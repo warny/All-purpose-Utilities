@@ -124,6 +124,38 @@ public class ControlFlowStack
     }
 
     /// <summary>
+    /// Handles an ENDFINALLY instruction: if a catch handler is pending (stored by a prior
+    /// <see cref="Throw"/> call when both <see cref="ExceptionBlock.CatchAddress"/> and
+    /// <see cref="ExceptionBlock.FinallyAddress"/> were set), redirects
+    /// <see cref="Context.InstructionPointer"/> to that catch handler and clears the pending
+    /// address. Otherwise, pops the <see cref="ExceptionBlock"/> from the stack (finally-only
+    /// scenario where no catch needs to run).
+    /// </summary>
+    /// <param name="context">The current execution context.</param>
+    /// <returns>
+    /// <see langword="true"/> if execution was redirected to a pending catch handler;
+    /// <see langword="false"/> if the exception block was popped (no pending catch).
+    /// </returns>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the innermost open block is not an <see cref="ExceptionBlock"/>.
+    /// </exception>
+    public bool EndFinally(Context context)
+    {
+        if (_blocks.TryPeek(out var top) && top is ExceptionBlock ex)
+        {
+            if (ex.PendingCatchAddress.HasValue)
+            {
+                context.InstructionPointer = ex.PendingCatchAddress.Value;
+                ex.PendingCatchAddress = null;
+                return true;
+            }
+            _blocks.Pop();
+            return false;
+        }
+        throw new InvalidOperationException("ENDFINALLY used outside of an exception block.");
+    }
+
+    /// <summary>
     /// Returns the nearest enclosing block of type <typeparamref name="T"/> without removing it
     /// from the stack, or <see langword="null"/> when no such block is open.
     /// Useful for introspection (e.g. "are we inside a loop?") and diagnostic assertions.
@@ -136,9 +168,17 @@ public class ControlFlowStack
     /// <summary>
     /// Handles a THROW instruction: pops all blocks until the nearest <see cref="ExceptionBlock"/>
     /// is found, stores the thrown value in <see cref="ExceptionBlock.ThrownValue"/>, and
-    /// redirects <see cref="Context.InstructionPointer"/> to the catch handler (or finally if
-    /// no catch is defined). The <see cref="ExceptionBlock"/> remains on the stack so that
-    /// the handler body can read <see cref="ExceptionBlock.ThrownValue"/>; ENDTRY pops it.
+    /// redirects <see cref="Context.InstructionPointer"/> according to the following rules:
+    /// <list type="bullet">
+    ///   <item>If the block has a finally clause, jumps to <see cref="ExceptionBlock.FinallyAddress"/>
+    ///     first. When a catch clause is also present, its address is stored in
+    ///     <see cref="ExceptionBlock.PendingCatchAddress"/> so the ENDFINALLY handler can jump there
+    ///     after the finally block completes.</item>
+    ///   <item>If the block has only a catch clause (no finally), jumps directly to
+    ///     <see cref="ExceptionBlock.CatchAddress"/>.</item>
+    /// </list>
+    /// The <see cref="ExceptionBlock"/> remains on the stack so that the handler body can read
+    /// <see cref="ExceptionBlock.ThrownValue"/>; ENDTRY pops it.
     /// </summary>
     /// <param name="context">The current execution context.</param>
     /// <param name="value">The value being thrown.</param>
@@ -154,7 +194,16 @@ public class ControlFlowStack
             {
                 ex.ThrownValue = value;
                 _blocks.Push(ex);
-                context.InstructionPointer = ex.CatchAddress ?? ex.FinallyAddress!.Value;
+                if (ex.FinallyAddress.HasValue)
+                {
+                    // Always run finally first. If there is also a catch, store it so ENDFINALLY can jump there.
+                    ex.PendingCatchAddress = ex.CatchAddress;
+                    context.InstructionPointer = ex.FinallyAddress.Value;
+                }
+                else
+                {
+                    context.InstructionPointer = ex.CatchAddress!.Value;
+                }
                 return true;
             }
         }

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Utils.VirtualMachine;
 
@@ -51,11 +52,15 @@ public class Scheduler<T> where T : Context
     /// Initial scheduling priority. Higher values run before lower values in the same
     /// <see cref="Step"/> pass. Defaults to <c>0</c>.
     /// </param>
+    /// <param name="name">
+    /// Optional human-readable name for the process, used in diagnostics and logging.
+    /// Accessible via <see cref="ScheduledProcess{T}.Name"/>. Defaults to <see langword="null"/>.
+    /// </param>
     /// <returns>The newly created <see cref="ScheduledProcess{T}"/> in the <see cref="ProcessState.Ready"/> state.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="context"/> or <paramref name="processor"/> is <see langword="null"/>.</exception>
-    public ScheduledProcess<T> AddProcess(T context, VirtualProcessor<T> processor, int priority = 0)
+    public ScheduledProcess<T> AddProcess(T context, VirtualProcessor<T> processor, int priority = 0, string? name = null)
     {
-        var process = new ScheduledProcess<T>(_nextId++, context, processor, priority);
+        var process = new ScheduledProcess<T>(_nextId++, context, processor, priority, name);
         _processes.Add(process);
         return process;
     }
@@ -145,6 +150,24 @@ public class Scheduler<T> where T : Context
         {
             cancellationToken.ThrowIfCancellationRequested();
             Step();
+        }
+    }
+
+    /// <summary>
+    /// Asynchronously runs the scheduler until no process remains in the
+    /// <see cref="ProcessState.Ready"/> or <see cref="ProcessState.Running"/> state,
+    /// or until cancellation is requested. Yields to the caller between each
+    /// <see cref="Step"/> call so the calling thread is not blocked for the duration.
+    /// </summary>
+    /// <param name="cancellationToken">Token that can interrupt the loop between steps.</param>
+    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is cancelled.</exception>
+    public async Task RunAsync(CancellationToken cancellationToken = default)
+    {
+        while (_processes.Any(p => p.State is ProcessState.Ready or ProcessState.Running))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            Step();
+            await Task.Yield();
         }
     }
 }

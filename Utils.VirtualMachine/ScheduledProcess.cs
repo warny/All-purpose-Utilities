@@ -19,6 +19,12 @@ public sealed class ScheduledProcess<T> where T : Context
     public int ProcessId { get; }
 
     /// <summary>
+    /// Gets the optional human-readable name for this process. Used in diagnostics and logging.
+    /// <see langword="null"/> when no name was supplied to <see cref="Scheduler{T}.AddProcess"/>.
+    /// </summary>
+    public string? Name { get; }
+
+    /// <summary>
     /// Gets or sets the scheduling priority. Higher values run first in each
     /// <see cref="Scheduler{T}.Step"/> pass. May be changed at runtime between quanta.
     /// </summary>
@@ -40,12 +46,13 @@ public sealed class ScheduledProcess<T> where T : Context
     /// </summary>
     public bool YieldRequested => _yieldRequested;
 
-    internal ScheduledProcess(int processId, T context, VirtualProcessor<T> processor, int priority)
+    internal ScheduledProcess(int processId, T context, VirtualProcessor<T> processor, int priority, string? name)
     {
         ProcessId = processId;
         Context = context ?? throw new ArgumentNullException(nameof(context));
         Processor = processor ?? throw new ArgumentNullException(nameof(processor));
         Priority = priority;
+        Name = name;
     }
 
     /// <summary>

@@ -103,6 +103,111 @@ class BigEndianMachine : VirtualProcessor<DefaultContext>
 }
 ```
 
+## Cooperative scheduler
+
+`Scheduler<T>` runs multiple processes concurrently using cooperative, priority-based time-slicing.
+Each `Step()` call advances the highest-priority ready process by one quantum.
+
+```csharp
+using Utils.VirtualMachine;
+
+var scheduler = new Scheduler<DefaultContext>(quantum: 10);
+
+// Add processes; optional name aids diagnostics.
+var p1 = scheduler.AddProcess(ctx1, machine1, priority: 1, name: "worker-A");
+var p2 = scheduler.AddProcess(ctx2, machine2, priority: 2, name: "worker-B");
+
+// Blocking run (executes on the calling thread).
+scheduler.Run();
+
+// Non-blocking async variant — yields between each quantum.
+await scheduler.RunAsync(cancellationToken);
+
+Console.WriteLine(p1.Name);      // "worker-A"
+Console.WriteLine(p1.State);     // ProcessState.Finished
+```
+
+## Structured control flow (CallStack / ControlFlow)
+
+`ControlFlowStack` tracks nested conditionals, loops, and try/catch/finally blocks at runtime.
+`ControlFlowContext` bundles a `DefaultContext` with a `ControlFlowStack`; `FullContext` also adds a call stack.
+
+```csharp
+using Utils.VirtualMachine;
+
+class MyMachine : VirtualProcessor<ControlFlowContext>
+{
+    // TRY — opens an exception block.
+    [Instruction("TRY", 0x30)]
+    void Try(ControlFlowContext ctx, int catchAddr, int finallyAddr)
+        => ctx.ControlFlow.PushException(ctx.InstructionPointer - 1, catchAddr, finallyAddr);
+
+    // THROW — finds the nearest handler; runs finally first when present.
+    [Instruction("THROW", 0x31)]
+    void Throw(ControlFlowContext ctx)
+        => ctx.ControlFlow.Throw(ctx, ctx.Stack.Pop());
+
+    // ENDFINALLY — after finally completes, jumps to catch (if pending) or pops the block.
+    [Instruction("ENDFINALLY", 0x32)]
+    void EndFinally(ControlFlowContext ctx)
+        => ctx.ControlFlow.EndFinally(ctx);
+}
+```
+
+When `Throw()` finds a block with both a catch and a finally clause, it stores the catch address
+in `ExceptionBlock.PendingCatchAddress` and jumps to the finally block first. `EndFinally()` then
+redirects to the catch handler automatically.
+
+## Virtual memory
+
+`VirtualMemory<TAddress>` provides a paged, process-isolated address space. Each physical page can
+be mapped into multiple processes with independent access rights.
+
+```csharp
+using Utils.VirtualMachine;
+
+var mem = new VirtualMemory<int>(pageSize: 256);
+var page = mem.AllocatePage();  // auto-mapped into MasterProcess with ReadWrite.
+
+var child = mem.CreateProcess();
+mem.MapPage(child, page, virtualPageIndex: 0, PageAccess.ReadOnly);
+
+// Read and write through a process view.
+mem.MasterProcess.Write(0, new byte[] { 1, 2, 3 });
+var buf = new byte[3];
+child.Read(0, buf);   // succeeds (ReadOnly)
+
+// Release a child process and unmap all its pages.
+mem.FreeProcess(child);
+```
+
+## Debugging with IVmInspector
+
+Attach an `IVmInspector<T>` to a `VirtualProcessor<T>` to intercept every instruction and
+trigger breakpoints without modifying the instruction set.
+
+```csharp
+using Utils.VirtualMachine;
+
+class TraceInspector : IVmInspector<DefaultContext>
+{
+    public void BeforeInstruction(DefaultContext ctx, int address, string name)
+        => Console.WriteLine($"[{address:X4}] {name}");
+
+    public void OnBreakpoint(DefaultContext ctx, int address, string name)
+        => Console.WriteLine($"*** breakpoint at {address:X4} ({name})");
+}
+
+var machine = new StackMachine();
+machine.Inspector = new TraceInspector();
+machine.Breakpoints.Add(0x0005);  // break when IP == 5
+
+machine.Execute(ctx);
+```
+
+`BeforeInstruction` is called for every instruction. `OnBreakpoint` is called first when the
+current address is in `Breakpoints`, then `BeforeInstruction` follows.
+
 ## Related packages
 - `omy.Utils.IO` – binary parsing helpers used by the VM framework.
 - `omy.Utils.Fonts` – uses the VM framework for font table parsing.
