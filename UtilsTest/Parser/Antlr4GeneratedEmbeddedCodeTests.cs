@@ -1024,6 +1024,121 @@ public class Antlr4GeneratedEmbeddedCodeTests
         StringAssert.Contains(source, "GetRequiredRuleLocal<int>(context, \"total\") >> 1");
     }
 
+
+
+    /// <summary>
+    /// Ensures default no-op embedded-code generation preserves ANTLR-style return writes unchanged.
+    /// </summary>
+    [TestMethod]
+    public void Emit_WithDefaultTransformer_PreservesReturnWriteSyntax()
+    {
+        const string grammar = """
+            grammar P;
+            start returns [int value]
+            @after {
+                $value = 42;
+            }
+                : A ;
+            A : 'a' ;
+            """;
+
+        string source = Emit(grammar);
+
+        StringAssert.Contains(source, "$value = 42;");
+    }
+
+    /// <summary>
+    /// Ensures the optional ANTLR-style transformer rewrites current-rule return write operators in @after.
+    /// </summary>
+    [TestMethod]
+    public void EmitWithAntlrStyleTransformer_CurrentRuleReturnWrites_RewritesSupportedOperators()
+    {
+        const string grammar = """
+            grammar P;
+            start returns [int value]
+            @after {
+                int mask = 1;
+                $value = 1;
+                $value += 1;
+                $value -= 1;
+                $value *= 2;
+                $value /= 2;
+                $value %= 2;
+                $value &= mask;
+                $value |= mask;
+                $value ^= mask;
+                $value <<= 1;
+                $value >>= 1;
+                $value++;
+                ++$value;
+                $value--;
+                --$value;
+            }
+                : A ;
+            A : 'a' ;
+            """;
+
+        string source = EmitWithAntlrStyleTransformer(grammar);
+
+        StringAssert.Contains(source, "SetRequiredRuleReturn<int>(context, \"value\", 1)");
+        StringAssert.Contains(source, "GetRequiredRuleReturn<int>(context, \"value\") + 1");
+        StringAssert.Contains(source, "GetRequiredRuleReturn<int>(context, \"value\") - 1");
+        StringAssert.Contains(source, "GetRequiredRuleReturn<int>(context, \"value\") * 2");
+        StringAssert.Contains(source, "GetRequiredRuleReturn<int>(context, \"value\") / 2");
+        StringAssert.Contains(source, "GetRequiredRuleReturn<int>(context, \"value\") % 2");
+        StringAssert.Contains(source, "GetRequiredRuleReturn<int>(context, \"value\") & mask");
+        StringAssert.Contains(source, "GetRequiredRuleReturn<int>(context, \"value\") | mask");
+        StringAssert.Contains(source, "GetRequiredRuleReturn<int>(context, \"value\") ^ mask");
+        StringAssert.Contains(source, "GetRequiredRuleReturn<int>(context, \"value\") << 1");
+        StringAssert.Contains(source, "GetRequiredRuleReturn<int>(context, \"value\") >> 1");
+    }
+
+    /// <summary>
+    /// Ensures return write right-hand sides still use existing ANTLR-style read rewrites.
+    /// </summary>
+    [TestMethod]
+    public void EmitWithAntlrStyleTransformer_CurrentRuleReturnWriteRhs_RewritesParameterReads()
+    {
+        const string grammar = """
+            grammar P;
+            start[int count] returns [int value]
+            @after {
+                $value = $count + 1;
+            }
+                : A ;
+            A : 'a' ;
+            """;
+
+        string source = EmitWithAntlrStyleTransformer(grammar);
+
+        StringAssert.Contains(source, "SetRequiredRuleReturn<int>(context, \"value\", GetRequiredRuleParameter<int>(context, \"count\") + 1)");
+    }
+
+    /// <summary>
+    /// Ensures comparison operators in return write right-hand sides are accepted by the transformer.
+    /// </summary>
+    [DataTestMethod]
+    [DataRow("$count == 1 ? 10 : 20")]
+    [DataRow("$count != 0 ? 1 : 0")]
+    [DataRow("$count <= 10 ? 1 : 0")]
+    [DataRow("$count >= 10 ? 1 : 0")]
+    public void EmitWithAntlrStyleTransformer_CurrentRuleReturnWriteRhs_AllowsComparisonOperators(string expression)
+    {
+        string grammar = $$"""
+            grammar P;
+            start[int count] returns [int value]
+            @after {
+                $value = {{expression}};
+            }
+                : A ;
+            A : 'a' ;
+            """;
+
+        string source = EmitWithAntlrStyleTransformer(grammar);
+
+        StringAssert.Contains(source, "SetRequiredRuleReturn<int>(context, \"value\", GetRequiredRuleParameter<int>(context, \"count\")");
+    }
+
     /// <summary>
     /// Ensures typed local writes execute through managed parser frame local state.
     /// </summary>
@@ -1193,10 +1308,10 @@ public class Antlr4GeneratedEmbeddedCodeTests
     public void EmitWithAntlrStyleTransformer_UnsupportedLocalWriteContexts_ReportDiagnostics()
     {
         AssertTransformerDiagnostic("start[int count] locals [int total] @init { $count = 1; } : A ; A : 'a' ;", "Parser parameter '$count' is read-only.");
-        AssertTransformerDiagnostic("start locals [int total] returns [int value] @after { $start.value = 1; } : A ; A : 'a' ;", "Current-rule return attributes are read-only");
+        AssertTransformerDiagnostic("start locals [int total] returns [int value] @after { $start.value = 1; } : A ; A : 'a' ;", "Current-rule dotted return writes are not supported");
         AssertTransformerDiagnostic("start locals [int total] : x=child { $x.value = 1; } ; child returns [int value] : A ; A : 'a' ;", "Labeled rule-call return attributes are read-only.");
         AssertTransformerDiagnostic("start locals [int total] : xs+=child { $xs.value = values; } ; child returns [int value] : A ; A : 'a' ;", "List-labeled rule-call return projections are read-only.");
-        AssertTransformerDiagnostic("start locals [int total] @init { value = $total++; } : A ; A : 'a' ;", "Increment/decrement parser local attributes are supported only as standalone statements.");
+        AssertTransformerDiagnostic("start locals [int total] @init { value = $total++; } : A ; A : 'a' ;", "Increment/decrement parser attributes are supported only as standalone statements.");
         AssertTransformerDiagnostic("start locals [int total] @init { Use(ref $total); } : A ; A : 'a' ;", "ref/out parser attributes are not supported");
         AssertTransformerDiagnostic("start locals [int total] : { $total = 1; }? A ; A : 'a' ;", "Parser local writes are not supported in semantic predicates.");
     }

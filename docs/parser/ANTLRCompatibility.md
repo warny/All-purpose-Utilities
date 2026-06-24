@@ -664,3 +664,11 @@ Embedded parser code preservation is supported by default. `IParserEmbeddedCodeT
 ### Optional C# local write convenience syntax
 
 ANTLR-style current-rule local writes are supported only by the optional C# `CSharpAntlrStyleParserEmbeddedCodeTransformer`; they are not parser-core syntax and are not applied by the default no-op transformer. In opt-in generated C# paths, simple local assignment, supported compound assignments, and statement-only increment/decrement are rewritten to typed local helper calls that use existing frame-local state. Compound assignment is getter/operator/setter based and does not reproduce C# compound-assignment narrowing conversions. Parameters, returns, assignment labels, list-label projections, token labels, lexer attributes, `ref`/`out`, semantic-predicate writes, nested assignment expressions, and increment/decrement expression values are intentionally unsupported and diagnosed by the transformer. Direct helper APIs remain the recommended style when no transformer is selected.
+
+### Optional C# transformer current-rule return writes
+
+The optional C# ANTLR-style transformer supports a narrow current-rule return write convenience syntax in rule `@after` code only. The default no-op transformer preserves bare `$returnName = ...` text unchanged. This is a logic-stage source rewrite only: broader execution semantics, parent visibility, rollback propagation, and inline action return-write semantics remain separate work.
+
+Supported forms use the bare return attribute declared by the current rule, for example `$value = 42;`, compound assignments such as `$value += 1;`, and standalone increment/decrement statements. The transformer rewrites those forms to explicit typed helper calls such as `SetRequiredRuleReturn<T>(context, "value", ...)` and `GetRequiredRuleReturn<T>(context, "value")`. Direct helper APIs remain the preferred non-transformer style.
+
+Parameters, labeled rule-call returns, list-labeled projections, lexer attributes, `ref`/`out`, semantic predicates, `@init`, and dotted current-rule return writes such as `$rule.value = ...` remain unsupported/read-only in this PR. Use bare `$returnName = ...` only for declared current-rule return attributes when opting into the C# transformer.

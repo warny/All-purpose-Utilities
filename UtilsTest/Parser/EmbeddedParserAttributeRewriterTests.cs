@@ -105,7 +105,7 @@ public class EmbeddedParserAttributeRewriterTests
         EmbeddedParserAttributeRewriteResult result = Rewrite(code);
 
         Assert.AreEqual(1, result.Errors.Count);
-        StringAssert.Contains(result.Errors[0], "writes are not supported");
+        StringAssert.Contains(result.Errors[0], code.Contains("$start.own") ? "Current-rule dotted return writes are not supported" : "writes are not supported");
     }
 
     /// <summary>Verifies bare parameter and local write-target shapes are rejected.</summary>
@@ -121,7 +121,63 @@ public class EmbeddedParserAttributeRewriterTests
         EmbeddedParserAttributeRewriteResult result = Rewrite(code);
 
         Assert.AreEqual(1, result.Errors.Count);
-        StringAssert.Contains(result.Errors[0], "writes are not supported");
+        StringAssert.Contains(result.Errors[0], code.Contains("ref") || code.Contains("out") ? "ref/out parser attributes are not supported" : "read-only");
+    }
+
+
+
+    /// <summary>Verifies current-rule return writes are rewritten to typed helper calls in @after.</summary>
+    [TestMethod]
+    public void Rewrite_CurrentRuleReturnWrites_RewritesToTypedHelpers()
+    {
+        EmbeddedParserAttributeRewriteResult result = Rewrite("$own = $count + 1; $own += 2; $own++; ++$own; $own--; --$own;");
+
+        StringAssert.Contains(result.Code, "SetRequiredRuleReturn<int>(context, \"own\", GetRequiredRuleParameter<int>(context, \"count\") + 1)");
+        StringAssert.Contains(result.Code, "GetRequiredRuleReturn<int>(context, \"own\") + 2");
+        StringAssert.Contains(result.Code, "GetRequiredRuleReturn<int>(context, \"own\") + 1");
+        StringAssert.Contains(result.Code, "GetRequiredRuleReturn<int>(context, \"own\") - 1");
+        Assert.AreEqual(0, result.Errors.Count);
+    }
+
+    /// <summary>Verifies comparison operators in return write right-hand sides are not treated as nested assignments.</summary>
+    [DataTestMethod]
+    [DataRow("$own = $count == 1 ? 10 : 20;")]
+    [DataRow("$own = $count != 0 ? 1 : 0;")]
+    [DataRow("$own = $count <= 10 ? 1 : 0;")]
+    [DataRow("$own = $count >= 10 ? 1 : 0;")]
+    public void Rewrite_CurrentRuleReturnWriteRhs_AllowsComparisonOperators(string code)
+    {
+        EmbeddedParserAttributeRewriteResult result = Rewrite(code);
+
+        Assert.AreEqual(0, result.Errors.Count);
+        StringAssert.Contains(result.Code, "SetRequiredRuleReturn<int>(context, \"own\", GetRequiredRuleParameter<int>(context, \"count\")");
+    }
+
+    /// <summary>Verifies unsupported current-rule return write contexts produce deterministic diagnostics.</summary>
+    [DataTestMethod]
+    [DataRow("value = $own++;", "Increment/decrement parser attributes are supported only as standalone statements")]
+    [DataRow("Foo(++$own);", "Increment/decrement parser attributes are supported only as standalone statements")]
+    [DataRow("Use(ref $own);", "ref/out parser attributes are not supported")]
+    [DataRow("Use(out $own);", "ref/out parser attributes are not supported")]
+    public void Rewrite_UnsupportedReturnWriteContext_ReportsDeterministicError(string code, string expectedMessage)
+    {
+        EmbeddedParserAttributeRewriteResult result = Rewrite(code);
+
+        Assert.AreEqual(1, result.Errors.Count);
+        StringAssert.Contains(result.Errors[0], expectedMessage);
+    }
+
+    /// <summary>Verifies current-rule return writes are rejected outside supported @after code.</summary>
+    [DataTestMethod]
+    [DataRow(0, "Parser return writes are not supported in @init")]
+    [DataRow(2, "Parser return writes are not supported in semantic predicates")]
+    [DataRow(1, "Parser return writes are supported only in @after")]
+    public void Rewrite_CurrentRuleReturnWriteInUnsupportedLocation_ReportsLifecycleError(int kindValue, string expectedMessage)
+    {
+        EmbeddedParserAttributeRewriteResult result = Rewrite("$own = 1;", (EmbeddedParserAttributeLocationKind)kindValue);
+
+        Assert.AreEqual(1, result.Errors.Count);
+        StringAssert.Contains(result.Errors[0], expectedMessage);
     }
 
     /// <summary>Verifies bare parameter and local reads are rejected in predicates.</summary>
