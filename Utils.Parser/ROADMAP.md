@@ -605,3 +605,10 @@ Parser embedded-code handling is centered on preservation plus an explicit `IPar
 ### Embedded-code transformer boundary update
 
 ANTLR-style current-rule local writes are now documented as an optional C# transformer convenience only. The parser/generator core continues to treat embedded code as raw target-language text by default; no-op generation preserves `$local = ...` unchanged, while richer conveniences remain isolated behind `IParserEmbeddedCodeTransformer`.
+
+
+### Optional C# transformer current-rule return writes
+
+**Status: in progress.**
+
+ANTLR-style current-rule return writes are now recognized only by the optional C# ANTLR-style transformer as a logic-stage source rewrite for rule `@after` code. The no-op/default transformer preserves `$returnName = ...` unchanged. The transformer supports bare declared current-rule return attributes and emits typed `SetRequiredRuleReturn<T>` / `GetRequiredRuleReturn<T>` helper calls for assignment, compound assignment, and standalone increment/decrement statements. This does not complete broader ANTLR return execution semantics: inline action return writes, parent propagation, rollback semantics beyond existing frame storage, labels, parameters, lexer constructs, `ref`/`out`, and dotted `$rule.returnName = ...` writes remain unsupported or read-only.

@@ -97,6 +97,8 @@ Do not add new `$...` semantics directly to `GrammarEmitter`, `ParserEngine`, ru
 
 ANTLR-style local writes are implemented only in the optional C# transformer. Do not move this logic into parser/generator core.
 
+ANTLR-style return writes are implemented only in the optional C# transformer. Do not move this logic into parser/generator core.
+
 Dynamic embedded code must be transformed before being passed to the existing compiler/preparer mechanism. Do not introduce a parallel compiler abstraction.
 
 ## Parser architecture boundaries

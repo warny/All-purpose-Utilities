@@ -95,7 +95,8 @@ internal static class EmbeddedParserAttributeRewriter
         var output = new StringBuilder(code.Length);
         var labels = CollectLabels(rule.Content);
         var parserRules = grammar.ParserRules.ToDictionary(static candidate => candidate.Name, StringComparer.Ordinal);
-        var currentReturns = ParseDeclarationNames(rule.Returns);
+        var returns = ParseTypedDeclarations(rule.Returns);
+        var currentReturns = new HashSet<string>(returns.Keys, StringComparer.Ordinal);
         var parameters = ParseTypedDeclarations(rule.Parameters);
         var locals = ParseTypedDeclarations(rule.Locals.Count == 0 ? null : string.Join(", ", rule.Locals));
         int index = 0;
@@ -119,9 +120,9 @@ internal static class EmbeddedParserAttributeRewriter
             int dotIndex = SkipWhitespace(code, index);
             if (dotIndex >= code.Length || code[dotIndex] != '.')
             {
-                if (!TryRewriteBareLocalWrite(code, rule, locationKind, errors, output, parameters, locals, labels, grammar, attributeStart, index, root, ref index))
+                if (!TryRewriteBareAttributeWrite(code, rule, locationKind, errors, output, parameters, locals, returns, labels, grammar, attributeStart, index, root, ref index))
                 {
-                    RewriteBareAttribute(code, rule, locationKind, errors, output, parameters, locals, labels, attributeStart, index, root);
+                    RewriteBareAttribute(code, rule, locationKind, errors, output, parameters, locals, returns, labels, attributeStart, index, root);
                 }
                 continue;
             }
@@ -161,7 +162,7 @@ internal static class EmbeddedParserAttributeRewriter
                 }
                 else if (string.Equals(root, rule.Name, StringComparison.Ordinal))
                 {
-                    errors.Add("Current-rule return attributes are read-only in the ANTLR-style transformer. Use SetRuleReturn(...) explicitly. Parser attribute writes are not supported.");
+                    errors.Add("Current-rule dotted return writes are not supported by the ANTLR-style transformer. Use bare '$returnName = ...' or SetRuleReturn(...) explicitly.");
                 }
                 else if (labels.TryGetValue(root, out RuleLabelTargets? writeLabel) && writeLabel.List.Count > 0 && writeLabel.Assignment is null)
                 {
@@ -334,7 +335,7 @@ internal static class EmbeddedParserAttributeRewriter
     /// <summary>
     /// Tries to rewrite a supported current-rule local write at the current parser attribute position.
     /// </summary>
-    private static bool TryRewriteBareLocalWrite(
+    private static bool TryRewriteBareAttributeWrite(
         string code,
         G4Rule rule,
         EmbeddedParserAttributeLocationKind locationKind,
@@ -342,6 +343,7 @@ internal static class EmbeddedParserAttributeRewriter
         StringBuilder output,
         Dictionary<string, TypedDeclaration> parameters,
         Dictionary<string, TypedDeclaration> locals,
+        Dictionary<string, TypedDeclaration> returns,
         Dictionary<string, RuleLabelTargets> labels,
         G4Grammar grammar,
         int attributeStart,
@@ -373,14 +375,22 @@ internal static class EmbeddedParserAttributeRewriter
 
         if (locationKind == EmbeddedParserAttributeLocationKind.Predicate)
         {
-            errors.Add("Parser local writes are not supported in semantic predicates.");
+            errors.Add("Parser return writes are not supported in semantic predicates.");
+            output.Append(code, attributeStart, attributeEnd - attributeStart);
+            return true;
+        }
+
+        int declarationCount = (parameters.ContainsKey(root) ? 1 : 0) + (locals.ContainsKey(root) ? 1 : 0) + (returns.ContainsKey(root) ? 1 : 0);
+        if (declarationCount > 1)
+        {
+            errors.Add($"Parser attribute '{attributeText}' is ambiguous because the current rule declares multiple attributes with this name. Use explicit helper APIs.");
             output.Append(code, attributeStart, attributeEnd - attributeStart);
             return true;
         }
 
         if (parameters.ContainsKey(root))
         {
-            errors.Add($"Parser parameter '{attributeText}' is read-only. Use a local or explicit helper API for mutable state. Parser attribute writes are not supported.");
+            errors.Add($"Parser parameter '{attributeText}' is read-only. Use a local or explicit helper API for mutable state.");
             output.Append(code, attributeStart, attributeEnd - attributeStart);
             return true;
         }
@@ -392,16 +402,33 @@ internal static class EmbeddedParserAttributeRewriter
             return true;
         }
 
-        if (!locals.TryGetValue(root, out TypedDeclaration? local))
+        bool isReturn = returns.TryGetValue(root, out TypedDeclaration? returnDeclaration);
+        TypedDeclaration? local = null;
+        if (!isReturn && !locals.TryGetValue(root, out local))
         {
-            errors.Add($"Bare parser attribute '{attributeText}' does not resolve to a current-rule local.");
+            errors.Add($"Bare parser attribute '{attributeText}' does not resolve to a current-rule parameter, local, or return.");
             output.Append(code, attributeStart, attributeEnd - attributeStart);
             return true;
         }
 
-        if (string.IsNullOrWhiteSpace(local.RawType))
+        if (isReturn && locationKind == EmbeddedParserAttributeLocationKind.Init)
         {
-            errors.Add($"Bare parser attribute '{attributeText}' cannot be typed because declaration '{local.RawDeclaration}' does not expose a raw type.");
+            errors.Add("Parser return writes are not supported in @init. Use @after or explicit runtime APIs when the return frame is available.");
+            output.Append(code, attributeStart, attributeEnd - attributeStart);
+            return true;
+        }
+
+        if (isReturn && locationKind == EmbeddedParserAttributeLocationKind.InlineAction)
+        {
+            errors.Add("Parser return writes are supported only in @after by the ANTLR-style transformer.");
+            output.Append(code, attributeStart, attributeEnd - attributeStart);
+            return true;
+        }
+
+        TypedDeclaration declaration = isReturn ? returnDeclaration! : local!;
+        if (string.IsNullOrWhiteSpace(declaration.RawType))
+        {
+            errors.Add($"Bare parser attribute '{attributeText}' cannot be typed because declaration '{declaration.RawDeclaration}' does not expose a raw type.");
             output.Append(code, attributeStart, attributeEnd - attributeStart);
             return true;
         }
@@ -410,14 +437,14 @@ internal static class EmbeddedParserAttributeRewriter
         {
             if (!IsStandalonePrefixUpdate(code, previous - 1, operatorStart))
             {
-                errors.Add("Increment/decrement parser local attributes are supported only as standalone statements.");
+                errors.Add("Increment/decrement parser attributes are supported only as standalone statements.");
                 output.Append(code, attributeStart, attributeEnd - attributeStart);
                 return true;
             }
 
             RemoveTrailingOperator(output, code, previous - 1, attributeStart);
             int statementEnd = SkipWhitespace(code, operatorStart);
-            AppendLocalUpdate(output, local.RawType!, root, hasPrefixIncrement ? "+" : "-", "1");
+            AppendAttributeUpdate(output, isReturn, declaration.RawType!, root, hasPrefixIncrement ? "+" : "-", "1");
             index = statementEnd;
             return true;
         }
@@ -427,12 +454,12 @@ internal static class EmbeddedParserAttributeRewriter
             int afterOperator = operatorStart + 2;
             if (!IsStandalonePostfixUpdate(code, attributeStart, afterOperator))
             {
-                errors.Add("Increment/decrement parser local attributes are supported only as standalone statements.");
+                errors.Add("Increment/decrement parser attributes are supported only as standalone statements.");
                 output.Append(code, attributeStart, attributeEnd - attributeStart);
                 return true;
             }
 
-            AppendLocalUpdate(output, local.RawType!, root, hasPostfixIncrement ? "+" : "-", "1");
+            AppendAttributeUpdate(output, isReturn, declaration.RawType!, root, hasPostfixIncrement ? "+" : "-", "1");
             index = afterOperator;
             return true;
         }
@@ -441,7 +468,7 @@ internal static class EmbeddedParserAttributeRewriter
         int rhsEnd = FindStatementTerminator(code, rhsStart);
         if (rhsEnd < 0)
         {
-            errors.Add($"Parser local write '{attributeText}' must be a complete statement ending with ';'.");
+            errors.Add($"Parser attribute write '{attributeText}' must be a complete statement ending with ';'.");
             output.Append(code, attributeStart, attributeEnd - attributeStart);
             return true;
         }
@@ -458,11 +485,11 @@ internal static class EmbeddedParserAttributeRewriter
         errors.AddRange(rhsResult.Errors);
         if (assignmentOperator == "=")
         {
-            AppendLocalSet(output, local.RawType!, root, rhsResult.Code);
+            AppendAttributeSet(output, isReturn, declaration.RawType!, root, rhsResult.Code);
         }
         else
         {
-            AppendLocalUpdate(output, local.RawType!, root, assignmentOperator.Substring(0, assignmentOperator.Length - 1), rhsResult.Code);
+            AppendAttributeUpdate(output, isReturn, declaration.RawType!, root, assignmentOperator.Substring(0, assignmentOperator.Length - 1), rhsResult.Code);
         }
 
         index = rhsEnd;
@@ -480,6 +507,7 @@ internal static class EmbeddedParserAttributeRewriter
         StringBuilder output,
         Dictionary<string, TypedDeclaration> parameters,
         Dictionary<string, TypedDeclaration> locals,
+        Dictionary<string, TypedDeclaration> returns,
         Dictionary<string, RuleLabelTargets> labels,
         int attributeStart,
         int attributeEnd,
@@ -502,19 +530,20 @@ internal static class EmbeddedParserAttributeRewriter
 
         bool hasParameter = parameters.TryGetValue(root, out TypedDeclaration? parameter);
         bool hasLocal = locals.TryGetValue(root, out TypedDeclaration? local);
-        if (hasParameter && hasLocal)
+        bool hasReturn = returns.TryGetValue(root, out TypedDeclaration? returnDeclaration);
+        if ((hasParameter ? 1 : 0) + (hasLocal ? 1 : 0) + (hasReturn ? 1 : 0) > 1)
         {
-            errors.Add($"Bare parser attribute '{attributeText}' is ambiguous because current rule '{rule.Name}' declares both a parameter and a local named '{root}'.");
+            errors.Add($"Bare parser attribute '{attributeText}' is ambiguous because current rule '{rule.Name}' declares multiple attributes named '{root}'.");
             output.Append(code, attributeStart, attributeEnd - attributeStart);
             return;
         }
 
-        TypedDeclaration? declaration = hasParameter ? parameter : local;
+        TypedDeclaration? declaration = hasParameter ? parameter : hasLocal ? local : returnDeclaration;
         if (declaration is null)
         {
             string message = labels.ContainsKey(root)
                 ? $"Bare parser attribute '{attributeText}' is a label access and is not supported. Use '$" + root + ".returnName' for declared child rule returns."
-                : $"Bare parser attribute '{attributeText}' does not resolve to a current-rule parameter or local.";
+                : $"Bare parser attribute '{attributeText}' does not resolve to a current-rule parameter, local, or return.";
             errors.Add(message);
             output.Append(code, attributeStart, attributeEnd - attributeStart);
             return;
@@ -527,7 +556,7 @@ internal static class EmbeddedParserAttributeRewriter
             return;
         }
 
-        output.Append(hasParameter ? "GetRequiredRuleParameter<" : "GetRequiredRuleLocal<")
+        output.Append(hasParameter ? "GetRequiredRuleParameter<" : hasLocal ? "GetRequiredRuleLocal<" : "GetRequiredRuleReturn<")
             .Append(declaration.RawType)
             .Append(">(context, \"")
             .Append(Escape(root))
@@ -846,16 +875,17 @@ internal static class EmbeddedParserAttributeRewriter
         return previous != '=' && previous != '!' && previous != '<' && previous != '>';
     }
 
-    /// <summary>Appends a typed local setter helper call.</summary>
-    private static void AppendLocalSet(StringBuilder output, string rawType, string name, string value)
+    /// <summary>Appends a typed current-rule local or return setter helper call.</summary>
+    private static void AppendAttributeSet(StringBuilder output, bool isReturn, string rawType, string name, string value)
     {
-        output.Append("SetRequiredRuleLocal<").Append(rawType).Append(">(context, \"").Append(Escape(name)).Append("\", ").Append(value).Append(')');
+        output.Append(isReturn ? "SetRequiredRuleReturn<" : "SetRequiredRuleLocal<").Append(rawType).Append(">(context, \"").Append(Escape(name)).Append("\", ").Append(value).Append(')');
     }
 
-    /// <summary>Appends a typed local getter/operator/setter helper call.</summary>
-    private static void AppendLocalUpdate(StringBuilder output, string rawType, string name, string op, string value)
+    /// <summary>Appends a typed current-rule local or return getter/operator/setter helper call.</summary>
+    private static void AppendAttributeUpdate(StringBuilder output, bool isReturn, string rawType, string name, string op, string value)
     {
-        output.Append("SetRequiredRuleLocal<").Append(rawType).Append(">(context, \"").Append(Escape(name)).Append("\", GetRequiredRuleLocal<")
+        output.Append(isReturn ? "SetRequiredRuleReturn<" : "SetRequiredRuleLocal<").Append(rawType).Append(">(context, \"").Append(Escape(name)).Append("\", ")
+            .Append(isReturn ? "GetRequiredRuleReturn<" : "GetRequiredRuleLocal<")
             .Append(rawType).Append(">(context, \"").Append(Escape(name)).Append("\") ").Append(op).Append(' ').Append(value).Append(')');
     }
 
