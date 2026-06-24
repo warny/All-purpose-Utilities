@@ -156,6 +156,13 @@ public abstract class VirtualProcessor<T> where T : Context
     protected byte ReadByte(Context context) => _numberReader.ReadByte(context);
 
     /// <summary>
+    /// Reads a single signed byte from the context using the configured <see cref="INumberReader"/>.
+    /// </summary>
+    /// <param name="context">The current execution context.</param>
+    /// <returns>The signed byte read from the data stream.</returns>
+    protected sbyte ReadSByte(Context context) => _numberReader.ReadSByte(context);
+
+    /// <summary>
     /// Reads a 16-bit signed integer (short) from the context.
     /// </summary>
     /// <param name="context">The current execution context.</param>
@@ -281,17 +288,25 @@ public abstract class VirtualProcessor<T> where T : Context
     /// <param name="opcode">Byte sequence identifying the instruction.</param>
     /// <param name="name">Human-readable name used in diagnostics.</param>
     /// <param name="handler">Delegate invoked when the opcode is matched.</param>
-    public void RegisterInstruction(byte[] opcode, string name, Action<T> handler)
+    /// <param name="overwrite">
+    /// When <see langword="true"/>, replaces an existing registration for the same opcode.
+    /// When <see langword="false"/> (default), throws if the opcode is already registered.
+    /// </param>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="opcode"/> is empty, or when the opcode is already registered
+    /// and <paramref name="overwrite"/> is <see langword="false"/>.
+    /// </exception>
+    public void RegisterInstruction(byte[] opcode, string name, Action<T> handler, bool overwrite = false)
     {
         ArgumentNullException.ThrowIfNull(opcode);
         ArgumentNullException.ThrowIfNull(handler);
         if (opcode.Length == 0) throw new ArgumentException("Opcode cannot be empty.", nameof(opcode));
-        if (InstructionsSet.ContainsKey(opcode))
+        if (!overwrite && InstructionsSet.ContainsKey(opcode))
             throw new ArgumentException(
                 $"An instruction with opcode [{string.Join(", ", opcode.Select(b => $"0x{b:X2}"))}] is already registered.",
                 nameof(opcode));
 
-        InstructionsSet.Add(opcode, (name ?? string.Empty, ctx => handler(ctx)));
+        InstructionsSet[opcode] = (name ?? string.Empty, ctx => handler(ctx));
         if (opcode.Length > _maxInstructionSize)
         {
             _maxInstructionSize = opcode.Length;
@@ -325,7 +340,7 @@ public abstract class VirtualProcessor<T> where T : Context
                 catch (Exception ex) when (ex is IndexOutOfRangeException or ArgumentOutOfRangeException)
                 {
                     // INumberReader methods throw these when the byte stream ends before all operand bytes are read.
-                    throw new VirtualProcessorException(instructionStart, segment, ex);
+                    throw new VirtualProcessorException(instructionStart, segment, entry.Name, ex);
                 }
                 return;
             }
@@ -341,8 +356,9 @@ public abstract class Context
 {
     /// <summary>
     /// Gets the raw byte data to be processed by the virtual processor.
+    /// The data is read-only; instruction handlers cannot modify the instruction stream.
     /// </summary>
-    public byte[] Data { get; }
+    public ReadOnlyMemory<byte> Data { get; }
 
     /// <summary>
     /// Gets or sets the current instruction pointer indicating the byte offset into <see cref="Data"/>.
@@ -354,7 +370,7 @@ public abstract class Context
     /// <summary>
     /// Signals program termination by setting <see cref="InstructionPointer"/> to <c>-1</c>.
     /// The <see cref="VirtualProcessor{T}"/> execution loop stops before the next instruction.
-    /// Prefer this over setting <see cref="InstructionPointer"/> to <see cref="Data"/>.<see cref="Array.Length"/>
+    /// Prefer this over setting <see cref="InstructionPointer"/> to <see cref="Data"/>.<see cref="ReadOnlyMemory{T}.Length"/>
     /// so that intent is explicit and the mechanism can evolve without changing every HALT handler.
     /// </summary>
     public void Terminate() => InstructionPointer = -1;
@@ -362,10 +378,10 @@ public abstract class Context
     /// <summary>
     /// Initializes a new instance of the <see cref="Context"/> class with the given data buffer.
     /// </summary>
-    /// <param name="data">The byte array containing all instructions or data to process.</param>
-    protected Context(byte[] data)
+    /// <param name="data">The byte data containing all instructions or data to process.</param>
+    protected Context(ReadOnlyMemory<byte> data)
     {
-        Data = data ?? throw new ArgumentNullException(nameof(data));
+        Data = data;
     }
 }
 
@@ -377,8 +393,8 @@ public class DefaultContext : Context
     /// <summary>
     /// Initializes a new instance of the <see cref="DefaultContext"/> class with the given data buffer.
     /// </summary>
-    /// <param name="data">The byte array containing all instructions or data to process.</param>
-    public DefaultContext(byte[] data) : base(data)
+    /// <param name="data">The byte data containing all instructions or data to process.</param>
+    public DefaultContext(ReadOnlyMemory<byte> data) : base(data)
     {
     }
 

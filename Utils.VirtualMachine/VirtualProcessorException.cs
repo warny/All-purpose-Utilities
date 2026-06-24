@@ -16,6 +16,9 @@ public class VirtualProcessorException : Exception
     /// <summary>Gets the opcode bytes that triggered the error, if available.</summary>
     public byte[]? OpcodeBytes { get; }
 
+    /// <summary>Gets the human-readable name of the instruction that caused the error, if available.</summary>
+    public string? InstructionName { get; }
+
     /// <summary>
     /// Initializes a new instance of the <see cref="VirtualProcessorException"/> class.
     /// </summary>
@@ -70,6 +73,27 @@ public class VirtualProcessorException : Exception
         OpcodeBytes = [.. opcodeBytes];
     }
 
-    private static string BuildMessage(int instructionPointer, IReadOnlyList<byte> opcodeBytes)
-        => $"Instruction error at position {instructionPointer}: [{string.Join(", ", opcodeBytes.Select(b => $"0x{b:X2}"))}].";
+    /// <summary>
+    /// Initializes a new instance with the instruction position, opcode bytes, instruction name, and an inner exception.
+    /// Used when a matched and named instruction's operand read fails due to a truncated stream.
+    /// </summary>
+    /// <param name="instructionPointer">Byte offset in the instruction stream where the error occurred.</param>
+    /// <param name="opcodeBytes">Bytes of the matched opcode.</param>
+    /// <param name="instructionName">Human-readable name of the instruction that failed.</param>
+    /// <param name="innerException">The exception raised while reading the operand bytes.</param>
+    public VirtualProcessorException(int instructionPointer, IReadOnlyList<byte> opcodeBytes, string? instructionName, Exception innerException)
+        : base(BuildMessage(instructionPointer, opcodeBytes, instructionName), innerException)
+    {
+        InstructionPointer = instructionPointer;
+        OpcodeBytes = [.. opcodeBytes];
+        InstructionName = instructionName;
+    }
+
+    private static string BuildMessage(int instructionPointer, IReadOnlyList<byte> opcodeBytes, string? instructionName = null)
+    {
+        var opStr = string.Join(", ", opcodeBytes.Select(b => $"0x{b:X2}"));
+        return instructionName is null
+            ? $"Instruction error at position {instructionPointer}: [{opStr}]."
+            : $"Instruction '{instructionName}' error at position {instructionPointer}: [{opStr}].";
+    }
 }
