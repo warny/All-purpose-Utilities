@@ -1093,6 +1093,174 @@ public class Antlr4GeneratedEmbeddedCodeTests
         StringAssert.Contains(source, "GetRequiredRuleReturn<int>(context, \"value\") >> 1");
     }
 
+
+    /// <summary>Ensures inline current-rule return writes are visible through parent assignment labels.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_InlineReturnWrite_IsVisibleToParentAssignmentLabel()
+    {
+        const string grammar = """
+            grammar P;
+            @members {
+                public int Seen { get; private set; }
+            }
+            start
+                : x=child { Seen = $x.value; }
+                ;
+            child returns [int value]
+                : A { $value = 42; }
+                ;
+            A : 'a' ;
+            """;
+        string source = EmitWithAntlrStyleTransformer(grammar);
+        StringAssert.Contains(source, "SetRequiredRuleReturn<int>(context, \"value\", 42)");
+        var assembly = CompileGeneratedSource(source);
+        var executionContext = CreateExecutionContext(assembly);
+
+        ParseNode result = InvokeParseWithContext(assembly, "a", executionContext);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(42, ReadContextIntProperty(executionContext, "Seen"));
+    }
+
+    /// <summary>Ensures inline and @after return writes share the same parser-managed frame return state.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_InlineAndAfterReturnWrites_ShareFrameState()
+    {
+        const string grammar = """
+            grammar P;
+            @members {
+                public int Seen { get; private set; }
+            }
+            start
+                : x=child { Seen = $x.value; }
+                ;
+            child returns [int value]
+            @after {
+                $value += 1;
+            }
+                : A { $value = 41; }
+                ;
+            A : 'a' ;
+            """;
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        var executionContext = CreateExecutionContext(assembly);
+
+        ParseNode result = InvokeParseWithContext(assembly, "a", executionContext);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(42, ReadContextIntProperty(executionContext, "Seen"));
+    }
+
+    /// <summary>Ensures failed alternatives roll back current-rule return writes before a later alternative succeeds.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_ReturnWrites_RollBackFailedAlternative()
+    {
+        const string grammar = """
+            grammar P;
+            @members {
+                public int Seen { get; private set; }
+            }
+            root
+                : x=start { Seen = $x.value; }
+                ;
+            start returns [int value]
+                : { $value = 1; } B
+                | { $value = 2; } A
+                ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        var executionContext = CreateExecutionContext(assembly);
+
+        ParseNode result = InvokeParseWithContext(assembly, "a", executionContext);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(2, ReadContextIntProperty(executionContext, "Seen"));
+    }
+
+
+    /// <summary>Ensures memoized child return snapshots are not restored into the caller return frame.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_MemoizedChildReturnSnapshot_DoesNotOverwriteCallerReturn()
+    {
+        const string grammar = """
+            grammar P;
+            @members {
+                public int Seen { get; private set; }
+            }
+            root
+                : x=start { Seen = $x.value; }
+                ;
+            start returns [int value]
+                : { $value = 1; } child B
+                | { $value = 2; } child A
+                ;
+            child returns [int value]
+            @after {
+                $value = 99;
+            }
+                : ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        var executionContext = CreateExecutionContext(assembly);
+
+        ParseNode result = InvokeParseWithContext(assembly, "a", executionContext);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(2, ReadContextIntProperty(executionContext, "Seen"));
+    }
+
+    /// <summary>Ensures arbitrary object current-rule returns do not make state-key hashing throw.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_ArbitraryObjectReturnBeforeChild_DoesNotBreakStateHashing()
+    {
+        const string grammar = """
+            grammar P;
+            root returns [object value]
+                : { $value = new object(); } child
+                ;
+            child
+                : A
+                ;
+            A : 'a' ;
+            """;
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        var executionContext = CreateExecutionContext(assembly);
+
+        ParseNode result = InvokeParseWithContext(assembly, "a", executionContext);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+    }
+
+    /// <summary>Ensures present-null return values remain distinguishable from missing returns.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_NullReturnWrite_IsPresentForParentRead()
+    {
+        const string grammar = """
+            grammar P;
+            @members {
+                public bool IsNull { get; private set; }
+            }
+            start
+                : x=child { IsNull = $x.value == null; }
+                ;
+            child returns [string? value]
+                : A { $value = null; }
+                ;
+            A : 'a' ;
+            """;
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        var executionContext = CreateExecutionContext(assembly);
+
+        ParseNode result = InvokeParseWithContext(assembly, "a", executionContext);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsTrue((bool)ReadContextObjectProperty(executionContext, "IsNull")!);
+    }
+
     /// <summary>
     /// Ensures return write right-hand sides still use existing ANTLR-style read rewrites.
     /// </summary>

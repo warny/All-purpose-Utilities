@@ -85,6 +85,17 @@ public sealed class StackParserRuleInvocationFrameManager : IParserRuleInvocatio
     public ParserRuleParameterSeedStore? GetCurrentPendingSeeds() => _current?.PendingChildSeeds;
 
     /// <summary>
+    /// Gets a snapshot of return values from the active current-rule frame.
+    /// Used by generated managed execution-state snapshots so inline and lifecycle return writes
+    /// roll back with failed alternatives.
+    /// </summary>
+    /// <returns>The current frame return snapshot, or <c>null</c> when no frame is active.</returns>
+    public ParserRuleReturnSnapshot? GetCurrentReturnSnapshot()
+        => _current is null
+            ? null
+            : new ParserRuleReturnSnapshot(_current.RuleName, _current.InputPosition, _current.Depth, _current.Returns);
+
+    /// <summary>
     /// Attempts to atomically merge pending child-rule parameter seeds on the current frame.
     /// </summary>
     /// <param name="ruleName">Name of the child rule that will receive the seeds when next entered.</param>
@@ -141,6 +152,31 @@ public sealed class StackParserRuleInvocationFrameManager : IParserRuleInvocatio
         if (_current is not null)
         {
             _current.PendingChildSeeds = seeds;
+        }
+    }
+
+    /// <summary>
+    /// Synchronizes restored return values to the active current-rule frame.
+    /// Called by generated managed execution-state restoration so failed parser alternatives
+    /// do not leak return writes into later alternatives.
+    /// </summary>
+    /// <param name="snapshot">Restored return snapshot, or <c>null</c> to clear the active frame returns.</param>
+    public void SyncReturnSnapshotToCurrentFrame(ParserRuleReturnSnapshot? snapshot)
+    {
+        if (_current is null)
+        {
+            return;
+        }
+
+        if (snapshot is null)
+        {
+            _current.ReplaceReturnValues(null);
+            return;
+        }
+
+        if (snapshot.Matches(_current))
+        {
+            _current.ReplaceReturnValues(snapshot.Returns);
         }
     }
 

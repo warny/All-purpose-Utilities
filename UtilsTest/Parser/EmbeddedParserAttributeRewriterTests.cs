@@ -24,7 +24,7 @@ public class EmbeddedParserAttributeRewriterTests
     {
         EmbeddedParserAttributeRewriteResult result = Rewrite("Seen = (int)$x.value + $xs.value.Count + $xs.value.Select(v => v).Count() + (int)$start.own;");
 
-        Assert.AreEqual("Seen = (int)GetRequiredLabeledRuleCallReturn(context, \"x\", \"value\") + GetLabeledRuleCallReturns(context, \"xs\", \"value\").Count + GetLabeledRuleCallReturns(context, \"xs\", \"value\").Select(v => v).Count() + (int)GetRequiredRuleReturn(context, \"own\");", result.Code);
+        Assert.AreEqual("Seen = (int)((int)GetRequiredLabeledRuleCallReturn(context, \"x\", \"value\")!) + GetLabeledRuleCallReturns(context, \"xs\", \"value\").Count + GetLabeledRuleCallReturns(context, \"xs\", \"value\").Select(v => v).Count() + (int)GetRequiredRuleReturn(context, \"own\");", result.Code);
         Assert.AreEqual(0, result.Errors.Count);
     }
 
@@ -50,7 +50,7 @@ public class EmbeddedParserAttributeRewriterTests
         StringAssert.Contains(result.Code, "@\"$x.value\"");
         StringAssert.Contains(result.Code, "// $x.value");
         StringAssert.Contains(result.Code, "/* $x.value */");
-        StringAssert.Contains(result.Code, "Seen = GetRequiredLabeledRuleCallReturn(context, \"x\", \"value\")");
+        StringAssert.Contains(result.Code, "Seen = ((int)GetRequiredLabeledRuleCallReturn(context, \"x\", \"value\")!)");
         Assert.AreEqual(0, result.Errors.Count);
     }
 
@@ -167,17 +167,26 @@ public class EmbeddedParserAttributeRewriterTests
         StringAssert.Contains(result.Errors[0], expectedMessage);
     }
 
-    /// <summary>Verifies current-rule return writes are rejected outside supported @after code.</summary>
+    /// <summary>Verifies current-rule return writes are rejected outside supported parser action code.</summary>
     [DataTestMethod]
     [DataRow(0, "Parser return writes are not supported in @init")]
     [DataRow(2, "Parser return writes are not supported in semantic predicates")]
-    [DataRow(1, "Parser return writes are supported only in @after")]
     public void Rewrite_CurrentRuleReturnWriteInUnsupportedLocation_ReportsLifecycleError(int kindValue, string expectedMessage)
     {
         EmbeddedParserAttributeRewriteResult result = Rewrite("$own = 1;", (EmbeddedParserAttributeLocationKind)kindValue);
 
         Assert.AreEqual(1, result.Errors.Count);
         StringAssert.Contains(result.Errors[0], expectedMessage);
+    }
+
+    /// <summary>Verifies current-rule return writes are supported in inline parser actions.</summary>
+    [TestMethod]
+    public void Rewrite_CurrentRuleReturnWriteInInlineAction_RewritesToTypedHelper()
+    {
+        EmbeddedParserAttributeRewriteResult result = Rewrite("$own = 1;", EmbeddedParserAttributeLocationKind.InlineAction);
+
+        Assert.AreEqual(0, result.Errors.Count);
+        Assert.AreEqual("SetRequiredRuleReturn<int>(context, \"own\", 1);", result.Code);
     }
 
     /// <summary>Verifies bare parameter and local reads are rejected in predicates.</summary>
@@ -305,7 +314,7 @@ public class EmbeddedParserAttributeRewriterTests
 
         EmbeddedParserAttributeRewriteResult result = EmbeddedParserAttributeRewriter.Rewrite("A = $x; B = $x.value;", grammar, rule, EmbeddedParserAttributeLocationKind.After);
 
-        Assert.AreEqual("A = GetRequiredRuleParameter<int>(context, \"x\"); B = GetRequiredLabeledRuleCallReturn(context, \"x\", \"value\");", result.Code);
+        Assert.AreEqual("A = GetRequiredRuleParameter<int>(context, \"x\"); B = ((int)GetRequiredLabeledRuleCallReturn(context, \"x\", \"value\")!);", result.Code);
         Assert.AreEqual(0, result.Errors.Count);
     }
 

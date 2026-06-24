@@ -217,6 +217,7 @@ internal static class EmbeddedParserAttributeRewriter
                 continue;
             }
 
+            string? assignmentReturnRawType = null;
             if (label.List.Count > 0)
             {
                 if (label.List.Any(target => !parserRules.ContainsKey(target.RuleName)))
@@ -252,6 +253,11 @@ internal static class EmbeddedParserAttributeRewriter
                     output.Append(code, attributeStart, index - attributeStart);
                     continue;
                 }
+
+                if (ParseTypedDeclarations(targetRule.Returns).TryGetValue(returnName, out TypedDeclaration? assignmentReturnDeclaration))
+                {
+                    assignmentReturnRawType = assignmentReturnDeclaration.RawType;
+                }
             }
 
             if (locationKind == EmbeddedParserAttributeLocationKind.Init)
@@ -262,13 +268,33 @@ internal static class EmbeddedParserAttributeRewriter
                 continue;
             }
 
-            output.Append(label.List.Count == 0
-                    ? "GetRequiredLabeledRuleCallReturn(context, \""
-                    : "GetLabeledRuleCallReturns(context, \"")
-                .Append(Escape(root))
-                .Append("\", \"")
-                .Append(Escape(returnName))
-                .Append("\")");
+            if (label.List.Count == 0)
+            {
+                if (!string.IsNullOrWhiteSpace(assignmentReturnRawType))
+                {
+                    output.Append("((").Append(assignmentReturnRawType).Append(")");
+                }
+
+                output.Append("GetRequiredLabeledRuleCallReturn(context, \"")
+                    .Append(Escape(root))
+                    .Append("\", \"")
+                    .Append(Escape(returnName))
+                    .Append("\")");
+
+                if (!string.IsNullOrWhiteSpace(assignmentReturnRawType))
+                {
+                    output.Append('!');
+                    output.Append(')');
+                }
+            }
+            else
+            {
+                output.Append("GetLabeledRuleCallReturns(context, \"")
+                    .Append(Escape(root))
+                    .Append("\", \"")
+                    .Append(Escape(returnName))
+                    .Append("\")");
+            }
         }
 
         return new EmbeddedParserAttributeRewriteResult(output.ToString(), errors);
@@ -414,13 +440,6 @@ internal static class EmbeddedParserAttributeRewriter
         if (isReturn && locationKind == EmbeddedParserAttributeLocationKind.Init)
         {
             errors.Add("Parser return writes are not supported in @init. Use @after or explicit runtime APIs when the return frame is available.");
-            output.Append(code, attributeStart, attributeEnd - attributeStart);
-            return true;
-        }
-
-        if (isReturn && locationKind == EmbeddedParserAttributeLocationKind.InlineAction)
-        {
-            errors.Add("Parser return writes are supported only in @after by the ANTLR-style transformer.");
             output.Append(code, attributeStart, attributeEnd - attributeStart);
             return true;
         }
