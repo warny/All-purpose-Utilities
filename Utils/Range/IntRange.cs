@@ -205,8 +205,7 @@ namespace Utils.Range
 
                 // If start > end => no intersection.
                 // start-null = -∞ (always ≤ anything); end-null = +∞ (always ≥ anything).
-                // The generic NullableIntEx.Compare treats null uniformly, so use a direct
-                // check: invalid only when both bounds are finite and start > end.
+                // Invalid only when both bounds are finite and start > end.
                 if (start.HasValue && end.HasValue && start.Value.CompareTo(end.Value) > 0)
                     return null;
 

@@ -140,35 +140,36 @@ public static class NullableIntEx
     }
 
     /// <summary>
-    /// A specialized compare for intersection checks
-    /// (start &lt;= end).
-    /// If isMinForComparison =&gt; treat null as -∞ for 'start'
-    /// else treat null as +∞ for 'end'.
-    ///
-    /// This is an attempt to unify a compare approach, but keep in mind
-    /// logic can get subtle with infinite endpoints.
+    /// Compares two startpoint values where <see langword="null"/> represents −∞.
+    /// Returns a negative value if <paramref name="left"/> &lt; <paramref name="right"/>,
+    /// zero if equal, and a positive value if <paramref name="left"/> &gt; <paramref name="right"/>.
     /// </summary>
-    public static int Compare<T>(T? left, T? right, bool isMinForComparison)
+    /// <typeparam name="T">The numeric type.</typeparam>
+    /// <param name="left">The left startpoint; <see langword="null"/> means −∞.</param>
+    /// <param name="right">The right startpoint; <see langword="null"/> means −∞.</param>
+    public static int CompareStartpoint<T>(T? left, T? right)
         where T : struct, IBinaryInteger<T>, IComparable<T>
     {
-        // If both are null => they represent the same ∞ => 0
         if (!left.HasValue && !right.HasValue) return 0;
+        if (!left.HasValue) return -1;  // −∞ < any finite
+        if (!right.HasValue) return 1;  // any finite > −∞
+        return left.Value.CompareTo(right.Value);
+    }
 
-        // If left is null => either -∞ or +∞
-        if (!left.HasValue)
-        {
-            // If isMinForComparison => left = -∞ => definitely less than or equal to any right
-            // => negative
-            // If not => left = +∞ => definitely greater than any finite => positive
-            return isMinForComparison ? -1 : 1;
-        }
-        // If right is null => similarly
-        if (!right.HasValue)
-        {
-            return isMinForComparison ? 1 : -1;
-        }
-
-        // Both finite
+    /// <summary>
+    /// Compares two endpoint values where <see langword="null"/> represents +∞.
+    /// Returns a negative value if <paramref name="left"/> &lt; <paramref name="right"/>,
+    /// zero if equal, and a positive value if <paramref name="left"/> &gt; <paramref name="right"/>.
+    /// </summary>
+    /// <typeparam name="T">The numeric type.</typeparam>
+    /// <param name="left">The left endpoint; <see langword="null"/> means +∞.</param>
+    /// <param name="right">The right endpoint; <see langword="null"/> means +∞.</param>
+    public static int CompareEndpoint<T>(T? left, T? right)
+        where T : struct, IBinaryInteger<T>, IComparable<T>
+    {
+        if (!left.HasValue && !right.HasValue) return 0;
+        if (!left.HasValue) return 1;   // +∞ > any finite
+        if (!right.HasValue) return -1; // any finite < +∞
         return left.Value.CompareTo(right.Value);
     }
 

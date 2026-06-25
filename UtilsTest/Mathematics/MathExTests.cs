@@ -202,6 +202,126 @@ public class MathExTests
         Assert.AreEqual(12, MathEx.Lcm(4, -6));
     }
 
+    // ── Min ─────────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void Min_ThreeValues_ReturnsSmallest()
+    {
+        Assert.AreEqual(1, MathEx.Min(3, 1, 2));
+        Assert.AreEqual(1, MathEx.Min(1, 2, 3));
+        Assert.AreEqual(1, MathEx.Min(2, 3, 1));
+    }
+
+    [TestMethod]
+    public void Min_SingleValue_ReturnsThatValue()
+    {
+        Assert.AreEqual(42, MathEx.Min(42));
+    }
+
+    [TestMethod]
+    public void Min_AllEqual_ReturnsValue()
+    {
+        Assert.AreEqual(5, MathEx.Min(5, 5, 5));
+    }
+
+    [TestMethod]
+    public void Min_EmptyArray_ThrowsArgumentException()
+    {
+        Assert.ThrowsException<ArgumentException>(() => MathEx.Min<int>());
+    }
+
+    [TestMethod]
+    public void Min_WithComparer_UsesCustomOrder()
+    {
+        // Reverse comparer → Min returns the largest natural value
+        var rev = Comparer<int>.Create((a, b) => b.CompareTo(a));
+        Assert.AreEqual(9, MathEx.Min(rev, 3, 9, 5));
+    }
+
+    // ── Max ─────────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void Max_ThreeValues_ReturnsLargest()
+    {
+        Assert.AreEqual(3, MathEx.Max(3, 1, 2));
+        Assert.AreEqual(3, MathEx.Max(1, 2, 3));
+        Assert.AreEqual(3, MathEx.Max(2, 3, 1));
+    }
+
+    [TestMethod]
+    public void Max_SingleValue_ReturnsThatValue()
+    {
+        Assert.AreEqual(42, MathEx.Max(42));
+    }
+
+    [TestMethod]
+    public void Max_AllEqual_ReturnsValue()
+    {
+        Assert.AreEqual(5, MathEx.Max(5, 5, 5));
+    }
+
+    [TestMethod]
+    public void Max_EmptyArray_ThrowsArgumentException()
+    {
+        Assert.ThrowsException<ArgumentException>(() => MathEx.Max<int>());
+    }
+
+    [TestMethod]
+    public void Max_WithComparer_UsesCustomOrder()
+    {
+        // Reverse comparer → Max returns the smallest natural value
+        var rev = Comparer<int>.Create((a, b) => b.CompareTo(a));
+        Assert.AreEqual(1, MathEx.Max(rev, 3, 9, 1));
+    }
+
+    // ── Clamp ────────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void Clamp_ValueInRange_ReturnsSameValue()
+    {
+        Assert.AreEqual(5, MathEx.Clamp(5, 1, 10));
+    }
+
+    [TestMethod]
+    public void Clamp_ValueBelowMin_ReturnsMin()
+    {
+        Assert.AreEqual(1, MathEx.Clamp(0, 1, 10));
+    }
+
+    [TestMethod]
+    public void Clamp_ValueAboveMax_ReturnsMax()
+    {
+        Assert.AreEqual(10, MathEx.Clamp(20, 1, 10));
+    }
+
+    [TestMethod]
+    public void Clamp_OnMinBoundary_ReturnsMin()
+    {
+        Assert.AreEqual(1, MathEx.Clamp(1, 1, 10));
+    }
+
+    [TestMethod]
+    public void Clamp_OnMaxBoundary_ReturnsMax()
+    {
+        Assert.AreEqual(10, MathEx.Clamp(10, 1, 10));
+    }
+
+    [TestMethod]
+    public void Clamp_MinGreaterThanMax_ThrowsArgumentException()
+    {
+        Assert.ThrowsException<ArgumentException>(() => MathEx.Clamp(5, 10, 1));
+    }
+
+    [TestMethod]
+    public void Clamp_WithComparer_UsesCustomOrder()
+    {
+        // Reverse comparer: "min"=9, "max"=1 in natural order means clamp(5) stays at 5
+        var rev = Comparer<int>.Create((a, b) => b.CompareTo(a));
+        Assert.AreEqual(5, MathEx.Clamp(5, 9, 1, rev));
+        Assert.AreEqual(9, MathEx.Clamp(10, 9, 1, rev)); // 10 "below" min=9 → returns 9
+        Assert.AreEqual(1, MathEx.Clamp(0, 9, 1, rev));  // 0 "above" max=1 → returns 1
+    }
+
     [TestMethod]
     public void PascalTriangleTest()
     {

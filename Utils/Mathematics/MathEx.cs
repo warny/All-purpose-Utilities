@@ -158,20 +158,20 @@ public static class MathEx
     #region Floor
 
     /// <summary>
-    /// Computes the greatest multiple of <paramref name="base"/> that is less than or equal to <paramref name="value"/>.
+    /// Computes the greatest multiple of <paramref name="step"/> that is less than or equal to <paramref name="value"/>.
     /// </summary>
     /// <typeparam name="T">A numeric type supporting modulus and basic arithmetic operators.</typeparam>
     /// <param name="value">The value for which to find the floor multiple.</param>
-    /// <param name="base">The base multiple. Must be non-zero.</param>
-    /// <returns>The greatest multiple of <paramref name="base"/> that is &lt;= <paramref name="value"/>.</returns>
-    /// <exception cref="DivideByZeroException">Thrown if <paramref name="base"/> equals zero.</exception>
-    public static T Floor<T>(T value, T @base)
+    /// <param name="step">The step. Must be non-zero.</param>
+    /// <returns>The greatest multiple of <paramref name="step"/> that is &lt;= <paramref name="value"/>.</returns>
+    /// <exception cref="DivideByZeroException">Thrown if <paramref name="step"/> equals zero.</exception>
+    public static T Floor<T>(T value, T step)
         where T : struct, IModulusOperators<T, T, T>, INumberBase<T>
     {
-        if (@base == T.Zero)
-            throw new DivideByZeroException("Base must be non-zero for floor operation.");
+        if (step == T.Zero)
+            throw new DivideByZeroException("Step must be non-zero for floor operation.");
 
-        T correction = Mod(value, @base);
+        T correction = Mod(value, step);
         return value - correction;
     }
 
@@ -180,21 +180,21 @@ public static class MathEx
     #region Ceiling
 
     /// <summary>
-    /// Computes the smallest multiple of <paramref name="base"/> that is greater than or equal to <paramref name="value"/>.
+    /// Computes the smallest multiple of <paramref name="step"/> that is greater than or equal to <paramref name="value"/>.
     /// </summary>
     /// <typeparam name="T">A numeric type supporting modulus and basic arithmetic operators.</typeparam>
     /// <param name="value">The value for which to find the ceiling multiple.</param>
-    /// <param name="base">The base multiple. Must be non-zero.</param>
-    /// <returns>The smallest multiple of <paramref name="base"/> that is &gt;= <paramref name="value"/>.</returns>
-    /// <exception cref="DivideByZeroException">Thrown if <paramref name="base"/> equals zero.</exception>
-    public static T Ceiling<T>(T value, T @base)
+    /// <param name="step">The step. Must be non-zero.</param>
+    /// <returns>The smallest multiple of <paramref name="step"/> that is &gt;= <paramref name="value"/>.</returns>
+    /// <exception cref="DivideByZeroException">Thrown if <paramref name="step"/> equals zero.</exception>
+    public static T Ceiling<T>(T value, T step)
         where T : struct, IModulusOperators<T, T, T>, INumberBase<T>
     {
-        if (@base == T.Zero)
-            throw new DivideByZeroException("Base must be non-zero for ceiling operation.");
+        if (step == T.Zero)
+            throw new DivideByZeroException("Step must be non-zero for ceiling operation.");
 
-        T floorValue = Floor(value, @base);
-        return floorValue == value ? value : floorValue + @base;
+        T floorValue = Floor(value, step);
+        return floorValue == value ? value : floorValue + step;
     }
 
     #endregion
@@ -371,43 +371,45 @@ public static class MathEx
 
     /// <summary>
     /// Computes and returns the specified line of Pascal's triangle, zero-based.
-    /// Uses a cached dictionary for performance. 
+    /// Uses a cached dictionary for performance.
     /// If the line is not in the cache, it is calculated and then stored.
     /// </summary>
     /// <param name="lineNumber">Zero-based index of the line to compute. Must be &gt;= 0.</param>
     /// <returns>An array representing the requested line of Pascal's triangle.</returns>
     /// <remarks>
     /// The function updates the cache dynamically up to <paramref name="lineNumber"/>.
-    /// Note that this static cache is not thread-safe; use locking if multiple threads will access it concurrently.
     /// </remarks>
     public static int[] ComputePascalTriangleLine(int lineNumber)
     {
         lineNumber.ArgMustBeGreaterOrEqualsThan(0);
 
-        // Return if it is already in the cache
-        if (pascalTriangleCache.TryGetValue(lineNumber, out var pascalTriangleLine))
+        lock (pascalTriangleCache)
         {
-            return pascalTriangleLine;
-        }
-
-        // Keys are always 0..n consecutive; Count-1 is the highest without scanning all keys.
-        int maxLine = pascalTriangleCache.Count - 1;
-        int[] lastLine = pascalTriangleCache[maxLine];
-
-        for (int i = maxLine + 1; i <= lineNumber; i++)
-        {
-            var newLine = new int[i + 1];
-            newLine[0] = 1;
-            for (int j = 1; j < i; j++)
+            // Return if it is already in the cache
+            if (pascalTriangleCache.TryGetValue(lineNumber, out var pascalTriangleLine))
             {
-                newLine[j] = lastLine[j - 1] + lastLine[j];
+                return pascalTriangleLine;
             }
-            newLine[^1] = 1;
 
-            pascalTriangleCache[i] = newLine;
-            lastLine = newLine;
+            // Keys are always 0..n consecutive; Count-1 is the highest without scanning all keys.
+            int maxLine = pascalTriangleCache.Count - 1;
+            int[] lastLine = pascalTriangleCache[maxLine];
+
+            for (int i = maxLine + 1; i <= lineNumber; i++)
+            {
+                var newLine = new int[i + 1];
+                newLine[0] = 1;
+                for (int j = 1; j < i; j++)
+                {
+                    newLine[j] = lastLine[j - 1] + lastLine[j];
+                }
+                newLine[^1] = 1;
+
+                pascalTriangleCache[i] = newLine;
+                lastLine = newLine;
+            }
+
+            return lastLine;
         }
-
-        return lastLine;
     }
 }

@@ -78,6 +78,62 @@ public class NullableIntExTests
         Assert.AreEqual(7, NullableIntEx.MaxEndpoint<int>(7, 3));
     }
 
+    // ── CompareStartpoint (null = −∞) ───────────────────────────────────────
+
+    [TestMethod]
+    public void CompareStartpoint_BothNull_ReturnsZero()
+    {
+        Assert.AreEqual(0, NullableIntEx.CompareStartpoint<int>(null, null));
+    }
+
+    [TestMethod]
+    public void CompareStartpoint_NullLeftIsLess()
+    {
+        Assert.IsTrue(NullableIntEx.CompareStartpoint<int>(null, 5) < 0);  // −∞ < 5
+    }
+
+    [TestMethod]
+    public void CompareStartpoint_NullRightIsGreater()
+    {
+        Assert.IsTrue(NullableIntEx.CompareStartpoint<int>(5, null) > 0);  // 5 > −∞
+    }
+
+    [TestMethod]
+    public void CompareStartpoint_BothFinite_OrdersByValue()
+    {
+        Assert.IsTrue(NullableIntEx.CompareStartpoint<int>(3, 7) < 0);
+        Assert.IsTrue(NullableIntEx.CompareStartpoint<int>(7, 3) > 0);
+        Assert.AreEqual(0, NullableIntEx.CompareStartpoint<int>(5, 5));
+    }
+
+    // ── CompareEndpoint (null = +∞) ──────────────────────────────────────────
+
+    [TestMethod]
+    public void CompareEndpoint_BothNull_ReturnsZero()
+    {
+        Assert.AreEqual(0, NullableIntEx.CompareEndpoint<int>(null, null));
+    }
+
+    [TestMethod]
+    public void CompareEndpoint_NullLeftIsGreater()
+    {
+        Assert.IsTrue(NullableIntEx.CompareEndpoint<int>(null, 5) > 0);   // +∞ > 5
+    }
+
+    [TestMethod]
+    public void CompareEndpoint_NullRightIsLess()
+    {
+        Assert.IsTrue(NullableIntEx.CompareEndpoint<int>(5, null) < 0);   // 5 < +∞
+    }
+
+    [TestMethod]
+    public void CompareEndpoint_BothFinite_OrdersByValue()
+    {
+        Assert.IsTrue(NullableIntEx.CompareEndpoint<int>(3, 7) < 0);
+        Assert.IsTrue(NullableIntEx.CompareEndpoint<int>(7, 3) > 0);
+        Assert.AreEqual(0, NullableIntEx.CompareEndpoint<int>(5, 5));
+    }
+
     // ── LessOrEqual / Less ──────────────────────────────────────────────────
 
     [TestMethod]

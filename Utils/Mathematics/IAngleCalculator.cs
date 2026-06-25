@@ -611,15 +611,6 @@ public class Trigonometry<T> : IAngleCalculator<T>
         public override T Acot2(T x, T y) => T.Atan2(y, x);
 
         /// <summary>
-        /// Normalizes an angle into the range [-π, +π).
-        /// </summary>
-        public override T NormalizeMinToMax(T angle)
-        {
-            // Equivalent to angle mod 2π in [-π, π).
-            return MathEx.Mod(angle + T.Pi + T.Pi, (T.Pi + T.Pi)) - T.Pi;
-        }
-
-        /// <summary>
         /// Normalizes an angle into the range [0, 2π).
         /// </summary>
         public override T Normalize0To2Max(T angle)

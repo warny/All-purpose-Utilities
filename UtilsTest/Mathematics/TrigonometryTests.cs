@@ -214,6 +214,24 @@ public class TrigonometryTests
         Assert.AreEqual(-1.0, trig.Cos(200), Delta); // 200 gr = 180°
     }
 
+    // ── Radian — NormalizeMinToMax ──────────────────────────────────────────
+
+    [TestMethod]
+    public void Radian_NormalizeMinToMax_CorrectlyNormalizesToMinusPiPi()
+    {
+        var trig = Trigonometry<double>.Radian;
+        // Values that should map to themselves (already in [-π, π))
+        Assert.AreEqual(0.0,          trig.NormalizeMinToMax(0),              Delta);
+        Assert.AreEqual(Math.PI / 2,  trig.NormalizeMinToMax(Math.PI / 2),   Delta);
+        Assert.AreEqual(-Math.PI / 2, trig.NormalizeMinToMax(-Math.PI / 2),  Delta);
+        // 2π → 0 (wraps to 0)
+        Assert.AreEqual(0.0,          trig.NormalizeMinToMax(2 * Math.PI),    Delta);
+        // 3π/2 → -π/2  (wraps)
+        Assert.AreEqual(-Math.PI / 2, trig.NormalizeMinToMax(3 * Math.PI / 2), Delta);
+        // -3π/2 → π/2  (wraps negative)
+        Assert.AreEqual(Math.PI / 2,  trig.NormalizeMinToMax(-3 * Math.PI / 2), Delta);
+    }
+
     // ── Trigonometry.Get() — cache ───────────────────────────────────────────
 
     [TestMethod]
