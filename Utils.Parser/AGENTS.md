@@ -123,27 +123,27 @@ When changing embedded-code behavior, update:
 
 ## Runtime safety rules
 
-Agents must not introduce:
+Agents must not introduce, outside the explicitly documented parser-managed mechanisms:
 
-- `ParserEngine2`,
-- speculative execution,
-- graph parsing,
-- adaptive LL / GLL,
-- continuation replay,
-- new rollback mechanisms outside the explicitly documented parser-managed rollback boundaries,
-- new semantic runtime state outside the explicitly documented parser-managed state and generated execution contexts,
-- new semantic-state-aware memoization outside the documented execution-state manager and generated execution-context key mechanisms,
-- async parser runtime,
-- runtime parallelism,
-- unreviewed or undocumented public API breaks,
-- parse-tree shape breaks,
+- a new parser engine (`ParserEngine2`);
+- speculative execution;
+- graph parsing;
+- adaptive LL / GLL;
+- continuation replay;
+- new rollback semantics;
+- new semantic runtime state ownership;
+- new semantic-state-aware memoization rules;
+- async parser runtime;
+- runtime parallelism;
+- unreviewed or undocumented public API breaks;
+- parse-tree shape breaks;
 - diagnostic format breaks.
 
-The existing rollback, execution-state manager, state-aware memoization, and generated execution-context mechanisms remain limited to parser-managed state and the generated execution contexts already documented for embedded-code support. External side effects produced by embedded actions are not automatically rollback-safe.
+Existing parser-managed rollback, execution-state snapshots, generated execution-context state keys, and state-aware memoization are allowed only within the boundaries documented in the parser compatibility and embedded-code documents. Extending those mechanisms requires a dedicated roadmap entry or design discussion in the PR.
+
+External side effects performed by embedded actions remain outside parser-managed rollback and must not be presented as rollback-safe.
 
 Public API changes are allowed while `Utils.Parser` remains pre-release and has no committed external compatibility contract, provided they follow the public API change policy below.
-
-Any extension of these runtime safety mechanisms, or any other exception, requires a future roadmap phase to explicitly allow it and a dedicated design in the PR.
 
 ## Public API change policy
 
