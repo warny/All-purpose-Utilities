@@ -1,24 +1,25 @@
 # Lexer Inline Actions and Predicates Audit
 
+This document records Phase 0 of the lexer inline actions and predicates roadmap. It is an audit only: it does not define support, does not authorize execution, and does not change parser, lexer, source-generator, or runtime behavior.
+
 ## Current implementation state
 
-The current lexer-related embedded-code support is intentionally narrow:
+The current implementation has intentionally narrow lexer embedded-code support:
 
 - Grammar-level `@lexer::header`, `@lexer::members`, and `@lexer::footer` are supported only by the source-generator C# path.
-- That support is limited to combined grammars and lexer grammars.
-- Parser grammars that declare `@lexer::*` remain unsupported because no lexer is generated for parser-only grammars.
+- The grammar-level `@lexer::*` support is limited to combined grammars and lexer grammars.
+- Parser grammars with `@lexer::*` remain unsupported because no lexer is generated for that grammar shape.
 - `@lexer::members` is injected into the existing generated execution context.
-- The `@lexer::members` injection does not create a separate ANTLR-compatible lexer runtime type.
-- There is no separate runtime lexer execution context today.
+- Injecting `@lexer::members` does not create a separate ANTLR-style lexer runtime type or a separate runtime lexer execution context.
 - Lexer inline actions remain unsupported.
 - Lexer predicates remain unsupported.
-- Runtime discovery classifies lexer actions and lexer predicates as unsupported constructs.
+- Runtime discovery classifies lexer actions and lexer predicates as unsupported.
 - The source-generator C# path collects executable hooks from parser rules only; lexer rules do not produce executable hooks.
-- Generated `Parse(...)` remains conservative and does not execute lexer code.
+- `Parse(...)` remains conservative and must not execute lexer inline actions, lexer predicates, or lexer hooks.
 
 ## Scope of lexer inline actions
 
-Future design work must account for the placement and execution semantics of lexer inline actions before any implementation is attempted. The following examples are representative audit inputs only; they are not supported behavior today:
+Future design work must account for the ANTLR lexer inline action forms below without treating them as currently supported:
 
 ```antlr
 A : 'a' { OnLex(); } ;
@@ -27,24 +28,24 @@ A : ('a' { OnLex(); })+ ;
 A : 'a' | 'b' { OnLex(); } ;
 ```
 
-The audit scope includes:
+The audit scope includes these concerns:
 
-- **Position in the rule**: an action may appear after a token fragment, between token fragments, inside grouped content, or near the end of a lexer rule.
-- **Alternative ownership**: an action belongs to the alternative that contains it; the same textual action in different alternatives may need distinct metadata and dispatch identity.
-- **Potential hook index**: any future hook model would need stable indexing that distinguishes rule name, alternative, element position, quantifier nesting, mode, and source location without implying execution authority before the feature is enabled.
-- **Expected execution order**: actions would need to run in the same tokenization path order as the matched lexer elements, not in parser-rule scheduling order.
-- **Actions in sequences**: actions between two lexer elements raise questions about whether the action runs only after the preceding element is accepted and before the following element is attempted.
-- **Actions in alternatives**: actions must be associated with the chosen tokenization alternative and must not leak into alternatives that were not selected.
-- **Actions in quantifiers**: actions inside `*`, `+`, or `?` content raise repeated-execution, failed-iteration, and partial-match questions.
-- **Actions in negation**: if represented by the grammar model, negated lexer content with embedded actions would require explicit design because probes and consumed input may not have the same execution boundary.
-- **Actions in lexer modes**: mode-local lexer rules may need mode-aware hook identity and state capture.
-- **Actions in combined grammars**: combined grammar support must distinguish lexer-rule actions from parser-rule actions even when both are present in one grammar file.
+- The position of an action inside a lexer rule matters: end-of-rule actions, mid-sequence actions, grouped actions, quantified actions, and alternative-specific actions have different execution points.
+- The alternative containing the action must be known so a future implementation can avoid treating actions from non-selected alternatives as executed behavior.
+- A stable hook index may be needed if future generated code maps each lexer inline action to generated methods or metadata records.
+- The expected execution order must follow the lexer tokenization path, including the order of actions inside a single sequence.
+- An action in a sequence such as `'a' { OnLex(); } 'b'` raises ordering questions when later elements fail after the action point.
+- An action in an alternative such as `'a' | 'b' { OnLex(); }` is alternative-specific and must not be generalized to the whole rule.
+- An action inside a quantifier such as `('a' { OnLex(); })+` may execute zero, one, or many times depending on the matched iterations and future rollback rules.
+- An action inside a negation must be considered if the grammar model represents such a placement; this audit does not define how to execute it.
+- An action inside a lexer mode must be associated with the active mode and any future mode-stack behavior.
+- An action inside a combined grammar must remain distinct from parser inline actions and from grammar-level parser named actions.
 
-These cases remain documentation targets only. They do not add executable lexer hooks, source-generator dispatch, diagnostics changes, or runtime behavior.
+Lexer inline actions are not currently executable hooks. Any future support must be explicitly designed, explicitly enabled, and source-generator C# first.
 
 ## Scope of lexer predicates
 
-Future design work must account for lexer predicates separately from lexer inline actions. The following examples are representative audit inputs only; they are not supported behavior today:
+Future design work must account for lexer predicate forms such as:
 
 ```antlr
 A : { IsEnabled() }? 'a' ;
@@ -52,30 +53,32 @@ A : 'a' { IsAllowed() }? ;
 A : { IsModeEnabled() }? 'a' | 'b' ;
 ```
 
-Lexer predicates require separate treatment because:
+The audit scope includes these concerns:
 
-- Lexer predicates change tokenization decisions.
-- Lexer predicates are not equivalent to lexer actions.
-- Lexer predicate execution can decide whether a token alternative is viable before a token is emitted.
-- Lexer predicates require a lexer-state-aware model that can describe current input position, mode, token construction state, and any future lexer-managed state.
-- Lexer predicates must not be executed by generated `Parse(...)`.
-- Lexer predicates must remain unsupported until a dedicated implementation phase designs and documents their semantics.
-- Predicate placement matters: a predicate before a token fragment, after a token fragment, or inside one alternative of a multi-alternative lexer rule can affect different tokenization decisions.
-- Disabled and enabled paths must be designed explicitly before any opt-in generated-C# support exists.
+- Lexer predicates change tokenization decisions; they decide whether a token path is viable.
+- Lexer predicates are not equivalent to lexer actions because predicates influence recognition, while actions are side-effecting code after a path reaches an action point.
+- Lexer predicates must be designed separately from lexer inline actions.
+- Lexer predicates require a lexer-state-aware model that can account for input position, active mode, mode stack, token type decisions, channels, commands, and any future generated execution state.
+- Lexer predicates must not be executed by conservative `Parse(...)`.
+- Lexer predicates must remain unsupported until a dedicated predicate phase is designed, implemented, tested, and documented.
 
 ## Interaction with grammar-level lexer members
 
-`@lexer::members` already exists in the limited source-generator C# compatibility model. Its current behavior is:
+Grammar-level `@lexer::members` already exists in the generated-C# compatibility surface. Its content is injected into the existing generated execution context.
 
-- The member text is injected into the existing generated execution context.
-- The injected members can be available to generated C# code that shares that execution context.
-- The injection is not a separate lexer runtime, a separate lexer object, or a complete ANTLR target-language compatibility layer.
+Future lexer inline actions or lexer predicates may want to call members declared by `@lexer::members`. That possibility must not be confused with the existence of a separate lexer runtime. The current implementation has no separate runtime lexer context, no separate ANTLR-style lexer class, and no executable lexer hook pipeline.
 
-Future lexer inline actions or lexer predicates may want to call members declared in `@lexer::members`. That possibility must be designed without confusing the existing execution context with a dedicated lexer runtime. A later design phase must decide whether lexer execution can safely use the existing generated execution context, requires a lexer sub-context, or requires a separate lexer-specific state object.
+A later design phase must decide whether lexer execution should use:
+
+- the existing generated execution context,
+- a lexer-specific sub-context inside that generated context, or
+- a separate lexer execution context with explicit copy, restore, and state-key responsibilities.
+
+That decision must be made before enabling lexer inline actions or lexer predicates.
 
 ## Modes, channels, commands, and tokenization concerns
 
-The audit must account for ANTLR lexer constructs that can affect tokenization, without promising support for them. Relevant constructs include:
+The audit must account for lexer constructs that affect tokenization, without promising support for executing inline lexer code with those constructs:
 
 - lexer modes;
 - lexer commands;
@@ -84,42 +87,37 @@ The audit must account for ANTLR lexer constructs that can affect tokenization, 
 - `more`;
 - `type`;
 - `pushMode`, `popMode`, and `mode`;
-- interaction between inline actions and lexer commands;
-- interaction between predicates and lexer commands;
+- interactions between inline actions and command execution;
+- interactions between predicates and command or mode decisions;
 - ordering between ANTLR commands and target-language actions.
 
-These constructs are not implemented by this audit. The existence of this checklist does not imply support for advanced modes, channels, commands, or complete ANTLR lexer semantics.
+This document does not add support for advanced mode, channel, command, or inline execution semantics. It only records the cases that a future design must review.
 
 ## Rollback and side-effect risks
 
-Lexer execution has rollback and side-effect risks that are distinct from parser rollback:
+Lexer inline actions and predicates introduce risks that are separate from parser rollback:
 
 - A lexer action could run during a tokenization attempt that is later abandoned.
-- External side effects from target-language code are not rollback-safe by default.
-- Parser rollback and lexer rollback must not be treated as the same mechanism.
-- Parser memoization does not necessarily capture future lexer state, token-construction state, mode stack state, or side effects.
-- A future implementation may require a separate lexer state model with copy, hash, rollback, and restore semantics.
-- There is currently no general action buffering or replay system.
-- Failed tokenization paths must not leave observable state changes unless a future design explicitly documents that risk and opt-in behavior.
+- External side effects from a lexer action may not be rollback-safe.
+- Parser rollback and lexer rollback are different concerns and must not be conflated.
+- Parser memoization currently does not imply that a future lexer execution state is captured, restored, or hashed correctly.
+- A future design may require a separate lexer state model for input position, mode stack, command effects, pending token decisions, and generated execution state.
+- There is currently no general action buffering or replay mechanism for lexer actions.
+- There is currently no general rollback mechanism for external side effects.
 
-Any future support must preserve the current conservative default and avoid presenting external target-language side effects as rollback-safe.
+Any future implementation must state which side effects are parser-managed, lexer-managed, or external and non-rollback-safe.
 
 ## Source-generator path versus runtime-inline path
 
-Any future support should preserve the existing architecture boundaries:
+Any future support should start as an explicitly enabled source-generator C# feature. It must not make default runtime parsing execute lexer code.
 
-- Future lexer inline action support, if implemented, should begin as source-generator C# opt-in work.
-- The runtime-inline expression path remains separate.
-- Parser core components must not gain C# target-language parsing, rewriting, or semantic logic.
-- There must be no target-language-specific lexer execution logic in the parser core.
-- The generator must not depend on a Roslyn semantic model for these features.
-- No new compiler API should be introduced for this audit or as an implicit prerequisite.
-- Lexer `$...` rewriting must remain optional and must be placed behind an explicit transformer.
-- No implicit lexer `$...` rewriting should be added to core parser, runtime, or generator logic.
+The runtime-inline expression path remains separate. Lexer execution must not add C# target-language logic to the parser core, `ParserEngine`, `ParserRuntimeFeaturePolicy`, runtime frames, or the grammar model. The generator must not depend on a Roslyn semantic model for deciding lexer action or predicate behavior. This audit does not introduce a new compiler API.
+
+ANTLR-style lexer `$...` rewriting must remain optional and must stay behind an explicit embedded-code transformer. No implicit lexer `$...` rewriting should be added as part of the parser core, source-generator core, or runtime-inline path.
 
 ## Proposed future PR sequence
 
-The following sequence is indicative only and does not commit the project to implementation or to complete ANTLR compatibility:
+The sequence below is indicative and non-binding:
 
 ```text
 PR A — audit documentation only
@@ -131,7 +129,7 @@ PR F — lexer predicates design
 PR G — source-generator opt-in lexer predicates
 ```
 
-Each implementation phase should independently document behavior, diagnostics, rollback boundaries, opt-in requirements, and tests before changing runtime or generator behavior.
+Each future PR should restate whether it is documentation-only, test-only, behavior-changing, or API-changing.
 
 ## Existing tests and future tests
 
@@ -139,10 +137,10 @@ Existing test families to preserve include:
 
 - `@lexer::*` supported in lexer grammars.
 - `@lexer::*` supported in combined grammars.
-- Parser grammar plus `@lexer::*` remains unsupported.
+- Parser grammars with `@lexer::*` remain unsupported.
 - Lexer inline actions remain unsupported.
 - Lexer predicates remain unsupported.
-- Generated source contains no executable lexer hooks.
+- Generated source does not contain executable lexer hooks.
 
 Possible future test families include:
 
@@ -152,24 +150,22 @@ Possible future test families include:
 - alternatives;
 - predicates before a token fragment;
 - predicates after a token fragment;
-- disabled path behavior;
-- enabled path behavior behind an explicit opt-in;
-- absence of lexer-code execution through `Parse(...)`.
-
-Future tests should remain deterministic and should not imply execution support before a dedicated implementation phase exists.
+- disabled lexer execution paths;
+- enabled lexer execution paths after explicit opt-in;
+- absence of lexer-code execution through conservative `Parse(...)`.
 
 ## Non-goals
 
-This audit explicitly does not include:
+This audit explicitly excludes:
 
 - complete ANTLR compatibility;
 - a separate runtime lexer in this PR;
-- executable lexer hooks;
-- executable lexer predicates;
-- a general replay or action-buffering system;
+- executable lexer hooks in this PR;
+- executable lexer predicates in this PR;
+- general replay or action buffering;
 - rollback of external side effects;
 - implicit support for advanced modes, channels, or commands;
-- lexer `$...` rewriting;
+- implicit lexer `$...` rewriting;
 - a new public API;
 - a new compiler API;
-- any change to generated `Parse(...)` behavior.
+- any change to `Parse(...)`.
