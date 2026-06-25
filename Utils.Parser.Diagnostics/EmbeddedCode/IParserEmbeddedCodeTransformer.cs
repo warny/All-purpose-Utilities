@@ -98,7 +98,16 @@ public enum ParserEmbeddedCodeLocation
     InlineAction = 5,
 
     /// <summary>Semantic predicate.</summary>
-    SemanticPredicate = 6
+    SemanticPredicate = 6,
+
+    /// <summary>Lexer header action.</summary>
+    LexerHeader = 7,
+
+    /// <summary>Lexer members action.</summary>
+    LexerMembers = 8,
+
+    /// <summary>Lexer footer action.</summary>
+    LexerFooter = 9
 }
 
 /// <summary>

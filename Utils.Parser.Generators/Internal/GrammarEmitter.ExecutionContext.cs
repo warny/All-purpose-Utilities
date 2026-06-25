@@ -15,6 +15,7 @@ internal static partial class GrammarEmitter
     /// <param name="hooks">Collected parser embedded-code hooks.</param>
     /// <param name="lifecycleHooks">Collected rule lifecycle (@init / @after) hooks.</param>
     /// <param name="parserMembers">Parser members blocks to inject verbatim.</param>
+    /// <param name="lexerMembers">Lexer members blocks to inject verbatim as a limited compatibility bridge.</param>
     /// <param name="className">Generated grammar class name.</param>
     /// <param name="sourceFileName">Original .g4 file name, used in generated XML documentation.</param>
     /// <param name="grammar">Parsed grammar AST used for transformer context.</param>
@@ -24,6 +25,7 @@ internal static partial class GrammarEmitter
         IReadOnlyList<EmbeddedCodeHook> hooks,
         IReadOnlyList<LifecycleHook> lifecycleHooks,
         IReadOnlyList<G4GrammarAction> parserMembers,
+        IReadOnlyList<G4GrammarAction> lexerMembers,
         string className,
         string sourceFileName,
         G4Grammar grammar,
@@ -38,6 +40,7 @@ internal static partial class GrammarEmitter
         sb.AppendLine($"internal sealed partial class {contextClassName}");
         sb.AppendLine("{");
         EmitParserMembers(sb, parserMembers, grammar, embeddedCodeTransformer);
+        EmitLexerMembers(sb, lexerMembers, grammar, embeddedCodeTransformer);
         sb.AppendLine("    /// <summary>Creates a copied execution context that can be used by future speculative parser execution paths.</summary>");
         sb.AppendLine("    /// <remarks>The copy follows <c>ParserExecutionContextCopier&lt;TContext&gt;</c> semantics.</remarks>");
         sb.AppendLine($"    /// <returns>A copied <see cref=\"{contextClassName}\"/> instance.</returns>");

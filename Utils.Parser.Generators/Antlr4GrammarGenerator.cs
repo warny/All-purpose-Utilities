@@ -211,6 +211,24 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
                 continue;
             }
 
+            if (EmbeddedMembersSupport.IsInjectableLexerHeaderAction(grammar, action))
+            {
+                ReportEmbeddedHeaderInjectedDiagnostic(context, file, text, action.Line, constructKind, grammar.Name);
+                continue;
+            }
+
+            if (EmbeddedMembersSupport.IsInjectableLexerMembersAction(grammar, action))
+            {
+                ReportEmbeddedMembersInjectedDiagnostic(context, file, text, action.Line, constructKind, grammar.Name);
+                continue;
+            }
+
+            if (EmbeddedMembersSupport.IsInjectableLexerFooterAction(grammar, action))
+            {
+                ReportEmbeddedFooterInjectedDiagnostic(context, file, text, action.Line, constructKind, grammar.Name);
+                continue;
+            }
+
             var reason = EmbeddedMembersSupport.FormatUnsupportedReason(grammar, action);
             ReportUnsupportedEmbeddedCodeDiagnostic(context, file, text, action.Line, constructKind, grammar.Name, reason);
         }
