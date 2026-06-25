@@ -162,7 +162,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
     /// <param name="right">The expression on the right side of the operator.</param>
     /// <returns>The integral of the subtraction expression.</returns>
     [ExpressionSignature(ExpressionType.Subtract)]
-    public Expression Substract(
+    public Expression Subtract(
         BinaryExpression e,
         Expression left,
         Expression right
@@ -304,7 +304,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         }
 
         double n = System.Convert.ToDouble(expo.Value);
-        if (double.Abs(n - 1.0) < double.Epsilon)
+        if (double.Abs(n - 1.0) < 1e-10)
         {
             return Expression.Multiply(
                 left,
@@ -383,7 +383,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
             }
 
             double n = System.Convert.ToDouble(exponent.Value);
-            if (double.Abs(n - 1.0) < double.Epsilon)
+            if (double.Abs(n - 1.0) < 1e-10)
             {
                 return Expression.Multiply(
                     left,
@@ -480,7 +480,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
     {
         if (p.Name != ParameterName) return null;
         double n = System.Convert.ToDouble(expo.Value);
-        if (double.Abs(n + 1.0) < double.Epsilon)
+        if (double.Abs(n + 1.0) < 1e-10)
         {
             return Expression.Call(typeof(T).GetMethod(nameof(double.Log), [typeof(T)]), p);
         }

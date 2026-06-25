@@ -51,32 +51,27 @@ public static class MathEx
     #region Round
 
     /// <summary>
-    /// Rounds <paramref name="value"/> to the nearest multiple of <paramref name="base"/>.
+    /// Rounds <paramref name="value"/> to the nearest multiple of <paramref name="step"/>.
     /// If <paramref name="value"/> is exactly between two multiples, it is rounded up.
     /// </summary>
     /// <typeparam name="T">A numeric type supporting modulus and comparison operators.</typeparam>
     /// <param name="value">Value to be rounded.</param>
-    /// <param name="base">Rounding base. Must be non-zero.</param>
-    /// <returns>The value of <paramref name="value"/> rounded to the nearest multiple of <paramref name="base"/>.</returns>
-    /// <exception cref="DivideByZeroException">Thrown if <paramref name="base"/> equals zero.</exception>
-    public static T Round<T>(T value, T @base)
+    /// <param name="step">Rounding step. Must be non-zero.</param>
+    /// <returns>The value of <paramref name="value"/> rounded to the nearest multiple of <paramref name="step"/>.</returns>
+    /// <exception cref="DivideByZeroException">Thrown if <paramref name="step"/> equals zero.</exception>
+    public static T Round<T>(T value, T step)
         where T : struct, INumber<T>
     {
-        if (@base == T.Zero)
-            throw new DivideByZeroException("Base must be non-zero for rounding.");
+        if (step == T.Zero)
+            throw new DivideByZeroException("Step must be non-zero for rounding.");
 
-        T middle = @base / (T.One + T.One);
-        T remainder = Mod(value, @base);
+        T middle = step / (T.One + T.One);
+        T remainder = Mod(value, step);
 
-        // If the remainder is less than half of the base, round down; otherwise, round up.
         if (remainder < middle)
-        {
             return value - remainder;
-        }
         else
-        {
-            return value - remainder + @base;
-        }
+            return value - remainder + step;
     }
 
     /// <summary>
@@ -85,14 +80,91 @@ public static class MathEx
     /// </summary>
     /// <typeparam name="T">A numeric type that supports exponentiation via <see cref="IPowerFunctions{TSelf}"/>.</typeparam>
     /// <param name="value">Value to be rounded.</param>
-    /// <param name="exponent">The exponent of 10 used as the rounding base. Defaults to 0 (which rounds to integer).</param>
+    /// <param name="exponent">The exponent of 10 used as the rounding step. Defaults to 0 (which rounds to integer).</param>
     /// <returns>A value rounded to the nearest power-of-ten multiple.</returns>
     public static T Round<T>(T value, int exponent = 0)
         where T : struct, INumber<T>, IPowerFunctions<T>
     {
-        T @base = T.Pow(T.CreateChecked(10), T.CreateChecked(exponent));
+        T step = T.Pow(T.CreateChecked(10), T.CreateChecked(exponent));
+        return Round(value, step);
+    }
 
-        return Round(value, @base);
+    #endregion
+
+    #region IsMultipleOf
+
+    /// <summary>
+    /// Returns <see langword="true"/> if <paramref name="value"/> is an exact multiple of <paramref name="step"/>,
+    /// i.e., <c>Mod(value, step) == 0</c>.
+    /// </summary>
+    /// <typeparam name="T">A numeric type supporting modulus, addition, and equality operators.</typeparam>
+    /// <param name="value">Value to test.</param>
+    /// <param name="step">The divisor. Must be non-zero.</param>
+    /// <returns><see langword="true"/> if <paramref name="value"/> is divisible by <paramref name="step"/>.</returns>
+    /// <exception cref="DivideByZeroException">Thrown if <paramref name="step"/> equals zero.</exception>
+    public static bool IsMultipleOf<T>(T value, T step)
+        where T : struct, INumber<T>
+    {
+        if (step == T.Zero)
+            throw new DivideByZeroException("Step must be non-zero.");
+        return Mod(value, step) == T.Zero;
+    }
+
+    #endregion
+
+    #region IsPowerOfTwo
+
+    /// <summary>
+    /// Returns <see langword="true"/> if <paramref name="value"/> is a positive power of two (1, 2, 4, 8, …).
+    /// </summary>
+    /// <typeparam name="T">A binary integer type.</typeparam>
+    /// <param name="value">Value to test.</param>
+    /// <returns><see langword="true"/> if <paramref name="value"/> is a positive integer of the form 2<sup>n</sup>.</returns>
+    public static bool IsPowerOfTwo<T>(T value)
+        where T : struct, IBinaryInteger<T>
+        => value > T.Zero && (value & (value - T.One)) == T.Zero;
+
+    #endregion
+
+    #region GCD / LCM
+
+    /// <summary>
+    /// Computes the greatest common divisor of <paramref name="a"/> and <paramref name="b"/>
+    /// using the Euclidean algorithm. Always returns a non-negative value.
+    /// Returns zero when both arguments are zero.
+    /// </summary>
+    /// <typeparam name="T">An integer type supporting modulus and absolute-value operations.</typeparam>
+    /// <param name="a">First value.</param>
+    /// <param name="b">Second value.</param>
+    /// <returns>The greatest common divisor of <paramref name="a"/> and <paramref name="b"/>.</returns>
+    public static T Gcd<T>(T a, T b)
+        where T : struct, IBinaryInteger<T>
+    {
+        a = T.Abs(a);
+        b = T.Abs(b);
+        while (b != T.Zero)
+        {
+            T t = b;
+            b = a % b;
+            a = t;
+        }
+        return a;
+    }
+
+    /// <summary>
+    /// Computes the least common multiple of <paramref name="a"/> and <paramref name="b"/>.
+    /// Returns zero if either argument is zero.
+    /// </summary>
+    /// <typeparam name="T">An integer type supporting modulus and absolute-value operations.</typeparam>
+    /// <param name="a">First value.</param>
+    /// <param name="b">Second value.</param>
+    /// <returns>The least common multiple of <paramref name="a"/> and <paramref name="b"/>.</returns>
+    public static T Lcm<T>(T a, T b)
+        where T : struct, IBinaryInteger<T>
+    {
+        if (a == T.Zero || b == T.Zero) return T.Zero;
+        // Divide before multiply to reduce overflow risk.
+        return T.Abs(a / Gcd(a, b) * b);
     }
 
     #endregion
@@ -100,20 +172,20 @@ public static class MathEx
     #region Floor
 
     /// <summary>
-    /// Computes the greatest multiple of <paramref name="base"/> that is less than or equal to <paramref name="value"/>.
+    /// Computes the greatest multiple of <paramref name="step"/> that is less than or equal to <paramref name="value"/>.
     /// </summary>
     /// <typeparam name="T">A numeric type supporting modulus and basic arithmetic operators.</typeparam>
     /// <param name="value">The value for which to find the floor multiple.</param>
-    /// <param name="base">The base multiple. Must be non-zero.</param>
-    /// <returns>The greatest multiple of <paramref name="base"/> that is &lt;= <paramref name="value"/>.</returns>
-    /// <exception cref="DivideByZeroException">Thrown if <paramref name="base"/> equals zero.</exception>
-    public static T Floor<T>(T value, T @base)
+    /// <param name="step">The step. Must be non-zero.</param>
+    /// <returns>The greatest multiple of <paramref name="step"/> that is &lt;= <paramref name="value"/>.</returns>
+    /// <exception cref="DivideByZeroException">Thrown if <paramref name="step"/> equals zero.</exception>
+    public static T Floor<T>(T value, T step)
         where T : struct, IModulusOperators<T, T, T>, INumberBase<T>
     {
-        if (@base == T.Zero)
-            throw new DivideByZeroException("Base must be non-zero for floor operation.");
+        if (step == T.Zero)
+            throw new DivideByZeroException("Step must be non-zero for floor operation.");
 
-        T correction = Mod(value, @base);
+        T correction = Mod(value, step);
         return value - correction;
     }
 
@@ -122,22 +194,40 @@ public static class MathEx
     #region Ceiling
 
     /// <summary>
-    /// Computes the smallest multiple of <paramref name="base"/> that is greater than or equal to <paramref name="value"/>.
+    /// Computes the smallest multiple of <paramref name="step"/> that is greater than or equal to <paramref name="value"/>.
     /// </summary>
     /// <typeparam name="T">A numeric type supporting modulus and basic arithmetic operators.</typeparam>
     /// <param name="value">The value for which to find the ceiling multiple.</param>
-    /// <param name="base">The base multiple. Must be non-zero.</param>
-    /// <returns>The smallest multiple of <paramref name="base"/> that is &gt;= <paramref name="value"/>.</returns>
-    /// <exception cref="DivideByZeroException">Thrown if <paramref name="base"/> equals zero.</exception>
-    public static T Ceiling<T>(T value, T @base)
+    /// <param name="step">The step. Must be non-zero.</param>
+    /// <returns>The smallest multiple of <paramref name="step"/> that is &gt;= <paramref name="value"/>.</returns>
+    /// <exception cref="DivideByZeroException">Thrown if <paramref name="step"/> equals zero.</exception>
+    public static T Ceiling<T>(T value, T step)
         where T : struct, IModulusOperators<T, T, T>, INumberBase<T>
     {
-        if (@base == T.Zero)
-            throw new DivideByZeroException("Base must be non-zero for ceiling operation.");
+        if (step == T.Zero)
+            throw new DivideByZeroException("Step must be non-zero for ceiling operation.");
 
-        T floorValue = Floor(value, @base);
-        return floorValue == value ? value : floorValue + @base;
+        T floorValue = Floor(value, step);
+        return floorValue == value ? value : floorValue + step;
     }
+
+    #endregion
+
+    #region Lerp
+
+    /// <summary>
+    /// Linearly interpolates between <paramref name="a"/> and <paramref name="b"/> by factor <paramref name="t"/>.
+    /// When <paramref name="t"/> is 0 the result equals <paramref name="a"/>; when 1, it equals <paramref name="b"/>.
+    /// Values of <paramref name="t"/> outside [0, 1] extrapolate beyond the segment.
+    /// </summary>
+    /// <typeparam name="T">A floating-point type.</typeparam>
+    /// <param name="a">Start value.</param>
+    /// <param name="b">End value.</param>
+    /// <param name="t">Interpolation factor.</param>
+    /// <returns>The interpolated value <c>a + t * (b − a)</c>.</returns>
+    public static T Lerp<T>(T a, T b, T t)
+        where T : struct, IFloatingPoint<T>
+        => a + t * (b - a);
 
     #endregion
 
@@ -313,43 +403,45 @@ public static class MathEx
 
     /// <summary>
     /// Computes and returns the specified line of Pascal's triangle, zero-based.
-    /// Uses a cached dictionary for performance. 
+    /// Uses a cached dictionary for performance.
     /// If the line is not in the cache, it is calculated and then stored.
     /// </summary>
     /// <param name="lineNumber">Zero-based index of the line to compute. Must be &gt;= 0.</param>
     /// <returns>An array representing the requested line of Pascal's triangle.</returns>
     /// <remarks>
     /// The function updates the cache dynamically up to <paramref name="lineNumber"/>.
-    /// Note that this static cache is not thread-safe; use locking if multiple threads will access it concurrently.
     /// </remarks>
     public static int[] ComputePascalTriangleLine(int lineNumber)
     {
         lineNumber.ArgMustBeGreaterOrEqualsThan(0);
 
-        // Return if it is already in the cache
-        if (pascalTriangleCache.TryGetValue(lineNumber, out var pascalTriangleLine))
+        lock (pascalTriangleCache)
         {
-            return pascalTriangleLine;
-        }
-
-        // Keys are always 0..n consecutive; Count-1 is the highest without scanning all keys.
-        int maxLine = pascalTriangleCache.Count - 1;
-        int[] lastLine = pascalTriangleCache[maxLine];
-
-        for (int i = maxLine + 1; i <= lineNumber; i++)
-        {
-            var newLine = new int[i + 1];
-            newLine[0] = 1;
-            for (int j = 1; j < i; j++)
+            // Return if it is already in the cache
+            if (pascalTriangleCache.TryGetValue(lineNumber, out var pascalTriangleLine))
             {
-                newLine[j] = lastLine[j - 1] + lastLine[j];
+                return pascalTriangleLine;
             }
-            newLine[^1] = 1;
 
-            pascalTriangleCache[i] = newLine;
-            lastLine = newLine;
+            // Keys are always 0..n consecutive; Count-1 is the highest without scanning all keys.
+            int maxLine = pascalTriangleCache.Count - 1;
+            int[] lastLine = pascalTriangleCache[maxLine];
+
+            for (int i = maxLine + 1; i <= lineNumber; i++)
+            {
+                var newLine = new int[i + 1];
+                newLine[0] = 1;
+                for (int j = 1; j < i; j++)
+                {
+                    newLine[j] = lastLine[j - 1] + lastLine[j];
+                }
+                newLine[^1] = 1;
+
+                pascalTriangleCache[i] = newLine;
+                lastLine = newLine;
+            }
+
+            return lastLine;
         }
-
-        return lastLine;
     }
 }

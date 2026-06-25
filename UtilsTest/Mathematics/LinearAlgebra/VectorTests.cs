@@ -114,5 +114,189 @@ public class VectorTests
         double[] items = v.ToArray();
         CollectionAssert.AreEqual(new[] { 1d, 2d, 3d }, items);
     }
+
+    // ── CrossProduct ─────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void CrossProduct_3D_ReturnsPerpendicularVector()
+    {
+        var x = new Vector<double>(1d, 0d, 0d);
+        var y = new Vector<double>(0d, 1d, 0d);
+        var z = Vector<double>.CrossProduct(x, y);
+
+        Assert.AreEqual(3, z.Dimension);
+        Assert.AreEqual(0d, z[0], 1e-12);
+        Assert.AreEqual(0d, z[1], 1e-12);
+        Assert.AreEqual(1d, z[2], 1e-12);
+    }
+
+    [TestMethod]
+    public void CrossProduct_ResultIsPerpendicularToBothInputs()
+    {
+        var a = new Vector<double>(1d, 2d, 3d);
+        var b = new Vector<double>(4d, 5d, 6d);
+        var c = Vector<double>.CrossProduct(a, b);
+
+        Assert.AreEqual(0d, a * c, 1e-10, "Result should be perpendicular to a");
+        Assert.AreEqual(0d, b * c, 1e-10, "Result should be perpendicular to b");
+    }
+
+    [TestMethod]
+    public void CrossProduct_WrongDimension_Throws()
+    {
+        var v1 = new Vector<double>(1d, 0d, 0d);
+        var v2 = new Vector<double>(1d, 0d);
+        Assert.ThrowsException<ArgumentException>(() => Vector<double>.CrossProduct(v1, v2));
+    }
+
+    // ── ToNormalSpace / FromNormalSpace ────────────────────────────────────
+
+    [TestMethod]
+    public void ToNormalSpace_AddsHomogeneousOne()
+    {
+        var v = new Vector<double>(1d, 2d, 3d);
+        var h = v.ToNormalSpace();
+
+        Assert.AreEqual(4, h.Dimension);
+        Assert.AreEqual(1d, h[0], 1e-12);
+        Assert.AreEqual(2d, h[1], 1e-12);
+        Assert.AreEqual(3d, h[2], 1e-12);
+        Assert.AreEqual(1d, h[3], 1e-12);
+    }
+
+    [TestMethod]
+    public void FromNormalSpace_DividesAndDropsLastComponent()
+    {
+        var h = new Vector<double>(2d, 4d, 6d, 2d); // w=2 → (1,2,3)
+        var v = h.FromNormalSpace();
+
+        Assert.AreEqual(3, v.Dimension);
+        Assert.AreEqual(1d, v[0], 1e-12);
+        Assert.AreEqual(2d, v[1], 1e-12);
+        Assert.AreEqual(3d, v[2], 1e-12);
+    }
+
+    [TestMethod]
+    public void ToNormalSpace_ThenFromNormalSpace_IsIdentity()
+    {
+        var v = new Vector<double>(3d, -1d, 5d);
+        var roundtrip = v.ToNormalSpace().FromNormalSpace();
+
+        Assert.AreEqual(v.Dimension, roundtrip.Dimension);
+        for (int i = 0; i < v.Dimension; i++)
+            Assert.AreEqual(v[i], roundtrip[i], 1e-12);
+    }
+
+    // ── ProjectOnto ───────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void ProjectOnto_OntoAxisVector_ReturnsComponent()
+    {
+        var v = new Vector<double>(3d, 4d);
+        var axis = new Vector<double>(1d, 0d);
+        var proj = v.ProjectOnto(axis);
+
+        Assert.AreEqual(3d, proj[0], 1e-12);
+        Assert.AreEqual(0d, proj[1], 1e-12);
+    }
+
+    [TestMethod]
+    public void ProjectOnto_ParallelVectors_ReturnsSameDirection()
+    {
+        var v = new Vector<double>(2d, 4d, 6d);
+        var u = new Vector<double>(1d, 2d, 3d);
+        var proj = v.ProjectOnto(u);
+
+        // v is already parallel to u, so projection = v
+        for (int i = 0; i < v.Dimension; i++)
+            Assert.AreEqual(v[i], proj[i], 1e-10);
+    }
+
+    [TestMethod]
+    public void ProjectOnto_PerpendicularVectors_ReturnsZero()
+    {
+        var v = new Vector<double>(0d, 5d);
+        var u = new Vector<double>(1d, 0d);
+        var proj = v.ProjectOnto(u);
+
+        Assert.AreEqual(0d, proj[0], 1e-12);
+        Assert.AreEqual(0d, proj[1], 1e-12);
+    }
+
+    [TestMethod]
+    public void ProjectOnto_ZeroVector_Throws()
+    {
+        var v = new Vector<double>(1d, 2d);
+        var zero = new Vector<double>(0d, 0d);
+        Assert.ThrowsException<InvalidOperationException>(() => v.ProjectOnto(zero));
+    }
+
+    [TestMethod]
+    public void ProjectOnto_DifferentDimensions_Throws()
+    {
+        var v = new Vector<double>(1d, 2d, 3d);
+        var u = new Vector<double>(1d, 0d);
+        Assert.ThrowsException<ArgumentException>(() => v.ProjectOnto(u));
+    }
+
+    // ── Equals overload fix (A) ───────────────────────────────────────────
+
+    [TestMethod]
+    public void Equals_WithMatchingArray_ReturnsTrue()
+    {
+        var v = new Vector<double>(1d, 2d, 3d);
+        double[] arr = { 1d, 2d, 3d };
+        Assert.IsTrue(v.Equals((object)arr));
+    }
+
+    // ── AngleWith ─────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void AngleWith_PerpendicularVectors_ReturnsPiOver2()
+    {
+        var v1 = new Vector<double>(1d, 0d);
+        var v2 = new Vector<double>(0d, 1d);
+        Assert.AreEqual(Math.PI / 2, v1.AngleWith(v2), 1e-9);
+    }
+
+    [TestMethod]
+    public void AngleWith_ParallelVectors_ReturnsZero()
+    {
+        var v1 = new Vector<double>(1d, 2d, 3d);
+        var v2 = new Vector<double>(2d, 4d, 6d);
+        Assert.AreEqual(0.0, v1.AngleWith(v2), 1e-9);
+    }
+
+    [TestMethod]
+    public void AngleWith_OppositeVectors_ReturnsPi()
+    {
+        var v1 = new Vector<double>(1d, 0d, 0d);
+        var v2 = new Vector<double>(-1d, 0d, 0d);
+        Assert.AreEqual(Math.PI, v1.AngleWith(v2), 1e-9);
+    }
+
+    [TestMethod]
+    public void AngleWith_Known45Degrees_ReturnsQuarterPi()
+    {
+        var v1 = new Vector<double>(1d, 0d);
+        var v2 = new Vector<double>(1d, 1d);
+        Assert.AreEqual(Math.PI / 4, v1.AngleWith(v2), 1e-9);
+    }
+
+    [TestMethod]
+    public void AngleWith_DifferentDimensions_Throws()
+    {
+        var v1 = new Vector<double>(1d, 0d);
+        var v2 = new Vector<double>(1d, 0d, 0d);
+        Assert.ThrowsException<ArgumentException>(() => v1.AngleWith(v2));
+    }
+
+    [TestMethod]
+    public void AngleWith_ZeroVector_Throws()
+    {
+        var v1 = new Vector<double>(1d, 0d);
+        var v2 = new Vector<double>(0d, 0d);
+        Assert.ThrowsException<InvalidOperationException>(() => v1.AngleWith(v2));
+    }
 }
 

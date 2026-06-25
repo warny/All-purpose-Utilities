@@ -56,7 +56,7 @@ public partial class Vector<T> :
     /// <param name="getVector">Function to extract the vector from the point.</param>
     /// <param name="weightedPoints">Collection of weighted points.</param>
     /// <returns>The total weight and the barycenter vector.</returns>
-    public static (T weigth, Vector<T> point) ComputeBarycenter<TW>(Func<TW, T> getWeight, Func<TW, Vector<T>> getVector, params TW[] weightedPoints)
+    public static (T weight, Vector<T> point) ComputeBarycenter<TW>(Func<TW, T> getWeight, Func<TW, Vector<T>> getVector, params TW[] weightedPoints)
         => ComputeBarycenter(getWeight, getVector, (IEnumerable<TW>)weightedPoints);
 
     /// <summary>
@@ -67,7 +67,7 @@ public partial class Vector<T> :
     /// <param name="getVector">Function to extract the vector from the point.</param>
     /// <param name="weightedPoints">Collection of weighted points.</param>
     /// <returns>The total weight and the barycenter vector.</returns>
-    public static (T weigth, Vector<T> point) ComputeBarycenter<TW>(Func<TW, T> getWeight, Func<TW, Vector<T>> getVector, IEnumerable<TW> weightedPoints)
+    public static (T weight, Vector<T> point) ComputeBarycenter<TW>(Func<TW, T> getWeight, Func<TW, Vector<T>> getVector, IEnumerable<TW> weightedPoints)
     {
         using var enumerator = weightedPoints.GetEnumerator();
         if (!enumerator.MoveNext()) throw new ArgumentException("At least one point is required", nameof(weightedPoints));

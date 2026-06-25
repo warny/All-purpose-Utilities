@@ -75,7 +75,8 @@ namespace UtilsTest.Mathematics.LinearAlgebra
             Assert.AreEqual(3, m.Rows);
             Assert.AreEqual(3, m.Columns);
             Assert.IsTrue(m.IsIdentity);
-            Assert.IsTrue(m.IsDiagonalized);
+            Assert.IsTrue(m.IsTriangular);
+            Assert.IsTrue(m.IsDiagonal);
             for (int i = 0; i < 3; i++)
                 for (int j = 0; j < 3; j++)
                     Assert.AreEqual(i == j ? 1d : 0d, m[i, j], 1e-12);
@@ -96,8 +97,8 @@ namespace UtilsTest.Mathematics.LinearAlgebra
         public void Diagonal_NonZero_SetsStructuralFlags()
         {
             var m = Matrix<double>.Diagonal(2d, 3d);
-            Assert.IsTrue(m.IsDiagonalized);
-            Assert.IsTrue(m.IsTriangularised);
+            Assert.IsTrue(m.IsTriangular);
+            Assert.IsTrue(m.IsDiagonal);
             Assert.IsFalse(m.IsIdentity);
             Assert.AreEqual(2d, m[0, 0], 1e-12);
             Assert.AreEqual(3d, m[1, 1], 1e-12);
@@ -105,12 +106,124 @@ namespace UtilsTest.Mathematics.LinearAlgebra
         }
 
         [TestMethod]
-        public void Diagonal_WithZeroEntry_ClearsStructuralFlags()
+        public void Diagonal_WithZeroEntry_IsStillDiagonalAndTriangular()
         {
+            // A diagonal matrix with a zero entry is still diagonal and triangular (just singular).
             var m = Matrix<double>.Diagonal(2d, 0d);
-            Assert.IsFalse(m.IsDiagonalized);
-            Assert.IsFalse(m.IsTriangularised);
+            Assert.IsTrue(m.IsTriangular);
+            Assert.IsTrue(m.IsDiagonal);
             Assert.IsFalse(m.IsIdentity);
+        }
+
+        [TestMethod]
+        public void IsTriangular_UpperTriangularMatrix_ReturnsTrue()
+        {
+            var m = new Matrix<double>(new double[,]
+            {
+                { 1d, 2d, 3d },
+                { 0d, 4d, 5d },
+                { 0d, 0d, 6d },
+            });
+            Assert.IsTrue(m.IsTriangular);
+            Assert.IsFalse(m.IsDiagonal);
+            Assert.IsFalse(m.IsIdentity);
+        }
+
+        [TestMethod]
+        public void IsTriangular_NonTriangularMatrix_ReturnsFalse()
+        {
+            var m = new Matrix<double>(new double[,]
+            {
+                { 1d, 0d },
+                { 1d, 1d },
+            });
+            // Lower triangular only — the other direction has a non-zero.
+            Assert.IsTrue(m.IsTriangular);
+
+            var m2 = new Matrix<double>(new double[,]
+            {
+                { 1d, 2d },
+                { 3d, 4d },
+            });
+            Assert.IsFalse(m2.IsTriangular);
+        }
+
+        [TestMethod]
+        public void Determinant_IdentityMatrix_ReturnsOne()
+        {
+            var m = Matrix<double>.Identity(3);
+            Assert.AreEqual(1d, m.Determinant, 1e-12);
+        }
+
+        [TestMethod]
+        public void Determinant_2x2_ReturnsCorrectValue()
+        {
+            var m = new Matrix<double>(new double[,] { { 1d, 2d }, { 3d, 4d } });
+            Assert.AreEqual(-2d, m.Determinant, 1e-12);
+        }
+
+        [TestMethod]
+        public void Determinant_SingularMatrix_ReturnsZero()
+        {
+            var m = new Matrix<double>(new double[,] { { 1d, 2d }, { 2d, 4d } });
+            Assert.AreEqual(0d, m.Determinant, 1e-12);
+        }
+
+        [TestMethod]
+        public void Determinant_3x3_ReturnsCorrectValue()
+        {
+            var m = new Matrix<double>(new double[,]
+            {
+                { 2d, -1d, 0d },
+                { -1d, 2d, -1d },
+                { 0d, -1d, 2d },
+            });
+            // det = 2*(4-1) - (-1)*(-2-0) + 0 = 6 - 2 = 4
+            Assert.AreEqual(4d, m.Determinant, 1e-10);
+        }
+
+        [TestMethod]
+        public void Transpose_NonSquare_SwapsRowsAndColumns()
+        {
+            var m = new Matrix<double>(new double[,] { { 1d, 2d, 3d }, { 4d, 5d, 6d } });
+            var t = m.Transpose();
+            Assert.AreEqual(3, t.Rows);
+            Assert.AreEqual(2, t.Columns);
+            Assert.AreEqual(1d, t[0, 0], 1e-12);
+            Assert.AreEqual(4d, t[0, 1], 1e-12);
+            Assert.AreEqual(2d, t[1, 0], 1e-12);
+            Assert.AreEqual(5d, t[1, 1], 1e-12);
+            Assert.AreEqual(3d, t[2, 0], 1e-12);
+            Assert.AreEqual(6d, t[2, 1], 1e-12);
+        }
+
+        [TestMethod]
+        public void Transpose_Square_IsInvolutory()
+        {
+            // Transposing twice returns the original matrix.
+            var m = new Matrix<double>(new double[,] { { 1d, 2d }, { 3d, 4d } });
+            AssertMatricesAreEqual(m, m.Transpose().Transpose(), 1e-12);
+        }
+
+        [TestMethod]
+        public void GetRow_ReturnsCorrectVector()
+        {
+            var m = new Matrix<double>(new double[,] { { 1d, 2d, 3d }, { 4d, 5d, 6d } });
+            var row = m.GetRow(1);
+            Assert.AreEqual(3, row.Dimension);
+            Assert.AreEqual(4d, row[0], 1e-12);
+            Assert.AreEqual(5d, row[1], 1e-12);
+            Assert.AreEqual(6d, row[2], 1e-12);
+        }
+
+        [TestMethod]
+        public void GetColumn_ReturnsCorrectVector()
+        {
+            var m = new Matrix<double>(new double[,] { { 1d, 2d, 3d }, { 4d, 5d, 6d } });
+            var col = m.GetColumn(2);
+            Assert.AreEqual(2, col.Dimension);
+            Assert.AreEqual(3d, col[0], 1e-12);
+            Assert.AreEqual(6d, col[1], 1e-12);
         }
 
         /// <summary>

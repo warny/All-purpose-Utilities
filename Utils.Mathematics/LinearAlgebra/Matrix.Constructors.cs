@@ -22,15 +22,15 @@ public sealed partial class Matrix<T>
     /// </summary>
     /// <param name="array">Backing array containing matrix values.</param>
     /// <param name="isIdentity">Indicates whether the matrix is an identity matrix.</param>
-    /// <param name="isDiagonalized">Indicates whether the matrix is diagonalized.</param>
-    /// <param name="isTriangularised">Indicates whether the matrix is triangularized.</param>
+    /// <param name="isTriangular">Indicates whether the matrix is triangular (upper or lower).</param>
+    /// <param name="isDiagonal">Indicates whether the matrix is diagonal (all off-diagonal elements are zero).</param>
     /// <param name="determinant">Precomputed determinant, if available.</param>
-    internal Matrix(T[,] array, bool isIdentity, bool isDiagonalized, bool isTriangularised, T? determinant)
+    internal Matrix(T[,] array, bool isIdentity, bool isTriangular, bool isDiagonal, T? determinant)
     {
         array.Arg().MustNotBeNull();
         this.components = array;
-        this.isDiagonalized = isDiagonalized;
-        this.isTriangularised = isTriangularised;
+        this.isTriangular = isTriangular;
+        this.isDiagonal = isDiagonal;
         this.isIdentity = isIdentity;
         this.determinant = determinant;
     }
@@ -45,9 +45,9 @@ public sealed partial class Matrix<T>
         components = new T[array.GetLength(0), array.GetLength(1)];
         Array.Copy(array, this.components, array.Length);
         var isSquare = IsSquare;
-        isDiagonalized = isSquare ? false : (bool?)null;
-        isTriangularised = isSquare ? false : (bool?)null;
-        isIdentity = isSquare ? false : (bool?)null;
+        isTriangular = isSquare ? (bool?)null : false;
+        isDiagonal = isSquare ? (bool?)null : false;
+        isIdentity = isSquare ? (bool?)null : false;
         determinant = null;
     }
 
@@ -68,8 +68,8 @@ public sealed partial class Matrix<T>
                 components[i, j] = array[i][j];
             }
         }
-        isDiagonalized = components.GetLength(0) != components.GetLength(1) ? false : (bool?)null;
-        isTriangularised = components.GetLength(0) != components.GetLength(1) ? false : (bool?)null;
+        isTriangular = components.GetLength(0) != components.GetLength(1) ? false : (bool?)null;
+        isDiagonal = components.GetLength(0) != components.GetLength(1) ? false : (bool?)null;
         isIdentity = components.GetLength(0) != components.GetLength(1) ? false : (bool?)null;
         determinant = null;
     }
@@ -92,8 +92,8 @@ public sealed partial class Matrix<T>
                 components[j, i] = vectors[i][j];
             }
         }
-        isDiagonalized = components.GetLength(0) != components.GetLength(1) ? false : (bool?)null;
-        isTriangularised = components.GetLength(0) != components.GetLength(1) ? false : (bool?)null;
+        isTriangular = components.GetLength(0) != components.GetLength(1) ? false : (bool?)null;
+        isDiagonal = components.GetLength(0) != components.GetLength(1) ? false : (bool?)null;
         isIdentity = components.GetLength(0) != components.GetLength(1) ? false : (bool?)null;
         determinant = null;
     }
@@ -108,8 +108,8 @@ public sealed partial class Matrix<T>
 
         this.components = new T[matrix.components.GetLength(0), matrix.components.GetLength(1)];
         Array.Copy(matrix.components, this.components, matrix.components.Length);
-        this.isDiagonalized = matrix.isDiagonalized;
-        this.isTriangularised = matrix.isTriangularised;
+        this.isTriangular = matrix.isTriangular;
+        this.isDiagonal = matrix.isDiagonal;
         this.isIdentity = matrix.isIdentity;
         this.determinant = matrix.determinant;
     }

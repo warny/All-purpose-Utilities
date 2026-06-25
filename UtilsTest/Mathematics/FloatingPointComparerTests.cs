@@ -9,44 +9,28 @@ public class FloatingPointComparerTests
     private readonly FloatingPointComparer<double> _comparer = new(precision: 2);
 
     [TestMethod]
-    public void Equals_WithinTolerance_ReturnsTrue()
-    {
-        Assert.IsTrue(_comparer.Equals(1.001, 1.002));
-        Assert.IsTrue(_comparer.Equals(5.0, 5.009));
-        Assert.IsTrue(_comparer.Equals(0.0, 0.009));
-    }
-
-    [TestMethod]
-    public void Equals_OutsideTolerance_ReturnsFalse()
-    {
-        Assert.IsFalse(_comparer.Equals(1.0, 1.02));
-        Assert.IsFalse(_comparer.Equals(5.0, 5.1));
-    }
-
-    [TestMethod]
-    public void Equals_ExactlyAtTolerance_ReturnsTrue()
-    {
-        // precision=2 => interval=0.01; x.Between(y-0.01, y+0.01) is inclusive
-        Assert.IsTrue(_comparer.Equals(1.0, 1.01));
-        Assert.IsTrue(_comparer.Equals(1.01, 1.0));
-    }
-
-    [TestMethod]
-    public void GetHashCode_EqualValues_SameHash()
-    {
-        // Values within tolerance must produce the same hash (contract: Equals→same hash).
-        // We return 0 for all values to satisfy this invariant.
-        Assert.AreEqual(_comparer.GetHashCode(1.001), _comparer.GetHashCode(1.002));
-        Assert.AreEqual(_comparer.GetHashCode(0.0), _comparer.GetHashCode(0.009));
-        Assert.AreEqual(0, _comparer.GetHashCode(42.0));
-    }
-
-    [TestMethod]
     public void Compare_OrdersCorrectly()
     {
         Assert.IsTrue(_comparer.Compare(1.0, 2.0) < 0);
         Assert.IsTrue(_comparer.Compare(2.0, 1.0) > 0);
         Assert.AreEqual(0, _comparer.Compare(1.5, 1.5));
+    }
+
+    [TestMethod]
+    public void Compare_WithinTolerance_ReturnsZero()
+    {
+        // precision=2 => interval=0.01
+        Assert.AreEqual(0, _comparer.Compare(1.0, 1.009));
+        Assert.AreEqual(0, _comparer.Compare(1.009, 1.0));
+        Assert.AreEqual(0, _comparer.Compare(5.0, 5.005));
+    }
+
+    [TestMethod]
+    public void Compare_OutsideTolerance_ReturnsNonZero()
+    {
+        // precision=2 => interval=0.01
+        Assert.IsTrue(_comparer.Compare(1.0, 1.02) < 0);
+        Assert.IsTrue(_comparer.Compare(1.02, 1.0) > 0);
     }
 
     [TestMethod]
@@ -61,7 +45,25 @@ public class FloatingPointComparerTests
     {
         var c = new FloatingPointComparer<double>(interval: 0.5);
         Assert.AreEqual(0.5, c.Interval);
-        Assert.IsTrue(c.Equals(1.0, 1.4));
-        Assert.IsFalse(c.Equals(1.0, 1.6));
+        Assert.AreEqual(0, c.Compare(1.0, 1.4));
+        Assert.IsTrue(c.Compare(1.0, 1.6) < 0);
+    }
+
+    [TestMethod]
+    public void ForPrecision_ReturnsCachedInstance()
+    {
+        var a = FloatingPointComparer<double>.ForPrecision(2);
+        var b = FloatingPointComparer<double>.ForPrecision(2);
+        Assert.AreSame(a, b);
+    }
+
+    [TestMethod]
+    public void ForPrecision_DifferentPrecisions_ReturnDifferentInstances()
+    {
+        var a = FloatingPointComparer<double>.ForPrecision(2);
+        var b = FloatingPointComparer<double>.ForPrecision(3);
+        Assert.AreNotSame(a, b);
+        Assert.AreEqual(0.01, a.Interval, 1e-15);
+        Assert.AreEqual(0.001, b.Interval, 1e-15);
     }
 }

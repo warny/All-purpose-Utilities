@@ -187,13 +187,13 @@ public sealed class GeoVector<T> : GeoPoint<T>, IEquatable<GeoVector<T>>, IUnary
     /// <returns>The bearing from A to B, normalized to [0..360).</returns>
     public static T ComputeBearing(GeoPoint<T> A, GeoPoint<T> B)
     {
-        if (comparer.Equals(A.Longitude, B.Longitude))
+        if (comparer.Compare(A.Longitude, B.Longitude) == 0)
         {
             // Vertical line test
             return A.Latitude > B.Latitude ? degree.StraightAngle : T.Zero;
         }
-        if (comparer.Equals(A.Longitude, B.Longitude - degree.StraightAngle)
-            || comparer.Equals(A.Longitude, B.Longitude + degree.StraightAngle))
+        if (comparer.Compare(A.Longitude, B.Longitude - degree.StraightAngle) == 0
+            || comparer.Compare(A.Longitude, B.Longitude + degree.StraightAngle) == 0)
         {
             return A.Latitude > -B.Latitude ? degree.StraightAngle : T.Zero;
         }
@@ -467,7 +467,7 @@ public sealed class GeoVector<T> : GeoPoint<T>, IEquatable<GeoVector<T>>, IUnary
 
     /// <inheritdoc />
     public bool Equals(GeoVector<T>? other)
-        => other is not null && comparer.Equals(Bearing, other.Bearing) && base.Equals(other);
+        => other is not null && comparer.Compare(Bearing, other.Bearing) == 0 && base.Equals(other);
 
     /// <inheritdoc />
     public override int GetHashCode()

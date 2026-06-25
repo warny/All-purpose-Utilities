@@ -96,7 +96,7 @@ public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>, 
     public override bool Equals(object? obj) => obj switch
     {
         Vector<T> v => Equals(v),
-        double[] a => Equals(a),
+        T[] a => Equals(a),
         _ => false,
     };
 
@@ -219,6 +219,23 @@ public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>, 
             sign = -sign;
         }
         return result;
+    }
+
+    /// <summary>
+    /// Projects this vector onto <paramref name="other"/>.
+    /// </summary>
+    /// <param name="other">The vector to project onto. Must be non-zero.</param>
+    /// <returns>The projection of this vector in the direction of <paramref name="other"/>.</returns>
+    /// <exception cref="ArgumentException">Thrown when the vectors have different dimensions.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when <paramref name="other"/> is the zero vector.</exception>
+    public Vector<T> ProjectOnto(Vector<T> other)
+    {
+        if (Dimension != other.Dimension)
+            throw new ArgumentException("Vectors must have the same dimension.", nameof(other));
+        T denominator = other * other;
+        if (denominator == T.Zero)
+            throw new InvalidOperationException("Cannot project onto the zero vector.");
+        return ((this * other) / denominator) * other;
     }
 
     /// <summary>

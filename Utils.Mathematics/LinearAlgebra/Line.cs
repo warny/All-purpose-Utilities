@@ -8,7 +8,7 @@ namespace Utils.Mathematics.LinearAlgebra;
 /// </summary>
 /// <typeparam name="T">Floating-point type.</typeparam>
 public class Line<T> : IFormattable, IEquatable<Line<T>>, ICloneable
-    where T : struct, IFloatingPoint<T>, IPowerFunctions<T>, ITrigonometricFunctions<T>, IRootFunctions<T>
+    where T : struct, IFloatingPoint<T>, IPowerFunctions<T>, IRootFunctions<T>
 {
     /// <summary>
     /// A point on the line.

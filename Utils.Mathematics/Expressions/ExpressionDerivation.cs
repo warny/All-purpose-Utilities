@@ -301,10 +301,10 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
             Expression operand)
     {
         return Expression.Divide(
-            operand,
+            Transform(operand),
             Expression.Multiply(
-                ExpressionEx.CreateConstant(T.CreateChecked(double.Log(10d))),
-                Transform(operand)
+                operand,
+                ExpressionEx.CreateConstant(T.CreateChecked(double.Log(10d)))
             )
         );
     }
@@ -389,9 +389,9 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
     /// <returns>The derivative expression using centered finite difference.</returns>
     private Expression DeriveUnknownMethodCall(MethodCallExpression methodCallExpression, Expression[] parameters)
     {
-        if (methodCallExpression.Method.ReturnType != typeof(double)
+        if (methodCallExpression.Method.ReturnType != typeof(T)
             || methodCallExpression.Method.GetParameters().Length != 1
-            || methodCallExpression.Method.GetParameters()[0].ParameterType != typeof(double))
+            || methodCallExpression.Method.GetParameters()[0].ParameterType != typeof(T))
         {
             throw new NotSupportedException($"No derivative rule is registered for '{methodCallExpression.Method}'.");
         }
@@ -402,8 +402,8 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
             return ExpressionEx.CreateConstant(T.CreateChecked(0d));
         }
 
-        var epsilon = Expression.Constant(FiniteDifferenceEpsilon);
-        var twoEpsilon = Expression.Constant(2.0 * FiniteDifferenceEpsilon);
+        var epsilon = ExpressionEx.CreateConstant(T.CreateChecked(FiniteDifferenceEpsilon));
+        var twoEpsilon = ExpressionEx.CreateConstant(T.CreateChecked(2.0 * FiniteDifferenceEpsilon));
         var operandDerivative = Transform(operand);
 
         var plus = Expression.Call(methodCallExpression.Method, Expression.Add(operand, epsilon));
