@@ -55,17 +55,17 @@ internal static class EmbeddedMembersSupport
     /// <returns>The support category that all emitter and diagnostic paths must use.</returns>
     public static GrammarActionSupportKind Classify(G4Grammar grammar, G4GrammarAction action)
     {
-        if (IsInjectableLexerAction(action, "header"))
+        if (IsInjectableLexerAction(grammar, action, "header"))
         {
             return GrammarActionSupportKind.LexerHeader;
         }
 
-        if (IsInjectableLexerAction(action, "members"))
+        if (IsInjectableLexerAction(grammar, action, "members"))
         {
             return GrammarActionSupportKind.LexerMembers;
         }
 
-        if (IsInjectableLexerAction(action, "footer"))
+        if (IsInjectableLexerAction(grammar, action, "footer"))
         {
             return GrammarActionSupportKind.LexerFooter;
         }
@@ -162,7 +162,7 @@ internal static class EmbeddedMembersSupport
     /// </summary>
     /// <param name="grammar">Grammar that owns the action.</param>
     /// <param name="action">Grammar-level action metadata to classify.</param>
-    /// <returns><c>true</c> for <c>@lexer::header</c>; otherwise <c>false</c>.</returns>
+    /// <returns><c>true</c> for <c>@lexer::header</c> in combined or lexer grammars; otherwise <c>false</c>.</returns>
     public static bool IsInjectableLexerHeaderAction(G4Grammar grammar, G4GrammarAction action)
     {
         return Classify(grammar, action) is GrammarActionSupportKind.LexerHeader;
@@ -173,7 +173,7 @@ internal static class EmbeddedMembersSupport
     /// </summary>
     /// <param name="grammar">Grammar that owns the action.</param>
     /// <param name="action">Grammar-level action metadata to classify.</param>
-    /// <returns><c>true</c> for <c>@lexer::members</c>; otherwise <c>false</c>.</returns>
+    /// <returns><c>true</c> for <c>@lexer::members</c> in combined or lexer grammars; otherwise <c>false</c>.</returns>
     public static bool IsInjectableLexerMembersAction(G4Grammar grammar, G4GrammarAction action)
     {
         return Classify(grammar, action) is GrammarActionSupportKind.LexerMembers;
@@ -184,7 +184,7 @@ internal static class EmbeddedMembersSupport
     /// </summary>
     /// <param name="grammar">Grammar that owns the action.</param>
     /// <param name="action">Grammar-level action metadata to classify.</param>
-    /// <returns><c>true</c> for <c>@lexer::footer</c>; otherwise <c>false</c>.</returns>
+    /// <returns><c>true</c> for <c>@lexer::footer</c> in combined or lexer grammars; otherwise <c>false</c>.</returns>
     public static bool IsInjectableLexerFooterAction(G4Grammar grammar, G4GrammarAction action)
     {
         return Classify(grammar, action) is GrammarActionSupportKind.LexerFooter;
@@ -238,12 +238,14 @@ internal static class EmbeddedMembersSupport
     /// <summary>
     /// Determines whether a grammar-level action is one of the explicitly supported lexer named actions.
     /// </summary>
+    /// <param name="grammar">Grammar that owns the action.</param>
     /// <param name="action">Grammar-level action metadata to inspect.</param>
     /// <param name="name">ANTLR grammar-level lexer action name to match.</param>
-    /// <returns><c>true</c> for the matching <c>@lexer::</c> compatibility action.</returns>
-    private static bool IsInjectableLexerAction(G4GrammarAction action, string name)
+    /// <returns><c>true</c> for the matching <c>@lexer::</c> compatibility action in combined or lexer grammars.</returns>
+    private static bool IsInjectableLexerAction(G4Grammar grammar, G4GrammarAction action, string name)
     {
-        return string.Equals(action.Target, "lexer", StringComparison.Ordinal)
+        return grammar.Kind is G4GrammarKind.Combined or G4GrammarKind.Lexer
+            && string.Equals(action.Target, "lexer", StringComparison.Ordinal)
             && string.Equals(action.Name, name, StringComparison.Ordinal);
     }
 

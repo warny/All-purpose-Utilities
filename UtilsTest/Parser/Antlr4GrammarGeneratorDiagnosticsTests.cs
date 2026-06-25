@@ -893,6 +893,34 @@ public class Antlr4GrammarGeneratorDiagnosticsTests
         Assert.AreEqual(2, diagnostics.Count(static diagnostic => diagnostic.Id == ParserDiagnostics.EmbeddedFooterInjectedByGenerator.Code));
     }
 
+
+    /// <summary>
+    /// Ensures scoped lexer compatibility actions in parser-only grammars remain unsupported because no lexer is generated.
+    /// </summary>
+    [DataTestMethod]
+    [DataRow("header", "// lexer header")]
+    [DataRow("members", "// lexer members")]
+    [DataRow("footer", "// lexer footer")]
+    public void GeneratorDiagnostics_LexerNamedActionsInParserGrammar_ReportUnsupportedEmbeddedCode(string actionName, string marker)
+    {
+        string grammar = $$"""
+            parser grammar P;
+
+            @lexer::{{actionName}} {
+                {{marker}}
+            }
+
+            start : A ;
+            """;
+
+        var diagnostics = RunGenerator(grammar);
+        var diagnostic = AssertSingleUnsupportedDiagnostic(diagnostics, $"Grammar @lexer::{actionName} action");
+        string generatedSource = GetGeneratedSource(grammar);
+
+        StringAssert.Contains(diagnostic.GetMessage(), $"Named action scope '@lexer::{actionName}' is not supported by this generator.");
+        Assert.IsFalse(generatedSource.Contains(marker, StringComparison.Ordinal));
+    }
+
     /// <summary>
     /// Ensures supported lexer named actions do not report unsupported diagnostics and preserve deterministic source order.
     /// </summary>
