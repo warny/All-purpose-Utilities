@@ -129,5 +129,51 @@ namespace UtilsTest.Lists
             TestRemove(5, result);
         }
 
+        [TestMethod]
+        public void AddBeforeFirstWithLevels_MaintainsStructure()
+        {
+            SkipList<int> list = new(2);
+            foreach (var v in new[] { 5, 6, 7, 8 }) list.Add(v);
+            list.Add(1);
+            list.Add(0);
+            CollectionAssert.AreEqual(new[] { 0, 1, 5, 6, 7, 8 }, list.ToArray());
+        }
+
+        [TestMethod]
+        public void RemoveFirstElementWithUpLinks_MaintainsStructure()
+        {
+            SkipList<int> list = new(2);
+            foreach (var v in new[] { 1, 2, 3, 4, 5, 6 }) list.Add(v);
+            Assert.IsTrue(list.Remove(1));
+            Assert.AreEqual(5, list.Count);
+            CollectionAssert.AreEqual(new[] { 2, 3, 4, 5, 6 }, list.ToArray());
+            list.Add(0);
+            Assert.IsTrue(list.Contains(0));
+            CollectionAssert.AreEqual(new[] { 0, 2, 3, 4, 5, 6 }, list.ToArray());
+        }
+
+        [TestMethod]
+        public void RemoveLastElementWithUpLinks_MaintainsStructure()
+        {
+            SkipList<int> list = new(2);
+            foreach (var v in new[] { 1, 2, 3, 4, 5, 6 }) list.Add(v);
+            Assert.IsTrue(list.Remove(6));
+            Assert.AreEqual(5, list.Count);
+            CollectionAssert.AreEqual(new[] { 1, 2, 3, 4, 5 }, list.ToArray());
+            list.Add(7);
+            Assert.IsTrue(list.Contains(7));
+            CollectionAssert.AreEqual(new[] { 1, 2, 3, 4, 5, 7 }, list.ToArray());
+        }
+
+        [TestMethod]
+        public void AddAndContains_WithSmallThreshold_NoSkipNodeBeyondEnd()
+        {
+            SkipList<int> list = new(2);
+            int[] values = [10, 20, 30, 40, 50];
+            foreach (var v in values) list.Add(v);
+            foreach (var v in values) Assert.IsTrue(list.Contains(v));
+            CollectionAssert.AreEqual(values, list.ToArray());
+        }
+
     }
 }
