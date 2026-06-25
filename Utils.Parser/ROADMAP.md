@@ -619,9 +619,9 @@ Parser and lexer grammar-level named-action support is source-generator C# only.
 
 ### Lexer inline actions and predicates roadmap
 
-**Status: not started / design required.**
+**Status: not started.**
 
-This roadmap section documents the intended direction after the limited source-generator C# support for grammar-level `@lexer::*` named actions. It is documentation-only: lexer inline actions and lexer predicates remain unsupported, and no runtime, generator, diagnostic, or test behavior is enabled by this plan.
+Design is still required before any implementation work begins. This roadmap section documents the intended direction after the limited source-generator C# support for grammar-level `@lexer::*` named actions. It is documentation-only: lexer inline actions and lexer predicates remain unsupported, and no runtime, generator, diagnostic, or test behavior is enabled by this plan.
 
 Current state:
 
