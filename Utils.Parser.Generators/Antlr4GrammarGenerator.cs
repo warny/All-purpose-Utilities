@@ -211,7 +211,7 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
                 continue;
             }
 
-            var reason = FormatGrammarActionReason(action);
+            var reason = FormatGrammarActionReason(grammar, action);
             ReportUnsupportedEmbeddedCodeDiagnostic(context, file, text, action.Line, constructKind, grammar.Name, reason);
         }
 
@@ -440,9 +440,10 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
     /// <summary>
     /// Formats a grammar-level action reason for diagnostics.
     /// </summary>
+    /// <param name="grammar">Grammar that owns the action.</param>
     /// <param name="action">Grammar-level action metadata.</param>
     /// <returns>Construct-specific diagnostic reason.</returns>
-    private static string FormatGrammarActionReason(G4GrammarAction action)
+    private static string FormatGrammarActionReason(G4Grammar grammar, G4GrammarAction action)
     {
         if (string.Equals(action.Target, "lexer", StringComparison.Ordinal)
             && (string.Equals(action.Name, "header", StringComparison.Ordinal)
@@ -450,6 +451,20 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
                 || string.Equals(action.Name, "footer", StringComparison.Ordinal)))
         {
             return $"Lexer named action '@lexer::{action.Name}' is not supported by this generator.";
+        }
+
+        if (string.Equals(action.Target, "parser", StringComparison.Ordinal)
+            && grammar.Kind is G4GrammarKind.Lexer
+            && IsParserCompatibilityActionName(action.Name))
+        {
+            return $"Parser named action '@parser::{action.Name}' is not valid in a lexer grammar.";
+        }
+
+        if (action.Target is null
+            && grammar.Kind is G4GrammarKind.Lexer
+            && IsParserCompatibilityActionName(action.Name))
+        {
+            return $"Unscoped grammar action '@{action.Name}' is not supported in lexer grammars by this generator.";
         }
 
         if (action.Target is not null && !string.Equals(action.Target, "parser", StringComparison.Ordinal))
@@ -478,6 +493,18 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
         }
 
         return "Grammar-level actions are preserved as metadata only and are not injected into generated parser or lexer types.";
+    }
+
+    /// <summary>
+    /// Determines whether a grammar-level action name is one of the parser compatibility block names.
+    /// </summary>
+    /// <param name="name">ANTLR grammar-level action name.</param>
+    /// <returns><see langword="true"/> for header, members, or footer action names.</returns>
+    private static bool IsParserCompatibilityActionName(string name)
+    {
+        return string.Equals(name, "header", StringComparison.Ordinal)
+            || string.Equals(name, "members", StringComparison.Ordinal)
+            || string.Equals(name, "footer", StringComparison.Ordinal);
     }
 
     /// <summary>
