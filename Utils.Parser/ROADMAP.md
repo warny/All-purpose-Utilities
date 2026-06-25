@@ -623,6 +623,8 @@ Parser and lexer grammar-level named-action support is source-generator C# only.
 
 Design is required before implementation. This work is tracked as a future sub-area of the in-progress ANTLR4 compatibility, code-generation, and embedded-code transformation roadmap items. This roadmap section refines the existing in-progress ANTLR4 compatibility and generated-C# embedded-code work by isolating the future lexer inline action and lexer predicate design. It does not start implementation work.
 
+The Phase 0 audit is tracked in `docs/parser/LexerInlineActionsAndPredicatesAudit.md`.
+
 This plan must stay aligned with the existing in-progress sections:
 
 - Phase 6 — ANTLR4 compatibility expansion.
