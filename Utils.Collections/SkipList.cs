@@ -106,7 +106,7 @@ public class SkipList<T> : ICollection<T>
             // make it the first element in the object hierarchy
             for (var levelElement = elementAfter?.Up; levelElement != null; levelElement = levelElement.Up)
             {
-                newElement.CreateUp(null, levelElement);
+                newElement = newElement.CreateUp(null, levelElement);
             }
             elementAfter?.RemoveUp();
             _firstElement = newElement;
@@ -182,6 +182,7 @@ public class SkipList<T> : ICollection<T>
             {
                 next = next.CreateUp(levelElement, levelElement.Next);
             }
+            _firstElement = next;
         }
         else if (element.Next is null && element.Previous is not null)
         {
@@ -190,9 +191,8 @@ public class SkipList<T> : ICollection<T>
             {
                 previous = previous.CreateUp(levelElement.Previous, levelElement);
             }
+            _lastElement = previous;
         }
-        if (element == _firstElement) _firstElement = element.Next;
-        if (element == _lastElement) _lastElement = element.Previous;
         element.Remove();
         while (_firstElement?.Sub is not null && _lastElement?.Sub is not null && _firstElement.Next == _lastElement)
         {
@@ -251,13 +251,14 @@ public class SkipList<T> : ICollection<T>
         Element currentElement;
         Element previousElement = startElement?.Previous;
         int counter = 0;
+        Element lastUpperNode = startElement.Up;
 
         for (currentElement = startElement; currentElement != null; currentElement = currentElement.Next)
         {
-            if (currentElement.Up is not null) counter = 0;
+            if (currentElement.Up is not null) { counter = 0; lastUpperNode = currentElement.Up; }
             if (counter > _threshold && currentElement.Next is not null && currentElement.Next?.Up is null)
             {
-                CreateNewSkipNode(startElement, endElement, currentElement);
+                lastUpperNode = CreateNewSkipNode(startElement, endElement, currentElement, lastUpperNode);
                 counter = 0;
             }
             int comparison = comparer.Compare(value, currentElement.Value);
@@ -272,7 +273,7 @@ public class SkipList<T> : ICollection<T>
         return (previousElement, null);
     }
 
-    private void CreateNewSkipNode(Element startElement, Element endElement, Element currentElement)
+    private Element CreateNewSkipNode(Element startElement, Element endElement, Element currentElement, Element lastUpperNode)
     {
         Element previousUp, nextUp;
 
@@ -287,11 +288,11 @@ public class SkipList<T> : ICollection<T>
         }
         else
         {
-            // insert into existing upper level
-            previousUp = startElement.Up;
+            // use lastUpperNode as left anchor to avoid overwriting links from previously created skip nodes
+            previousUp = lastUpperNode ?? startElement.Up;
             nextUp = endElement.Up;
         }
-        currentElement.CreateUp(previousUp, nextUp);
+        return currentElement.CreateUp(previousUp, nextUp);
     }
 
     private IEnumerable<T> Enumerate()
