@@ -621,7 +621,14 @@ Parser and lexer grammar-level named-action support is source-generator C# only.
 
 **Status: not started.**
 
-Design is still required before any implementation work begins. This roadmap section documents the intended direction after the limited source-generator C# support for grammar-level `@lexer::*` named actions. It is documentation-only: lexer inline actions and lexer predicates remain unsupported, and no runtime, generator, diagnostic, or test behavior is enabled by this plan.
+Design is required before implementation. This work is tracked as a future sub-area of the in-progress ANTLR4 compatibility, code-generation, and embedded-code transformation roadmap items. This roadmap section refines the existing in-progress ANTLR4 compatibility and generated-C# embedded-code work by isolating the future lexer inline action and lexer predicate design. It does not start implementation work.
+
+This plan must stay aligned with the existing in-progress sections:
+
+- Phase 6 — ANTLR4 compatibility expansion.
+- Phase 7 — Code generation and tooling.
+- Embedded-code transformation boundary.
+- Incremental parser rule-call execution policy, which remains parser-only and does not include lexer execution.
 
 Current state:
 
@@ -650,8 +657,8 @@ Recommended phasing:
    - Record the current support state for grammar-level `@lexer::*`, lexer inline actions, lexer predicates, runtime discovery, and source-generator hook collection.
    - Identify the ANTLR scenarios affected by lexer inline actions, predicates, modes, channels, and side effects.
    - Document current limits, risks, invariants, and existing tests before changing behavior.
-2. Phase 1 — Executable lexer metadata, without execution
-   - Improve or clarify how lexer actions and lexer predicates are represented as metadata.
+2. Phase 1 — Lexer hook metadata audit, without execution
+   - Audit, improve, or clarify how lexer actions and lexer predicates are represented as unsupported metadata without implying execution authority.
    - Keep unsupported diagnostics in place.
    - Do not generate executable lexer hooks.
    - Add indexing or source-position tests only if the metadata representation changes.
