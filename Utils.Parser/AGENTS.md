@@ -213,6 +213,6 @@ Before completing any PR, verify:
 
 - Grammar-level named-action classification must go through the shared internal helper. Do not duplicate `@header`/`@members`/`@footer` parser/lexer support rules in `GrammarEmitter` and `Antlr4GrammarGenerator`.
 - Parser header/member/footer are source-generator C# compatibility only.
-- Lexer named actions remain unsupported.
-- `@parser::members` is emitted into the generated execution context only.
+- Lexer grammar-level named actions are limited to `@lexer::header`, `@lexer::members`, and `@lexer::footer` source-generator C# injection. Lexer inline actions and lexer predicates remain unsupported.
+- `@parser::members` and `@lexer::members` are emitted into the generated execution context only.
 - `$...` current-rule rewriting is rule-bound and must not run for parser header/member/footer content.

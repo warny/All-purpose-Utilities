@@ -16,8 +16,14 @@ internal enum GrammarActionSupportKind
     /// <summary>Parser <c>@footer</c> or <c>@parser::footer</c> action injected as trailing generated C# source.</summary>
     ParserFooter,
 
-    /// <summary>Lexer <c>@lexer::header</c>, <c>@lexer::members</c>, or <c>@lexer::footer</c> action that remains unsupported.</summary>
-    UnsupportedLexerNamedAction,
+    /// <summary>Lexer <c>@lexer::header</c> action injected near the top of generated C# source.</summary>
+    LexerHeader,
+
+    /// <summary>Lexer <c>@lexer::members</c> action injected into the generated execution context as a limited compatibility bridge.</summary>
+    LexerMembers,
+
+    /// <summary>Lexer <c>@lexer::footer</c> action injected as trailing generated C# source.</summary>
+    LexerFooter,
 
     /// <summary>Parser-scoped compatibility action used in a lexer grammar.</summary>
     UnsupportedParserNamedActionInLexerGrammar,
@@ -49,9 +55,19 @@ internal static class EmbeddedMembersSupport
     /// <returns>The support category that all emitter and diagnostic paths must use.</returns>
     public static GrammarActionSupportKind Classify(G4Grammar grammar, G4GrammarAction action)
     {
-        if (IsLexerCompatibilityAction(action))
+        if (IsInjectableLexerAction(action, "header"))
         {
-            return GrammarActionSupportKind.UnsupportedLexerNamedAction;
+            return GrammarActionSupportKind.LexerHeader;
+        }
+
+        if (IsInjectableLexerAction(action, "members"))
+        {
+            return GrammarActionSupportKind.LexerMembers;
+        }
+
+        if (IsInjectableLexerAction(action, "footer"))
+        {
+            return GrammarActionSupportKind.LexerFooter;
         }
 
         if (string.Equals(action.Target, "parser", StringComparison.Ordinal)
@@ -142,6 +158,39 @@ internal static class EmbeddedMembersSupport
     }
 
     /// <summary>
+    /// Determines whether a grammar-level action is a lexer header block supported by the generated C# source-file compatibility bridge.
+    /// </summary>
+    /// <param name="grammar">Grammar that owns the action.</param>
+    /// <param name="action">Grammar-level action metadata to classify.</param>
+    /// <returns><c>true</c> for <c>@lexer::header</c>; otherwise <c>false</c>.</returns>
+    public static bool IsInjectableLexerHeaderAction(G4Grammar grammar, G4GrammarAction action)
+    {
+        return Classify(grammar, action) is GrammarActionSupportKind.LexerHeader;
+    }
+
+    /// <summary>
+    /// Determines whether a grammar-level action is a lexer members block supported by the generated execution-context compatibility bridge.
+    /// </summary>
+    /// <param name="grammar">Grammar that owns the action.</param>
+    /// <param name="action">Grammar-level action metadata to classify.</param>
+    /// <returns><c>true</c> for <c>@lexer::members</c>; otherwise <c>false</c>.</returns>
+    public static bool IsInjectableLexerMembersAction(G4Grammar grammar, G4GrammarAction action)
+    {
+        return Classify(grammar, action) is GrammarActionSupportKind.LexerMembers;
+    }
+
+    /// <summary>
+    /// Determines whether a grammar-level action is a lexer footer block supported by the generated C# trailing source-file compatibility bridge.
+    /// </summary>
+    /// <param name="grammar">Grammar that owns the action.</param>
+    /// <param name="action">Grammar-level action metadata to classify.</param>
+    /// <returns><c>true</c> for <c>@lexer::footer</c>; otherwise <c>false</c>.</returns>
+    public static bool IsInjectableLexerFooterAction(G4Grammar grammar, G4GrammarAction action)
+    {
+        return Classify(grammar, action) is GrammarActionSupportKind.LexerFooter;
+    }
+
+    /// <summary>
     /// Formats the deterministic unsupported diagnostic reason for a grammar-level action.
     /// </summary>
     /// <param name="grammar">Grammar that owns the action.</param>
@@ -151,7 +200,6 @@ internal static class EmbeddedMembersSupport
     {
         return Classify(grammar, action) switch
         {
-            GrammarActionSupportKind.UnsupportedLexerNamedAction => $"Lexer named action '@lexer::{action.Name}' is not supported by this generator.",
             GrammarActionSupportKind.UnsupportedParserNamedActionInLexerGrammar => $"Parser named action '@parser::{action.Name}' is not valid in a lexer grammar.",
             GrammarActionSupportKind.UnsupportedUnscopedParserCompatibilityActionInLexerGrammar => $"Unscoped grammar action '@{action.Name}' is not supported in lexer grammars by this generator.",
             GrammarActionSupportKind.UnsupportedUnknownScope => $"Named action scope '@{action.Target}::{action.Name}' is not supported by this generator.",
@@ -188,13 +236,15 @@ internal static class EmbeddedMembersSupport
     }
 
     /// <summary>
-    /// Determines whether a grammar-level action is one of the explicitly unsupported lexer named actions.
+    /// Determines whether a grammar-level action is one of the explicitly supported lexer named actions.
     /// </summary>
     /// <param name="action">Grammar-level action metadata to inspect.</param>
-    /// <returns><c>true</c> for <c>@lexer::header</c>, <c>@lexer::members</c>, or <c>@lexer::footer</c>.</returns>
-    private static bool IsLexerCompatibilityAction(G4GrammarAction action)
+    /// <param name="name">ANTLR grammar-level lexer action name to match.</param>
+    /// <returns><c>true</c> for the matching <c>@lexer::</c> compatibility action.</returns>
+    private static bool IsInjectableLexerAction(G4GrammarAction action, string name)
     {
-        return string.Equals(action.Target, "lexer", StringComparison.Ordinal) && IsParserCompatibilityActionName(action.Name);
+        return string.Equals(action.Target, "lexer", StringComparison.Ordinal)
+            && string.Equals(action.Name, name, StringComparison.Ordinal);
     }
 
     /// <summary>
