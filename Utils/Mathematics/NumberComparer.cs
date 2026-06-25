@@ -18,6 +18,26 @@ public class FloatingPointComparer<T> : IComparer<T>, IEqualityComparer<T>
     /// </summary>
     public T Interval { get; }
 
+    private static readonly Dictionary<int, FloatingPointComparer<T>> _precisionCache = [];
+
+    /// <summary>
+    /// Returns a cached <see cref="FloatingPointComparer{T}"/> for the specified decimal <paramref name="precision"/>.
+    /// Repeated calls with the same precision return the same instance.
+    /// </summary>
+    /// <param name="precision">The number of decimal places that must match.</param>
+    public static FloatingPointComparer<T> ForPrecision(int precision)
+    {
+        lock (_precisionCache)
+        {
+            if (!_precisionCache.TryGetValue(precision, out var comparer))
+            {
+                comparer = new FloatingPointComparer<T>(precision);
+                _precisionCache[precision] = comparer;
+            }
+            return comparer;
+        }
+    }
+
     /// <summary>
     /// Initializes a new instance of the <see cref="FloatingPointComparer{T}"/> class using a decimal precision.
     /// </summary>

@@ -91,6 +91,70 @@ public static class MathEx
 
     #endregion
 
+    #region IsMultipleOf
+
+    /// <summary>
+    /// Returns <see langword="true"/> if <paramref name="value"/> is an exact multiple of <paramref name="step"/>,
+    /// i.e., <c>Mod(value, step) == 0</c>.
+    /// </summary>
+    /// <typeparam name="T">A numeric type supporting modulus, addition, and equality operators.</typeparam>
+    /// <param name="value">Value to test.</param>
+    /// <param name="step">The divisor. Must be non-zero.</param>
+    /// <returns><see langword="true"/> if <paramref name="value"/> is divisible by <paramref name="step"/>.</returns>
+    /// <exception cref="DivideByZeroException">Thrown if <paramref name="step"/> equals zero.</exception>
+    public static bool IsMultipleOf<T>(T value, T step)
+        where T : struct, INumber<T>
+    {
+        if (step == T.Zero)
+            throw new DivideByZeroException("Step must be non-zero.");
+        return Mod(value, step) == T.Zero;
+    }
+
+    #endregion
+
+    #region GCD / LCM
+
+    /// <summary>
+    /// Computes the greatest common divisor of <paramref name="a"/> and <paramref name="b"/>
+    /// using the Euclidean algorithm. Always returns a non-negative value.
+    /// Returns zero when both arguments are zero.
+    /// </summary>
+    /// <typeparam name="T">An integer type supporting modulus and absolute-value operations.</typeparam>
+    /// <param name="a">First value.</param>
+    /// <param name="b">Second value.</param>
+    /// <returns>The greatest common divisor of <paramref name="a"/> and <paramref name="b"/>.</returns>
+    public static T Gcd<T>(T a, T b)
+        where T : struct, IBinaryInteger<T>
+    {
+        a = T.Abs(a);
+        b = T.Abs(b);
+        while (b != T.Zero)
+        {
+            T t = b;
+            b = a % b;
+            a = t;
+        }
+        return a;
+    }
+
+    /// <summary>
+    /// Computes the least common multiple of <paramref name="a"/> and <paramref name="b"/>.
+    /// Returns zero if either argument is zero.
+    /// </summary>
+    /// <typeparam name="T">An integer type supporting modulus and absolute-value operations.</typeparam>
+    /// <param name="a">First value.</param>
+    /// <param name="b">Second value.</param>
+    /// <returns>The least common multiple of <paramref name="a"/> and <paramref name="b"/>.</returns>
+    public static T Lcm<T>(T a, T b)
+        where T : struct, IBinaryInteger<T>
+    {
+        if (a == T.Zero || b == T.Zero) return T.Zero;
+        // Divide before multiply to reduce overflow risk.
+        return T.Abs(a / Gcd(a, b) * b);
+    }
+
+    #endregion
+
     #region Floor
 
     /// <summary>

@@ -86,7 +86,7 @@ public static class NullableIntEx
     /// <summary>
     /// Compares a &gt;= b. Null =&gt; +∞ is always &gt;= any finite.
     /// </summary>
-    public static bool GreaterOrEqual<T>(T? a, T? b)
+    public static bool GreaterOrEqual<T>(this T? a, T? b)
         where T : struct, IBinaryInteger<T>, IComparable<T>
     {
         // a >= b => b <= a

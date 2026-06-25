@@ -52,10 +52,18 @@ public class FloatingPointComparerTests
     [TestMethod]
     public void Compare_WithinTolerance_ReturnsZero()
     {
-        // precision=2 => interval=0.01
+        // precision=2 => interval=0.01; test well within tolerance to avoid floating-point boundary issues
         Assert.AreEqual(0, _comparer.Compare(1.0, 1.009));
         Assert.AreEqual(0, _comparer.Compare(1.009, 1.0));
-        Assert.AreEqual(0, _comparer.Compare(1.0, 1.01));  // exactement à la limite
+        Assert.AreEqual(0, _comparer.Compare(5.0, 5.005));
+    }
+
+    [TestMethod]
+    public void Compare_OutsideTolerance_ReturnsNonZero()
+    {
+        // precision=2 => interval=0.01
+        Assert.IsTrue(_comparer.Compare(1.0, 1.02) < 0);
+        Assert.IsTrue(_comparer.Compare(1.02, 1.0) > 0);
     }
 
     [TestMethod]
@@ -63,6 +71,24 @@ public class FloatingPointComparerTests
     {
         var c = new FloatingPointComparer<double>(precision: 3);
         Assert.AreEqual(0.001, c.Interval, delta: 1e-12);
+    }
+
+    [TestMethod]
+    public void ForPrecision_ReturnsCachedInstance()
+    {
+        var a = FloatingPointComparer<double>.ForPrecision(2);
+        var b = FloatingPointComparer<double>.ForPrecision(2);
+        Assert.AreSame(a, b);
+    }
+
+    [TestMethod]
+    public void ForPrecision_DifferentPrecisions_ReturnDifferentInstances()
+    {
+        var a = FloatingPointComparer<double>.ForPrecision(2);
+        var b = FloatingPointComparer<double>.ForPrecision(3);
+        Assert.AreNotSame(a, b);
+        Assert.AreEqual(0.01, a.Interval, 1e-15);
+        Assert.AreEqual(0.001, b.Interval, 1e-15);
     }
 
     [TestMethod]

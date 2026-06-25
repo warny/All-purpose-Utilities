@@ -187,8 +187,8 @@ namespace Utils.Range
                 if (!CanUnion(r1, r2)) return null;
 
                 // The union is simply min of both minima, max of both maxima
-                var newMin = NullableIntEx.Min(r1.Value.Minimum, r2.Value.Minimum, isMin: true);
-                var newMax = NullableIntEx.Max(r1.Value.Maximum, r2.Value.Maximum, isMax: true);
+                var newMin = NullableIntEx.MinStartpoint(r1.Value.Minimum, r2.Value.Minimum);
+                var newMax = NullableIntEx.MaxEndpoint(r1.Value.Maximum, r2.Value.Maximum);
                 return new SimpleRange(newMin, newMax);
             }
 
@@ -200,8 +200,8 @@ namespace Utils.Range
                 if (r1 is null || r2 is null) return null;
 
                 // Intersection => [max of minima, min of maxima]
-                var start = NullableIntEx.Max(r1.Value.Minimum, r2.Value.Minimum, isMax: false);
-                var end = NullableIntEx.Min(r1.Value.Maximum, r2.Value.Maximum, isMin: false);
+                var start = NullableIntEx.MaxStartpoint(r1.Value.Minimum, r2.Value.Minimum);
+                var end = NullableIntEx.MinEndpoint(r1.Value.Maximum, r2.Value.Maximum);
 
                 // If start > end => no intersection.
                 // start-null = -∞ (always ≤ anything); end-null = +∞ (always ≥ anything).

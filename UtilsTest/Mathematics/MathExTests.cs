@@ -168,6 +168,41 @@ public class MathExTests
 
 
     [TestMethod]
+    public void IsMultipleOfTest()
+    {
+        Assert.IsTrue(MathEx.IsMultipleOf(12, 4));
+        Assert.IsFalse(MathEx.IsMultipleOf(13, 4));
+        Assert.IsTrue(MathEx.IsMultipleOf(0, 5));
+        Assert.IsTrue(MathEx.IsMultipleOf(-6, 3));
+        Assert.IsFalse(MathEx.IsMultipleOf(-7, 3));
+        Assert.ThrowsException<DivideByZeroException>(() => MathEx.IsMultipleOf(5, 0));
+    }
+
+    [TestMethod]
+    public void GcdTest()
+    {
+        Assert.AreEqual(6, MathEx.Gcd(12, 18));
+        Assert.AreEqual(1, MathEx.Gcd(7, 13));
+        Assert.AreEqual(5, MathEx.Gcd(0, 5));
+        Assert.AreEqual(5, MathEx.Gcd(5, 0));
+        Assert.AreEqual(0, MathEx.Gcd(0, 0));
+        Assert.AreEqual(4, MathEx.Gcd(-8, 4));
+        Assert.AreEqual(4, MathEx.Gcd(8, -4));
+        Assert.AreEqual(4, MathEx.Gcd(-8, -4));
+    }
+
+    [TestMethod]
+    public void LcmTest()
+    {
+        Assert.AreEqual(36, MathEx.Lcm(12, 18));
+        Assert.AreEqual(91, MathEx.Lcm(7, 13));
+        Assert.AreEqual(0, MathEx.Lcm(0, 5));
+        Assert.AreEqual(0, MathEx.Lcm(5, 0));
+        Assert.AreEqual(12, MathEx.Lcm(-4, 6));
+        Assert.AreEqual(12, MathEx.Lcm(4, -6));
+    }
+
+    [TestMethod]
     public void PascalTriangleTest()
     {
         var tests = new (int line, int[] values)[] {
