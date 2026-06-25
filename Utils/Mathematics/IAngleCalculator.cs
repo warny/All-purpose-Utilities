@@ -296,8 +296,14 @@ public class Trigonometry<T> : IAngleCalculator<T>
 
     #endregion
 
-    // Precomputed once per T; avoids calling T.Pow on every inverse-trig call.
-    private static readonly T _invTrigPrecision = T.Pow(T.CreateChecked(10), T.CreateChecked(-10));
+    // Rounding step for inverse-trig output: max(1e-10, 100 × machine_epsilon).
+    // The 1e-10 floor preserves existing double behavior (where machine_epsilon ≈ 2.2e-16,
+    // so 100×ε ≈ 2.2e-14 < 1e-10 and the floor wins).
+    // For types with coarser precision such as float (machine_epsilon ≈ 1.2e-7),
+    // 100×ε ≈ 1.2e-5 exceeds 1e-10 and the adapted value is used instead.
+    private static readonly T _invTrigPrecision = T.Max(
+        T.Pow(T.CreateChecked(10), T.CreateChecked(-10)),
+        T.CreateChecked(100) * (T.BitIncrement(T.One) - T.One));
 
     #region Constructors
 

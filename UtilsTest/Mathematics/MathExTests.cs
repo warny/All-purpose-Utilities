@@ -178,6 +178,53 @@ public class MathExTests
         Assert.ThrowsException<DivideByZeroException>(() => MathEx.IsMultipleOf(5, 0));
     }
 
+    // ── IsPowerOfTwo ──────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void IsPowerOfTwo_PowersOfTwo_ReturnTrue()
+    {
+        Assert.IsTrue(MathEx.IsPowerOfTwo(1));
+        Assert.IsTrue(MathEx.IsPowerOfTwo(2));
+        Assert.IsTrue(MathEx.IsPowerOfTwo(4));
+        Assert.IsTrue(MathEx.IsPowerOfTwo(1024));
+    }
+
+    [TestMethod]
+    public void IsPowerOfTwo_NonPowers_ReturnFalse()
+    {
+        Assert.IsFalse(MathEx.IsPowerOfTwo(0));
+        Assert.IsFalse(MathEx.IsPowerOfTwo(3));
+        Assert.IsFalse(MathEx.IsPowerOfTwo(6));
+        Assert.IsFalse(MathEx.IsPowerOfTwo(-2));
+    }
+
+    // ── Lerp ─────────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void Lerp_AtZero_ReturnsA()
+    {
+        Assert.AreEqual(1.0, MathEx.Lerp(1.0, 5.0, 0.0));
+    }
+
+    [TestMethod]
+    public void Lerp_AtOne_ReturnsB()
+    {
+        Assert.AreEqual(5.0, MathEx.Lerp(1.0, 5.0, 1.0));
+    }
+
+    [TestMethod]
+    public void Lerp_AtHalf_ReturnsMidpoint()
+    {
+        Assert.AreEqual(3.0, MathEx.Lerp(1.0, 5.0, 0.5));
+    }
+
+    [TestMethod]
+    public void Lerp_Extrapolation_WorksBeyondRange()
+    {
+        Assert.AreEqual(9.0, MathEx.Lerp(1.0, 5.0, 2.0));  // t=2 → 1 + 2*(5-1) = 9
+        Assert.AreEqual(-3.0, MathEx.Lerp(1.0, 5.0, -1.0)); // t=-1 → 1 + (-1)*(5-1) = -3
+    }
+
     [TestMethod]
     public void GcdTest()
     {

@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using Utils.Objects;
 
@@ -7,9 +6,10 @@ namespace Utils.Mathematics;
 
 /// <summary>
 /// Provides floating-point comparisons that allow for small deviations using a configurable interval.
+/// Implements only <see cref="IComparer{T}"/>: fuzzy equality cannot be used for hashing.
 /// </summary>
 [DebuggerDisplay("FloatingPointComparer (±{Interval})")]
-public class FloatingPointComparer<T> : IComparer<T>, IEqualityComparer<T>
+public class FloatingPointComparer<T> : IComparer<T>
     where
         T : struct, IFloatingPointIeee754<T>
 {
@@ -63,13 +63,4 @@ public class FloatingPointComparer<T> : IComparer<T>, IEqualityComparer<T>
             return 0;
         return x.CompareTo(y);
     }
-
-    /// <inheritdoc />
-    public bool Equals(T x, T y) => x.Between(y - Interval, y + Interval);
-
-    /// <inheritdoc />
-    // Fuzzy equality makes a collision-free hash impossible; returning a constant satisfies
-    // the IEqualityComparer contract (equal objects must share a hash code) at the cost of
-    // degrading hash-based collections to O(n) lookup.
-    public int GetHashCode([DisallowNull] T obj) => 0;
 }

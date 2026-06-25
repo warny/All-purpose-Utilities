@@ -248,5 +248,55 @@ public class VectorTests
         double[] arr = { 1d, 2d, 3d };
         Assert.IsTrue(v.Equals((object)arr));
     }
+
+    // ── AngleWith ─────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void AngleWith_PerpendicularVectors_ReturnsPiOver2()
+    {
+        var v1 = new Vector<double>(1d, 0d);
+        var v2 = new Vector<double>(0d, 1d);
+        Assert.AreEqual(Math.PI / 2, v1.AngleWith(v2), 1e-9);
+    }
+
+    [TestMethod]
+    public void AngleWith_ParallelVectors_ReturnsZero()
+    {
+        var v1 = new Vector<double>(1d, 2d, 3d);
+        var v2 = new Vector<double>(2d, 4d, 6d);
+        Assert.AreEqual(0.0, v1.AngleWith(v2), 1e-9);
+    }
+
+    [TestMethod]
+    public void AngleWith_OppositeVectors_ReturnsPi()
+    {
+        var v1 = new Vector<double>(1d, 0d, 0d);
+        var v2 = new Vector<double>(-1d, 0d, 0d);
+        Assert.AreEqual(Math.PI, v1.AngleWith(v2), 1e-9);
+    }
+
+    [TestMethod]
+    public void AngleWith_Known45Degrees_ReturnsQuarterPi()
+    {
+        var v1 = new Vector<double>(1d, 0d);
+        var v2 = new Vector<double>(1d, 1d);
+        Assert.AreEqual(Math.PI / 4, v1.AngleWith(v2), 1e-9);
+    }
+
+    [TestMethod]
+    public void AngleWith_DifferentDimensions_Throws()
+    {
+        var v1 = new Vector<double>(1d, 0d);
+        var v2 = new Vector<double>(1d, 0d, 0d);
+        Assert.ThrowsException<ArgumentException>(() => v1.AngleWith(v2));
+    }
+
+    [TestMethod]
+    public void AngleWith_ZeroVector_Throws()
+    {
+        var v1 = new Vector<double>(1d, 0d);
+        var v2 = new Vector<double>(0d, 0d);
+        Assert.ThrowsException<InvalidOperationException>(() => v1.AngleWith(v2));
+    }
 }
 

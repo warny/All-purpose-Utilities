@@ -214,6 +214,46 @@ public class TrigonometryTests
         Assert.AreEqual(-1.0, trig.Cos(200), Delta); // 200 gr = 180°
     }
 
+    // ── Degrés — trigonométrie inverse ──────────────────────────────────────
+
+    [TestMethod]
+    public void Degree_InverseTrig_KnownValues()
+    {
+        var trig = Trigonometry<double>.Degree;
+        Assert.AreEqual(30.0, trig.Asin(0.5), Delta); // arcsin(1/2) = 30°
+        Assert.AreEqual(60.0, trig.Acos(0.5), Delta); // arccos(1/2) = 60°
+        Assert.AreEqual(45.0, trig.Atan(1.0), Delta); // arctan(1)   = 45°
+    }
+
+    [TestMethod]
+    public void Degree_InverseTrig_Boundary()
+    {
+        var trig = Trigonometry<double>.Degree;
+        Assert.AreEqual(90.0,  trig.Asin(1.0),  Delta);  // arcsin(1)  = 90°
+        Assert.AreEqual(0.0,   trig.Acos(1.0),  Delta);  // arccos(1)  = 0°
+        Assert.AreEqual(0.0,   trig.Atan(0.0),  Delta);  // arctan(0)  = 0°
+    }
+
+    // ── Grades — trigonométrie inverse ──────────────────────────────────────
+
+    [TestMethod]
+    public void Grade_InverseTrig_KnownValues()
+    {
+        var trig = Trigonometry<double>.Grade;
+        // 30° = 33.333... grad, 60° = 66.666... grad, 45° = 50 grad
+        Assert.AreEqual(100.0 / 3.0, trig.Asin(0.5), Delta);
+        Assert.AreEqual(200.0 / 3.0, trig.Acos(0.5), Delta);
+        Assert.AreEqual(50.0,        trig.Atan(1.0),  Delta);
+    }
+
+    [TestMethod]
+    public void Grade_InverseTrig_Boundary()
+    {
+        var trig = Trigonometry<double>.Grade;
+        Assert.AreEqual(100.0, trig.Asin(1.0), Delta);  // arcsin(1) = 100 grad
+        Assert.AreEqual(0.0,   trig.Acos(1.0), Delta);  // arccos(1) = 0 grad
+    }
+
     // ── Radian — NormalizeMinToMax ──────────────────────────────────────────
 
     [TestMethod]

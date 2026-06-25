@@ -112,6 +112,20 @@ public static class MathEx
 
     #endregion
 
+    #region IsPowerOfTwo
+
+    /// <summary>
+    /// Returns <see langword="true"/> if <paramref name="value"/> is a positive power of two (1, 2, 4, 8, …).
+    /// </summary>
+    /// <typeparam name="T">A binary integer type.</typeparam>
+    /// <param name="value">Value to test.</param>
+    /// <returns><see langword="true"/> if <paramref name="value"/> is a positive integer of the form 2<sup>n</sup>.</returns>
+    public static bool IsPowerOfTwo<T>(T value)
+        where T : struct, IBinaryInteger<T>
+        => value > T.Zero && (value & (value - T.One)) == T.Zero;
+
+    #endregion
+
     #region GCD / LCM
 
     /// <summary>
@@ -196,6 +210,24 @@ public static class MathEx
         T floorValue = Floor(value, step);
         return floorValue == value ? value : floorValue + step;
     }
+
+    #endregion
+
+    #region Lerp
+
+    /// <summary>
+    /// Linearly interpolates between <paramref name="a"/> and <paramref name="b"/> by factor <paramref name="t"/>.
+    /// When <paramref name="t"/> is 0 the result equals <paramref name="a"/>; when 1, it equals <paramref name="b"/>.
+    /// Values of <paramref name="t"/> outside [0, 1] extrapolate beyond the segment.
+    /// </summary>
+    /// <typeparam name="T">A floating-point type.</typeparam>
+    /// <param name="a">Start value.</param>
+    /// <param name="b">End value.</param>
+    /// <param name="t">Interpolation factor.</param>
+    /// <returns>The interpolated value <c>a + t * (b − a)</c>.</returns>
+    public static T Lerp<T>(T a, T b, T t)
+        where T : struct, IFloatingPoint<T>
+        => a + t * (b - a);
 
     #endregion
 

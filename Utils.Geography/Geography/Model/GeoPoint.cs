@@ -324,11 +324,11 @@ namespace Utils.Geography.Model
         public bool Equals(GeoPoint<T>? other)
         {
             if (other is null) return false;
-            if (comparer.Equals(Latitude, MaxLatitude) && comparer.Equals(other.Latitude, MaxLatitude)) return true;
-            if (comparer.Equals(Latitude, MinLatitude) && comparer.Equals(other.Latitude, MinLatitude)) return true;
+            if (comparer.Compare(Latitude, MaxLatitude) == 0 && comparer.Compare(other.Latitude, MaxLatitude) == 0) return true;
+            if (comparer.Compare(Latitude, MinLatitude) == 0 && comparer.Compare(other.Latitude, MinLatitude) == 0) return true;
 
-            return comparer.Equals(Latitude, other.Latitude)
-                && comparer.Equals(Longitude, other.Longitude);
+            return comparer.Compare(Latitude, other.Latitude) == 0
+                && comparer.Compare(Longitude, other.Longitude) == 0;
         }
 
         /// <inheritdoc/>

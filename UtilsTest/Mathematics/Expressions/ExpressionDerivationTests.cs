@@ -151,4 +151,151 @@ public class ExpressionDerivationTests
         Assert.AreEqual(1f, compiled(4f), 5e-3f);
     }
 
+    // ── Logarithms ───────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// d/dx[ln(x)] = 1/x.
+    /// </summary>
+    [TestMethod]
+    public void Derivate_Log_ReturnsOneOverX()
+    {
+        Expression<Func<double, double>> f = x => double.Log(x);
+        var df = (Expression<Func<double, double>>)derivation.Derivate(f);
+        var compiled = df.Compile();
+
+        foreach (double xv in new[] { 0.5, 1.0, 2.0, Math.E })
+            Assert.AreEqual(1.0 / xv, compiled(xv), 1e-9, $"d/dx[ln(x)] at x={xv}");
+    }
+
+    /// <summary>
+    /// d/dx[log10(x)] = 1/(x·ln(10)) — verifies the Log10 numerator/denominator fix.
+    /// </summary>
+    [TestMethod]
+    public void Derivate_Log10_ReturnsOneOverXLn10()
+    {
+        Expression<Func<double, double>> f = x => double.Log10(x);
+        var df = (Expression<Func<double, double>>)derivation.Derivate(f);
+        var compiled = df.Compile();
+
+        foreach (double xv in new[] { 0.5, 1.0, 2.0, 10.0 })
+            Assert.AreEqual(1.0 / (xv * Math.Log(10)), compiled(xv), 1e-9, $"d/dx[log10(x)] at x={xv}");
+    }
+
+    // ── Trigonometry ─────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// d/dx[tan(x)] = 1/cos²(x).
+    /// </summary>
+    [TestMethod]
+    public void Derivate_Tan_ReturnsSecSquared()
+    {
+        Expression<Func<double, double>> f = x => double.Tan(x);
+        var df = (Expression<Func<double, double>>)derivation.Derivate(f);
+        var compiled = df.Compile();
+
+        foreach (double xv in new[] { 0.0, 0.3, -0.5, 1.0 })
+            Assert.AreEqual(1.0 / (Math.Cos(xv) * Math.Cos(xv)), compiled(xv), 1e-9, $"d/dx[tan(x)] at x={xv}");
+    }
+
+    // ── Hyperbolic ───────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// d/dx[sinh(x)] = cosh(x), verified via finite-difference fallback.
+    /// </summary>
+    [TestMethod]
+    public void Derivate_Sinh_MatchesCosh()
+    {
+        Expression<Func<double, double>> f = x => double.Sinh(x);
+        var df = (Expression<Func<double, double>>)derivation.Derivate(f);
+        var compiled = df.Compile();
+
+        foreach (double xv in new[] { -1.0, 0.0, 0.5, 2.0 })
+            Assert.AreEqual(Math.Cosh(xv), compiled(xv), 1e-4, $"d/dx[sinh(x)] at x={xv}");
+    }
+
+    /// <summary>
+    /// d/dx[cosh(x)] = sinh(x), verified via finite-difference fallback.
+    /// </summary>
+    [TestMethod]
+    public void Derivate_Cosh_MatchesSinh()
+    {
+        Expression<Func<double, double>> f = x => double.Cosh(x);
+        var df = (Expression<Func<double, double>>)derivation.Derivate(f);
+        var compiled = df.Compile();
+
+        foreach (double xv in new[] { -1.0, 0.0, 0.5, 2.0 })
+            Assert.AreEqual(Math.Sinh(xv), compiled(xv), 1e-4, $"d/dx[cosh(x)] at x={xv}");
+    }
+
+    /// <summary>
+    /// d/dx[tanh(x)] = sech²(x) = 1/cosh²(x), verified via finite-difference fallback.
+    /// </summary>
+    [TestMethod]
+    public void Derivate_Tanh_MatchesSechSquared()
+    {
+        Expression<Func<double, double>> f = x => double.Tanh(x);
+        var df = (Expression<Func<double, double>>)derivation.Derivate(f);
+        var compiled = df.Compile();
+
+        foreach (double xv in new[] { -1.0, 0.0, 0.5, 2.0 })
+            Assert.AreEqual(1.0 / (Math.Cosh(xv) * Math.Cosh(xv)), compiled(xv), 1e-4, $"d/dx[tanh(x)] at x={xv}");
+    }
+
+    // ── Quotient rule ─────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// d/dx[x/(x²+1)] = (1−x²)/(x²+1)².
+    /// </summary>
+    [TestMethod]
+    public void Derivate_Quotient_XOverXSquaredPlusOne()
+    {
+        var x = Expression.Parameter(typeof(double), "x");
+        var body = Expression.Divide(
+            x,
+            Expression.Add(Expression.Multiply(x, x), Expression.Constant(1.0)));
+        var f = Expression.Lambda<Func<double, double>>(body, x);
+        var df = (Expression<Func<double, double>>)derivation.Derivate(f);
+        var compiled = df.Compile();
+
+        foreach (double xv in new[] { -2.0, -1.0, 0.0, 1.0, 2.0 })
+        {
+            double expected = (1.0 - xv * xv) / Math.Pow(xv * xv + 1.0, 2);
+            Assert.AreEqual(expected, compiled(xv), 1e-9, $"d/dx[x/(x²+1)] at x={xv}");
+        }
+    }
+
+    // ── Constant derivative ───────────────────────────────────────────────────
+
+    /// <summary>
+    /// d/dx[5] = 0.
+    /// </summary>
+    [TestMethod]
+    public void Derivate_Constant_ReturnsZero()
+    {
+        var x = Expression.Parameter(typeof(double), "x");
+        var f = Expression.Lambda<Func<double, double>>(Expression.Constant(5.0), x);
+        var df = (Expression<Func<double, double>>)derivation.Derivate(f);
+        var compiled = df.Compile();
+
+        Assert.AreEqual(0.0, compiled(42.0), 1e-9);
+    }
+
+    // ── Float unknown function fallback ───────────────────────────────────────
+
+    /// <summary>
+    /// After fixing DeriveUnknownMethodCall to use typeof(T), unknown float functions use finite difference.
+    /// </summary>
+    [TestMethod]
+    public void Derivate_UnknownFloatFunction_UsesFiniteDifferenceFallback()
+    {
+        static float FloatCube(float x) => x * x * x;
+        ExpressionDerivation<float> floatDerivation = new("x");
+        Expression<Func<float, float>> f = x => FloatCube(x);
+        var df = (Expression<Func<float, float>>)floatDerivation.Derivate(f);
+        var compiled = df.Compile();
+
+        foreach (float xv in new[] { -2f, -0.5f, 0.5f, 1.5f })
+            Assert.AreEqual(3f * xv * xv, compiled(xv), 5e-2f, $"Float fallback derivative at x={xv}");
+    }
+
 }

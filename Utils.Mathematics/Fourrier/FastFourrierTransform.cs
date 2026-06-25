@@ -5,78 +5,77 @@ namespace Utils.Mathematics.Fourrier;
 /// <summary>
 /// Provides a recursive Cooley-Tukey Fast Fourier Transform implementation.
 /// </summary>
-public class FastFourrierTransform
+public static class FastFourrierTransform
 {
     /// <summary>
-    /// Separates even and odd elements so the even values occupy the first half of the array range and the odd values occupy the second half.
+    /// Performs an in-place FFT on the provided sample array.
     /// </summary>
-    /// <param name="array">Array to reorder.</param>
-    /// <param name="start">Inclusive start index.</param>
-    /// <param name="end">Exclusive end index.</param>
-    private void Separate(Complex[] array, int start, int end)
+    /// <param name="array">Sample array to transform in place. Its length must be a power of two.</param>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="array"/> length is not a power of two.
+    /// </exception>
+    public static void Transform(Complex[] array)
     {
-        int n = end - start;
-        var n2 = n >> 1;
-        Complex[] buffer = new Complex[n2];
-        for (int i = 0; i < n2; i++)
-        {
-            buffer[i] = array[(i << 1) | 1];
-        }
-
-        for (int i = 0; i < n2; i++)
-        {
-            array[i] = array[i << 1];
-        }
-
-        for (int i = 0; i < n2; i++)
-        {
-            array[i + n2] = buffer[i];
-        }
+        if (!Mathematics.MathEx.IsPowerOfTwo(array.Length))
+            throw new ArgumentException("Array length must be a power of two.", nameof(array));
+        Transform(array.AsSpan());
     }
 
     /// <summary>
-    /// Performs an in-place FFT on the entire sample array.
+    /// Performs an in-place inverse FFT on the provided sample array.
     /// </summary>
-    /// <param name="array">Array to transform.</param>
-    public void Transform(Complex[] array)
+    /// <param name="array">Frequency-domain array to transform back to the time domain. Its length must be a power of two.</param>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="array"/> length is not a power of two.
+    /// </exception>
+    public static void InverseTransform(Complex[] array)
     {
-        Transform(array, 0, array.Length);
+        if (!Mathematics.MathEx.IsPowerOfTwo(array.Length))
+            throw new ArgumentException("Array length must be a power of two.", nameof(array));
+
+        for (int i = 0; i < array.Length; i++)
+            array[i] = Complex.Conjugate(array[i]);
+
+        Transform(array.AsSpan());
+
+        double n = array.Length;
+        for (int i = 0; i < array.Length; i++)
+            array[i] = Complex.Conjugate(array[i]) / n;
     }
 
-    // N must be a power-of-2, or bad things will happen.
-    // Currently no check for this condition.
-    //
-    // N input samples in X[] are FFT'd and results left in X[].
-    // Because of Nyquist theorem, N samples means
-    // only first N/2 FFT results in X[] are the answer.
-    // (upper half of X[] is a reflection with no new information).
-    /// <summary>
-    /// Performs an in-place FFT on a range of the provided array.
-    /// </summary>
-    /// <param name="array">Array to transform.</param>
-    /// <param name="start">Inclusive start index.</param>
-    /// <param name="end">Exclusive end index.</param>
-    public void Transform(Complex[] array, int start, int end)
+    private static void Transform(Span<Complex> span)
     {
-        int n = end - start;
-        if (n < 2)
-        {
-            return;
-        }
+        int n = span.Length;
+        if (n < 2) return;
 
         int n2 = n >> 1;
-
-        Separate(array, start, end);
-        Transform(array, start, start + n2);
-        Transform(array, start + n2, end);
+        Separate(span);
+        Transform(span[..n2]);
+        Transform(span[n2..]);
 
         for (int k = 0; k < n2; k++)
         {
-            Complex evenComponent = array[k];
-            Complex oddComponent = array[k + n2];
-            Complex twiddleFactor = Complex.Exp(new Complex(0, -2 * Math.PI * k / n));
-            array[k] = evenComponent + twiddleFactor * oddComponent;
-            array[k + n2] = evenComponent - twiddleFactor * oddComponent;
+            Complex even = span[k];
+            Complex odd = span[k + n2];
+            Complex twiddle = Complex.Exp(new Complex(0, -2 * Math.PI * k / n));
+            span[k] = even + twiddle * odd;
+            span[k + n2] = even - twiddle * odd;
         }
+    }
+
+    /// <summary>
+    /// Rearranges <paramref name="span"/> so that even-indexed elements occupy the first half
+    /// and odd-indexed elements occupy the second half.
+    /// </summary>
+    private static void Separate(Span<Complex> span)
+    {
+        int n2 = span.Length >> 1;
+        Complex[] buffer = new Complex[n2];
+        for (int i = 0; i < n2; i++)
+            buffer[i] = span[(i << 1) | 1];
+        for (int i = 0; i < n2; i++)
+            span[i] = span[i << 1];
+        for (int i = 0; i < n2; i++)
+            span[i + n2] = buffer[i];
     }
 }
