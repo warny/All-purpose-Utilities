@@ -130,18 +130,20 @@ Agents must not introduce:
 - graph parsing,
 - adaptive LL / GLL,
 - continuation replay,
-- rollback,
-- semantic runtime state,
-- semantic-state-aware memoization,
+- new rollback mechanisms outside the explicitly documented parser-managed rollback boundaries,
+- new semantic runtime state outside the explicitly documented parser-managed state and generated execution contexts,
+- new semantic-state-aware memoization outside the documented execution-state manager and generated execution-context key mechanisms,
 - async parser runtime,
 - runtime parallelism,
 - unreviewed or undocumented public API breaks,
 - parse-tree shape breaks,
 - diagnostic format breaks.
 
+The existing rollback, execution-state manager, state-aware memoization, and generated execution-context mechanisms remain limited to parser-managed state and the generated execution contexts already documented for embedded-code support. External side effects produced by embedded actions are not automatically rollback-safe.
+
 Public API changes are allowed while `Utils.Parser` remains pre-release and has no committed external compatibility contract, provided they follow the public API change policy below.
 
-Any other exception requires a future roadmap phase to explicitly allow it and a dedicated design in the PR.
+Any extension of these runtime safety mechanisms, or any other exception, requires a future roadmap phase to explicitly allow it and a dedicated design in the PR.
 
 ## Public API change policy
 
