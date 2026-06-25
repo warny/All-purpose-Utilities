@@ -654,6 +654,7 @@ Required invariants for any future work:
 Recommended phasing:
 
 1. Phase 0 — Audit and documentation
+   - The Phase 0 audit is tracked in `docs/parser/LexerInlineActionsAndPredicatesAudit.md`.
    - Record the current support state for grammar-level `@lexer::*`, lexer inline actions, lexer predicates, runtime discovery, and source-generator hook collection.
    - Identify the ANTLR scenarios affected by lexer inline actions, predicates, modes, channels, and side effects.
    - Document current limits, risks, invariants, and existing tests before changing behavior.
