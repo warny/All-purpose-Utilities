@@ -123,8 +123,8 @@ public partial class Matrix<T>
             }
         }
 
-        Matrix<T> L = new Matrix<T>(l, false, false, true, null);
-        Matrix<T> U = new Matrix<T>(u, false, false, true, null);
+        Matrix<T> L = new Matrix<T>(l, false, true, false, null);
+        Matrix<T> U = new Matrix<T>(u, false, true, false, null);
         return (L, U);
     }
 

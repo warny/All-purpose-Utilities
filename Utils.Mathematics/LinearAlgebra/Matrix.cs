@@ -13,8 +13,8 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
         where T : struct, IFloatingPoint<T>, IRootFunctions<T>
 {
     private readonly T[,] components;
-    private bool? isDiagonalized;
-    private bool? isTriangularised;
+    private bool? isTriangular;
+    private bool? isDiagonal;
     private bool? isIdentity;
     private T? determinant;
     private int? hashCode;
@@ -43,15 +43,15 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
     public T this[int row, int col] => components[row, col];
 
     /// <summary>
-    /// Determines if the matrix is triangular, diagonal, or identity.
+    /// Lazily determines whether the matrix is triangular, diagonal, or identity.
     /// </summary>
-    private void DetermineTriangularisedAndDiagonalized()
+    private void DetermineStructuralFlags()
     {
-        if (isTriangularised is not null && isDiagonalized is not null && isIdentity is not null) return;
+        if (isTriangular is not null && isDiagonal is not null && isIdentity is not null) return;
         if (!IsSquare)
         {
-            isDiagonalized = false;
-            isTriangularised = false;
+            isDiagonal = false;
+            isTriangular = false;
             isIdentity = false;
             return;
         }
@@ -65,19 +65,8 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
         {
             for (int col = 0; col < dimension; col++)
             {
-                if (row == col)
-                {
-                    if (components[row, col] == T.Zero)
-                    {
-                        isDiagonalized = false;
-                        isTriangularised = false;
-                        return;
-                    }
-                    else if (components[row, col] != T.One)
-                    {
-                        identityCheck = false;
-                    }
-                }
+                if (row == col && components[row, col] != T.One)
+                    identityCheck = false;
 
                 if (components[row, col] != T.Zero)
                 {
@@ -91,32 +80,33 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
             if (!upperTriangular && !lowerTriangular) break;
         }
 
-        isDiagonalized = upperTriangular || lowerTriangular;
-        isTriangularised = upperTriangular && lowerTriangular;
-        isIdentity = isDiagonalized.Value && identityCheck;
+        isTriangular = upperTriangular || lowerTriangular;
+        isDiagonal = upperTriangular && lowerTriangular;
+        // Identity requires diagonal structure (all off-diagonal = 0) and all diagonal = 1.
+        isIdentity = isDiagonal.Value && identityCheck;
     }
 
     /// <summary>
-    /// Indicates if the matrix is triangular.
+    /// Indicates whether the matrix is triangular (upper or lower).
     /// </summary>
-    public bool IsTriangularised
+    public bool IsTriangular
     {
         get
         {
-            DetermineTriangularisedAndDiagonalized();
-            return isTriangularised ?? false;
+            DetermineStructuralFlags();
+            return isTriangular ?? false;
         }
     }
 
     /// <summary>
-    /// Indicates if the matrix is diagonal.
+    /// Indicates whether the matrix is diagonal (all off-diagonal elements are zero).
     /// </summary>
-    public bool IsDiagonalized
+    public bool IsDiagonal
     {
         get
         {
-            DetermineTriangularisedAndDiagonalized();
-            return isDiagonalized ?? false;
+            DetermineStructuralFlags();
+            return isDiagonal ?? false;
         }
     }
 
@@ -127,7 +117,7 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
     {
         get
         {
-            DetermineTriangularisedAndDiagonalized();
+            DetermineStructuralFlags();
             return isIdentity ?? false;
         }
     }
@@ -173,6 +163,51 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
     }
 
     /// <summary>
+    /// Returns the transpose of this matrix (rows and columns swapped).
+    /// </summary>
+    /// <returns>A new <see cref="Matrix{T}"/> with dimensions <c>Columns × Rows</c>.</returns>
+    public Matrix<T> Transpose()
+    {
+        var result = new T[Columns, Rows];
+        for (int row = 0; row < Rows; row++)
+            for (int col = 0; col < Columns; col++)
+                result[col, row] = components[row, col];
+        return new Matrix<T>(result);
+    }
+
+    /// <summary>
+    /// Returns the specified row as a vector.
+    /// </summary>
+    /// <param name="row">Zero-based row index.</param>
+    /// <returns>A new <see cref="Vector{T}"/> containing the row elements.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="row"/> is out of range.</exception>
+    public Vector<T> GetRow(int row)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(row);
+        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(row, Rows);
+        T[] result = new T[Columns];
+        for (int col = 0; col < Columns; col++)
+            result[col] = components[row, col];
+        return new Vector<T>(result);
+    }
+
+    /// <summary>
+    /// Returns the specified column as a vector.
+    /// </summary>
+    /// <param name="col">Zero-based column index.</param>
+    /// <returns>A new <see cref="Vector{T}"/> containing the column elements.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="col"/> is out of range.</exception>
+    public Vector<T> GetColumn(int col)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(col);
+        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(col, Columns);
+        T[] result = new T[Rows];
+        for (int row = 0; row < Rows; row++)
+            result[row] = components[row, col];
+        return new Vector<T>(result);
+    }
+
+    /// <summary>
     /// Gets the determinant of the matrix.
     /// </summary>
     public T Determinant
@@ -192,17 +227,41 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
 
     private T ComputeDeterminant()
     {
-        var (_, U) = DiagonalizeLU();
+        int n = Rows;
+        T[,] u = ToArray();
+        int swaps = 0;
 
-        T determinant = -T.One;
-
-        // Calculate the product of the diagonal elements of U to get the determinant
-        for (int i = 0; i < U.Rows; i++)
+        for (int k = 0; k < n; k++)
         {
-            determinant *= U[i, i];
+            int pivotRow = k;
+            for (int i = k + 1; i < n; i++)
+            {
+                if (T.Abs(u[i, k]) > T.Abs(u[pivotRow, k]))
+                    pivotRow = i;
+            }
+
+            if (u[pivotRow, k].Equals(T.Zero))
+                return T.Zero;
+
+            if (pivotRow != k)
+            {
+                PermuteRows(u, k, pivotRow);
+                swaps++;
+            }
+
+            for (int row = k + 1; row < n; row++)
+            {
+                T factor = u[row, k] / u[k, k];
+                for (int col = k; col < n; col++)
+                    u[row, col] -= factor * u[k, col];
+            }
         }
 
-        return determinant;
+        // Each row swap inverts the sign of the determinant.
+        T det = (swaps % 2 == 0) ? T.One : -T.One;
+        for (int i = 0; i < n; i++)
+            det *= u[i, i];
+        return det;
     }
 
 

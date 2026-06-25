@@ -17,7 +17,7 @@ public sealed partial class Matrix<T>
         var array = new T[size, size];
         for (int i = 0; i < size; i++)
             array[i, i] = T.One;
-        return new Matrix<T>(array, isIdentity: true, isDiagonalized: true, isTriangularised: true, determinant: T.One);
+        return new Matrix<T>(array, isIdentity: true, isTriangular: true, isDiagonal: true, determinant: T.One);
     }
 
     /// <summary>
@@ -43,14 +43,13 @@ public sealed partial class Matrix<T>
         var array = new T[n, n];
         T det = T.One;
         bool isIdentity = true;
-        bool hasZero = false;
         for (int i = 0; i < n; i++)
         {
             array[i, i] = values[i];
             det *= values[i];
-            if (values[i] == T.Zero) { hasZero = true; isIdentity = false; }
-            else if (values[i] != T.One) isIdentity = false;
+            if (values[i] != T.One) isIdentity = false;
         }
-        return new Matrix<T>(array, isIdentity: isIdentity, isDiagonalized: !hasZero, isTriangularised: !hasZero, determinant: det);
+        // A diagonal matrix is always triangular and diagonal regardless of zero entries on the diagonal.
+        return new Matrix<T>(array, isIdentity: isIdentity, isTriangular: true, isDiagonal: true, determinant: det);
     }
 }
