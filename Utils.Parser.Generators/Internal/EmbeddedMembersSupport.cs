@@ -3,11 +3,99 @@ using System;
 namespace Utils.Parser.Generators.Internal;
 
 /// <summary>
-/// Provides shared source-generator rules for deciding whether ANTLR grammar-level actions
-/// are parser compatibility blocks that can be injected into generated C# output.
+/// Identifies the source-generator support category for one ANTLR grammar-level action.
+/// </summary>
+internal enum GrammarActionSupportKind
+{
+    /// <summary>Parser <c>@header</c> or <c>@parser::header</c> action injected near the top of generated C# source.</summary>
+    ParserHeader,
+
+    /// <summary>Parser <c>@members</c> or <c>@parser::members</c> action injected into the generated execution context.</summary>
+    ParserMembers,
+
+    /// <summary>Parser <c>@footer</c> or <c>@parser::footer</c> action injected as trailing generated C# source.</summary>
+    ParserFooter,
+
+    /// <summary>Lexer <c>@lexer::header</c>, <c>@lexer::members</c>, or <c>@lexer::footer</c> action that remains unsupported.</summary>
+    UnsupportedLexerNamedAction,
+
+    /// <summary>Parser-scoped compatibility action used in a lexer grammar.</summary>
+    UnsupportedParserNamedActionInLexerGrammar,
+
+    /// <summary>Unscoped parser compatibility action used in a lexer grammar.</summary>
+    UnsupportedUnscopedParserCompatibilityActionInLexerGrammar,
+
+    /// <summary>Named action that uses an unsupported non-parser scope.</summary>
+    UnsupportedUnknownScope,
+
+    /// <summary>Parser-scoped named action whose name is not a supported parser compatibility block.</summary>
+    UnsupportedUnknownParserNamedAction,
+
+    /// <summary>Grammar-level action that is preserved as metadata only.</summary>
+    UnsupportedMetadataOnly
+}
+
+/// <summary>
+/// Provides the shared source of truth for ANTLR grammar-level action classification,
+/// source-generator injection eligibility, and unsupported diagnostic reasons.
 /// </summary>
 internal static class EmbeddedMembersSupport
 {
+    /// <summary>
+    /// Classifies a grammar-level action into the exact source-generator support category.
+    /// </summary>
+    /// <param name="grammar">Grammar that owns the action.</param>
+    /// <param name="action">Grammar-level action metadata to classify.</param>
+    /// <returns>The support category that all emitter and diagnostic paths must use.</returns>
+    public static GrammarActionSupportKind Classify(G4Grammar grammar, G4GrammarAction action)
+    {
+        if (IsLexerCompatibilityAction(action))
+        {
+            return GrammarActionSupportKind.UnsupportedLexerNamedAction;
+        }
+
+        if (string.Equals(action.Target, "parser", StringComparison.Ordinal)
+            && grammar.Kind is G4GrammarKind.Lexer
+            && IsParserCompatibilityActionName(action.Name))
+        {
+            return GrammarActionSupportKind.UnsupportedParserNamedActionInLexerGrammar;
+        }
+
+        if (action.Target is null
+            && grammar.Kind is G4GrammarKind.Lexer
+            && IsParserCompatibilityActionName(action.Name))
+        {
+            return GrammarActionSupportKind.UnsupportedUnscopedParserCompatibilityActionInLexerGrammar;
+        }
+
+        if (action.Target is not null && !string.Equals(action.Target, "parser", StringComparison.Ordinal))
+        {
+            return GrammarActionSupportKind.UnsupportedUnknownScope;
+        }
+
+        if (IsInjectableParserAction(grammar, action, "header"))
+        {
+            return GrammarActionSupportKind.ParserHeader;
+        }
+
+        if (IsInjectableParserAction(grammar, action, "members"))
+        {
+            return GrammarActionSupportKind.ParserMembers;
+        }
+
+        if (IsInjectableParserAction(grammar, action, "footer"))
+        {
+            return GrammarActionSupportKind.ParserFooter;
+        }
+
+        if (string.Equals(action.Target, "parser", StringComparison.Ordinal))
+        {
+            return GrammarActionSupportKind.UnsupportedUnknownParserNamedAction;
+        }
+
+        return GrammarActionSupportKind.UnsupportedMetadataOnly;
+    }
+
     /// <summary>
     /// Determines whether a grammar-level action is a parser members block supported
     /// by the generated per-parse execution-context compatibility bridge.
@@ -20,7 +108,7 @@ internal static class EmbeddedMembersSupport
     /// </returns>
     public static bool IsInjectableParserMembersAction(G4Grammar grammar, G4GrammarAction action)
     {
-        return IsInjectableParserAction(grammar, action, "members");
+        return Classify(grammar, action) is GrammarActionSupportKind.ParserMembers;
     }
 
     /// <summary>
@@ -35,7 +123,7 @@ internal static class EmbeddedMembersSupport
     /// </returns>
     public static bool IsInjectableParserHeaderAction(G4Grammar grammar, G4GrammarAction action)
     {
-        return IsInjectableParserAction(grammar, action, "header");
+        return Classify(grammar, action) is GrammarActionSupportKind.ParserHeader;
     }
 
     /// <summary>
@@ -50,7 +138,26 @@ internal static class EmbeddedMembersSupport
     /// </returns>
     public static bool IsInjectableParserFooterAction(G4Grammar grammar, G4GrammarAction action)
     {
-        return IsInjectableParserAction(grammar, action, "footer");
+        return Classify(grammar, action) is GrammarActionSupportKind.ParserFooter;
+    }
+
+    /// <summary>
+    /// Formats the deterministic unsupported diagnostic reason for a grammar-level action.
+    /// </summary>
+    /// <param name="grammar">Grammar that owns the action.</param>
+    /// <param name="action">Grammar-level action metadata to classify.</param>
+    /// <returns>Construct-specific diagnostic reason matching the classified support category.</returns>
+    public static string FormatUnsupportedReason(G4Grammar grammar, G4GrammarAction action)
+    {
+        return Classify(grammar, action) switch
+        {
+            GrammarActionSupportKind.UnsupportedLexerNamedAction => $"Lexer named action '@lexer::{action.Name}' is not supported by this generator.",
+            GrammarActionSupportKind.UnsupportedParserNamedActionInLexerGrammar => $"Parser named action '@parser::{action.Name}' is not valid in a lexer grammar.",
+            GrammarActionSupportKind.UnsupportedUnscopedParserCompatibilityActionInLexerGrammar => $"Unscoped grammar action '@{action.Name}' is not supported in lexer grammars by this generator.",
+            GrammarActionSupportKind.UnsupportedUnknownScope => $"Named action scope '@{action.Target}::{action.Name}' is not supported by this generator.",
+            GrammarActionSupportKind.UnsupportedUnknownParserNamedAction => $"Parser named action '@parser::{action.Name}' is not supported by this generator.",
+            _ => FormatMetadataOnlyReason(action)
+        };
     }
 
     /// <summary>
@@ -78,5 +185,52 @@ internal static class EmbeddedMembersSupport
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// Determines whether a grammar-level action is one of the explicitly unsupported lexer named actions.
+    /// </summary>
+    /// <param name="action">Grammar-level action metadata to inspect.</param>
+    /// <returns><c>true</c> for <c>@lexer::header</c>, <c>@lexer::members</c>, or <c>@lexer::footer</c>.</returns>
+    private static bool IsLexerCompatibilityAction(G4GrammarAction action)
+    {
+        return string.Equals(action.Target, "lexer", StringComparison.Ordinal) && IsParserCompatibilityActionName(action.Name);
+    }
+
+    /// <summary>
+    /// Determines whether a grammar-level action name is one of the parser compatibility block names.
+    /// </summary>
+    /// <param name="name">ANTLR grammar-level action name.</param>
+    /// <returns><see langword="true"/> for header, members, or footer action names.</returns>
+    private static bool IsParserCompatibilityActionName(string name)
+    {
+        return string.Equals(name, "header", StringComparison.Ordinal)
+            || string.Equals(name, "members", StringComparison.Ordinal)
+            || string.Equals(name, "footer", StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Formats the existing metadata-only diagnostic reason for an unsupported unscoped grammar action.
+    /// </summary>
+    /// <param name="action">Grammar-level action metadata to describe.</param>
+    /// <returns>Metadata-only unsupported diagnostic reason.</returns>
+    private static string FormatMetadataOnlyReason(G4GrammarAction action)
+    {
+        if (string.Equals(action.Name, "header", StringComparison.Ordinal))
+        {
+            return "This header action is not a parser @header block supported by generated C# source-file injection and remains metadata-only.";
+        }
+
+        if (string.Equals(action.Name, "members", StringComparison.Ordinal))
+        {
+            return "This members action is not a parser @members block supported by the generated execution context and remains metadata-only.";
+        }
+
+        if (string.Equals(action.Name, "footer", StringComparison.Ordinal))
+        {
+            return "This footer action is not a parser @footer block supported by generated trailing C# source injection and remains metadata-only.";
+        }
+
+        return "Grammar-level actions are preserved as metadata only and are not injected into generated parser or lexer types.";
     }
 }

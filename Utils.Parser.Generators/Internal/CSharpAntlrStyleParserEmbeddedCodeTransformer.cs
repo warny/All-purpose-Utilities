@@ -29,6 +29,8 @@ internal sealed class CSharpAntlrStyleParserEmbeddedCodeTransformer : IParserEmb
         if (context is null) throw new System.ArgumentNullException(nameof(context));
         if (context.RuleName is null || !_rules.TryGetValue(context.RuleName, out G4Rule? rule))
         {
+            // Parser header/member/footer blocks are not tied to a current parser rule.
+            // ANTLR-style current-rule attribute rewriting is intentionally skipped there.
             return new ParserEmbeddedCodeTransformationResult { Code = context.Code };
         }
 

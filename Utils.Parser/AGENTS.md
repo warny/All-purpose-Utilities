@@ -206,3 +206,11 @@ Before completing any PR, verify:
 - tests cover new or clarified invariants;
 - public API changes are documented when present;
 - no unsupported runtime feature was accidentally introduced.
+
+## Parser named actions
+
+- Grammar-level named-action classification must go through the shared internal helper. Do not duplicate `@header`/`@members`/`@footer` parser/lexer support rules in `GrammarEmitter` and `Antlr4GrammarGenerator`.
+- Parser header/member/footer are source-generator C# compatibility only.
+- Lexer named actions remain unsupported.
+- `@parser::members` is emitted into the generated execution context only.
+- `$...` current-rule rewriting is rule-bound and must not run for parser header/member/footer content.

@@ -80,25 +80,25 @@ public enum ParserEmbeddedCodeDiagnosticSeverity
 public enum ParserEmbeddedCodeLocation
 {
     /// <summary>Parser header action.</summary>
-    ParserHeader,
+    ParserHeader = 0,
 
     /// <summary>Parser footer action.</summary>
-    ParserFooter,
+    ParserFooter = 1,
 
     /// <summary>Parser members action.</summary>
-    ParserMembers,
+    ParserMembers = 2,
 
     /// <summary>Rule <c>@init</c> action.</summary>
-    RuleInit,
+    RuleInit = 3,
 
     /// <summary>Rule <c>@after</c> action.</summary>
-    RuleAfter,
+    RuleAfter = 4,
 
     /// <summary>Inline parser action.</summary>
-    InlineAction,
+    InlineAction = 5,
 
     /// <summary>Semantic predicate.</summary>
-    SemanticPredicate
+    SemanticPredicate = 6
 }
 
 /// <summary>

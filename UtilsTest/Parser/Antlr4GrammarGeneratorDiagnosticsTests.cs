@@ -6,6 +6,7 @@ using System.Collections.Immutable;
 using System.Text;
 using Utils.Parser.Diagnostics;
 using Utils.Parser.Generators;
+using Utils.Parser.Generators.Internal;
 
 namespace UtilsTest.Parser;
 
@@ -15,6 +16,30 @@ namespace UtilsTest.Parser;
 [TestClass]
 public class Antlr4GrammarGeneratorDiagnosticsTests
 {
+    /// <summary>
+    /// Ensures grammar-level named-action classification remains centralized and deterministic.
+    /// </summary>
+    [DataTestMethod]
+    [DataRow("grammar P; @header { } start : A ; A : 'a' ;", "ParserHeader")]
+    [DataRow("parser grammar P; @parser::header { } start : A ;", "ParserHeader")]
+    [DataRow("grammar P; @members { } start : A ; A : 'a' ;", "ParserMembers")]
+    [DataRow("parser grammar P; @parser::members { } start : A ;", "ParserMembers")]
+    [DataRow("grammar P; @footer { } start : A ; A : 'a' ;", "ParserFooter")]
+    [DataRow("parser grammar P; @parser::footer { } start : A ;", "ParserFooter")]
+    [DataRow("grammar P; @lexer::members { } start : A ; A : 'a' ;", "UnsupportedLexerNamedAction")]
+    [DataRow("lexer grammar L; @parser::header { } A : 'a' ;", "UnsupportedParserNamedActionInLexerGrammar")]
+    [DataRow("lexer grammar L; @members { } A : 'a' ;", "UnsupportedUnscopedParserCompatibilityActionInLexerGrammar")]
+    [DataRow("grammar P; @tree::members { } start : A ; A : 'a' ;", "UnsupportedUnknownScope")]
+    [DataRow("grammar P; @parser::custom { } start : A ; A : 'a' ;", "UnsupportedUnknownParserNamedAction")]
+    [DataRow("grammar P; @custom { } start : A ; A : 'a' ;", "UnsupportedMetadataOnly")]
+    public void GrammarActionSupport_Classify_ReturnsExpectedKind(string grammarText, string expectedKindName)
+    {
+        var grammar = new G4Parser(new G4Tokenizer(grammarText).Tokenize()).Parse();
+        var action = grammar.Actions.Single();
+
+        Assert.AreEqual(expectedKindName, EmbeddedMembersSupport.Classify(grammar, action).ToString());
+    }
+
     /// <summary>
     /// Ensures lexer actions are reported as unsupported generator execution constructs.
     /// </summary>

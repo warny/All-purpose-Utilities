@@ -211,7 +211,7 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
                 continue;
             }
 
-            var reason = FormatGrammarActionReason(grammar, action);
+            var reason = EmbeddedMembersSupport.FormatUnsupportedReason(grammar, action);
             ReportUnsupportedEmbeddedCodeDiagnostic(context, file, text, action.Line, constructKind, grammar.Name, reason);
         }
 
@@ -435,76 +435,6 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
         return action.Target is null
             ? "Grammar " + name + " action"
             : "Grammar @" + action.Target + "::" + action.Name + " action";
-    }
-
-    /// <summary>
-    /// Formats a grammar-level action reason for diagnostics.
-    /// </summary>
-    /// <param name="grammar">Grammar that owns the action.</param>
-    /// <param name="action">Grammar-level action metadata.</param>
-    /// <returns>Construct-specific diagnostic reason.</returns>
-    private static string FormatGrammarActionReason(G4Grammar grammar, G4GrammarAction action)
-    {
-        if (string.Equals(action.Target, "lexer", StringComparison.Ordinal)
-            && (string.Equals(action.Name, "header", StringComparison.Ordinal)
-                || string.Equals(action.Name, "members", StringComparison.Ordinal)
-                || string.Equals(action.Name, "footer", StringComparison.Ordinal)))
-        {
-            return $"Lexer named action '@lexer::{action.Name}' is not supported by this generator.";
-        }
-
-        if (string.Equals(action.Target, "parser", StringComparison.Ordinal)
-            && grammar.Kind is G4GrammarKind.Lexer
-            && IsParserCompatibilityActionName(action.Name))
-        {
-            return $"Parser named action '@parser::{action.Name}' is not valid in a lexer grammar.";
-        }
-
-        if (action.Target is null
-            && grammar.Kind is G4GrammarKind.Lexer
-            && IsParserCompatibilityActionName(action.Name))
-        {
-            return $"Unscoped grammar action '@{action.Name}' is not supported in lexer grammars by this generator.";
-        }
-
-        if (action.Target is not null && !string.Equals(action.Target, "parser", StringComparison.Ordinal))
-        {
-            return $"Named action scope '@{action.Target}::{action.Name}' is not supported by this generator.";
-        }
-
-        if (string.Equals(action.Target, "parser", StringComparison.Ordinal))
-        {
-            return $"Parser named action '@parser::{action.Name}' is not supported by this generator.";
-        }
-
-        if (string.Equals(action.Name, "header", StringComparison.Ordinal))
-        {
-            return "This header action is not a parser @header block supported by generated C# source-file injection and remains metadata-only.";
-        }
-
-        if (string.Equals(action.Name, "members", StringComparison.Ordinal))
-        {
-            return "This members action is not a parser @members block supported by the generated execution context and remains metadata-only.";
-        }
-
-        if (string.Equals(action.Name, "footer", StringComparison.Ordinal))
-        {
-            return "This footer action is not a parser @footer block supported by generated trailing C# source injection and remains metadata-only.";
-        }
-
-        return "Grammar-level actions are preserved as metadata only and are not injected into generated parser or lexer types.";
-    }
-
-    /// <summary>
-    /// Determines whether a grammar-level action name is one of the parser compatibility block names.
-    /// </summary>
-    /// <param name="name">ANTLR grammar-level action name.</param>
-    /// <returns><see langword="true"/> for header, members, or footer action names.</returns>
-    private static bool IsParserCompatibilityActionName(string name)
-    {
-        return string.Equals(name, "header", StringComparison.Ordinal)
-            || string.Equals(name, "members", StringComparison.Ordinal)
-            || string.Equals(name, "footer", StringComparison.Ordinal);
     }
 
     /// <summary>
