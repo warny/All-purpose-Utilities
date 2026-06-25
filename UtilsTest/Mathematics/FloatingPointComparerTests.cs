@@ -50,6 +50,15 @@ public class FloatingPointComparerTests
     }
 
     [TestMethod]
+    public void Compare_WithinTolerance_ReturnsZero()
+    {
+        // precision=2 => interval=0.01
+        Assert.AreEqual(0, _comparer.Compare(1.0, 1.009));
+        Assert.AreEqual(0, _comparer.Compare(1.009, 1.0));
+        Assert.AreEqual(0, _comparer.Compare(1.0, 1.01));  // exactement à la limite
+    }
+
+    [TestMethod]
     public void PrecisionConstructor_SetsInterval()
     {
         var c = new FloatingPointComparer<double>(precision: 3);

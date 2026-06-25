@@ -6,58 +6,76 @@ namespace UtilsTest.Mathematics;
 [TestClass]
 public class NullableIntExTests
 {
-    // ── Min ─────────────────────────────────────────────────────────────────
+    // ── MinStartpoint (null = −∞) ────────────────────────────────────────────
 
     [TestMethod]
-    public void Min_IsMinTrue_NullMeansMinusInfinity()
+    public void MinStartpoint_NullMeansMinusInfinity()
     {
-        // min(-∞, 5) = -∞
-        Assert.IsNull(NullableIntEx.Min<int>(null, 5, isMin: true));
-        Assert.IsNull(NullableIntEx.Min<int>(5, null, isMin: true));
-        Assert.IsNull(NullableIntEx.Min<int>(null, null, isMin: true));
+        // min(−∞, x) = −∞ → null wins
+        Assert.IsNull(NullableIntEx.MinStartpoint<int>(null, 5));
+        Assert.IsNull(NullableIntEx.MinStartpoint<int>(5, null));
+        Assert.IsNull(NullableIntEx.MinStartpoint<int>(null, null));
     }
 
     [TestMethod]
-    public void Min_IsMinFalse_NullMeansPlusInfinity()
+    public void MinStartpoint_BothFinite_ReturnsSmaller()
     {
-        // min(+∞, 5) = 5
-        Assert.AreEqual(5, NullableIntEx.Min<int>(null, 5, isMin: false));
-        Assert.AreEqual(5, NullableIntEx.Min<int>(5, null, isMin: false));
-        Assert.IsNull(NullableIntEx.Min<int>(null, null, isMin: false));
+        Assert.AreEqual(3, NullableIntEx.MinStartpoint<int>(3, 7));
+        Assert.AreEqual(3, NullableIntEx.MinStartpoint<int>(7, 3));
+    }
+
+    // ── MinEndpoint (null = +∞) ──────────────────────────────────────────────
+
+    [TestMethod]
+    public void MinEndpoint_NullMeansPlusInfinity()
+    {
+        // min(+∞, x) = x → finite wins
+        Assert.AreEqual(5, NullableIntEx.MinEndpoint<int>(null, 5));
+        Assert.AreEqual(5, NullableIntEx.MinEndpoint<int>(5, null));
+        Assert.IsNull(NullableIntEx.MinEndpoint<int>(null, null));
     }
 
     [TestMethod]
-    public void Min_BothFinite_ReturnsSmaller()
+    public void MinEndpoint_BothFinite_ReturnsSmaller()
     {
-        Assert.AreEqual(3, NullableIntEx.Min<int>(3, 7, isMin: true));
-        Assert.AreEqual(3, NullableIntEx.Min<int>(3, 7, isMin: false));
+        Assert.AreEqual(3, NullableIntEx.MinEndpoint<int>(3, 7));
+        Assert.AreEqual(3, NullableIntEx.MinEndpoint<int>(7, 3));
     }
 
-    // ── Max ─────────────────────────────────────────────────────────────────
+    // ── MaxStartpoint (null = −∞) ────────────────────────────────────────────
 
     [TestMethod]
-    public void Max_IsMaxTrue_NullMeansPlusInfinity()
+    public void MaxStartpoint_NullMeansMinusInfinity()
     {
-        // max(+∞, 5) = +∞
-        Assert.IsNull(NullableIntEx.Max<int>(null, 5, isMax: true));
-        Assert.IsNull(NullableIntEx.Max<int>(5, null, isMax: true));
-        Assert.IsNull(NullableIntEx.Max<int>(null, null, isMax: true));
-    }
-
-    [TestMethod]
-    public void Max_IsMaxFalse_NullMeansMinusInfinity()
-    {
-        // max(-∞, 5) = 5
-        Assert.AreEqual(5, NullableIntEx.Max<int>(null, 5, isMax: false));
-        Assert.AreEqual(5, NullableIntEx.Max<int>(5, null, isMax: false));
-        Assert.IsNull(NullableIntEx.Max<int>(null, null, isMax: false));
+        // max(−∞, x) = x → finite wins
+        Assert.AreEqual(5, NullableIntEx.MaxStartpoint<int>(null, 5));
+        Assert.AreEqual(5, NullableIntEx.MaxStartpoint<int>(5, null));
+        Assert.IsNull(NullableIntEx.MaxStartpoint<int>(null, null));
     }
 
     [TestMethod]
-    public void Max_BothFinite_ReturnsLarger()
+    public void MaxStartpoint_BothFinite_ReturnsLarger()
     {
-        Assert.AreEqual(7, NullableIntEx.Max<int>(3, 7, isMax: true));
-        Assert.AreEqual(7, NullableIntEx.Max<int>(3, 7, isMax: false));
+        Assert.AreEqual(7, NullableIntEx.MaxStartpoint<int>(3, 7));
+        Assert.AreEqual(7, NullableIntEx.MaxStartpoint<int>(7, 3));
+    }
+
+    // ── MaxEndpoint (null = +∞) ──────────────────────────────────────────────
+
+    [TestMethod]
+    public void MaxEndpoint_NullMeansPlusInfinity()
+    {
+        // max(+∞, x) = +∞ → null wins
+        Assert.IsNull(NullableIntEx.MaxEndpoint<int>(null, 5));
+        Assert.IsNull(NullableIntEx.MaxEndpoint<int>(5, null));
+        Assert.IsNull(NullableIntEx.MaxEndpoint<int>(null, null));
+    }
+
+    [TestMethod]
+    public void MaxEndpoint_BothFinite_ReturnsLarger()
+    {
+        Assert.AreEqual(7, NullableIntEx.MaxEndpoint<int>(3, 7));
+        Assert.AreEqual(7, NullableIntEx.MaxEndpoint<int>(7, 3));
     }
 
     // ── LessOrEqual / Less ──────────────────────────────────────────────────

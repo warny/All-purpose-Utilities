@@ -51,32 +51,27 @@ public static class MathEx
     #region Round
 
     /// <summary>
-    /// Rounds <paramref name="value"/> to the nearest multiple of <paramref name="base"/>.
+    /// Rounds <paramref name="value"/> to the nearest multiple of <paramref name="step"/>.
     /// If <paramref name="value"/> is exactly between two multiples, it is rounded up.
     /// </summary>
     /// <typeparam name="T">A numeric type supporting modulus and comparison operators.</typeparam>
     /// <param name="value">Value to be rounded.</param>
-    /// <param name="base">Rounding base. Must be non-zero.</param>
-    /// <returns>The value of <paramref name="value"/> rounded to the nearest multiple of <paramref name="base"/>.</returns>
-    /// <exception cref="DivideByZeroException">Thrown if <paramref name="base"/> equals zero.</exception>
-    public static T Round<T>(T value, T @base)
+    /// <param name="step">Rounding step. Must be non-zero.</param>
+    /// <returns>The value of <paramref name="value"/> rounded to the nearest multiple of <paramref name="step"/>.</returns>
+    /// <exception cref="DivideByZeroException">Thrown if <paramref name="step"/> equals zero.</exception>
+    public static T Round<T>(T value, T step)
         where T : struct, INumber<T>
     {
-        if (@base == T.Zero)
-            throw new DivideByZeroException("Base must be non-zero for rounding.");
+        if (step == T.Zero)
+            throw new DivideByZeroException("Step must be non-zero for rounding.");
 
-        T middle = @base / (T.One + T.One);
-        T remainder = Mod(value, @base);
+        T middle = step / (T.One + T.One);
+        T remainder = Mod(value, step);
 
-        // If the remainder is less than half of the base, round down; otherwise, round up.
         if (remainder < middle)
-        {
             return value - remainder;
-        }
         else
-        {
-            return value - remainder + @base;
-        }
+            return value - remainder + step;
     }
 
     /// <summary>
@@ -85,14 +80,13 @@ public static class MathEx
     /// </summary>
     /// <typeparam name="T">A numeric type that supports exponentiation via <see cref="IPowerFunctions{TSelf}"/>.</typeparam>
     /// <param name="value">Value to be rounded.</param>
-    /// <param name="exponent">The exponent of 10 used as the rounding base. Defaults to 0 (which rounds to integer).</param>
+    /// <param name="exponent">The exponent of 10 used as the rounding step. Defaults to 0 (which rounds to integer).</param>
     /// <returns>A value rounded to the nearest power-of-ten multiple.</returns>
     public static T Round<T>(T value, int exponent = 0)
         where T : struct, INumber<T>, IPowerFunctions<T>
     {
-        T @base = T.Pow(T.CreateChecked(10), T.CreateChecked(exponent));
-
-        return Round(value, @base);
+        T step = T.Pow(T.CreateChecked(10), T.CreateChecked(exponent));
+        return Round(value, step);
     }
 
     #endregion

@@ -1,4 +1,4 @@
-﻿using System.Numerics;
+using System.Numerics;
 
 namespace Utils.Mathematics;
 
@@ -11,30 +11,50 @@ public static class NullableIntEx
     #region Utilities for Endpoints
 
     /// <summary>
-    /// Minimum of two endpoints, taking null as -∞ if <paramref name="isMin"/> is true.
+    /// Returns the minimum of two start endpoints where <see langword="null"/> represents −∞.
+    /// If either argument is <see langword="null"/>, the result is <see langword="null"/> (−∞ wins).
     /// </summary>
-    public static T? Min<T>(T? a, T? b, bool isMin)
+    public static T? MinStartpoint<T>(T? a, T? b)
         where T : struct, IBinaryInteger<T>
     {
-        // isMin=true  => null means -∞: min(-∞, x) = -∞ → return null
-        // isMin=false => null means +∞: min(+∞, x) = x  → return the finite side
-        if (!a.HasValue && !b.HasValue) return null;
-        if (!a.HasValue) return isMin ? a : b;
-        if (!b.HasValue) return isMin ? b : a;
+        if (!a.HasValue || !b.HasValue) return null;
         return T.Min(a.Value, b.Value);
     }
 
     /// <summary>
-    /// Maximum of two endpoints, taking null as +∞ if <paramref name="isMax"/> is true.
+    /// Returns the minimum of two end endpoints where <see langword="null"/> represents +∞.
+    /// If only one argument is <see langword="null"/>, the finite value wins.
     /// </summary>
-    public static T? Max<T>(T? a, T? b, bool isMax)
+    public static T? MinEndpoint<T>(T? a, T? b)
         where T : struct, IBinaryInteger<T>
     {
-        // isMax=true  => null means +∞: max(+∞, x) = +∞ → return null
-        // isMax=false => null means -∞: max(-∞, x) = x  → return the finite side
         if (!a.HasValue && !b.HasValue) return null;
-        if (!a.HasValue) return isMax ? a : b;
-        if (!b.HasValue) return isMax ? b : a;
+        if (!a.HasValue) return b;
+        if (!b.HasValue) return a;
+        return T.Min(a.Value, b.Value);
+    }
+
+    /// <summary>
+    /// Returns the maximum of two start endpoints where <see langword="null"/> represents −∞.
+    /// If only one argument is <see langword="null"/>, the finite value wins.
+    /// </summary>
+    public static T? MaxStartpoint<T>(T? a, T? b)
+        where T : struct, IBinaryInteger<T>
+    {
+        if (!a.HasValue && !b.HasValue) return null;
+        if (!a.HasValue) return b;
+        if (!b.HasValue) return a;
+        return T.Max(a.Value, b.Value);
+    }
+
+    /// <summary>
+    /// Returns the maximum of two end endpoints where <see langword="null"/> represents +∞.
+    /// If either argument is <see langword="null"/>, the result is <see langword="null"/> (+∞ wins).
+    /// </summary>
+    public static T? MaxEndpoint<T>(T? a, T? b)
+        where T : struct, IBinaryInteger<T>
+    {
+        if (!a.HasValue || !b.HasValue) return null;
         return T.Max(a.Value, b.Value);
     }
 
@@ -176,27 +196,9 @@ public static class NullableIntEx
     public static T? Parse<T>(string token, IFormatProvider formatProvider)
         where T : struct, IBinaryInteger<T>, IComparable<T>, IParsable<T>
     {
-        // If "∞" => null => means -∞ if isStart, +∞ if not isStart
-        // but let's keep it simpler: by convention,
-        // "∞" always => null,
-        // we'll interpret it in the range logic as -∞ or +∞ as needed
-        // based on whether it's Minimum or Maximum.
-        // The 'SimpleRange' logic handles that in comparisons.
-        //
-        // Alternatively, you could parse "∞" => null for maximum,
-        // and "∞" => some special negative?
-        // But let's keep it uniform: "∞" => null,
-        // the usage context is in a SimpleRange constructor
-        // which sets Minimum or Maximum.
-        // If Minimum = null => that indicates -∞,
-        // if Maximum = null => that indicates +∞.
-
         if (token == "∞" || token == "inf")
-        {
-            return null; // interpret as infinity
-        }
+            return null;
 
-        // else parse as int
         return T.Parse(token, formatProvider);
     }
 }

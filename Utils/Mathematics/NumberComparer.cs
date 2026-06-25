@@ -37,7 +37,12 @@ public class FloatingPointComparer<T> : IComparer<T>, IEqualityComparer<T>
     }
 
     /// <inheritdoc />
-    public int Compare(T x, T y) => x.CompareTo(y);
+    public int Compare(T x, T y)
+    {
+        if (T.Abs(x - y) <= Interval)
+            return 0;
+        return x.CompareTo(y);
+    }
 
     /// <inheritdoc />
     public bool Equals(T x, T y) => x.Between(y - Interval, y + Interval);
