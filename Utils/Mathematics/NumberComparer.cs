@@ -8,6 +8,12 @@ namespace Utils.Mathematics;
 /// Provides floating-point comparisons that allow for small deviations using a configurable interval.
 /// Implements only <see cref="IComparer{T}"/>: fuzzy equality cannot be used for hashing.
 /// </summary>
+/// <remarks>
+/// This comparer is intentionally non-transitive: two values that are each within <see cref="Interval"/>
+/// of a middle value may not be within <see cref="Interval"/> of each other.
+/// Do not use with <see cref="SortedSet{T}"/>, <see cref="SortedDictionary{TKey, TValue}"/>,
+/// or any algorithm that requires a total strict order.
+/// </remarks>
 [DebuggerDisplay("FloatingPointComparer (±{Interval})")]
 public class FloatingPointComparer<T> : IComparer<T>
     where
@@ -56,7 +62,16 @@ public class FloatingPointComparer<T> : IComparer<T>
         Interval = interval;
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Compares two values, treating them as equal when their absolute difference is at most <see cref="Interval"/>.
+    /// </summary>
+    /// <returns>
+    /// 0 when <c>|x − y| ≤ <see cref="Interval"/></c>; otherwise the sign of <c>x − y</c>.
+    /// </returns>
+    /// <remarks>
+    /// Because this uses a tolerance zone, the ordering is not transitive:
+    /// <c>Compare(a, b) == 0</c> and <c>Compare(b, c) == 0</c> do not imply <c>Compare(a, c) == 0</c>.
+    /// </remarks>
     public int Compare(T x, T y)
     {
         if (T.Abs(x - y) <= Interval)
