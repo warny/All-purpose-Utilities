@@ -178,7 +178,7 @@ public class Antlr4GrammarGeneratorDiagnosticsTests
         var diagnostic = AssertSingleUnsupportedDiagnostic(diagnostics, "Grammar @footer action");
         string generatedSource = GetGeneratedSource(grammar, "L.g4");
 
-        StringAssert.Contains(diagnostic.GetMessage(), "parser @footer");
+        StringAssert.Contains(diagnostic.GetMessage(), "Unscoped grammar action '@footer' is not supported in lexer grammars by this generator.");
         AssertNoFooterInjectedDiagnostics(diagnostics);
         Assert.IsFalse(generatedSource.Contains("LexerFooterHelper", StringComparison.Ordinal));
     }
@@ -324,7 +324,7 @@ public class Antlr4GrammarGeneratorDiagnosticsTests
         var diagnostic = AssertSingleUnsupportedDiagnostic(diagnostics, "Grammar @members action");
         string generatedSource = GetGeneratedSource(grammar, "L.g4");
 
-        StringAssert.Contains(diagnostic.GetMessage(), "metadata-only");
+        StringAssert.Contains(diagnostic.GetMessage(), "Unscoped grammar action '@members' is not supported in lexer grammars by this generator.");
         AssertNoMembersInjectedDiagnostics(diagnostics);
         StringAssert.Contains(generatedSource, "internal sealed partial class LExecutionContext");
         Assert.IsFalse(generatedSource.Contains("private int LexerState;", StringComparison.Ordinal));
@@ -400,7 +400,7 @@ public class Antlr4GrammarGeneratorDiagnosticsTests
         var diagnostic = AssertSingleUnsupportedDiagnostic(diagnostics, "Grammar @header action");
         string generatedSource = GetGeneratedSource(grammar, "L.g4");
 
-        StringAssert.Contains(diagnostic.GetMessage(), "parser @header");
+        StringAssert.Contains(diagnostic.GetMessage(), "Unscoped grammar action '@header' is not supported in lexer grammars by this generator.");
         AssertNoHeaderInjectedDiagnostics(diagnostics);
         Assert.IsFalse(generatedSource.Contains("using System.Text;", StringComparison.Ordinal));
     }
@@ -730,8 +730,10 @@ public class Antlr4GrammarGeneratorDiagnosticsTests
             """;
 
         var diagnostic = AssertSingleUnsupportedDiagnostic(RunGenerator(grammar), "Grammar @tree::members action");
+        string generatedSource = GetGeneratedSource(grammar);
 
         StringAssert.Contains(diagnostic.GetMessage(), "Named action scope '@tree::members' is not supported by this generator.");
+        Assert.IsFalse(generatedSource.Contains("// tree", StringComparison.Ordinal));
     }
 
     /// <summary>
@@ -752,8 +754,109 @@ public class Antlr4GrammarGeneratorDiagnosticsTests
             """;
 
         var diagnostic = AssertSingleUnsupportedDiagnostic(RunGenerator(grammar), "Grammar @parser::custom action");
+        string generatedSource = GetGeneratedSource(grammar);
 
         StringAssert.Contains(diagnostic.GetMessage(), "Parser named action '@parser::custom' is not supported by this generator.");
+        Assert.IsFalse(generatedSource.Contains("// custom", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// Ensures scoped parser compatibility actions in lexer-only grammars report deterministic invalid-grammar diagnostics.
+    /// </summary>
+    [DataTestMethod]
+    [DataRow("header", "// parser header")]
+    [DataRow("members", "// parser members")]
+    [DataRow("footer", "// parser footer")]
+    public void GeneratorDiagnostics_ParserNamedActionsInLexerGrammar_ReportDeterministicDiagnostic(string actionName, string marker)
+    {
+        string grammar = $$"""
+            lexer grammar L;
+
+            @parser::{{actionName}} {
+                {{marker}}
+            }
+
+            A : 'a' ;
+            """;
+
+        var diagnostics = RunGenerator(grammar, "L.g4");
+        var diagnostic = AssertSingleUnsupportedDiagnostic(diagnostics, $"Grammar @parser::{actionName} action");
+        string generatedSource = GetGeneratedSource(grammar, "L.g4");
+
+        StringAssert.Contains(diagnostic.GetMessage(), $"Parser named action '@parser::{actionName}' is not valid in a lexer grammar.");
+        Assert.IsFalse(generatedSource.Contains(marker, StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// Ensures unscoped parser compatibility actions in lexer-only grammars report deterministic unsupported diagnostics.
+    /// </summary>
+    [DataTestMethod]
+    [DataRow("header", "// header")]
+    [DataRow("members", "// members")]
+    [DataRow("footer", "// footer")]
+    public void GeneratorDiagnostics_UnscopedActionsInLexerGrammar_ReportDeterministicDiagnostic(string actionName, string marker)
+    {
+        string grammar = $$"""
+            lexer grammar L;
+
+            @{{actionName}} {
+                {{marker}}
+            }
+
+            A : 'a' ;
+            """;
+
+        var diagnostics = RunGenerator(grammar, "L.g4");
+        var diagnostic = AssertSingleUnsupportedDiagnostic(diagnostics, $"Grammar @{actionName} action");
+        string generatedSource = GetGeneratedSource(grammar, "L.g4");
+
+        StringAssert.Contains(diagnostic.GetMessage(), $"Unscoped grammar action '@{actionName}' is not supported in lexer grammars by this generator.");
+        Assert.IsFalse(generatedSource.Contains(marker, StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// Ensures supported parser compatibility actions emit only injection compatibility warnings.
+    /// </summary>
+    [TestMethod]
+    public void GeneratorDiagnostics_SupportedParserNamedActions_DoNotReportUnsupportedDiagnostics()
+    {
+        const string grammar = """
+            grammar P;
+
+            @header {
+                using System;
+            }
+
+            @parser::header {
+                using System.Linq;
+            }
+
+            @members {
+                public int Seen { get; private set; }
+            }
+
+            @parser::members {
+                public int Other { get; private set; }
+            }
+
+            @footer {
+                // footer
+            }
+
+            @parser::footer {
+                // parser footer
+            }
+
+            start : A ;
+            A : 'a' ;
+            """;
+
+        var diagnostics = RunGenerator(grammar);
+
+        AssertNoUnsupportedDiagnostics(diagnostics);
+        Assert.AreEqual(2, diagnostics.Count(static diagnostic => diagnostic.Id == ParserDiagnostics.EmbeddedHeaderInjectedByGenerator.Code));
+        Assert.AreEqual(2, diagnostics.Count(static diagnostic => diagnostic.Id == ParserDiagnostics.EmbeddedMembersInjectedByGenerator.Code));
+        Assert.AreEqual(2, diagnostics.Count(static diagnostic => diagnostic.Id == ParserDiagnostics.EmbeddedFooterInjectedByGenerator.Code));
     }
 
     /// <summary>
