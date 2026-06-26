@@ -39,7 +39,7 @@ public sealed class CompiledGrammar
     public CompiledGrammar(ParserDefinition definition, ParserRuntimeFeaturePolicy runtimeFeaturePolicy)
     {
         Definition = definition;
-        _lexer = new LexerEngine(definition);
+        _lexer = new LexerEngine(definition, runtimeFeaturePolicy);
         _parser = new ParserEngine(definition, runtimeFeaturePolicy);
     }
 

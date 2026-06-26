@@ -50,7 +50,7 @@ public class Antlr4GrammarGeneratorDiagnosticsTests
     /// Ensures lexer actions are reported as unsupported generator execution constructs.
     /// </summary>
     [TestMethod]
-    public void GeneratorDiagnostics_LexerAction_ReportsUnsupportedEmbeddedCode()
+    public void GeneratorDiagnostics_LexerAction_DoesNotReportUnsupportedEmbeddedCode()
     {
         const string grammar = """
             grammar P;
@@ -58,12 +58,7 @@ public class Antlr4GrammarGeneratorDiagnosticsTests
             A : 'a' { OnLex(context); } ;
             """;
 
-        var diagnostics = RunGenerator(grammar);
-        var diagnostic = AssertSingleUnsupportedDiagnostic(diagnostics, "Lexer action");
-
-        Assert.AreEqual(Microsoft.CodeAnalysis.DiagnosticSeverity.Warning, diagnostic.Severity);
-        StringAssert.Contains(diagnostic.GetMessage(), "not executed");
-        AssertGeneratedSourceDoesNotContainLexerHook(grammar);
+        AssertNoUnsupportedDiagnostics(RunGenerator(grammar));
     }
 
     /// <summary>
@@ -517,19 +512,14 @@ public class Antlr4GrammarGeneratorDiagnosticsTests
     /// Ensures lexer inline actions in lexer-only grammars remain unsupported generator execution constructs.
     /// </summary>
     [TestMethod]
-    public void GeneratorDiagnostics_LexerGrammarLexerAction_ReportsUnsupportedEmbeddedCode()
+    public void GeneratorDiagnostics_LexerGrammarLexerAction_DoesNotReportUnsupportedEmbeddedCode()
     {
         const string grammar = """
             lexer grammar L;
             A : 'a' { OnLex(context); } ;
             """;
 
-        var diagnostics = RunGenerator(grammar, "L.g4");
-        var diagnostic = AssertSingleUnsupportedDiagnostic(diagnostics, "Lexer action");
-
-        Assert.AreEqual(Microsoft.CodeAnalysis.DiagnosticSeverity.Warning, diagnostic.Severity);
-        StringAssert.Contains(diagnostic.GetMessage(), "not executed");
-        AssertGeneratedSourceDoesNotContainLexerHook(grammar, "L.g4");
+        AssertNoUnsupportedDiagnostics(RunGenerator(grammar, "L.g4"));
     }
 
     /// <summary>

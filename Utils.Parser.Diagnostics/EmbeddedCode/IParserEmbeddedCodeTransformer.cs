@@ -107,7 +107,10 @@ public enum ParserEmbeddedCodeLocation
     LexerMembers = 8,
 
     /// <summary>Lexer footer action.</summary>
-    LexerFooter = 9
+    LexerFooter = 9,
+
+    /// <summary>Inline lexer action.</summary>
+    LexerInlineAction = 10
 }
 
 /// <summary>

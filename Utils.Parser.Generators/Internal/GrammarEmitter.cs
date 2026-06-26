@@ -35,6 +35,7 @@ internal static partial class GrammarEmitter
         string[] stringSyntaxNumberRules = GetStringSyntaxRulesByName(grammar, "NUMBER");
         string[] stringSyntaxStringRules = GetStringSyntaxRulesByName(grammar, "STRING");
         var embeddedHooks = CollectEmbeddedCodeHooks(grammar, embeddedCodeTransformer);
+        var lexerEmbeddedHooks = CollectLexerEmbeddedCodeHooks(grammar, embeddedCodeTransformer);
         var lifecycleHooks = CollectLifecycleHooks(grammar, embeddedCodeTransformer);
         var parserHeaders = CollectParserHeaders(grammar);
         var lexerHeaders = CollectLexerHeaders(grammar);
@@ -191,7 +192,7 @@ internal static partial class GrammarEmitter
 
         sb.AppendLine("}");
         sb.AppendLine();
-        EmitExecutionContext(sb, embeddedHooks, lifecycleHooks, parserMembers, lexerMembers, className, sourceFileName, grammar, embeddedCodeTransformer);
+        EmitExecutionContext(sb, embeddedHooks, lexerEmbeddedHooks, lifecycleHooks, parserMembers, lexerMembers, className, sourceFileName, grammar, embeddedCodeTransformer);
         EmitParserFooters(sb, parserFooters, grammar, embeddedCodeTransformer);
         EmitLexerFooters(sb, lexerFooters, grammar, embeddedCodeTransformer);
 

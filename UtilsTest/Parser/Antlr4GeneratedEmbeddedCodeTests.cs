@@ -18,6 +18,144 @@ namespace UtilsTest.Parser;
 public class Antlr4GeneratedEmbeddedCodeTests
 {
     /// <summary>
+    /// Ensures conservative generated Parse does not execute lexer inline actions.
+    /// </summary>
+    [TestMethod]
+    public void Parse_LexerInlineAction_DoesNotExecuteAction()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public static int Count;
+            }
+
+            start : A ;
+            A : 'a' { Count++; } ;
+            """;
+
+        string source = Emit(grammar);
+        StringAssert.Contains(source, "private void __LexerAction_A_0_1_0");
+        var assembly = CompileGeneratedSource(source);
+
+        var result = InvokeParse(assembly, "Parse", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(0, ReadIntField(assembly, "Count"));
+    }
+
+    /// <summary>
+    /// Ensures opt-in generated parsing executes a simple lexer inline action.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerInlineAction_ExecutesAction()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public int Count;
+            }
+
+            start : A ;
+            A : 'a' { Count++; } ;
+            """;
+
+        string source = Emit(grammar);
+        var assembly = CompileGeneratedSource(source);
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "a", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(1, ReadInstanceIntField(context, "Count"));
+    }
+
+    /// <summary>
+    /// Ensures lexer inline actions can call members injected through @lexer::members.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerInlineAction_CanCallLexerMember()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public int Count;
+                public void Mark() { Count++; }
+            }
+
+            start : A ;
+            A : 'a' { Mark(); } ;
+            """;
+
+        string source = Emit(grammar);
+        var assembly = CompileGeneratedSource(source);
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "a", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(1, ReadInstanceIntField(context, "Count"));
+    }
+
+
+    /// <summary>
+    /// Ensures lexer action dispatch uses runtime alternative and element indexes.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerInlineAction_ReceivesRuntimeIndexes()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public int Count;
+            }
+
+            start : A ;
+            A
+                : 'a' { Count += context.AlternativeIndex == 0 && context.ElementIndex == 1 ? 1 : 100; }
+                | 'b' { Count += context.AlternativeIndex == 1 && context.ElementIndex == 1 ? 10 : 1000; }
+                ;
+            """;
+
+        string source = Emit(grammar);
+        var assembly = CompileGeneratedSource(source);
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "b", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(10, ReadInstanceIntField(context, "Count"));
+    }
+
+    /// <summary>
+    /// Ensures generated source has lexer action hooks without invoking them from conservative Parse.
+    /// </summary>
+    [TestMethod]
+    public void Emit_LexerInlineAction_GeneratesStableHookOutsideConservativeParse()
+    {
+        const string grammar = """
+            lexer grammar L;
+            A : 'a' { } ;
+            B : { IsEnabled() }? 'b' ;
+            """;
+
+        string source = Emit(grammar);
+
+        StringAssert.Contains(source, "private void __LexerAction_A_0_1_0");
+        StringAssert.Contains(source, "&& context.AlternativeIndex == 0");
+        StringAssert.Contains(source, "&& context.ElementIndex == 1");
+        Assert.IsFalse(source.Contains("__LexerPredicate", StringComparison.Ordinal));
+        StringAssert.Contains(source, "public static ParseNode Parse(");
+        int parseIndex = source.IndexOf("public static ParseNode Parse(", StringComparison.Ordinal);
+        int optInIndex = source.IndexOf("public static ParseNode ParseWithEmbeddedCode(", StringComparison.Ordinal);
+        string conservativeSection = source.Substring(parseIndex, optInIndex - parseIndex);
+        Assert.IsFalse(conservativeSection.Contains("__LexerAction_A_0_1_0", StringComparison.Ordinal));
+    }
+
+    /// <summary>
     /// Ensures a generated <c>true</c> predicate hook is compiled and allows parsing to succeed.
     /// </summary>
     [TestMethod]
@@ -3276,6 +3414,19 @@ public class Antlr4GeneratedEmbeddedCodeTests
         var type = assembly.GetType("Generated.Tests.PExecutionContext", throwOnError: true)!;
         var field = type.GetField(fieldName, BindingFlags.Public | BindingFlags.Static)!;
         return (string?)field.GetValue(null);
+    }
+
+
+    /// <summary>
+    /// Reads a named integer field from a generated execution context instance.
+    /// </summary>
+    /// <param name="executionContext">Generated execution context instance.</param>
+    /// <param name="fieldName">Public integer field name.</param>
+    /// <returns>Current integer field value.</returns>
+    private static int ReadInstanceIntField(object executionContext, string fieldName)
+    {
+        var field = executionContext.GetType().GetField(fieldName, BindingFlags.Public | BindingFlags.Instance)!;
+        return (int)field.GetValue(executionContext)!;
     }
 
     /// <summary>

@@ -326,11 +326,19 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
     {
         foreach (var action in EnumerateEmbeddedActions(rule.Content))
         {
-            var constructKind = action.IsPredicate ? "Lexer predicate" : "Lexer action";
-            var reason = action.IsPredicate
-                ? "Lexer predicates require lexer-state-aware predicate execution and are currently metadata-only."
-                : "Lexer actions require a dedicated lexer action execution model and are currently metadata-only.";
-            ReportUnsupportedEmbeddedCodeDiagnostic(context, file, text, action.Line, constructKind, rule.Name, reason);
+            if (!action.IsPredicate)
+            {
+                continue;
+            }
+
+            ReportUnsupportedEmbeddedCodeDiagnostic(
+                context,
+                file,
+                text,
+                action.Line,
+                "Lexer predicate",
+                rule.Name,
+                "Lexer predicates require lexer-state-aware predicate execution and remain unsupported by the generated C# opt-in lexer action path.");
         }
     }
 

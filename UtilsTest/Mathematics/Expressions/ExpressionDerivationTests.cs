@@ -297,4 +297,11 @@ public class ExpressionDerivationTests
             Assert.AreEqual(3f * xv * xv, compiled(xv), 5e-2f, $"Float fallback derivative at x={xv}");
     }
 
+    /// <summary>
+    /// Computes a cubic value for expression-tree method-call fallback tests.
+    /// </summary>
+    /// <param name="x">Input value.</param>
+    /// <returns>The cubic value of <paramref name="x"/>.</returns>
+    private static float FloatCube(float x) => x * x * x;
+
 }

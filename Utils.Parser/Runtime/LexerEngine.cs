@@ -14,8 +14,9 @@ namespace Utils.Parser.Runtime;
 /// This class is not thread-safe. Each concurrent tokenization must use a separate
 /// <see cref="LexerEngine"/> instance.
 /// </remarks>
-public sealed class LexerEngine(ParserDefinition definition)
+public sealed class LexerEngine(ParserDefinition definition, ParserRuntimeFeaturePolicy? runtimeFeaturePolicy = null)
 {
+    private readonly ParserRuntimeFeaturePolicy _runtimeFeaturePolicy = runtimeFeaturePolicy ?? ParserRuntimeFeaturePolicy.Default;
     private const string DefaultChannel = "DEFAULT_CHANNEL";
     private const string HiddenChannel = "HIDDEN";
 
@@ -67,7 +68,7 @@ public sealed class LexerEngine(ParserDefinition definition)
                 break;
             }
 
-            var (match, rule, commands) = MatchLongest(input, mode, filePath);
+            var (match, rule, commands, actions) = MatchLongest(input, mode, filePath);
             if (match is null)
             {
                 int bad = input.Peek(0);
@@ -85,6 +86,7 @@ public sealed class LexerEngine(ParserDefinition definition)
             input.Consume(match.Length);
             var token = new Token(match, rule!.Name, mode.Name, DefaultChannel, tokenText);
 
+            ExecuteLexerActions(actions);
             bool skip = ExecuteLexerCommands(commands, ref token, diagnostics, filePath);
             if (rule.IsFragment || skip)
             {
@@ -223,11 +225,12 @@ public sealed class LexerEngine(ParserDefinition definition)
         }
     }
 
-    private (SourceSpan? Span, Rule? Rule, List<Model.LexerCommand> Commands) MatchLongest(TextReaderBuffer input, LexerMode mode, string? filePath)
+    private (SourceSpan? Span, Rule? Rule, List<Model.LexerCommand> Commands, List<LexerActionOccurrence> Actions) MatchLongest(TextReaderBuffer input, LexerMode mode, string? filePath)
     {
         SourceSpan? best = null;
         Rule? bestRule = null;
         List<Model.LexerCommand> bestCommands = [];
+        List<LexerActionOccurrence> bestActions = [];
 
         if (_keywordTrieByMode.TryGetValue(mode.Name, out var trie) && !trie.IsEmpty)
         {
@@ -247,59 +250,67 @@ public sealed class LexerEngine(ParserDefinition definition)
             }
 
             var commands = new List<Model.LexerCommand>();
-            if (TryMatchContent(input, rule.Content, 0, commands, out int length) && length > 0)
+            var actions = new List<LexerActionOccurrence>();
+            if (TryMatchContent(input, rule.Content, 0, commands, actions, rule, out int length) && length > 0)
             {
                 if (best is null || length > best.Length)
                 {
                     best = new SourceSpan(input.Position, length, input.Line, input.Column, filePath);
                     bestRule = rule;
                     bestCommands = commands;
+                    bestActions = actions;
                 }
             }
         }
 
-        return (best, bestRule, bestCommands);
+        return (best, bestRule, bestCommands, bestActions);
     }
 
     private readonly record struct LexerMatchResult(bool Matched, int Consumed);
 
     private delegate LexerMatchResult ContentMatcher(
         LexerEngine engine, TextReaderBuffer input, RuleContent content,
-        int offset, List<Model.LexerCommand>? commands);
+        int offset, List<Model.LexerCommand>? commands, List<LexerActionOccurrence>? actions, Rule? rule, LexerMatchIndexContext indexContext);
 
     /// <summary>Maps each concrete <see cref="RuleContent"/> type to its lexer match handler.</summary>
     private static readonly Dictionary<Type, ContentMatcher> ContentMatchers = new()
     {
-        [typeof(LiteralMatch)] = static (e, input, c, offset, _) =>
+        [typeof(LiteralMatch)] = static (e, input, c, offset, _, _, _, _) =>
             e.MatchLiteralContent(input, (LiteralMatch)c, offset),
-        [typeof(RangeMatch)] = static (e, input, c, offset, _) =>
+        [typeof(RangeMatch)] = static (e, input, c, offset, _, _, _, _) =>
             e.MatchRangeContent(input, (RangeMatch)c, offset),
-        [typeof(CharSetMatch)] = static (e, input, c, offset, _) =>
+        [typeof(CharSetMatch)] = static (e, input, c, offset, _, _, _, _) =>
             e.MatchCharSetContent(input, (CharSetMatch)c, offset),
-        [typeof(AnyChar)] = static (_, input, _, offset, _) =>
+        [typeof(AnyChar)] = static (_, input, _, offset, _, _, _, _) =>
             MatchAnyCharContent(input, offset),
-        [typeof(RuleRef)] = static (e, input, c, offset, commands) =>
-            e.MatchRuleRefContent(input, (RuleRef)c, offset, commands),
-        [typeof(Sequence)] = static (e, input, c, offset, commands) =>
-            e.MatchSequenceContent(input, (Sequence)c, offset, commands),
-        [typeof(Alternation)] = static (e, input, c, offset, commands) =>
-            e.MatchAlternationContent(input, (Alternation)c, offset, commands),
-        [typeof(Alternative)] = static (e, input, c, offset, commands) =>
-            e.MatchAlternativeContent(input, (Alternative)c, offset, commands),
-        [typeof(Quantifier)] = static (e, input, c, offset, commands) =>
-            e.MatchQuantifierContent(input, (Quantifier)c, offset, commands),
-        [typeof(Negation)] = static (e, input, c, offset, _) =>
+        [typeof(RuleRef)] = static (e, input, c, offset, commands, actions, _, _) =>
+            e.MatchRuleRefContent(input, (RuleRef)c, offset, commands, actions),
+        [typeof(Sequence)] = static (e, input, c, offset, commands, actions, rule, indexContext) =>
+            e.MatchSequenceContent(input, (Sequence)c, offset, commands, actions, rule, indexContext),
+        [typeof(Alternation)] = static (e, input, c, offset, commands, actions, rule, indexContext) =>
+            e.MatchAlternationContent(input, (Alternation)c, offset, commands, actions, rule, indexContext),
+        [typeof(Alternative)] = static (e, input, c, offset, commands, actions, rule, indexContext) =>
+            e.MatchAlternativeContent(input, (Alternative)c, offset, commands, actions, rule, indexContext),
+        [typeof(Quantifier)] = static (e, input, c, offset, commands, actions, rule, indexContext) =>
+            e.MatchQuantifierContent(input, (Quantifier)c, offset, commands, actions, rule, indexContext),
+        [typeof(Negation)] = static (e, input, c, offset, _, _, _, _) =>
             e.MatchNegationContent(input, (Negation)c, offset),
-        [typeof(LexerCommand)] = static (_, _, c, _, commands) =>
+        [typeof(LexerCommand)] = static (_, _, c, _, commands, _, _, _) =>
             MatchLexerCommandContent((LexerCommand)c, commands),
-        [typeof(EmbeddedAction)] = static (_, _, _, _, _) => new(true, 0),
+        [typeof(EmbeddedAction)] = static (_, _, c, _, _, actions, rule, indexContext) =>
+            MatchEmbeddedActionContent((EmbeddedAction)c, actions, rule, indexContext),
     };
 
-    private bool TryMatchContent(TextReaderBuffer input, RuleContent content, int offset, List<Model.LexerCommand>? commands, out int consumed)
+    private bool TryMatchContent(TextReaderBuffer input, RuleContent content, int offset, List<Model.LexerCommand>? commands, List<LexerActionOccurrence>? actions, Rule? rule, out int consumed)
+    {
+        return TryMatchContent(input, content, offset, commands, actions, rule, LexerMatchIndexContext.Initial, out consumed);
+    }
+
+    private bool TryMatchContent(TextReaderBuffer input, RuleContent content, int offset, List<Model.LexerCommand>? commands, List<LexerActionOccurrence>? actions, Rule? rule, LexerMatchIndexContext indexContext, out int consumed)
     {
         if (ContentMatchers.TryGetValue(content.GetType(), out var matcher))
         {
-            var result = matcher(this, input, content, offset, commands);
+            var result = matcher(this, input, content, offset, commands, actions, rule, indexContext);
             consumed = result.Consumed;
             return result.Matched;
         }
@@ -308,7 +319,7 @@ public sealed class LexerEngine(ParserDefinition definition)
         return false;
     }
 
-    private bool TryMatchQuantifier(TextReaderBuffer input, Quantifier quant, int offset, List<Model.LexerCommand>? commands, out int consumed)
+    private bool TryMatchQuantifier(TextReaderBuffer input, Quantifier quant, int offset, List<Model.LexerCommand>? commands, List<LexerActionOccurrence>? actions, Rule? rule, LexerMatchIndexContext indexContext, out int consumed)
     {
         int count = 0;
         int total = 0;
@@ -318,7 +329,8 @@ public sealed class LexerEngine(ParserDefinition definition)
             // Isolate each iteration so that commands from a failed attempt — or from
             // an attempt that matched zero characters — never reach the caller's list.
             var iterationCommands = commands is null ? null : new List<Model.LexerCommand>();
-            if (!TryMatchContent(input, quant.Inner, offset + total, iterationCommands, out int inner))
+            var iterationActions = actions is null ? null : new List<LexerActionOccurrence>();
+            if (!TryMatchContent(input, quant.Inner, offset + total, iterationCommands, iterationActions, rule, indexContext, out int inner))
             {
                 break;
             }
@@ -329,6 +341,7 @@ public sealed class LexerEngine(ParserDefinition definition)
             }
 
             commands?.AddRange(iterationCommands!);
+            actions?.AddRange(iterationActions!);
             total += inner;
             count++;
             if (!quant.Greedy && count >= quant.Min)
@@ -383,7 +396,7 @@ public sealed class LexerEngine(ParserDefinition definition)
     /// Resolves and matches a rule reference, guarding against direct left-recursion
     /// via the active-rule-refs set.
     /// </summary>
-    private LexerMatchResult MatchRuleRefContent(TextReaderBuffer input, RuleRef ruleRef, int offset, List<Model.LexerCommand>? commands)
+    private LexerMatchResult MatchRuleRefContent(TextReaderBuffer input, RuleRef ruleRef, int offset, List<Model.LexerCommand>? commands, List<LexerActionOccurrence>? actions)
     {
         if (!definition.AllRules.TryGetValue(ruleRef.RuleName, out var referenced))
         {
@@ -398,7 +411,7 @@ public sealed class LexerEngine(ParserDefinition definition)
 
         try
         {
-            bool matched = TryMatchContent(input, referenced.Content, offset, commands, out int consumed);
+            bool matched = TryMatchContent(input, referenced.Content, offset, commands, actions, referenced, LexerMatchIndexContext.Initial, out int consumed);
             return new(matched, consumed);
         }
         finally
@@ -413,16 +426,19 @@ public sealed class LexerEngine(ParserDefinition definition)
     /// only when the entire sequence succeeds — ensuring that a partially-matched but
     /// ultimately failed sequence never leaks commands into the caller's list.
     /// </summary>
-    private LexerMatchResult MatchSequenceContent(TextReaderBuffer input, Sequence seq, int offset, List<Model.LexerCommand>? commands)
+    private LexerMatchResult MatchSequenceContent(TextReaderBuffer input, Sequence seq, int offset, List<Model.LexerCommand>? commands, List<LexerActionOccurrence>? actions, Rule? rule, LexerMatchIndexContext indexContext)
     {
         // Accumulate into a local buffer so that commands from partially-matched
         // items are never visible to the caller when the sequence ultimately fails.
         // Only flush to `commands` when every item has succeeded.
         var local = commands is null ? null : new List<Model.LexerCommand>();
+        var localActions = actions is null ? null : new List<LexerActionOccurrence>();
         int total = 0;
-        foreach (RuleContent item in seq.Items)
+        for (int index = 0; index < seq.Items.Count; index++)
         {
-            if (!TryMatchContent(input, item, offset + total, local, out int part))
+            RuleContent item = seq.Items[index];
+            var itemIndexContext = indexContext with { ElementIndex = index };
+            if (!TryMatchContent(input, item, offset + total, local, localActions, rule, itemIndexContext, out int part))
             {
                 return new(false, 0);
             }
@@ -431,6 +447,7 @@ public sealed class LexerEngine(ParserDefinition definition)
         }
 
         commands?.AddRange(local!);
+        actions?.AddRange(localActions!);
         return new(true, total);
     }
 
@@ -439,14 +456,18 @@ public sealed class LexerEngine(ParserDefinition definition)
     /// The branch buffer is merged into <paramref name="commands"/> only when
     /// an alternative succeeds; failed alternatives are discarded without side-effects.
     /// </summary>
-    private LexerMatchResult MatchAlternationContent(TextReaderBuffer input, Alternation alternation, int offset, List<Model.LexerCommand>? commands)
+    private LexerMatchResult MatchAlternationContent(TextReaderBuffer input, Alternation alternation, int offset, List<Model.LexerCommand>? commands, List<LexerActionOccurrence>? actions, Rule? rule, LexerMatchIndexContext indexContext)
     {
-        foreach (Alternative alt in alternation.Alternatives)
+        for (int index = 0; index < alternation.Alternatives.Count; index++)
         {
+            Alternative alt = alternation.Alternatives[index];
             var branch = commands is null ? null : new List<Model.LexerCommand>();
-            if (TryMatchContent(input, alt.Content, offset, branch, out int altLen))
+            var branchActions = actions is null ? null : new List<LexerActionOccurrence>();
+            var branchIndexContext = indexContext with { AlternativeIndex = index, ElementIndex = -1 };
+            if (TryMatchContent(input, alt.Content, offset, branch, branchActions, rule, branchIndexContext, out int altLen))
             {
                 commands?.AddRange(branch!);
+                actions?.AddRange(branchActions!);
                 return new(true, altLen);
             }
         }
@@ -455,23 +476,23 @@ public sealed class LexerEngine(ParserDefinition definition)
     }
 
     /// <summary>Delegates to the content of a single <see cref="Alternative"/>.</summary>
-    private LexerMatchResult MatchAlternativeContent(TextReaderBuffer input, Alternative alternative, int offset, List<Model.LexerCommand>? commands)
+    private LexerMatchResult MatchAlternativeContent(TextReaderBuffer input, Alternative alternative, int offset, List<Model.LexerCommand>? commands, List<LexerActionOccurrence>? actions, Rule? rule, LexerMatchIndexContext indexContext)
     {
-        bool matched = TryMatchContent(input, alternative.Content, offset, commands, out int consumed);
+        bool matched = TryMatchContent(input, alternative.Content, offset, commands, actions, rule, indexContext, out int consumed);
         return new(matched, consumed);
     }
 
     /// <summary>Delegates to <see cref="TryMatchQuantifier"/> and wraps the result.</summary>
-    private LexerMatchResult MatchQuantifierContent(TextReaderBuffer input, Quantifier quant, int offset, List<Model.LexerCommand>? commands)
+    private LexerMatchResult MatchQuantifierContent(TextReaderBuffer input, Quantifier quant, int offset, List<Model.LexerCommand>? commands, List<LexerActionOccurrence>? actions, Rule? rule, LexerMatchIndexContext indexContext)
     {
-        bool matched = TryMatchQuantifier(input, quant, offset, commands, out int consumed);
+        bool matched = TryMatchQuantifier(input, quant, offset, commands, actions, rule, indexContext, out int consumed);
         return new(matched, consumed);
     }
 
     /// <summary>Implements the <c>~</c> negation operator: succeeds when the inner element does not match.</summary>
     private LexerMatchResult MatchNegationContent(TextReaderBuffer input, Negation neg, int offset)
     {
-        if (!TryMatchContent(input, neg.Inner, offset, null, out _) && input.Peek(offset) >= 0)
+        if (!TryMatchContent(input, neg.Inner, offset, null, null, null, out _) && input.Peek(offset) >= 0)
         {
             return new(true, 1);
         }
@@ -485,6 +506,36 @@ public sealed class LexerEngine(ParserDefinition definition)
         commands?.Add(cmd);
         return new(true, 0);
     }
+
+    /// <summary>Records a lexer inline action for execution after the owning token rule is accepted.</summary>
+    private static LexerMatchResult MatchEmbeddedActionContent(EmbeddedAction action, List<LexerActionOccurrence>? actions, Rule? rule, LexerMatchIndexContext indexContext)
+    {
+        if (rule is not null)
+        {
+            actions?.Add(new LexerActionOccurrence(rule, action.RawCode, indexContext.AlternativeIndex, indexContext.ElementIndex));
+        }
+
+        return new(true, 0);
+    }
+
+    /// <summary>Executes accepted lexer inline actions through the explicit runtime policy.</summary>
+    private void ExecuteLexerActions(IReadOnlyList<LexerActionOccurrence> actions)
+    {
+        foreach (var action in actions)
+        {
+            _runtimeFeaturePolicy.LexerActionExecutor.Execute(new LexerActionExecutionContext(action.Rule, action.ActionCode, action.AlternativeIndex, action.ElementIndex));
+        }
+    }
+
+    /// <summary>Describes deterministic hook indexes while matching lexer rule content.</summary>
+    private readonly record struct LexerMatchIndexContext(int AlternativeIndex, int ElementIndex)
+    {
+        /// <summary>Gets the default context used before a lexer alternation or sequence assigns indexes.</summary>
+        public static LexerMatchIndexContext Initial { get; } = new(-1, -1);
+    }
+
+    /// <summary>Describes a lexer action collected while matching an accepted token rule.</summary>
+    private sealed record LexerActionOccurrence(Rule Rule, string ActionCode, int AlternativeIndex, int ElementIndex);
 
     private bool ExecuteLexerCommands(List<Model.LexerCommand> commands, ref Token token, DiagnosticBag? diagnostics, string? filePath)
     {
