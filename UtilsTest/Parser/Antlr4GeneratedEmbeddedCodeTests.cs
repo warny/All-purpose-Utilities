@@ -24,12 +24,13 @@ public class Antlr4GeneratedEmbeddedCodeTests
     public void Parse_LexerInlineAction_DoesNotExecuteAction()
     {
         const string grammar = """
-            lexer grammar L;
+            grammar P;
 
             @lexer::members {
                 public static int Count;
             }
 
+            start : A ;
             A : 'a' { Count++; } ;
             """;
 
@@ -37,8 +38,9 @@ public class Antlr4GeneratedEmbeddedCodeTests
         StringAssert.Contains(source, "private void __LexerAction_A_0_1_0");
         var assembly = CompileGeneratedSource(source);
 
-        Assert.ThrowsException<TargetInvocationException>(() => InvokeParse(assembly, "Parse", "a"));
+        var result = InvokeParse(assembly, "Parse", "a");
 
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
         Assert.AreEqual(0, ReadIntField(assembly, "Count"));
     }
 
@@ -49,12 +51,13 @@ public class Antlr4GeneratedEmbeddedCodeTests
     public void ParseWithEmbeddedCode_LexerInlineAction_ExecutesAction()
     {
         const string grammar = """
-            lexer grammar L;
+            grammar P;
 
             @lexer::members {
                 public int Count;
             }
 
+            start : A ;
             A : 'a' { Count++; } ;
             """;
 
@@ -62,8 +65,9 @@ public class Antlr4GeneratedEmbeddedCodeTests
         var assembly = CompileGeneratedSource(source);
         object context = CreateExecutionContext(assembly);
 
-        Assert.ThrowsException<TargetInvocationException>(() => InvokeParseWithContext(assembly, "a", context));
+        var result = InvokeParseWithContext(assembly, "a", context);
 
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
         Assert.AreEqual(1, ReadInstanceIntField(context, "Count"));
     }
 
@@ -74,13 +78,14 @@ public class Antlr4GeneratedEmbeddedCodeTests
     public void ParseWithEmbeddedCode_LexerInlineAction_CanCallLexerMember()
     {
         const string grammar = """
-            lexer grammar L;
+            grammar P;
 
             @lexer::members {
                 public int Count;
                 public void Mark() { Count++; }
             }
 
+            start : A ;
             A : 'a' { Mark(); } ;
             """;
 
@@ -88,8 +93,9 @@ public class Antlr4GeneratedEmbeddedCodeTests
         var assembly = CompileGeneratedSource(source);
         object context = CreateExecutionContext(assembly);
 
-        Assert.ThrowsException<TargetInvocationException>(() => InvokeParseWithContext(assembly, "a", context));
+        var result = InvokeParseWithContext(assembly, "a", context);
 
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
         Assert.AreEqual(1, ReadInstanceIntField(context, "Count"));
     }
 
