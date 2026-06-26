@@ -288,7 +288,6 @@ public class ExpressionDerivationTests
     [TestMethod]
     public void Derivate_UnknownFloatFunction_UsesFiniteDifferenceFallback()
     {
-        static float FloatCube(float x) => x * x * x;
         ExpressionDerivation<float> floatDerivation = new("x");
         Expression<Func<float, float>> f = x => FloatCube(x);
         var df = (Expression<Func<float, float>>)floatDerivation.Derivate(f);
@@ -297,5 +296,12 @@ public class ExpressionDerivationTests
         foreach (float xv in new[] { -2f, -0.5f, 0.5f, 1.5f })
             Assert.AreEqual(3f * xv * xv, compiled(xv), 5e-2f, $"Float fallback derivative at x={xv}");
     }
+
+    /// <summary>
+    /// Computes a cubic value for expression-tree method-call fallback tests.
+    /// </summary>
+    /// <param name="x">Input value.</param>
+    /// <returns>The cubic value of <paramref name="x"/>.</returns>
+    private static float FloatCube(float x) => x * x * x;
 
 }

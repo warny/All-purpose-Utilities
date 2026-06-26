@@ -37,7 +37,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
         StringAssert.Contains(source, "private void __LexerAction_A_0_1_0");
         var assembly = CompileGeneratedSource(source);
 
-        _ = InvokeParse(assembly, "Parse", "a");
+        Assert.ThrowsException<TargetInvocationException>(() => InvokeParse(assembly, "Parse", "a"));
 
         Assert.AreEqual(0, ReadIntField(assembly, "Count"));
     }
@@ -62,7 +62,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
         var assembly = CompileGeneratedSource(source);
         object context = CreateExecutionContext(assembly);
 
-        _ = InvokeParseWithContext(assembly, "a", context);
+        Assert.ThrowsException<TargetInvocationException>(() => InvokeParseWithContext(assembly, "a", context));
 
         Assert.AreEqual(1, ReadInstanceIntField(context, "Count"));
     }
@@ -88,7 +88,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
         var assembly = CompileGeneratedSource(source);
         object context = CreateExecutionContext(assembly);
 
-        _ = InvokeParseWithContext(assembly, "a", context);
+        Assert.ThrowsException<TargetInvocationException>(() => InvokeParseWithContext(assembly, "a", context));
 
         Assert.AreEqual(1, ReadInstanceIntField(context, "Count"));
     }
