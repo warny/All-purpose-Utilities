@@ -38,8 +38,7 @@ internal static partial class GrammarEmitter
 
 
     /// <summary>
-    /// Collects executable lexer inline action hooks for the generated C# opt-in path.
-    /// Lexer predicates are deliberately ignored here and remain unsupported diagnostics.
+    /// Collects executable lexer inline action and predicate hooks for the generated C# opt-in path.
     /// </summary>
     /// <param name="grammar">Parsed grammar AST.</param>
     /// <param name="transformer">Embedded-code transformer used for supported lexer action bodies.</param>
@@ -62,7 +61,7 @@ internal static partial class GrammarEmitter
 
         foreach (var hook in hooks)
         {
-            hook.EmittedCode = TransformEmbeddedCode(transformer, hook.Code, ParserEmbeddedCodeLocation.LexerInlineAction, grammar, null);
+            hook.EmittedCode = TransformEmbeddedCode(transformer, hook.Code, hook.IsPredicate ? ParserEmbeddedCodeLocation.SemanticPredicate : ParserEmbeddedCodeLocation.LexerInlineAction, grammar, null);
         }
 
         return hooks;
@@ -97,9 +96,10 @@ internal static partial class GrammarEmitter
             case G4Negation negation:
                 CollectLexerEmbeddedCodeHooks(ruleName, negation.Inner, hooks, alternativeIndex, elementIndex);
                 break;
-            case G4EmbeddedAction action when !action.IsPredicate:
-                string methodName = $"__LexerAction_{Sanitize(ruleName)}_{NormalizeIndexForName(alternativeIndex)}_{NormalizeIndexForName(elementIndex)}_{hooks.Count}";
-                hooks.Add(new LexerEmbeddedCodeHook(ruleName, action.Code, alternativeIndex, elementIndex, methodName));
+            case G4EmbeddedAction action:
+                string prefix = action.IsPredicate ? "__LexerPredicate" : "__LexerAction";
+                string methodName = $"{prefix}_{Sanitize(ruleName)}_{NormalizeIndexForName(alternativeIndex)}_{NormalizeIndexForName(elementIndex)}_{hooks.Count}";
+                hooks.Add(new LexerEmbeddedCodeHook(ruleName, action.Code, action.IsPredicate, alternativeIndex, elementIndex, methodName));
                 break;
         }
     }
@@ -311,11 +311,12 @@ internal static partial class GrammarEmitter
     private sealed class LexerEmbeddedCodeHook
     {
         /// <summary>Initializes lexer embedded-code hook metadata.</summary>
-        public LexerEmbeddedCodeHook(string ruleName, string code, int alternativeIndex, int elementIndex, string methodName)
+        public LexerEmbeddedCodeHook(string ruleName, string code, bool isPredicate, int alternativeIndex, int elementIndex, string methodName)
         {
             RuleName = ruleName;
             Code = code;
             EmittedCode = code;
+            IsPredicate = isPredicate;
             AlternativeIndex = alternativeIndex;
             ElementIndex = elementIndex;
             MethodName = methodName;
@@ -329,6 +330,9 @@ internal static partial class GrammarEmitter
 
         /// <summary>Gets or sets the rewritten C# source emitted into the hook method.</summary>
         public string EmittedCode { get; set; }
+
+        /// <summary>Gets whether this hook is a lexer predicate rather than a lexer action.</summary>
+        public bool IsPredicate { get; }
 
         /// <summary>Gets the best-effort alternative index.</summary>
         public int AlternativeIndex { get; }

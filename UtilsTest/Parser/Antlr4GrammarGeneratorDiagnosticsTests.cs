@@ -62,10 +62,10 @@ public class Antlr4GrammarGeneratorDiagnosticsTests
     }
 
     /// <summary>
-    /// Ensures lexer predicates are reported as unsupported generator execution constructs.
+    /// Ensures supported lexer predicates no longer report unsupported generator execution diagnostics.
     /// </summary>
     [TestMethod]
-    public void GeneratorDiagnostics_LexerPredicate_ReportsUnsupportedEmbeddedCode()
+    public void GeneratorDiagnostics_LexerPredicate_DoesNotReportUnsupportedEmbeddedCode()
     {
         const string grammar = """
             grammar P;
@@ -73,10 +73,7 @@ public class Antlr4GrammarGeneratorDiagnosticsTests
             A : { IsA(context) }? 'a' ;
             """;
 
-        var diagnostic = AssertSingleUnsupportedDiagnostic(RunGenerator(grammar), "Lexer predicate");
-
-        Assert.AreEqual(Microsoft.CodeAnalysis.DiagnosticSeverity.Warning, diagnostic.Severity);
-        StringAssert.Contains(diagnostic.GetMessage(), "lexer-state-aware");
+        AssertNoUnsupportedDiagnostics(RunGenerator(grammar));
     }
 
     /// <summary>
@@ -523,20 +520,17 @@ public class Antlr4GrammarGeneratorDiagnosticsTests
     }
 
     /// <summary>
-    /// Ensures lexer predicates in lexer-only grammars remain unsupported generator execution constructs.
+    /// Ensures lexer predicates in lexer-only grammars no longer report unsupported generator execution diagnostics.
     /// </summary>
     [TestMethod]
-    public void GeneratorDiagnostics_LexerGrammarLexerPredicate_ReportsUnsupportedEmbeddedCode()
+    public void GeneratorDiagnostics_LexerGrammarLexerPredicate_DoesNotReportUnsupportedEmbeddedCode()
     {
         const string grammar = """
             lexer grammar L;
             A : { IsA(context) }? 'a' ;
             """;
 
-        var diagnostic = AssertSingleUnsupportedDiagnostic(RunGenerator(grammar, "L.g4"), "Lexer predicate");
-
-        Assert.AreEqual(Microsoft.CodeAnalysis.DiagnosticSeverity.Warning, diagnostic.Severity);
-        StringAssert.Contains(diagnostic.GetMessage(), "lexer-state-aware");
+        AssertNoUnsupportedDiagnostics(RunGenerator(grammar, "L.g4"));
     }
 
     /// <summary>

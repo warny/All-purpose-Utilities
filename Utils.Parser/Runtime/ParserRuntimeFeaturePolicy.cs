@@ -18,6 +18,7 @@ public sealed record ParserRuntimeFeaturePolicy
         SemanticPredicateEvaluator = new DefaultSemanticPredicateEvaluator(),
         ParserActionExecutor = new DefaultParserActionExecutor(),
         LexerActionExecutor = DefaultLexerActionExecutor.Instance,
+        LexerPredicateEvaluator = DefaultLexerPredicateEvaluator.Instance,
         ExecutionStateManager = NullParserExecutionStateManager.Instance,
         RuleLifecycleExecutor = NullParserRuleLifecycleExecutor.Instance,
         RuleInvocationFrameManager = NullParserRuleInvocationFrameManager.Instance,
@@ -40,6 +41,11 @@ public sealed record ParserRuntimeFeaturePolicy
     /// Gets the lexer action execution strategy. The default no-op executor preserves conservative lexer behavior.
     /// </summary>
     public required ILexerActionExecutor LexerActionExecutor { get; init; }
+
+    /// <summary>
+    /// Gets the lexer predicate evaluation strategy. The default no-op evaluator preserves conservative lexer behavior.
+    /// </summary>
+    public required ILexerPredicateEvaluator LexerPredicateEvaluator { get; init; }
 
     /// <summary>
     /// Gets the parser execution-state manager used to expose opaque semantic state snapshots and memoization keys.

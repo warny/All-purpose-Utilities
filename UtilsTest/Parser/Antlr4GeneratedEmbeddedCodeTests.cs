@@ -130,6 +130,200 @@ public class Antlr4GeneratedEmbeddedCodeTests
         Assert.AreEqual(10, ReadInstanceIntField(context, "Count"));
     }
 
+
+    /// <summary>
+    /// Ensures conservative generated Parse does not execute lexer predicates and keeps the predicate path non-matching.
+    /// </summary>
+    [TestMethod]
+    public void Parse_LexerPredicate_RemainsConservative()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public bool Enabled = false;
+            }
+
+            start : A ;
+            A : { Enabled }? 'a' ;
+            """;
+
+        string source = Emit(grammar);
+        var assembly = CompileGeneratedSource(source);
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParse(assembly, "Parse", "a");
+
+        Assert.IsInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsFalse(ReadInstanceBoolField(context, "Enabled"));
+    }
+
+    /// <summary>
+    /// Ensures opt-in generated parsing evaluates a true lexer predicate during matching.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerPredicateTrue_ParsesSuccessfully()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public bool Enabled = true;
+            }
+
+            start : A ;
+            A : { Enabled }? 'a' ;
+            """;
+
+        string source = Emit(grammar);
+        var assembly = CompileGeneratedSource(source);
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "a", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+    }
+
+    /// <summary>
+    /// Ensures opt-in generated parsing rejects a token path when a lexer predicate is false.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerPredicateFalse_RejectsParse()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public bool Enabled = false;
+            }
+
+            start : A ;
+            A : { Enabled }? 'a' ;
+            """;
+
+        string source = Emit(grammar);
+        var assembly = CompileGeneratedSource(source);
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "a", context);
+
+        Assert.IsInstanceOfType(result, typeof(ErrorNode));
+    }
+
+    /// <summary>
+    /// Ensures lexer predicates can call members injected through <c>@lexer::members</c>.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerPredicate_CanCallLexerMember()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public bool IsEnabled() => true;
+            }
+
+            start : A ;
+            A : { IsEnabled() }? 'a' ;
+            """;
+
+        string source = Emit(grammar);
+        var assembly = CompileGeneratedSource(source);
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "a", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+    }
+
+    /// <summary>
+    /// Ensures lexer predicate dispatch uses alternative and element indexes while matching alternatives.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerPredicateAlternative_UsesRuntimeIndexes()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public bool UseB = true;
+            }
+
+            start : A ;
+            A
+                : { false }? 'a'
+                | { UseB && context.AlternativeIndex == 1 && context.ElementIndex == 0 }? 'b'
+                ;
+            """;
+
+        string source = Emit(grammar);
+        var assembly = CompileGeneratedSource(source);
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "b", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+    }
+
+    /// <summary>
+    /// Ensures generated source contains lexer predicate hooks and keeps conservative Parse disconnected from them.
+    /// </summary>
+    [TestMethod]
+    public void Emit_LexerPredicate_GeneratesStableHookOutsideConservativeParse()
+    {
+        const string grammar = """
+            grammar P;
+            start : A ;
+            A : { true }? 'a' { } ;
+            """;
+
+        string source = Emit(grammar);
+
+        StringAssert.Contains(source, "private bool __LexerPredicate_A_0_0_0");
+        StringAssert.Contains(source, "GeneratedLexerPredicateEvaluator");
+        StringAssert.Contains(source, "&& string.Equals(context.PredicateCode, \" true \"");
+        StringAssert.Contains(source, "&& context.AlternativeIndex == 0");
+        StringAssert.Contains(source, "&& context.ElementIndex == 0");
+        StringAssert.Contains(source, "private void __LexerAction_A_0_2_1");
+        int parseIndex = source.IndexOf("public static ParseNode Parse(", StringComparison.Ordinal);
+        int optInIndex = source.IndexOf("public static ParseNode ParseWithEmbeddedCode(", StringComparison.Ordinal);
+        string conservativeSection = source.Substring(parseIndex, optInIndex - parseIndex);
+        Assert.IsFalse(conservativeSection.Contains("__LexerPredicate_A_0_0_0", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// Ensures lexer predicates run before accepted lexer actions and prevent later action execution when false.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerPredicateAndAction_ExecutesActionOnlyWhenPredicateTrue()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public bool Enabled = true;
+                public int Count;
+            }
+
+            start : A ;
+            A : { Enabled }? 'a' { Count++; } ;
+            """;
+
+        string source = Emit(grammar);
+        var assembly = CompileGeneratedSource(source);
+        object enabledContext = CreateExecutionContext(assembly);
+        var enabledResult = InvokeParseWithContext(assembly, "a", enabledContext);
+
+        object disabledContext = CreateExecutionContext(assembly);
+        WriteInstanceBoolField(disabledContext, "Enabled", false);
+        var disabledResult = InvokeParseWithContext(assembly, "a", disabledContext);
+
+        Assert.IsNotInstanceOfType(enabledResult, typeof(ErrorNode));
+        Assert.AreEqual(1, ReadInstanceIntField(enabledContext, "Count"));
+        Assert.IsInstanceOfType(disabledResult, typeof(ErrorNode));
+        Assert.AreEqual(0, ReadInstanceIntField(disabledContext, "Count"));
+    }
+
     /// <summary>
     /// Ensures generated source has lexer action hooks without invoking them from conservative Parse.
     /// </summary>
@@ -147,7 +341,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
         StringAssert.Contains(source, "private void __LexerAction_A_0_1_0");
         StringAssert.Contains(source, "&& context.AlternativeIndex == 0");
         StringAssert.Contains(source, "&& context.ElementIndex == 1");
-        Assert.IsFalse(source.Contains("__LexerPredicate", StringComparison.Ordinal));
+        StringAssert.Contains(source, "private bool __LexerPredicate_B_0_0_1");
         StringAssert.Contains(source, "public static ParseNode Parse(");
         int parseIndex = source.IndexOf("public static ParseNode Parse(", StringComparison.Ordinal);
         int optInIndex = source.IndexOf("public static ParseNode ParseWithEmbeddedCode(", StringComparison.Ordinal);
@@ -3506,6 +3700,31 @@ public class Antlr4GeneratedEmbeddedCodeTests
                 && executionContextType == contextType
                 && policyType == typeof(ParserRuntimeFeaturePolicy));
         return (ParseNode)method.Invoke(null, [input, executionContext, basePolicy])!;
+    }
+
+
+    /// <summary>
+    /// Reads a named boolean field from a generated execution context instance.
+    /// </summary>
+    /// <param name="executionContext">Execution context instance to inspect.</param>
+    /// <param name="fieldName">Field name.</param>
+    /// <returns>The boolean field value.</returns>
+    private static bool ReadInstanceBoolField(object executionContext, string fieldName)
+    {
+        var field = executionContext.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)!;
+        return (bool)field.GetValue(executionContext)!;
+    }
+
+    /// <summary>
+    /// Writes a named boolean field on a generated execution context instance.
+    /// </summary>
+    /// <param name="executionContext">Execution context instance to update.</param>
+    /// <param name="fieldName">Field name.</param>
+    /// <param name="value">Value to assign.</param>
+    private static void WriteInstanceBoolField(object executionContext, string fieldName, bool value)
+    {
+        var field = executionContext.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)!;
+        field.SetValue(executionContext, value);
     }
 
     /// <summary>

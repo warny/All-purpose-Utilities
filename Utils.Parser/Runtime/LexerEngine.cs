@@ -299,6 +299,8 @@ public sealed class LexerEngine(ParserDefinition definition, ParserRuntimeFeatur
             MatchLexerCommandContent((LexerCommand)c, commands),
         [typeof(EmbeddedAction)] = static (_, _, c, _, _, actions, rule, indexContext) =>
             MatchEmbeddedActionContent((EmbeddedAction)c, actions, rule, indexContext),
+        [typeof(ValidatingPredicate)] = static (e, _, c, _, _, _, rule, indexContext) =>
+            e.MatchValidatingPredicateContent((ValidatingPredicate)c, rule, indexContext),
     };
 
     private bool TryMatchContent(TextReaderBuffer input, RuleContent content, int offset, List<Model.LexerCommand>? commands, List<LexerActionOccurrence>? actions, Rule? rule, out int consumed)
@@ -505,6 +507,19 @@ public sealed class LexerEngine(ParserDefinition definition, ParserRuntimeFeatur
     {
         commands?.Add(cmd);
         return new(true, 0);
+    }
+
+    /// <summary>Evaluates a lexer predicate during matching and rejects the current path unless it is explicitly satisfied.</summary>
+    private LexerMatchResult MatchValidatingPredicateContent(ValidatingPredicate predicate, Rule? rule, LexerMatchIndexContext indexContext)
+    {
+        if (rule is null)
+        {
+            return new(false, 0);
+        }
+
+        var context = new LexerPredicateEvaluationContext(rule, predicate.Code, indexContext.AlternativeIndex, indexContext.ElementIndex);
+        LexerPredicateEvaluationOutcome outcome = _runtimeFeaturePolicy.LexerPredicateEvaluator.Evaluate(context);
+        return new(outcome == LexerPredicateEvaluationOutcome.True, 0);
     }
 
     /// <summary>Records a lexer inline action for execution after the owning token rule is accepted.</summary>
