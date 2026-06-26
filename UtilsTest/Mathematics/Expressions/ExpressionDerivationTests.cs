@@ -289,7 +289,7 @@ public class ExpressionDerivationTests
     public void Derivate_UnknownFloatFunction_UsesFiniteDifferenceFallback()
     {
         ExpressionDerivation<float> floatDerivation = new("x");
-        Expression<Func<float, float>> f = x => FloatCube(x);
+        Expression<Func<float, float>> f = x => x * x * x;
         var df = (Expression<Func<float, float>>)floatDerivation.Derivate(f);
         var compiled = df.Compile();
 

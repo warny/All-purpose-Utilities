@@ -1,12 +1,12 @@
 using System;
 using System.Numerics;
 
-namespace Utils.Mathematics.Fourrier;
+namespace Utils.Mathematics.Fourier;
 
 /// <summary>
 /// Utility extension methods for Fourier-related computations.
 /// </summary>
-public static class FourrierExtensions
+public static class FourierExtensions
 {
     /// <summary>
     /// Returns the frequency represented by each bin in the first half of a Fourier transform result.
