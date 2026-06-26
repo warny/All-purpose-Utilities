@@ -111,12 +111,10 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
     /// Integrates a parameter expression, returning x^2/2 when it matches the integration variable.
     /// </summary>
     /// <param name="e">The parameter expression that may match the integration variable.</param>
-    /// <param name="value">The value associated with the parameter (unused).</param>
     /// <returns>The integral of the parameter expression.</returns>
     [ExpressionSignature(ExpressionType.Parameter)]
     public Expression Parameter(
-        ParameterExpression e,
-        object value
+        ParameterExpression e
     )
     {
         if (e.Name == ParameterName)
@@ -515,6 +513,51 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         }
 
         return Power(e, p, Expression.Constant(System.Convert.ToDouble(constantExpo.Value)));
+    }
+
+    /// <summary>
+    /// Integrates a <see cref="Math.Pow"/> call whose base is the integration parameter and exponent is a numeric constant.
+    /// </summary>
+    /// <param name="e">The method call expression representing <c>Math.Pow</c>.</param>
+    /// <param name="p">The parameter expression that serves as the base.</param>
+    /// <param name="expo">The constant numeric exponent.</param>
+    /// <returns>The integral of the power expression when the pattern matches; otherwise, <see langword="null"/>.</returns>
+    [ExpressionCallSignature(typeof(Math), nameof(Math.Pow))]
+    public Expression? PowerMathCall(
+        MethodCallExpression e,
+        ParameterExpression p,
+        [ConstantNumeric] ConstantExpression expo
+    )
+    {
+        if (p.Name != ParameterName) return null;
+        double n = System.Convert.ToDouble(expo.Value);
+        if (double.Abs(n + 1.0) < 1e-10)
+            return Expression.Call(typeof(T).GetMethod(nameof(double.Log), [typeof(T)]), p);
+        return Expression.Divide(
+            Expression.Power(p, Expression.Constant(n + 1.0)),
+            Expression.Constant(n + 1.0)
+        );
+    }
+
+    /// <summary>
+    /// Integrates a <see cref="Math.Pow"/> call whose base is the integration parameter and exponent is a convert-wrapped numeric constant.
+    /// </summary>
+    /// <param name="e">The method call expression representing <c>Math.Pow</c>.</param>
+    /// <param name="p">The parameter expression that serves as the base.</param>
+    /// <param name="expo">The converted exponent expression.</param>
+    /// <returns>The integral of the power expression when the pattern matches; otherwise, <see langword="null"/>.</returns>
+    [ExpressionCallSignature(typeof(Math), nameof(Math.Pow))]
+    public Expression? PowerMathCall(
+        MethodCallExpression e,
+        ParameterExpression p,
+        UnaryExpression expo
+    )
+    {
+        if (expo.NodeType != ExpressionType.Convert && expo.NodeType != ExpressionType.ConvertChecked)
+            return null;
+        if (expo.Operand is not ConstantExpression constantExpo || !NumberUtils.IsNumeric(constantExpo.Value))
+            return null;
+        return PowerMathCall(e, p, Expression.Constant(System.Convert.ToDouble(constantExpo.Value)));
     }
 
     /// <summary>

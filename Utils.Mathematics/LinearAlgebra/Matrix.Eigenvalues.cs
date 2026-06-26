@@ -1,0 +1,110 @@
+using System.Numerics;
+
+namespace Utils.Mathematics.LinearAlgebra;
+
+/// <summary>
+/// Eigenvalue decomposition for the <see cref="Matrix{T}"/> type.
+/// </summary>
+public sealed partial class Matrix<T>
+{
+    private static readonly T EigenEpsilon = T.CreateChecked(1e-10);
+
+    /// <summary>
+    /// Computes the real eigenvalues and corresponding eigenvectors of a symmetric matrix
+    /// using the QR iteration algorithm.
+    /// </summary>
+    /// <remarks>
+    /// Only real symmetric matrices are supported; all eigenvalues of such matrices are guaranteed real.
+    /// Eigenvalues are returned in descending order of absolute value.
+    /// </remarks>
+    /// <param name="maxIterations">Maximum number of QR iterations before giving up.</param>
+    /// <returns>
+    /// A tuple containing an array of eigenvalues (descending by magnitude) and a matrix whose
+    /// columns are the corresponding eigenvectors.
+    /// </returns>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the matrix is not square, not symmetric, or fails to converge.
+    /// </exception>
+    public (T[] Eigenvalues, Matrix<T> Eigenvectors) ComputeEigenvalues(int maxIterations = 1000)
+    {
+        if (!IsSquare)
+            throw new InvalidOperationException("Eigenvalue decomposition requires a square matrix.");
+
+        int n = Rows;
+        if (!IsSymmetric())
+            throw new InvalidOperationException("This implementation only supports real symmetric matrices.");
+
+        // Working copy for QR iteration
+        T[,] a = ToArray();
+
+        // Accumulate eigenvectors: V = Q_0 · Q_1 · …
+        T[,] v = new T[n, n];
+        for (int i = 0; i < n; i++) v[i, i] = T.One;
+
+        for (int iter = 0; iter < maxIterations; iter++)
+        {
+            if (OffDiagonalNorm(a, n) <= EigenEpsilon) break;
+
+            // QR decompose the current A
+            var (q, r) = new Matrix<T>(a).DecomposeQR();
+
+            // A ← R·Q  (this is A_{k+1} = R_k · Q_k)
+            a = (r * q).ToArray();
+
+            // V ← V·Q
+            T[,] newV = new T[n, n];
+            for (int i = 0; i < n; i++)
+                for (int j = 0; j < n; j++)
+                {
+                    T sum = T.Zero;
+                    for (int k = 0; k < n; k++) sum += v[i, k] * q[k, j];
+                    newV[i, j] = sum;
+                }
+            v = newV;
+
+            if (iter == maxIterations - 1 && OffDiagonalNorm(a, n) > EigenEpsilon)
+                throw new InvalidOperationException(
+                    $"QR iteration did not converge after {maxIterations} iterations.");
+        }
+
+        // Extract eigenvalues from the diagonal
+        T[] eigenvalues = new T[n];
+        for (int i = 0; i < n; i++) eigenvalues[i] = a[i, i];
+
+        // Sort by descending absolute value and reorder eigenvectors accordingly
+        int[] order = Enumerable.Range(0, n)
+            .OrderByDescending(i => T.Abs(eigenvalues[i]))
+            .ToArray();
+
+        T[] sortedValues = new T[n];
+        T[,] sortedVectors = new T[n, n];
+        for (int j = 0; j < n; j++)
+        {
+            sortedValues[j] = eigenvalues[order[j]];
+            for (int i = 0; i < n; i++)
+                sortedVectors[i, j] = v[i, order[j]];
+        }
+
+        return (sortedValues, new Matrix<T>(sortedVectors));
+    }
+
+    /// <summary>Returns <see langword="true"/> when this square matrix is symmetric (A[i,j] == A[j,i]).</summary>
+    public bool IsSymmetric()
+    {
+        if (!IsSquare) return false;
+        for (int i = 0; i < Rows; i++)
+            for (int j = i + 1; j < Columns; j++)
+                if (T.Abs(this[i, j] - this[j, i]) > EigenEpsilon) return false;
+        return true;
+    }
+
+    /// <summary>Frobenius norm of strictly off-diagonal elements of the working array.</summary>
+    private static T OffDiagonalNorm(T[,] a, int n)
+    {
+        T sum = T.Zero;
+        for (int i = 0; i < n; i++)
+            for (int j = 0; j < n; j++)
+                if (i != j) sum += a[i, j] * a[i, j];
+        return T.Sqrt(sum);
+    }
+}

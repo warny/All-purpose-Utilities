@@ -49,6 +49,39 @@ public static class MathExpressionExtensions
     }
 
     /// <summary>
+    /// Computes the gradient of a multi-parameter lambda expression as an array of partial-derivative expressions.
+    /// Each entry i is the partial derivative with respect to the i-th parameter.
+    /// </summary>
+    /// <param name="e">Lambda expression to differentiate.</param>
+    /// <returns>Array of lambda expressions representing each partial derivative; shares the same parameter list as <paramref name="e"/>.</returns>
+    public static LambdaExpression[] Gradient(this LambdaExpression e)
+    {
+        e.Arg().MustNotBeNull();
+        return e.Gradient<double>(e.Parameters.Select(p => p.Name!).ToArray());
+    }
+
+    /// <summary>
+    /// Computes the partial derivatives of a lambda expression with respect to the specified parameter names.
+    /// </summary>
+    /// <typeparam name="T">Floating-point type used by derivative rules.</typeparam>
+    /// <param name="e">Lambda expression to differentiate.</param>
+    /// <param name="paramNames">Names of the parameters to differentiate with respect to.</param>
+    /// <returns>Array of lambda expressions representing each partial derivative; shares the same parameter list as <paramref name="e"/>.</returns>
+    public static LambdaExpression[] Gradient<T>(this LambdaExpression e, params IEnumerable<string> paramNames)
+        where T : IFloatingPoint<T>
+    {
+        e.Arg().MustNotBeNull();
+        return paramNames
+            .Select(name =>
+            {
+                ExpressionDerivation<T> derivation = new ExpressionDerivation<T>(name);
+                var derived = (LambdaExpression)derivation.Derivate(e);
+                return Expression.Lambda(derived.Body.Simplify(), e.Parameters);
+            })
+            .ToArray();
+    }
+
+    /// <summary>
     /// Computes the integral of a single-parameter lambda expression with respect to its declared parameter.
     /// </summary>
     /// <param name="e">Lambda expression to integrate.</param>

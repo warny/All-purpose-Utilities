@@ -36,18 +36,19 @@ public sealed partial class Matrix<T>
     /// Returns a square diagonal matrix whose diagonal entries are <paramref name="values"/>.
     /// </summary>
     /// <param name="values">Diagonal values, left to right.</param>
-    public static Matrix<T> Diagonal(params T[] values)
+    public static Matrix<T> Diagonal(params IEnumerable<T> values)
     {
-        if (values.Length == 0) throw new ArgumentException("At least one diagonal value is required", nameof(values));
-        int n = values.Length;
+        T[] valuesArray = values.ToArray();
+        if (valuesArray.Length == 0) throw new ArgumentException("At least one diagonal value is required", nameof(values));
+        int n = valuesArray.Length;
         var array = new T[n, n];
         T det = T.One;
         bool isIdentity = true;
         for (int i = 0; i < n; i++)
         {
-            array[i, i] = values[i];
-            det *= values[i];
-            if (values[i] != T.One) isIdentity = false;
+            array[i, i] = valuesArray[i];
+            det *= valuesArray[i];
+            if (valuesArray[i] != T.One) isIdentity = false;
         }
         // A diagonal matrix is always triangular and diagonal regardless of zero entries on the diagonal.
         return new Matrix<T>(array, isIdentity: isIdentity, isTriangular: true, isDiagonal: true, determinant: det);

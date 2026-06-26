@@ -633,6 +633,11 @@ namespace Utils.Mathematics.Expressions
 
             if (ExpressionComparer.Default.Equals(leftleft, rightleft))
             {
+                // Expression.Power only resolves to Math.Pow(double,double); for other
+                // numeric types it throws. Skip the x^(a+b) rewrite in that case so
+                // the expression stays as repeated multiplications, which all handlers support.
+                if (leftleft.Type != typeof(double)) return null;
+
                 return Transform(
                     Expression.Power(
                         leftleft,

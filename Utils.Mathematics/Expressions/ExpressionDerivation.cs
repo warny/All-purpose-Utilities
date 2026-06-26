@@ -192,10 +192,11 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
         Expression right
     )
     {
+        // Quotient rule: (f'g − fg') / g²
         return Expression.Divide(
             Expression.Subtract(
-                Expression.Multiply(left, Transform(right)),
-                Expression.Multiply(Transform(left), right)),
+                Expression.Multiply(Transform(left), right),
+                Expression.Multiply(left, Transform(right))),
             Expression.Power(right, ExpressionEx.CreateConstant(T.CreateChecked(2d))));
     }
 
@@ -343,7 +344,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
     }
 
     /// <summary>
-    /// Differentiates a tangent call expression by rewriting it as sine over cosine and differentiating the quotient.
+    /// Differentiates a tangent call expression using the identity d/dx tan(f) = f'(x) / cos²(f(x)).
     /// </summary>
     /// <param name="e">Call expression describing the tangent invocation.</param>
     /// <param name="operand">Operand of the tangent call.</param>
@@ -353,10 +354,14 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
         MethodCallExpression e,
         Expression operand)
     {
-        return Transform(Expression.Divide(
-             Expression.Call(typeof(T).GetMethod(nameof(double.Sin), [typeof(T)]), operand),
-             Expression.Call(typeof(T).GetMethod(nameof(double.Cos), [typeof(T)]), operand)
-            ).Simplify()
+        // Applying Simplify to Sin(x)/Cos(x) can rebuild Tan(x), causing infinite recursion.
+        // Use the direct identity instead: (tan(f))' = f'(x) / cos²(f(x))
+        return Expression.Divide(
+            Transform(operand),
+            Expression.Power(
+                Expression.Call(typeof(T).GetMethod(nameof(double.Cos), [typeof(T)]), operand),
+                ExpressionEx.CreateConstant(T.CreateChecked(2d))
+            )
         );
     }
 
