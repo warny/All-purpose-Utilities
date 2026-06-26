@@ -162,6 +162,48 @@ internal static partial class GrammarEmitter
         sb.AppendLine();
     }
 
+
+    /// <summary>
+    /// Emits the grammar-specific lexer action executor.
+    /// </summary>
+    /// <param name="sb">Source builder receiving generated C#.</param>
+    /// <param name="lexerActions">Lexer action hooks available to the executor.</param>
+    /// <param name="contextClassName">Generated execution context class name.</param>
+    private static void EmitLexerActionExecutor(StringBuilder sb, IReadOnlyList<LexerEmbeddedCodeHook> lexerActions, string contextClassName)
+    {
+        sb.AppendLine("    /// <summary>Dispatches accepted lexer inline actions to generated C# lexer action hooks.</summary>");
+        sb.AppendLine("    private sealed class GeneratedLexerActionExecutor : ILexerActionExecutor");
+        sb.AppendLine("    {");
+        sb.AppendLine($"        private readonly {contextClassName} _executionContext;");
+        sb.AppendLine("        private readonly ILexerActionExecutor _fallback;");
+        sb.AppendLine();
+        sb.AppendLine("        /// <summary>Initializes a generated lexer action executor for one execution context.</summary>");
+        sb.AppendLine($"        public GeneratedLexerActionExecutor({contextClassName} executionContext, ILexerActionExecutor fallback)");
+        sb.AppendLine("        {");
+        sb.AppendLine("            _executionContext = executionContext;");
+        sb.AppendLine("            _fallback = fallback;");
+        sb.AppendLine("        }");
+        sb.AppendLine();
+        sb.AppendLine("        /// <summary>Executes a generated lexer action hook when the runtime context matches.</summary>");
+        sb.AppendLine("        public LexerActionExecutionOutcome Execute(LexerActionExecutionContext context)");
+        sb.AppendLine("        {");
+        foreach (var action in lexerActions)
+        {
+            sb.AppendLine($"            if (string.Equals(context.Rule.Name, \"{Escape(action.RuleName)}\", global::System.StringComparison.Ordinal)");
+            sb.AppendLine($"                && string.Equals(context.ActionCode, \"{Escape(action.Code)}\", global::System.StringComparison.Ordinal))");
+            sb.AppendLine("            {");
+            sb.AppendLine($"                _executionContext.{action.MethodName}(context);");
+            sb.AppendLine("                return LexerActionExecutionOutcome.Executed;");
+            sb.AppendLine("            }");
+            sb.AppendLine();
+        }
+
+        sb.AppendLine("            return _fallback.Execute(context);");
+        sb.AppendLine("        }");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+    }
+
     /// <summary>
     /// Emits a generated C# method for a semantic predicate body.
     /// </summary>
@@ -193,6 +235,24 @@ internal static partial class GrammarEmitter
         sb.AppendLine($"    private void {hook.MethodName}(ParserActionExecutionContext context)");
         sb.AppendLine("    {");
         EmitContextLocals(sb, predicate: false);
+        EmitGeneratedEmbeddedCodeBody(sb, body, "        ");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+    }
+
+
+    /// <summary>
+    /// Emits a generated C# method for an inline lexer action body.
+    /// </summary>
+    /// <param name="sb">Source builder receiving generated C#.</param>
+    /// <param name="hook">Lexer action hook metadata.</param>
+    private static void EmitLexerActionHook(StringBuilder sb, LexerEmbeddedCodeHook hook)
+    {
+        var body = GeneratedEmbeddedCodeBody.ForAction(hook.EmittedCode);
+
+        sb.AppendLine($"    /// <summary>Executes inline lexer action hook for rule <c>{EscapeXml(hook.RuleName)}</c>.</summary>");
+        sb.AppendLine($"    private void {hook.MethodName}(LexerActionExecutionContext context)");
+        sb.AppendLine("    {");
         EmitGeneratedEmbeddedCodeBody(sb, body, "        ");
         sb.AppendLine("    }");
         sb.AppendLine();

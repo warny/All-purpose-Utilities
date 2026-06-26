@@ -169,3 +169,6 @@ This audit explicitly excludes:
 - a new public API;
 - a new compiler API;
 - any change to `Parse(...)`.
+
+
+> Lexer inline actions: simple source-generator C# lexer inline actions are now supported only through the explicit opt-in generated path. `Parse(...)` remains conservative; lexer predicates, lexer `$...` rewriting, lexer modes/channels/commands action semantics, runtime-inline lexer execution, a separate runtime lexer, and external side-effect rollback remain unsupported.

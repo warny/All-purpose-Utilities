@@ -36,6 +36,74 @@ internal static partial class GrammarEmitter
         return hooks;
     }
 
+
+    /// <summary>
+    /// Collects executable lexer inline action hooks for the generated C# opt-in path.
+    /// Lexer predicates are deliberately ignored here and remain unsupported diagnostics.
+    /// </summary>
+    /// <param name="grammar">Parsed grammar AST.</param>
+    /// <param name="transformer">Embedded-code transformer used for supported lexer action bodies.</param>
+    /// <returns>Deterministic lexer action hook metadata.</returns>
+    private static IReadOnlyList<LexerEmbeddedCodeHook> CollectLexerEmbeddedCodeHooks(G4Grammar grammar, IParserEmbeddedCodeTransformer transformer)
+    {
+        var hooks = new List<LexerEmbeddedCodeHook>();
+        foreach (var rule in grammar.LexerRules)
+        {
+            CollectLexerEmbeddedCodeHooks(rule.Name, rule.Content, hooks, -1, -1);
+        }
+
+        foreach (var mode in grammar.ExtraModes)
+        {
+            foreach (var rule in mode.Rules)
+            {
+                CollectLexerEmbeddedCodeHooks(rule.Name, rule.Content, hooks, -1, -1);
+            }
+        }
+
+        foreach (var hook in hooks)
+        {
+            hook.EmittedCode = TransformEmbeddedCode(transformer, hook.Code, ParserEmbeddedCodeLocation.LexerInlineAction, grammar, null);
+        }
+
+        return hooks;
+    }
+
+    /// <summary>Recursively collects lexer inline actions from lexer rule content.</summary>
+    private static void CollectLexerEmbeddedCodeHooks(string ruleName, G4Content content, List<LexerEmbeddedCodeHook> hooks, int alternativeIndex, int elementIndex)
+    {
+        switch (content)
+        {
+            case G4Alternation alternation:
+                for (int index = 0; index < alternation.Alternatives.Count; index++)
+                {
+                    CollectLexerEmbeddedCodeHooks(ruleName, alternation.Alternatives[index], hooks, index, -1);
+                }
+                break;
+            case G4Alternative alternative:
+                for (int index = 0; index < alternative.Items.Count; index++)
+                {
+                    CollectLexerEmbeddedCodeHooks(ruleName, alternative.Items[index], hooks, alternativeIndex, index);
+                }
+                break;
+            case G4Sequence sequence:
+                for (int index = 0; index < sequence.Items.Count; index++)
+                {
+                    CollectLexerEmbeddedCodeHooks(ruleName, sequence.Items[index], hooks, alternativeIndex, index);
+                }
+                break;
+            case G4Quantifier quantifier:
+                CollectLexerEmbeddedCodeHooks(ruleName, quantifier.Inner, hooks, alternativeIndex, elementIndex);
+                break;
+            case G4Negation negation:
+                CollectLexerEmbeddedCodeHooks(ruleName, negation.Inner, hooks, alternativeIndex, elementIndex);
+                break;
+            case G4EmbeddedAction action when !action.IsPredicate:
+                string methodName = $"__LexerAction_{Sanitize(ruleName)}_{NormalizeIndexForName(alternativeIndex)}_{NormalizeIndexForName(elementIndex)}_{hooks.Count}";
+                hooks.Add(new LexerEmbeddedCodeHook(ruleName, action.Code, alternativeIndex, elementIndex, methodName));
+                break;
+        }
+    }
+
     /// <summary>
     /// Collects parser-rule embedded predicates and inline actions using indexes aligned with the parser runtime.
     /// </summary>
@@ -234,6 +302,42 @@ internal static partial class GrammarEmitter
     private static string NormalizeIndexForName(int index)
     {
         return index < 0 ? "m1" : index.ToString();
+    }
+
+
+    /// <summary>
+    /// Metadata for one generated lexer inline action hook.
+    /// </summary>
+    private sealed class LexerEmbeddedCodeHook
+    {
+        /// <summary>Initializes lexer embedded-code hook metadata.</summary>
+        public LexerEmbeddedCodeHook(string ruleName, string code, int alternativeIndex, int elementIndex, string methodName)
+        {
+            RuleName = ruleName;
+            Code = code;
+            EmittedCode = code;
+            AlternativeIndex = alternativeIndex;
+            ElementIndex = elementIndex;
+            MethodName = methodName;
+        }
+
+        /// <summary>Gets the owning lexer rule name.</summary>
+        public string RuleName { get; }
+
+        /// <summary>Gets the raw embedded source code without ANTLR braces.</summary>
+        public string Code { get; }
+
+        /// <summary>Gets or sets the rewritten C# source emitted into the hook method.</summary>
+        public string EmittedCode { get; set; }
+
+        /// <summary>Gets the best-effort alternative index.</summary>
+        public int AlternativeIndex { get; }
+
+        /// <summary>Gets the best-effort element index.</summary>
+        public int ElementIndex { get; }
+
+        /// <summary>Gets the generated C# hook method name.</summary>
+        public string MethodName { get; }
     }
 
     /// <summary>

@@ -13,6 +13,7 @@ internal static partial class GrammarEmitter
     /// </summary>
     /// <param name="sb">Source builder receiving generated C#.</param>
     /// <param name="hooks">Collected parser embedded-code hooks.</param>
+    /// <param name="lexerHooks">Collected lexer inline action hooks.</param>
     /// <param name="lifecycleHooks">Collected rule lifecycle (@init / @after) hooks.</param>
     /// <param name="parserMembers">Parser members blocks to inject verbatim.</param>
     /// <param name="lexerMembers">Lexer members blocks to inject verbatim as a limited compatibility bridge.</param>
@@ -23,6 +24,7 @@ internal static partial class GrammarEmitter
     private static void EmitExecutionContext(
         StringBuilder sb,
         IReadOnlyList<EmbeddedCodeHook> hooks,
+        IReadOnlyList<LexerEmbeddedCodeHook> lexerHooks,
         IReadOnlyList<LifecycleHook> lifecycleHooks,
         IReadOnlyList<G4GrammarAction> parserMembers,
         IReadOnlyList<G4GrammarAction> lexerMembers,
@@ -104,6 +106,7 @@ internal static partial class GrammarEmitter
         sb.AppendLine("        {");
         sb.AppendLine("            SemanticPredicateEvaluator = new GeneratedSemanticPredicateEvaluator(this, effectiveBase.SemanticPredicateEvaluator),");
         sb.AppendLine("            ParserActionExecutor = new GeneratedParserActionExecutor(this, effectiveBase.ParserActionExecutor),");
+        sb.AppendLine("            LexerActionExecutor = new GeneratedLexerActionExecutor(this, effectiveBase.LexerActionExecutor),");
         sb.AppendLine("            ExecutionStateManager = new GeneratedExecutionStateManager(");
         sb.AppendLine("                this,");
         sb.AppendLine("                result => this._frameManager!.SyncCallResultToCurrentFrame(result),");
@@ -124,6 +127,7 @@ internal static partial class GrammarEmitter
         EmitExecutionStateManager(sb, contextClassName);
         EmitSemanticPredicateEvaluator(sb, predicates, contextClassName);
         EmitParserActionExecutor(sb, actions, contextClassName);
+        EmitLexerActionExecutor(sb, lexerHooks, contextClassName);
         if (lifecycleHooks.Count > 0)
         {
             EmitRuleLifecycleExecutor(sb, lifecycleHooks, contextClassName);
@@ -137,6 +141,11 @@ internal static partial class GrammarEmitter
         foreach (var action in actions)
         {
             EmitActionHook(sb, action);
+        }
+
+        foreach (var lexerHook in lexerHooks)
+        {
+            EmitLexerActionHook(sb, lexerHook);
         }
 
         foreach (var lifecycleHook in lifecycleHooks)
