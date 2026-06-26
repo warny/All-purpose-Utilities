@@ -34,30 +34,31 @@ public static class MatrixTransformations
     /// <typeparam name="T">Numeric type of the matrix.</typeparam>
     /// <param name="values">Diagonal values.</param>
     /// <returns>New diagonal matrix.</returns>
-    public static Matrix<T> Diagonal<T>(params T[] values)
+    public static Matrix<T> Diagonal<T>(params IEnumerable<T> values)
         where T : struct, IFloatingPoint<T>, IRootFunctions<T>
     {
-        int dimension = values.Length;
+        T[] valuesArray = values.ToArray();
+        int dimension = valuesArray.Length;
         var array = new T[dimension, dimension];
         bool allOne = true;
         bool oneZero = false;
         T newDeterminant = T.One;
         for (int i = 0; i < dimension; i++)
         {
-            if (values[i] == T.Zero)
+            if (valuesArray[i] == T.Zero)
             {
                 oneZero = true;
                 allOne = false;
             }
-            else if (values[i] != T.One)
+            else if (valuesArray[i] != T.One)
             {
                 allOne = false;
             }
             for (int j = 0; j < dimension; j++)
             {
-                array[i, j] = i == j ? values[i] : T.Zero;
+                array[i, j] = i == j ? valuesArray[i] : T.Zero;
             }
-            newDeterminant *= values[i];
+            newDeterminant *= valuesArray[i];
         }
         return new Matrix<T>(array, allOne, !oneZero, !oneZero, newDeterminant);
     }
@@ -68,10 +69,11 @@ public static class MatrixTransformations
     /// <typeparam name="T">Numeric type of the matrix.</typeparam>
     /// <param name="coefficients">Scaling factors for each axis.</param>
     /// <returns>New scaling matrix.</returns>
-    public static Matrix<T> Scaling<T>(params T[] coefficients)
+    public static Matrix<T> Scaling<T>(params IEnumerable<T> coefficients)
         where T : struct, IFloatingPoint<T>, IRootFunctions<T>
     {
-        int dimension = coefficients.Length + 1;
+        T[] coefficientsArray = coefficients.ToArray();
+        int dimension = coefficientsArray.Length + 1;
         var array = new T[dimension, dimension];
         bool allOne = true;
         T determinant = T.One;
@@ -87,7 +89,7 @@ public static class MatrixTransformations
                     continue;
                 }
 
-                T value = i < coefficients.Length ? coefficients[i] : T.One;
+                T value = i < coefficientsArray.Length ? coefficientsArray[i] : T.One;
                 array[i, j] = value;
                 determinant *= value;
                 allOne &= value == T.One;
@@ -103,10 +105,11 @@ public static class MatrixTransformations
     /// <typeparam name="T">Numeric type of the matrix.</typeparam>
     /// <param name="angles">Angles of the shear.</param>
     /// <returns>New shear matrix.</returns>
-    public static Matrix<T> Skew<T>(params T[] angles)
+    public static Matrix<T> Skew<T>(params IEnumerable<T> angles)
         where T : struct, IFloatingPoint<T>, ITrigonometricFunctions<T>, IRootFunctions<T>
     {
-        var dimension = (Math.Sqrt(4 * angles.Length + 1) + 1) / 2;
+        T[] anglesArray = angles.ToArray();
+        var dimension = (Math.Sqrt(4 * anglesArray.Length + 1) + 1) / 2;
         if (dimension != Math.Floor(dimension))
             throw new ArgumentException("Invalid dimension for skew matrix", nameof(angles));
 
@@ -128,7 +131,7 @@ public static class MatrixTransformations
             for (int y = 0; y < baseDimension; y++)
             {
                 int column = y >= x ? y : y + 1;
-                array[x, column] = T.Tan(angles[coefficientIndex]);
+                array[x, column] = T.Tan(anglesArray[coefficientIndex]);
                 coefficientIndex++;
             }
         }
@@ -142,10 +145,11 @@ public static class MatrixTransformations
     /// <typeparam name="T">Numeric type of the matrix.</typeparam>
     /// <param name="angles">Angles of rotation.</param>
     /// <returns>New rotation matrix.</returns>
-    public static Matrix<T> Rotation<T>(params T[] angles)
+    public static Matrix<T> Rotation<T>(params IEnumerable<T> angles)
         where T : struct, IFloatingPoint<T>, ITrigonometricFunctions<T>, IRootFunctions<T>
     {
-        double baseComputeDimension = (1 + Math.Sqrt(8 * angles.Length + 1)) / 2;
+        T[] anglesArray = angles.ToArray();
+        double baseComputeDimension = (1 + Math.Sqrt(8 * anglesArray.Length + 1)) / 2;
         int dimension = (int)Math.Floor(baseComputeDimension);
         if (baseComputeDimension != dimension)
         {
@@ -157,8 +161,8 @@ public static class MatrixTransformations
         {
             for (int dim2 = dim1 + 1; dim2 < dimension; dim2++)
             {
-                T cos = T.Cos(angles[angleIndex]);
-                T sin = T.Sin(angles[angleIndex]);
+                T cos = T.Cos(anglesArray[angleIndex]);
+                T sin = T.Sin(anglesArray[angleIndex]);
 
                 int matrixDimension = dimension + 1;
                 var rotationArray = new T[matrixDimension, matrixDimension];
@@ -189,10 +193,11 @@ public static class MatrixTransformations
     /// <typeparam name="T">Numeric type of the matrix.</typeparam>
     /// <param name="values">Translation values.</param>
     /// <returns>New translation matrix.</returns>
-    public static Matrix<T> Translation<T>(params T[] values)
+    public static Matrix<T> Translation<T>(params IEnumerable<T> values)
         where T : struct, IFloatingPoint<T>, IRootFunctions<T>
     {
-        int dimension = values.Length + 1;
+        T[] valuesArray = values.ToArray();
+        int dimension = valuesArray.Length + 1;
         var array = new T[dimension, dimension];
 
         for (int i = 0; i < dimension; i++)
@@ -204,9 +209,9 @@ public static class MatrixTransformations
         }
 
         int lastRow = dimension - 1;
-        for (int i = 0; i < values.Length; i++)
+        for (int i = 0; i < valuesArray.Length; i++)
         {
-            array[lastRow, i] = values[i];
+            array[lastRow, i] = valuesArray[i];
         }
 
         return new Matrix<T>(array, false, false, false, null);
@@ -218,10 +223,11 @@ public static class MatrixTransformations
     /// <typeparam name="T">Numeric type of the matrix.</typeparam>
     /// <param name="values">Transformation coefficients.</param>
     /// <returns>New transformation matrix.</returns>
-    public static Matrix<T> Transform<T>(params T[] values)
+    public static Matrix<T> Transform<T>(params IEnumerable<T> values)
         where T : struct, IFloatingPoint<T>, IRootFunctions<T>
     {
-        var dimension = (Math.Sqrt(4 * values.Length + 1) + 1) / 2;
+        T[] valuesArray = values.ToArray();
+        var dimension = (Math.Sqrt(4 * valuesArray.Length + 1) + 1) / 2;
         if (dimension != Math.Floor(dimension))
             throw new ArgumentException("Invalid dimension for transformation matrix", nameof(values));
         int matrixDimension = (int)dimension;
@@ -240,7 +246,7 @@ public static class MatrixTransformations
         {
             for (int y = 0; y < matrixDimension - 1; y++)
             {
-                array[x, y] = values[index];
+                array[x, y] = valuesArray[index];
                 index++;
             }
         }

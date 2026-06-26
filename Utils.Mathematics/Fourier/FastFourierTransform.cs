@@ -1,11 +1,11 @@
 using System.Numerics;
 
-namespace Utils.Mathematics.Fourrier;
+namespace Utils.Mathematics.Fourier;
 
 /// <summary>
 /// Provides a recursive Cooley-Tukey Fast Fourier Transform implementation.
 /// </summary>
-public static class FastFourrierTransform
+public static class FastFourierTransform
 {
     /// <summary>
     /// Performs an in-place FFT on the provided sample array.

@@ -224,6 +224,16 @@ public class AffineSubspaceTests
     }
 
     [TestMethod]
+    public void IntersectWith_Line_HighCodimension_ParallelLine_ReturnsNull()
+    {
+        // x-axis has codimension 2 in R³.  A line through (0,1,0) in direction (0,0,1)
+        // is not parallel (denominator > 0) but never reaches the x-axis.
+        var xAxis = AffineSubspace<double>.FromNormals(V(0, 0, 0), V(0, 1, 0), V(0, 0, 1));
+        var line = new Line<double>(V(0, 1, 0), V(0, 0, 1));
+        Assert.IsNull(xAxis.IntersectWith(line));
+    }
+
+    [TestMethod]
     public void IntersectWith_Line_WrongDimension_Throws()
     {
         var plane = AffineSubspace<double>.FromNormals(V(0, 0, 0), V(0, 0, 1));

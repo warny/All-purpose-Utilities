@@ -40,11 +40,10 @@ public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>, 
     /// </summary>
     /// <param name="components">Component values of the vector.</param>
     /// <exception cref="ArgumentException">Thrown when no components are provided.</exception>
-    public Vector(params T[] components)
+    public Vector(params IEnumerable<T> components)
     {
-        if (components.Length == 0) throw new ArgumentException("Vector dimension cannot be 0", nameof(components));
-        this.components = new T[components.Length];
-        Array.Copy(components, this.components, components.Length);
+        this.components = components.ToArray();
+        if (this.components.Length == 0) throw new ArgumentException("Vector dimension cannot be 0", nameof(components));
     }
 
     /// <summary>

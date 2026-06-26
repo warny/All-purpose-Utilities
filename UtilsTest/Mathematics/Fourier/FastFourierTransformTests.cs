@@ -1,12 +1,12 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Numerics;
-using Utils.Mathematics.Fourrier;
+using Utils.Mathematics.Fourier;
 
-namespace UtilsTest.Mathematics.Fourrier;
+namespace UtilsTest.Mathematics.Fourier;
 
 [TestClass]
-public class FastFourrierTransformTests
+public class FastFourierTransformTests
 {
     private const double Delta = 1e-6;
 
@@ -17,7 +17,7 @@ public class FastFourrierTransformTests
     {
         // FFT of [1,1,1,1]: only bin 0 (DC) is non-zero → [4, 0, 0, 0]
         Complex[] samples = [1, 1, 1, 1];
-        FastFourrierTransform.Transform(samples);
+        FastFourierTransform.Transform(samples);
 
         Assert.AreEqual(4.0, samples[0].Real,      Delta);
         Assert.AreEqual(0.0, samples[0].Imaginary, Delta);
@@ -38,7 +38,7 @@ public class FastFourrierTransformTests
         for (int i = 0; i < n; i++)
             samples[i] = Math.Sin(2 * Math.PI * i / n);
 
-        FastFourrierTransform.Transform(samples);
+        FastFourierTransform.Transform(samples);
 
         Assert.AreEqual(0.0, samples[0].Real,      Delta);
         Assert.AreEqual(0.0, samples[0].Imaginary, Delta);
@@ -57,7 +57,7 @@ public class FastFourrierTransformTests
     public void Transform_NonPowerOfTwo_Throws()
     {
         var samples = new Complex[3];
-        Assert.ThrowsException<ArgumentException>(() => FastFourrierTransform.Transform(samples));
+        Assert.ThrowsException<ArgumentException>(() => FastFourierTransform.Transform(samples));
     }
 
     // ── Extensions ────────────────────────────────────────────────────────────
@@ -71,7 +71,7 @@ public class FastFourrierTransformTests
         for (int i = 0; i < n; i++)
             samples[i] = Math.Sin(2 * Math.PI * i / n);
 
-        FastFourrierTransform.Transform(samples);
+        FastFourierTransform.Transform(samples);
 
         double[] frequencies = samples.GetFrequencies(8);
         CollectionAssert.AreEqual(new double[] { 0, 1, 2, 3 }, frequencies);
@@ -90,7 +90,7 @@ public class FastFourrierTransformTests
     {
         // FFT of [1,1,1,1] → amplitudes = [4, 0, 0, 0]
         Complex[] samples = [1, 1, 1, 1];
-        FastFourrierTransform.Transform(samples);
+        FastFourierTransform.Transform(samples);
 
         double[] amplitudes = samples.GetAmplitudes();
         Assert.AreEqual(4.0, amplitudes[0], Delta);
@@ -102,7 +102,7 @@ public class FastFourrierTransformTests
     public void GetPhases_ConstantSignal_AllZero()
     {
         Complex[] samples = [1, 1, 1, 1];
-        FastFourrierTransform.Transform(samples);
+        FastFourierTransform.Transform(samples);
 
         double[] phases = samples.GetPhases();
         // DC bin is 4+0j → phase = 0. Bins 1..3 are 0+0j → phase = 0 by convention.
@@ -118,7 +118,7 @@ public class FastFourrierTransformTests
         for (int i = 0; i < n; i++)
             samples[i] = Math.Sin(2 * Math.PI * i / n);
 
-        FastFourrierTransform.Transform(samples);
+        FastFourierTransform.Transform(samples);
         double[] amplitudes = samples.GetAmplitudes();
 
         Assert.AreEqual(4.0, amplitudes[1], Delta);
@@ -137,8 +137,8 @@ public class FastFourrierTransformTests
         Complex[] original = [1, 2, 3, 4];
         Complex[] samples = [1, 2, 3, 4];
 
-        FastFourrierTransform.Transform(samples);
-        FastFourrierTransform.InverseTransform(samples);
+        FastFourierTransform.Transform(samples);
+        FastFourierTransform.InverseTransform(samples);
 
         for (int i = 0; i < samples.Length; i++)
         {
@@ -152,7 +152,7 @@ public class FastFourrierTransformTests
     {
         // IFFT of [1, 1, 1, 1] = [1, 0, 0, 0] (impulse at index 0)
         Complex[] spectrum = [1, 1, 1, 1];
-        FastFourrierTransform.InverseTransform(spectrum);
+        FastFourierTransform.InverseTransform(spectrum);
 
         Assert.AreEqual(1.0, spectrum[0].Real,      Delta);
         Assert.AreEqual(0.0, spectrum[0].Imaginary, Delta);
@@ -167,6 +167,6 @@ public class FastFourrierTransformTests
     public void InverseTransform_NonPowerOfTwo_Throws()
     {
         var spectrum = new Complex[3];
-        Assert.ThrowsException<ArgumentException>(() => FastFourrierTransform.InverseTransform(spectrum));
+        Assert.ThrowsException<ArgumentException>(() => FastFourierTransform.InverseTransform(spectrum));
     }
 }

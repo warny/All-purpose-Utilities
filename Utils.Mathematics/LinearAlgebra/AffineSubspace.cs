@@ -170,7 +170,15 @@ public sealed class AffineSubspace<T> : IEquatable<AffineSubspace<T>>, ICloneabl
             return null;
 
         T t = numerator / denominator;
-        return line.Point + t * line.Direction;
+        var candidate = line.Point + t * line.Direction;
+
+        // For codimension > 1 the normal-equation least-squares t minimises the
+        // residual but may not satisfy all constraints simultaneously.  Verify
+        // the candidate actually lies on the subspace before returning it.
+        if (DistanceTo(candidate) > Epsilon)
+            return null;
+
+        return candidate;
     }
 
     /// <summary>
