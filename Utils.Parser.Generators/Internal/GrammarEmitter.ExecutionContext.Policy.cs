@@ -190,7 +190,9 @@ internal static partial class GrammarEmitter
         foreach (var action in lexerActions)
         {
             sb.AppendLine($"            if (string.Equals(context.Rule.Name, \"{Escape(action.RuleName)}\", global::System.StringComparison.Ordinal)");
-            sb.AppendLine($"                && string.Equals(context.ActionCode, \"{Escape(action.Code)}\", global::System.StringComparison.Ordinal))");
+            sb.AppendLine($"                && string.Equals(context.ActionCode, \"{Escape(action.Code)}\", global::System.StringComparison.Ordinal)");
+            sb.AppendLine($"                && context.AlternativeIndex == {action.AlternativeIndex}");
+            sb.AppendLine($"                && context.ElementIndex == {action.ElementIndex})");
             sb.AppendLine("            {");
             sb.AppendLine($"                _executionContext.{action.MethodName}(context);");
             sb.AppendLine("                return LexerActionExecutionOutcome.Executed;");

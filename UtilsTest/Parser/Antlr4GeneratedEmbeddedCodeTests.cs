@@ -99,6 +99,37 @@ public class Antlr4GeneratedEmbeddedCodeTests
         Assert.AreEqual(1, ReadInstanceIntField(context, "Count"));
     }
 
+
+    /// <summary>
+    /// Ensures lexer action dispatch uses runtime alternative and element indexes.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerInlineAction_ReceivesRuntimeIndexes()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public int Count;
+            }
+
+            start : A ;
+            A
+                : 'a' { Count += context.AlternativeIndex == 0 && context.ElementIndex == 1 ? 1 : 100; }
+                | 'b' { Count += context.AlternativeIndex == 1 && context.ElementIndex == 1 ? 10 : 1000; }
+                ;
+            """;
+
+        string source = Emit(grammar);
+        var assembly = CompileGeneratedSource(source);
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "b", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(10, ReadInstanceIntField(context, "Count"));
+    }
+
     /// <summary>
     /// Ensures generated source has lexer action hooks without invoking them from conservative Parse.
     /// </summary>
@@ -114,6 +145,8 @@ public class Antlr4GeneratedEmbeddedCodeTests
         string source = Emit(grammar);
 
         StringAssert.Contains(source, "private void __LexerAction_A_0_1_0");
+        StringAssert.Contains(source, "&& context.AlternativeIndex == 0");
+        StringAssert.Contains(source, "&& context.ElementIndex == 1");
         Assert.IsFalse(source.Contains("__LexerPredicate", StringComparison.Ordinal));
         StringAssert.Contains(source, "public static ParseNode Parse(");
         int parseIndex = source.IndexOf("public static ParseNode Parse(", StringComparison.Ordinal);
