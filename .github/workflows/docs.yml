@@ -47,8 +47,8 @@ jobs:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   LABEL: ${{ steps.ver.outputs.label }}
               run: |
-                  git config user.name "github-actions[bot]"
-                  git config user.email "github-actions[bot]@users.noreply.github.com"
+                  git config --global user.name "github-actions[bot]"
+                  git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
                   # Clone gh-pages or initialise an orphan branch
                   if git ls-remote --exit-code origin gh-pages > /dev/null 2>&1; then
