@@ -37,7 +37,8 @@ TestResult.xml
 
 # DocFX generated output
 _site/
-api/
+api/*.yml
+api/*.json
 
 # Build Results of an ATL Project
 [Dd]ebugPS/
