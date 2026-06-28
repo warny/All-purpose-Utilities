@@ -5,6 +5,7 @@ on:
         branches:
             - master
             - release
+            - releases/**
     workflow_dispatch:
 
 permissions:
@@ -32,7 +33,10 @@ jobs:
             - name: Determine version label
               id: ver
               run: |
-                  if [ "$GITHUB_REF" = "refs/heads/release" ]; then
+                  if echo "$GITHUB_REF" | grep -q '^refs/heads/releases/'; then
+                      V=$(echo "$GITHUB_REF" | sed 's|refs/heads/releases/||')
+                      echo "label=v$V" >> "$GITHUB_OUTPUT"
+                  elif [ "$GITHUB_REF" = "refs/heads/release" ]; then
                       V=$(grep -oP '(?<=<Version>)[^<]+' Utils/Utils.csproj | head -1)
                       echo "label=v$V" >> "$GITHUB_OUTPUT"
                   else
@@ -47,8 +51,8 @@ jobs:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   LABEL: ${{ steps.ver.outputs.label }}
               run: |
-                  git config user.name "github-actions[bot]"
-                  git config user.email "github-actions[bot]@users.noreply.github.com"
+                  git config --global user.name "github-actions[bot]"
+                  git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
                   # Clone gh-pages or initialise an orphan branch
                   if git ls-remote --exit-code origin gh-pages > /dev/null 2>&1; then
