@@ -16,6 +16,14 @@ namespace Utils.Mathematics
         BigInteger? MaxNumber { get; }
 
         /// <summary>
+        /// Gets the declared variant dimensions for this language, each with its ordered
+        /// list of valid values. The first value of each dimension is the default applied
+        /// when no explicit variant parameter is supplied to a conversion method.
+        /// Returns an empty list when the language declares no variants.
+        /// </summary>
+        IReadOnlyList<NumberToStringConverter.VariantDimension> VariantDimensions { get; }
+
+        /// <summary>
         /// Converts an arbitrarily large integer into its string representation.
         /// </summary>
         /// <param name="number">The value to convert.</param>
