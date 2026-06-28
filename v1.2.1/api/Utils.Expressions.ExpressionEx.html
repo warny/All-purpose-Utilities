@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Class ExpressionEx | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Class ExpressionEx | omy.Utils Documentation ">
+      
+      <meta name="description" content="Provides helper methods for building and manipulating expression trees.">
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_Expressions_ExpressionEx.md&amp;value=---%0Auid%3A%20Utils.Expressions.ExpressionEx%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="Utils.Expressions.ExpressionEx">
+
+
+
+  <h1 id="Utils_Expressions_ExpressionEx" data-uid="Utils.Expressions.ExpressionEx" class="text-break">
+Class ExpressionEx  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Expressions/ExpressionEx.cs/#L15"><i class="bi bi-code-slash"></i></a>
+  </h1>
+
+  <div class="facts text-secondary">
+    <dl><dt>Namespace</dt><dd><a class="xref" href="Utils.html">Utils</a>.<a class="xref" href="Utils.Expressions.html">Expressions</a></dd></dl>
+  <dl><dt>Assembly</dt><dd>Utils.dll</dd></dl>
+  </div>
+
+  <div class="markdown summary"><p>Provides helper methods for building and manipulating expression trees.</p>
+</div>
+  <div class="markdown conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static class ExpressionEx</code></pre>
+  </div>
+
+
+
+
+  <dl class="typelist inheritance">
+    <dt>Inheritance</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
+      <div><span class="xref">ExpressionEx</span></div>
+    </dd>
+  </dl>
+
+
+
+  <dl class="typelist inheritedMembers">
+    <dt>Inherited Members</dt>
+    <dd>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)">object.Equals(object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)">object.Equals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gethashcode">object.GetHashCode()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone">object.MemberwiseClone()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.tostring">object.ToString()</a>
+    </div>
+  </dd></dl>
+
+
+
+
+
+
+  <h2 class="section" id="methods">Methods
+</h2>
+
+
+  <a id="Utils_Expressions_ExpressionEx_CreateExpressionCall_" data-uid="Utils.Expressions.ExpressionEx.CreateExpressionCall*"></a>
+
+  <h3 id="Utils_Expressions_ExpressionEx_CreateExpressionCall_System_Linq_Expressions_Expression_System_String_System_Linq_Expressions_Expression___" data-uid="Utils.Expressions.ExpressionEx.CreateExpressionCall(System.Linq.Expressions.Expression,System.String,System.Linq.Expressions.Expression[])">
+  CreateExpressionCall(Expression, string, params Expression[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Expressions/ExpressionEx.cs/#L24"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Create an expression call on an object given the specified arguments</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static MethodCallExpression CreateExpressionCall(Expression expression, string name, params Expression[] arguments)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>expression</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></dt>
+    <dd></dd>
+    <dt><code>name</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+    <dt><code>arguments</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a>[]</dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.methodcallexpression">MethodCallExpression</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Expressions_ExpressionEx_CreateExpressionCall_" data-uid="Utils.Expressions.ExpressionEx.CreateExpressionCall*"></a>
+
+  <h3 id="Utils_Expressions_ExpressionEx_CreateExpressionCall_System_Linq_Expressions_Expression_System_String_System_Reflection_BindingFlags_System_Linq_Expressions_Expression___" data-uid="Utils.Expressions.ExpressionEx.CreateExpressionCall(System.Linq.Expressions.Expression,System.String,System.Reflection.BindingFlags,System.Linq.Expressions.Expression[])">
+  CreateExpressionCall(Expression, string, BindingFlags, params Expression[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Expressions/ExpressionEx.cs/#L35"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Create an expression call on an object given the specified arguments</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static MethodCallExpression CreateExpressionCall(Expression expression, string name, BindingFlags bindingFlags, params Expression[] arguments)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>expression</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></dt>
+    <dd></dd>
+    <dt><code>name</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+    <dt><code>bindingFlags</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.reflection.bindingflags">BindingFlags</a></dt>
+    <dd></dd>
+    <dt><code>arguments</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a>[]</dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.methodcallexpression">MethodCallExpression</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Expressions_ExpressionEx_CreateExpressionCall_" data-uid="Utils.Expressions.ExpressionEx.CreateExpressionCall*"></a>
+
+  <h3 id="Utils_Expressions_ExpressionEx_CreateExpressionCall_System_Type_System_String_System_Reflection_BindingFlags_System_Linq_Expressions_Expression___" data-uid="Utils.Expressions.ExpressionEx.CreateExpressionCall(System.Type,System.String,System.Reflection.BindingFlags,System.Linq.Expressions.Expression[])">
+  CreateExpressionCall(Type, string, BindingFlags, params Expression[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Expressions/ExpressionEx.cs/#L52"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Create a static expression call given the specified arguments</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static MethodCallExpression CreateExpressionCall(Type type, string name, BindingFlags bindingFlags, params Expression[] arguments)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>type</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.type">Type</a></dt>
+    <dd></dd>
+    <dt><code>name</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+    <dt><code>bindingFlags</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.reflection.bindingflags">BindingFlags</a></dt>
+    <dd></dd>
+    <dt><code>arguments</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a>[]</dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.methodcallexpression">MethodCallExpression</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Expressions_ExpressionEx_CreateMemberExpression_" data-uid="Utils.Expressions.ExpressionEx.CreateMemberExpression*"></a>
+
+  <h3 id="Utils_Expressions_ExpressionEx_CreateMemberExpression_System_Linq_Expressions_Expression_System_Reflection_MemberInfo_System_Linq_Expressions_Expression___" data-uid="Utils.Expressions.ExpressionEx.CreateMemberExpression(System.Linq.Expressions.Expression,System.Reflection.MemberInfo,System.Linq.Expressions.Expression[])">
+  CreateMemberExpression(Expression, MemberInfo, params Expression[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Expressions/ExpressionEx.cs/#L338"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Creates an expression accessing a specific member on an instance.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Expression CreateMemberExpression(Expression expression, MemberInfo member, params Expression[] arguments)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>expression</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></dt>
+    <dd><p>Expression producing the instance whose member is accessed.</p>
+</dd>
+    <dt><code>member</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.reflection.memberinfo">MemberInfo</a></dt>
+    <dd><p>The member metadata describing the target.</p>
+</dd>
+    <dt><code>arguments</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a>[]</dt>
+    <dd><p>Arguments used for indexed properties or method invocations.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></dt>
+    <dd><p>An <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a> representing the member access.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when the supplied <code class="paramref">arguments</code> do not match the member signature.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Expressions_ExpressionEx_CreateMemberExpression_" data-uid="Utils.Expressions.ExpressionEx.CreateMemberExpression*"></a>
+
+  <h3 id="Utils_Expressions_ExpressionEx_CreateMemberExpression_System_Linq_Expressions_Expression_System_String_System_Linq_Expressions_Expression___" data-uid="Utils.Expressions.ExpressionEx.CreateMemberExpression(System.Linq.Expressions.Expression,System.String,System.Linq.Expressions.Expression[])">
+  CreateMemberExpression(Expression, string, params Expression[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Expressions/ExpressionEx.cs/#L275"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Creates an expression accessing a member on an instance using the supplied arguments.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Expression CreateMemberExpression(Expression expression, string memberName, params Expression[] arguments)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>expression</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></dt>
+    <dd><p>Expression producing the instance whose member is accessed.</p>
+</dd>
+    <dt><code>memberName</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Name of the member to access.</p>
+</dd>
+    <dt><code>arguments</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a>[]</dt>
+    <dd><p>Arguments used for indexed properties or method invocations.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></dt>
+    <dd><p>An <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a> representing the member access.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Expressions_ExpressionEx_CreateMemberExpression_" data-uid="Utils.Expressions.ExpressionEx.CreateMemberExpression*"></a>
+
+  <h3 id="Utils_Expressions_ExpressionEx_CreateMemberExpression_System_Linq_Expressions_Expression_System_String_System_Reflection_BindingFlags_System_Linq_Expressions_Expression___" data-uid="Utils.Expressions.ExpressionEx.CreateMemberExpression(System.Linq.Expressions.Expression,System.String,System.Reflection.BindingFlags,System.Linq.Expressions.Expression[])">
+  CreateMemberExpression(Expression, string, BindingFlags, params Expression[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Expressions/ExpressionEx.cs/#L287"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Creates an expression accessing a member on an instance using explicit binding flags.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Expression CreateMemberExpression(Expression expression, string memberName, BindingFlags bindingFlags, params Expression[] arguments)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>expression</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></dt>
+    <dd><p>Expression producing the instance whose member is accessed.</p>
+</dd>
+    <dt><code>memberName</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Name of the member to access.</p>
+</dd>
+    <dt><code>bindingFlags</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.reflection.bindingflags">BindingFlags</a></dt>
+    <dd><p>Flags controlling visibility, case, and hierarchy.</p>
+</dd>
+    <dt><code>arguments</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a>[]</dt>
+    <dd><p>Arguments used for indexed properties or method invocations.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></dt>
+    <dd><p>An <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a> representing the member access.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.missingmemberexception">MissingMemberException</a></dt>
+    <dd><p>Thrown when the requested member cannot be located.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Expressions_ExpressionEx_CreateStaticExpression_" data-uid="Utils.Expressions.ExpressionEx.CreateStaticExpression*"></a>
+
+  <h3 id="Utils_Expressions_ExpressionEx_CreateStaticExpression_System_Type_System_String_System_Linq_Expressions_Expression___" data-uid="Utils.Expressions.ExpressionEx.CreateStaticExpression(System.Type,System.String,System.Linq.Expressions.Expression[])">
+  CreateStaticExpression(Type, string, params Expression[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Expressions/ExpressionEx.cs/#L379"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Creates an expression accessing a static member using the supplied arguments.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Expression CreateStaticExpression(Type type, string memberName, params Expression[] arguments)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>type</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.type">Type</a></dt>
+    <dd><p>Type declaring the member.</p>
+</dd>
+    <dt><code>memberName</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Name of the member to access.</p>
+</dd>
+    <dt><code>arguments</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a>[]</dt>
+    <dd><p>Arguments used for indexed properties or method invocations.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></dt>
+    <dd><p>An <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a> representing the member access.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Expressions_ExpressionEx_CreateStaticExpression_" data-uid="Utils.Expressions.ExpressionEx.CreateStaticExpression*"></a>
+
+  <h3 id="Utils_Expressions_ExpressionEx_CreateStaticExpression_System_Type_System_String_System_Reflection_BindingFlags_System_Linq_Expressions_Expression___" data-uid="Utils.Expressions.ExpressionEx.CreateStaticExpression(System.Type,System.String,System.Reflection.BindingFlags,System.Linq.Expressions.Expression[])">
+  CreateStaticExpression(Type, string, BindingFlags, params Expression[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Expressions/ExpressionEx.cs/#L391"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Creates an expression accessing a static member using explicit binding flags.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Expression CreateStaticExpression(Type type, string memberName, BindingFlags bindingFlags, params Expression[] arguments)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>type</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.type">Type</a></dt>
+    <dd><p>Type declaring the member.</p>
+</dd>
+    <dt><code>memberName</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Name of the member to access.</p>
+</dd>
+    <dt><code>bindingFlags</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.reflection.bindingflags">BindingFlags</a></dt>
+    <dd><p>Flags controlling visibility, case, and hierarchy.</p>
+</dd>
+    <dt><code>arguments</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a>[]</dt>
+    <dd><p>Arguments used for indexed properties or method invocations.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></dt>
+    <dd><p>An <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a> representing the member access.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.missingmemberexception">MissingMemberException</a></dt>
+    <dd><p>Thrown when the requested member cannot be located.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Expressions_ExpressionEx_Do_" data-uid="Utils.Expressions.ExpressionEx.Do*"></a>
+
+  <h3 id="Utils_Expressions_ExpressionEx_Do_System_Linq_Expressions_Expression_System_Linq_Expressions_Expression_System_Linq_Expressions_LabelTarget_System_Linq_Expressions_LabelTarget_" data-uid="Utils.Expressions.ExpressionEx.Do(System.Linq.Expressions.Expression,System.Linq.Expressions.Expression,System.Linq.Expressions.LabelTarget,System.Linq.Expressions.LabelTarget)">
+  Do(Expression, Expression, LabelTarget, LabelTarget)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Expressions/ExpressionEx.cs/#L254"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Builds a <code>do</code>/<code>while</code> loop expression.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Expression Do(Expression test, Expression iteration, LabelTarget breakLoop = null, LabelTarget continueLoop = null)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>test</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></dt>
+    <dd><p>Condition evaluated after each iteration.</p>
+</dd>
+    <dt><code>iteration</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></dt>
+    <dd><p>Body executed for each iteration.</p>
+</dd>
+    <dt><code>breakLoop</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.labeltarget">LabelTarget</a></dt>
+    <dd><p>Optional label used to exit the loop early.</p>
+</dd>
+    <dt><code>continueLoop</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.labeltarget">LabelTarget</a></dt>
+    <dd><p>Optional label used to jump to the next iteration.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></dt>
+    <dd><p>An <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a> representing the loop.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Expressions_ExpressionEx_ExtractInnerExpression_" data-uid="Utils.Expressions.ExpressionEx.ExtractInnerExpression*"></a>
+
+  <h3 id="Utils_Expressions_ExpressionEx_ExtractInnerExpression_System_Linq_Expressions_LambdaExpression_System_Linq_Expressions_Expression___" data-uid="Utils.Expressions.ExpressionEx.ExtractInnerExpression(System.Linq.Expressions.LambdaExpression,System.Linq.Expressions.Expression[])">
+  ExtractInnerExpression(LambdaExpression, params Expression[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Expressions/ExpressionEx.cs/#L560"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Replaces the parameters of a lambda expression with supplied expressions and returns the resulting body.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Expression ExtractInnerExpression(LambdaExpression lambda, params Expression[] replacingExpressions)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>lambda</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.lambdaexpression">LambdaExpression</a></dt>
+    <dd><p>Lambda whose body will be copied.</p>
+</dd>
+    <dt><code>replacingExpressions</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a>[]</dt>
+    <dd><p>Expressions replacing each parameter in order.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></dt>
+    <dd><p>The lambda body with parameters replaced by the provided expressions.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when replacement counts or types do not match the lambda parameters.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Expressions_ExpressionEx_For_" data-uid="Utils.Expressions.ExpressionEx.For*"></a>
+
+  <h3 id="Utils_Expressions_ExpressionEx_For_System_Linq_Expressions_ParameterExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_Expression_System_Linq_Expressions_Expression___System_Linq_Expressions_Expression_System_Linq_Expressions_LabelTarget_System_Linq_Expressions_LabelTarget_" data-uid="Utils.Expressions.ExpressionEx.For(System.Linq.Expressions.ParameterExpression,System.Linq.Expressions.Expression,System.Linq.Expressions.Expression,System.Linq.Expressions.Expression[],System.Linq.Expressions.Expression,System.Linq.Expressions.LabelTarget,System.Linq.Expressions.LabelTarget)">
+  For(ParameterExpression, Expression, Expression, Expression[], Expression, LabelTarget, LabelTarget)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Expressions/ExpressionEx.cs/#L198"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Builds a traditional <code>for</code> loop expression.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Expression For(ParameterExpression iterator, Expression init, Expression test, Expression[] next, Expression iteration, LabelTarget breakLoop = null, LabelTarget continueLoop = null)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>iterator</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.parameterexpression">ParameterExpression</a></dt>
+    <dd><p>Loop variable that is initialized, tested, and incremented.</p>
+</dd>
+    <dt><code>init</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></dt>
+    <dd><p>Initialization expression assigning the start value.</p>
+</dd>
+    <dt><code>test</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></dt>
+    <dd><p>Condition that must remain <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> for the loop to continue.</p>
+</dd>
+    <dt><code>next</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a>[]</dt>
+    <dd><p>Expressions executed after each iteration to advance the loop.</p>
+</dd>
+    <dt><code>iteration</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></dt>
+    <dd><p>Body executed for each iteration.</p>
+</dd>
+    <dt><code>breakLoop</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.labeltarget">LabelTarget</a></dt>
+    <dd><p>Optional label used to exit the loop early.</p>
+</dd>
+    <dt><code>continueLoop</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.labeltarget">LabelTarget</a></dt>
+    <dd><p>Optional label used to jump to the next iteration.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></dt>
+    <dd><p>An <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a> representing the loop.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Expressions_ExpressionEx_ForEach_" data-uid="Utils.Expressions.ExpressionEx.ForEach*"></a>
+
+  <h3 id="Utils_Expressions_ExpressionEx_ForEach_System_Linq_Expressions_ParameterExpression_System_Linq_Expressions_ParameterExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_LabelTarget_System_Linq_Expressions_LabelTarget_" data-uid="Utils.Expressions.ExpressionEx.ForEach(System.Linq.Expressions.ParameterExpression,System.Linq.Expressions.ParameterExpression,System.Linq.Expressions.Expression,System.Linq.Expressions.LabelTarget,System.Linq.Expressions.LabelTarget)">
+  ForEach(ParameterExpression, ParameterExpression, Expression, LabelTarget, LabelTarget)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Expressions/ExpressionEx.cs/#L157"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Builds a <code>foreach</code>-style loop over the provided enumerable expression.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Expression ForEach(ParameterExpression iterator, ParameterExpression enumerable, Expression iteration, LabelTarget breakLoop = null, LabelTarget continueLoop = null)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>iterator</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.parameterexpression">ParameterExpression</a></dt>
+    <dd><p>Variable that receives the current item on each iteration.</p>
+</dd>
+    <dt><code>enumerable</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.parameterexpression">ParameterExpression</a></dt>
+    <dd><p>Expression that evaluates to the enumerable value.</p>
+</dd>
+    <dt><code>iteration</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></dt>
+    <dd><p>Body executed for each element.</p>
+</dd>
+    <dt><code>breakLoop</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.labeltarget">LabelTarget</a></dt>
+    <dd><p>Optional label used to exit the loop early.</p>
+</dd>
+    <dt><code>continueLoop</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.labeltarget">LabelTarget</a></dt>
+    <dd><p>Optional label used to jump to the next iteration.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></dt>
+    <dd><p>An <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a> representing the loop.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Expressions_ExpressionEx_TryGetConverter_" data-uid="Utils.Expressions.ExpressionEx.TryGetConverter*"></a>
+
+  <h3 id="Utils_Expressions_ExpressionEx_TryGetConverter_System_Linq_Expressions_Expression_System_Linq_Expressions_Expression_System_Linq_Expressions_Expression__System_Reflection_BindingFlags_" data-uid="Utils.Expressions.ExpressionEx.TryGetConverter(System.Linq.Expressions.Expression,System.Linq.Expressions.Expression,System.Linq.Expressions.Expression@,System.Reflection.BindingFlags)">
+  TryGetConverter(Expression, Expression, out Expression, BindingFlags)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Expressions/ExpressionEx.cs/#L452"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Attempts to create a conversion expression between two operands using the specified binding flags.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool TryGetConverter(Expression expressionLeft, Expression expressionRight, out Expression converter, BindingFlags bindingFlags = BindingFlags.Public)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>expressionLeft</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></dt>
+    <dd><p>Expression providing the target conversion type.</p>
+</dd>
+    <dt><code>expressionRight</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></dt>
+    <dd><p>Expression representing the value to convert.</p>
+</dd>
+    <dt><code>converter</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></dt>
+    <dd><p>Receives the resulting conversion expression when successful.</p>
+</dd>
+    <dt><code>bindingFlags</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.reflection.bindingflags">BindingFlags</a></dt>
+    <dd><p>Binding flags controlling which members are considered.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when a suitable conversion expression can be created.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Expressions_ExpressionEx_TryGetConverter_" data-uid="Utils.Expressions.ExpressionEx.TryGetConverter*"></a>
+
+  <h3 id="Utils_Expressions_ExpressionEx_TryGetConverter_System_Type_System_Linq_Expressions_Expression_System_Linq_Expressions_Expression__System_Reflection_BindingFlags_" data-uid="Utils.Expressions.ExpressionEx.TryGetConverter(System.Type,System.Linq.Expressions.Expression,System.Linq.Expressions.Expression@,System.Reflection.BindingFlags)">
+  TryGetConverter(Type, Expression, out Expression, BindingFlags)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Expressions/ExpressionEx.cs/#L482"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Attempts to create a conversion expression for the supplied target type and value expression.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool TryGetConverter(Type targetType, Expression expressionRight, out Expression converter, BindingFlags bindingFlags = BindingFlags.Public)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>targetType</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.type">Type</a></dt>
+    <dd><p>Destination type for the conversion.</p>
+</dd>
+    <dt><code>expressionRight</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></dt>
+    <dd><p>Expression representing the value to convert.</p>
+</dd>
+    <dt><code>converter</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></dt>
+    <dd><p>Receives the resulting conversion expression when successful.</p>
+</dd>
+    <dt><code>bindingFlags</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.reflection.bindingflags">BindingFlags</a></dt>
+    <dd><p>Binding flags controlling which members are considered.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when a suitable conversion expression can be created.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Expressions_ExpressionEx_TryGetConverter_" data-uid="Utils.Expressions.ExpressionEx.TryGetConverter*"></a>
+
+  <h3 id="Utils_Expressions_ExpressionEx_TryGetConverter_System_ValueTuple_System_Type_System_Linq_Expressions_Expression____System_Linq_Expressions_Expression__System_Reflection_BindingFlags_" data-uid="Utils.Expressions.ExpressionEx.TryGetConverter(System.ValueTuple{System.Type,System.Linq.Expressions.Expression}[],System.Linq.Expressions.Expression@,System.Reflection.BindingFlags)">
+  TryGetConverter((Type targetType, Expression expressionRight)[], out Expression, BindingFlags)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Expressions/ExpressionEx.cs/#L464"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Attempts to produce a conversion expression for any of the supplied target/value pairs.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool TryGetConverter((Type targetType, Expression expressionRight)[] expressions, out Expression converter, BindingFlags bindingFlags = BindingFlags.Public)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>expressions</code> (<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.type">Type</a> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple-system.type,system.linq.expressions.expression-.targettype">targetType</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple-system.type,system.linq.expressions.expression-.expressionright">expressionRight</a>)[]</dt>
+    <dd><p>Pairs describing the desired target type and associated value expression.</p>
+</dd>
+    <dt><code>converter</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></dt>
+    <dd><p>Receives the resulting conversion expression when successful.</p>
+</dd>
+    <dt><code>bindingFlags</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.reflection.bindingflags">BindingFlags</a></dt>
+    <dd><p>Binding flags controlling which members are considered.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when a suitable conversion expression can be created.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Expressions_ExpressionEx_TryGetConverterMethod_" data-uid="Utils.Expressions.ExpressionEx.TryGetConverterMethod*"></a>
+
+  <h3 id="Utils_Expressions_ExpressionEx_TryGetConverterMethod_System_Linq_Expressions_Expression_System_Type_System_Linq_Expressions_Expression__" data-uid="Utils.Expressions.ExpressionEx.TryGetConverterMethod(System.Linq.Expressions.Expression,System.Type,System.Linq.Expressions.Expression@)">
+  TryGetConverterMethod(Expression, Type, out Expression)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Expressions/ExpressionEx.cs/#L69"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Attempts to locate an implicit or explicit conversion for the provided expression.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool TryGetConverterMethod(Expression source, Type outType, out Expression builder)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>source</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></dt>
+    <dd><p>Expression that should be converted.</p>
+</dd>
+    <dt><code>outType</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.type">Type</a></dt>
+    <dd><p>Target type of the conversion.</p>
+</dd>
+    <dt><code>builder</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></dt>
+    <dd><p>Receives the conversion expression when successful.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when a conversion was located.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Expressions_ExpressionEx_TryGetConverterMethod_" data-uid="Utils.Expressions.ExpressionEx.TryGetConverterMethod*"></a>
+
+  <h3 id="Utils_Expressions_ExpressionEx_TryGetConverterMethod_System_Linq_Expressions_Expression_System_Type_System_Reflection_BindingFlags_System_Linq_Expressions_Expression__" data-uid="Utils.Expressions.ExpressionEx.TryGetConverterMethod(System.Linq.Expressions.Expression,System.Type,System.Reflection.BindingFlags,System.Linq.Expressions.Expression@)">
+  TryGetConverterMethod(Expression, Type, BindingFlags, out Expression)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Expressions/ExpressionEx.cs/#L80"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Attempts to locate an implicit or explicit conversion for the provided expression using the specified binding flags.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool TryGetConverterMethod(Expression source, Type outType, BindingFlags bindingFlags, out Expression builder)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>source</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></dt>
+    <dd><p>Expression that should be converted.</p>
+</dd>
+    <dt><code>outType</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.type">Type</a></dt>
+    <dd><p>Target type of the conversion.</p>
+</dd>
+    <dt><code>bindingFlags</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.reflection.bindingflags">BindingFlags</a></dt>
+    <dd><p>Binding flags controlling which members are considered.</p>
+</dd>
+    <dt><code>builder</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></dt>
+    <dd><p>Receives the conversion expression when successful.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when a conversion was located.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Expressions_ExpressionEx_While_" data-uid="Utils.Expressions.ExpressionEx.While*"></a>
+
+  <h3 id="Utils_Expressions_ExpressionEx_While_System_Linq_Expressions_Expression_System_Linq_Expressions_Expression_System_Linq_Expressions_LabelTarget_System_Linq_Expressions_LabelTarget_" data-uid="Utils.Expressions.ExpressionEx.While(System.Linq.Expressions.Expression,System.Linq.Expressions.Expression,System.Linq.Expressions.LabelTarget,System.Linq.Expressions.LabelTarget)">
+  While(Expression, Expression, LabelTarget, LabelTarget)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Expressions/ExpressionEx.cs/#L232"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Builds a <code>while</code> loop expression.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Expression While(Expression test, Expression iteration, LabelTarget breakLoop = null, LabelTarget continueLoop = null)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>test</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></dt>
+    <dd><p>Condition that must remain <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> for the loop to continue.</p>
+</dd>
+    <dt><code>iteration</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></dt>
+    <dd><p>Body executed for each iteration.</p>
+</dd>
+    <dt><code>breakLoop</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.labeltarget">LabelTarget</a></dt>
+    <dd><p>Optional label used to exit the loop early.</p>
+</dd>
+    <dt><code>continueLoop</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.labeltarget">LabelTarget</a></dt>
+    <dd><p>Optional label used to jump to the next iteration.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></dt>
+    <dd><p>An <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a> representing the loop.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Expressions/ExpressionEx.cs/#L15" class="edit-link">Edit this page</a>
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

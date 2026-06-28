@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Class ArrayUtils | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Class ArrayUtils | omy.Utils Documentation ">
+      
+      <meta name="description" content="Provides helper methods for manipulating arrays, including slicing and trimming utilities.">
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_Arrays_ArrayUtils.md&amp;value=---%0Auid%3A%20Utils.Arrays.ArrayUtils%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="Utils.Arrays.ArrayUtils">
+
+
+
+  <h1 id="Utils_Arrays_ArrayUtils" data-uid="Utils.Arrays.ArrayUtils" class="text-break">
+Class ArrayUtils  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Arrays/ArrayUtils.cs/#L13"><i class="bi bi-code-slash"></i></a>
+  </h1>
+
+  <div class="facts text-secondary">
+    <dl><dt>Namespace</dt><dd><a class="xref" href="Utils.html">Utils</a>.<a class="xref" href="Utils.Arrays.html">Arrays</a></dd></dl>
+  <dl><dt>Assembly</dt><dd>Utils.dll</dd></dl>
+  </div>
+
+  <div class="markdown summary"><p>Provides helper methods for manipulating arrays, including slicing and trimming utilities.</p>
+</div>
+  <div class="markdown conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static class ArrayUtils</code></pre>
+  </div>
+
+
+
+
+  <dl class="typelist inheritance">
+    <dt>Inheritance</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
+      <div><span class="xref">ArrayUtils</span></div>
+    </dd>
+  </dl>
+
+
+
+  <dl class="typelist inheritedMembers">
+    <dt>Inherited Members</dt>
+    <dd>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)">object.Equals(object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)">object.Equals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gethashcode">object.GetHashCode()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone">object.MemberwiseClone()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.tostring">object.ToString()</a>
+    </div>
+  </dd></dl>
+
+
+
+
+
+
+  <h2 class="section" id="methods">Methods
+</h2>
+
+
+  <a id="Utils_Arrays_ArrayUtils_Adjust_" data-uid="Utils.Arrays.ArrayUtils.Adjust*"></a>
+
+  <h3 id="Utils_Arrays_ArrayUtils_Adjust__1___0___System_Boolean_System_Int32_" data-uid="Utils.Arrays.ArrayUtils.Adjust``1(``0[],System.Boolean,System.Int32)">
+  Adjust&lt;T&gt;(T[], bool, int)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Arrays/ArrayUtils.cs/#L446"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Adjusts the size of the array to <code class="paramref">fullLength</code>, optionally reversing the order of new elements if <code class="paramref">invert</code> is true.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static T[] Adjust&lt;T&gt;(this T[] array, bool invert, int fullLength)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>array</code> T[]</dt>
+    <dd><p>The source array.</p>
+</dd>
+    <dt><code>invert</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p>If true, the existing elements remain in the same order at the start of the new array.
+If false, they are placed starting from the end of the new array.</p>
+</dd>
+    <dt><code>fullLength</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>The final desired length.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt>T[]</dt>
+    <dd><p>A new array of length <code class="paramref">fullLength</code> with the original elements in the specified arrangement.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Type of elements in the array.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown if <code class="paramref">array</code> is null.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown if <code class="paramref">fullLength</code> is negative.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Arrays_ArrayUtils_ConvertToArrayOf_" data-uid="Utils.Arrays.ArrayUtils.ConvertToArrayOf*"></a>
+
+  <h3 id="Utils_Arrays_ArrayUtils_ConvertToArrayOf_System_Collections_Generic_IEnumerable_System_String__System_Type_" data-uid="Utils.Arrays.ArrayUtils.ConvertToArrayOf(System.Collections.Generic.IEnumerable{System.String},System.Type)">
+  ConvertToArrayOf(IEnumerable&lt;string&gt;, Type)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Arrays/ArrayUtils.cs/#L485"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Converts a collection of strings <code class="paramref">values</code> into an array of a specified <code class="paramref">elementType</code>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Array ConvertToArrayOf(this IEnumerable&lt;string&gt; values, Type elementType)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>values</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;</dt>
+    <dd><p>The source collection of strings.</p>
+</dd>
+    <dt><code>elementType</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.type">Type</a></dt>
+    <dd><p>The target element type.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.array">Array</a></dt>
+    <dd><p>A new array of type <code class="paramref">elementType</code> containing parsed values from <code class="paramref">values</code>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown if <code class="paramref">values</code> or <code class="paramref">elementType</code> is null.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.formatexception">FormatException</a></dt>
+    <dd><p>May be thrown if parsing fails for a given string.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Arrays_ArrayUtils_ConvertToArrayOf_" data-uid="Utils.Arrays.ArrayUtils.ConvertToArrayOf*"></a>
+
+  <h3 id="Utils_Arrays_ArrayUtils_ConvertToArrayOf__1_System_Collections_Generic_IEnumerable_System_String__" data-uid="Utils.Arrays.ArrayUtils.ConvertToArrayOf``1(System.Collections.Generic.IEnumerable{System.String})">
+  ConvertToArrayOf&lt;T&gt;(IEnumerable&lt;string&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Arrays/ArrayUtils.cs/#L508"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Converts a collection of strings <code class="paramref">values</code> into an array of type <code class="typeparamref">T</code>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static T[] ConvertToArrayOf&lt;T&gt;(this IEnumerable&lt;string&gt; values)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>values</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;</dt>
+    <dd><p>The source collection of strings.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt>T[]</dt>
+    <dd><p>A new array of type <code class="typeparamref">T</code> containing parsed values.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>The target element type.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown if <code class="paramref">values</code> is null.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.formatexception">FormatException</a></dt>
+    <dd><p>May be thrown if parsing fails for a given string.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Arrays_ArrayUtils_Copy_" data-uid="Utils.Arrays.ArrayUtils.Copy*"></a>
+
+  <h3 id="Utils_Arrays_ArrayUtils_Copy_System_Array_" data-uid="Utils.Arrays.ArrayUtils.Copy(System.Array)">
+  Copy(Array)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Arrays/ArrayUtils.cs/#L353"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Creates a copy of a multidimensional array (2D/3D/etc.).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Array Copy(Array array)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>array</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.array">Array</a></dt>
+    <dd><p>The source multidimensional array.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.array">Array</a></dt>
+    <dd><p>A new multidimensional array with the same dimensions and contents.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown if <code class="paramref">array</code> is null.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Arrays_ArrayUtils_Copy_" data-uid="Utils.Arrays.ArrayUtils.Copy*"></a>
+
+  <h3 id="Utils_Arrays_ArrayUtils_Copy__1___0___System_Int32_" data-uid="Utils.Arrays.ArrayUtils.Copy``1(``0[],System.Int32)">
+  Copy&lt;T&gt;(T[], int)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Arrays/ArrayUtils.cs/#L338"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Copies the array <code class="paramref">array</code> starting at <code class="paramref">start</code> until the end
+into a new array.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static T[] Copy&lt;T&gt;(this T[] array, int start)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>array</code> T[]</dt>
+    <dd><p>The source array.</p>
+</dd>
+    <dt><code>start</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>The starting index.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt>T[]</dt>
+    <dd><p>A new array containing elements from <code class="paramref">start</code> to the end.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Type of elements in the array.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown if <code class="paramref">array</code> is null.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown if <code class="paramref">start</code> is invalid.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Arrays_ArrayUtils_Copy_" data-uid="Utils.Arrays.ArrayUtils.Copy*"></a>
+
+  <h3 id="Utils_Arrays_ArrayUtils_Copy__1___0___System_Int32_System_Int32_" data-uid="Utils.Arrays.ArrayUtils.Copy``1(``0[],System.Int32,System.Int32)">
+  Copy&lt;T&gt;(T[], int, int)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Arrays/ArrayUtils.cs/#L314"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Copies a portion of the array <code class="paramref">array</code> (from <code class="paramref">start</code> over <code class="paramref">length</code> elements)
+into a new array.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static T[] Copy&lt;T&gt;(this T[] array, int start, int length)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>array</code> T[]</dt>
+    <dd><p>The source array.</p>
+</dd>
+    <dt><code>start</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>The starting index of the slice.</p>
+</dd>
+    <dt><code>length</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>The number of elements to copy.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt>T[]</dt>
+    <dd><p>A new array containing the copied elements.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Type of elements in the array.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown if <code class="paramref">array</code> is null.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown if <code class="paramref">start</code> or <code class="paramref">length</code> is invalid.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Arrays_ArrayUtils_EndWith_" data-uid="Utils.Arrays.ArrayUtils.EndWith*"></a>
+
+  <h3 id="Utils_Arrays_ArrayUtils_EndWith__1___0_____0___" data-uid="Utils.Arrays.ArrayUtils.EndWith``1(``0[],``0[])">
+  EndWith&lt;T&gt;(T[], params T[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Arrays/ArrayUtils.cs/#L285"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Checks whether the array <code class="paramref">array</code> ends with the sequence <code class="paramref">suffix</code>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool EndWith&lt;T&gt;(this T[] array, params T[] suffix)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>array</code> T[]</dt>
+    <dd><p>The source array.</p>
+</dd>
+    <dt><code>suffix</code> T[]</dt>
+    <dd><p>The sequence to check at the end.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p>True if <code class="paramref">array</code> ends with <code class="paramref">suffix</code>, false otherwise.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Type of elements in the array.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown if <code class="paramref">array</code> or <code class="paramref">suffix</code> is null.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Arrays_ArrayUtils_Mid_" data-uid="Utils.Arrays.ArrayUtils.Mid*"></a>
+
+  <h3 id="Utils_Arrays_ArrayUtils_Mid__1___0___System_Int32_" data-uid="Utils.Arrays.ArrayUtils.Mid``1(``0[],System.Int32)">
+  Mid&lt;T&gt;(T[], int)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Arrays/ArrayUtils.cs/#L69"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Retrieves a slice (sub-part) of this array starting at the specified <code class="paramref">start</code> index to the end.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static T[] Mid&lt;T&gt;(this T[] s, int start)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>s</code> T[]</dt>
+    <dd><p>The source array from which to extract the slice.</p>
+</dd>
+    <dt><code>start</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>The starting index. Can be negative, in which case it counts from the end of the array.
+For example, -1 would refer to the last element.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt>T[]</dt>
+    <dd><p>A new array containing elements from <code class="paramref">start</code> to the end.
+Returns an empty array if <code class="paramref">start</code> is out of range.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Type of elements in the array.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown if <code class="paramref">s</code> is null.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Arrays_ArrayUtils_Mid_" data-uid="Utils.Arrays.ArrayUtils.Mid*"></a>
+
+  <h3 id="Utils_Arrays_ArrayUtils_Mid__1___0___System_Int32_System_Int32_" data-uid="Utils.Arrays.ArrayUtils.Mid``1(``0[],System.Int32,System.Int32)">
+  Mid&lt;T&gt;(T[], int, int)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Arrays/ArrayUtils.cs/#L31"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Retrieves a slice (sub-part) of this array.
+The slice starts at the specified <code class="paramref">start</code> index and contains <code class="paramref">length</code> elements.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static T[] Mid&lt;T&gt;(this T[] s, int start, int length)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>s</code> T[]</dt>
+    <dd><p>The source array from which to extract the slice.</p>
+</dd>
+    <dt><code>start</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>The starting index of the slice. Can be negative, in which case it counts from the end of the array.
+For example, -1 would refer to the last element.</p>
+</dd>
+    <dt><code>length</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>The number of elements to extract.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt>T[]</dt>
+    <dd><p>A new array containing the requested slice.
+If <code class="paramref">start</code> is out of range, this may return <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.array.empty">Empty&lt;T&gt;()</a>.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Type of elements in the array.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown if <code class="paramref">s</code> is null.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Arrays_ArrayUtils_PadLeft_" data-uid="Utils.Arrays.ArrayUtils.PadLeft*"></a>
+
+  <h3 id="Utils_Arrays_ArrayUtils_PadLeft__1___0___System_Int32___0_" data-uid="Utils.Arrays.ArrayUtils.PadLeft``1(``0[],System.Int32,``0)">
+  PadLeft&lt;T&gt;(T[], int, T)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Arrays/ArrayUtils.cs/#L384"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Resizes the array to have length <code class="paramref">length</code>,
+padding on the left with <code class="paramref">value</code> if necessary.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static T[] PadLeft&lt;T&gt;(this T[] array, int length, T value = default)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>array</code> T[]</dt>
+    <dd><p>The source array.</p>
+</dd>
+    <dt><code>length</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>The new length of the array.</p>
+</dd>
+    <dt><code>value</code> <span class="xref">T</span></dt>
+    <dd><p>The padding value to insert on the left if the array is enlarged.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt>T[]</dt>
+    <dd><p>A new array of size <code class="paramref">length</code>, padded on the left as needed.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Type of elements in the array.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown if <code class="paramref">array</code> is null.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown if <code class="paramref">length</code> is smaller than the current array size.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Arrays_ArrayUtils_PadRight_" data-uid="Utils.Arrays.ArrayUtils.PadRight*"></a>
+
+  <h3 id="Utils_Arrays_ArrayUtils_PadRight__1___0___System_Int32___0_" data-uid="Utils.Arrays.ArrayUtils.PadRight``1(``0[],System.Int32,``0)">
+  PadRight&lt;T&gt;(T[], int, T)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Arrays/ArrayUtils.cs/#L415"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Resizes the array to have length <code class="paramref">length</code>,
+padding on the right with <code class="paramref">value</code> if necessary.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static T[] PadRight&lt;T&gt;(this T[] array, int length, T value = default)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>array</code> T[]</dt>
+    <dd><p>The source array.</p>
+</dd>
+    <dt><code>length</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>The new length of the array.</p>
+</dd>
+    <dt><code>value</code> <span class="xref">T</span></dt>
+    <dd><p>The padding value to insert on the right if the array is enlarged.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt>T[]</dt>
+    <dd><p>A new array of size <code class="paramref">length</code>, padded on the right as needed.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Type of elements in the array.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown if <code class="paramref">array</code> is null.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown if <code class="paramref">length</code> is smaller than the current array size.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Arrays_ArrayUtils_Replace_" data-uid="Utils.Arrays.ArrayUtils.Replace*"></a>
+
+  <h3 id="Utils_Arrays_ArrayUtils_Replace__1___0_____0_____0___" data-uid="Utils.Arrays.ArrayUtils.Replace``1(``0[],``0[],``0[])">
+  Replace&lt;T&gt;(T[], T[], T[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Arrays/ArrayUtils.cs/#L527"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Replaces non-overlapping occurrences of the subsequence <code class="paramref">toReplace</code> in <code class="paramref">array</code>
+with the subsequence <code class="paramref">replacement</code>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static T[] Replace&lt;T&gt;(this T[] array, T[] toReplace, T[] replacement) where T : IEquatable&lt;T&gt;</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>array</code> T[]</dt>
+    <dd><p>The source array in which to perform replacements.</p>
+</dd>
+    <dt><code>toReplace</code> T[]</dt>
+    <dd><p>The subsequence to find and replace.</p>
+</dd>
+    <dt><code>replacement</code> T[]</dt>
+    <dd><p>The subsequence to substitute in place of <code class="paramref">toReplace</code>.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt>T[]</dt>
+    <dd><p>A new array with the replacements applied where the pattern is matched.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Type of elements, must implement <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable&lt;T&gt;</a> for equality checks.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+  <h4 class="section" id="Utils_Arrays_ArrayUtils_Replace__1___0_____0_____0____remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Overlapping matches are not detected. Only distinct, non-overlapping occurrences are replaced.</p>
+<p>If <code class="paramref">toReplace</code> is empty, no replacement is done and the original array is returned as-is.</p>
+</div>
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown if <code class="paramref">array</code>, <code class="paramref">toReplace</code>, or <code class="paramref">replacement</code> is null.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Arrays_ArrayUtils_StartWith_" data-uid="Utils.Arrays.ArrayUtils.StartWith*"></a>
+
+  <h3 id="Utils_Arrays_ArrayUtils_StartWith_System_ReadOnlySpan_System_Char__System_ReadOnlySpan_System_Char__" data-uid="Utils.Arrays.ArrayUtils.StartWith(System.ReadOnlySpan{System.Char},System.ReadOnlySpan{System.Char})">
+  StartWith(ReadOnlySpan&lt;char&gt;, ReadOnlySpan&lt;char&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Arrays/ArrayUtils.cs/#L260"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether the provided span begins with the specified prefix.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool StartWith(this ReadOnlySpan&lt;char&gt; span, ReadOnlySpan&lt;char&gt; prefix)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>span</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.readonlyspan-1">ReadOnlySpan</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.char">char</a>&gt;</dt>
+    <dd><p>The span to inspect.</p>
+</dd>
+    <dt><code>prefix</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.readonlyspan-1">ReadOnlySpan</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.char">char</a>&gt;</dt>
+    <dd><p>The expected prefix.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when the span starts with <code class="paramref">prefix</code>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Arrays_ArrayUtils_StartWith_" data-uid="Utils.Arrays.ArrayUtils.StartWith*"></a>
+
+  <h3 id="Utils_Arrays_ArrayUtils_StartWith__1___0_____0___" data-uid="Utils.Arrays.ArrayUtils.StartWith``1(``0[],``0[])">
+  StartWith&lt;T&gt;(T[], params T[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Arrays/ArrayUtils.cs/#L236"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Checks whether the array <code class="paramref">array</code> starts with the sequence <code class="paramref">prefix</code>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool StartWith&lt;T&gt;(this T[] array, params T[] prefix)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>array</code> T[]</dt>
+    <dd><p>The source array.</p>
+</dd>
+    <dt><code>prefix</code> T[]</dt>
+    <dd><p>The sequence to check at the start.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p>True if <code class="paramref">array</code> starts with <code class="paramref">prefix</code>, false otherwise.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Type of elements in the array.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown if <code class="paramref">array</code> or <code class="paramref">prefix</code> is null.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Arrays_ArrayUtils_TrimEnd_" data-uid="Utils.Arrays.ArrayUtils.TrimEnd*"></a>
+
+  <h3 id="Utils_Arrays_ArrayUtils_TrimEnd__1___0___System_Func___0_System_Boolean__" data-uid="Utils.Arrays.ArrayUtils.TrimEnd``1(``0[],System.Func{``0,System.Boolean})">
+  TrimEnd&lt;T&gt;(T[], Func&lt;T, bool&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Arrays/ArrayUtils.cs/#L206"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns a new array without the elements at the end that match the given <code class="paramref">trimTester</code> predicate.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static T[] TrimEnd&lt;T&gt;(this T[] obj, Func&lt;T, bool&gt; trimTester)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>obj</code> T[]</dt>
+    <dd><p>The source array.</p>
+</dd>
+    <dt><code>trimTester</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.func-2">Func</a>&lt;T, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a>&gt;</dt>
+    <dd><p>A function that returns <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> for elements that should be trimmed from the end.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt>T[]</dt>
+    <dd><p>A new array with matching elements removed from the end only.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Type of elements in the array.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown if <code class="paramref">obj</code> or <code class="paramref">trimTester</code> is null.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Arrays_ArrayUtils_TrimEnd_" data-uid="Utils.Arrays.ArrayUtils.TrimEnd*"></a>
+
+  <h3 id="Utils_Arrays_ArrayUtils_TrimEnd__1___0_____0___" data-uid="Utils.Arrays.ArrayUtils.TrimEnd``1(``0[],``0[])">
+  TrimEnd&lt;T&gt;(T[], params T[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Arrays/ArrayUtils.cs/#L188"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns a new array without the values at the end (those in <code class="paramref">values</code>).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static T[] TrimEnd&lt;T&gt;(this T[] obj, params T[] values)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>obj</code> T[]</dt>
+    <dd><p>The source array.</p>
+</dd>
+    <dt><code>values</code> T[]</dt>
+    <dd><p>Values to remove from the end.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt>T[]</dt>
+    <dd><p>A new array with those values removed from the end only.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Type of elements in the array.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown if <code class="paramref">obj</code> or <code class="paramref">values</code> is null.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Arrays_ArrayUtils_TrimStart_" data-uid="Utils.Arrays.ArrayUtils.TrimStart*"></a>
+
+  <h3 id="Utils_Arrays_ArrayUtils_TrimStart__1___0___System_Func___0_System_Boolean__" data-uid="Utils.Arrays.ArrayUtils.TrimStart``1(``0[],System.Func{``0,System.Boolean})">
+  TrimStart&lt;T&gt;(T[], Func&lt;T, bool&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Arrays/ArrayUtils.cs/#L160"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns a new array without the elements at the start that match the given <code class="paramref">trimTester</code> predicate.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static T[] TrimStart&lt;T&gt;(this T[] obj, Func&lt;T, bool&gt; trimTester)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>obj</code> T[]</dt>
+    <dd><p>The source array.</p>
+</dd>
+    <dt><code>trimTester</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.func-2">Func</a>&lt;T, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a>&gt;</dt>
+    <dd><p>A function that returns <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> for elements that should be trimmed from the start.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt>T[]</dt>
+    <dd><p>A new array with matching elements removed from the start only.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Type of elements in the array.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown if <code class="paramref">obj</code> or <code class="paramref">trimTester</code> is null.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Arrays_ArrayUtils_TrimStart_" data-uid="Utils.Arrays.ArrayUtils.TrimStart*"></a>
+
+  <h3 id="Utils_Arrays_ArrayUtils_TrimStart__1___0_____0___" data-uid="Utils.Arrays.ArrayUtils.TrimStart``1(``0[],``0[])">
+  TrimStart&lt;T&gt;(T[], params T[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Arrays/ArrayUtils.cs/#L142"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns a new array without the values at the start (those in <code class="paramref">values</code>).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static T[] TrimStart&lt;T&gt;(this T[] obj, params T[] values)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>obj</code> T[]</dt>
+    <dd><p>The source array.</p>
+</dd>
+    <dt><code>values</code> T[]</dt>
+    <dd><p>Values to remove from the start.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt>T[]</dt>
+    <dd><p>A new array with those values removed from the start only.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Type of elements in the array.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown if <code class="paramref">obj</code> or <code class="paramref">values</code> is null.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Arrays_ArrayUtils_Trim_" data-uid="Utils.Arrays.ArrayUtils.Trim*"></a>
+
+  <h3 id="Utils_Arrays_ArrayUtils_Trim__1___0___System_Func___0_System_Boolean__" data-uid="Utils.Arrays.ArrayUtils.Trim``1(``0[],System.Func{``0,System.Boolean})">
+  Trim&lt;T&gt;(T[], Func&lt;T, bool&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Arrays/ArrayUtils.cs/#L109"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns a new array without the elements at the start or end that match the given <code class="paramref">trimTester</code> predicate.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static T[] Trim&lt;T&gt;(this T[] obj, Func&lt;T, bool&gt; trimTester)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>obj</code> T[]</dt>
+    <dd><p>The source array.</p>
+</dd>
+    <dt><code>trimTester</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.func-2">Func</a>&lt;T, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a>&gt;</dt>
+    <dd><p>A function that returns <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> for elements that should be trimmed from the start and end.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt>T[]</dt>
+    <dd><p>A new array with the matching elements removed from both ends.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Type of elements in the array.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown if <code class="paramref">obj</code> or <code class="paramref">trimTester</code> is null.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Arrays_ArrayUtils_Trim_" data-uid="Utils.Arrays.ArrayUtils.Trim*"></a>
+
+  <h3 id="Utils_Arrays_ArrayUtils_Trim__1___0_____0___" data-uid="Utils.Arrays.ArrayUtils.Trim``1(``0[],``0[])">
+  Trim&lt;T&gt;(T[], params T[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Arrays/ArrayUtils.cs/#L91"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns a new array without the values at the start or end that match <code class="paramref">values</code>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static T[] Trim&lt;T&gt;(this T[] obj, params T[] values)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>obj</code> T[]</dt>
+    <dd><p>The source array.</p>
+</dd>
+    <dt><code>values</code> T[]</dt>
+    <dd><p>Values to remove from both ends.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt>T[]</dt>
+    <dd><p>A new array with those values removed from the start and end.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Type of elements in the array.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown if <code class="paramref">obj</code> or <code class="paramref">values</code> is null.</p>
+</dd>
+  </dl>
+
+
+
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Arrays/ArrayUtils.cs/#L13" class="edit-link">Edit this page</a>
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

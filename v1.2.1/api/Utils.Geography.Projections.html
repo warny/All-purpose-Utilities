@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Namespace Utils.Geography.Projections | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Namespace Utils.Geography.Projections | omy.Utils Documentation ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="Utils.Geography.Projections">
+
+  <h1 id="Utils_Geography_Projections" data-uid="Utils.Geography.Projections" class="text-break">Namespace Utils.Geography.Projections</h1>
+  <div class="markdown level0 summary"></div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="markdown level0 remarks"></div>
+
+    <h3 id="classes">
+Classes
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Geography.Projections.EquirectangularProjection-1.html">EquirectangularProjection&lt;T&gt;</a></dt>
+      <dd><p>A simple Equirectangular (Plate Carrée) projection that uses degrees throughout:</p>
+<p>X = longitude (in degrees)
+Y = latitude (in degrees)</p>
+<p>Hence (0°, 0°) =&gt; (0,0) with no offsets or scalings. If latitude exceeds ±90,
+it is optionally clamped.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Geography.Projections.GallsPetersProjection-1.html">GallsPetersProjection&lt;T&gt;</a></dt>
+      <dd><p>Implements the Gall–Peters cylindrical equal-area projection
+&quot;centered&quot; at (lat=0°, lon=0°) =&gt; (x=0, y=0).</p>
+<p>Formulas (in degrees):
+x = cos(45°) * longitude
+y = sin(latitude) / cos(45°)</p>
+<p>lon = x / cos(45°)
+lat = asin( y * cos(45°) )</p>
+<p>Both input (GeoPoint) and output (ProjectedPoint) use degrees.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Geography.Projections.LambertAzimuthalEqualArea-1.html">LambertAzimuthalEqualArea&lt;T&gt;</a></dt>
+      <dd><p>Implements the Lambert azimuthal equal-area projection for spherical coordinates.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Geography.Projections.MercatorProjection-1.html">MercatorProjection&lt;T&gt;</a></dt>
+      <dd><p>centered Mercator projection where (lat=0°, lon=0°) maps to (X=0, Y=0),</p>
+<p>Forward transform:
+X = lon
+Y = ln( tan(45° + lat/2) )</p>
+<p>Inverse transform:
+lon = X
+lat = 2 * [ atan( exp(Y) ) - 45° ]</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Geography.Projections.MillerProjection-1.html">MillerProjection&lt;T&gt;</a></dt>
+      <dd><p>Implements the Miller cylindrical map projection.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Geography.Projections.MollweideProjection-1.html">MollweideProjection&lt;T&gt;</a></dt>
+      <dd><p>Mollweide (Homalographic) equal-area projection, implemented with degree-based trigonometry.</p>
+<p>Lat/Lon in degrees =&gt; (x,y) in &quot;Mollweide units&quot; with:</p>
+<ul>
+<li>(0°,0°) maps to (0,0).</li>
+<li>The bounding ellipse is roughly x ∈ [-2√2..+2√2], y ∈ [-√2..+√2].</li>
+</ul>
+<p>Usage:
+var projector = new MollweideProjectionDegrees&lt;double&gt;();
+var projected = projector.GeoPointToMapPoint(new GeoPoint&lt;double&gt;(latDeg, lonDeg));
+var unprojected = projector.MapPointToGeoPoint(projected);</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Geography.Projections.ProjectionTransformation-1.html">ProjectionTransformation&lt;T&gt;</a></dt>
+      <dd><p>Represents an abstract base class for map projection transformations
+that convert between geographic (<a class="xref" href="Utils.Geography.Model.GeoPoint-1.html">GeoPoint&lt;T&gt;</a>) and projected
+(<a class="xref" href="Utils.Geography.Model.ProjectedPoint-1.html">ProjectedPoint&lt;T&gt;</a>) coordinates.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Geography.Projections.Projections-1.html">Projections&lt;T&gt;</a></dt>
+      <dd><p>Provides cached access to a collection of well-known map projections.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Geography.Projections.StereographicProjection-1.html">StereographicProjection&lt;T&gt;</a></dt>
+      <dd><p>Implements the stereographic map projection for spherical coordinates.</p>
+</dd>
+    </dl>
+    <h3 id="interfaces">
+Interfaces
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Geography.Projections.IProjectionTransformation-1.html">IProjectionTransformation&lt;T&gt;</a></dt>
+      <dd><p>Represents a generic transformation interface that converts
+<a class="xref" href="Utils.Geography.Model.GeoPoint-1.html">GeoPoint&lt;T&gt;</a> objects to <a class="xref" href="Utils.Geography.Model.ProjectedPoint-1.html">ProjectedPoint&lt;T&gt;</a> objects and vice versa.</p>
+</dd>
+    </dl>
+
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

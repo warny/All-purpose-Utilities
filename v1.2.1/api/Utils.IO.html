@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Namespace Utils.IO | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Namespace Utils.IO | omy.Utils Documentation ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="Utils.IO">
+
+  <h1 id="Utils_IO" data-uid="Utils.IO" class="text-break">Namespace Utils.IO</h1>
+  <div class="markdown level0 summary"></div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="markdown level0 remarks"></div>
+
+    <h3 id="classes">
+Classes
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.IO.PartialStream.html">PartialStream</a></dt>
+      <dd><p>Provides a view onto a restricted portion (a &quot;slice&quot;) of an underlying <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a>.
+This partial stream starts at a specified offset within the base stream, and has a maximum length.
+Reading or writing beyond that partial length is not permitted.</p>
+<p>The <a class="xref" href="Utils.IO.PartialStream.html#Utils_IO_PartialStream_Position">Position</a> property reflects the offset within the partial stream, not the offset
+in the underlying stream. All read and write operations are bounded by the specified length.
+The underlying stream's position is restored after each operation, so external consumers of the
+base stream see no position change (though locking is used to ensure thread safety in concurrent scenarios).</p>
+<p>By default, disposing this <a class="xref" href="Utils.IO.PartialStream.html">PartialStream</a> does not close or dispose the underlying stream.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.IO.StreamCopier.html">StreamCopier</a></dt>
+      <dd><p>A writable-only stream that copies written data to multiple target streams simultaneously.</p>
+<p>This class implements both <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a> and <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ilist-1">IList&lt;T&gt;</a> so that
+the set of target streams can be dynamically modified at runtime. Note that no concurrency
+control is provided; if multiple threads write concurrently, external locking may be needed.</p>
+<p>Reading and seeking are not supported.
+Calling <a class="xref" href="Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_Write_System_Byte___System_Int32_System_Int32_">Write(byte[], int, int)</a> will broadcast the provided data to all
+underlying streams in the targets collection.</p>
+<remarks>
+By default, disposing this object does not dispose any of the contained streams. If the
+parameter <span class="xref">closeAllTargetsOnDispose</span> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when constructing
+this class, all target streams will be disposed when <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.idisposable.dispose">Dispose()</a>
+is called.
+</remarks>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.IO.StreamUtils.html">StreamUtils</a></dt>
+      <dd><p>Provides extension and utility methods for working with <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a> objects.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.IO.StreamValidator.html">StreamValidator</a></dt>
+      <dd><p>A write-only buffering stream that defers writing to a target stream until
+<a class="xref" href="Utils.IO.StreamValidator.html#Utils_IO_StreamValidator_Validate">Validate()</a> is called. Data written to this stream is held in an
+internal buffer. When <a class="xref" href="Utils.IO.StreamValidator.html#Utils_IO_StreamValidator_Validate">Validate()</a> is invoked, the buffered data is
+flushed into the underlying target stream. If <a class="xref" href="Utils.IO.StreamValidator.html#Utils_IO_StreamValidator_Discard">Discard()</a> is called,
+the buffered data is discarded without being written to the target.</p>
+<remarks>
+This class does not support reading or seeking. After you finish all writes, 
+you can either commit them by calling <a class="xref" href="Utils.IO.StreamValidator.html#Utils_IO_StreamValidator_Validate">Validate()</a> or discard them 
+via <a class="xref" href="Utils.IO.StreamValidator.html#Utils_IO_StreamValidator_Discard">Discard()</a>. The underlying stream is not closed or disposed 
+automatically when this stream is disposed (override <a class="xref" href="Utils.IO.StreamValidator.html#Utils_IO_StreamValidator_Dispose_System_Boolean_">Dispose(bool)</a> 
+if you need that behavior).
+</remarks>
+</dd>
+    </dl>
+
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

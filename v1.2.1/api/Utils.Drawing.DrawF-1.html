@@ -1,0 +1,1613 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Class DrawF&lt;T&gt; | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Class DrawF&lt;T&gt; | omy.Utils Documentation ">
+      
+      <meta name="description" content="Provides floating-point drawing helpers on top of .">
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_Drawing_DrawF_1.md&amp;value=---%0Auid%3A%20Utils.Drawing.DrawF%601%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="Utils.Drawing.DrawF`1">
+
+
+
+  <h1 id="Utils_Drawing_DrawF_1" data-uid="Utils.Drawing.DrawF`1" class="text-break">
+Class DrawF&lt;T&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawF.cs/#L27"><i class="bi bi-code-slash"></i></a>
+  </h1>
+
+  <div class="facts text-secondary">
+    <dl><dt>Namespace</dt><dd><a class="xref" href="Utils.html">Utils</a>.<a class="xref" href="Utils.Drawing.html">Drawing</a></dd></dl>
+  <dl><dt>Assembly</dt><dd>Utils.Imaging.dll</dd></dl>
+  </div>
+
+  <div class="markdown summary"><p>Provides floating-point drawing helpers on top of <a class="xref" href="Utils.Drawing.DrawI-1.html">DrawI&lt;T&gt;</a>.</p>
+</div>
+  <div class="markdown conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public class DrawF&lt;T&gt; : BaseDrawing&lt;T&gt;</code></pre>
+  </div>
+
+
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Type of the pixel value handled by the drawing operations.</p>
+</dd>
+  </dl>
+
+  <dl class="typelist inheritance">
+    <dt>Inheritance</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
+      <div><a class="xref" href="Utils.Drawing.BaseDrawing-1.html">BaseDrawing</a>&lt;T&gt;</div>
+      <div><span class="xref">DrawF&lt;T&gt;</span></div>
+    </dd>
+  </dl>
+
+
+
+  <dl class="typelist inheritedMembers">
+    <dt>Inherited Members</dt>
+    <dd>
+    <div>
+      <a class="xref" href="Utils.Drawing.BaseDrawing-1.html#Utils_Drawing_BaseDrawing_1_ImageAccessor">BaseDrawing&lt;T&gt;.ImageAccessor</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)">object.Equals(object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)">object.Equals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gethashcode">object.GetHashCode()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone">object.MemberwiseClone()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.tostring">object.ToString()</a>
+    </div>
+  </dd></dl>
+
+  <dl class="typelist extensionMethods">
+    <dt>Extension Methods</dt>
+    <dd>
+  <div>
+      <a class="xref" href="Utils.Data.DataUtils.html#Utils_Data_DataUtils_ToDbValue_System_Object_">DataUtils.ToDbValue(object?)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Mathematics.MathEx.html#Utils_Mathematics_MathEx_Clamp__1___0___0___0_System_Collections_Generic_IComparer___0__">MathEx.Clamp&lt;T&gt;(T, T, T, IComparer&lt;T&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Mathematics.MathEx.html#Utils_Mathematics_MathEx_Clamp__1___0___0___0_System_Collections_Generic_IComparer___0__">MathEx.Clamp&lt;T&gt;(T, T, T, IComparer&lt;T&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Failure__1___0_">FluentExtensions.Failure&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Failure__1___0_">FluentExtensions.Failure&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsEqualTo__2___0___1_">FluentExtensions.IsEqualTo&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsEqualTo__2___0___1_">FluentExtensions.IsEqualTo&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterOrEqualsThan__2___0___1_">FluentExtensions.IsGreaterOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterOrEqualsThan__2___0___1_">FluentExtensions.IsGreaterOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterThan__2___0___1_">FluentExtensions.IsGreaterThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterThan__2___0___1_">FluentExtensions.IsGreaterThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsIn__1___0___0___">FluentExtensions.IsIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsIn__1___0___0___">FluentExtensions.IsIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerOrEqualsThan__2___0___1_">FluentExtensions.IsLowerOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerOrEqualsThan__2___0___1_">FluentExtensions.IsLowerOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerThan__2___0___1_">FluentExtensions.IsLowerThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerThan__2___0___1_">FluentExtensions.IsLowerThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotIn__1___0___0___">FluentExtensions.IsNotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotIn__1___0___0___">FluentExtensions.IsNotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotNull__1___0_">FluentExtensions.IsNotNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotNull__1___0_">FluentExtensions.IsNotNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNull__1___0_">FluentExtensions.IsNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNull__1___0_">FluentExtensions.IsNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Success__1___0_">FluentExtensions.Success&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Success__1___0_">FluentExtensions.Success&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Test__1___0_System_Func___0_System_Boolean__">FluentExtensions.Test&lt;T&gt;(T, Func&lt;T, bool&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Test__1___0_System_Func___0_System_Boolean__">FluentExtensions.Test&lt;T&gt;(T, Func&lt;T, bool&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_System_Boolean_System_Boolean_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T, bool, bool)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_System_Boolean_System_Boolean_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T, bool, bool)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1____1_">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1____1_">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1____1_">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1____1_">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_In__1___0___0___">ObjectUtils.In&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_In__1___0___0___">ObjectUtils.In&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_NotIn__1___0___0___">ObjectUtils.NotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_NotIn__1___0___0___">ObjectUtils.NotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustNotBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustNotBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustNotBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustNotBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Arg__1___0_System_String_">Validations.Arg&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Arg__1___0_System_String_">Validations.Arg&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ValueMustNotBeNull__1___0_System_String_">Validations.ValueMustNotBeNull&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ValueMustNotBeNull__1___0_System_String_">Validations.ValueMustNotBeNull&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Variable__1___0_System_String_">Validations.Variable&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Variable__1___0_System_String_">Validations.Variable&lt;T&gt;(T, string)</a>
+  </div>
+  </dd></dl>
+
+
+
+  <h2 id="Utils_Drawing_DrawF_1_remarks">Remarks</h2>
+  <div class="markdown level0 remarks"><p>
+The floating-point API mirrors the integer-based <a class="xref" href="Utils.Drawing.DrawI-1.html">DrawI&lt;T&gt;</a> helpers while transparently
+converting coordinates expressed in an arbitrary viewport to pixel positions.  This allows callers to
+operate in normalized or physical spaces without manually performing the conversions required by the
+underlying <a class="xref" href="Utils.Imaging.IImageAccessor-1.html">IImageAccessor&lt;T&gt;</a> implementation.
+</p>
+<p>
+All conversions clamp to the image bounds when delegated to <a class="xref" href="Utils.Drawing.DrawF-1.html#Utils_Drawing_DrawF_1_Draw">Draw</a>, ensuring consistency
+with the low-level routines.
+</p>
+</div>
+
+
+  <h2 class="section" id="constructors">Constructors
+</h2>
+
+
+  <a id="Utils_Drawing_DrawF_1__ctor_" data-uid="Utils.Drawing.DrawF`1.#ctor*"></a>
+
+  <h3 id="Utils_Drawing_DrawF_1__ctor_Utils_Imaging_IImageAccessor__0__" data-uid="Utils.Drawing.DrawF`1.#ctor(Utils.Imaging.IImageAccessor{`0})">
+  DrawF(IImageAccessor&lt;T&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawF.cs/#L64"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Drawing.DrawF-1.html">DrawF&lt;T&gt;</a> class covering the entire image.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public DrawF(IImageAccessor&lt;T&gt; imageAccessor)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>imageAccessor</code> <a class="xref" href="Utils.Imaging.IImageAccessor-1.html">IImageAccessor</a>&lt;T&gt;</dt>
+    <dd><p>Accessor used to manipulate the underlying image.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section" id="Utils_Drawing_DrawF_1__ctor_Utils_Imaging_IImageAccessor__0___remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>The viewport matches the full image bounds so one drawing unit equals one pixel.</p>
+</div>
+
+
+
+
+  <a id="Utils_Drawing_DrawF_1__ctor_" data-uid="Utils.Drawing.DrawF`1.#ctor*"></a>
+
+  <h3 id="Utils_Drawing_DrawF_1__ctor_Utils_Imaging_IImageAccessor__0__System_Single_System_Single_System_Single_System_Single_" data-uid="Utils.Drawing.DrawF`1.#ctor(Utils.Imaging.IImageAccessor{`0},System.Single,System.Single,System.Single,System.Single)">
+  DrawF(IImageAccessor&lt;T&gt;, float, float, float, float)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawF.cs/#L78"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Drawing.DrawF-1.html">DrawF&lt;T&gt;</a> class using a custom viewport.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public DrawF(IImageAccessor&lt;T&gt; imageAccessor, float top, float left, float right, float down)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>imageAccessor</code> <a class="xref" href="Utils.Imaging.IImageAccessor-1.html">IImageAccessor</a>&lt;T&gt;</dt>
+    <dd><p>Accessor used to manipulate the underlying image.</p>
+</dd>
+    <dt><code>top</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd><p>Top boundary of the viewport.</p>
+</dd>
+    <dt><code>left</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd><p>Left boundary of the viewport.</p>
+</dd>
+    <dt><code>right</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd><p>Right boundary of the viewport.</p>
+</dd>
+    <dt><code>down</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd><p>Bottom boundary of the viewport.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section" id="Utils_Drawing_DrawF_1__ctor_Utils_Imaging_IImageAccessor__0__System_Single_System_Single_System_Single_System_Single__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>The viewport boundaries define the coordinate space exposed to callers; the constructor computes
+the scaling factors that map the viewport to pixel positions.</p>
+</div>
+
+
+
+
+  <h2 class="section" id="properties">Properties
+</h2>
+
+
+  <a id="Utils_Drawing_DrawF_1_Down_" data-uid="Utils.Drawing.DrawF`1.Down*"></a>
+
+  <h3 id="Utils_Drawing_DrawF_1_Down" data-uid="Utils.Drawing.DrawF`1.Down">
+  Down
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawF.cs/#L52"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the bottom coordinate of the drawing viewport in the caller-provided space.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public float Down { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawF_1_Draw_" data-uid="Utils.Drawing.DrawF`1.Draw*"></a>
+
+  <h3 id="Utils_Drawing_DrawF_1_Draw" data-uid="Utils.Drawing.DrawF`1.Draw">
+  Draw
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawF.cs/#L32"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the integer-based drawing helper that ultimately performs the rasterization work.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public DrawI&lt;T&gt; Draw { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Drawing.DrawI-1.html">DrawI</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawF_1_Left_" data-uid="Utils.Drawing.DrawF`1.Left*"></a>
+
+  <h3 id="Utils_Drawing_DrawF_1_Left" data-uid="Utils.Drawing.DrawF`1.Left">
+  Left
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawF.cs/#L42"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the left coordinate of the drawing viewport in the caller-provided space.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public float Left { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawF_1_Right_" data-uid="Utils.Drawing.DrawF`1.Right*"></a>
+
+  <h3 id="Utils_Drawing_DrawF_1_Right" data-uid="Utils.Drawing.DrawF`1.Right">
+  Right
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawF.cs/#L47"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the right coordinate of the drawing viewport in the caller-provided space.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public float Right { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawF_1_Top_" data-uid="Utils.Drawing.DrawF`1.Top*"></a>
+
+  <h3 id="Utils_Drawing_DrawF_1_Top" data-uid="Utils.Drawing.DrawF`1.Top">
+  Top
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawF.cs/#L37"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the top coordinate of the drawing viewport in the caller-provided space.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public float Top { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h2 class="section" id="methods">Methods
+</h2>
+
+
+  <a id="Utils_Drawing_DrawF_1_ComputePixelPosition_" data-uid="Utils.Drawing.DrawF`1.ComputePixelPosition*"></a>
+
+  <h3 id="Utils_Drawing_DrawF_1_ComputePixelPosition_System_Drawing_PointF_" data-uid="Utils.Drawing.DrawF`1.ComputePixelPosition(System.Drawing.PointF)">
+  ComputePixelPosition(PointF)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawF.cs/#L100"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Computes the integer pixel corresponding to the provided floating-point coordinates.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Point ComputePixelPosition(PointF p)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>p</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.pointf">PointF</a></dt>
+    <dd><p>Coordinates expressed in the viewport space.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.point">Point</a></dt>
+    <dd><p>The integer pixel location within the image.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section" id="Utils_Drawing_DrawF_1_ComputePixelPosition_System_Drawing_PointF__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>The conversion applies the viewport scaling and truncates the result to the nearest lower integer,
+matching the behavior of <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.math.floor#system-math-floor(system-double)">Floor(double)</a> for positive coordinates.</p>
+</div>
+
+
+
+
+  <a id="Utils_Drawing_DrawF_1_ComputePixelPosition_" data-uid="Utils.Drawing.DrawF`1.ComputePixelPosition*"></a>
+
+  <h3 id="Utils_Drawing_DrawF_1_ComputePixelPosition_System_Single_System_Single_" data-uid="Utils.Drawing.DrawF`1.ComputePixelPosition(System.Single,System.Single)">
+  ComputePixelPosition(float, float)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawF.cs/#L112"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Computes the integer pixel corresponding to the provided floating-point coordinates.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Point ComputePixelPosition(float x, float y)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>x</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd><p>Horizontal coordinate in the viewport space.</p>
+</dd>
+    <dt><code>y</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd><p>Vertical coordinate in the viewport space.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.point">Point</a></dt>
+    <dd><p>The integer pixel location within the image.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section" id="Utils_Drawing_DrawF_1_ComputePixelPosition_System_Single_System_Single__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Values falling outside the viewport range result in negative or oversized pixel indices; the
+downstream <a class="xref" href="Utils.Drawing.DrawF-1.html#Utils_Drawing_DrawF_1_Draw">Draw</a> helper clamps them to the image dimensions when actually drawing.</p>
+</div>
+
+
+
+
+  <a id="Utils_Drawing_DrawF_1_ComputePixelPositionF_" data-uid="Utils.Drawing.DrawF`1.ComputePixelPositionF*"></a>
+
+  <h3 id="Utils_Drawing_DrawF_1_ComputePixelPositionF_System_Drawing_PointF_" data-uid="Utils.Drawing.DrawF`1.ComputePixelPositionF(System.Drawing.PointF)">
+  ComputePixelPositionF(PointF)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawF.cs/#L129"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Computes the floating-point pixel location corresponding to the provided viewport coordinates.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public PointF ComputePixelPositionF(PointF p)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>p</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.pointf">PointF</a></dt>
+    <dd><p>Coordinates expressed in the viewport space.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.pointf">PointF</a></dt>
+    <dd><p>The floating-point pixel position inside the image.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section" id="Utils_Drawing_DrawF_1_ComputePixelPositionF_System_Drawing_PointF__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>The method preserves the fractional part, which is useful for anti-aliasing or sub-pixel sampling
+scenarios.</p>
+</div>
+
+
+
+
+  <a id="Utils_Drawing_DrawF_1_ComputePixelPositionF_" data-uid="Utils.Drawing.DrawF`1.ComputePixelPositionF*"></a>
+
+  <h3 id="Utils_Drawing_DrawF_1_ComputePixelPositionF_System_Single_System_Single_" data-uid="Utils.Drawing.DrawF`1.ComputePixelPositionF(System.Single,System.Single)">
+  ComputePixelPositionF(float, float)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawF.cs/#L141"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Computes the floating-point pixel location corresponding to the provided viewport coordinates.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public PointF ComputePixelPositionF(float x, float y)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>x</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd><p>Horizontal coordinate in the viewport space.</p>
+</dd>
+    <dt><code>y</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd><p>Vertical coordinate in the viewport space.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.pointf">PointF</a></dt>
+    <dd><p>The floating-point pixel position inside the image.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section" id="Utils_Drawing_DrawF_1_ComputePixelPositionF_System_Single_System_Single__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Unlike <a class="xref" href="Utils.Drawing.DrawF-1.html#Utils_Drawing_DrawF_1_ComputePixelPosition_System_Single_System_Single_">ComputePixelPosition(float, float)</a>, this overload returns sub-pixel precision
+so callers can implement their own interpolation strategies.</p>
+</div>
+
+
+
+
+  <a id="Utils_Drawing_DrawF_1_ComputePoint_" data-uid="Utils.Drawing.DrawF`1.ComputePoint*"></a>
+
+  <h3 id="Utils_Drawing_DrawF_1_ComputePoint_System_Drawing_PointF_" data-uid="Utils.Drawing.DrawF`1.ComputePoint(System.Drawing.PointF)">
+  ComputePoint(PointF)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawF.cs/#L155"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Converts a pixel coordinate to the viewport space.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public PointF ComputePoint(PointF p)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>p</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.pointf">PointF</a></dt>
+    <dd><p>Pixel coordinate.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.pointf">PointF</a></dt>
+    <dd><p>The corresponding viewport coordinate.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawF_1_ComputePoint_" data-uid="Utils.Drawing.DrawF`1.ComputePoint*"></a>
+
+  <h3 id="Utils_Drawing_DrawF_1_ComputePoint_System_Single_System_Single_" data-uid="Utils.Drawing.DrawF`1.ComputePoint(System.Single,System.Single)">
+  ComputePoint(float, float)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawF.cs/#L163"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Converts a pixel coordinate to the viewport space.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public PointF ComputePoint(float x, float y)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>x</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd><p>Pixel horizontal coordinate.</p>
+</dd>
+    <dt><code>y</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd><p>Pixel vertical coordinate.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.pointf">PointF</a></dt>
+    <dd><p>The corresponding viewport coordinate.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawF_1_DrawBezier_" data-uid="Utils.Drawing.DrawF`1.DrawBezier*"></a>
+
+  <h3 id="Utils_Drawing_DrawF_1_DrawBezier__0_System_Drawing_PointF___" data-uid="Utils.Drawing.DrawF`1.DrawBezier(`0,System.Drawing.PointF[])">
+  DrawBezier(T, params PointF[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawF.cs/#L244"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Draws a Bézier curve using viewport coordinates.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void DrawBezier(T color, params PointF[] points)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>color</code> <span class="xref">T</span></dt>
+    <dd><p>Color applied to the curve.</p>
+</dd>
+    <dt><code>points</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.pointf">PointF</a>[]</dt>
+    <dd><p>Control points expressed in viewport coordinates.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawF_1_DrawCircle_" data-uid="Utils.Drawing.DrawF`1.DrawCircle*"></a>
+
+  <h3 id="Utils_Drawing_DrawF_1_DrawCircle_System_Drawing_PointF_System_Single_Utils_Drawing_IBrush__0__System_Double_System_Double_" data-uid="Utils.Drawing.DrawF`1.DrawCircle(System.Drawing.PointF,System.Single,Utils.Drawing.IBrush{`0},System.Double,System.Double)">
+  DrawCircle(PointF, float, IBrush&lt;T&gt;, double, double)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawF.cs/#L294"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Draws a circle outline using a brush.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void DrawCircle(PointF center, float radius, IBrush&lt;T&gt; color, double startAngle = 0, double endAngle = 6.283185307179586)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>center</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.pointf">PointF</a></dt>
+    <dd><p>Center of the circle.</p>
+</dd>
+    <dt><code>radius</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd><p>Radius of the circle.</p>
+</dd>
+    <dt><code>color</code> <a class="xref" href="Utils.Drawing.IBrush-1.html">IBrush</a>&lt;T&gt;</dt>
+    <dd><p>Brush providing the circle colors.</p>
+</dd>
+    <dt><code>startAngle</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd><p>Start angle in radians.</p>
+</dd>
+    <dt><code>endAngle</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd><p>End angle in radians.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawF_1_DrawEllipse_" data-uid="Utils.Drawing.DrawF`1.DrawEllipse*"></a>
+
+  <h3 id="Utils_Drawing_DrawF_1_DrawEllipse_System_Drawing_PointF_System_Single_System_Single_Utils_Drawing_IBrush__0__System_Double_System_Double_System_Double_" data-uid="Utils.Drawing.DrawF`1.DrawEllipse(System.Drawing.PointF,System.Single,System.Single,Utils.Drawing.IBrush{`0},System.Double,System.Double,System.Double)">
+  DrawEllipse(PointF, float, float, IBrush&lt;T&gt;, double, double, double)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawF.cs/#L323"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Draws an ellipse outline with a brush using viewport coordinates.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void DrawEllipse(PointF center, float radius1, float radius2, IBrush&lt;T&gt; color, double rotation = 0, double startAngle = 0, double endAngle = 6.283185307179586)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>center</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.pointf">PointF</a></dt>
+    <dd><p>Center of the ellipse.</p>
+</dd>
+    <dt><code>radius1</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd><p>Radius along the horizontal axis.</p>
+</dd>
+    <dt><code>radius2</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd><p>Radius along the vertical axis.</p>
+</dd>
+    <dt><code>color</code> <a class="xref" href="Utils.Drawing.IBrush-1.html">IBrush</a>&lt;T&gt;</dt>
+    <dd><p>Brush providing the ellipse colors.</p>
+</dd>
+    <dt><code>rotation</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd><p>Rotation in radians.</p>
+</dd>
+    <dt><code>startAngle</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd><p>Start angle in radians.</p>
+</dd>
+    <dt><code>endAngle</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd><p>End angle in radians.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawF_1_DrawEllipse_" data-uid="Utils.Drawing.DrawF`1.DrawEllipse*"></a>
+
+  <h3 id="Utils_Drawing_DrawF_1_DrawEllipse_System_Drawing_PointF_System_Single_System_Single__0_System_Double_System_Double_System_Double_" data-uid="Utils.Drawing.DrawF`1.DrawEllipse(System.Drawing.PointF,System.Single,System.Single,`0,System.Double,System.Double,System.Double)">
+  DrawEllipse(PointF, float, float, T, double, double, double)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawF.cs/#L307"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Draws an ellipse outline with a solid color using viewport coordinates.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void DrawEllipse(PointF center, float radius1, float radius2, T color, double rotation = 0, double startAngle = 0, double endAngle = 6.283185307179586)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>center</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.pointf">PointF</a></dt>
+    <dd><p>Center of the ellipse.</p>
+</dd>
+    <dt><code>radius1</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd><p>Radius along the horizontal axis.</p>
+</dd>
+    <dt><code>radius2</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd><p>Radius along the vertical axis.</p>
+</dd>
+    <dt><code>color</code> <span class="xref">T</span></dt>
+    <dd><p>Color applied to the ellipse.</p>
+</dd>
+    <dt><code>rotation</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd><p>Rotation in radians.</p>
+</dd>
+    <dt><code>startAngle</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd><p>Start angle in radians.</p>
+</dd>
+    <dt><code>endAngle</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd><p>End angle in radians.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawF_1_DrawLine_" data-uid="Utils.Drawing.DrawF`1.DrawLine*"></a>
+
+  <h3 id="Utils_Drawing_DrawF_1_DrawLine_System_Drawing_PointF_System_Drawing_PointF_Utils_Drawing_IBrush__0__" data-uid="Utils.Drawing.DrawF`1.DrawLine(System.Drawing.PointF,System.Drawing.PointF,Utils.Drawing.IBrush{`0})">
+  DrawLine(PointF, PointF, IBrush&lt;T&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawF.cs/#L220"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Draws a line between two viewport coordinates using a brush.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void DrawLine(PointF p1, PointF p2, IBrush&lt;T&gt; color)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>p1</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.pointf">PointF</a></dt>
+    <dd><p>Starting point in viewport coordinates.</p>
+</dd>
+    <dt><code>p2</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.pointf">PointF</a></dt>
+    <dd><p>Ending point in viewport coordinates.</p>
+</dd>
+    <dt><code>color</code> <a class="xref" href="Utils.Drawing.IBrush-1.html">IBrush</a>&lt;T&gt;</dt>
+    <dd><p>Brush providing the color values.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawF_1_DrawLine_" data-uid="Utils.Drawing.DrawF`1.DrawLine*"></a>
+
+  <h3 id="Utils_Drawing_DrawF_1_DrawLine_System_Drawing_PointF_System_Drawing_PointF__0_" data-uid="Utils.Drawing.DrawF`1.DrawLine(System.Drawing.PointF,System.Drawing.PointF,`0)">
+  DrawLine(PointF, PointF, T)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawF.cs/#L197"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Draws a line between two viewport coordinates using a solid color.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void DrawLine(PointF p1, PointF p2, T color)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>p1</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.pointf">PointF</a></dt>
+    <dd><p>Starting point in viewport coordinates.</p>
+</dd>
+    <dt><code>p2</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.pointf">PointF</a></dt>
+    <dd><p>Ending point in viewport coordinates.</p>
+</dd>
+    <dt><code>color</code> <span class="xref">T</span></dt>
+    <dd><p>Color to apply.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawF_1_DrawLine_" data-uid="Utils.Drawing.DrawF`1.DrawLine*"></a>
+
+  <h3 id="Utils_Drawing_DrawF_1_DrawLine_System_Single_System_Single_System_Single_System_Single_Utils_Drawing_IBrush__0__" data-uid="Utils.Drawing.DrawF`1.DrawLine(System.Single,System.Single,System.Single,System.Single,Utils.Drawing.IBrush{`0})">
+  DrawLine(float, float, float, float, IBrush&lt;T&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawF.cs/#L230"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Draws a line between two viewport coordinates using a brush.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void DrawLine(float x1, float y1, float x2, float y2, IBrush&lt;T&gt; color)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>x1</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd><p>Starting point horizontal coordinate.</p>
+</dd>
+    <dt><code>y1</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd><p>Starting point vertical coordinate.</p>
+</dd>
+    <dt><code>x2</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd><p>Ending point horizontal coordinate.</p>
+</dd>
+    <dt><code>y2</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd><p>Ending point vertical coordinate.</p>
+</dd>
+    <dt><code>color</code> <a class="xref" href="Utils.Drawing.IBrush-1.html">IBrush</a>&lt;T&gt;</dt>
+    <dd><p>Brush providing the color values.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawF_1_DrawLine_" data-uid="Utils.Drawing.DrawF`1.DrawLine*"></a>
+
+  <h3 id="Utils_Drawing_DrawF_1_DrawLine_System_Single_System_Single_System_Single_System_Single__0_" data-uid="Utils.Drawing.DrawF`1.DrawLine(System.Single,System.Single,System.Single,System.Single,`0)">
+  DrawLine(float, float, float, float, T)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawF.cs/#L207"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Draws a line between two viewport coordinates using a solid color.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void DrawLine(float x1, float y1, float x2, float y2, T color)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>x1</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd><p>Starting point horizontal coordinate.</p>
+</dd>
+    <dt><code>y1</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd><p>Starting point vertical coordinate.</p>
+</dd>
+    <dt><code>x2</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd><p>Ending point horizontal coordinate.</p>
+</dd>
+    <dt><code>y2</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd><p>Ending point vertical coordinate.</p>
+</dd>
+    <dt><code>color</code> <span class="xref">T</span></dt>
+    <dd><p>Color to apply.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawF_1_DrawPoint_" data-uid="Utils.Drawing.DrawF`1.DrawPoint*"></a>
+
+  <h3 id="Utils_Drawing_DrawF_1_DrawPoint_System_Drawing_PointF__0_" data-uid="Utils.Drawing.DrawF`1.DrawPoint(System.Drawing.PointF,`0)">
+  DrawPoint(PointF, T)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawF.cs/#L176"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Draws a single point expressed in viewport coordinates.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void DrawPoint(PointF point, T color)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>point</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.pointf">PointF</a></dt>
+    <dd><p>Point in viewport coordinates.</p>
+</dd>
+    <dt><code>color</code> <span class="xref">T</span></dt>
+    <dd><p>Color to draw.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawF_1_DrawPoint_" data-uid="Utils.Drawing.DrawF`1.DrawPoint*"></a>
+
+  <h3 id="Utils_Drawing_DrawF_1_DrawPoint_System_Single_System_Single__0_" data-uid="Utils.Drawing.DrawF`1.DrawPoint(System.Single,System.Single,`0)">
+  DrawPoint(float, float, T)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawF.cs/#L184"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Draws a single point expressed in viewport coordinates.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void DrawPoint(float x, float y, T color)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>x</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd><p>Horizontal coordinate.</p>
+</dd>
+    <dt><code>y</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd><p>Vertical coordinate.</p>
+</dd>
+    <dt><code>color</code> <span class="xref">T</span></dt>
+    <dd><p>Color to draw.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawF_1_DrawPolygon_" data-uid="Utils.Drawing.DrawF`1.DrawPolygon*"></a>
+
+  <h3 id="Utils_Drawing_DrawF_1_DrawPolygon_Utils_Drawing_IBrush__0__System_Collections_Generic_IEnumerable_System_Drawing_PointF__" data-uid="Utils.Drawing.DrawF`1.DrawPolygon(Utils.Drawing.IBrush{`0},System.Collections.Generic.IEnumerable{System.Drawing.PointF})">
+  DrawPolygon(IBrush&lt;T&gt;, IEnumerable&lt;PointF&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawF.cs/#L266"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Draws a polygon filled with a brush.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void DrawPolygon(IBrush&lt;T&gt; color, IEnumerable&lt;PointF&gt; points)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>color</code> <a class="xref" href="Utils.Drawing.IBrush-1.html">IBrush</a>&lt;T&gt;</dt>
+    <dd><p>Brush providing the polygon colors.</p>
+</dd>
+    <dt><code>points</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.pointf">PointF</a>&gt;</dt>
+    <dd><p>Polygon vertices in viewport coordinates.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawF_1_DrawPolygon_" data-uid="Utils.Drawing.DrawF`1.DrawPolygon*"></a>
+
+  <h3 id="Utils_Drawing_DrawF_1_DrawPolygon_Utils_Drawing_IBrush__0__System_Drawing_PointF___" data-uid="Utils.Drawing.DrawF`1.DrawPolygon(Utils.Drawing.IBrush{`0},System.Drawing.PointF[])">
+  DrawPolygon(IBrush&lt;T&gt;, params PointF[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawF.cs/#L272"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Draws a polygon filled with a brush.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void DrawPolygon(IBrush&lt;T&gt; color, params PointF[] points)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>color</code> <a class="xref" href="Utils.Drawing.IBrush-1.html">IBrush</a>&lt;T&gt;</dt>
+    <dd><p>Brush providing the polygon colors.</p>
+</dd>
+    <dt><code>points</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.pointf">PointF</a>[]</dt>
+    <dd><p>Polygon vertices in viewport coordinates.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawF_1_DrawPolygon_" data-uid="Utils.Drawing.DrawF`1.DrawPolygon*"></a>
+
+  <h3 id="Utils_Drawing_DrawF_1_DrawPolygon__0_System_Collections_Generic_IEnumerable_System_Drawing_PointF__" data-uid="Utils.Drawing.DrawF`1.DrawPolygon(`0,System.Collections.Generic.IEnumerable{System.Drawing.PointF})">
+  DrawPolygon(T, IEnumerable&lt;PointF&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawF.cs/#L254"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Draws a polygon filled with a solid color.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void DrawPolygon(T color, IEnumerable&lt;PointF&gt; points)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>color</code> <span class="xref">T</span></dt>
+    <dd><p>Color applied to the polygon.</p>
+</dd>
+    <dt><code>points</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.pointf">PointF</a>&gt;</dt>
+    <dd><p>Polygon vertices in viewport coordinates.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawF_1_DrawPolygon_" data-uid="Utils.Drawing.DrawF`1.DrawPolygon*"></a>
+
+  <h3 id="Utils_Drawing_DrawF_1_DrawPolygon__0_System_Drawing_PointF___" data-uid="Utils.Drawing.DrawF`1.DrawPolygon(`0,System.Drawing.PointF[])">
+  DrawPolygon(T, params PointF[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawF.cs/#L260"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Draws a polygon filled with a solid color.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void DrawPolygon(T color, params PointF[] points)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>color</code> <span class="xref">T</span></dt>
+    <dd><p>Color applied to the polygon.</p>
+</dd>
+    <dt><code>points</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.pointf">PointF</a>[]</dt>
+    <dd><p>Polygon vertices in viewport coordinates.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawF_1_FillCircle_" data-uid="Utils.Drawing.DrawF`1.FillCircle*"></a>
+
+  <h3 id="Utils_Drawing_DrawF_1_FillCircle_System_Drawing_PointF_System_Single__0_System_Double_System_Double_" data-uid="Utils.Drawing.DrawF`1.FillCircle(System.Drawing.PointF,System.Single,`0,System.Double,System.Double)">
+  FillCircle(PointF, float, T, double, double)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawF.cs/#L283"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Fills a circle using viewport coordinates.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void FillCircle(PointF center, float radius, T color, double startAngle = 0, double endAngle = 6.283185307179586)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>center</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.pointf">PointF</a></dt>
+    <dd><p>Center of the circle.</p>
+</dd>
+    <dt><code>radius</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd><p>Radius of the circle.</p>
+</dd>
+    <dt><code>color</code> <span class="xref">T</span></dt>
+    <dd><p>Color applied to the circle.</p>
+</dd>
+    <dt><code>startAngle</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd><p>Start angle in radians.</p>
+</dd>
+    <dt><code>endAngle</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd><p>End angle in radians.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawF_1_FillRectangle_" data-uid="Utils.Drawing.DrawF`1.FillRectangle*"></a>
+
+  <h3 id="Utils_Drawing_DrawF_1_FillRectangle_System_Drawing_PointF_System_Drawing_PointF__0_" data-uid="Utils.Drawing.DrawF`1.FillRectangle(System.Drawing.PointF,System.Drawing.PointF,`0)">
+  FillRectangle(PointF, PointF, T)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawF.cs/#L403"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Fills a rectangle defined by two viewport points.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void FillRectangle(PointF p1, PointF p2, T color)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>p1</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.pointf">PointF</a></dt>
+    <dd><p>First point of the rectangle.</p>
+</dd>
+    <dt><code>p2</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.pointf">PointF</a></dt>
+    <dd><p>Opposite corner of the rectangle.</p>
+</dd>
+    <dt><code>color</code> <span class="xref">T</span></dt>
+    <dd><p>Color applied to the rectangle.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawF_1_FillRectangle_" data-uid="Utils.Drawing.DrawF`1.FillRectangle*"></a>
+
+  <h3 id="Utils_Drawing_DrawF_1_FillRectangle_System_Drawing_RectangleF__0_" data-uid="Utils.Drawing.DrawF`1.FillRectangle(System.Drawing.RectangleF,`0)">
+  FillRectangle(RectangleF, T)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawF.cs/#L394"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Fills a rectangle defined in viewport coordinates.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void FillRectangle(RectangleF r, T color)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>r</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.rectanglef">RectangleF</a></dt>
+    <dd><p>Rectangle to fill.</p>
+</dd>
+    <dt><code>color</code> <span class="xref">T</span></dt>
+    <dd><p>Color applied to the rectangle.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawF_1_FillRectangle_" data-uid="Utils.Drawing.DrawF`1.FillRectangle*"></a>
+
+  <h3 id="Utils_Drawing_DrawF_1_FillRectangle_System_Single_System_Single_System_Single_System_Single__0_" data-uid="Utils.Drawing.DrawF`1.FillRectangle(System.Single,System.Single,System.Single,System.Single,`0)">
+  FillRectangle(float, float, float, float, T)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawF.cs/#L414"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Fills a rectangle defined by its viewport coordinates.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void FillRectangle(float x1, float y1, float x2, float y2, T color)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>x1</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd><p>First corner horizontal coordinate.</p>
+</dd>
+    <dt><code>y1</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd><p>First corner vertical coordinate.</p>
+</dd>
+    <dt><code>x2</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd><p>Opposite corner horizontal coordinate.</p>
+</dd>
+    <dt><code>y2</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd><p>Opposite corner vertical coordinate.</p>
+</dd>
+    <dt><code>color</code> <span class="xref">T</span></dt>
+    <dd><p>Color applied to the rectangle.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawF.cs/#L27" class="edit-link">Edit this page</a>
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

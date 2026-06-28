@@ -1,0 +1,1549 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Class DrawI&lt;T&gt; | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Class DrawI&lt;T&gt; | omy.Utils Documentation ">
+      
+      <meta name="description" content="Provides integer-based drawing helpers for image accessors.">
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_Drawing_DrawI_1.md&amp;value=---%0Auid%3A%20Utils.Drawing.DrawI%601%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="Utils.Drawing.DrawI`1">
+
+
+
+  <h1 id="Utils_Drawing_DrawI_1" data-uid="Utils.Drawing.DrawI`1" class="text-break">
+Class DrawI&lt;T&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawI.cs/#L23"><i class="bi bi-code-slash"></i></a>
+  </h1>
+
+  <div class="facts text-secondary">
+    <dl><dt>Namespace</dt><dd><a class="xref" href="Utils.html">Utils</a>.<a class="xref" href="Utils.Drawing.html">Drawing</a></dd></dl>
+  <dl><dt>Assembly</dt><dd>Utils.Imaging.dll</dd></dl>
+  </div>
+
+  <div class="markdown summary"><p>Provides integer-based drawing helpers for image accessors.</p>
+</div>
+  <div class="markdown conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public class DrawI&lt;T&gt; : BaseDrawing&lt;T&gt;</code></pre>
+  </div>
+
+
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Type of the pixel value handled by the drawing operations.</p>
+</dd>
+  </dl>
+
+  <dl class="typelist inheritance">
+    <dt>Inheritance</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
+      <div><a class="xref" href="Utils.Drawing.BaseDrawing-1.html">BaseDrawing</a>&lt;T&gt;</div>
+      <div><span class="xref">DrawI&lt;T&gt;</span></div>
+    </dd>
+  </dl>
+
+
+
+  <dl class="typelist inheritedMembers">
+    <dt>Inherited Members</dt>
+    <dd>
+    <div>
+      <a class="xref" href="Utils.Drawing.BaseDrawing-1.html#Utils_Drawing_BaseDrawing_1_ImageAccessor">BaseDrawing&lt;T&gt;.ImageAccessor</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)">object.Equals(object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)">object.Equals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gethashcode">object.GetHashCode()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone">object.MemberwiseClone()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.tostring">object.ToString()</a>
+    </div>
+  </dd></dl>
+
+  <dl class="typelist extensionMethods">
+    <dt>Extension Methods</dt>
+    <dd>
+  <div>
+      <a class="xref" href="Utils.Data.DataUtils.html#Utils_Data_DataUtils_ToDbValue_System_Object_">DataUtils.ToDbValue(object?)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Mathematics.MathEx.html#Utils_Mathematics_MathEx_Clamp__1___0___0___0_System_Collections_Generic_IComparer___0__">MathEx.Clamp&lt;T&gt;(T, T, T, IComparer&lt;T&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Mathematics.MathEx.html#Utils_Mathematics_MathEx_Clamp__1___0___0___0_System_Collections_Generic_IComparer___0__">MathEx.Clamp&lt;T&gt;(T, T, T, IComparer&lt;T&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Failure__1___0_">FluentExtensions.Failure&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Failure__1___0_">FluentExtensions.Failure&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsEqualTo__2___0___1_">FluentExtensions.IsEqualTo&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsEqualTo__2___0___1_">FluentExtensions.IsEqualTo&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterOrEqualsThan__2___0___1_">FluentExtensions.IsGreaterOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterOrEqualsThan__2___0___1_">FluentExtensions.IsGreaterOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterThan__2___0___1_">FluentExtensions.IsGreaterThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterThan__2___0___1_">FluentExtensions.IsGreaterThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsIn__1___0___0___">FluentExtensions.IsIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsIn__1___0___0___">FluentExtensions.IsIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerOrEqualsThan__2___0___1_">FluentExtensions.IsLowerOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerOrEqualsThan__2___0___1_">FluentExtensions.IsLowerOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerThan__2___0___1_">FluentExtensions.IsLowerThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerThan__2___0___1_">FluentExtensions.IsLowerThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotIn__1___0___0___">FluentExtensions.IsNotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotIn__1___0___0___">FluentExtensions.IsNotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotNull__1___0_">FluentExtensions.IsNotNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotNull__1___0_">FluentExtensions.IsNotNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNull__1___0_">FluentExtensions.IsNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNull__1___0_">FluentExtensions.IsNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Success__1___0_">FluentExtensions.Success&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Success__1___0_">FluentExtensions.Success&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Test__1___0_System_Func___0_System_Boolean__">FluentExtensions.Test&lt;T&gt;(T, Func&lt;T, bool&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Test__1___0_System_Func___0_System_Boolean__">FluentExtensions.Test&lt;T&gt;(T, Func&lt;T, bool&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_System_Boolean_System_Boolean_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T, bool, bool)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_System_Boolean_System_Boolean_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T, bool, bool)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1____1_">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1____1_">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1____1_">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1____1_">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_In__1___0___0___">ObjectUtils.In&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_In__1___0___0___">ObjectUtils.In&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_NotIn__1___0___0___">ObjectUtils.NotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_NotIn__1___0___0___">ObjectUtils.NotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustNotBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustNotBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustNotBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustNotBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Arg__1___0_System_String_">Validations.Arg&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Arg__1___0_System_String_">Validations.Arg&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ValueMustNotBeNull__1___0_System_String_">Validations.ValueMustNotBeNull&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ValueMustNotBeNull__1___0_System_String_">Validations.ValueMustNotBeNull&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Variable__1___0_System_String_">Validations.Variable&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Variable__1___0_System_String_">Validations.Variable&lt;T&gt;(T, string)</a>
+  </div>
+  </dd></dl>
+
+
+
+  <h2 id="Utils_Drawing_DrawI_1_remarks">Remarks</h2>
+  <div class="markdown level0 remarks"><p>The <code>DrawI</code> class exposes low-level rasterization primitives.  It is intentionally conservative about
+bounds checking and delegates all color decisions to <a class="xref" href="Utils.Drawing.IBrush-1.html">IBrush&lt;T&gt;</a> implementations so that higher
+level helpers, such as <a class="xref" href="Utils.Drawing.DrawF-1.html">DrawF&lt;T&gt;</a>, can reuse the same pixel pipeline.</p>
+</div>
+
+
+  <h2 class="section" id="constructors">Constructors
+</h2>
+
+
+  <a id="Utils_Drawing_DrawI_1__ctor_" data-uid="Utils.Drawing.DrawI`1.#ctor*"></a>
+
+  <h3 id="Utils_Drawing_DrawI_1__ctor_Utils_Imaging_IImageAccessor__0__" data-uid="Utils.Drawing.DrawI`1.#ctor(Utils.Imaging.IImageAccessor{`0})">
+  DrawI(IImageAccessor&lt;T&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawI.cs/#L33"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Drawing.DrawI-1.html">DrawI&lt;T&gt;</a> class.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public DrawI(IImageAccessor&lt;T&gt; imageAccessor)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>imageAccessor</code> <a class="xref" href="Utils.Imaging.IImageAccessor-1.html">IImageAccessor</a>&lt;T&gt;</dt>
+    <dd><p>Accessor used to manipulate the underlying image.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section" id="Utils_Drawing_DrawI_1__ctor_Utils_Imaging_IImageAccessor__0___remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>The accessor reference is stored for the whole lifetime of the helper so that callers can perform
+several drawing operations without recreating the wrapper.</p>
+</div>
+
+
+
+
+  <h2 class="section" id="methods">Methods
+</h2>
+
+
+  <a id="Utils_Drawing_DrawI_1_DrawBezier_" data-uid="Utils.Drawing.DrawI`1.DrawBezier*"></a>
+
+  <h3 id="Utils_Drawing_DrawI_1_DrawBezier_Utils_Drawing_MapBrush__0__System_Drawing_Point___" data-uid="Utils.Drawing.DrawI`1.DrawBezier(Utils.Drawing.MapBrush{`0},System.Drawing.Point[])">
+  DrawBezier(MapBrush&lt;T&gt;, params Point[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawI.cs/#L214"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Draws a Bézier curve using a brush.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void DrawBezier(MapBrush&lt;T&gt; color, params Point[] points)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>color</code> <a class="xref" href="Utils.Drawing.MapBrush-1.html">MapBrush</a>&lt;T&gt;</dt>
+    <dd><p>Brush providing the colors.</p>
+</dd>
+    <dt><code>points</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.point">Point</a>[]</dt>
+    <dd><p>Control points.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawI_1_DrawBezier_" data-uid="Utils.Drawing.DrawI`1.DrawBezier*"></a>
+
+  <h3 id="Utils_Drawing_DrawI_1_DrawBezier__0_System_Drawing_Point___" data-uid="Utils.Drawing.DrawI`1.DrawBezier(`0,System.Drawing.Point[])">
+  DrawBezier(T, params Point[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawI.cs/#L196"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Draws a Bézier curve using integer coordinates.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void DrawBezier(T color, params Point[] points)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>color</code> <span class="xref">T</span></dt>
+    <dd><p>Color applied to the curve.</p>
+</dd>
+    <dt><code>points</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.point">Point</a>[]</dt>
+    <dd><p>Control points in pixel coordinates.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawI_1_DrawCircle_" data-uid="Utils.Drawing.DrawI`1.DrawCircle*"></a>
+
+  <h3 id="Utils_Drawing_DrawI_1_DrawCircle_System_Drawing_Point_System_Int32_Utils_Drawing_IBrush__0__System_Double_System_Double_" data-uid="Utils.Drawing.DrawI`1.DrawCircle(System.Drawing.Point,System.Int32,Utils.Drawing.IBrush{`0},System.Double,System.Double)">
+  DrawCircle(Point, int, IBrush&lt;T&gt;, double, double)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawI.cs/#L372"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Draws a circle outline with a brush.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void DrawCircle(Point center, int radius, IBrush&lt;T&gt; color, double startAngle = 0, double endAngle = 6.283185307179586)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>center</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.point">Point</a></dt>
+    <dd><p>Center of the circle.</p>
+</dd>
+    <dt><code>radius</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Circle radius in pixels.</p>
+</dd>
+    <dt><code>color</code> <a class="xref" href="Utils.Drawing.IBrush-1.html">IBrush</a>&lt;T&gt;</dt>
+    <dd><p>Brush providing the circle colors.</p>
+</dd>
+    <dt><code>startAngle</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd><p>Start angle in radians.</p>
+</dd>
+    <dt><code>endAngle</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd><p>End angle in radians.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawI_1_DrawCircle_" data-uid="Utils.Drawing.DrawI`1.DrawCircle*"></a>
+
+  <h3 id="Utils_Drawing_DrawI_1_DrawCircle_System_Drawing_Point_System_Int32__0_System_Double_System_Double_" data-uid="Utils.Drawing.DrawI`1.DrawCircle(System.Drawing.Point,System.Int32,`0,System.Double,System.Double)">
+  DrawCircle(Point, int, T, double, double)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawI.cs/#L361"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Draws a circle outline with a solid color.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void DrawCircle(Point center, int radius, T color, double startAngle = 0, double endAngle = 6.283185307179586)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>center</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.point">Point</a></dt>
+    <dd><p>Center of the circle.</p>
+</dd>
+    <dt><code>radius</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Circle radius in pixels.</p>
+</dd>
+    <dt><code>color</code> <span class="xref">T</span></dt>
+    <dd><p>Color applied to the circle outline.</p>
+</dd>
+    <dt><code>startAngle</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd><p>Start angle in radians.</p>
+</dd>
+    <dt><code>endAngle</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd><p>End angle in radians.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawI_1_DrawEllipse_" data-uid="Utils.Drawing.DrawI`1.DrawEllipse*"></a>
+
+  <h3 id="Utils_Drawing_DrawI_1_DrawEllipse_System_Drawing_Point_System_Int32_System_Int32_Utils_Drawing_IBrush__0__System_Double_System_Double_System_Double_" data-uid="Utils.Drawing.DrawI`1.DrawEllipse(System.Drawing.Point,System.Int32,System.Int32,Utils.Drawing.IBrush{`0},System.Double,System.Double,System.Double)">
+  DrawEllipse(Point, int, int, IBrush&lt;T&gt;, double, double, double)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawI.cs/#L401"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Draws an ellipse outline with a brush.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void DrawEllipse(Point center, int radius1, int radius2, IBrush&lt;T&gt; color, double orientation = 0, double startAngle = 0, double endAngle = 6.283185307179586)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>center</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.point">Point</a></dt>
+    <dd><p>Center of the ellipse.</p>
+</dd>
+    <dt><code>radius1</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Horizontal radius in pixels.</p>
+</dd>
+    <dt><code>radius2</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Vertical radius in pixels.</p>
+</dd>
+    <dt><code>color</code> <a class="xref" href="Utils.Drawing.IBrush-1.html">IBrush</a>&lt;T&gt;</dt>
+    <dd><p>Brush providing the ellipse colors.</p>
+</dd>
+    <dt><code>orientation</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd><p>Ellipse rotation in radians.</p>
+</dd>
+    <dt><code>startAngle</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd><p>Start angle in radians.</p>
+</dd>
+    <dt><code>endAngle</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd><p>End angle in radians.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawI_1_DrawEllipse_" data-uid="Utils.Drawing.DrawI`1.DrawEllipse*"></a>
+
+  <h3 id="Utils_Drawing_DrawI_1_DrawEllipse_System_Drawing_Point_System_Int32_System_Int32__0_System_Double_System_Double_System_Double_" data-uid="Utils.Drawing.DrawI`1.DrawEllipse(System.Drawing.Point,System.Int32,System.Int32,`0,System.Double,System.Double,System.Double)">
+  DrawEllipse(Point, int, int, T, double, double, double)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawI.cs/#L385"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Draws an ellipse outline with a solid color.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void DrawEllipse(Point center, int radius1, int radius2, T color, double orientation = 0, double startAngle = 0, double endAngle = 6.283185307179586)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>center</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.point">Point</a></dt>
+    <dd><p>Center of the ellipse.</p>
+</dd>
+    <dt><code>radius1</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Horizontal radius in pixels.</p>
+</dd>
+    <dt><code>radius2</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Vertical radius in pixels.</p>
+</dd>
+    <dt><code>color</code> <span class="xref">T</span></dt>
+    <dd><p>Color applied to the ellipse outline.</p>
+</dd>
+    <dt><code>orientation</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd><p>Ellipse rotation in radians.</p>
+</dd>
+    <dt><code>startAngle</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd><p>Start angle in radians.</p>
+</dd>
+    <dt><code>endAngle</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd><p>End angle in radians.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawI_1_DrawLine_" data-uid="Utils.Drawing.DrawI`1.DrawLine*"></a>
+
+  <h3 id="Utils_Drawing_DrawI_1_DrawLine_System_Drawing_Point_System_Drawing_Point_Utils_Drawing_IBrush__0__" data-uid="Utils.Drawing.DrawI`1.DrawLine(System.Drawing.Point,System.Drawing.Point,Utils.Drawing.IBrush{`0})">
+  DrawLine(Point, Point, IBrush&lt;T&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawI.cs/#L174"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Draws a line between two pixels using a brush.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void DrawLine(Point p1, Point p2, IBrush&lt;T&gt; color)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>p1</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.point">Point</a></dt>
+    <dd><p>Starting point.</p>
+</dd>
+    <dt><code>p2</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.point">Point</a></dt>
+    <dd><p>Ending point.</p>
+</dd>
+    <dt><code>color</code> <a class="xref" href="Utils.Drawing.IBrush-1.html">IBrush</a>&lt;T&gt;</dt>
+    <dd><p>Brush providing the colors.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawI_1_DrawLine_" data-uid="Utils.Drawing.DrawI`1.DrawLine*"></a>
+
+  <h3 id="Utils_Drawing_DrawI_1_DrawLine_System_Drawing_Point_System_Drawing_Point__0_" data-uid="Utils.Drawing.DrawI`1.DrawLine(System.Drawing.Point,System.Drawing.Point,`0)">
+  DrawLine(Point, Point, T)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawI.cs/#L156"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Draws a line between two pixels using a solid color.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void DrawLine(Point p1, Point p2, T color)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>p1</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.point">Point</a></dt>
+    <dd><p>Starting point.</p>
+</dd>
+    <dt><code>p2</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.point">Point</a></dt>
+    <dd><p>Ending point.</p>
+</dd>
+    <dt><code>color</code> <span class="xref">T</span></dt>
+    <dd><p>Color applied to the line.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawI_1_DrawLine_" data-uid="Utils.Drawing.DrawI`1.DrawLine*"></a>
+
+  <h3 id="Utils_Drawing_DrawI_1_DrawLine_System_Int32_System_Int32_System_Int32_System_Int32_Utils_Drawing_IBrush__0__" data-uid="Utils.Drawing.DrawI`1.DrawLine(System.Int32,System.Int32,System.Int32,System.Int32,Utils.Drawing.IBrush{`0})">
+  DrawLine(int, int, int, int, IBrush&lt;T&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawI.cs/#L184"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Draws a line between two pixels using a brush.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void DrawLine(int x1, int y1, int x2, int y2, IBrush&lt;T&gt; color)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>x1</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Starting point horizontal coordinate.</p>
+</dd>
+    <dt><code>y1</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Starting point vertical coordinate.</p>
+</dd>
+    <dt><code>x2</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Ending point horizontal coordinate.</p>
+</dd>
+    <dt><code>y2</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Ending point vertical coordinate.</p>
+</dd>
+    <dt><code>color</code> <a class="xref" href="Utils.Drawing.IBrush-1.html">IBrush</a>&lt;T&gt;</dt>
+    <dd><p>Brush providing the colors.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawI_1_DrawLine_" data-uid="Utils.Drawing.DrawI`1.DrawLine*"></a>
+
+  <h3 id="Utils_Drawing_DrawI_1_DrawLine_System_Int32_System_Int32_System_Int32_System_Int32__0_" data-uid="Utils.Drawing.DrawI`1.DrawLine(System.Int32,System.Int32,System.Int32,System.Int32,`0)">
+  DrawLine(int, int, int, int, T)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawI.cs/#L166"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Draws a line between two pixels using a solid color.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void DrawLine(int x1, int y1, int x2, int y2, T color)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>x1</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Starting point horizontal coordinate.</p>
+</dd>
+    <dt><code>y1</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Starting point vertical coordinate.</p>
+</dd>
+    <dt><code>x2</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Ending point horizontal coordinate.</p>
+</dd>
+    <dt><code>y2</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Ending point vertical coordinate.</p>
+</dd>
+    <dt><code>color</code> <span class="xref">T</span></dt>
+    <dd><p>Color applied to the line.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawI_1_DrawPoint_" data-uid="Utils.Drawing.DrawI`1.DrawPoint*"></a>
+
+  <h3 id="Utils_Drawing_DrawI_1_DrawPoint_System_Drawing_Point__0_" data-uid="Utils.Drawing.DrawI`1.DrawPoint(System.Drawing.Point,`0)">
+  DrawPoint(Point, T)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawI.cs/#L41"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Draws a single pixel.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void DrawPoint(Point point, T color)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>point</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.point">Point</a></dt>
+    <dd><p>Pixel coordinates.</p>
+</dd>
+    <dt><code>color</code> <span class="xref">T</span></dt>
+    <dd><p>Color applied to the pixel.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawI_1_DrawPoint_" data-uid="Utils.Drawing.DrawI`1.DrawPoint*"></a>
+
+  <h3 id="Utils_Drawing_DrawI_1_DrawPoint_System_Int32_System_Int32__0_" data-uid="Utils.Drawing.DrawI`1.DrawPoint(System.Int32,System.Int32,`0)">
+  DrawPoint(int, int, T)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawI.cs/#L49"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Draws a single pixel.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void DrawPoint(int x, int y, T color)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>x</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Horizontal coordinate.</p>
+</dd>
+    <dt><code>y</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Vertical coordinate.</p>
+</dd>
+    <dt><code>color</code> <span class="xref">T</span></dt>
+    <dd><p>Color applied to the pixel.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawI_1_DrawPolygon_" data-uid="Utils.Drawing.DrawI`1.DrawPolygon*"></a>
+
+  <h3 id="Utils_Drawing_DrawI_1_DrawPolygon_Utils_Drawing_IBrush__0__System_Collections_Generic_IEnumerable_System_Drawing_Point__" data-uid="Utils.Drawing.DrawI`1.DrawPolygon(Utils.Drawing.IBrush{`0},System.Collections.Generic.IEnumerable{System.Drawing.Point})">
+  DrawPolygon(IBrush&lt;T&gt;, IEnumerable&lt;Point&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawI.cs/#L288"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Draws a polygon filled with a brush.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void DrawPolygon(IBrush&lt;T&gt; color, IEnumerable&lt;Point&gt; points)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>color</code> <a class="xref" href="Utils.Drawing.IBrush-1.html">IBrush</a>&lt;T&gt;</dt>
+    <dd><p>Brush providing the polygon colors.</p>
+</dd>
+    <dt><code>points</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.point">Point</a>&gt;</dt>
+    <dd><p>Polygon vertices.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawI_1_DrawPolygon_" data-uid="Utils.Drawing.DrawI`1.DrawPolygon*"></a>
+
+  <h3 id="Utils_Drawing_DrawI_1_DrawPolygon_Utils_Drawing_IBrush__0__System_Drawing_Point___" data-uid="Utils.Drawing.DrawI`1.DrawPolygon(Utils.Drawing.IBrush{`0},System.Drawing.Point[])">
+  DrawPolygon(IBrush&lt;T&gt;, params Point[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawI.cs/#L295"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Draws a polygon filled with a brush.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void DrawPolygon(IBrush&lt;T&gt; color, params Point[] points)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>color</code> <a class="xref" href="Utils.Drawing.IBrush-1.html">IBrush</a>&lt;T&gt;</dt>
+    <dd><p>Brush providing the polygon colors.</p>
+</dd>
+    <dt><code>points</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.point">Point</a>[]</dt>
+    <dd><p>Polygon vertices.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawI_1_DrawPolygon_" data-uid="Utils.Drawing.DrawI`1.DrawPolygon*"></a>
+
+  <h3 id="Utils_Drawing_DrawI_1_DrawPolygon__0_System_Collections_Generic_IEnumerable_System_Drawing_Point__" data-uid="Utils.Drawing.DrawI`1.DrawPolygon(`0,System.Collections.Generic.IEnumerable{System.Drawing.Point})">
+  DrawPolygon(T, IEnumerable&lt;Point&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawI.cs/#L270"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Draws a polygon filled with a solid color.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void DrawPolygon(T color, IEnumerable&lt;Point&gt; points)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>color</code> <span class="xref">T</span></dt>
+    <dd><p>Color applied to the polygon.</p>
+</dd>
+    <dt><code>points</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.point">Point</a>&gt;</dt>
+    <dd><p>Polygon vertices.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawI_1_DrawPolygon_" data-uid="Utils.Drawing.DrawI`1.DrawPolygon*"></a>
+
+  <h3 id="Utils_Drawing_DrawI_1_DrawPolygon__0_System_Drawing_Point___" data-uid="Utils.Drawing.DrawI`1.DrawPolygon(`0,System.Drawing.Point[])">
+  DrawPolygon(T, params Point[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawI.cs/#L277"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Draws a polygon filled with a solid color.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void DrawPolygon(T color, params Point[] points)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>color</code> <span class="xref">T</span></dt>
+    <dd><p>Color applied to the polygon.</p>
+</dd>
+    <dt><code>points</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.point">Point</a>[]</dt>
+    <dd><p>Polygon vertices.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawI_1_FillBezier_" data-uid="Utils.Drawing.DrawI`1.FillBezier*"></a>
+
+  <h3 id="Utils_Drawing_DrawI_1_FillBezier_Utils_Drawing_UVMap__0__System_Drawing_Point___" data-uid="Utils.Drawing.DrawI`1.FillBezier(Utils.Drawing.UVMap{`0},System.Drawing.Point[])">
+  FillBezier(UVMap&lt;T&gt;, params Point[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawI.cs/#L250"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Fills the area enclosed by a Bézier curve using a UV mapping.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void FillBezier(UVMap&lt;T&gt; color, params Point[] points)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>color</code> <a class="xref" href="Utils.Drawing.UVMap-1.html">UVMap</a>&lt;T&gt;</dt>
+    <dd><p>Delegate providing colors for each pixel.</p>
+</dd>
+    <dt><code>points</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.point">Point</a>[]</dt>
+    <dd><p>Control points.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawI_1_FillBezier_" data-uid="Utils.Drawing.DrawI`1.FillBezier*"></a>
+
+  <h3 id="Utils_Drawing_DrawI_1_FillBezier__0_System_Drawing_Point___" data-uid="Utils.Drawing.DrawI`1.FillBezier(`0,System.Drawing.Point[])">
+  FillBezier(T, params Point[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawI.cs/#L232"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Fills the area enclosed by a Bézier curve with a solid color.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void FillBezier(T color, params Point[] points)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>color</code> <span class="xref">T</span></dt>
+    <dd><p>Color applied to the curve interior.</p>
+</dd>
+    <dt><code>points</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.point">Point</a>[]</dt>
+    <dd><p>Control points.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawI_1_FillCircle_" data-uid="Utils.Drawing.DrawI`1.FillCircle*"></a>
+
+  <h3 id="Utils_Drawing_DrawI_1_FillCircle_System_Drawing_Point_System_Int32_Utils_Drawing_UVMap__0__System_Double_System_Double_" data-uid="Utils.Drawing.DrawI`1.FillCircle(System.Drawing.Point,System.Int32,Utils.Drawing.UVMap{`0},System.Double,System.Double)">
+  FillCircle(Point, int, UVMap&lt;T&gt;, double, double)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawI.cs/#L347"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Fills a circular arc using a UV color mapping.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void FillCircle(Point center, int radius, UVMap&lt;T&gt; color, double startAngle = 0, double endAngle = 6.283185307179586)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>center</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.point">Point</a></dt>
+    <dd><p>Center of the circle.</p>
+</dd>
+    <dt><code>radius</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Circle radius in pixels.</p>
+</dd>
+    <dt><code>color</code> <a class="xref" href="Utils.Drawing.UVMap-1.html">UVMap</a>&lt;T&gt;</dt>
+    <dd><p>Delegate providing colors for each pixel.</p>
+</dd>
+    <dt><code>startAngle</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd><p>Start angle in radians.</p>
+</dd>
+    <dt><code>endAngle</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd><p>End angle in radians.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawI_1_FillCircle_" data-uid="Utils.Drawing.DrawI`1.FillCircle*"></a>
+
+  <h3 id="Utils_Drawing_DrawI_1_FillCircle_System_Drawing_Point_System_Int32__0_System_Double_System_Double_" data-uid="Utils.Drawing.DrawI`1.FillCircle(System.Drawing.Point,System.Int32,`0,System.Double,System.Double)">
+  FillCircle(Point, int, T, double, double)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawI.cs/#L333"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Fills a circular arc with a solid color.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void FillCircle(Point center, int radius, T color, double startAngle = 0, double endAngle = 6.283185307179586)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>center</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.point">Point</a></dt>
+    <dd><p>Center of the circle.</p>
+</dd>
+    <dt><code>radius</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Circle radius in pixels.</p>
+</dd>
+    <dt><code>color</code> <span class="xref">T</span></dt>
+    <dd><p>Color applied to the circle interior.</p>
+</dd>
+    <dt><code>startAngle</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd><p>Start angle in radians.</p>
+</dd>
+    <dt><code>endAngle</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd><p>End angle in radians.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawI_1_FillPolygon1_" data-uid="Utils.Drawing.DrawI`1.FillPolygon1*"></a>
+
+  <h3 id="Utils_Drawing_DrawI_1_FillPolygon1__0_System_Drawing_Point___" data-uid="Utils.Drawing.DrawI`1.FillPolygon1(`0,System.Drawing.Point[])">
+  FillPolygon1(T, params Point[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawI.cs/#L306"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Fills a polygon using the even-odd rule and a solid color.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void FillPolygon1(T color, params Point[] points)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>color</code> <span class="xref">T</span></dt>
+    <dd><p>Color applied to the polygon interior.</p>
+</dd>
+    <dt><code>points</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.point">Point</a>[]</dt>
+    <dd><p>Polygon vertices.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawI_1_FillPolygon2_" data-uid="Utils.Drawing.DrawI`1.FillPolygon2*"></a>
+
+  <h3 id="Utils_Drawing_DrawI_1_FillPolygon2__0_System_Drawing_Point___" data-uid="Utils.Drawing.DrawI`1.FillPolygon2(`0,System.Drawing.Point[])">
+  FillPolygon2(T, params Point[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawI.cs/#L317"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Fills a polygon using the non-zero winding rule and a solid color.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void FillPolygon2(T color, params Point[] points)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>color</code> <span class="xref">T</span></dt>
+    <dd><p>Color applied to the polygon interior.</p>
+</dd>
+    <dt><code>points</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.point">Point</a>[]</dt>
+    <dd><p>Polygon vertices.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawI_1_FillRectangle_" data-uid="Utils.Drawing.DrawI`1.FillRectangle*"></a>
+
+  <h3 id="Utils_Drawing_DrawI_1_FillRectangle_System_Drawing_Point_System_Drawing_Point__0_" data-uid="Utils.Drawing.DrawI`1.FillRectangle(System.Drawing.Point,System.Drawing.Point,`0)">
+  FillRectangle(Point, Point, T)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawI.cs/#L423"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Fills a rectangle with a solid color.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void FillRectangle(Point p1, Point p2, T color)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>p1</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.point">Point</a></dt>
+    <dd><p>First corner of the rectangle.</p>
+</dd>
+    <dt><code>p2</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.point">Point</a></dt>
+    <dd><p>Opposite corner of the rectangle.</p>
+</dd>
+    <dt><code>color</code> <span class="xref">T</span></dt>
+    <dd><p>Color applied to the rectangle.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawI_1_FillRectangle_" data-uid="Utils.Drawing.DrawI`1.FillRectangle*"></a>
+
+  <h3 id="Utils_Drawing_DrawI_1_FillRectangle_System_Drawing_Rectangle__0_" data-uid="Utils.Drawing.DrawI`1.FillRectangle(System.Drawing.Rectangle,`0)">
+  FillRectangle(Rectangle, T)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawI.cs/#L414"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Fills a rectangle with a solid color.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void FillRectangle(Rectangle r, T color)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>r</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.rectangle">Rectangle</a></dt>
+    <dd><p>Rectangle to fill.</p>
+</dd>
+    <dt><code>color</code> <span class="xref">T</span></dt>
+    <dd><p>Color applied to the rectangle.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawI_1_FillRectangle_" data-uid="Utils.Drawing.DrawI`1.FillRectangle*"></a>
+
+  <h3 id="Utils_Drawing_DrawI_1_FillRectangle_System_Int32_System_Int32_System_Int32_System_Int32__0_" data-uid="Utils.Drawing.DrawI`1.FillRectangle(System.Int32,System.Int32,System.Int32,System.Int32,`0)">
+  FillRectangle(int, int, int, int, T)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawI.cs/#L434"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Fills a rectangle with a solid color.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void FillRectangle(int x1, int y1, int x2, int y2, T color)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>x1</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>First corner horizontal coordinate.</p>
+</dd>
+    <dt><code>y1</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>First corner vertical coordinate.</p>
+</dd>
+    <dt><code>x2</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Opposite corner horizontal coordinate.</p>
+</dd>
+    <dt><code>y2</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Opposite corner vertical coordinate.</p>
+</dd>
+    <dt><code>color</code> <span class="xref">T</span></dt>
+    <dd><p>Color applied to the rectangle.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawI_1_FillShape1_" data-uid="Utils.Drawing.DrawI`1.FillShape1*"></a>
+
+  <h3 id="Utils_Drawing_DrawI_1_FillShape1_Utils_Drawing_UVMap__0__System_Collections_Generic_IEnumerable_Utils_Drawing_IDrawable__" data-uid="Utils.Drawing.DrawI`1.FillShape1(Utils.Drawing.UVMap{`0},System.Collections.Generic.IEnumerable{Utils.Drawing.IDrawable})">
+  FillShape1(UVMap&lt;T&gt;, IEnumerable&lt;IDrawable&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawI.cs/#L89"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Fills shapes using the even-odd rule with a UV color mapping.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void FillShape1(UVMap&lt;T&gt; color, IEnumerable&lt;IDrawable&gt; drawables)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>color</code> <a class="xref" href="Utils.Drawing.UVMap-1.html">UVMap</a>&lt;T&gt;</dt>
+    <dd><p>Delegate providing colors for each pixel.</p>
+</dd>
+    <dt><code>drawables</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<a class="xref" href="Utils.Drawing.IDrawable.html">IDrawable</a>&gt;</dt>
+    <dd><p>Shapes to fill.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawI_1_FillShape1_" data-uid="Utils.Drawing.DrawI`1.FillShape1*"></a>
+
+  <h3 id="Utils_Drawing_DrawI_1_FillShape1_Utils_Drawing_UVMap__0__Utils_Drawing_IDrawable___" data-uid="Utils.Drawing.DrawI`1.FillShape1(Utils.Drawing.UVMap{`0},Utils.Drawing.IDrawable[])">
+  FillShape1(UVMap&lt;T&gt;, params IDrawable[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawI.cs/#L81"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Fills shapes using the even-odd rule with a UV color mapping.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void FillShape1(UVMap&lt;T&gt; color, params IDrawable[] drawables)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>color</code> <a class="xref" href="Utils.Drawing.UVMap-1.html">UVMap</a>&lt;T&gt;</dt>
+    <dd><p>Delegate providing colors for each pixel.</p>
+</dd>
+    <dt><code>drawables</code> <a class="xref" href="Utils.Drawing.IDrawable.html">IDrawable</a>[]</dt>
+    <dd><p>Shapes to fill.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawI_1_FillShape2_" data-uid="Utils.Drawing.DrawI`1.FillShape2*"></a>
+
+  <h3 id="Utils_Drawing_DrawI_1_FillShape2_Utils_Drawing_UVMap__0__System_Collections_Generic_IEnumerable_Utils_Drawing_IDrawable__" data-uid="Utils.Drawing.DrawI`1.FillShape2(Utils.Drawing.UVMap{`0},System.Collections.Generic.IEnumerable{Utils.Drawing.IDrawable})">
+  FillShape2(UVMap&lt;T&gt;, IEnumerable&lt;IDrawable&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawI.cs/#L125"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Fills shapes using the non-zero winding rule with a UV color mapping.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void FillShape2(UVMap&lt;T&gt; color, IEnumerable&lt;IDrawable&gt; drawables)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>color</code> <a class="xref" href="Utils.Drawing.UVMap-1.html">UVMap</a>&lt;T&gt;</dt>
+    <dd><p>Delegate providing colors for each pixel.</p>
+</dd>
+    <dt><code>drawables</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<a class="xref" href="Utils.Drawing.IDrawable.html">IDrawable</a>&gt;</dt>
+    <dd><p>Shapes to fill.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Drawing_DrawI_1_FillShape2_" data-uid="Utils.Drawing.DrawI`1.FillShape2*"></a>
+
+  <h3 id="Utils_Drawing_DrawI_1_FillShape2_Utils_Drawing_UVMap__0__Utils_Drawing_IDrawable___" data-uid="Utils.Drawing.DrawI`1.FillShape2(Utils.Drawing.UVMap{`0},Utils.Drawing.IDrawable[])">
+  FillShape2(UVMap&lt;T&gt;, params IDrawable[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawI.cs/#L117"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Fills shapes using the non-zero winding rule with a UV color mapping.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void FillShape2(UVMap&lt;T&gt; color, params IDrawable[] drawables)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>color</code> <a class="xref" href="Utils.Drawing.UVMap-1.html">UVMap</a>&lt;T&gt;</dt>
+    <dd><p>Delegate providing colors for each pixel.</p>
+</dd>
+    <dt><code>drawables</code> <a class="xref" href="Utils.Drawing.IDrawable.html">IDrawable</a>[]</dt>
+    <dd><p>Shapes to fill.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Drawing/DrawI.cs/#L23" class="edit-link">Edit this page</a>
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

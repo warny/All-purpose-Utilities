@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Class ObjectUtils | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Class ObjectUtils | omy.Utils Documentation ">
+      
+      <meta name="description" content="Exposes null-aware control flow helpers and hash code utilities for arbitrary objects.">
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_Objects_ObjectUtils.md&amp;value=---%0Auid%3A%20Utils.Objects.ObjectUtils%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="Utils.Objects.ObjectUtils">
+
+
+
+  <h1 id="Utils_Objects_ObjectUtils" data-uid="Utils.Objects.ObjectUtils" class="text-break">
+Class ObjectUtils  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/ObjectUtils.cs/#L9"><i class="bi bi-code-slash"></i></a>
+  </h1>
+
+  <div class="facts text-secondary">
+    <dl><dt>Namespace</dt><dd><a class="xref" href="Utils.html">Utils</a>.<a class="xref" href="Utils.Objects.html">Objects</a></dd></dl>
+  <dl><dt>Assembly</dt><dd>Utils.dll</dd></dl>
+  </div>
+
+  <div class="markdown summary"><p>Exposes null-aware control flow helpers and hash code utilities for arbitrary objects.</p>
+</div>
+  <div class="markdown conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static class ObjectUtils</code></pre>
+  </div>
+
+
+
+
+  <dl class="typelist inheritance">
+    <dt>Inheritance</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
+      <div><span class="xref">ObjectUtils</span></div>
+    </dd>
+  </dl>
+
+
+
+  <dl class="typelist inheritedMembers">
+    <dt>Inherited Members</dt>
+    <dd>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)">object.Equals(object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)">object.Equals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gethashcode">object.GetHashCode()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone">object.MemberwiseClone()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.tostring">object.ToString()</a>
+    </div>
+  </dd></dl>
+
+
+
+
+
+
+  <h2 class="section" id="methods">Methods
+</h2>
+
+
+  <a id="Utils_Objects_ObjectUtils_Between_" data-uid="Utils.Objects.ObjectUtils.Between*"></a>
+
+  <h3 id="Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_" data-uid="Utils.Objects.ObjectUtils.Between``1(``0,System.Collections.Generic.IComparer{``0},``0,``0)">
+  Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/ObjectUtils.cs/#L284"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether a value is between a lower and upper bound using a custom comparer (inclusive).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool Between&lt;T&gt;(this T value, IComparer&lt;T&gt; comparer, T lowerBound, T upperBound)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>value</code> <span class="xref">T</span></dt>
+    <dd><p>The value to check.</p>
+</dd>
+    <dt><code>comparer</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.icomparer-1">IComparer</a>&lt;T&gt;</dt>
+    <dd><p>The custom comparer to use.</p>
+</dd>
+    <dt><code>lowerBound</code> <span class="xref">T</span></dt>
+    <dd><p>The lower bound.</p>
+</dd>
+    <dt><code>upperBound</code> <span class="xref">T</span></dt>
+    <dd><p>The upper bound.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p>True if the value is between the bounds; otherwise, false.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>The type of the value.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_ObjectUtils_Between_" data-uid="Utils.Objects.ObjectUtils.Between*"></a>
+
+  <h3 id="Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_System_Boolean_System_Boolean_" data-uid="Utils.Objects.ObjectUtils.Between``1(``0,System.Collections.Generic.IComparer{``0},``0,``0,System.Boolean,System.Boolean)">
+  Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T, bool, bool)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/ObjectUtils.cs/#L300"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether a value is between a lower and upper bound using a custom comparer with optional inclusivity.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool Between&lt;T&gt;(this T value, IComparer&lt;T&gt; comparer, T lowerBound, T upperBound, bool includeLowerBound, bool includeUpperBound)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>value</code> <span class="xref">T</span></dt>
+    <dd><p>The value to check.</p>
+</dd>
+    <dt><code>comparer</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.icomparer-1">IComparer</a>&lt;T&gt;</dt>
+    <dd><p>The custom comparer to use.</p>
+</dd>
+    <dt><code>lowerBound</code> <span class="xref">T</span></dt>
+    <dd><p>The lower bound.</p>
+</dd>
+    <dt><code>upperBound</code> <span class="xref">T</span></dt>
+    <dd><p>The upper bound.</p>
+</dd>
+    <dt><code>includeLowerBound</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p>Whether to include the lower bound in the comparison.</p>
+</dd>
+    <dt><code>includeUpperBound</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p>Whether to include the upper bound in the comparison.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p>True if the value is between the bounds with the specified inclusivity; otherwise, false.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>The type of the value.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_ObjectUtils_Between_" data-uid="Utils.Objects.ObjectUtils.Between*"></a>
+
+  <h3 id="Utils_Objects_ObjectUtils_Between__1___0___0___0_" data-uid="Utils.Objects.ObjectUtils.Between``1(``0,``0,``0)">
+  Between&lt;T&gt;(T, T, T)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/ObjectUtils.cs/#L253"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether a value is between a lower and upper bound (inclusive).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool Between&lt;T&gt;(this T value, T lowerBound, T upperBound) where T : IComparable&lt;T&gt;</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>value</code> <span class="xref">T</span></dt>
+    <dd><p>The value to check.</p>
+</dd>
+    <dt><code>lowerBound</code> <span class="xref">T</span></dt>
+    <dd><p>The lower bound.</p>
+</dd>
+    <dt><code>upperBound</code> <span class="xref">T</span></dt>
+    <dd><p>The upper bound.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p>True if the value is between the bounds; otherwise, false.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>The type of the value.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_ObjectUtils_Between_" data-uid="Utils.Objects.ObjectUtils.Between*"></a>
+
+  <h3 id="Utils_Objects_ObjectUtils_Between__1___0___0___0_System_Boolean_System_Boolean_" data-uid="Utils.Objects.ObjectUtils.Between``1(``0,``0,``0,System.Boolean,System.Boolean)">
+  Between&lt;T&gt;(T, T, T, bool, bool)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/ObjectUtils.cs/#L268"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether a value is between a lower and upper bound with optional inclusivity.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool Between&lt;T&gt;(this T value, T lowerBound, T upperBound, bool includeLowerBound = true, bool includeUpperBound = true) where T : IComparable&lt;T&gt;</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>value</code> <span class="xref">T</span></dt>
+    <dd><p>The value to check.</p>
+</dd>
+    <dt><code>lowerBound</code> <span class="xref">T</span></dt>
+    <dd><p>The lower bound.</p>
+</dd>
+    <dt><code>upperBound</code> <span class="xref">T</span></dt>
+    <dd><p>The upper bound.</p>
+</dd>
+    <dt><code>includeLowerBound</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p>Whether to include the lower bound in the comparison.</p>
+</dd>
+    <dt><code>includeUpperBound</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p>Whether to include the upper bound in the comparison.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p>True if the value is between the bounds with the specified inclusivity; otherwise, false.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>The type of the value.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_ObjectUtils_ComputeHash_" data-uid="Utils.Objects.ObjectUtils.ComputeHash*"></a>
+
+  <h3 id="Utils_Objects_ObjectUtils_ComputeHash_System_Array_" data-uid="Utils.Objects.ObjectUtils.ComputeHash(System.Array)">
+  ComputeHash(Array)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/ObjectUtils.cs/#L83"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Computes a hash code for a multi-dimensional array.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static int ComputeHash(this Array array)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>array</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.array">Array</a></dt>
+    <dd><p>The array for which to compute the hash code.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>The computed hash code.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_ObjectUtils_ComputeHash_" data-uid="Utils.Objects.ObjectUtils.ComputeHash*"></a>
+
+  <h3 id="Utils_Objects_ObjectUtils_ComputeHash_System_Collections_Generic_IEnumerable_System_Object__" data-uid="Utils.Objects.ObjectUtils.ComputeHash(System.Collections.Generic.IEnumerable{System.Object})">
+  ComputeHash(IEnumerable&lt;object&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/ObjectUtils.cs/#L158"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Computes a hash code based on the hash codes of the given objects.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static int ComputeHash(this IEnumerable&lt;object&gt; objects)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>objects</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a>&gt;</dt>
+    <dd><p>The objects to include in the hash computation.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>The computed hash code.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_ObjectUtils_ComputeHash_" data-uid="Utils.Objects.ObjectUtils.ComputeHash*"></a>
+
+  <h3 id="Utils_Objects_ObjectUtils_ComputeHash_System_Object___" data-uid="Utils.Objects.ObjectUtils.ComputeHash(System.Object[])">
+  ComputeHash(params object[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/ObjectUtils.cs/#L151"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Computes a hash code based on the hash codes of the given objects.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static int ComputeHash(params object[] objects)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>objects</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a>[]</dt>
+    <dd><p>The objects to include in the hash computation.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>The computed hash code.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_ObjectUtils_ComputeHash_" data-uid="Utils.Objects.ObjectUtils.ComputeHash*"></a>
+
+  <h3 id="Utils_Objects_ObjectUtils_ComputeHash__1_System_Array_System_Func___0_System_Int32__" data-uid="Utils.Objects.ObjectUtils.ComputeHash``1(System.Array,System.Func{``0,System.Int32})">
+  ComputeHash&lt;T&gt;(Array, Func&lt;T, int&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/ObjectUtils.cs/#L117"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Computes a hash code for a multi-dimensional array using a custom hash code function.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static int ComputeHash&lt;T&gt;(this Array array, Func&lt;T, int&gt; getHashCode)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>array</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.array">Array</a></dt>
+    <dd><p>The array for which to compute the hash code.</p>
+</dd>
+    <dt><code>getHashCode</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.func-2">Func</a>&lt;T, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a>&gt;</dt>
+    <dd><p>The custom hash code function.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>The computed hash code.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>The type of elements in the array.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_ObjectUtils_ComputeHash_" data-uid="Utils.Objects.ObjectUtils.ComputeHash*"></a>
+
+  <h3 id="Utils_Objects_ObjectUtils_ComputeHash__1_System_Collections_Generic_IEnumerable___0__System_Func___0_System_Int32__" data-uid="Utils.Objects.ObjectUtils.ComputeHash``1(System.Collections.Generic.IEnumerable{``0},System.Func{``0,System.Int32})">
+  ComputeHash&lt;T&gt;(IEnumerable&lt;T&gt;, Func&lt;T, int&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/ObjectUtils.cs/#L173"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Computes a hash code based on a custom hash function and the given objects.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static int ComputeHash&lt;T&gt;(this IEnumerable&lt;T&gt; objects, Func&lt;T, int&gt; getHashCode)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>objects</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T&gt;</dt>
+    <dd><p>The objects to include in the hash computation.</p>
+</dd>
+    <dt><code>getHashCode</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.func-2">Func</a>&lt;T, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a>&gt;</dt>
+    <dd><p>The custom hash function.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>The computed hash code.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>The type of objects to hash.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_ObjectUtils_ComputeHash_" data-uid="Utils.Objects.ObjectUtils.ComputeHash*"></a>
+
+  <h3 id="Utils_Objects_ObjectUtils_ComputeHash__1_System_Func___0_System_Int32____0___" data-uid="Utils.Objects.ObjectUtils.ComputeHash``1(System.Func{``0,System.Int32},``0[])">
+  ComputeHash&lt;T&gt;(Func&lt;T, int&gt;, params T[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/ObjectUtils.cs/#L227"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Computes a hash code based on a custom hash function and the given objects.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static int ComputeHash&lt;T&gt;(Func&lt;T, int&gt; getHashCode, params T[] objects)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>getHashCode</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.func-2">Func</a>&lt;T, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a>&gt;</dt>
+    <dd><p>The custom hash function.</p>
+</dd>
+    <dt><code>objects</code> T[]</dt>
+    <dd><p>The objects to include in the hash computation.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>The computed hash code.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>The type of objects to hash.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_ObjectUtils_ComputeHash_" data-uid="Utils.Objects.ObjectUtils.ComputeHash*"></a>
+
+  <h3 id="Utils_Objects_ObjectUtils_ComputeHash__1_System_ReadOnlySpan___0__" data-uid="Utils.Objects.ObjectUtils.ComputeHash``1(System.ReadOnlySpan{``0})">
+  ComputeHash&lt;T&gt;(ReadOnlySpan&lt;T&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/ObjectUtils.cs/#L187"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Computes a hash code based on a custom hash function and the given objects.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static int ComputeHash&lt;T&gt;(this ReadOnlySpan&lt;T&gt; objects)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>objects</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.readonlyspan-1">ReadOnlySpan</a>&lt;T&gt;</dt>
+    <dd><p>The objects to include in the hash computation.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>The computed hash code.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>The type of objects to hash.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_ObjectUtils_ComputeHash_" data-uid="Utils.Objects.ObjectUtils.ComputeHash*"></a>
+
+  <h3 id="Utils_Objects_ObjectUtils_ComputeHash__1_System_ReadOnlySpan___0__System_Func___0_System_Int32__" data-uid="Utils.Objects.ObjectUtils.ComputeHash``1(System.ReadOnlySpan{``0},System.Func{``0,System.Int32})">
+  ComputeHash&lt;T&gt;(ReadOnlySpan&lt;T&gt;, Func&lt;T, int&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/ObjectUtils.cs/#L207"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Computes a hash code based on a custom hash function and the given objects.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static int ComputeHash&lt;T&gt;(this ReadOnlySpan&lt;T&gt; objects, Func&lt;T, int&gt; getHashCode)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>objects</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.readonlyspan-1">ReadOnlySpan</a>&lt;T&gt;</dt>
+    <dd><p>The objects to include in the hash computation.</p>
+</dd>
+    <dt><code>getHashCode</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.func-2">Func</a>&lt;T, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a>&gt;</dt>
+    <dd><p>The custom hash function.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>The computed hash code.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>The type of objects to hash.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_ObjectUtils_DoAsync_" data-uid="Utils.Objects.ObjectUtils.DoAsync*"></a>
+
+  <h3 id="Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1__System_Func___1__" data-uid="Utils.Objects.ObjectUtils.DoAsync``2(``0,System.Func{``0,``1},System.Func{``1})">
+  DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/ObjectUtils.cs/#L59"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Asynchronously executes the specified function if the object is not null; otherwise, executes the fallback function.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Task&lt;Result&gt; DoAsync&lt;T, Result&gt;(this T value, Func&lt;T, Result&gt; ifNotNull, Func&lt;Result&gt; ifNull)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>value</code> <span class="xref">T</span></dt>
+    <dd><p>The object to check.</p>
+</dd>
+    <dt><code>ifNotNull</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.func-2">Func</a>&lt;T, Result&gt;</dt>
+    <dd><p>The function to execute if the object is not null.</p>
+</dd>
+    <dt><code>ifNull</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.func-1">Func</a>&lt;Result&gt;</dt>
+    <dd><p>The function to execute if the object is null.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;Result&gt;</dt>
+    <dd><p>A task representing the asynchronous operation.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>The type of the object.</p>
+</dd>
+    <dt><code>Result</code></dt>
+    <dd><p>The type of the result.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_ObjectUtils_DoAsync_" data-uid="Utils.Objects.ObjectUtils.DoAsync*"></a>
+
+  <h3 id="Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1____1_" data-uid="Utils.Objects.ObjectUtils.DoAsync``2(``0,System.Func{``0,``1},``1)">
+  DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/ObjectUtils.cs/#L73"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Asynchronously executes the specified function if the object is not null; otherwise, returns a fallback value.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Task&lt;Result&gt; DoAsync&lt;T, Result&gt;(this T value, Func&lt;T, Result&gt; ifNotNull, Result ifNull)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>value</code> <span class="xref">T</span></dt>
+    <dd><p>The object to check.</p>
+</dd>
+    <dt><code>ifNotNull</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.func-2">Func</a>&lt;T, Result&gt;</dt>
+    <dd><p>The function to execute if the object is not null.</p>
+</dd>
+    <dt><code>ifNull</code> <span class="xref">Result</span></dt>
+    <dd><p>The value to return if the object is null.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;Result&gt;</dt>
+    <dd><p>A task representing the asynchronous operation.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>The type of the object.</p>
+</dd>
+    <dt><code>Result</code></dt>
+    <dd><p>The type of the result.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_ObjectUtils_Do_" data-uid="Utils.Objects.ObjectUtils.Do*"></a>
+
+  <h3 id="Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1__System_Func___1__" data-uid="Utils.Objects.ObjectUtils.Do``2(``0,System.Func{``0,``1},System.Func{``1})">
+  Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/ObjectUtils.cs/#L31"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Executes the specified function if the object is not null; otherwise, executes the fallback function.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Result Do&lt;T, Result&gt;(this T value, Func&lt;T, Result&gt; ifNotNull, Func&lt;Result&gt; ifNull)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>value</code> <span class="xref">T</span></dt>
+    <dd><p>The object to check.</p>
+</dd>
+    <dt><code>ifNotNull</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.func-2">Func</a>&lt;T, Result&gt;</dt>
+    <dd><p>The function to execute if the object is not null.</p>
+</dd>
+    <dt><code>ifNull</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.func-1">Func</a>&lt;Result&gt;</dt>
+    <dd><p>The function to execute if the object is null.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><span class="xref">Result</span></dt>
+    <dd><p>The result of the executed function.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>The type of the object.</p>
+</dd>
+    <dt><code>Result</code></dt>
+    <dd><p>The type of the result.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_ObjectUtils_Do_" data-uid="Utils.Objects.ObjectUtils.Do*"></a>
+
+  <h3 id="Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1____1_" data-uid="Utils.Objects.ObjectUtils.Do``2(``0,System.Func{``0,``1},``1)">
+  Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/ObjectUtils.cs/#L45"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Executes the specified function if the object is not null; otherwise, returns a fallback value.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Result Do&lt;T, Result&gt;(this T value, Func&lt;T, Result&gt; ifNotNull, Result ifNull)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>value</code> <span class="xref">T</span></dt>
+    <dd><p>The object to check.</p>
+</dd>
+    <dt><code>ifNotNull</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.func-2">Func</a>&lt;T, Result&gt;</dt>
+    <dd><p>The function to execute if the object is not null.</p>
+</dd>
+    <dt><code>ifNull</code> <span class="xref">Result</span></dt>
+    <dd><p>The value to return if the object is null.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><span class="xref">Result</span></dt>
+    <dd><p>The result of the executed function or the fallback value.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>The type of the object.</p>
+</dd>
+    <dt><code>Result</code></dt>
+    <dd><p>The type of the result.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_ObjectUtils_In_" data-uid="Utils.Objects.ObjectUtils.In*"></a>
+
+  <h3 id="Utils_Objects_ObjectUtils_In__1___0___0___" data-uid="Utils.Objects.ObjectUtils.In``1(``0,``0[])">
+  In&lt;T&gt;(T, params T[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/ObjectUtils.cs/#L314"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether a value is contained in the specified array.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool In&lt;T&gt;(this T value, params T[] objects)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>value</code> <span class="xref">T</span></dt>
+    <dd><p>The value to check.</p>
+</dd>
+    <dt><code>objects</code> T[]</dt>
+    <dd><p>The array of values to check against.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p>True if the value is found in the array; otherwise, false.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>The type of the value.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_ObjectUtils_IndexOf_" data-uid="Utils.Objects.ObjectUtils.IndexOf*"></a>
+
+  <h3 id="Utils_Objects_ObjectUtils_IndexOf__1_System_Collections_Generic_IEnumerable___0__System_Func___0_System_Boolean__" data-uid="Utils.Objects.ObjectUtils.IndexOf``1(System.Collections.Generic.IEnumerable{``0},System.Func{``0,System.Boolean})">
+  IndexOf&lt;T&gt;(IEnumerable&lt;T&gt;, Func&lt;T, bool&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/ObjectUtils.cs/#L369"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns the index of the first element in the enumerable that satisfies the specified condition, or -1 if not found.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static int IndexOf&lt;T&gt;(this IEnumerable&lt;T&gt; enumeration, Func&lt;T, bool&gt; predicate)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>enumeration</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T&gt;</dt>
+    <dd><p>The enumerable to search.</p>
+</dd>
+    <dt><code>predicate</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.func-2">Func</a>&lt;T, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a>&gt;</dt>
+    <dd><p>The condition to satisfy.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>The index of the first matching element if found; otherwise, -1.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>The type of elements in the enumerable.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_ObjectUtils_IndexOf_" data-uid="Utils.Objects.ObjectUtils.IndexOf*"></a>
+
+  <h3 id="Utils_Objects_ObjectUtils_IndexOf__1_System_Collections_Generic_IEnumerable___0____0_" data-uid="Utils.Objects.ObjectUtils.IndexOf``1(System.Collections.Generic.IEnumerable{``0},``0)">
+  IndexOf&lt;T&gt;(IEnumerable&lt;T&gt;, T)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/ObjectUtils.cs/#L332"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns the index of the specified value in the enumerable, or -1 if not found.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static int IndexOf&lt;T&gt;(this IEnumerable&lt;T&gt; enumeration, T toFind)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>enumeration</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T&gt;</dt>
+    <dd><p>The enumerable to search.</p>
+</dd>
+    <dt><code>toFind</code> <span class="xref">T</span></dt>
+    <dd><p>The value to find.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>The index of the value if found; otherwise, -1.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>The type of elements in the enumerable.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_ObjectUtils_IndexOf_" data-uid="Utils.Objects.ObjectUtils.IndexOf*"></a>
+
+  <h3 id="Utils_Objects_ObjectUtils_IndexOf__1_System_Collections_Generic_IEnumerable___0____0_System_Collections_Generic_IEqualityComparer___0__" data-uid="Utils.Objects.ObjectUtils.IndexOf``1(System.Collections.Generic.IEnumerable{``0},``0,System.Collections.Generic.IEqualityComparer{``0})">
+  IndexOf&lt;T&gt;(IEnumerable&lt;T&gt;, T, IEqualityComparer&lt;T&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/ObjectUtils.cs/#L351"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns the index of the specified value in the enumerable, using a custom comparer, or -1 if not found.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static int IndexOf&lt;T&gt;(this IEnumerable&lt;T&gt; enumeration, T toFind, IEqualityComparer&lt;T&gt; comparer)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>enumeration</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T&gt;</dt>
+    <dd><p>The enumerable to search.</p>
+</dd>
+    <dt><code>toFind</code> <span class="xref">T</span></dt>
+    <dd><p>The value to find.</p>
+</dd>
+    <dt><code>comparer</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.iequalitycomparer-1">IEqualityComparer</a>&lt;T&gt;</dt>
+    <dd><p>The custom comparer to use.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>The index of the value if found; otherwise, -1.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>The type of elements in the enumerable.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_ObjectUtils_IsNullOrDefault_" data-uid="Utils.Objects.ObjectUtils.IsNullOrDefault*"></a>
+
+  <h3 id="Utils_Objects_ObjectUtils_IsNullOrDefault__1_System_Nullable___0__" data-uid="Utils.Objects.ObjectUtils.IsNullOrDefault``1(System.Nullable{``0})">
+  IsNullOrDefault&lt;T&gt;(T?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/ObjectUtils.cs/#L17"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns true if the given nullable object is either null or equal to the default value of its type.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool IsNullOrDefault&lt;T&gt;(this T? nullableObj) where T : struct</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>nullableObj</code> T?</dt>
+    <dd><p>The nullable object to check.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p>True if the object is null or its default value; otherwise, false.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>The underlying value type.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_ObjectUtils_NotIn_" data-uid="Utils.Objects.ObjectUtils.NotIn*"></a>
+
+  <h3 id="Utils_Objects_ObjectUtils_NotIn__1___0___0___" data-uid="Utils.Objects.ObjectUtils.NotIn``1(``0,``0[])">
+  NotIn&lt;T&gt;(T, params T[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/ObjectUtils.cs/#L323"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether a value is not contained in the specified array.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool NotIn&lt;T&gt;(this T value, params T[] objects)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>value</code> <span class="xref">T</span></dt>
+    <dd><p>The value to check.</p>
+</dd>
+    <dt><code>objects</code> T[]</dt>
+    <dd><p>The array of values to check against.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p>True if the value is not found in the array; otherwise, false.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>The type of the value.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_ObjectUtils_Swap_" data-uid="Utils.Objects.ObjectUtils.Swap*"></a>
+
+  <h3 id="Utils_Objects_ObjectUtils_Swap__1___0____0__" data-uid="Utils.Objects.ObjectUtils.Swap``1(``0@,``0@)">
+  Swap&lt;T&gt;(ref T, ref T)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/ObjectUtils.cs/#L235"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Swaps the values of two objects.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static void Swap&lt;T&gt;(ref T obj1, ref T obj2)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>obj1</code> <span class="xref">T</span></dt>
+    <dd><p>The first object.</p>
+</dd>
+    <dt><code>obj2</code> <span class="xref">T</span></dt>
+    <dd><p>The second object.</p>
+</dd>
+  </dl>
+
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>The type of the objects.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/ObjectUtils.cs/#L9" class="edit-link">Edit this page</a>
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

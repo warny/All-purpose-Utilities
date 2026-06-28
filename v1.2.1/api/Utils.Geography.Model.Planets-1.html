@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Class Planets&lt;T&gt; | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Class Planets&lt;T&gt; | omy.Utils Documentation ">
+      
+      <meta name="description" content="Contains predefined planet models with their respective equatorial radii.">
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_Geography_Model_Planets_1.md&amp;value=---%0Auid%3A%20Utils.Geography.Model.Planets%601%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="Utils.Geography.Model.Planets`1">
+
+
+
+  <h1 id="Utils_Geography_Model_Planets_1" data-uid="Utils.Geography.Model.Planets`1" class="text-break">
+Class Planets&lt;T&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Geography/Geography/Model/Planet.cs/#L131"><i class="bi bi-code-slash"></i></a>
+  </h1>
+
+  <div class="facts text-secondary">
+    <dl><dt>Namespace</dt><dd><a class="xref" href="Utils.html">Utils</a>.<a class="xref" href="Utils.Geography.html">Geography</a>.<a class="xref" href="Utils.Geography.Model.html">Model</a></dd></dl>
+  <dl><dt>Assembly</dt><dd>Utils.Geography.dll</dd></dl>
+  </div>
+
+  <div class="markdown summary"><p>Contains predefined planet models with their respective equatorial radii.</p>
+</div>
+  <div class="markdown conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static class Planets&lt;T&gt; where T : struct, IFloatingPointIeee754&lt;T&gt;</code></pre>
+  </div>
+
+
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>A numeric type that supports IEEE 754 floating-point operations.</p>
+</dd>
+  </dl>
+
+  <dl class="typelist inheritance">
+    <dt>Inheritance</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
+      <div><span class="xref">Planets&lt;T&gt;</span></div>
+    </dd>
+  </dl>
+
+
+
+  <dl class="typelist inheritedMembers">
+    <dt>Inherited Members</dt>
+    <dd>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)">object.Equals(object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)">object.Equals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gethashcode">object.GetHashCode()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone">object.MemberwiseClone()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.tostring">object.ToString()</a>
+    </div>
+  </dd></dl>
+
+
+
+
+
+
+  <h2 class="section" id="properties">Properties
+</h2>
+
+
+  <a id="Utils_Geography_Model_Planets_1_Earth_" data-uid="Utils.Geography.Model.Planets`1.Earth*"></a>
+
+  <h3 id="Utils_Geography_Model_Planets_1_Earth" data-uid="Utils.Geography.Model.Planets`1.Earth">
+  Earth
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Geography/Geography/Model/Planet.cs/#L144"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets a predefined planet model for Earth.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Planet&lt;T&gt; Earth { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Geography.Model.Planet-1.html">Planet</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_Planets_1_EarthMoon_" data-uid="Utils.Geography.Model.Planets`1.EarthMoon*"></a>
+
+  <h3 id="Utils_Geography_Model_Planets_1_EarthMoon" data-uid="Utils.Geography.Model.Planets`1.EarthMoon">
+  EarthMoon
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Geography/Geography/Model/Planet.cs/#L148"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets a predefined planet model for Earth's Moon.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Planet&lt;T&gt; EarthMoon { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Geography.Model.Planet-1.html">Planet</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_Planets_1_Jupiter_" data-uid="Utils.Geography.Model.Planets`1.Jupiter*"></a>
+
+  <h3 id="Utils_Geography_Model_Planets_1_Jupiter" data-uid="Utils.Geography.Model.Planets`1.Jupiter">
+  Jupiter
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Geography/Geography/Model/Planet.cs/#L156"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets a predefined planet model for Jupiter.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Planet&lt;T&gt; Jupiter { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Geography.Model.Planet-1.html">Planet</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_Planets_1_JupiterCallisto_" data-uid="Utils.Geography.Model.Planets`1.JupiterCallisto*"></a>
+
+  <h3 id="Utils_Geography_Model_Planets_1_JupiterCallisto" data-uid="Utils.Geography.Model.Planets`1.JupiterCallisto">
+  JupiterCallisto
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Geography/Geography/Model/Planet.cs/#L172"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets a predefined planet model for Jupiter's moon Callisto.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Planet&lt;T&gt; JupiterCallisto { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Geography.Model.Planet-1.html">Planet</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_Planets_1_JupiterEurope_" data-uid="Utils.Geography.Model.Planets`1.JupiterEurope*"></a>
+
+  <h3 id="Utils_Geography_Model_Planets_1_JupiterEurope" data-uid="Utils.Geography.Model.Planets`1.JupiterEurope">
+  JupiterEurope
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Geography/Geography/Model/Planet.cs/#L160"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets a predefined planet model for Jupiter's moon Europa.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Planet&lt;T&gt; JupiterEurope { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Geography.Model.Planet-1.html">Planet</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_Planets_1_JupiterGanymede_" data-uid="Utils.Geography.Model.Planets`1.JupiterGanymede*"></a>
+
+  <h3 id="Utils_Geography_Model_Planets_1_JupiterGanymede" data-uid="Utils.Geography.Model.Planets`1.JupiterGanymede">
+  JupiterGanymede
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Geography/Geography/Model/Planet.cs/#L164"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets a predefined planet model for Jupiter's moon Ganymede.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Planet&lt;T&gt; JupiterGanymede { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Geography.Model.Planet-1.html">Planet</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_Planets_1_JupiterIo_" data-uid="Utils.Geography.Model.Planets`1.JupiterIo*"></a>
+
+  <h3 id="Utils_Geography_Model_Planets_1_JupiterIo" data-uid="Utils.Geography.Model.Planets`1.JupiterIo">
+  JupiterIo
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Geography/Geography/Model/Planet.cs/#L168"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets a predefined planet model for Jupiter's moon Io.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Planet&lt;T&gt; JupiterIo { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Geography.Model.Planet-1.html">Planet</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_Planets_1_Mars_" data-uid="Utils.Geography.Model.Planets`1.Mars*"></a>
+
+  <h3 id="Utils_Geography_Model_Planets_1_Mars" data-uid="Utils.Geography.Model.Planets`1.Mars">
+  Mars
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Geography/Geography/Model/Planet.cs/#L152"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets a predefined planet model for Mars.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Planet&lt;T&gt; Mars { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Geography.Model.Planet-1.html">Planet</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_Planets_1_Mercury_" data-uid="Utils.Geography.Model.Planets`1.Mercury*"></a>
+
+  <h3 id="Utils_Geography_Model_Planets_1_Mercury" data-uid="Utils.Geography.Model.Planets`1.Mercury">
+  Mercury
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Geography/Geography/Model/Planet.cs/#L136"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets a predefined planet model for Mercury.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Planet&lt;T&gt; Mercury { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Geography.Model.Planet-1.html">Planet</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_Planets_1_Neptune_" data-uid="Utils.Geography.Model.Planets`1.Neptune*"></a>
+
+  <h3 id="Utils_Geography_Model_Planets_1_Neptune" data-uid="Utils.Geography.Model.Planets`1.Neptune">
+  Neptune
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Geography/Geography/Model/Planet.cs/#L232"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets a predefined planet model for Neptune.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Planet&lt;T&gt; Neptune { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Geography.Model.Planet-1.html">Planet</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_Planets_1_NeptuneTriton_" data-uid="Utils.Geography.Model.Planets`1.NeptuneTriton*"></a>
+
+  <h3 id="Utils_Geography_Model_Planets_1_NeptuneTriton" data-uid="Utils.Geography.Model.Planets`1.NeptuneTriton">
+  NeptuneTriton
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Geography/Geography/Model/Planet.cs/#L236"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets a predefined planet model for Neptune's moon Triton.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Planet&lt;T&gt; NeptuneTriton { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Geography.Model.Planet-1.html">Planet</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_Planets_1_Saturn_" data-uid="Utils.Geography.Model.Planets`1.Saturn*"></a>
+
+  <h3 id="Utils_Geography_Model_Planets_1_Saturn" data-uid="Utils.Geography.Model.Planets`1.Saturn">
+  Saturn
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Geography/Geography/Model/Planet.cs/#L176"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets a predefined planet model for Saturn.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Planet&lt;T&gt; Saturn { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Geography.Model.Planet-1.html">Planet</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_Planets_1_SaturnDione_" data-uid="Utils.Geography.Model.Planets`1.SaturnDione*"></a>
+
+  <h3 id="Utils_Geography_Model_Planets_1_SaturnDione" data-uid="Utils.Geography.Model.Planets`1.SaturnDione">
+  SaturnDione
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Geography/Geography/Model/Planet.cs/#L196"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets a predefined planet model for Saturn's moon Dione.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Planet&lt;T&gt; SaturnDione { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Geography.Model.Planet-1.html">Planet</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_Planets_1_SaturnEnceladus_" data-uid="Utils.Geography.Model.Planets`1.SaturnEnceladus*"></a>
+
+  <h3 id="Utils_Geography_Model_Planets_1_SaturnEnceladus" data-uid="Utils.Geography.Model.Planets`1.SaturnEnceladus">
+  SaturnEnceladus
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Geography/Geography/Model/Planet.cs/#L184"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets a predefined planet model for Saturn's moon Enceladus.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Planet&lt;T&gt; SaturnEnceladus { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Geography.Model.Planet-1.html">Planet</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_Planets_1_SaturnIapetus_" data-uid="Utils.Geography.Model.Planets`1.SaturnIapetus*"></a>
+
+  <h3 id="Utils_Geography_Model_Planets_1_SaturnIapetus" data-uid="Utils.Geography.Model.Planets`1.SaturnIapetus">
+  SaturnIapetus
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Geography/Geography/Model/Planet.cs/#L200"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets a predefined planet model for Saturn's moon Iapetus.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Planet&lt;T&gt; SaturnIapetus { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Geography.Model.Planet-1.html">Planet</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_Planets_1_SaturnMimas_" data-uid="Utils.Geography.Model.Planets`1.SaturnMimas*"></a>
+
+  <h3 id="Utils_Geography_Model_Planets_1_SaturnMimas" data-uid="Utils.Geography.Model.Planets`1.SaturnMimas">
+  SaturnMimas
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Geography/Geography/Model/Planet.cs/#L192"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets a predefined planet model for Saturn's moon Mimas.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Planet&lt;T&gt; SaturnMimas { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Geography.Model.Planet-1.html">Planet</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_Planets_1_SaturnRhea_" data-uid="Utils.Geography.Model.Planets`1.SaturnRhea*"></a>
+
+  <h3 id="Utils_Geography_Model_Planets_1_SaturnRhea" data-uid="Utils.Geography.Model.Planets`1.SaturnRhea">
+  SaturnRhea
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Geography/Geography/Model/Planet.cs/#L204"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets a predefined planet model for Saturn's moon Rhea.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Planet&lt;T&gt; SaturnRhea { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Geography.Model.Planet-1.html">Planet</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_Planets_1_SaturnThetys_" data-uid="Utils.Geography.Model.Planets`1.SaturnThetys*"></a>
+
+  <h3 id="Utils_Geography_Model_Planets_1_SaturnThetys" data-uid="Utils.Geography.Model.Planets`1.SaturnThetys">
+  SaturnThetys
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Geography/Geography/Model/Planet.cs/#L188"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets a predefined planet model for Saturn's moon Tethys.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Planet&lt;T&gt; SaturnThetys { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Geography.Model.Planet-1.html">Planet</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_Planets_1_SaturnTitan_" data-uid="Utils.Geography.Model.Planets`1.SaturnTitan*"></a>
+
+  <h3 id="Utils_Geography_Model_Planets_1_SaturnTitan" data-uid="Utils.Geography.Model.Planets`1.SaturnTitan">
+  SaturnTitan
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Geography/Geography/Model/Planet.cs/#L180"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets a predefined planet model for Saturn's moon Titan.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Planet&lt;T&gt; SaturnTitan { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Geography.Model.Planet-1.html">Planet</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_Planets_1_Uranus_" data-uid="Utils.Geography.Model.Planets`1.Uranus*"></a>
+
+  <h3 id="Utils_Geography_Model_Planets_1_Uranus" data-uid="Utils.Geography.Model.Planets`1.Uranus">
+  Uranus
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Geography/Geography/Model/Planet.cs/#L208"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets a predefined planet model for Uranus.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Planet&lt;T&gt; Uranus { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Geography.Model.Planet-1.html">Planet</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_Planets_1_UranusAriel_" data-uid="Utils.Geography.Model.Planets`1.UranusAriel*"></a>
+
+  <h3 id="Utils_Geography_Model_Planets_1_UranusAriel" data-uid="Utils.Geography.Model.Planets`1.UranusAriel">
+  UranusAriel
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Geography/Geography/Model/Planet.cs/#L228"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets a predefined planet model for Uranus' moon Ariel.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Planet&lt;T&gt; UranusAriel { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Geography.Model.Planet-1.html">Planet</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_Planets_1_UranusMiranda_" data-uid="Utils.Geography.Model.Planets`1.UranusMiranda*"></a>
+
+  <h3 id="Utils_Geography_Model_Planets_1_UranusMiranda" data-uid="Utils.Geography.Model.Planets`1.UranusMiranda">
+  UranusMiranda
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Geography/Geography/Model/Planet.cs/#L224"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets a predefined planet model for Uranus' moon Miranda.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Planet&lt;T&gt; UranusMiranda { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Geography.Model.Planet-1.html">Planet</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_Planets_1_UranusOberon_" data-uid="Utils.Geography.Model.Planets`1.UranusOberon*"></a>
+
+  <h3 id="Utils_Geography_Model_Planets_1_UranusOberon" data-uid="Utils.Geography.Model.Planets`1.UranusOberon">
+  UranusOberon
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Geography/Geography/Model/Planet.cs/#L216"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets a predefined planet model for Uranus' moon Oberon.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Planet&lt;T&gt; UranusOberon { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Geography.Model.Planet-1.html">Planet</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_Planets_1_UranusTitania_" data-uid="Utils.Geography.Model.Planets`1.UranusTitania*"></a>
+
+  <h3 id="Utils_Geography_Model_Planets_1_UranusTitania" data-uid="Utils.Geography.Model.Planets`1.UranusTitania">
+  UranusTitania
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Geography/Geography/Model/Planet.cs/#L220"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets a predefined planet model for Uranus' moon Titania.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Planet&lt;T&gt; UranusTitania { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Geography.Model.Planet-1.html">Planet</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_Planets_1_UranusUmbriel_" data-uid="Utils.Geography.Model.Planets`1.UranusUmbriel*"></a>
+
+  <h3 id="Utils_Geography_Model_Planets_1_UranusUmbriel" data-uid="Utils.Geography.Model.Planets`1.UranusUmbriel">
+  UranusUmbriel
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Geography/Geography/Model/Planet.cs/#L212"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets a predefined planet model for Uranus' moon Umbriel.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Planet&lt;T&gt; UranusUmbriel { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Geography.Model.Planet-1.html">Planet</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_Planets_1_Venus_" data-uid="Utils.Geography.Model.Planets`1.Venus*"></a>
+
+  <h3 id="Utils_Geography_Model_Planets_1_Venus" data-uid="Utils.Geography.Model.Planets`1.Venus">
+  Venus
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Geography/Geography/Model/Planet.cs/#L140"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets a predefined planet model for Venus.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Planet&lt;T&gt; Venus { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Geography.Model.Planet-1.html">Planet</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Geography/Geography/Model/Planet.cs/#L131" class="edit-link">Edit this page</a>
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

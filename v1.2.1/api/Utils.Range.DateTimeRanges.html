@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Class DateTimeRanges | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Class DateTimeRanges | omy.Utils Documentation ">
+      
+      <meta name="description" content="Represents a collection of ranges for DateTime values, with parsing support from string representations.">
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_Range_DateTimeRanges.md&amp;value=---%0Auid%3A%20Utils.Range.DateTimeRanges%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="Utils.Range.DateTimeRanges">
+
+
+
+  <h1 id="Utils_Range_DateTimeRanges" data-uid="Utils.Range.DateTimeRanges" class="text-break">
+Class DateTimeRanges  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Range/Ranges.Specifics.cs/#L184"><i class="bi bi-code-slash"></i></a>
+  </h1>
+
+  <div class="facts text-secondary">
+    <dl><dt>Namespace</dt><dd><a class="xref" href="Utils.html">Utils</a>.<a class="xref" href="Utils.Range.html">Range</a></dd></dl>
+  <dl><dt>Assembly</dt><dd>Utils.dll</dd></dl>
+  </div>
+
+  <div class="markdown summary"><p>Represents a collection of ranges for DateTime values, with parsing support from string representations.</p>
+</div>
+  <div class="markdown conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public class DateTimeRanges : Ranges&lt;DateTime&gt;, IFormattable, IEquatable&lt;Ranges&lt;DateTime&gt;&gt;, ISubtractionOperators&lt;Ranges&lt;DateTime&gt;, Ranges&lt;DateTime&gt;, Ranges&lt;DateTime&gt;&gt;, IBitwiseOperators&lt;Ranges&lt;DateTime&gt;, Ranges&lt;DateTime&gt;, Ranges&lt;DateTime&gt;&gt;, IEqualityOperators&lt;Ranges&lt;DateTime&gt;, Ranges&lt;DateTime&gt;, bool&gt;</code></pre>
+  </div>
+
+
+
+
+  <dl class="typelist inheritance">
+    <dt>Inheritance</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
+      <div><a class="xref" href="Utils.Range.Ranges-1.html">Ranges</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a>&gt;</div>
+      <div><span class="xref">DateTimeRanges</span></div>
+    </dd>
+  </dl>
+
+  <dl class="typelist implements">
+    <dt>Implements</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.iformattable">IFormattable</a></div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a class="xref" href="Utils.Range.Ranges-1.html">Ranges</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a>&gt;&gt;</div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.isubtractionoperators-3">ISubtractionOperators</a>&lt;<a class="xref" href="Utils.Range.Ranges-1.html">Ranges</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a>&gt;, <a class="xref" href="Utils.Range.Ranges-1.html">Ranges</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a>&gt;, <a class="xref" href="Utils.Range.Ranges-1.html">Ranges</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a>&gt;&gt;</div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.ibitwiseoperators-3">IBitwiseOperators</a>&lt;<a class="xref" href="Utils.Range.Ranges-1.html">Ranges</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a>&gt;, <a class="xref" href="Utils.Range.Ranges-1.html">Ranges</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a>&gt;, <a class="xref" href="Utils.Range.Ranges-1.html">Ranges</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a>&gt;&gt;</div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.iequalityoperators-3">IEqualityOperators</a>&lt;<a class="xref" href="Utils.Range.Ranges-1.html">Ranges</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a>&gt;, <a class="xref" href="Utils.Range.Ranges-1.html">Ranges</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a>&gt;, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a>&gt;</div>
+    </dd>
+  </dl>
+
+
+  <dl class="typelist inheritedMembers">
+    <dt>Inherited Members</dt>
+    <dd>
+    <div>
+      <a class="xref" href="Utils.Range.Ranges-1.html#Utils_Range_Ranges_1_Count">Ranges&lt;DateTime&gt;.Count</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Range.Ranges-1.html#Utils_Range_Ranges_1_Intervals">Ranges&lt;DateTime&gt;.Intervals</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Range.Ranges-1.html#Utils_Range_Ranges_1_InnerParse__1_System_String_System_String_System_Collections_Generic_IEnumerable_System_String__System_Func_System_String___0__">Ranges&lt;DateTime&gt;.InnerParse&lt;T1&gt;(string, string, IEnumerable&lt;string&gt;, Func&lt;string, T1&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Range.Ranges-1.html#Utils_Range_Ranges_1_Clear">Ranges&lt;DateTime&gt;.Clear()</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Range.Ranges-1.html#Utils_Range_Ranges_1_Contains__0_">Ranges&lt;DateTime&gt;.Contains(DateTime)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Range.Ranges-1.html#Utils_Range_Ranges_1_Contains_Utils_Range_Range__0__">Ranges&lt;DateTime&gt;.Contains(Range&lt;DateTime&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Range.Ranges-1.html#Utils_Range_Ranges_1_AddAll_System_Collections_Generic_IEnumerable_Utils_Range_Range__0___">Ranges&lt;DateTime&gt;.AddAll(IEnumerable&lt;Range&lt;DateTime&gt;&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Range.Ranges-1.html#Utils_Range_Ranges_1_Add__0_">Ranges&lt;DateTime&gt;.Add(DateTime)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Range.Ranges-1.html#Utils_Range_Ranges_1_Add__0__0_System_Boolean_System_Boolean_">Ranges&lt;DateTime&gt;.Add(DateTime, DateTime, bool, bool)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Range.Ranges-1.html#Utils_Range_Ranges_1_Add_Utils_Range_Range__0__">Ranges&lt;DateTime&gt;.Add(Range&lt;DateTime&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Range.Ranges-1.html#Utils_Range_Ranges_1_RemoveAll_System_Collections_Generic_IEnumerable_Utils_Range_Range__0___">Ranges&lt;DateTime&gt;.RemoveAll(IEnumerable&lt;Range&lt;DateTime&gt;&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Range.Ranges-1.html#Utils_Range_Ranges_1_Remove__0_">Ranges&lt;DateTime&gt;.Remove(DateTime)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Range.Ranges-1.html#Utils_Range_Ranges_1_Remove__0__0_System_Boolean_System_Boolean_">Ranges&lt;DateTime&gt;.Remove(DateTime, DateTime, bool, bool)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Range.Ranges-1.html#Utils_Range_Ranges_1_Remove_Utils_Range_Range__0__">Ranges&lt;DateTime&gt;.Remove(Range&lt;DateTime&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Range.Ranges-1.html#Utils_Range_Ranges_1_Union_Utils_Range_Ranges__0__Utils_Range_Ranges__0__">Ranges&lt;DateTime&gt;.Union(Ranges&lt;DateTime&gt;, Ranges&lt;DateTime&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Range.Ranges-1.html#Utils_Range_Ranges_1_Intersect_Utils_Range_Ranges__0__Utils_Range_Ranges__0__">Ranges&lt;DateTime&gt;.Intersect(Ranges&lt;DateTime&gt;, Ranges&lt;DateTime&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Range.Ranges-1.html#Utils_Range_Ranges_1_Except_Utils_Range_Ranges__0__Utils_Range_Ranges__0__">Ranges&lt;DateTime&gt;.Except(Ranges&lt;DateTime&gt;, Ranges&lt;DateTime&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Range.Ranges-1.html#Utils_Range_Ranges_1_SymmetricDifference_Utils_Range_Ranges__0__Utils_Range_Ranges__0__">Ranges&lt;DateTime&gt;.SymmetricDifference(Ranges&lt;DateTime&gt;, Ranges&lt;DateTime&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Range.Ranges-1.html#Utils_Range_Ranges_1_Complement_Utils_Range_Ranges__0__">Ranges&lt;DateTime&gt;.Complement(Ranges&lt;DateTime&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Range.Ranges-1.html#Utils_Range_Ranges_1_ToString">Ranges&lt;DateTime&gt;.ToString()</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Range.Ranges-1.html#Utils_Range_Ranges_1_ToString_System_String_">Ranges&lt;DateTime&gt;.ToString(string)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Range.Ranges-1.html#Utils_Range_Ranges_1_ToString_System_IFormatProvider_">Ranges&lt;DateTime&gt;.ToString(IFormatProvider)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Range.Ranges-1.html#Utils_Range_Ranges_1_ToString_System_String_System_IFormatProvider_">Ranges&lt;DateTime&gt;.ToString(string, IFormatProvider)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Range.Ranges-1.html#Utils_Range_Ranges_1_Equals_System_Object_">Ranges&lt;DateTime&gt;.Equals(object)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Range.Ranges-1.html#Utils_Range_Ranges_1_Equals_Utils_Range_Ranges__0__">Ranges&lt;DateTime&gt;.Equals(Ranges&lt;DateTime&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Range.Ranges-1.html#Utils_Range_Ranges_1_GetHashCode">Ranges&lt;DateTime&gt;.GetHashCode()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)">object.Equals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone">object.MemberwiseClone()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
+    </div>
+  </dd></dl>
+
+  <dl class="typelist extensionMethods">
+    <dt>Extension Methods</dt>
+    <dd>
+  <div>
+      <a class="xref" href="Utils.Data.DataUtils.html#Utils_Data_DataUtils_ToDbValue_System_Object_">DataUtils.ToDbValue(object?)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Mathematics.MathEx.html#Utils_Mathematics_MathEx_Clamp__1___0___0___0_System_Collections_Generic_IComparer___0__">MathEx.Clamp&lt;T&gt;(T, T, T, IComparer&lt;T&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Mathematics.MathEx.html#Utils_Mathematics_MathEx_Clamp__1___0___0___0_System_Collections_Generic_IComparer___0__">MathEx.Clamp&lt;T&gt;(T, T, T, IComparer&lt;T&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Failure__1___0_">FluentExtensions.Failure&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Failure__1___0_">FluentExtensions.Failure&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsEqualTo__2___0___1_">FluentExtensions.IsEqualTo&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsEqualTo__2___0___1_">FluentExtensions.IsEqualTo&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterOrEqualsThan__2___0___1_">FluentExtensions.IsGreaterOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterOrEqualsThan__2___0___1_">FluentExtensions.IsGreaterOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterThan__2___0___1_">FluentExtensions.IsGreaterThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterThan__2___0___1_">FluentExtensions.IsGreaterThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsIn__1___0___0___">FluentExtensions.IsIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsIn__1___0___0___">FluentExtensions.IsIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerOrEqualsThan__2___0___1_">FluentExtensions.IsLowerOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerOrEqualsThan__2___0___1_">FluentExtensions.IsLowerOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerThan__2___0___1_">FluentExtensions.IsLowerThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerThan__2___0___1_">FluentExtensions.IsLowerThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotIn__1___0___0___">FluentExtensions.IsNotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotIn__1___0___0___">FluentExtensions.IsNotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotNull__1___0_">FluentExtensions.IsNotNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotNull__1___0_">FluentExtensions.IsNotNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNull__1___0_">FluentExtensions.IsNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNull__1___0_">FluentExtensions.IsNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Success__1___0_">FluentExtensions.Success&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Success__1___0_">FluentExtensions.Success&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Test__1___0_System_Func___0_System_Boolean__">FluentExtensions.Test&lt;T&gt;(T, Func&lt;T, bool&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Test__1___0_System_Func___0_System_Boolean__">FluentExtensions.Test&lt;T&gt;(T, Func&lt;T, bool&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_System_Boolean_System_Boolean_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T, bool, bool)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_System_Boolean_System_Boolean_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T, bool, bool)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1____1_">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1____1_">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1____1_">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1____1_">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_In__1___0___0___">ObjectUtils.In&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_In__1___0___0___">ObjectUtils.In&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_NotIn__1___0___0___">ObjectUtils.NotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_NotIn__1___0___0___">ObjectUtils.NotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustNotBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustNotBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustNotBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustNotBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Arg__1___0_System_String_">Validations.Arg&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Arg__1___0_System_String_">Validations.Arg&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ValueMustNotBeNull__1___0_System_String_">Validations.ValueMustNotBeNull&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ValueMustNotBeNull__1___0_System_String_">Validations.ValueMustNotBeNull&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Variable__1___0_System_String_">Validations.Variable&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Variable__1___0_System_String_">Validations.Variable&lt;T&gt;(T, string)</a>
+  </div>
+  </dd></dl>
+
+
+
+
+
+  <h2 class="section" id="constructors">Constructors
+</h2>
+
+
+  <a id="Utils_Range_DateTimeRanges__ctor_" data-uid="Utils.Range.DateTimeRanges.#ctor*"></a>
+
+  <h3 id="Utils_Range_DateTimeRanges__ctor" data-uid="Utils.Range.DateTimeRanges.#ctor">
+  DateTimeRanges()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Range/Ranges.Specifics.cs/#L189"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Range.DateTimeRanges.html">DateTimeRanges</a> class with no ranges.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public DateTimeRanges()</code></pre>
+  </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Range_DateTimeRanges__ctor_" data-uid="Utils.Range.DateTimeRanges.#ctor*"></a>
+
+  <h3 id="Utils_Range_DateTimeRanges__ctor_System_Collections_Generic_IEnumerable_Utils_Range_Range_System_DateTime___" data-uid="Utils.Range.DateTimeRanges.#ctor(System.Collections.Generic.IEnumerable{Utils.Range.Range{System.DateTime}})">
+  DateTimeRanges(IEnumerable&lt;Range&lt;DateTime&gt;&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Range/Ranges.Specifics.cs/#L207"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Range.DateTimeRanges.html">DateTimeRanges</a> class with ranges provided as an enumerable collection.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public DateTimeRanges(IEnumerable&lt;Range&lt;DateTime&gt;&gt; ranges)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>ranges</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<a class="xref" href="Utils.Range.Range-1.html">Range</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a>&gt;&gt;</dt>
+    <dd><p>The ranges to include in the collection.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Range_DateTimeRanges__ctor_" data-uid="Utils.Range.DateTimeRanges.#ctor*"></a>
+
+  <h3 id="Utils_Range_DateTimeRanges__ctor_Utils_Range_Ranges_System_DateTime__" data-uid="Utils.Range.DateTimeRanges.#ctor(Utils.Range.Ranges{System.DateTime})">
+  DateTimeRanges(Ranges&lt;DateTime&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Range/Ranges.Specifics.cs/#L195"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Range.DateTimeRanges.html">DateTimeRanges</a> class by copying an existing set of ranges.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public DateTimeRanges(Ranges&lt;DateTime&gt; ranges)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>ranges</code> <a class="xref" href="Utils.Range.Ranges-1.html">Ranges</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a>&gt;</dt>
+    <dd><p>The ranges to copy into this collection.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Range_DateTimeRanges__ctor_" data-uid="Utils.Range.DateTimeRanges.#ctor*"></a>
+
+  <h3 id="Utils_Range_DateTimeRanges__ctor_Utils_Range_Range_System_DateTime____" data-uid="Utils.Range.DateTimeRanges.#ctor(Utils.Range.Range{System.DateTime}[])">
+  DateTimeRanges(params Range&lt;DateTime&gt;[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Range/Ranges.Specifics.cs/#L201"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Range.DateTimeRanges.html">DateTimeRanges</a> class with the specified ranges.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public DateTimeRanges(params Range&lt;DateTime&gt;[] ranges)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>ranges</code> <a class="xref" href="Utils.Range.Range-1.html">Range</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a>&gt;[]</dt>
+    <dd><p>The ranges to include in the collection.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <h2 class="section" id="methods">Methods
+</h2>
+
+
+  <a id="Utils_Range_DateTimeRanges_Add_" data-uid="Utils.Range.DateTimeRanges.Add*"></a>
+
+  <h3 id="Utils_Range_DateTimeRanges_Add_System_String_" data-uid="Utils.Range.DateTimeRanges.Add(System.String)">
+  Add(string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Range/Ranges.Specifics.cs/#L328"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Adds ranges to the collection by parsing them from a string using the current culture.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void Add(string ranges)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>ranges</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>The string representation of the ranges to add.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Range_DateTimeRanges_Add_" data-uid="Utils.Range.DateTimeRanges.Add*"></a>
+
+  <h3 id="Utils_Range_DateTimeRanges_Add_System_String_System_Globalization_CultureInfo_" data-uid="Utils.Range.DateTimeRanges.Add(System.String,System.Globalization.CultureInfo)">
+  Add(string, CultureInfo)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Range/Ranges.Specifics.cs/#L335"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Adds ranges to the collection by parsing them from a string using a specified culture.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void Add(string ranges, CultureInfo cultureInfo)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>ranges</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>The string representation of the ranges to add.</p>
+</dd>
+    <dt><code>cultureInfo</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.globalization.cultureinfo">CultureInfo</a></dt>
+    <dd><p>The culture information to use for parsing.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Range_DateTimeRanges_Add_" data-uid="Utils.Range.DateTimeRanges.Add*"></a>
+
+  <h3 id="Utils_Range_DateTimeRanges_Add_System_String_System_Globalization_DateTimeFormatInfo_" data-uid="Utils.Range.DateTimeRanges.Add(System.String,System.Globalization.DateTimeFormatInfo)">
+  Add(string, DateTimeFormatInfo)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Range/Ranges.Specifics.cs/#L342"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Adds ranges to the collection by parsing them from a string using a specified DateTime format.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void Add(string ranges, DateTimeFormatInfo formatInfo)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>ranges</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>The string representation of the ranges to add.</p>
+</dd>
+    <dt><code>formatInfo</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.globalization.datetimeformatinfo">DateTimeFormatInfo</a></dt>
+    <dd><p>The DateTime format information to use for parsing.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Range_DateTimeRanges_InnerParse_" data-uid="Utils.Range.DateTimeRanges.InnerParse*"></a>
+
+  <h3 id="Utils_Range_DateTimeRanges_InnerParse_System_String_System_Globalization_DateTimeFormatInfo_" data-uid="Utils.Range.DateTimeRanges.InnerParse(System.String,System.Globalization.DateTimeFormatInfo)">
+  InnerParse(string, DateTimeFormatInfo)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Range/Ranges.Specifics.cs/#L230"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Helper method to parse ranges from a string using specified DateTime format information.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected static IEnumerable&lt;Range&lt;DateTime&gt;&gt; InnerParse(string range, DateTimeFormatInfo formatInfo)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>range</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>The string representation of the ranges.</p>
+</dd>
+    <dt><code>formatInfo</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.globalization.datetimeformatinfo">DateTimeFormatInfo</a></dt>
+    <dd><p>The DateTime format information to use for parsing.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<a class="xref" href="Utils.Range.Range-1.html">Range</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a>&gt;&gt;</dt>
+    <dd><p>An enumerable collection of Range&lt;DateTime&gt; objects parsed from the string.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Range_DateTimeRanges_Parse_" data-uid="Utils.Range.DateTimeRanges.Parse*"></a>
+
+  <h3 id="Utils_Range_DateTimeRanges_Parse_System_String_" data-uid="Utils.Range.DateTimeRanges.Parse(System.String)">
+  Parse(string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Range/Ranges.Specifics.cs/#L214"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Parses a string representation of ranges into a DateTimeRanges object using the current culture.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static DateTimeRanges Parse(string range)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>range</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>The string representation of the ranges.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Range.DateTimeRanges.html">DateTimeRanges</a></dt>
+    <dd><p>A DateTimeRanges object containing the parsed ranges.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Range_DateTimeRanges_Parse_" data-uid="Utils.Range.DateTimeRanges.Parse*"></a>
+
+  <h3 id="Utils_Range_DateTimeRanges_Parse_System_String_System_Globalization_CultureInfo_" data-uid="Utils.Range.DateTimeRanges.Parse(System.String,System.Globalization.CultureInfo)">
+  Parse(string, CultureInfo)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Range/Ranges.Specifics.cs/#L222"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Parses a string representation of ranges into a DateTimeRanges object using a specified culture.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static DateTimeRanges Parse(string range, CultureInfo cultureInfo)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>range</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>The string representation of the ranges.</p>
+</dd>
+    <dt><code>cultureInfo</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.globalization.cultureinfo">CultureInfo</a></dt>
+    <dd><p>The culture information to use for parsing.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Range.DateTimeRanges.html">DateTimeRanges</a></dt>
+    <dd><p>A DateTimeRanges object containing the parsed ranges.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Range/Ranges.Specifics.cs/#L184" class="edit-link">Edit this page</a>
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

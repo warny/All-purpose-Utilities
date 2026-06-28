@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Namespace Utils.Expressions | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Namespace Utils.Expressions | omy.Utils Documentation ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="Utils.Expressions">
+
+  <h1 id="Utils_Expressions" data-uid="Utils.Expressions" class="text-break">Namespace Utils.Expressions</h1>
+  <div class="markdown level0 summary"></div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="markdown level0 remarks"></div>
+
+    <h3 id="classes">
+Classes
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.BlockExpressionBuilder.html">BlockExpressionBuilder</a></dt>
+      <dd><p>A helper class that builds expression blocks while minimizing the number of declared variables.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.CompileException.html">CompileException</a></dt>
+      <dd><p>Represents the base class for compile-time exceptions that occur during
+expression compilation in the <code>Utils.Expressions</code> namespace.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ConstantNumericAttribute.html">ConstantNumericAttribute</a></dt>
+      <dd><p>A specialized attribute that indicates the expected parameter is a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.constantexpression">ConstantExpression</a>
+holding a numeric value, optionally restricted to a specific set of allowed numeric values.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ExpressionCallSignatureAttribute.html">ExpressionCallSignatureAttribute</a></dt>
+      <dd><p>Marks a method as matching only method-call expressions that invoke a specific function name
+on a specific type. This is a specialized <a class="xref" href="Utils.Expressions.ExpressionSignatureAttribute.html">ExpressionSignatureAttribute</a> for calls.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ExpressionEx.html">ExpressionEx</a></dt>
+      <dd><p>Provides helper methods for building and manipulating expression trees.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ExpressionParser.html">ExpressionParser</a></dt>
+      <dd><p>Provides static methods for parsing and compiling lambda expressions from string code.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ExpressionParserCore.html">ExpressionParserCore</a></dt>
+      <dd><p>Provides core parsing functionality for building expression trees from tokenized input.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ExpressionSignatureAttribute.html">ExpressionSignatureAttribute</a></dt>
+      <dd><p>Marks a method or parameter as having a signature requirement for a certain <a class="xref" href="Utils.Expressions.ExpressionSignatureAttribute.html#Utils_Expressions_ExpressionSignatureAttribute_ExpressionType">ExpressionType</a>.
+When used on a method, the method is considered for transformation if its attribute matches the current node type.
+When used on a parameter, it further restricts which sub-expressions are permissible.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ExpressionTransformer.html">ExpressionTransformer</a></dt>
+      <dd><p>Provides an abstract base class to transform or rewrite LINQ expression trees.
+Subclasses may override the transformation logic for specific expression signatures.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ExpressionUtils.html">ExpressionUtils</a></dt>
+      <dd><p>Provides utility helpers for analysing and comparing expression trees.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.FindTypeException.html">FindTypeException</a></dt>
+      <dd><p>Thrown when a type cannot be found during a type resolution process.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.FormattedPart.html">FormattedPart</a></dt>
+      <dd><p>Represents a formatted part of an interpolated string, containing an expression
+and optional format/alignment specifications.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.InterpolatedStringParser.html">InterpolatedStringParser</a></dt>
+      <dd><p>Parses an interpolated string into its constituent parts, which can be either literals or formatted expressions.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.LiteralPart.html">LiteralPart</a></dt>
+      <dd><p>Represents a literal (non-interpolated) part of a string.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.Parenthesis.html">Parenthesis</a></dt>
+      <dd><p>Describes a set of parenthesis tokens used by the expression parser.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ParseDuplicateParameterNameException.html">ParseDuplicateParameterNameException</a></dt>
+      <dd><p>Thrown when the parser encounters a parameter name that is already in use.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ParseException.html">ParseException</a></dt>
+      <dd><p>Represents the base class for all parsing exceptions that occur during
+expression parsing in the <code>Utils.Expressions</code> namespace.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ParseNoEndException.html">ParseNoEndException</a></dt>
+      <dd><p>Thrown when an expected closing symbol is not found in the parsed expression.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ParseUnfindTypeException.html">ParseUnfindTypeException</a></dt>
+      <dd><p>Thrown when a type name cannot be resolved or found by the parser.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ParseUnknownException.html">ParseUnknownException</a></dt>
+      <dd><p>Thrown when an unknown symbol is encountered by the parser.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ParseUnmatchException.html">ParseUnmatchException</a></dt>
+      <dd><p>Thrown when a pair of opening and closing symbols do not match in the parsed expression.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ParseWrongSymbolException.html">ParseWrongSymbolException</a></dt>
+      <dd><p>Thrown when the parser encounters a symbol that is incorrect for the current context.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ParserContext.html">ParserContext</a></dt>
+      <dd><p>Maintains contextual information while parsing expressions.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ParserOptions.html">ParserOptions</a></dt>
+      <dd><p>Provides configuration settings and default mappings for parsing expressions,
+including operator priorities, numeric type levels, default type keywords,
+and numeric suffix mappings.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ReturnTypeAttribute.html">ReturnTypeAttribute</a></dt>
+      <dd><p>A specialized attribute that indicates the matched expression's return type
+must be assignable to a specified type. Useful for restricting the
+type of an operand beyond its <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expressiontype">ExpressionType</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.Tokenizer.html">Tokenizer</a></dt>
+      <dd><p>Represents a tokenizer that parses and reads tokens from a given string content,
+based on configurable symbols, whitespace definitions, and token readers.</p>
+</dd>
+    </dl>
+    <h3 id="interfaces">
+Interfaces
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.IAdditionalTokens.html">IAdditionalTokens</a></dt>
+      <dd><p>Represents an entity that provides additional tokens beyond the standard set,
+useful for customizing lexical analysis or parser behavior.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.IBuilder.html">IBuilder</a></dt>
+      <dd><p>Describes the configuration and components required to parse
+and build expressions (e.g., token readers, whitespace handling, etc.).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.IDistanceValue-1.html">IDistanceValue&lt;T&gt;</a></dt>
+      <dd><p>Represents a pairing of a distance measure and a value, typically used
+for scoring or ranking operations in method or constructor selection.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.IFollowUpExpressionBuilder.html">IFollowUpExpressionBuilder</a></dt>
+      <dd><p>Defines a contract for building follow-up portions of an expression,
+typically when the parser encounters an operator or token after an initial expression.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.IInterpolatedStringPart.html">IInterpolatedStringPart</a></dt>
+      <dd><p>Represents a part of an interpolated string, which can be either literal text or a formatted expression.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.IParserOptions.html">IParserOptions</a></dt>
+      <dd><p>Describes configuration settings that influence how expressions are parsed and interpreted.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.IResolver.html">IResolver</a></dt>
+      <dd><p>Provides functionality to resolve types, constructors, methods, and members at runtime,
+as well as to manage constants in expressions.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.IStartExpressionBuilder.html">IStartExpressionBuilder</a></dt>
+      <dd><p>Defines a contract for building the initial portion of an expression,
+typically when the parser encounters a token indicating a new expression start.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ITokenizerPosition.html">ITokenizerPosition</a></dt>
+      <dd><p>Exposes read-only properties representing the tokenizer's position within the content.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ITypeFinder.html">ITypeFinder</a></dt>
+      <dd><p>Provides methods for finding types and extension methods at runtime.</p>
+</dd>
+    </dl>
+    <h3 id="delegates">
+Delegates
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.StringTransformer.html">StringTransformer</a></dt>
+      <dd><p>Represents a function that attempts to transform or rewrite a token string.
+If successful, outputs a new token result.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.TryReadToken.html">TryReadToken</a></dt>
+      <dd><p>Represents a function that attempts to read a token from a given content string at the specified index.
+If successful, it outputs the token's length.</p>
+</dd>
+    </dl>
+
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,1605 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Struct StringEncodedDouble | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Struct StringEncodedDouble | omy.Utils Documentation ">
+      
+      <meta name="description" content="Represents a double precision value that can be encoded to and decoded from string or byte representations.">
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_Net_Structures_StringEncodedDouble.md&amp;value=---%0Auid%3A%20Utils.Net.Structures.StringEncodedDouble%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="Utils.Net.Structures.StringEncodedDouble">
+
+
+
+  <h1 id="Utils_Net_Structures_StringEncodedDouble" data-uid="Utils.Net.Structures.StringEncodedDouble" class="text-break">
+Struct StringEncodedDouble  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Net/Net/Structures/StringEncodedDouble.cs/#L11"><i class="bi bi-code-slash"></i></a>
+  </h1>
+
+  <div class="facts text-secondary">
+    <dl><dt>Namespace</dt><dd><a class="xref" href="Utils.html">Utils</a>.<a class="xref" href="Utils.Net.html">Net</a>.<a class="xref" href="Utils.Net.Structures.html">Structures</a></dd></dl>
+  <dl><dt>Assembly</dt><dd>Utils.Net.dll</dd></dl>
+  </div>
+
+  <div class="markdown summary"><p>Represents a double precision value that can be encoded to and decoded from string or byte representations.</p>
+</div>
+  <div class="markdown conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public struct StringEncodedDouble : IComparable&lt;StringEncodedDouble&gt;, IEquatable&lt;StringEncodedDouble&gt;, IComparable&lt;double&gt;, IEquatable&lt;double&gt;, IComparisonOperators&lt;StringEncodedDouble, StringEncodedDouble, bool&gt;, IEqualityOperators&lt;StringEncodedDouble, StringEncodedDouble, bool&gt;, IComparisonOperators&lt;StringEncodedDouble, double, bool&gt;, IEqualityOperators&lt;StringEncodedDouble, double, bool&gt;, IComparable</code></pre>
+  </div>
+
+
+
+
+
+  <dl class="typelist implements">
+    <dt>Implements</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.icomparable-1">IComparable</a>&lt;<a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a>&gt;</div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a>&gt;</div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.icomparable-1">IComparable</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a>&gt;</div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a>&gt;</div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.icomparisonoperators-3">IComparisonOperators</a>&lt;<a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a>, <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a>&gt;</div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.iequalityoperators-3">IEqualityOperators</a>&lt;<a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a>, <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a>&gt;</div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.icomparisonoperators-3">IComparisonOperators</a>&lt;<a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a>&gt;</div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.iequalityoperators-3">IEqualityOperators</a>&lt;<a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a>&gt;</div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.icomparable">IComparable</a></div>
+    </dd>
+  </dl>
+
+
+  <dl class="typelist inheritedMembers">
+    <dt>Inherited Members</dt>
+    <dd>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)">object.Equals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
+    </div>
+  </dd></dl>
+
+  <dl class="typelist extensionMethods">
+    <dt>Extension Methods</dt>
+    <dd>
+  <div>
+      <a class="xref" href="Utils.Mathematics.MathEx.html#Utils_Mathematics_MathEx_Clamp__1___0___0___0_System_Collections_Generic_IComparer___0__">MathEx.Clamp&lt;T&gt;(T, T, T, IComparer&lt;T&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Mathematics.MathEx.html#Utils_Mathematics_MathEx_Clamp__1___0___0___0_System_Collections_Generic_IComparer___0__">MathEx.Clamp&lt;T&gt;(T, T, T, IComparer&lt;T&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Failure__1___0_">FluentExtensions.Failure&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Failure__1___0_">FluentExtensions.Failure&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsEqualTo__2___0___1_">FluentExtensions.IsEqualTo&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsEqualTo__2___0___1_">FluentExtensions.IsEqualTo&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterOrEqualsThan__2___0___1_">FluentExtensions.IsGreaterOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterOrEqualsThan__2___0___1_">FluentExtensions.IsGreaterOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterThan__2___0___1_">FluentExtensions.IsGreaterThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterThan__2___0___1_">FluentExtensions.IsGreaterThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsIn__1___0___0___">FluentExtensions.IsIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsIn__1___0___0___">FluentExtensions.IsIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerOrEqualsThan__2___0___1_">FluentExtensions.IsLowerOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerOrEqualsThan__2___0___1_">FluentExtensions.IsLowerOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerThan__2___0___1_">FluentExtensions.IsLowerThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerThan__2___0___1_">FluentExtensions.IsLowerThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotIn__1___0___0___">FluentExtensions.IsNotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotIn__1___0___0___">FluentExtensions.IsNotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotNull__1___0_">FluentExtensions.IsNotNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotNull__1___0_">FluentExtensions.IsNotNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNull__1___0_">FluentExtensions.IsNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNull__1___0_">FluentExtensions.IsNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Success__1___0_">FluentExtensions.Success&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Success__1___0_">FluentExtensions.Success&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Test__1___0_System_Func___0_System_Boolean__">FluentExtensions.Test&lt;T&gt;(T, Func&lt;T, bool&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Test__1___0_System_Func___0_System_Boolean__">FluentExtensions.Test&lt;T&gt;(T, Func&lt;T, bool&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_System_Boolean_System_Boolean_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T, bool, bool)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_System_Boolean_System_Boolean_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T, bool, bool)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1____1_">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1____1_">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1____1_">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1____1_">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_In__1___0___0___">ObjectUtils.In&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_In__1___0___0___">ObjectUtils.In&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_NotIn__1___0___0___">ObjectUtils.NotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_NotIn__1___0___0___">ObjectUtils.NotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustNotBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustNotBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustNotBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustNotBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Arg__1___0_System_String_">Validations.Arg&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Arg__1___0_System_String_">Validations.Arg&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Variable__1___0_System_String_">Validations.Variable&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Variable__1___0_System_String_">Validations.Variable&lt;T&gt;(T, string)</a>
+  </div>
+  </dd></dl>
+
+
+
+
+
+  <h2 class="section" id="constructors">Constructors
+</h2>
+
+
+  <a id="Utils_Net_Structures_StringEncodedDouble__ctor_" data-uid="Utils.Net.Structures.StringEncodedDouble.#ctor*"></a>
+
+  <h3 id="Utils_Net_Structures_StringEncodedDouble__ctor_System_Double_" data-uid="Utils.Net.Structures.StringEncodedDouble.#ctor(System.Double)">
+  StringEncodedDouble(double)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Net/Net/Structures/StringEncodedDouble.cs/#L22"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a> struct with the specified value.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public StringEncodedDouble(double value)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>value</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd><p>The floating-point value to wrap.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <h2 class="section" id="properties">Properties
+</h2>
+
+
+  <a id="Utils_Net_Structures_StringEncodedDouble_Value_" data-uid="Utils.Net.Structures.StringEncodedDouble.Value*"></a>
+
+  <h3 id="Utils_Net_Structures_StringEncodedDouble_Value" data-uid="Utils.Net.Structures.StringEncodedDouble.Value">
+  Value
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Net/Net/Structures/StringEncodedDouble.cs/#L30"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the underlying floating-point value.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public double Value { readonly get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h2 class="section" id="methods">Methods
+</h2>
+
+
+  <a id="Utils_Net_Structures_StringEncodedDouble_CompareTo_" data-uid="Utils.Net.Structures.StringEncodedDouble.CompareTo*"></a>
+
+  <h3 id="Utils_Net_Structures_StringEncodedDouble_CompareTo_System_Double_" data-uid="Utils.Net.Structures.StringEncodedDouble.CompareTo(System.Double)">
+  CompareTo(double)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Net/Net/Structures/StringEncodedDouble.cs/#L59"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Compares the current instance with another object of the same type and returns an integer that indicates whether the current instance precedes, follows, or occurs in the same position in the sort order as the other object.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public readonly int CompareTo(double other)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>other</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd><p>An object to compare with this instance.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>A value that indicates the relative order of the objects being compared. The return value has these meanings:</p>
+ <table><thead><tr><th class="term"> Value</th><th class="description"> Meaning</th></tr></thead><tbody><tr><td class="term"> Less than zero</td><td class="description"> This instance precedes <code class="paramref">other</code> in the sort order.</td></tr><tr><td class="term"> Zero</td><td class="description"> This instance occurs in the same position in the sort order as <code class="paramref">other</code>.</td></tr><tr><td class="term"> Greater than zero</td><td class="description"> This instance follows <code class="paramref">other</code> in the sort order.</td></tr></tbody></table>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_Structures_StringEncodedDouble_CompareTo_" data-uid="Utils.Net.Structures.StringEncodedDouble.CompareTo*"></a>
+
+  <h3 id="Utils_Net_Structures_StringEncodedDouble_CompareTo_System_Object_" data-uid="Utils.Net.Structures.StringEncodedDouble.CompareTo(System.Object)">
+  CompareTo(object)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Net/Net/Structures/StringEncodedDouble.cs/#L61"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Compares the current instance with another object of the same type and returns an integer that indicates whether the current instance precedes, follows, or occurs in the same position in the sort order as the other object.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public readonly int CompareTo(object obj)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>obj</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></dt>
+    <dd><p>An object to compare with this instance.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>A value that indicates the relative order of the objects being compared. The return value has these meanings:</p>
+ <table><thead><tr><th class="term"> Value</th><th class="description"> Meaning</th></tr></thead><tbody><tr><td class="term"> Less than zero</td><td class="description"> This instance precedes <code class="paramref">obj</code> in the sort order.</td></tr><tr><td class="term"> Zero</td><td class="description"> This instance occurs in the same position in the sort order as <code class="paramref">obj</code>.</td></tr><tr><td class="term"> Greater than zero</td><td class="description"> This instance follows <code class="paramref">obj</code> in the sort order.</td></tr></tbody></table>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p><code class="paramref">obj</code> is not the same type as this instance.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Net_Structures_StringEncodedDouble_CompareTo_" data-uid="Utils.Net.Structures.StringEncodedDouble.CompareTo*"></a>
+
+  <h3 id="Utils_Net_Structures_StringEncodedDouble_CompareTo_Utils_Net_Structures_StringEncodedDouble_" data-uid="Utils.Net.Structures.StringEncodedDouble.CompareTo(Utils.Net.Structures.StringEncodedDouble)">
+  CompareTo(StringEncodedDouble)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Net/Net/Structures/StringEncodedDouble.cs/#L57"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Compares the current instance with another object of the same type and returns an integer that indicates whether the current instance precedes, follows, or occurs in the same position in the sort order as the other object.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public readonly int CompareTo(StringEncodedDouble other)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>other</code> <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a></dt>
+    <dd><p>An object to compare with this instance.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>A value that indicates the relative order of the objects being compared. The return value has these meanings:</p>
+ <table><thead><tr><th class="term"> Value</th><th class="description"> Meaning</th></tr></thead><tbody><tr><td class="term"> Less than zero</td><td class="description"> This instance precedes <code class="paramref">other</code> in the sort order.</td></tr><tr><td class="term"> Zero</td><td class="description"> This instance occurs in the same position in the sort order as <code class="paramref">other</code>.</td></tr><tr><td class="term"> Greater than zero</td><td class="description"> This instance follows <code class="paramref">other</code> in the sort order.</td></tr></tbody></table>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_Structures_StringEncodedDouble_Equals_" data-uid="Utils.Net.Structures.StringEncodedDouble.Equals*"></a>
+
+  <h3 id="Utils_Net_Structures_StringEncodedDouble_Equals_System_Double_" data-uid="Utils.Net.Structures.StringEncodedDouble.Equals(System.Double)">
+  Equals(double)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Net/Net/Structures/StringEncodedDouble.cs/#L72"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Indicates whether the current object is equal to another object of the same type.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public readonly bool Equals(double other)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>other</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd><p>An object to compare with this object.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if the current object is equal to the <code class="paramref">other</code> parameter; otherwise, <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_Structures_StringEncodedDouble_Equals_" data-uid="Utils.Net.Structures.StringEncodedDouble.Equals*"></a>
+
+  <h3 id="Utils_Net_Structures_StringEncodedDouble_Equals_System_Object_" data-uid="Utils.Net.Structures.StringEncodedDouble.Equals(System.Object)">
+  Equals(object)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Net/Net/Structures/StringEncodedDouble.cs/#L74"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Indicates whether this instance and a specified object are equal.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override readonly bool Equals(object obj)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>obj</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></dt>
+    <dd><p>The object to compare with the current instance.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if <code class="paramref">obj</code> and this instance are the same type and represent the same value; otherwise, <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_Structures_StringEncodedDouble_Equals_" data-uid="Utils.Net.Structures.StringEncodedDouble.Equals*"></a>
+
+  <h3 id="Utils_Net_Structures_StringEncodedDouble_Equals_Utils_Net_Structures_StringEncodedDouble_" data-uid="Utils.Net.Structures.StringEncodedDouble.Equals(Utils.Net.Structures.StringEncodedDouble)">
+  Equals(StringEncodedDouble)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Net/Net/Structures/StringEncodedDouble.cs/#L70"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Indicates whether the current object is equal to another object of the same type.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public readonly bool Equals(StringEncodedDouble other)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>other</code> <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a></dt>
+    <dd><p>An object to compare with this object.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if the current object is equal to the <code class="paramref">other</code> parameter; otherwise, <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_Structures_StringEncodedDouble_FromBytes_" data-uid="Utils.Net.Structures.StringEncodedDouble.FromBytes*"></a>
+
+  <h3 id="Utils_Net_Structures_StringEncodedDouble_FromBytes_System_Byte___" data-uid="Utils.Net.Structures.StringEncodedDouble.FromBytes(System.Byte[])">
+  FromBytes(byte[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Net/Net/Structures/StringEncodedDouble.cs/#L43"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Creates an instance from a UTF-8 byte sequence that stores a culture invariant string representation.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static StringEncodedDouble FromBytes(byte[] bytes)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>bytes</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
+    <dd><p>The encoded byte buffer to convert.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a></dt>
+    <dd><p>A new <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a> initialized from the decoded value.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_Structures_StringEncodedDouble_FromString_" data-uid="Utils.Net.Structures.StringEncodedDouble.FromString*"></a>
+
+  <h3 id="Utils_Net_Structures_StringEncodedDouble_FromString_System_String_" data-uid="Utils.Net.Structures.StringEncodedDouble.FromString(System.String)">
+  FromString(string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Net/Net/Structures/StringEncodedDouble.cs/#L37"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Creates an instance from a culture invariant string representation.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static StringEncodedDouble FromString(string str)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>str</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>The textual representation to parse.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a></dt>
+    <dd><p>A new <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a> initialized from the parsed value.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_Structures_StringEncodedDouble_GetHashCode_" data-uid="Utils.Net.Structures.StringEncodedDouble.GetHashCode*"></a>
+
+  <h3 id="Utils_Net_Structures_StringEncodedDouble_GetHashCode" data-uid="Utils.Net.Structures.StringEncodedDouble.GetHashCode">
+  GetHashCode()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Net/Net/Structures/StringEncodedDouble.cs/#L84"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns the hash code for this instance.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override int GetHashCode()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>A 32-bit signed integer that is the hash code for this instance.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_Structures_StringEncodedDouble_ToBytes_" data-uid="Utils.Net.Structures.StringEncodedDouble.ToBytes*"></a>
+
+  <h3 id="Utils_Net_Structures_StringEncodedDouble_ToBytes" data-uid="Utils.Net.Structures.StringEncodedDouble.ToBytes">
+  ToBytes()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Net/Net/Structures/StringEncodedDouble.cs/#L54"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Encodes the wrapped value as a UTF-8 byte array using invariant culture formatting.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public readonly byte[] ToBytes()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
+    <dd><p>The UTF-8 encoded representation.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_Structures_StringEncodedDouble_ToString_" data-uid="Utils.Net.Structures.StringEncodedDouble.ToString*"></a>
+
+  <h3 id="Utils_Net_Structures_StringEncodedDouble_ToString" data-uid="Utils.Net.Structures.StringEncodedDouble.ToString">
+  ToString()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Net/Net/Structures/StringEncodedDouble.cs/#L49"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns the culture specific string representation of the wrapped value.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override readonly string ToString()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>The string representation of <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html#Utils_Net_Structures_StringEncodedDouble_Value">Value</a>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <h2 class="section" id="operators">Operators
+</h2>
+
+
+  <a id="Utils_Net_Structures_StringEncodedDouble_op_Equality_" data-uid="Utils.Net.Structures.StringEncodedDouble.op_Equality*"></a>
+
+  <h3 id="Utils_Net_Structures_StringEncodedDouble_op_Equality_System_Double_Utils_Net_Structures_StringEncodedDouble_" data-uid="Utils.Net.Structures.StringEncodedDouble.op_Equality(System.Double,Utils.Net.Structures.StringEncodedDouble)">
+  operator ==(double, StringEncodedDouble)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Net/Net/Structures/StringEncodedDouble.cs/#L150"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether the specified <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a> value equals the <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a> value.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator ==(double d1, StringEncodedDouble sed2)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>d1</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd></dd>
+    <dt><code>sed2</code> <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_Structures_StringEncodedDouble_op_Equality_" data-uid="Utils.Net.Structures.StringEncodedDouble.op_Equality*"></a>
+
+  <h3 id="Utils_Net_Structures_StringEncodedDouble_op_Equality_Utils_Net_Structures_StringEncodedDouble_System_Double_" data-uid="Utils.Net.Structures.StringEncodedDouble.op_Equality(Utils.Net.Structures.StringEncodedDouble,System.Double)">
+  operator ==(StringEncodedDouble, double)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Net/Net/Structures/StringEncodedDouble.cs/#L125"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether the <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a> value equals the specified <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a> value.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator ==(StringEncodedDouble sed1, double d2)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>sed1</code> <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a></dt>
+    <dd></dd>
+    <dt><code>d2</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_Structures_StringEncodedDouble_op_Equality_" data-uid="Utils.Net.Structures.StringEncodedDouble.op_Equality*"></a>
+
+  <h3 id="Utils_Net_Structures_StringEncodedDouble_op_Equality_Utils_Net_Structures_StringEncodedDouble_Utils_Net_Structures_StringEncodedDouble_" data-uid="Utils.Net.Structures.StringEncodedDouble.op_Equality(Utils.Net.Structures.StringEncodedDouble,Utils.Net.Structures.StringEncodedDouble)">
+  operator ==(StringEncodedDouble, StringEncodedDouble)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Net/Net/Structures/StringEncodedDouble.cs/#L100"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether two <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a> instances are equal.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator ==(StringEncodedDouble sed1, StringEncodedDouble sed2)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>sed1</code> <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a></dt>
+    <dd></dd>
+    <dt><code>sed2</code> <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_Structures_StringEncodedDouble_op_GreaterThan_" data-uid="Utils.Net.Structures.StringEncodedDouble.op_GreaterThan*"></a>
+
+  <h3 id="Utils_Net_Structures_StringEncodedDouble_op_GreaterThan_System_Double_Utils_Net_Structures_StringEncodedDouble_" data-uid="Utils.Net.Structures.StringEncodedDouble.op_GreaterThan(System.Double,Utils.Net.Structures.StringEncodedDouble)">
+  operator &gt;(double, StringEncodedDouble)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Net/Net/Structures/StringEncodedDouble.cs/#L158"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether the specified <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a> value is greater than the <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a> value.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator &gt;(double d1, StringEncodedDouble sed2)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>d1</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd></dd>
+    <dt><code>sed2</code> <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_Structures_StringEncodedDouble_op_GreaterThan_" data-uid="Utils.Net.Structures.StringEncodedDouble.op_GreaterThan*"></a>
+
+  <h3 id="Utils_Net_Structures_StringEncodedDouble_op_GreaterThan_Utils_Net_Structures_StringEncodedDouble_System_Double_" data-uid="Utils.Net.Structures.StringEncodedDouble.op_GreaterThan(Utils.Net.Structures.StringEncodedDouble,System.Double)">
+  operator &gt;(StringEncodedDouble, double)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Net/Net/Structures/StringEncodedDouble.cs/#L133"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether the <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a> value is greater than the specified <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a> value.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator &gt;(StringEncodedDouble sed1, double d2)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>sed1</code> <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a></dt>
+    <dd></dd>
+    <dt><code>d2</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_Structures_StringEncodedDouble_op_GreaterThan_" data-uid="Utils.Net.Structures.StringEncodedDouble.op_GreaterThan*"></a>
+
+  <h3 id="Utils_Net_Structures_StringEncodedDouble_op_GreaterThan_Utils_Net_Structures_StringEncodedDouble_Utils_Net_Structures_StringEncodedDouble_" data-uid="Utils.Net.Structures.StringEncodedDouble.op_GreaterThan(Utils.Net.Structures.StringEncodedDouble,Utils.Net.Structures.StringEncodedDouble)">
+  operator &gt;(StringEncodedDouble, StringEncodedDouble)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Net/Net/Structures/StringEncodedDouble.cs/#L108"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether the first operand is greater than the second operand.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator &gt;(StringEncodedDouble sed1, StringEncodedDouble sed2)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>sed1</code> <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a></dt>
+    <dd></dd>
+    <dt><code>sed2</code> <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_Structures_StringEncodedDouble_op_GreaterThanOrEqual_" data-uid="Utils.Net.Structures.StringEncodedDouble.op_GreaterThanOrEqual*"></a>
+
+  <h3 id="Utils_Net_Structures_StringEncodedDouble_op_GreaterThanOrEqual_System_Double_Utils_Net_Structures_StringEncodedDouble_" data-uid="Utils.Net.Structures.StringEncodedDouble.op_GreaterThanOrEqual(System.Double,Utils.Net.Structures.StringEncodedDouble)">
+  operator &gt;=(double, StringEncodedDouble)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Net/Net/Structures/StringEncodedDouble.cs/#L166"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether the specified <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a> value is greater than or equal to the <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a> value.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator &gt;=(double d1, StringEncodedDouble sed2)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>d1</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd></dd>
+    <dt><code>sed2</code> <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_Structures_StringEncodedDouble_op_GreaterThanOrEqual_" data-uid="Utils.Net.Structures.StringEncodedDouble.op_GreaterThanOrEqual*"></a>
+
+  <h3 id="Utils_Net_Structures_StringEncodedDouble_op_GreaterThanOrEqual_Utils_Net_Structures_StringEncodedDouble_System_Double_" data-uid="Utils.Net.Structures.StringEncodedDouble.op_GreaterThanOrEqual(Utils.Net.Structures.StringEncodedDouble,System.Double)">
+  operator &gt;=(StringEncodedDouble, double)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Net/Net/Structures/StringEncodedDouble.cs/#L141"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether the <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a> value is greater than or equal to the specified <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a> value.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator &gt;=(StringEncodedDouble sed1, double d2)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>sed1</code> <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a></dt>
+    <dd></dd>
+    <dt><code>d2</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_Structures_StringEncodedDouble_op_GreaterThanOrEqual_" data-uid="Utils.Net.Structures.StringEncodedDouble.op_GreaterThanOrEqual*"></a>
+
+  <h3 id="Utils_Net_Structures_StringEncodedDouble_op_GreaterThanOrEqual_Utils_Net_Structures_StringEncodedDouble_Utils_Net_Structures_StringEncodedDouble_" data-uid="Utils.Net.Structures.StringEncodedDouble.op_GreaterThanOrEqual(Utils.Net.Structures.StringEncodedDouble,Utils.Net.Structures.StringEncodedDouble)">
+  operator &gt;=(StringEncodedDouble, StringEncodedDouble)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Net/Net/Structures/StringEncodedDouble.cs/#L116"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether the first operand is greater than or equal to the second operand.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator &gt;=(StringEncodedDouble sed1, StringEncodedDouble sed2)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>sed1</code> <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a></dt>
+    <dd></dd>
+    <dt><code>sed2</code> <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_Structures_StringEncodedDouble_op_Implicit_" data-uid="Utils.Net.Structures.StringEncodedDouble.op_Implicit*"></a>
+
+  <h3 id="Utils_Net_Structures_StringEncodedDouble_op_Implicit_System_Double__Utils_Net_Structures_StringEncodedDouble" data-uid="Utils.Net.Structures.StringEncodedDouble.op_Implicit(System.Double)~Utils.Net.Structures.StringEncodedDouble">
+  implicit operator StringEncodedDouble(double)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Net/Net/Structures/StringEncodedDouble.cs/#L95"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Converts the specified <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a> to a <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a> instance.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static implicit operator StringEncodedDouble(double value)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>value</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd><p>The floating-point value to wrap.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_Structures_StringEncodedDouble_op_Implicit_" data-uid="Utils.Net.Structures.StringEncodedDouble.op_Implicit*"></a>
+
+  <h3 id="Utils_Net_Structures_StringEncodedDouble_op_Implicit_Utils_Net_Structures_StringEncodedDouble__System_Double" data-uid="Utils.Net.Structures.StringEncodedDouble.op_Implicit(Utils.Net.Structures.StringEncodedDouble)~System.Double">
+  implicit operator double(StringEncodedDouble)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Net/Net/Structures/StringEncodedDouble.cs/#L90"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Converts the specified <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a> to its underlying double value.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static implicit operator double(StringEncodedDouble obj)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>obj</code> <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a></dt>
+    <dd><p>The wrapped value to convert.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_Structures_StringEncodedDouble_op_Inequality_" data-uid="Utils.Net.Structures.StringEncodedDouble.op_Inequality*"></a>
+
+  <h3 id="Utils_Net_Structures_StringEncodedDouble_op_Inequality_System_Double_Utils_Net_Structures_StringEncodedDouble_" data-uid="Utils.Net.Structures.StringEncodedDouble.op_Inequality(System.Double,Utils.Net.Structures.StringEncodedDouble)">
+  operator !=(double, StringEncodedDouble)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Net/Net/Structures/StringEncodedDouble.cs/#L154"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether the specified <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a> value differs from the <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a> value.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator !=(double d1, StringEncodedDouble sed2)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>d1</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd></dd>
+    <dt><code>sed2</code> <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_Structures_StringEncodedDouble_op_Inequality_" data-uid="Utils.Net.Structures.StringEncodedDouble.op_Inequality*"></a>
+
+  <h3 id="Utils_Net_Structures_StringEncodedDouble_op_Inequality_Utils_Net_Structures_StringEncodedDouble_System_Double_" data-uid="Utils.Net.Structures.StringEncodedDouble.op_Inequality(Utils.Net.Structures.StringEncodedDouble,System.Double)">
+  operator !=(StringEncodedDouble, double)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Net/Net/Structures/StringEncodedDouble.cs/#L129"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether the <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a> value differs from the specified <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a> value.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator !=(StringEncodedDouble sed1, double d2)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>sed1</code> <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a></dt>
+    <dd></dd>
+    <dt><code>d2</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_Structures_StringEncodedDouble_op_Inequality_" data-uid="Utils.Net.Structures.StringEncodedDouble.op_Inequality*"></a>
+
+  <h3 id="Utils_Net_Structures_StringEncodedDouble_op_Inequality_Utils_Net_Structures_StringEncodedDouble_Utils_Net_Structures_StringEncodedDouble_" data-uid="Utils.Net.Structures.StringEncodedDouble.op_Inequality(Utils.Net.Structures.StringEncodedDouble,Utils.Net.Structures.StringEncodedDouble)">
+  operator !=(StringEncodedDouble, StringEncodedDouble)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Net/Net/Structures/StringEncodedDouble.cs/#L104"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether two <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a> instances are not equal.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator !=(StringEncodedDouble sed1, StringEncodedDouble sed2)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>sed1</code> <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a></dt>
+    <dd></dd>
+    <dt><code>sed2</code> <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_Structures_StringEncodedDouble_op_LessThan_" data-uid="Utils.Net.Structures.StringEncodedDouble.op_LessThan*"></a>
+
+  <h3 id="Utils_Net_Structures_StringEncodedDouble_op_LessThan_System_Double_Utils_Net_Structures_StringEncodedDouble_" data-uid="Utils.Net.Structures.StringEncodedDouble.op_LessThan(System.Double,Utils.Net.Structures.StringEncodedDouble)">
+  operator &lt;(double, StringEncodedDouble)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Net/Net/Structures/StringEncodedDouble.cs/#L162"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether the specified <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a> value is less than the <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a> value.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator &lt;(double d1, StringEncodedDouble sed2)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>d1</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd></dd>
+    <dt><code>sed2</code> <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_Structures_StringEncodedDouble_op_LessThan_" data-uid="Utils.Net.Structures.StringEncodedDouble.op_LessThan*"></a>
+
+  <h3 id="Utils_Net_Structures_StringEncodedDouble_op_LessThan_Utils_Net_Structures_StringEncodedDouble_System_Double_" data-uid="Utils.Net.Structures.StringEncodedDouble.op_LessThan(Utils.Net.Structures.StringEncodedDouble,System.Double)">
+  operator &lt;(StringEncodedDouble, double)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Net/Net/Structures/StringEncodedDouble.cs/#L137"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether the <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a> value is less than the specified <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a> value.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator &lt;(StringEncodedDouble sed1, double d2)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>sed1</code> <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a></dt>
+    <dd></dd>
+    <dt><code>d2</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_Structures_StringEncodedDouble_op_LessThan_" data-uid="Utils.Net.Structures.StringEncodedDouble.op_LessThan*"></a>
+
+  <h3 id="Utils_Net_Structures_StringEncodedDouble_op_LessThan_Utils_Net_Structures_StringEncodedDouble_Utils_Net_Structures_StringEncodedDouble_" data-uid="Utils.Net.Structures.StringEncodedDouble.op_LessThan(Utils.Net.Structures.StringEncodedDouble,Utils.Net.Structures.StringEncodedDouble)">
+  operator &lt;(StringEncodedDouble, StringEncodedDouble)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Net/Net/Structures/StringEncodedDouble.cs/#L112"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether the first operand is less than the second operand.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator &lt;(StringEncodedDouble sed1, StringEncodedDouble sed2)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>sed1</code> <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a></dt>
+    <dd></dd>
+    <dt><code>sed2</code> <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_Structures_StringEncodedDouble_op_LessThanOrEqual_" data-uid="Utils.Net.Structures.StringEncodedDouble.op_LessThanOrEqual*"></a>
+
+  <h3 id="Utils_Net_Structures_StringEncodedDouble_op_LessThanOrEqual_System_Double_Utils_Net_Structures_StringEncodedDouble_" data-uid="Utils.Net.Structures.StringEncodedDouble.op_LessThanOrEqual(System.Double,Utils.Net.Structures.StringEncodedDouble)">
+  operator &lt;=(double, StringEncodedDouble)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Net/Net/Structures/StringEncodedDouble.cs/#L170"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether the specified <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a> value is less than or equal to the <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a> value.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator &lt;=(double d1, StringEncodedDouble sed2)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>d1</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd></dd>
+    <dt><code>sed2</code> <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_Structures_StringEncodedDouble_op_LessThanOrEqual_" data-uid="Utils.Net.Structures.StringEncodedDouble.op_LessThanOrEqual*"></a>
+
+  <h3 id="Utils_Net_Structures_StringEncodedDouble_op_LessThanOrEqual_Utils_Net_Structures_StringEncodedDouble_System_Double_" data-uid="Utils.Net.Structures.StringEncodedDouble.op_LessThanOrEqual(Utils.Net.Structures.StringEncodedDouble,System.Double)">
+  operator &lt;=(StringEncodedDouble, double)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Net/Net/Structures/StringEncodedDouble.cs/#L145"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether the <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a> value is less than or equal to the specified <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a> value.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator &lt;=(StringEncodedDouble sed1, double d2)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>sed1</code> <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a></dt>
+    <dd></dd>
+    <dt><code>d2</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_Structures_StringEncodedDouble_op_LessThanOrEqual_" data-uid="Utils.Net.Structures.StringEncodedDouble.op_LessThanOrEqual*"></a>
+
+  <h3 id="Utils_Net_Structures_StringEncodedDouble_op_LessThanOrEqual_Utils_Net_Structures_StringEncodedDouble_Utils_Net_Structures_StringEncodedDouble_" data-uid="Utils.Net.Structures.StringEncodedDouble.op_LessThanOrEqual(Utils.Net.Structures.StringEncodedDouble,Utils.Net.Structures.StringEncodedDouble)">
+  operator &lt;=(StringEncodedDouble, StringEncodedDouble)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Net/Net/Structures/StringEncodedDouble.cs/#L120"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether the first operand is less than or equal to the second operand.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator &lt;=(StringEncodedDouble sed1, StringEncodedDouble sed2)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>sed1</code> <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a></dt>
+    <dd></dd>
+    <dt><code>sed2</code> <a class="xref" href="Utils.Net.Structures.StringEncodedDouble.html">StringEncodedDouble</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Net/Net/Structures/StringEncodedDouble.cs/#L11" class="edit-link">Edit this page</a>
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

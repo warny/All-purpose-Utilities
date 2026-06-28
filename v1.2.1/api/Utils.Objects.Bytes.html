@@ -1,0 +1,2040 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Struct Bytes | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Struct Bytes | omy.Utils Documentation ">
+      
+      <meta name="description" content="Represents a read-only view over a sequence of bytes.">
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_Objects_Bytes.md&amp;value=---%0Auid%3A%20Utils.Objects.Bytes%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="Utils.Objects.Bytes">
+
+
+
+  <h1 id="Utils_Objects_Bytes" data-uid="Utils.Objects.Bytes" class="text-break">
+Struct Bytes  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/Bytes.cs/#L11"><i class="bi bi-code-slash"></i></a>
+  </h1>
+
+  <div class="facts text-secondary">
+    <dl><dt>Namespace</dt><dd><a class="xref" href="Utils.html">Utils</a>.<a class="xref" href="Utils.Objects.html">Objects</a></dd></dl>
+  <dl><dt>Assembly</dt><dd>Utils.dll</dd></dl>
+  </div>
+
+  <div class="markdown summary"><p>Represents a read-only view over a sequence of bytes.</p>
+</div>
+  <div class="markdown conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public readonly struct Bytes : IReadOnlyList&lt;byte&gt;, IReadOnlyCollection&lt;byte&gt;, IEnumerable&lt;byte&gt;, IEnumerable, ICloneable, IEquatable&lt;Bytes&gt;, IEquatable&lt;byte[]&gt;, IComparable&lt;Bytes&gt;, IComparable&lt;byte[]&gt;, IComparable, IComparisonOperators&lt;Bytes, Bytes, bool&gt;, IEqualityOperators&lt;Bytes, Bytes, bool&gt;, IComparisonOperators&lt;Bytes, byte[], bool&gt;, IEqualityOperators&lt;Bytes, byte[], bool&gt;, IAdditionOperators&lt;Bytes, Bytes, Bytes&gt;, IAdditionOperators&lt;Bytes, byte[], Bytes&gt;</code></pre>
+  </div>
+
+
+
+
+
+  <dl class="typelist implements">
+    <dt>Implements</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1">IReadOnlyList</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>&gt;</div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlycollection-1">IReadOnlyCollection</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>&gt;</div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>&gt;</div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.ienumerable">IEnumerable</a></div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.icloneable">ICloneable</a></div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a class="xref" href="Utils.Objects.Bytes.html">Bytes</a>&gt;</div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]&gt;</div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.icomparable-1">IComparable</a>&lt;<a class="xref" href="Utils.Objects.Bytes.html">Bytes</a>&gt;</div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.icomparable-1">IComparable</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]&gt;</div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.icomparable">IComparable</a></div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.icomparisonoperators-3">IComparisonOperators</a>&lt;<a class="xref" href="Utils.Objects.Bytes.html">Bytes</a>, <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a>&gt;</div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.iequalityoperators-3">IEqualityOperators</a>&lt;<a class="xref" href="Utils.Objects.Bytes.html">Bytes</a>, <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a>&gt;</div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.icomparisonoperators-3">IComparisonOperators</a>&lt;<a class="xref" href="Utils.Objects.Bytes.html">Bytes</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[], <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a>&gt;</div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.iequalityoperators-3">IEqualityOperators</a>&lt;<a class="xref" href="Utils.Objects.Bytes.html">Bytes</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[], <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a>&gt;</div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.iadditionoperators-3">IAdditionOperators</a>&lt;<a class="xref" href="Utils.Objects.Bytes.html">Bytes</a>, <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a>, <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a>&gt;</div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.iadditionoperators-3">IAdditionOperators</a>&lt;<a class="xref" href="Utils.Objects.Bytes.html">Bytes</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[], <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a>&gt;</div>
+    </dd>
+  </dl>
+
+
+  <dl class="typelist inheritedMembers">
+    <dt>Inherited Members</dt>
+    <dd>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)">object.Equals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
+    </div>
+  </dd></dl>
+
+  <dl class="typelist extensionMethods">
+    <dt>Extension Methods</dt>
+    <dd>
+  <div>
+      <a class="xref" href="Utils.Collections.EnumerableEx.html#Utils_Collections_EnumerableEx_FollowedBy__1_System_Collections_Generic_IEnumerable___0____0___">EnumerableEx.FollowedBy&lt;T&gt;(IEnumerable&lt;T&gt;, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Collections.EnumerableEx.html#Utils_Collections_EnumerableEx_HasAtLeastElements__1_System_Collections_Generic_IEnumerable___0__System_Int32_">EnumerableEx.HasAtLeastElements&lt;T&gt;(IEnumerable&lt;T&gt;, int)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Collections.EnumerableEx.html#Utils_Collections_EnumerableEx_HasManyElements__1_System_Collections_Generic_IEnumerable___0__">EnumerableEx.HasManyElements&lt;T&gt;(IEnumerable&lt;T&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Collections.EnumerableEx.html#Utils_Collections_EnumerableEx_IsNullOrEmptyCollection__1_System_Collections_Generic_IEnumerable___0__">EnumerableEx.IsNullOrEmptyCollection&lt;T&gt;(IEnumerable&lt;T&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Collections.EnumerableEx.html#Utils_Collections_EnumerableEx_Pack__1_System_Collections_Generic_IEnumerable___0__">EnumerableEx.Pack&lt;T&gt;(IEnumerable&lt;T&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Collections.EnumerableEx.html#Utils_Collections_EnumerableEx_PrecededBy__1_System_Collections_Generic_IEnumerable___0____0___">EnumerableEx.PrecededBy&lt;T&gt;(IEnumerable&lt;T&gt;, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Collections.EnumerableEx.html#Utils_Collections_EnumerableEx_Replace__1_System_Collections_Generic_IEnumerable___0____0_____0___">EnumerableEx.Replace&lt;T&gt;(IEnumerable&lt;T&gt;, T[], T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Collections.EnumerableEx.html#Utils_Collections_EnumerableEx_Slice__1_System_Collections_Generic_IEnumerable___0__System_Int32___">EnumerableEx.Slice&lt;T&gt;(IEnumerable&lt;T&gt;, params int[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Collections.EnumerableEx.html#Utils_Collections_EnumerableEx_SlideEnumerateBy__1_System_Collections_Generic_IEnumerable___0__System_Int32_System_Int32_">EnumerableEx.SlideEnumerateBy&lt;T&gt;(IEnumerable&lt;T&gt;, int, int)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.BytesExtensions.html#Utils_Objects_BytesExtensions_ToBytes_System_Collections_Generic_IEnumerable_System_Byte__">BytesExtensions.ToBytes(IEnumerable&lt;byte&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_ComputeHash__1_System_Collections_Generic_IEnumerable___0__System_Func___0_System_Int32__">ObjectUtils.ComputeHash&lt;T&gt;(IEnumerable&lt;T&gt;, Func&lt;T, int&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_IndexOf__1_System_Collections_Generic_IEnumerable___0____0_">ObjectUtils.IndexOf&lt;T&gt;(IEnumerable&lt;T&gt;, T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_IndexOf__1_System_Collections_Generic_IEnumerable___0____0_System_Collections_Generic_IEqualityComparer___0__">ObjectUtils.IndexOf&lt;T&gt;(IEnumerable&lt;T&gt;, T, IEqualityComparer&lt;T&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_IndexOf__1_System_Collections_Generic_IEnumerable___0__System_Func___0_System_Boolean__">ObjectUtils.IndexOf&lt;T&gt;(IEnumerable&lt;T&gt;, Func&lt;T, bool&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustBeOfSize__1_System_Collections_Generic_IReadOnlyCollection___0__System_Int32_System_String_">Validations.ArgMustBeOfSize&lt;T&gt;(IReadOnlyCollection&lt;T&gt;, int, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustNotBeEmpty__1_System_Collections_Generic_IReadOnlyCollection___0__System_String_">Validations.ArgMustNotBeEmpty&lt;T&gt;(IReadOnlyCollection&lt;T&gt;, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgSizeMustBeMultipleOf__1_System_Collections_Generic_IReadOnlyCollection___0__System_Int32_System_String_">Validations.ArgSizeMustBeMultipleOf&lt;T&gt;(IReadOnlyCollection&lt;T&gt;, int, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ValueSizeMustBeMultipleOf__1_System_Collections_Generic_IReadOnlyCollection___0__System_Int32_System_String_">Validations.ValueSizeMustBeMultipleOf&lt;T&gt;(IReadOnlyCollection&lt;T&gt;, int, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Range.RangeUtils.html#Utils_Range_RangeUtils_Between__1_System_Collections_Generic_IReadOnlyList___0__System_Int32_System_Int32_">RangeUtils.Between&lt;T&gt;(IReadOnlyList&lt;T&gt;, int, int)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Range.RangeUtils.html#Utils_Range_RangeUtils_Between__1_System_Collections_Generic_IReadOnlyList___0__System_Int32_System_Int32_System_Int32_">RangeUtils.Between&lt;T&gt;(IReadOnlyList&lt;T&gt;, int, int, int)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Range.RangeUtils.html#Utils_Range_RangeUtils_From__1_System_Collections_Generic_IReadOnlyList___0__System_Int32_System_Int32_">RangeUtils.From&lt;T&gt;(IReadOnlyList&lt;T&gt;, int, int)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Range.RangeUtils.html#Utils_Range_RangeUtils_Reverse__1_System_Collections_Generic_IReadOnlyList___0__">RangeUtils.Reverse&lt;T&gt;(IReadOnlyList&lt;T&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Range.RangeUtils.html#Utils_Range_RangeUtils_To__1_System_Collections_Generic_IReadOnlyList___0__System_Int32_System_Int32_">RangeUtils.To&lt;T&gt;(IReadOnlyList&lt;T&gt;, int, int)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Data.DataUtils.html#Utils_Data_DataUtils_ToDbValue_System_Object_">DataUtils.ToDbValue(object?)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Mathematics.MathEx.html#Utils_Mathematics_MathEx_Clamp__1___0___0___0_">MathEx.Clamp&lt;T&gt;(T, T, T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Mathematics.MathEx.html#Utils_Mathematics_MathEx_Clamp__1___0___0___0_System_Collections_Generic_IComparer___0__">MathEx.Clamp&lt;T&gt;(T, T, T, IComparer&lt;T&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Mathematics.MathEx.html#Utils_Mathematics_MathEx_Clamp__1___0___0___0_System_Collections_Generic_IComparer___0__">MathEx.Clamp&lt;T&gt;(T, T, T, IComparer&lt;T&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Failure__1___0_">FluentExtensions.Failure&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Failure__1___0_">FluentExtensions.Failure&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsEqualTo__2___0___1_">FluentExtensions.IsEqualTo&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsEqualTo__2___0___1_">FluentExtensions.IsEqualTo&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterOrEqualsThan__2___0___1_">FluentExtensions.IsGreaterOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterOrEqualsThan__2___0___1_">FluentExtensions.IsGreaterOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterThan__2___0___1_">FluentExtensions.IsGreaterThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterThan__2___0___1_">FluentExtensions.IsGreaterThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsIn__1___0___0___">FluentExtensions.IsIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsIn__1___0___0___">FluentExtensions.IsIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerOrEqualsThan__2___0___1_">FluentExtensions.IsLowerOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerOrEqualsThan__2___0___1_">FluentExtensions.IsLowerOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerThan__2___0___1_">FluentExtensions.IsLowerThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerThan__2___0___1_">FluentExtensions.IsLowerThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotIn__1___0___0___">FluentExtensions.IsNotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotIn__1___0___0___">FluentExtensions.IsNotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotNull__1___0_">FluentExtensions.IsNotNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotNull__1___0_">FluentExtensions.IsNotNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNull__1___0_">FluentExtensions.IsNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNull__1___0_">FluentExtensions.IsNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Success__1___0_">FluentExtensions.Success&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Success__1___0_">FluentExtensions.Success&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Test__1___0_System_Func___0_System_Boolean__">FluentExtensions.Test&lt;T&gt;(T, Func&lt;T, bool&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Test__1___0_System_Func___0_System_Boolean__">FluentExtensions.Test&lt;T&gt;(T, Func&lt;T, bool&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_System_Boolean_System_Boolean_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T, bool, bool)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_System_Boolean_System_Boolean_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T, bool, bool)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0___0___0_">ObjectUtils.Between&lt;T&gt;(T, T, T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0___0___0_System_Boolean_System_Boolean_">ObjectUtils.Between&lt;T&gt;(T, T, T, bool, bool)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1____1_">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1____1_">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1____1_">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1____1_">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_In__1___0___0___">ObjectUtils.In&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_In__1___0___0___">ObjectUtils.In&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_NotIn__1___0___0___">ObjectUtils.NotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_NotIn__1___0___0___">ObjectUtils.NotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustBeBetween__1___0___0___0_System_String_">Validations.ArgMustBeBetween&lt;T&gt;(T, T, T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustBeEqualsTo__1___0___0_System_String_">Validations.ArgMustBeEqualsTo&lt;T&gt;(T, T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustBeGreaterOrEqualsThan__1___0___0_System_String_">Validations.ArgMustBeGreaterOrEqualsThan&lt;T&gt;(T, T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustBeGreaterThan__1___0___0_System_String_">Validations.ArgMustBeGreaterThan&lt;T&gt;(T, T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustBeIn__1___0___0___System_String_">Validations.ArgMustBeIn&lt;T&gt;(T, T[], string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustBeLesserOrEqualsThan__1___0___0_System_String_">Validations.ArgMustBeLesserOrEqualsThan&lt;T&gt;(T, T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustBeLesserThan__1___0___0_System_String_">Validations.ArgMustBeLesserThan&lt;T&gt;(T, T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustNotBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustNotBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustNotBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustNotBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Arg__1___0_System_String_">Validations.Arg&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Arg__1___0_System_String_">Validations.Arg&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Variable__1___0_System_String_">Validations.Variable&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Variable__1___0_System_String_">Validations.Variable&lt;T&gt;(T, string)</a>
+  </div>
+  </dd></dl>
+
+
+
+
+
+  <h2 class="section" id="properties">Properties
+</h2>
+
+
+  <a id="Utils_Objects_Bytes_Count_" data-uid="Utils.Objects.Bytes.Count*"></a>
+
+  <h3 id="Utils_Objects_Bytes_Count" data-uid="Utils.Objects.Bytes.Count">
+  Count
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/Bytes.cs/#L36"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the number of bytes stored in this <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a> instance.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int Count { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_Bytes_Empty_" data-uid="Utils.Objects.Bytes.Empty*"></a>
+
+  <h3 id="Utils_Objects_Bytes_Empty" data-uid="Utils.Objects.Bytes.Empty">
+  Empty
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/Bytes.cs/#L31"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets an empty <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a> instance with no data.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Bytes Empty { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Objects.Bytes.html">Bytes</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_Bytes_Item_" data-uid="Utils.Objects.Bytes.Item*"></a>
+
+  <h3 id="Utils_Objects_Bytes_Item_System_Int32_" data-uid="Utils.Objects.Bytes.Item(System.Int32)">
+  this[int]
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/Bytes.cs/#L137"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a> at the specified index.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public byte this[int index] { get; }</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>index</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>The zero-based index of the element to get.</p>
+</dd>
+  </dl>
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a></dt>
+    <dd><p>The byte at the specified <code class="paramref">index</code>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h2 class="section" id="methods">Methods
+</h2>
+
+
+  <a id="Utils_Objects_Bytes_Clone_" data-uid="Utils.Objects.Bytes.Clone*"></a>
+
+  <h3 id="Utils_Objects_Bytes_Clone" data-uid="Utils.Objects.Bytes.Clone">
+  Clone()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/Bytes.cs/#L413"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Creates a new copy of the current <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a> object.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public object Clone()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></dt>
+    <dd><p>A new <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a> containing a copy of the internal array.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_Bytes_CompareTo_" data-uid="Utils.Objects.Bytes.CompareTo*"></a>
+
+  <h3 id="Utils_Objects_Bytes_CompareTo_System_Byte___" data-uid="Utils.Objects.Bytes.CompareTo(System.Byte[])">
+  CompareTo(byte[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/Bytes.cs/#L399"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Compares the current <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a> with a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a> array.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int CompareTo(byte[] other)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>other</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
+    <dd><p>A <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a> array to compare.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>A signed integer that indicates the relative order of the compared objects.
+0 if they are equal, less than 0 if this is less than <code class="paramref">other</code>,
+and greater than 0 if this is greater.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_Bytes_CompareTo_" data-uid="Utils.Objects.Bytes.CompareTo*"></a>
+
+  <h3 id="Utils_Objects_Bytes_CompareTo_System_Object_" data-uid="Utils.Objects.Bytes.CompareTo(System.Object)">
+  CompareTo(object)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/Bytes.cs/#L372"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Compares the current instance with another object of the same type.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int CompareTo(object obj)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>obj</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></dt>
+    <dd><p>An object to compare, which can be <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a> or <span class="xref">byte[]</span>.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>A value indicating the relative order of the objects.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a></dt>
+    <dd><p>If <code class="paramref">obj</code> is not a valid type.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Objects_Bytes_CompareTo_" data-uid="Utils.Objects.Bytes.CompareTo*"></a>
+
+  <h3 id="Utils_Objects_Bytes_CompareTo_Utils_Objects_Bytes_" data-uid="Utils.Objects.Bytes.CompareTo(Utils.Objects.Bytes)">
+  CompareTo(Bytes)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/Bytes.cs/#L388"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Compares the current <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a> with another <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int CompareTo(Bytes other)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>other</code> <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a></dt>
+    <dd><p>A <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a> to compare.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>A signed integer that indicates the relative order of the compared objects.
+0 if they are equal, less than 0 if this is less than <code class="paramref">other</code>,
+and greater than 0 if this is greater.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_Bytes_CopyTo_" data-uid="Utils.Objects.Bytes.CopyTo*"></a>
+
+  <h3 id="Utils_Objects_Bytes_CopyTo_System_Byte___System_Int32_System_Nullable_System_Int32__" data-uid="Utils.Objects.Bytes.CopyTo(System.Byte[],System.Int32,System.Nullable{System.Int32})">
+  CopyTo(byte[], int, int?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/Bytes.cs/#L429"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Copies the contents of this <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a> into the specified <code class="paramref">array</code>
+starting at <code class="paramref">index</code> and using an optional <code class="paramref">length</code>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void CopyTo(byte[] array, int index, int? length = null)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>array</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
+    <dd><p>The target array.</p>
+</dd>
+    <dt><code>index</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>The destination index in <code class="paramref">array</code>.
+If negative, it is offset from the end of <code class="paramref">array</code>.</p>
+</dd>
+    <dt><code>length</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a>?</dt>
+    <dd><p>Number of bytes to copy. If null, copies as many as possible.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_Bytes_CopyTo_" data-uid="Utils.Objects.Bytes.CopyTo*"></a>
+
+  <h3 id="Utils_Objects_Bytes_CopyTo_System_IO_Stream_System_Int32_System_Nullable_System_Int32__" data-uid="Utils.Objects.Bytes.CopyTo(System.IO.Stream,System.Int32,System.Nullable{System.Int32})">
+  CopyTo(Stream, int, int?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/Bytes.cs/#L451"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Writes the contents of this <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a> to a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a>
+starting at the specified <code class="paramref">index</code> and using an optional <code class="paramref">length</code>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void CopyTo(Stream s, int index, int? length = null)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>s</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a></dt>
+    <dd><p>The stream to write to.</p>
+</dd>
+    <dt><code>index</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>The source index in the <span class="xref">Utils.Objects.Bytes._innerBytes</span> array.</p>
+</dd>
+    <dt><code>length</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a>?</dt>
+    <dd><p>Number of bytes to write. If null, writes as many as possible.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_Bytes_Equals_" data-uid="Utils.Objects.Bytes.Equals*"></a>
+
+  <h3 id="Utils_Objects_Bytes_Equals_System_Byte___" data-uid="Utils.Objects.Bytes.Equals(System.Byte[])">
+  Equals(byte[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/Bytes.cs/#L356"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether the specified byte array is equal to the current <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool Equals(byte[] other)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>other</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
+    <dd><p>A <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a> array to compare.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if both contain identical byte sequences; otherwise <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_Bytes_Equals_" data-uid="Utils.Objects.Bytes.Equals*"></a>
+
+  <h3 id="Utils_Objects_Bytes_Equals_System_Object_" data-uid="Utils.Objects.Bytes.Equals(System.Object)">
+  Equals(object)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/Bytes.cs/#L327"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Indicates whether this instance and a specified object are equal.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override bool Equals(object obj)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>obj</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></dt>
+    <dd><p>The object to compare with the current instance.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if <code class="paramref">obj</code> and this instance are the same type and represent the same value; otherwise, <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_Bytes_Equals_" data-uid="Utils.Objects.Bytes.Equals*"></a>
+
+  <h3 id="Utils_Objects_Bytes_Equals_Utils_Objects_Bytes_" data-uid="Utils.Objects.Bytes.Equals(Utils.Objects.Bytes)">
+  Equals(Bytes)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/Bytes.cs/#L346"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether the specified <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a> is equal to the current <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool Equals(Bytes other)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>other</code> <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a></dt>
+    <dd><p>Another <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a> to compare.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if both contain identical byte sequences; otherwise <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_Bytes_GetEnumerator_" data-uid="Utils.Objects.Bytes.GetEnumerator*"></a>
+
+  <h3 id="Utils_Objects_Bytes_GetEnumerator" data-uid="Utils.Objects.Bytes.GetEnumerator">
+  GetEnumerator()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/Bytes.cs/#L127"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns an enumerator that iterates through the byte array.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public IEnumerator&lt;byte&gt; GetEnumerator()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerator-1">IEnumerator</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_Bytes_GetHashCode_" data-uid="Utils.Objects.Bytes.GetHashCode*"></a>
+
+  <h3 id="Utils_Objects_Bytes_GetHashCode" data-uid="Utils.Objects.Bytes.GetHashCode">
+  GetHashCode()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/Bytes.cs/#L324"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns the hash code for this instance.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override int GetHashCode()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>A 32-bit signed integer that is the hash code for this instance.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_Bytes_Parse_" data-uid="Utils.Objects.Bytes.Parse*"></a>
+
+  <h3 id="Utils_Objects_Bytes_Parse_System_String_" data-uid="Utils.Objects.Bytes.Parse(System.String)">
+  Parse(string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/Bytes.cs/#L486"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Creates a <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a> object from a string of hexadecimal numbers
+separated by spaces or common delimiters.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Bytes Parse(string s)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>s</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>A string containing hexadecimal numbers to parse.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Objects.Bytes.html">Bytes</a></dt>
+    <dd><p>A <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a> instance containing the parsed data.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.formatexception">FormatException</a></dt>
+    <dd><p>Thrown if the string contains invalid hexadecimal values.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Objects_Bytes_ToArray_" data-uid="Utils.Objects.Bytes.ToArray*"></a>
+
+  <h3 id="Utils_Objects_Bytes_ToArray" data-uid="Utils.Objects.Bytes.ToArray">
+  ToArray()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/Bytes.cs/#L113"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns a copy of the underlying byte array.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public byte[] ToArray()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
+    <dd><p>A new <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a> array with the same contents.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_Bytes_ToString_" data-uid="Utils.Objects.Bytes.ToString*"></a>
+
+  <h3 id="Utils_Objects_Bytes_ToString" data-uid="Utils.Objects.Bytes.ToString">
+  ToString()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/Bytes.cs/#L469"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns a string that represents the byte array in hexadecimal format.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override string ToString()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <h2 class="section" id="operators">Operators
+</h2>
+
+
+  <a id="Utils_Objects_Bytes_op_Addition_" data-uid="Utils.Objects.Bytes.op_Addition*"></a>
+
+  <h3 id="Utils_Objects_Bytes_op_Addition_System_Byte___Utils_Objects_Bytes_" data-uid="Utils.Objects.Bytes.op_Addition(System.Byte[],Utils.Objects.Bytes)">
+  operator +(byte[], Bytes)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/Bytes.cs/#L317"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Concatenates a raw <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a> array with a <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a> instance.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Bytes operator +(byte[] left, Bytes right)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>left</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
+    <dd><p>The raw array to prepend.</p>
+</dd>
+    <dt><code>right</code> <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a></dt>
+    <dd><p>The wrapped byte sequence.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Objects.Bytes.html">Bytes</a></dt>
+    <dd><p>A new <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a> containing the bytes of both operands.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_Bytes_op_Addition_" data-uid="Utils.Objects.Bytes.op_Addition*"></a>
+
+  <h3 id="Utils_Objects_Bytes_op_Addition_Utils_Objects_Bytes_System_Byte___" data-uid="Utils.Objects.Bytes.op_Addition(Utils.Objects.Bytes,System.Byte[])">
+  operator +(Bytes, byte[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/Bytes.cs/#L309"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Concatenates a <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a> instance with a raw <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a> array.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Bytes operator +(Bytes left, byte[] right)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>left</code> <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a></dt>
+    <dd><p>The wrapped byte sequence.</p>
+</dd>
+    <dt><code>right</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
+    <dd><p>The raw array to append.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Objects.Bytes.html">Bytes</a></dt>
+    <dd><p>A new <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a> containing the bytes of both operands.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_Bytes_op_Addition_" data-uid="Utils.Objects.Bytes.op_Addition*"></a>
+
+  <h3 id="Utils_Objects_Bytes_op_Addition_Utils_Objects_Bytes_Utils_Objects_Bytes_" data-uid="Utils.Objects.Bytes.op_Addition(Utils.Objects.Bytes,Utils.Objects.Bytes)">
+  operator +(Bytes, Bytes)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/Bytes.cs/#L301"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Concatenates two <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a> instances into a new sequence.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Bytes operator +(Bytes left, Bytes right)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>left</code> <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a></dt>
+    <dd><p>The first operand.</p>
+</dd>
+    <dt><code>right</code> <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a></dt>
+    <dd><p>The second operand.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Objects.Bytes.html">Bytes</a></dt>
+    <dd><p>A new <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a> containing the bytes of both operands.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_Bytes_op_Equality_" data-uid="Utils.Objects.Bytes.op_Equality*"></a>
+
+  <h3 id="Utils_Objects_Bytes_op_Equality_System_Byte___Utils_Objects_Bytes_" data-uid="Utils.Objects.Bytes.op_Equality(System.Byte[],Utils.Objects.Bytes)">
+  operator ==(byte[], Bytes)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/Bytes.cs/#L173"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether a raw <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a> array equals a <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a> instance.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator ==(byte[] left, Bytes right)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>left</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
+    <dd><p>The raw array to compare.</p>
+</dd>
+    <dt><code>right</code> <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a></dt>
+    <dd><p>The wrapped byte sequence to compare.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when both operands contain the same bytes.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_Bytes_op_Equality_" data-uid="Utils.Objects.Bytes.op_Equality*"></a>
+
+  <h3 id="Utils_Objects_Bytes_op_Equality_Utils_Objects_Bytes_System_Byte___" data-uid="Utils.Objects.Bytes.op_Equality(Utils.Objects.Bytes,System.Byte[])">
+  operator ==(Bytes, byte[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/Bytes.cs/#L165"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether a <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a> instance equals a raw <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a> array.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator ==(Bytes left, byte[] right)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>left</code> <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a></dt>
+    <dd><p>The wrapped byte sequence to compare.</p>
+</dd>
+    <dt><code>right</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
+    <dd><p>The raw array to compare.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when both operands contain the same bytes.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_Bytes_op_Equality_" data-uid="Utils.Objects.Bytes.op_Equality*"></a>
+
+  <h3 id="Utils_Objects_Bytes_op_Equality_Utils_Objects_Bytes_Utils_Objects_Bytes_" data-uid="Utils.Objects.Bytes.op_Equality(Utils.Objects.Bytes,Utils.Objects.Bytes)">
+  operator ==(Bytes, Bytes)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/Bytes.cs/#L157"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether two <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a> instances represent identical sequences.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator ==(Bytes left, Bytes right)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>left</code> <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a></dt>
+    <dd><p>The first byte sequence to compare.</p>
+</dd>
+    <dt><code>right</code> <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a></dt>
+    <dd><p>The second byte sequence to compare.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when both operands contain the same bytes.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_Bytes_op_GreaterThan_" data-uid="Utils.Objects.Bytes.op_GreaterThan*"></a>
+
+  <h3 id="Utils_Objects_Bytes_op_GreaterThan_System_Byte___Utils_Objects_Bytes_" data-uid="Utils.Objects.Bytes.op_GreaterThan(System.Byte[],Utils.Objects.Bytes)">
+  operator &gt;(byte[], Bytes)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/Bytes.cs/#L221"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether a raw <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a> array is lexicographically greater than a wrapped sequence.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator &gt;(byte[] left, Bytes right)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>left</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
+    <dd><p>The raw array to compare.</p>
+</dd>
+    <dt><code>right</code> <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a></dt>
+    <dd><p>The wrapped byte sequence to compare.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when <code class="paramref">left</code> sorts after <code class="paramref">right</code>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_Bytes_op_GreaterThan_" data-uid="Utils.Objects.Bytes.op_GreaterThan*"></a>
+
+  <h3 id="Utils_Objects_Bytes_op_GreaterThan_Utils_Objects_Bytes_System_Byte___" data-uid="Utils.Objects.Bytes.op_GreaterThan(Utils.Objects.Bytes,System.Byte[])">
+  operator &gt;(Bytes, byte[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/Bytes.cs/#L213"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether a <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a> instance is lexicographically greater than a raw array.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator &gt;(Bytes left, byte[] right)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>left</code> <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a></dt>
+    <dd><p>The wrapped byte sequence to compare.</p>
+</dd>
+    <dt><code>right</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
+    <dd><p>The raw array to compare.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when <code class="paramref">left</code> sorts after <code class="paramref">right</code>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_Bytes_op_GreaterThan_" data-uid="Utils.Objects.Bytes.op_GreaterThan*"></a>
+
+  <h3 id="Utils_Objects_Bytes_op_GreaterThan_Utils_Objects_Bytes_Utils_Objects_Bytes_" data-uid="Utils.Objects.Bytes.op_GreaterThan(Utils.Objects.Bytes,Utils.Objects.Bytes)">
+  operator &gt;(Bytes, Bytes)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/Bytes.cs/#L205"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether one <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a> instance is lexicographically greater than another.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator &gt;(Bytes left, Bytes right)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>left</code> <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a></dt>
+    <dd><p>The first byte sequence to compare.</p>
+</dd>
+    <dt><code>right</code> <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a></dt>
+    <dd><p>The second byte sequence to compare.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when <code class="paramref">left</code> sorts after <code class="paramref">right</code>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_Bytes_op_GreaterThanOrEqual_" data-uid="Utils.Objects.Bytes.op_GreaterThanOrEqual*"></a>
+
+  <h3 id="Utils_Objects_Bytes_op_GreaterThanOrEqual_System_Byte___Utils_Objects_Bytes_" data-uid="Utils.Objects.Bytes.op_GreaterThanOrEqual(System.Byte[],Utils.Objects.Bytes)">
+  operator &gt;=(byte[], Bytes)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/Bytes.cs/#L269"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether a raw <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a> array is lexicographically greater than or equal to a wrapped sequence.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator &gt;=(byte[] left, Bytes right)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>left</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
+    <dd><p>The raw array to compare.</p>
+</dd>
+    <dt><code>right</code> <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a></dt>
+    <dd><p>The wrapped byte sequence to compare.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when <code class="paramref">left</code> sorts after or equals <code class="paramref">right</code>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_Bytes_op_GreaterThanOrEqual_" data-uid="Utils.Objects.Bytes.op_GreaterThanOrEqual*"></a>
+
+  <h3 id="Utils_Objects_Bytes_op_GreaterThanOrEqual_Utils_Objects_Bytes_System_Byte___" data-uid="Utils.Objects.Bytes.op_GreaterThanOrEqual(Utils.Objects.Bytes,System.Byte[])">
+  operator &gt;=(Bytes, byte[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/Bytes.cs/#L261"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether a <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a> instance is lexicographically greater than or equal to a raw array.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator &gt;=(Bytes left, byte[] right)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>left</code> <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a></dt>
+    <dd><p>The wrapped byte sequence to compare.</p>
+</dd>
+    <dt><code>right</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
+    <dd><p>The raw array to compare.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when <code class="paramref">left</code> sorts after or equals <code class="paramref">right</code>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_Bytes_op_GreaterThanOrEqual_" data-uid="Utils.Objects.Bytes.op_GreaterThanOrEqual*"></a>
+
+  <h3 id="Utils_Objects_Bytes_op_GreaterThanOrEqual_Utils_Objects_Bytes_Utils_Objects_Bytes_" data-uid="Utils.Objects.Bytes.op_GreaterThanOrEqual(Utils.Objects.Bytes,Utils.Objects.Bytes)">
+  operator &gt;=(Bytes, Bytes)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/Bytes.cs/#L253"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether one <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a> instance is lexicographically greater than or equal to another.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator &gt;=(Bytes left, Bytes right)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>left</code> <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a></dt>
+    <dd><p>The first byte sequence to compare.</p>
+</dd>
+    <dt><code>right</code> <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a></dt>
+    <dd><p>The second byte sequence to compare.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when <code class="paramref">left</code> sorts after or equals <code class="paramref">right</code>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_Bytes_op_Implicit_" data-uid="Utils.Objects.Bytes.op_Implicit*"></a>
+
+  <h3 id="Utils_Objects_Bytes_op_Implicit_System_Byte____Utils_Objects_Bytes" data-uid="Utils.Objects.Bytes.op_Implicit(System.Byte[])~Utils.Objects.Bytes">
+  implicit operator Bytes(byte[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/Bytes.cs/#L144"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Implicitly converts a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a> array to a <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a> instance.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static implicit operator Bytes(byte[] bytes)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>bytes</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Objects.Bytes.html">Bytes</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_Bytes_op_Implicit_" data-uid="Utils.Objects.Bytes.op_Implicit*"></a>
+
+  <h3 id="Utils_Objects_Bytes_op_Implicit_Utils_Objects_Bytes__System_Byte__" data-uid="Utils.Objects.Bytes.op_Implicit(Utils.Objects.Bytes)~System.Byte[]">
+  implicit operator byte[](Bytes)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/Bytes.cs/#L149"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Implicitly converts a <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a> instance to a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a> array.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static implicit operator byte[](Bytes bytes)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>bytes</code> <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_Bytes_op_Inequality_" data-uid="Utils.Objects.Bytes.op_Inequality*"></a>
+
+  <h3 id="Utils_Objects_Bytes_op_Inequality_System_Byte___Utils_Objects_Bytes_" data-uid="Utils.Objects.Bytes.op_Inequality(System.Byte[],Utils.Objects.Bytes)">
+  operator !=(byte[], Bytes)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/Bytes.cs/#L197"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether a raw <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a> array differs from a <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a> instance.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator !=(byte[] left, Bytes right)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>left</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
+    <dd><p>The raw array to compare.</p>
+</dd>
+    <dt><code>right</code> <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a></dt>
+    <dd><p>The wrapped byte sequence to compare.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when operands differ.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_Bytes_op_Inequality_" data-uid="Utils.Objects.Bytes.op_Inequality*"></a>
+
+  <h3 id="Utils_Objects_Bytes_op_Inequality_Utils_Objects_Bytes_System_Byte___" data-uid="Utils.Objects.Bytes.op_Inequality(Utils.Objects.Bytes,System.Byte[])">
+  operator !=(Bytes, byte[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/Bytes.cs/#L189"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether a <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a> instance differs from a raw <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a> array.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator !=(Bytes left, byte[] right)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>left</code> <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a></dt>
+    <dd><p>The wrapped byte sequence to compare.</p>
+</dd>
+    <dt><code>right</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
+    <dd><p>The raw array to compare.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when operands differ.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_Bytes_op_Inequality_" data-uid="Utils.Objects.Bytes.op_Inequality*"></a>
+
+  <h3 id="Utils_Objects_Bytes_op_Inequality_Utils_Objects_Bytes_Utils_Objects_Bytes_" data-uid="Utils.Objects.Bytes.op_Inequality(Utils.Objects.Bytes,Utils.Objects.Bytes)">
+  operator !=(Bytes, Bytes)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/Bytes.cs/#L181"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether two <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a> instances do not represent identical sequences.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator !=(Bytes left, Bytes right)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>left</code> <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a></dt>
+    <dd><p>The first byte sequence to compare.</p>
+</dd>
+    <dt><code>right</code> <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a></dt>
+    <dd><p>The second byte sequence to compare.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when operands differ.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_Bytes_op_LessThan_" data-uid="Utils.Objects.Bytes.op_LessThan*"></a>
+
+  <h3 id="Utils_Objects_Bytes_op_LessThan_System_Byte___Utils_Objects_Bytes_" data-uid="Utils.Objects.Bytes.op_LessThan(System.Byte[],Utils.Objects.Bytes)">
+  operator &lt;(byte[], Bytes)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/Bytes.cs/#L245"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether a raw <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a> array is lexicographically less than a wrapped sequence.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator &lt;(byte[] left, Bytes right)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>left</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
+    <dd><p>The raw array to compare.</p>
+</dd>
+    <dt><code>right</code> <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a></dt>
+    <dd><p>The wrapped byte sequence to compare.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when <code class="paramref">left</code> sorts before <code class="paramref">right</code>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_Bytes_op_LessThan_" data-uid="Utils.Objects.Bytes.op_LessThan*"></a>
+
+  <h3 id="Utils_Objects_Bytes_op_LessThan_Utils_Objects_Bytes_System_Byte___" data-uid="Utils.Objects.Bytes.op_LessThan(Utils.Objects.Bytes,System.Byte[])">
+  operator &lt;(Bytes, byte[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/Bytes.cs/#L237"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether a <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a> instance is lexicographically less than a raw array.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator &lt;(Bytes left, byte[] right)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>left</code> <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a></dt>
+    <dd><p>The wrapped byte sequence to compare.</p>
+</dd>
+    <dt><code>right</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
+    <dd><p>The raw array to compare.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when <code class="paramref">left</code> sorts before <code class="paramref">right</code>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_Bytes_op_LessThan_" data-uid="Utils.Objects.Bytes.op_LessThan*"></a>
+
+  <h3 id="Utils_Objects_Bytes_op_LessThan_Utils_Objects_Bytes_Utils_Objects_Bytes_" data-uid="Utils.Objects.Bytes.op_LessThan(Utils.Objects.Bytes,Utils.Objects.Bytes)">
+  operator &lt;(Bytes, Bytes)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/Bytes.cs/#L229"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether one <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a> instance is lexicographically less than another.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator &lt;(Bytes left, Bytes right)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>left</code> <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a></dt>
+    <dd><p>The first byte sequence to compare.</p>
+</dd>
+    <dt><code>right</code> <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a></dt>
+    <dd><p>The second byte sequence to compare.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when <code class="paramref">left</code> sorts before <code class="paramref">right</code>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_Bytes_op_LessThanOrEqual_" data-uid="Utils.Objects.Bytes.op_LessThanOrEqual*"></a>
+
+  <h3 id="Utils_Objects_Bytes_op_LessThanOrEqual_System_Byte___Utils_Objects_Bytes_" data-uid="Utils.Objects.Bytes.op_LessThanOrEqual(System.Byte[],Utils.Objects.Bytes)">
+  operator &lt;=(byte[], Bytes)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/Bytes.cs/#L293"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether a raw <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a> array is lexicographically less than or equal to a wrapped sequence.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator &lt;=(byte[] left, Bytes right)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>left</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
+    <dd><p>The raw array to compare.</p>
+</dd>
+    <dt><code>right</code> <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a></dt>
+    <dd><p>The wrapped byte sequence to compare.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when <code class="paramref">left</code> sorts before or equals <code class="paramref">right</code>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_Bytes_op_LessThanOrEqual_" data-uid="Utils.Objects.Bytes.op_LessThanOrEqual*"></a>
+
+  <h3 id="Utils_Objects_Bytes_op_LessThanOrEqual_Utils_Objects_Bytes_System_Byte___" data-uid="Utils.Objects.Bytes.op_LessThanOrEqual(Utils.Objects.Bytes,System.Byte[])">
+  operator &lt;=(Bytes, byte[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/Bytes.cs/#L285"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether a <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a> instance is lexicographically less than or equal to a raw array.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator &lt;=(Bytes left, byte[] right)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>left</code> <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a></dt>
+    <dd><p>The wrapped byte sequence to compare.</p>
+</dd>
+    <dt><code>right</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
+    <dd><p>The raw array to compare.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when <code class="paramref">left</code> sorts before or equals <code class="paramref">right</code>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_Bytes_op_LessThanOrEqual_" data-uid="Utils.Objects.Bytes.op_LessThanOrEqual*"></a>
+
+  <h3 id="Utils_Objects_Bytes_op_LessThanOrEqual_Utils_Objects_Bytes_Utils_Objects_Bytes_" data-uid="Utils.Objects.Bytes.op_LessThanOrEqual(Utils.Objects.Bytes,Utils.Objects.Bytes)">
+  operator &lt;=(Bytes, Bytes)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/Bytes.cs/#L277"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether one <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a> instance is lexicographically less than or equal to another.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator &lt;=(Bytes left, Bytes right)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>left</code> <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a></dt>
+    <dd><p>The first byte sequence to compare.</p>
+</dd>
+    <dt><code>right</code> <a class="xref" href="Utils.Objects.Bytes.html">Bytes</a></dt>
+    <dd><p>The second byte sequence to compare.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when <code class="paramref">left</code> sorts before or equals <code class="paramref">right</code>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Objects/Bytes.cs/#L11" class="edit-link">Edit this page</a>
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

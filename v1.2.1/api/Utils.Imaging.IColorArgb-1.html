@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Interface IColorArgb&lt;T&gt; | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Interface IColorArgb&lt;T&gt; | omy.Utils Documentation ">
+      
+      <meta name="description" content="Represents a color value expressed through alpha, red, green, and blue channels.">
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_Imaging_IColorArgb_1.md&amp;value=---%0Auid%3A%20Utils.Imaging.IColorArgb%601%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="Utils.Imaging.IColorArgb`1">
+
+
+
+  <h1 id="Utils_Imaging_IColorArgb_1" data-uid="Utils.Imaging.IColorArgb`1" class="text-break">
+Interface IColorArgb&lt;T&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Imaging/IImageAccessor.cs/#L55"><i class="bi bi-code-slash"></i></a>
+  </h1>
+
+  <div class="facts text-secondary">
+    <dl><dt>Namespace</dt><dd><a class="xref" href="Utils.html">Utils</a>.<a class="xref" href="Utils.Imaging.html">Imaging</a></dd></dl>
+  <dl><dt>Assembly</dt><dd>Utils.Imaging.dll</dd></dl>
+  </div>
+
+  <div class="markdown summary"><p>Represents a color value expressed through alpha, red, green, and blue channels.</p>
+</div>
+  <div class="markdown conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public interface IColorArgb&lt;T&gt; where T : struct, INumber&lt;T&gt;</code></pre>
+  </div>
+
+
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Numeric type describing the channel precision.</p>
+</dd>
+  </dl>
+
+
+
+
+
+  <dl class="typelist extensionMethods">
+    <dt>Extension Methods</dt>
+    <dd>
+  <div>
+      <a class="xref" href="Utils.Data.DataUtils.html#Utils_Data_DataUtils_ToDbValue_System_Object_">DataUtils.ToDbValue(object?)</a>
+  </div>
+  </dd></dl>
+
+
+
+
+
+  <h2 class="section" id="properties">Properties
+</h2>
+
+
+  <a id="Utils_Imaging_IColorArgb_1_Alpha_" data-uid="Utils.Imaging.IColorArgb`1.Alpha*"></a>
+
+  <h3 id="Utils_Imaging_IColorArgb_1_Alpha" data-uid="Utils.Imaging.IColorArgb`1.Alpha">
+  Alpha
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Imaging/IImageAccessor.cs/#L71"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the alpha channel component.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">T Alpha { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><span class="xref">T</span></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Imaging_IColorArgb_1_Blue_" data-uid="Utils.Imaging.IColorArgb`1.Blue*"></a>
+
+  <h3 id="Utils_Imaging_IColorArgb_1_Blue" data-uid="Utils.Imaging.IColorArgb`1.Blue">
+  Blue
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Imaging/IImageAccessor.cs/#L86"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the blue channel component.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">T Blue { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><span class="xref">T</span></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Imaging_IColorArgb_1_Green_" data-uid="Utils.Imaging.IColorArgb`1.Green*"></a>
+
+  <h3 id="Utils_Imaging_IColorArgb_1_Green" data-uid="Utils.Imaging.IColorArgb`1.Green">
+  Green
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Imaging/IImageAccessor.cs/#L81"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the green channel component.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">T Green { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><span class="xref">T</span></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Imaging_IColorArgb_1_MaxValue_" data-uid="Utils.Imaging.IColorArgb`1.MaxValue*"></a>
+
+  <h3 id="Utils_Imaging_IColorArgb_1_MaxValue" data-uid="Utils.Imaging.IColorArgb`1.MaxValue">
+  MaxValue
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Imaging/IImageAccessor.cs/#L66"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the maximum representable value for each channel.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static abstract T MaxValue { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><span class="xref">T</span></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Imaging_IColorArgb_1_MinValue_" data-uid="Utils.Imaging.IColorArgb`1.MinValue*"></a>
+
+  <h3 id="Utils_Imaging_IColorArgb_1_MinValue" data-uid="Utils.Imaging.IColorArgb`1.MinValue">
+  MinValue
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Imaging/IImageAccessor.cs/#L61"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the minimum representable value for each channel.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static T MinValue { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><span class="xref">T</span></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Imaging_IColorArgb_1_Red_" data-uid="Utils.Imaging.IColorArgb`1.Red*"></a>
+
+  <h3 id="Utils_Imaging_IColorArgb_1_Red" data-uid="Utils.Imaging.IColorArgb`1.Red">
+  Red
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Imaging/IImageAccessor.cs/#L76"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the red channel component.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">T Red { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><span class="xref">T</span></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h2 class="section" id="methods">Methods
+</h2>
+
+
+  <a id="Utils_Imaging_IColorArgb_1_Add_" data-uid="Utils.Imaging.IColorArgb`1.Add*"></a>
+
+  <h3 id="Utils_Imaging_IColorArgb_1_Add_Utils_Imaging_IColorArgb__0__" data-uid="Utils.Imaging.IColorArgb`1.Add(Utils.Imaging.IColorArgb{`0})">
+  Add(IColorArgb&lt;T&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Imaging/IImageAccessor.cs/#L100"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Adds the channels of <code class="paramref">other</code> to this color and returns the result.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">IColorArgb&lt;T&gt; Add(IColorArgb&lt;T&gt; other)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>other</code> <a class="xref" href="Utils.Imaging.IColorArgb-1.html">IColorArgb</a>&lt;T&gt;</dt>
+    <dd><p>Color to add channel values from.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Imaging.IColorArgb-1.html">IColorArgb</a>&lt;T&gt;</dt>
+    <dd><p>The channel-wise sum.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Imaging_IColorArgb_1_Deconstruct_" data-uid="Utils.Imaging.IColorArgb`1.Deconstruct*"></a>
+
+  <h3 id="Utils_Imaging_IColorArgb_1_Deconstruct__0___0___0__" data-uid="Utils.Imaging.IColorArgb`1.Deconstruct(`0@,`0@,`0@)">
+  Deconstruct(out T, out T, out T)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Imaging/IImageAccessor.cs/#L130"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Deconstructs the color into its RGB components, discarding alpha.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">void Deconstruct(out T red, out T green, out T blue)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>red</code> <span class="xref">T</span></dt>
+    <dd><p>Receives the red component.</p>
+</dd>
+    <dt><code>green</code> <span class="xref">T</span></dt>
+    <dd><p>Receives the green component.</p>
+</dd>
+    <dt><code>blue</code> <span class="xref">T</span></dt>
+    <dd><p>Receives the blue component.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Imaging_IColorArgb_1_Deconstruct_" data-uid="Utils.Imaging.IColorArgb`1.Deconstruct*"></a>
+
+  <h3 id="Utils_Imaging_IColorArgb_1_Deconstruct__0___0___0___0__" data-uid="Utils.Imaging.IColorArgb`1.Deconstruct(`0@,`0@,`0@,`0@)">
+  Deconstruct(out T, out T, out T, out T)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Imaging/IImageAccessor.cs/#L116"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Deconstructs the color into its alpha and RGB components.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">void Deconstruct(out T alpha, out T red, out T green, out T blue)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>alpha</code> <span class="xref">T</span></dt>
+    <dd><p>Receives the alpha component.</p>
+</dd>
+    <dt><code>red</code> <span class="xref">T</span></dt>
+    <dd><p>Receives the red component.</p>
+</dd>
+    <dt><code>green</code> <span class="xref">T</span></dt>
+    <dd><p>Receives the green component.</p>
+</dd>
+    <dt><code>blue</code> <span class="xref">T</span></dt>
+    <dd><p>Receives the blue component.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Imaging_IColorArgb_1_Over_" data-uid="Utils.Imaging.IColorArgb`1.Over*"></a>
+
+  <h3 id="Utils_Imaging_IColorArgb_1_Over_Utils_Imaging_IColorArgb__0__" data-uid="Utils.Imaging.IColorArgb`1.Over(Utils.Imaging.IColorArgb{`0})">
+  Over(IColorArgb&lt;T&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Imaging/IImageAccessor.cs/#L93"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Blends this color over <code class="paramref">other</code> using standard alpha compositing.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">IColorArgb&lt;T&gt; Over(IColorArgb&lt;T&gt; other)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>other</code> <a class="xref" href="Utils.Imaging.IColorArgb-1.html">IColorArgb</a>&lt;T&gt;</dt>
+    <dd><p>Underlying color to blend onto.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Imaging.IColorArgb-1.html">IColorArgb</a>&lt;T&gt;</dt>
+    <dd><p>The composited color.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Imaging_IColorArgb_1_Substract_" data-uid="Utils.Imaging.IColorArgb`1.Substract*"></a>
+
+  <h3 id="Utils_Imaging_IColorArgb_1_Substract_Utils_Imaging_IColorArgb__0__" data-uid="Utils.Imaging.IColorArgb`1.Substract(Utils.Imaging.IColorArgb{`0})">
+  Substract(IColorArgb&lt;T&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Imaging/IImageAccessor.cs/#L107"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Subtracts the channels of <code class="paramref">other</code> from this color and returns the result.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">IColorArgb&lt;T&gt; Substract(IColorArgb&lt;T&gt; other)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>other</code> <a class="xref" href="Utils.Imaging.IColorArgb-1.html">IColorArgb</a>&lt;T&gt;</dt>
+    <dd><p>Color providing channel values to subtract.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Imaging.IColorArgb-1.html">IColorArgb</a>&lt;T&gt;</dt>
+    <dd><p>The channel-wise difference.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils.Imaging/Imaging/IImageAccessor.cs/#L55" class="edit-link">Edit this page</a>
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

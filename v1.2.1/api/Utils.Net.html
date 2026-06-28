@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Namespace Utils.Net | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Namespace Utils.Net | omy.Utils Documentation ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="Utils.Net">
+
+  <h1 id="Utils_Net" data-uid="Utils.Net" class="text-break">Namespace Utils.Net</h1>
+  <div class="markdown level0 summary"></div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="markdown level0 remarks"></div>
+
+    <h3 id="classes">
+Classes
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.ArpUtils.html">ArpUtils</a></dt>
+      <dd><p>Provides helpers to build ARP packets.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.CommandContext.html">CommandContext</a></dt>
+      <dd><p>Provides access to the server contexts during command execution.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.CommandResponseClient.html">CommandResponseClient</a></dt>
+      <dd><p>Provides a base client for text based command/response protocols.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.CommandResponseServer.html">CommandResponseServer</a></dt>
+      <dd><p>Provides a base server for text based command/response protocols.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNSLookup.html">DNSLookup</a></dt>
+      <dd><p>A class for performing DNS lookups using specified name servers.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.EchoClient.html">EchoClient</a></dt>
+      <dd><p>Client for the TCP Echo protocol (RFC 862).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.IcmpUtils.html">IcmpUtils</a></dt>
+      <dd><p>Provides methods for sending and receiving ICMP packets, including Echo Requests and Traceroute.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.IpRange.html">IpRange</a></dt>
+      <dd><p>Represents a contiguous range of IP addresses. Instances are immutable and
+may be constructed from a pair of addresses or from a single address with a
+prefix length. The range can be enumerated to list each address it contains.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.MailUtils.html">MailUtils</a></dt>
+      <dd><p>Provides helper methods for parsing addresses and populating <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a> recipients.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.MimeDocument.html">MimeDocument</a></dt>
+      <dd><p>Represents a MIME document composed of multiple parts.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.MimePart.html">MimePart</a></dt>
+      <dd><p>Represents a single MIME part.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.MimePartConverter.html">MimePartConverter</a></dt>
+      <dd><p>Provides conversion of <a class="xref" href="Utils.Net.MimePart.html">MimePart</a> contents based on registered converters.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.MimePartFactory.html">MimePartFactory</a></dt>
+      <dd><p>Factory used to convert objects to <a class="xref" href="Utils.Net.MimePart.html">MimePart</a> instances.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.MimeReader.html">MimeReader</a></dt>
+      <dd><p>Provides methods for reading <a class="xref" href="Utils.Net.MimeDocument.html">MimeDocument</a> instances from various sources.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.MimeType.html">MimeType</a></dt>
+      <dd><p>Represents a MIME type with optional parameters.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.MimeWriter.html">MimeWriter</a></dt>
+      <dd><p>Provides methods for writing <a class="xref" href="Utils.Net.MimeDocument.html">MimeDocument</a> instances to various targets.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.NetworkParameters.html">NetworkParameters</a></dt>
+      <dd><p>Provides access to host networking metadata such as interfaces and DNS servers.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.NntpClient.html">NntpClient</a></dt>
+      <dd><p>Client for the Network News Transfer Protocol (NNTP).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.NntpServer.html">NntpServer</a></dt>
+      <dd><p>Server for the Network News Transfer Protocol (NNTP).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.NtpClient.html">NtpClient</a></dt>
+      <dd><p>Client for the Network Time Protocol (RFC 5905).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.Pop3Client.html">Pop3Client</a></dt>
+      <dd><p>Client for the Post Office Protocol version 3 (POP3).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.Pop3Server.html">Pop3Server</a></dt>
+      <dd><p>Server for the Post Office Protocol version 3 (POP3).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.QueryString.html">QueryString</a></dt>
+      <dd><p>A collection class representing the key-value pairs in a query string,
+allowing multiple values per key and intuitive syntax for manipulation.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.QueryString.QueryValues.html">QueryString.QueryValues</a></dt>
+      <dd><p>A helper class for working with multiple query values under a single key.
+It can be used like a list or implicitly converted to a comma-separated string.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.QuoteOfTheDayClient.html">QuoteOfTheDayClient</a></dt>
+      <dd><p>Client for the Quote of the Day protocol (RFC 865).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.SmtpAuthenticationResult.html">SmtpAuthenticationResult</a></dt>
+      <dd><p>Represents the result of an SMTP authentication attempt.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.SmtpClient.html">SmtpClient</a></dt>
+      <dd><p>Client for the Simple Mail Transfer Protocol (SMTP).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.SmtpMessage.html">SmtpMessage</a></dt>
+      <dd><p>Represents a message exchanged via SMTP.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.SmtpServer.html">SmtpServer</a></dt>
+      <dd><p>Simple server implementation for the Simple Mail Transfer Protocol (SMTP).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.TimeProtocolClient.html">TimeProtocolClient</a></dt>
+      <dd><p>Client for the Time protocol (RFC 868).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.UriBuilderEx.html">UriBuilderEx</a></dt>
+      <dd><p>Provides a convenient way to construct and manipulate URIs, including user credentials, query parameters, and fragments.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.WakeOnLan.html">WakeOnLan</a></dt>
+      <dd><p>Provides helpers to send Wake-on-LAN magic packets.</p>
+</dd>
+    </dl>
+    <h3 id="structs">
+Structs
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.ServerResponse.html">ServerResponse</a></dt>
+      <dd><p>Represents a single server response line consisting of a code, its severity and an optional message.</p>
+</dd>
+    </dl>
+    <h3 id="interfaces">
+Interfaces
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.IMimeFormatter.html">IMimeFormatter</a></dt>
+      <dd><p>Defines a serializer for <a class="xref" href="Utils.Net.MimeDocument.html">MimeDocument</a> instances.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.IMimePartConverter.html">IMimePartConverter</a></dt>
+      <dd><p>Defines a converter capable of converting a MIME part body to a target type.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.IMimePartConverter-1.html">IMimePartConverter&lt;T&gt;</a></dt>
+      <dd><p>Generic interface implemented by converters supporting a specific target type.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.IMimePartSerializer.html">IMimePartSerializer</a></dt>
+      <dd><p>Defines a converter that creates <a class="xref" href="Utils.Net.MimePart.html">MimePart</a> instances from objects.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.IMimePartSerializer-1.html">IMimePartSerializer&lt;T&gt;</a></dt>
+      <dd><p>Typed serializer for values of type <code class="typeparamref">T</code>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.INntpArticleStore.html">INntpArticleStore</a></dt>
+      <dd><p>Provides access to newsgroup articles for the NNTP server.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.IPop3Mailbox.html">IPop3Mailbox</a></dt>
+      <dd><p>Defines operations required by a POP3 server to access mailbox data.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.ISmtpAuthenticator.html">ISmtpAuthenticator</a></dt>
+      <dd><p>Provides authentication services for the <a class="xref" href="Utils.Net.SmtpServer.html">SmtpServer</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.ISmtpMessageStore.html">ISmtpMessageStore</a></dt>
+      <dd><p>Defines the interface used by <a class="xref" href="Utils.Net.SmtpServer.html">SmtpServer</a> to exchange messages.</p>
+</dd>
+    </dl>
+    <h3 id="enums">
+Enums
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.ResponseSeverity.html">ResponseSeverity</a></dt>
+      <dd><p>Indicates the severity of a server response.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.SmtpAuthenticationMechanism.html">SmtpAuthenticationMechanism</a></dt>
+      <dd><p>Specifies the authentication mechanism used with the <a class="xref" href="Utils.Net.SmtpClient.html">SmtpClient</a> and <a class="xref" href="Utils.Net.SmtpServer.html">SmtpServer</a>.</p>
+</dd>
+    </dl>
+
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

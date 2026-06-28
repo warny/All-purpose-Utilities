@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Class MailUtils | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Class MailUtils | omy.Utils Documentation ">
+      
+      <meta name="description" content="Provides helper methods for parsing addresses and populating  recipients.">
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="Utils.Net.MailUtils">
+
+
+
+  <h1 id="Utils_Net_MailUtils" data-uid="Utils.Net.MailUtils" class="text-break">
+Class MailUtils  
+  </h1>
+
+  <div class="facts text-secondary">
+    <dl><dt>Namespace</dt><dd><a class="xref" href="Utils.html">Utils</a>.<a class="xref" href="Utils.Net.html">Net</a></dd></dl>
+  <dl><dt>Assembly</dt><dd>Utils.dll</dd></dl>
+  </div>
+
+  <div class="markdown summary"><p>Provides helper methods for parsing addresses and populating <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a> recipients.</p>
+</div>
+  <div class="markdown conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static class MailUtils</code></pre>
+  </div>
+
+
+
+
+  <dl class="typelist inheritance">
+    <dt>Inheritance</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
+      <div><span class="xref">MailUtils</span></div>
+    </dd>
+  </dl>
+
+
+
+  <dl class="typelist inheritedMembers">
+    <dt>Inherited Members</dt>
+    <dd>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)">object.Equals(object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)">object.Equals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gethashcode">object.GetHashCode()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone">object.MemberwiseClone()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.tostring">object.ToString()</a>
+    </div>
+  </dd></dl>
+
+
+
+
+
+
+  <h2 class="section" id="methods">Methods
+</h2>
+
+
+  <a id="Utils_Net_MailUtils_AddRange_" data-uid="Utils.Net.MailUtils.AddRange*"></a>
+
+  <h3 id="Utils_Net_MailUtils_AddRange_System_Net_Mail_MailAddressCollection_System_Collections_Generic_IEnumerable_System_Net_Mail_MailAddress__" data-uid="Utils.Net.MailUtils.AddRange(System.Net.Mail.MailAddressCollection,System.Collections.Generic.IEnumerable{System.Net.Mail.MailAddress})">
+  AddRange(MailAddressCollection, IEnumerable&lt;MailAddress&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Net/MailUtils.cs/#L81"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Adds multiple <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailaddress">MailAddress</a> objects to this <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailaddresscollection">MailAddressCollection</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static void AddRange(this MailAddressCollection addresses, IEnumerable&lt;MailAddress&gt; mailAddresses)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>addresses</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailaddresscollection">MailAddressCollection</a></dt>
+    <dd><p>The mail address collection to extend.</p>
+</dd>
+    <dt><code>mailAddresses</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailaddress">MailAddress</a>&gt;</dt>
+    <dd><p>An enumeration of <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailaddress">MailAddress</a> objects to add.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_MailUtils_AddRange_" data-uid="Utils.Net.MailUtils.AddRange*"></a>
+
+  <h3 id="Utils_Net_MailUtils_AddRange_System_Net_Mail_MailAddressCollection_System_Collections_Generic_IEnumerable_System_String__" data-uid="Utils.Net.MailUtils.AddRange(System.Net.Mail.MailAddressCollection,System.Collections.Generic.IEnumerable{System.String})">
+  AddRange(MailAddressCollection, IEnumerable&lt;string&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Net/MailUtils.cs/#L104"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Adds multiple email addresses (as strings) to this <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailaddresscollection">MailAddressCollection</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static void AddRange(this MailAddressCollection addresses, IEnumerable&lt;string&gt; mailAddresses)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>addresses</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailaddresscollection">MailAddressCollection</a></dt>
+    <dd><p>The mail address collection to extend.</p>
+</dd>
+    <dt><code>mailAddresses</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;</dt>
+    <dd><p>An enumeration of email address strings.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_MailUtils_AddRange_" data-uid="Utils.Net.MailUtils.AddRange*"></a>
+
+  <h3 id="Utils_Net_MailUtils_AddRange_System_Net_Mail_MailAddressCollection_System_Net_Mail_MailAddress___" data-uid="Utils.Net.MailUtils.AddRange(System.Net.Mail.MailAddressCollection,System.Net.Mail.MailAddress[])">
+  AddRange(MailAddressCollection, params MailAddress[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Net/MailUtils.cs/#L73"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Adds multiple <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailaddress">MailAddress</a> objects to this <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailaddresscollection">MailAddressCollection</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static void AddRange(this MailAddressCollection addresses, params MailAddress[] mailAddresses)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>addresses</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailaddresscollection">MailAddressCollection</a></dt>
+    <dd><p>The mail address collection to extend.</p>
+</dd>
+    <dt><code>mailAddresses</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailaddress">MailAddress</a>[]</dt>
+    <dd><p>An array of <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailaddress">MailAddress</a> objects to add.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_MailUtils_AddRange_" data-uid="Utils.Net.MailUtils.AddRange*"></a>
+
+  <h3 id="Utils_Net_MailUtils_AddRange_System_Net_Mail_MailAddressCollection_System_String_" data-uid="Utils.Net.MailUtils.AddRange(System.Net.Mail.MailAddressCollection,System.String)">
+  AddRange(MailAddressCollection, string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Net/MailUtils.cs/#L116"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Adds one or more email addresses (given as a single string) to this <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailaddresscollection">MailAddressCollection</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static void AddRange(this MailAddressCollection addresses, string mailAddresses)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>addresses</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailaddresscollection">MailAddressCollection</a></dt>
+    <dd><p>The mail address collection to extend.</p>
+</dd>
+    <dt><code>mailAddresses</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>A string with one or more email addresses.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_MailUtils_AddRange_" data-uid="Utils.Net.MailUtils.AddRange*"></a>
+
+  <h3 id="Utils_Net_MailUtils_AddRange_System_Net_Mail_MailAddressCollection_System_String___" data-uid="Utils.Net.MailUtils.AddRange(System.Net.Mail.MailAddressCollection,System.String[])">
+  AddRange(MailAddressCollection, params string[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Net/MailUtils.cs/#L96"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Adds multiple email addresses (as strings) to this <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailaddresscollection">MailAddressCollection</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static void AddRange(this MailAddressCollection addresses, params string[] mailAddresses)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>addresses</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailaddresscollection">MailAddressCollection</a></dt>
+    <dd><p>The mail address collection to extend.</p>
+</dd>
+    <dt><code>mailAddresses</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>[]</dt>
+    <dd><p>An array of email address strings.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_MailUtils_Attachment_" data-uid="Utils.Net.MailUtils.Attachment*"></a>
+
+  <h3 id="Utils_Net_MailUtils_Attachment_System_Net_Mail_MailMessage_System_IO_FileInfo_" data-uid="Utils.Net.MailUtils.Attachment(System.Net.Mail.MailMessage,System.IO.FileInfo)">
+  Attachment(MailMessage, FileInfo)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Net/MailUtils.cs/#L301"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Attaches a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.fileinfo">FileInfo</a> to the mail message.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static MailMessage Attachment(this MailMessage mailMessage, FileInfo fileInfo)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>mailMessage</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a></dt>
+    <dd><p>The <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a> object to modify.</p>
+</dd>
+    <dt><code>fileInfo</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.fileinfo">FileInfo</a></dt>
+    <dd><p>The <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.fileinfo">FileInfo</a> representing the file to attach.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a></dt>
+    <dd><p>The updated <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a> instance for chaining.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_MailUtils_Attachment_" data-uid="Utils.Net.MailUtils.Attachment*"></a>
+
+  <h3 id="Utils_Net_MailUtils_Attachment_System_Net_Mail_MailMessage_System_String_" data-uid="Utils.Net.MailUtils.Attachment(System.Net.Mail.MailMessage,System.String)">
+  Attachment(MailMessage, string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Net/MailUtils.cs/#L286"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Attaches a file (by path) to the mail message.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static MailMessage Attachment(this MailMessage mailMessage, string fileName)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>mailMessage</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a></dt>
+    <dd><p>The <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a> object to modify.</p>
+</dd>
+    <dt><code>fileName</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>The file path to attach.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a></dt>
+    <dd><p>The updated <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a> instance for chaining.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_MailUtils_Attachment_" data-uid="Utils.Net.MailUtils.Attachment*"></a>
+
+  <h3 id="Utils_Net_MailUtils_Attachment_System_Net_Mail_MailMessage_System_String_System_Byte___" data-uid="Utils.Net.MailUtils.Attachment(System.Net.Mail.MailMessage,System.String,System.Byte[])">
+  Attachment(MailMessage, string, byte[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Net/MailUtils.cs/#L344"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Attaches a byte array to the mail message as a file.</p>
+<p>
+<strong>Note:</strong> The in-memory stream is kept alive by the <a class="xref" href="Utils.Net.MailUtils.html#Utils_Net_MailUtils_Attachment_System_Net_Mail_MailMessage_System_String_">Attachment(MailMessage, string)</a>.
+It is disposed when the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a> or the <a class="xref" href="Utils.Net.MailUtils.html#Utils_Net_MailUtils_Attachment_System_Net_Mail_MailMessage_System_String_">Attachment(MailMessage, string)</a> is disposed.
+</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static MailMessage Attachment(this MailMessage mailMessage, string filename, byte[] content)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>mailMessage</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a></dt>
+    <dd><p>The <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a> object to modify.</p>
+</dd>
+    <dt><code>filename</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>The name of the file to represent the attached byte array.</p>
+</dd>
+    <dt><code>content</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
+    <dd><p>A byte array containing the file content.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a></dt>
+    <dd><p>The updated <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a> instance for chaining.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_MailUtils_Attachment_" data-uid="Utils.Net.MailUtils.Attachment*"></a>
+
+  <h3 id="Utils_Net_MailUtils_Attachment_System_Net_Mail_MailMessage_System_String_System_IO_Stream_" data-uid="Utils.Net.MailUtils.Attachment(System.Net.Mail.MailMessage,System.String,System.IO.Stream)">
+  Attachment(MailMessage, string, Stream)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Net/MailUtils.cs/#L322"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Attaches a stream to the mail message as a file.</p>
+<p>
+<strong>Note:</strong> The stream is used by the <a class="xref" href="Utils.Net.MailUtils.html#Utils_Net_MailUtils_Attachment_System_Net_Mail_MailMessage_System_String_">Attachment(MailMessage, string)</a>.
+Do not dispose this stream until the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a> (and its attachments) 
+is disposed or the mail is sent.
+</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static MailMessage Attachment(this MailMessage mailMessage, string filename, Stream contentStream)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>mailMessage</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a></dt>
+    <dd><p>The <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a> object to modify.</p>
+</dd>
+    <dt><code>filename</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>The name of the file to represent the attached stream.</p>
+</dd>
+    <dt><code>contentStream</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a></dt>
+    <dd><p>A <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a> containing the file content.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a></dt>
+    <dd><p>The updated <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a> instance for chaining.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_MailUtils_Attachment_" data-uid="Utils.Net.MailUtils.Attachment*"></a>
+
+  <h3 id="Utils_Net_MailUtils_Attachment_System_Net_Mail_MailMessage_System_String_System_String_System_Text_Encoding_" data-uid="Utils.Net.MailUtils.Attachment(System.Net.Mail.MailMessage,System.String,System.String,System.Text.Encoding)">
+  Attachment(MailMessage, string, string, Encoding)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Net/MailUtils.cs/#L371"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Attaches a string as a file to the mail message.</p>
+<p>
+<strong>Note:</strong> The in-memory stream is kept alive by the <a class="xref" href="Utils.Net.MailUtils.html#Utils_Net_MailUtils_Attachment_System_Net_Mail_MailMessage_System_String_">Attachment(MailMessage, string)</a>.
+It is disposed when the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a> or the <a class="xref" href="Utils.Net.MailUtils.html#Utils_Net_MailUtils_Attachment_System_Net_Mail_MailMessage_System_String_">Attachment(MailMessage, string)</a> is disposed.
+</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static MailMessage Attachment(this MailMessage mailMessage, string filename, string content, Encoding encoding = null)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>mailMessage</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a></dt>
+    <dd><p>The <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a> object to modify.</p>
+</dd>
+    <dt><code>filename</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>The file name for the attached content.</p>
+</dd>
+    <dt><code>content</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>The string content to attach.</p>
+</dd>
+    <dt><code>encoding</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.text.encoding">Encoding</a></dt>
+    <dd><p>An optional encoding. Defaults to <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.text.encoding.utf8">UTF8</a>.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a></dt>
+    <dd><p>The updated <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a> instance for chaining.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_MailUtils_BCC_" data-uid="Utils.Net.MailUtils.BCC*"></a>
+
+  <h3 id="Utils_Net_MailUtils_BCC_System_Net_Mail_MailMessage_System_Collections_Generic_IEnumerable_System_String__" data-uid="Utils.Net.MailUtils.BCC(System.Net.Mail.MailMessage,System.Collections.Generic.IEnumerable{System.String})">
+  BCC(MailMessage, IEnumerable&lt;string&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Net/MailUtils.cs/#L231"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Adds one or more BCC (blind carbon copy) recipients to this <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static MailMessage BCC(this MailMessage mailMessage, IEnumerable&lt;string&gt; mailAddresses)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>mailMessage</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a></dt>
+    <dd><p>The <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a> object to add BCC addresses to.</p>
+</dd>
+    <dt><code>mailAddresses</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;</dt>
+    <dd><p>An enumeration of email address strings.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a></dt>
+    <dd><p>The updated <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a> instance for chaining.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_MailUtils_BCC_" data-uid="Utils.Net.MailUtils.BCC*"></a>
+
+  <h3 id="Utils_Net_MailUtils_BCC_System_Net_Mail_MailMessage_System_String_" data-uid="Utils.Net.MailUtils.BCC(System.Net.Mail.MailMessage,System.String)">
+  BCC(MailMessage, string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Net/MailUtils.cs/#L207"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Adds one or more BCC (blind carbon copy) recipients to this <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static MailMessage BCC(this MailMessage mailMessage, string mailAddresses)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>mailMessage</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a></dt>
+    <dd><p>The <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a> object to add BCC addresses to.</p>
+</dd>
+    <dt><code>mailAddresses</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>A string containing one or more email addresses.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a></dt>
+    <dd><p>The updated <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a> instance for chaining.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_MailUtils_BCC_" data-uid="Utils.Net.MailUtils.BCC*"></a>
+
+  <h3 id="Utils_Net_MailUtils_BCC_System_Net_Mail_MailMessage_System_String___" data-uid="Utils.Net.MailUtils.BCC(System.Net.Mail.MailMessage,System.String[])">
+  BCC(MailMessage, params string[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Net/MailUtils.cs/#L222"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Adds one or more BCC (blind carbon copy) recipients to this <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static MailMessage BCC(this MailMessage mailMessage, params string[] mailAddresses)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>mailMessage</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a></dt>
+    <dd><p>The <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a> object to add BCC addresses to.</p>
+</dd>
+    <dt><code>mailAddresses</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>[]</dt>
+    <dd><p>An array of email address strings.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a></dt>
+    <dd><p>The updated <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a> instance for chaining.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_MailUtils_Body_" data-uid="Utils.Net.MailUtils.Body*"></a>
+
+  <h3 id="Utils_Net_MailUtils_Body_System_Net_Mail_MailMessage_System_String_System_Text_Encoding_" data-uid="Utils.Net.MailUtils.Body(System.Net.Mail.MailMessage,System.String,System.Text.Encoding)">
+  Body(MailMessage, string, Encoding)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Net/MailUtils.cs/#L269"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Sets the body of the mail message. Automatically sets <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage.isbodyhtml">IsBodyHtml</a>
+to <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if the body starts with <code>&lt;html</code>, otherwise <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static MailMessage Body(this MailMessage mailMessage, string body, Encoding encoding = null)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>mailMessage</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a></dt>
+    <dd><p>The <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a> object to modify.</p>
+</dd>
+    <dt><code>body</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>The body content of the message.</p>
+</dd>
+    <dt><code>encoding</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.text.encoding">Encoding</a></dt>
+    <dd><p>An optional <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.text.encoding">Encoding</a> for the body. Defaults to <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.text.encoding.utf8">UTF8</a>.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a></dt>
+    <dd><p>The updated <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a> instance for chaining.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_MailUtils_CC_" data-uid="Utils.Net.MailUtils.CC*"></a>
+
+  <h3 id="Utils_Net_MailUtils_CC_System_Net_Mail_MailMessage_System_Collections_Generic_IEnumerable_System_String__" data-uid="Utils.Net.MailUtils.CC(System.Net.Mail.MailMessage,System.Collections.Generic.IEnumerable{System.String})">
+  CC(MailMessage, IEnumerable&lt;string&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Net/MailUtils.cs/#L192"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Adds one or more CC (carbon copy) recipients to this <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static MailMessage CC(this MailMessage mailMessage, IEnumerable&lt;string&gt; mailAddresses)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>mailMessage</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a></dt>
+    <dd><p>The <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a> object to add CC addresses to.</p>
+</dd>
+    <dt><code>mailAddresses</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;</dt>
+    <dd><p>An enumeration of email address strings.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a></dt>
+    <dd><p>The updated <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a> instance for chaining.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_MailUtils_CC_" data-uid="Utils.Net.MailUtils.CC*"></a>
+
+  <h3 id="Utils_Net_MailUtils_CC_System_Net_Mail_MailMessage_System_String_" data-uid="Utils.Net.MailUtils.CC(System.Net.Mail.MailMessage,System.String)">
+  CC(MailMessage, string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Net/MailUtils.cs/#L168"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Adds one or more CC (carbon copy) recipients to this <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static MailMessage CC(this MailMessage mailMessage, string mailAddresses)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>mailMessage</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a></dt>
+    <dd><p>The <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a> object to add CC addresses to.</p>
+</dd>
+    <dt><code>mailAddresses</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>A string containing one or more email addresses.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a></dt>
+    <dd><p>The updated <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a> instance for chaining.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_MailUtils_CC_" data-uid="Utils.Net.MailUtils.CC*"></a>
+
+  <h3 id="Utils_Net_MailUtils_CC_System_Net_Mail_MailMessage_System_String___" data-uid="Utils.Net.MailUtils.CC(System.Net.Mail.MailMessage,System.String[])">
+  CC(MailMessage, params string[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Net/MailUtils.cs/#L183"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Adds one or more CC (carbon copy) recipients to this <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static MailMessage CC(this MailMessage mailMessage, params string[] mailAddresses)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>mailMessage</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a></dt>
+    <dd><p>The <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a> object to add CC addresses to.</p>
+</dd>
+    <dt><code>mailAddresses</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>[]</dt>
+    <dd><p>An array of email address strings.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a></dt>
+    <dd><p>The updated <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a> instance for chaining.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_MailUtils_ParseMailAddress_" data-uid="Utils.Net.MailUtils.ParseMailAddress*"></a>
+
+  <h3 id="Utils_Net_MailUtils_ParseMailAddress_System_String_" data-uid="Utils.Net.MailUtils.ParseMailAddress(System.String)">
+  ParseMailAddress(string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Net/MailUtils.cs/#L38"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Parses a string into a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailaddress">MailAddress</a> instance.
+The string may be of the form <code>user@domain.com</code> or <code>Name &lt;user@domain.com&amp;gt;</code>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static MailAddress ParseMailAddress(string mailAddress)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>mailAddress</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>The string containing the mail address.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailaddress">MailAddress</a></dt>
+    <dd><p>An instance of <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailaddress">MailAddress</a> representing the parsed address.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown if the string does not match a valid mail address pattern.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Net_MailUtils_ParseMailAddresses_" data-uid="Utils.Net.MailUtils.ParseMailAddresses*"></a>
+
+  <h3 id="Utils_Net_MailUtils_ParseMailAddresses_System_String_" data-uid="Utils.Net.MailUtils.ParseMailAddresses(System.String)">
+  ParseMailAddresses(string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Net/MailUtils.cs/#L58"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Parses a string containing multiple mail addresses separated by
+semicolons, commas, or newlines into an array of <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailaddress">MailAddress</a> objects.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static MailAddress[] ParseMailAddresses(string mailAddresses)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>mailAddresses</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>A string with one or more email addresses.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailaddress">MailAddress</a>[]</dt>
+    <dd><p>An array of <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailaddress">MailAddress</a> objects.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_MailUtils_Subject_" data-uid="Utils.Net.MailUtils.Subject*"></a>
+
+  <h3 id="Utils_Net_MailUtils_Subject_System_Net_Mail_MailMessage_System_String_System_Text_Encoding_" data-uid="Utils.Net.MailUtils.Subject(System.Net.Mail.MailMessage,System.String,System.Text.Encoding)">
+  Subject(MailMessage, string, Encoding)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Net/MailUtils.cs/#L249"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Sets the subject of the mail message.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static MailMessage Subject(this MailMessage mailMessage, string subject, Encoding encoding = null)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>mailMessage</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a></dt>
+    <dd><p>The <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a> object to modify.</p>
+</dd>
+    <dt><code>subject</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>The subject text.</p>
+</dd>
+    <dt><code>encoding</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.text.encoding">Encoding</a></dt>
+    <dd><p>An optional <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.text.encoding">Encoding</a> for the subject. Defaults to <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.text.encoding.utf8">UTF8</a>.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a></dt>
+    <dd><p>The updated <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a> instance for chaining.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_MailUtils_To_" data-uid="Utils.Net.MailUtils.To*"></a>
+
+  <h3 id="Utils_Net_MailUtils_To_System_Net_Mail_MailMessage_System_Collections_Generic_IEnumerable_System_String__" data-uid="Utils.Net.MailUtils.To(System.Net.Mail.MailMessage,System.Collections.Generic.IEnumerable{System.String})">
+  To(MailMessage, IEnumerable&lt;string&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Net/MailUtils.cs/#L153"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Adds one or more recipients (To) to this <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static MailMessage To(this MailMessage mailMessage, IEnumerable&lt;string&gt; mailAddresses)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>mailMessage</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a></dt>
+    <dd><p>The <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a> object to add addresses to.</p>
+</dd>
+    <dt><code>mailAddresses</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;</dt>
+    <dd><p>An enumeration of email address strings.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a></dt>
+    <dd><p>The updated <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a> instance for chaining.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_MailUtils_To_" data-uid="Utils.Net.MailUtils.To*"></a>
+
+  <h3 id="Utils_Net_MailUtils_To_System_Net_Mail_MailMessage_System_String_" data-uid="Utils.Net.MailUtils.To(System.Net.Mail.MailMessage,System.String)">
+  To(MailMessage, string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Net/MailUtils.cs/#L129"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Adds one or more recipients (To) to this <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static MailMessage To(this MailMessage mailMessage, string mailAddresses)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>mailMessage</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a></dt>
+    <dd><p>The <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a> object to add addresses to.</p>
+</dd>
+    <dt><code>mailAddresses</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>A string containing one or more email addresses.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a></dt>
+    <dd><p>The updated <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a> instance for chaining.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_MailUtils_To_" data-uid="Utils.Net.MailUtils.To*"></a>
+
+  <h3 id="Utils_Net_MailUtils_To_System_Net_Mail_MailMessage_System_String___" data-uid="Utils.Net.MailUtils.To(System.Net.Mail.MailMessage,System.String[])">
+  To(MailMessage, params string[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/releases/1.2.1/Utils/Net/MailUtils.cs/#L144"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Adds one or more recipients (To) to this <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static MailMessage To(this MailMessage mailMessage, params string[] mailAddresses)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>mailMessage</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a></dt>
+    <dd><p>The <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a> object to add addresses to.</p>
+</dd>
+    <dt><code>mailAddresses</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>[]</dt>
+    <dd><p>An array of email address strings.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a></dt>
+    <dd><p>The updated <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.mail.mailmessage">MailMessage</a> instance for chaining.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
