@@ -18,8 +18,8 @@ dotnet add package omy.Utils.NumberToString
 |------|----------|----------|---------|
 | EN, EN-uk, EN-us | English | ✓ | — |
 | FR, FR-fr, FR-ca | French | ✓ | gender (masculin/feminin) |
-| FR-be, FR-ch | Belgian/Swiss French | — | — |
-| DE | German | — | — |
+| FR-be, FR-ch | Belgian/Swiss French | — | gender (masculin/feminin) |
+| DE | German | — | genus (maskulin/feminin/neutrum) × kasus (nominativ/akkusativ/dativ/genitiv) |
 | ES | Spanish | — | — |
 | IT | Italian | — | — |
 | PT | Portuguese | — | — |
@@ -142,38 +142,115 @@ bool supportsGender = converter.VariantDimensions
     .Any(d => d.Name.Equals("gender", StringComparison.OrdinalIgnoreCase));
 ```
 
-### Architecture — variantes multi-dimensionnelles
+### Français belge/suisse — même genre, mots différents
 
-Pour des langues avec plusieurs dimensions (ex. allemand : genre × cas), la configuration XML déclare chaque dimension et les règles de remplacement pour chaque combinaison :
+FR-be et FR-ch utilisent septante/huitante/nonante au lieu de soixante-dix/quatre-vingts/quatre-vingt-dix,
+mais la règle de genre est identique à FR : la dimension `gender` (masculin/féminin) est disponible.
+
+```csharp
+NumberToStringConverter frBe = NumberToStringConverter.GetConverter("FR-be");
+
+frBe.Convert(71);                  // "septante et un"
+frBe.Convert(71, "gender=feminin"); // "septante et une"
+frBe.Convert(81, "gender=feminin"); // "huitante et une"
+frBe.Convert(91, "gender=feminin"); // "nonante et une"
+
+// "un million" → dernier mot = "million" → pas de remplacement
+frBe.Convert(1_000_000, "gender=feminin"); // "un million"
+```
+
+### Allemand — genus × kasus
+
+L'allemand est le seul chiffre variable en déclinaison : seul `ein` (1) prend des formes différentes.
+Les composés comme `einundzwanzig` (21) sont invariables.
+
+```csharp
+NumberToStringConverter de = NumberToStringConverter.GetConverter("DE");
+
+// Défaut (nominatif masculin) — GermanSpecifics: "ein" → "eins"
+de.Convert(1);   // "eins"
+
+// Variations de genre et de cas
+de.Convert(1, "genus=feminin");                       // "eine"
+de.Convert(1, "kasus=akkusativ", "genus=maskulin");   // "einen"
+de.Convert(1, "kasus=akkusativ", "genus=feminin");    // "eine"
+de.Convert(1, "kasus=dativ",     "genus=maskulin");   // "einem"
+de.Convert(1, "kasus=dativ",     "genus=neutrum");    // "einem"
+de.Convert(1, "kasus=dativ",     "genus=feminin");    // "einer"
+de.Convert(1, "kasus=genitiv",   "genus=maskulin");   // "eines"
+de.Convert(1, "kasus=genitiv",   "genus=neutrum");    // "eines"
+de.Convert(1, "kasus=genitiv",   "genus=feminin");    // "einer"
+
+// Les composés ne sont pas déclinés
+de.Convert(21, "genus=feminin");  // "einundzwanzig"  (inchangé)
+
+// "eine Million" : GermanSpecifics corrige "ein Million" → "eine Million" indépendamment des variantes
+de.Convert(1_000_000);  // "eine Million"
+```
+
+Tableau complet des formes de `ein` :
+
+| kasus \ genus | maskulin | feminin | neutrum |
+|--------------|----------|---------|---------|
+| Nominativ    | eins*    | eine    | eins*   |
+| Akkusativ    | einen    | eine    | eins*   |
+| Dativ        | einem    | einer   | einem   |
+| Genitiv      | eines    | einer   | eines   |
+
+\* `GermanNumberToStringLanguageSpecifics` convertit la forme brute `ein` en `eins` (forme de comptage).
+Pour akkusatif/nominatif neutrum, la forme adjectivale `ein` (sans -s) et la forme de comptage `eins` sont
+indiscernables sans contexte syntaxique ; le système retourne `eins` dans les deux cas.
+
+### Découverte des variantes disponibles
+
+```csharp
+NumberToStringConverter de = NumberToStringConverter.GetConverter("DE");
+
+foreach (var dim in de.VariantDimensions)
+    Console.WriteLine($"{dim.Name}: {string.Join(", ", dim.Values)}  (défaut: {dim.DefaultValue})");
+// genus: maskulin, feminin, neutrum  (défaut: maskulin)
+// kasus: nominativ, akkusativ, dativ, genitiv  (défaut: nominativ)
+```
+
+### Architecture — variantes multi-dimensionnelles et cascade
+
+La configuration XML déclare chaque dimension, puis les règles de remplacement de la moins spécifique à la plus spécifique. L'ordre de déclaration des règles à égalité de contraintes est important : une règle transforme le texte en séquence, et la suivante voit le résultat de la précédente.
 
 ```xml
 <Variants>
-  <!-- valeurs ordonnées : la première est le défaut -->
   <Dimension name="genus"  values="maskulin,feminin,neutrum" />
   <Dimension name="kasus"  values="nominativ,akkusativ,dativ,genitiv" />
 
-  <!-- Variant appliqué quand genus=feminin (quelle que soit la valeur de kasus) -->
+  <!-- 1 contrainte — genus=feminin déclaré EN PREMIER -->
   <Variant genus="feminin">
     <Replacement oldValue="ein" newValue="eine" scope="LastWord" />
   </Variant>
+  <!-- dativ/genitiv maskulin+neutrum : "ein" encore présent si genus≠feminin -->
+  <Variant kasus="dativ">
+    <Replacement oldValue="ein" newValue="einem" scope="LastWord" />
+  </Variant>
+  <Variant kasus="genitiv">
+    <Replacement oldValue="ein" newValue="eines" scope="LastWord" />
+  </Variant>
 
-  <!-- Variant plus spécifique : kasus=akkusativ ET genus=maskulin -->
+  <!-- 2 contraintes — surcharge les résultats des règles à 1 contrainte -->
   <Variant kasus="akkusativ" genus="maskulin">
     <Replacement oldValue="ein" newValue="einen" scope="LastWord" />
+  </Variant>
+  <!-- Pour dativ+feminin : genus=feminin a déjà changé "ein"→"eine",
+       la règle à 2 contraintes cherche donc "eine" et non "ein" -->
+  <Variant kasus="dativ" genus="feminin">
+    <Replacement oldValue="eine" newValue="einer" scope="LastWord" />
+  </Variant>
+  <Variant kasus="genitiv" genus="feminin">
+    <Replacement oldValue="eine" newValue="einer" scope="LastWord" />
   </Variant>
 </Variants>
 ```
 
-```csharp
-// Hypothétique — si la configuration allemande déclarait ces variantes :
-de.Convert(1);                              // "eins"    (défaut: nominativ, maskulin)
-de.Convert(1, "genus=feminin");             // "eine"
-de.Convert(1, "kasus=akkusativ", "genus=maskulin"); // "einen"
-```
+**Règles de cascade** : les variantes avec moins de contraintes sont appliquées avant celles avec plus de contraintes. Au sein du même niveau de spécificité, l'ordre de déclaration est préservé — ce qui permet de composer les transformations.
 
-**Règles de cascade** : les variantes avec moins de contraintes sont appliquées avant celles avec plus de contraintes. Une variante à 2 dimensions peut surcharger le résultat d'une variante à 1 dimension.
-
-**Scope `LastWord`** : le remplacement ne s'applique que si `oldValue` correspond exactement au dernier mot du résultat (séparé par un espace ou un tiret). Cela empêche de modifier "ein" dans "eine Million" alors qu'on veut seulement infliger la règle sur l'unité terminale.
+**Scope `LastWord`** : le remplacement ne s'applique que si `oldValue` correspond exactement au dernier mot du résultat (séparé par un espace ou un tiret). Cela empêche de modifier `ein` à l'intérieur de `einundzwanzig` ou dans `ein million` quand le dernier mot est `million`.
 
 **Dimensions inconnues** : si le code appelant passe une dimension non déclarée pour une langue, elle est ignorée silencieusement — le résultat est identique à un appel sans variante.
 
@@ -535,10 +612,11 @@ Activée par des appels `Convert(number, "dimension=value", …)`.
         <Replacement oldValue="un" newValue="une" scope="LastWord" />
     </Variant>
 
-    <!-- Exemple hypothétique à 2 contraintes (priorité supérieure à gender seul) -->
-    <!-- <Variant kasus="akkusativ" gender="maskulin"> -->
-    <!--     <Replacement oldValue="ein" newValue="einen" scope="LastWord" /> -->
-    <!-- </Variant> -->
+    <!-- Exemple à 2 contraintes (priorité supérieure à genus seul) :
+         voir la configuration DE pour l'implémentation complète genus × kasus -->
+    <!-- <Variant kasus="akkusativ" genus="maskulin">
+        <Replacement oldValue="ein" newValue="einen" scope="LastWord" />
+    </Variant> -->
 
 </Variants>
 ```

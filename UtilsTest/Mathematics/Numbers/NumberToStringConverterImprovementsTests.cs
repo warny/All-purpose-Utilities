@@ -1,5 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Linq;
 using System.Numerics;
 using Utils.Mathematics;
 using Utils.Numerics;
@@ -308,6 +309,134 @@ public class NumberToStringConverterImprovementsTests
 
         string result = converter.Convert(1, "cas=inconnu");
         Assert.AreEqual("un", result);
+    }
+
+    // ─── C2b — Variants FR-be/ch (genre) ─────────────────────────────────
+
+    [TestMethod]
+    public void Convert_FRbe_Feminine_OneBecomesUne()
+    {
+        var converter = NumberToStringConverter.GetConverter("FR-be");
+
+        Assert.AreEqual("une", converter.Convert(1, "gender=feminin"));
+    }
+
+    [TestMethod]
+    public void Convert_FRbe_Feminine_SeptanteEtUne()
+    {
+        var converter = NumberToStringConverter.GetConverter("FR-be");
+
+        // FR-be utilise septante/huitante/nonante — la règle LastWord s'applique de la même façon
+        (int number, string expected)[] cases = [
+            (21, "vingt et une"),
+            (71, "septante et une"),
+            (81, "huitante et une"),
+            (91, "nonante et une"),
+        ];
+
+        foreach (var (number, expected) in cases)
+            Assert.AreEqual(expected, converter.Convert(number, "gender=feminin"), $"Féminin FR-be de {number}");
+    }
+
+    [TestMethod]
+    public void Convert_FRbe_Masculine_IsDefault()
+    {
+        var converter = NumberToStringConverter.GetConverter("FR-be");
+
+        Assert.AreEqual("un", converter.Convert(1));
+        Assert.AreEqual("un", converter.Convert(1, "gender=masculin"));
+        Assert.AreEqual("septante et un", converter.Convert(71));
+        Assert.AreEqual("septante et un", converter.Convert(71, "gender=masculin"));
+    }
+
+    [TestMethod]
+    public void Convert_FRbe_Feminine_MillionNotAffected()
+    {
+        var converter = NumberToStringConverter.GetConverter("FR-be");
+
+        Assert.AreEqual("un million", converter.Convert(1_000_000, "gender=feminin"));
+    }
+
+    // ─── C2c — Variants DE (genus / kasus) ────────────────────────────────
+
+    [TestMethod]
+    public void Convert_DE_Default_IsEins()
+    {
+        var converter = NumberToStringConverter.GetConverter("DE");
+
+        // Sans variante : forme de comptage (GermanSpecifics: "ein" → "eins")
+        Assert.AreEqual("eins", converter.Convert(1));
+        Assert.AreEqual("eins", converter.Convert(1, "genus=maskulin"));
+        Assert.AreEqual("eins", converter.Convert(1, "kasus=nominativ"));
+    }
+
+    [TestMethod]
+    public void Convert_DE_Feminin_Nominativ_IsEine()
+    {
+        var converter = NumberToStringConverter.GetConverter("DE");
+
+        Assert.AreEqual("eine", converter.Convert(1, "genus=feminin"));
+        Assert.AreEqual("eine", converter.Convert(1, "kasus=nominativ", "genus=feminin"));
+        Assert.AreEqual("eine", converter.Convert(1, "kasus=akkusativ", "genus=feminin"));
+    }
+
+    [TestMethod]
+    public void Convert_DE_Akkusativ_Maskulin_IsEinen()
+    {
+        var converter = NumberToStringConverter.GetConverter("DE");
+
+        Assert.AreEqual("einen", converter.Convert(1, "kasus=akkusativ", "genus=maskulin"));
+    }
+
+    [TestMethod]
+    public void Convert_DE_Dativ_IsEinem_OrEiner()
+    {
+        var converter = NumberToStringConverter.GetConverter("DE");
+
+        Assert.AreEqual("einem", converter.Convert(1, "kasus=dativ", "genus=maskulin"));
+        Assert.AreEqual("einem", converter.Convert(1, "kasus=dativ", "genus=neutrum"));
+        Assert.AreEqual("einer", converter.Convert(1, "kasus=dativ", "genus=feminin"));
+    }
+
+    [TestMethod]
+    public void Convert_DE_Genitiv_IsEines_OrEiner()
+    {
+        var converter = NumberToStringConverter.GetConverter("DE");
+
+        Assert.AreEqual("eines", converter.Convert(1, "kasus=genitiv", "genus=maskulin"));
+        Assert.AreEqual("eines", converter.Convert(1, "kasus=genitiv", "genus=neutrum"));
+        Assert.AreEqual("einer", converter.Convert(1, "kasus=genitiv", "genus=feminin"));
+    }
+
+    [TestMethod]
+    public void Convert_DE_CompoundNumbers_NotInflected()
+    {
+        var converter = NumberToStringConverter.GetConverter("DE");
+
+        // Les composés allemands (einundzwanzig…) sont invariables :
+        // "ein" y est soudé, il ne correspond pas au dernier mot.
+        Assert.AreEqual("einundzwanzig", converter.Convert(21, "genus=feminin"));
+        Assert.AreEqual("einundzwanzig", converter.Convert(21, "kasus=akkusativ", "genus=maskulin"));
+    }
+
+    [TestMethod]
+    public void Convert_DE_VariantDimensions_ListsGenusAndKasus()
+    {
+        var converter = NumberToStringConverter.GetConverter("DE");
+
+        var names = converter.VariantDimensions.Select(d => d.Name).ToList();
+        CollectionAssert.Contains(names, "genus");
+        CollectionAssert.Contains(names, "kasus");
+
+        var genus = converter.VariantDimensions.First(d => d.Name == "genus");
+        CollectionAssert.AreEqual(
+            new[] { "maskulin", "feminin", "neutrum" },
+            genus.Values.ToArray());
+
+        var kasus = converter.VariantDimensions.First(d => d.Name == "kasus");
+        CollectionAssert.AreEqual(
+            new[] { "nominativ", "akkusativ", "dativ", "genitiv" },
+            kasus.Values.ToArray());
     }
 
     // ─── C3 — Currency conversion ──────────────────────────────────────────

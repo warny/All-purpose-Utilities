@@ -76,5 +76,11 @@
 			<Fraction digits="2" string="centième(s)" />
 			<Fraction digits="3" string="millième(s)" />
 		</Fractions>
+		<Variants>
+			<Dimension name="gender" values="masculin,feminin" />
+			<Variant gender="feminin">
+				<Replacement oldValue="un" newValue="une" scope="LastWord" />
+			</Variant>
+		</Variants>
 	</Language>
 </Numbers>
