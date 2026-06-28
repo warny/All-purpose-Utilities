@@ -20,9 +20,9 @@ dotnet add package omy.Utils.NumberToString
 | FR, FR-fr, FR-ca | French | ✓ | gender (masculin/feminin) |
 | FR-be, FR-ch | Belgian/Swiss French | — | gender (masculin/feminin) |
 | DE | German | — | genus (maskulin/feminin/neutrum) × kasus (nominativ/akkusativ/dativ/genitiv) |
-| ES | Spanish | — | — |
-| IT | Italian | — | — |
-| PT | Portuguese | — | — |
+| ES | Spanish | — | gender (masculino/femenino) |
+| IT | Italian | — | gender (maschile/femminile) |
+| PT | Portuguese | — | gender (masculino/feminino) |
 | PL | Polish | — | — |
 | NL | Dutch | — | — |
 | RU | Russian | — | — |
@@ -34,9 +34,9 @@ dotnet add package omy.Utils.NumberToString
 | HI | Hindi | — | — |
 | EL | Greek | — | — |
 | FI | Finnish | — | — |
-| CA | Catalan | — | — |
-| EU | Basque | — | — |
-| GL | Galician | — | — |
+| CA | Catalan | — | gender (masculí/femení) |
+| EU | Basque | — | — (pas de genre en basque) |
+| GL | Galician | — | gender (masculino/feminino) |
 | ZU | Zulu | — | — |
 | EE | Ewe | — | — |
 | WO | Wolof | — | — |
@@ -141,6 +141,100 @@ INumberToStringConverter converter = NumberToStringConverter.GetConverter("FR");
 bool supportsGender = converter.VariantDimensions
     .Any(d => d.Name.Equals("gender", StringComparison.OrdinalIgnoreCase));
 ```
+
+### Espagnol — genre et centaines
+
+En espagnol, `uno` (1) et les centaines composées `-cientos` varient en genre.
+
+```csharp
+NumberToStringConverter es = NumberToStringConverter.GetConverter("ES");
+
+es.Convert(1);                    // "uno"
+es.Convert(1,   "gender=femenino"); // "una"
+es.Convert(200, "gender=femenino"); // "doscientas"
+es.Convert(500, "gender=femenino"); // "quinientas"
+es.Convert(900, "gender=femenino"); // "novecientas"
+```
+
+> **Limitation** : les formes composées soudées sans espace (`veintiuno`, `treintauno`) ne sont
+> pas converties — la règle `LastWord` exige un espace ou un tiret avant `uno`. Corriger les
+> `buildStrings` de la configuration (`"treinta y *"` au lieu de `"treinta*"`) résoudrait ce point.
+
+### Portugais — genre avec espaces, unités et centaines
+
+Le portugais utilise des espaces dans tous ses composés (`vinte e um`), ce qui rend
+la règle `LastWord` efficace sur l'ensemble des formes. `um` et `dois` varient, ainsi que
+toutes les centaines (sauf 100 `cem`/`cento`).
+
+```csharp
+NumberToStringConverter pt = NumberToStringConverter.GetConverter("PT");
+
+pt.Convert(1,   "gender=feminino"); // "uma"
+pt.Convert(2,   "gender=feminino"); // "duas"
+pt.Convert(21,  "gender=feminino"); // "vinte e uma"
+pt.Convert(22,  "gender=feminino"); // "vinte e duas"
+pt.Convert(200, "gender=feminino"); // "duzentas"
+pt.Convert(201, "gender=feminino"); // "duzentas e uma"
+pt.Convert(202, "gender=feminino"); // "duzentas e duas"
+
+// Le multiplicateur avant "mil" reste masculin (dernier mot = "mil")
+pt.Convert(2_000, "gender=feminino"); // "dois mil"  (limitation)
+```
+
+### Italien — seul `uno` varie
+
+En italien, les centaines (`duecento`, `trecento`…) sont invariables en genre.
+Seul `uno` → `una` change.
+
+```csharp
+NumberToStringConverter it = NumberToStringConverter.GetConverter("IT");
+
+it.Convert(1, "gender=femminile"); // "una"
+it.Convert(100); // "cento"         ← invariable
+it.Convert(200); // "duecento"      ← invariable
+```
+
+> **Limitation** : les composés soudés (`ventiuno`, `trentuno`…) ne sont pas convertis,
+> pour la même raison que l'espagnol.
+
+### Catalan — tirets comme frontières de mots
+
+Le catalan utilise des tirets dans ses composés (`vint-i-un`, `trenta-un`…).
+Un tiret est une frontière de mot pour `LastWord`, donc la règle s'applique correctement
+aux nombres composés. Seul `dos-cents` (200) a une forme féminine parmi les centaines.
+
+```csharp
+NumberToStringConverter ca = NumberToStringConverter.GetConverter("CA");
+
+ca.Convert(1,   "gender=femení"); // "una"
+ca.Convert(2,   "gender=femení"); // "dues"
+ca.Convert(21,  "gender=femení"); // "vint-i-una"   ← tiret = frontière de mot ✓
+ca.Convert(22,  "gender=femení"); // "vint-i-dues"
+ca.Convert(31,  "gender=femení"); // "trenta-una"
+ca.Convert(200, "gender=femení"); // "dues-centes"
+ca.Convert(201, "gender=femení"); // "dues-centes una"
+```
+
+### Galicien — comme le portugais
+
+Le galicien utilise des espaces (`vinte e un`) et suit une logique proche du portugais.
+`un` → `unha`, `dous` → `dúas`, et seul `douscentos` (200) a une forme féminine.
+
+```csharp
+NumberToStringConverter gl = NumberToStringConverter.GetConverter("GL");
+
+gl.Convert(1,   "gender=feminino"); // "unha"
+gl.Convert(2,   "gender=feminino"); // "dúas"
+gl.Convert(21,  "gender=feminino"); // "vinte e unha"
+gl.Convert(22,  "gender=feminino"); // "vinte e dúas"
+gl.Convert(200, "gender=feminino"); // "douscentas"
+gl.Convert(201, "gender=feminino"); // "douscentas unha"
+```
+
+### Basque (EU) — pas de genre grammatical
+
+Le basque est une langue isolat sans genre grammatical : aucune variante morphologique
+n'est disponible pour cette langue.
 
 ### Français belge/suisse — même genre, mots différents
 

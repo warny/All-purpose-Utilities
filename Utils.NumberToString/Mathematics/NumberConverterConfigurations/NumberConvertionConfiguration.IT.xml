@@ -61,16 +61,30 @@
 		<Replacements>
 			<Replacement oldValue="uno mille" newValue="mille" />
 		</Replacements>
-                <Exceptions>
-                        <Number value="11" string="undici" />
-                        <Number value="12" string="dodici" />
-                        <Number value="13" string="tredici" />
-                        <Number value="14" string="quattordici" />
-                        <Number value="15" string="quindici" />
-                        <Number value="16" string="sedici" />
-                        <Number value="17" string="diciassette" />
-                        <Number value="18" string="diciotto" />
-                        <Number value="19" string="diciannove" />
-                </Exceptions>
-        </Language>
+		<Exceptions>
+			<Number value="11" string="undici" />
+			<Number value="12" string="dodici" />
+			<Number value="13" string="tredici" />
+			<Number value="14" string="quattordici" />
+			<Number value="15" string="quindici" />
+			<Number value="16" string="sedici" />
+			<Number value="17" string="diciassette" />
+			<Number value="18" string="diciotto" />
+			<Number value="19" string="diciannove" />
+		</Exceptions>
+		<Variants>
+			<!--
+			  En italien, seul "uno" (1) varie en genre ; les centaines (duecento,
+			  trecento…) sont invariables. Les formes composées des dizaines sont
+			  soudées sans espace (ventiuno, trentuno…) : LastWord ne transforme pas
+			  "uno" à l'intérieur de ces composés. Si les buildStrings étaient
+			  modifiés pour inclure une espace, la couverture serait complète.
+			-->
+			<Dimension name="gender" values="maschile,femminile" />
+
+			<Variant gender="femminile">
+				<Replacement oldValue="uno" newValue="una" scope="LastWord" />
+			</Variant>
+		</Variants>
+	</Language>
 </Numbers>

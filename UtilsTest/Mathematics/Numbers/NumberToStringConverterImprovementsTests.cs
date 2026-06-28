@@ -311,6 +311,132 @@ public class NumberToStringConverterImprovementsTests
         Assert.AreEqual("un", result);
     }
 
+    // ─── C2d — Variants ES (género) ───────────────────────────────────────
+
+    [TestMethod]
+    public void Convert_ES_Femenino_OneBecomesUna()
+    {
+        var converter = NumberToStringConverter.GetConverter("ES");
+
+        Assert.AreEqual("uno", converter.Convert(1));
+        Assert.AreEqual("una", converter.Convert(1, "gender=femenino"));
+    }
+
+    [TestMethod]
+    public void Convert_ES_Femenino_Hundreds()
+    {
+        var converter = NumberToStringConverter.GetConverter("ES");
+
+        (int number, string expected)[] cases = [
+            (200, "doscientas"),
+            (300, "trescientas"),
+            (400, "cuatrocientas"),
+            (500, "quinientas"),
+            (600, "seiscientas"),
+            (700, "setecientas"),
+            (800, "ochocientas"),
+            (900, "novecientas"),
+        ];
+
+        foreach (var (number, expected) in cases)
+            Assert.AreEqual(expected, converter.Convert(number, "gender=femenino"), $"ES femenino {number}");
+    }
+
+    // ─── C2e — Variants PT (género) ───────────────────────────────────────
+
+    [TestMethod]
+    public void Convert_PT_Feminino_UnitsAndComposites()
+    {
+        var converter = NumberToStringConverter.GetConverter("PT");
+
+        Assert.AreEqual("um",         converter.Convert(1));
+        Assert.AreEqual("uma",        converter.Convert(1,  "gender=feminino"));
+        Assert.AreEqual("duas",       converter.Convert(2,  "gender=feminino"));
+        Assert.AreEqual("vinte e uma", converter.Convert(21, "gender=feminino"));
+        Assert.AreEqual("vinte e duas", converter.Convert(22, "gender=feminino"));
+    }
+
+    [TestMethod]
+    public void Convert_PT_Feminino_Hundreds()
+    {
+        var converter = NumberToStringConverter.GetConverter("PT");
+
+        Assert.AreEqual("duzentas",     converter.Convert(200, "gender=feminino"));
+        Assert.AreEqual("trezentas",    converter.Convert(300, "gender=feminino"));
+        Assert.AreEqual("quatrocentas", converter.Convert(400, "gender=feminino"));
+        Assert.AreEqual("quinhentas",   converter.Convert(500, "gender=feminino"));
+    }
+
+    [TestMethod]
+    public void Convert_PT_Feminino_CompoundWithHundreds()
+    {
+        var converter = NumberToStringConverter.GetConverter("PT");
+
+        // Centaine + unité → les deux doivent passer au féminin
+        Assert.AreEqual("duzentas e uma",  converter.Convert(201, "gender=feminino"));
+        Assert.AreEqual("duzentas e duas", converter.Convert(202, "gender=feminino"));
+    }
+
+    // ─── C2f — Variants IT (genere) ───────────────────────────────────────
+
+    [TestMethod]
+    public void Convert_IT_Femminile_OneBecomesUna()
+    {
+        var converter = NumberToStringConverter.GetConverter("IT");
+
+        Assert.AreEqual("uno", converter.Convert(1));
+        Assert.AreEqual("una", converter.Convert(1, "gender=femminile"));
+    }
+
+    // ─── C2g — Variants CA (gènere) ───────────────────────────────────────
+
+    [TestMethod]
+    public void Convert_CA_Femeni_UnitsAndHyphenComposites()
+    {
+        var converter = NumberToStringConverter.GetConverter("CA");
+
+        Assert.AreEqual("un",        converter.Convert(1));
+        Assert.AreEqual("una",       converter.Convert(1,  "gender=femení"));
+        Assert.AreEqual("dues",      converter.Convert(2,  "gender=femení"));
+        // Les tirets sont des frontières de mot → LastWord fonctionne sur les composés
+        Assert.AreEqual("vint-i-una",  converter.Convert(21, "gender=femení"));
+        Assert.AreEqual("vint-i-dues", converter.Convert(22, "gender=femení"));
+        Assert.AreEqual("trenta-una",  converter.Convert(31, "gender=femení"));
+    }
+
+    [TestMethod]
+    public void Convert_CA_Femeni_TwoHundred()
+    {
+        var converter = NumberToStringConverter.GetConverter("CA");
+
+        // Seule dos-cents a une forme féminine en catalan
+        Assert.AreEqual("dues-centes",     converter.Convert(200, "gender=femení"));
+        Assert.AreEqual("dues-centes una", converter.Convert(201, "gender=femení"));
+    }
+
+    // ─── C2h — Variants GL (xénero) ───────────────────────────────────────
+
+    [TestMethod]
+    public void Convert_GL_Feminino_UnitsAndComposites()
+    {
+        var converter = NumberToStringConverter.GetConverter("GL");
+
+        Assert.AreEqual("un",           converter.Convert(1));
+        Assert.AreEqual("unha",         converter.Convert(1,  "gender=feminino"));
+        Assert.AreEqual("dúas",         converter.Convert(2,  "gender=feminino"));
+        Assert.AreEqual("vinte e unha", converter.Convert(21, "gender=feminino"));
+        Assert.AreEqual("vinte e dúas", converter.Convert(22, "gender=feminino"));
+    }
+
+    [TestMethod]
+    public void Convert_GL_Feminino_TwoHundred()
+    {
+        var converter = NumberToStringConverter.GetConverter("GL");
+
+        Assert.AreEqual("douscentas",      converter.Convert(200, "gender=feminino"));
+        Assert.AreEqual("douscentas unha", converter.Convert(201, "gender=feminino"));
+    }
+
     // ─── C2b — Variants FR-be/ch (genre) ─────────────────────────────────
 
     [TestMethod]

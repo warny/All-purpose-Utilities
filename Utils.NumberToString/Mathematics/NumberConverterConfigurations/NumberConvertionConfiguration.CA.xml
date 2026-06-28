@@ -64,16 +64,34 @@
                 <Replacements>
                         <Replacement oldValue="un mil" newValue="mil" />
                 </Replacements>
-                <Exceptions>
-                        <Number value="11" string="onze" />
-                        <Number value="12" string="dotze" />
-                        <Number value="13" string="tretze" />
-                        <Number value="14" string="catorze" />
-                        <Number value="15" string="quinze" />
-                        <Number value="16" string="setze" />
-                        <Number value="17" string="disset" />
-                        <Number value="18" string="divuit" />
-                        <Number value="19" string="dinou" />
-                </Exceptions>
-        </Language>
+		<Exceptions>
+			<Number value="11" string="onze" />
+			<Number value="12" string="dotze" />
+			<Number value="13" string="tretze" />
+			<Number value="14" string="catorze" />
+			<Number value="15" string="quinze" />
+			<Number value="16" string="setze" />
+			<Number value="17" string="disset" />
+			<Number value="18" string="divuit" />
+			<Number value="19" string="dinou" />
+		</Exceptions>
+		<Variants>
+			<!--
+			  En catalan, les chiffres 1 (un/una) et 2 (dos/dues) varient en genre,
+			  ainsi que les deux-cents (dos-cents/dues-centes). Les autres centaines
+			  sont invariables. Les composés des dizaines utilisent des tirets
+			  (vint-i-un, trenta-un…) : le tiret est une frontière de mot pour
+			  LastWord, donc la règle s'applique correctement aux composés.
+			-->
+			<Dimension name="gender" values="masculí,femení" />
+
+			<Variant gender="femení">
+				<!-- Unités variables en genre (fonctionne sur les composés grâce aux tirets) -->
+				<Replacement oldValue="un"  newValue="una"  scope="LastWord" />
+				<Replacement oldValue="dos" newValue="dues" scope="LastWord" />
+				<!-- Seule la centaine de 200 a une forme féminine en catalan -->
+				<Replacement oldValue="dos-cents" newValue="dues-centes" scope="Anywhere" />
+			</Variant>
+		</Variants>
+	</Language>
 </Numbers>
