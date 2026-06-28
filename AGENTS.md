@@ -66,6 +66,7 @@ SpecFlow `.feature` files and their step bindings live exclusively in **UtilsTes
 
 ## README  
 - The project’s **README.md** must include an **example snippet**.  
+- Every package **README.md** that accompanies a release must include a link to the versioned API documentation for that release: `https://warny.github.io/All-purpose-Utilities/vX.Y.Z/`  
 
 ---
 

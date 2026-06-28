@@ -21,21 +21,124 @@ jobs:
               with:
                   dotnet-version: '9.0.x'
 
-            - name: Restore
-              run: dotnet restore
-
-            - name: Build (generate XML docs)
-              run: dotnet build --configuration Release --no-restore
+            - name: Restore and build (generates XML docs)
+              run: |
+                  dotnet restore
+                  dotnet build --configuration Release --no-restore
 
             - name: Install DocFX
               run: dotnet tool install -g docfx
+
+            - name: Determine version label
+              id: ver
+              run: |
+                  if [ "$GITHUB_REF" = "refs/heads/release" ]; then
+                      V=$(grep -oP '(?<=<Version>)[^<]+' Utils/Utils.csproj | head -1)
+                      echo "label=v$V" >> "$GITHUB_OUTPUT"
+                  else
+                      echo "label=latest" >> "$GITHUB_OUTPUT"
+                  fi
 
             - name: Build documentation
               run: docfx docfx.json
 
             - name: Deploy to GitHub Pages
-              uses: peaceiris/actions-gh-pages@v4
-              with:
-                  github_token: ${{ secrets.GITHUB_TOKEN }}
-                  publish_dir: ./_site
-                  force_orphan: true
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  LABEL: ${{ steps.ver.outputs.label }}
+              run: |
+                  git config user.name "github-actions[bot]"
+                  git config user.email "github-actions[bot]@users.noreply.github.com"
+
+                  # Clone gh-pages or initialise an orphan branch
+                  if git ls-remote --exit-code origin gh-pages > /dev/null 2>&1; then
+                      git clone --branch gh-pages --depth 1 \
+                          "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+                          gh-pages-out
+                  else
+                      mkdir gh-pages-out
+                      cd gh-pages-out
+                      git init
+                      git remote add origin \
+                          "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+                      git checkout --orphan gh-pages
+                      cd ..
+                  fi
+
+                  # Prevent Jekyll processing of DocFX assets (_static, etc.)
+                  touch gh-pages-out/.nojekyll
+
+                  # Deploy this version's docs into its own subdirectory
+                  rm -rf "gh-pages-out/${LABEL}"
+                  cp -r _site/. "gh-pages-out/${LABEL}/"
+
+                  # Regenerate root index listing all available versions
+                  python3 - <<'PYEOF'
+                  import os, re
+
+                  out = "gh-pages-out"
+                  versions = sorted(
+                      [d for d in os.listdir(out) if re.match(r'^v\d', d) and os.path.isdir(f"{out}/{d}")],
+                      key=lambda v: [int(x) for x in re.findall(r'\d+', v)],
+                      reverse=True,
+                  )
+                  has_latest = os.path.isdir(f"{out}/latest")
+
+                  lines = [
+                      '<!DOCTYPE html>',
+                      '<html lang="en">',
+                      '<head>',
+                      '  <meta charset="utf-8">',
+                      '  <meta name="viewport" content="width=device-width, initial-scale=1">',
+                      '  <title>omy.Utils Documentation</title>',
+                      '  <style>',
+                      '    body { font-family: system-ui, sans-serif; max-width: 600px; margin: 4rem auto; padding: 0 1rem; }',
+                      '    h1 { color: #24292f; }',
+                      '    a { color: #0969da; text-decoration: none; }',
+                      '    a:hover { text-decoration: underline; }',
+                      '    ul { padding: 0; list-style: none; }',
+                      '    li { margin: .6rem 0; font-size: 1.1rem; }',
+                      '    .badge { font-size: .75rem; background: #ddf4ff; color: #0550ae;',
+                      '             border-radius: 3px; padding: 2px 6px; margin-left: .4rem; }',
+                      '    .dev   { background: #fff8c5; color: #7d4e00; }',
+                      '  </style>',
+                      '</head>',
+                      '<body>',
+                      '  <h1>omy.Utils Documentation</h1>',
+                      '  <p>Focused .NET utility libraries published on NuGet under the <code>omy.Utils</code> prefix.</p>',
+                      '  <ul>',
+                  ]
+
+                  if has_latest:
+                      lines.append('    <li><a href="latest/">latest (master)</a>'
+                                   '<span class="badge dev">dev</span></li>')
+
+                  for i, v in enumerate(versions):
+                      badge = '<span class="badge">latest release</span>' if i == 0 else ''
+                      lines.append(f'    <li><a href="{v}/">{v}</a>{badge}</li>')
+
+                  lines += [
+                      '  </ul>',
+                      '  <p>',
+                      '    <a href="https://github.com/warny/All-purpose-Utilities">GitHub repository</a> ·',
+                      '    <a href="https://www.nuget.org/profiles/warny">NuGet packages</a>',
+                      '  </p>',
+                      '</body>',
+                      '</html>',
+                  ]
+
+                  with open(f"{out}/index.html", "w", encoding="utf-8") as f:
+                      f.write("\n".join(lines) + "\n")
+
+                  print(f"Index generated — versions: {versions}, has_latest: {has_latest}")
+                  PYEOF
+
+                  # Commit and push only when something actually changed
+                  cd gh-pages-out
+                  git add .
+                  if git diff --cached --quiet; then
+                      echo "No changes — skipping push."
+                  else
+                      git commit -m "docs: deploy ${LABEL}"
+                      git push origin gh-pages
+                  fi
