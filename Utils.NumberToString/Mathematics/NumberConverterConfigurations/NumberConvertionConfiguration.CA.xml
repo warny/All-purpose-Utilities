@@ -77,19 +77,19 @@
 		</Exceptions>
 		<Variants>
 			<!--
-			  En catalan, les chiffres 1 (un/una) et 2 (dos/dues) varient en genre,
-			  ainsi que les deux-cents (dos-cents/dues-centes). Les autres centaines
-			  sont invariables. Les composés des dizaines utilisent des tirets
-			  (vint-i-un, trenta-un…) : le tiret est une frontière de mot pour
-			  LastWord, donc la règle s'applique correctement aux composés.
+			  In Catalan, digits 1 (un/una) and 2 (dos/dues) vary in gender,
+			  as does two-hundred (dos-cents/dues-centes). All other hundreds
+			  are invariable. Tens compounds use hyphens (vint-i-un, trenta-un…):
+			  the hyphen is a word boundary for LastWord, so the rule applies
+			  correctly to compound numbers.
 			-->
 			<Dimension name="gender" values="masculí,femení" />
 
 			<Variant gender="femení">
-				<!-- Unités variables en genre (fonctionne sur les composés grâce aux tirets) -->
+				<!-- Gender-variable units (works on compounds because hyphens are word boundaries) -->
 				<Replacement oldValue="un"  newValue="una"  scope="LastWord" />
 				<Replacement oldValue="dos" newValue="dues" scope="LastWord" />
-				<!-- Seule la centaine de 200 a une forme féminine en catalan -->
+				<!-- Only the 200-hundred has a feminine form in Catalan -->
 				<Replacement oldValue="dos-cents" newValue="dues-centes" scope="Anywhere" />
 			</Variant>
 		</Variants>

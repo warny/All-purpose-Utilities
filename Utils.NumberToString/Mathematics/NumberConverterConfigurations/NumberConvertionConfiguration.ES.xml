@@ -72,20 +72,20 @@
 		</Exceptions>
 		<Variants>
 			<!--
-			  En espagnol, seul "uno" (1) et les centaines composées (-cientos)
-			  varient en genre. Les dizaines 21-29 sont des mots composés soudés
-			  (veintiuno, veintidós…) : LastWord ne transforme pas "uno" à
-			  l'intérieur de "veintiuno" car le caractère précédent ('i') n'est pas
-			  une espace ni un tiret. Corriger les buildStrings (ajouter une espace
-			  et "y") permettrait d'étendre la couverture aux formes 31-99.
+			  In Spanish, only "uno" (1) and compound hundreds (-cientos) vary in
+			  gender. The 21-29 compounds are fused words (veintiuno, veintidós…):
+			  LastWord does not transform "uno" inside "veintiuno" because the
+			  preceding character ('i') is neither a space nor a hyphen. Fixing
+			  the buildStrings (adding a space and "y") would extend coverage to
+			  the 31-99 forms.
 			-->
 			<Dimension name="gender" values="masculino,femenino" />
 
 			<Variant gender="femenino">
-				<!-- Unités : "uno" seul ou en fin de groupe (précédé d'une espace ou tiret) -->
+				<!-- Units: "uno" alone or at end of group (preceded by a space or hyphen) -->
 				<Replacement oldValue="uno" newValue="una" scope="LastWord" />
-				<!-- Centaines : remplace la forme -cientos par -cientas partout
-				     (safe car ces mots n'apparaissent pas dans les noms de scale) -->
+				<!-- Hundreds: replaces the -cientos form with -cientas everywhere
+				     (safe because these words do not appear in scale names) -->
 				<Replacement oldValue="doscientos"    newValue="doscientas"    scope="Anywhere" />
 				<Replacement oldValue="trescientos"   newValue="trescientas"   scope="Anywhere" />
 				<Replacement oldValue="cuatrocientos" newValue="cuatrocientas" scope="Anywhere" />

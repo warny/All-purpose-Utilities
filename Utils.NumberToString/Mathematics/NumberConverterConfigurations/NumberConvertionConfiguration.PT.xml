@@ -73,19 +73,19 @@
 		</Exceptions>
 		<Variants>
 			<!--
-			  Le portugais utilise des espaces pour tous les composés ("vinte e um",
-			  "trinta e dois"…), donc LastWord fonctionne sur l'ensemble des formes,
-			  y compris les composés. Les centaines varient en genre (-entos/-entas).
-			  Limitation : le multiplicateur avant "mil" (ex. "dois mil") n'est pas
-			  modifié car le dernier mot est "mil" et non le multiplicateur.
+			  Portuguese uses spaces for all compounds ("vinte e um", "trinta e dois"…),
+			  so LastWord works for every form, including composites.
+			  Hundreds vary in gender (-entos/-entas).
+			  Limitation: the multiplier before "mil" (e.g. "dois mil") is not
+			  changed because the last word is "mil", not the multiplier.
 			-->
 			<Dimension name="gender" values="masculino,feminino" />
 
 			<Variant gender="feminino">
-				<!-- Unités variables en genre -->
+				<!-- Gender-variable units -->
 				<Replacement oldValue="um"   newValue="uma"  scope="LastWord" />
 				<Replacement oldValue="dois" newValue="duas" scope="LastWord" />
-				<!-- Centaines : -entos → -entas (safe car absents des noms de scale) -->
+				<!-- Hundreds: -entos → -entas (safe because these words do not appear in scale names) -->
 				<Replacement oldValue="duzentos"     newValue="duzentas"     scope="Anywhere" />
 				<Replacement oldValue="trezentos"    newValue="trezentas"    scope="Anywhere" />
 				<Replacement oldValue="quatrocentos" newValue="quatrocentas" scope="Anywhere" />

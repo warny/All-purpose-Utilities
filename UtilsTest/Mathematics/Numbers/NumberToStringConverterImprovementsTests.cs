@@ -234,10 +234,10 @@ public class NumberToStringConverterImprovementsTests
         ];
 
         foreach (var (number, expected) in cases)
-            Assert.AreEqual(expected, converter.ConvertOrdinal(number), $"Ordinal FR de {number}");
+            Assert.AreEqual(expected, converter.ConvertOrdinal(number), $"FR ordinal of {number}");
     }
 
-    // ─── C2 — Variants grammaticaux (genre) ───────────────────────────────
+    // ─── C2 — Grammatical variants (gender) ───────────────────────────────
 
     [TestMethod]
     public void Convert_FR_Feminine_OneBecomesUne()
@@ -259,13 +259,13 @@ public class NumberToStringConverterImprovementsTests
         ];
 
         foreach (var (number, expected) in cases)
-            Assert.AreEqual(expected, converter.Convert(number, "gender=feminin"), $"Féminin FR de {number}");
+            Assert.AreEqual(expected, converter.Convert(number, "gender=feminin"), $"FR feminine of {number}");
     }
 
     [TestMethod]
     public void Convert_FR_Masculine_IsDefault()
     {
-        // "masculin" est la première valeur de la dimension → même résultat qu'avec ou sans paramètre
+        // "masculin" is the first value of the dimension → same result with or without the parameter
         var converter = NumberToStringConverter.GetConverter("FR");
 
         Assert.AreEqual("un", converter.Convert(1));
@@ -304,7 +304,7 @@ public class NumberToStringConverterImprovementsTests
     [TestMethod]
     public void Convert_UnknownVariantDimension_FallsBackSilently()
     {
-        // Une dimension inconnue est ignorée silencieusement → résultat identique à Convert(1)
+        // An unknown dimension is silently ignored → same result as Convert(1)
         var converter = NumberToStringConverter.GetConverter("FR");
 
         string result = converter.Convert(1, "cas=inconnu");
@@ -372,7 +372,7 @@ public class NumberToStringConverterImprovementsTests
     {
         var converter = NumberToStringConverter.GetConverter("PT");
 
-        // Centaine + unité → les deux doivent passer au féminin
+        // Hundred + unit → both must switch to feminine
         Assert.AreEqual("duzentas e uma",  converter.Convert(201, "gender=feminino"));
         Assert.AreEqual("duzentas e duas", converter.Convert(202, "gender=feminino"));
     }
@@ -398,7 +398,7 @@ public class NumberToStringConverterImprovementsTests
         Assert.AreEqual("un",        converter.Convert(1));
         Assert.AreEqual("una",       converter.Convert(1,  "gender=femení"));
         Assert.AreEqual("dues",      converter.Convert(2,  "gender=femení"));
-        // Les tirets sont des frontières de mot → LastWord fonctionne sur les composés
+        // Hyphens are word boundaries → LastWord works on compound numbers
         Assert.AreEqual("vint-i-una",  converter.Convert(21, "gender=femení"));
         Assert.AreEqual("vint-i-dues", converter.Convert(22, "gender=femení"));
         Assert.AreEqual("trenta-una",  converter.Convert(31, "gender=femení"));
@@ -409,7 +409,7 @@ public class NumberToStringConverterImprovementsTests
     {
         var converter = NumberToStringConverter.GetConverter("CA");
 
-        // Seule dos-cents a une forme féminine en catalan
+        // Only dos-cents has a feminine form in Catalan
         Assert.AreEqual("dues-centes",     converter.Convert(200, "gender=femení"));
         Assert.AreEqual("dues-centes una", converter.Convert(201, "gender=femení"));
     }
@@ -452,7 +452,7 @@ public class NumberToStringConverterImprovementsTests
     {
         var converter = NumberToStringConverter.GetConverter("FR-be");
 
-        // FR-be utilise septante/huitante/nonante — la règle LastWord s'applique de la même façon
+        // FR-be uses septante/huitante/nonante — the LastWord rule applies in the same way
         (int number, string expected)[] cases = [
             (21, "vingt et une"),
             (71, "septante et une"),
@@ -461,7 +461,7 @@ public class NumberToStringConverterImprovementsTests
         ];
 
         foreach (var (number, expected) in cases)
-            Assert.AreEqual(expected, converter.Convert(number, "gender=feminin"), $"Féminin FR-be de {number}");
+            Assert.AreEqual(expected, converter.Convert(number, "gender=feminin"), $"FR-be feminine of {number}");
     }
 
     [TestMethod]
@@ -490,7 +490,7 @@ public class NumberToStringConverterImprovementsTests
     {
         var converter = NumberToStringConverter.GetConverter("DE");
 
-        // Sans variante : forme de comptage (GermanSpecifics: "ein" → "eins")
+        // Without variant: counting form (GermanSpecifics: "ein" → "eins")
         Assert.AreEqual("eins", converter.Convert(1));
         Assert.AreEqual("eins", converter.Convert(1, "genus=maskulin"));
         Assert.AreEqual("eins", converter.Convert(1, "kasus=nominativ"));
@@ -539,8 +539,8 @@ public class NumberToStringConverterImprovementsTests
     {
         var converter = NumberToStringConverter.GetConverter("DE");
 
-        // Les composés allemands (einundzwanzig…) sont invariables :
-        // "ein" y est soudé, il ne correspond pas au dernier mot.
+        // German compound numbers (einundzwanzig…) are invariable:
+        // "ein" is fused into the compound and does not match the last word.
         Assert.AreEqual("einundzwanzig", converter.Convert(21, "genus=feminin"));
         Assert.AreEqual("einundzwanzig", converter.Convert(21, "kasus=akkusativ", "genus=maskulin"));
     }
@@ -654,17 +654,17 @@ public class NumberToStringConverterImprovementsTests
         Assert.AreEqual(1, callCount);
     }
 
-    // ─── C2i — Variants FI (sijamuoto : cas grammaticaux) ────────────────────
+    // ─── C2i — Variants FI (sijamuoto: grammatical cases) ────────────────────
 
     [TestMethod]
     public void Convert_FI_Partitiivi_Units()
     {
         var converter = NumberToStringConverter.GetConverter("FI");
 
-        // Nominatif (défaut)
+        // Nominative (default)
         Assert.AreEqual("yksi",  converter.Convert(1));
         Assert.AreEqual("kaksi", converter.Convert(2));
-        // Partitif
+        // Partitive
         Assert.AreEqual("yhtä",      converter.Convert(1, "sijamuoto=partitiivi"));
         Assert.AreEqual("kahta",     converter.Convert(2, "sijamuoto=partitiivi"));
         Assert.AreEqual("kolmea",    converter.Convert(3, "sijamuoto=partitiivi"));
@@ -681,15 +681,15 @@ public class NumberToStringConverterImprovementsTests
     {
         var converter = NumberToStringConverter.GetConverter("FI");
 
-        // Mots d'échelle seuls
+        // Scale words alone
         Assert.AreEqual("kymmentä",      converter.Convert(10,  "sijamuoto=partitiivi"));
         Assert.AreEqual("sataa",         converter.Convert(100, "sijamuoto=partitiivi"));
-        // 1000 : FI n'a pas de remplacement "yksi tuhat"→"tuhat", donc "yksi" reste
+        // 1000: FI has no replacement "yksi tuhat"→"tuhat", so "yksi" stays
         Assert.AreEqual("yksi tuhatta",  converter.Convert(1000, "sijamuoto=partitiivi"));
-        // Composés : dizaine + unité
+        // Compounds: tens + unit
         Assert.AreEqual("kaksikymmentä yhtä", converter.Convert(21, "sijamuoto=partitiivi"));
         Assert.AreEqual("kaksikymmentä kahta", converter.Convert(22, "sijamuoto=partitiivi"));
-        // Centaine composée (déjà compatible partitif) + unité
+        // Compound hundred (already partitive-compatible) + unit
         Assert.AreEqual("kaksisataa yhtä", converter.Convert(201, "sijamuoto=partitiivi"));
     }
 
@@ -703,7 +703,7 @@ public class NumberToStringConverterImprovementsTests
         Assert.AreEqual("seitsemäätoista", converter.Convert(17, "sijamuoto=partitiivi"));
         Assert.AreEqual("kahdeksaatoista", converter.Convert(18, "sijamuoto=partitiivi"));
         Assert.AreEqual("yhdeksäätoista",  converter.Convert(19, "sijamuoto=partitiivi"));
-        // En contexte composé : sata + exception
+        // In compound context: sata + exception
         Assert.AreEqual("kaksisataa yhtätoista", converter.Convert(211, "sijamuoto=partitiivi"));
     }
 
@@ -718,7 +718,7 @@ public class NumberToStringConverterImprovementsTests
         Assert.AreEqual("neljän",   converter.Convert(4, "sijamuoto=genetiivi"));
         Assert.AreEqual("viiden",   converter.Convert(5, "sijamuoto=genetiivi"));
         Assert.AreEqual("kuuden",   converter.Convert(6, "sijamuoto=genetiivi"));
-        // seitsemän/kahdeksan/yhdeksän : invariables au génitif
+        // seitsemän/kahdeksan/yhdeksän: invariable in genitive
         Assert.AreEqual("seitsemän", converter.Convert(7, "sijamuoto=genetiivi"));
         Assert.AreEqual("kahdeksan", converter.Convert(8, "sijamuoto=genetiivi"));
         Assert.AreEqual("yhdeksän",  converter.Convert(9, "sijamuoto=genetiivi"));
@@ -729,18 +729,18 @@ public class NumberToStringConverterImprovementsTests
     {
         var converter = NumberToStringConverter.GetConverter("FI");
 
-        // Dizaines composées
+        // Compound tens
         Assert.AreEqual("kahdenkymmenen",    converter.Convert(20, "sijamuoto=genetiivi"));
         Assert.AreEqual("kolmenkymmenen",    converter.Convert(30, "sijamuoto=genetiivi"));
         Assert.AreEqual("seitsemänkymmenen", converter.Convert(70, "sijamuoto=genetiivi"));
-        // Dizaine + unité
+        // Tens + unit
         Assert.AreEqual("kahdenkymmenen yhden",  converter.Convert(21, "sijamuoto=genetiivi"));
         Assert.AreEqual("kahdenkymmenen kahden", converter.Convert(22, "sijamuoto=genetiivi"));
-        // Centaines composées
+        // Compound hundreds
         Assert.AreEqual("kahdensadan",   converter.Convert(200, "sijamuoto=genetiivi"));
         Assert.AreEqual("kolmensadan",   converter.Convert(300, "sijamuoto=genetiivi"));
         Assert.AreEqual("yhdeksänsadan", converter.Convert(900, "sijamuoto=genetiivi"));
-        // Composé complet : centaine + dizaine + unité
+        // Full compound: hundred + tens + unit
         Assert.AreEqual("kahdensadan kahdenkymmenen yhden",  converter.Convert(221, "sijamuoto=genetiivi"));
         Assert.AreEqual("kahdensadan kahdenkymmenen kahden", converter.Convert(222, "sijamuoto=genetiivi"));
     }
@@ -753,7 +753,7 @@ public class NumberToStringConverterImprovementsTests
         Assert.AreEqual("yhdentoista",  converter.Convert(11, "sijamuoto=genetiivi"));
         Assert.AreEqual("kahdentoista", converter.Convert(12, "sijamuoto=genetiivi"));
         Assert.AreEqual("kuudentoista", converter.Convert(16, "sijamuoto=genetiivi"));
-        // 17-19 invariables au génitif
+        // 17-19 invariable in genitive
         Assert.AreEqual("seitsemäntoista", converter.Convert(17, "sijamuoto=genetiivi"));
         Assert.AreEqual("kahdeksantoista", converter.Convert(18, "sijamuoto=genetiivi"));
         Assert.AreEqual("yhdeksäntoista",  converter.Convert(19, "sijamuoto=genetiivi"));

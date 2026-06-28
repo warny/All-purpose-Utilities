@@ -76,22 +76,22 @@
 		</Exceptions>
 		<Variants>
 			<!--
-			  Le galicien utilise des espaces pour les composés ("vinte e un",
-			  "trinta e dous"…) : LastWord fonctionne sur toutes les formes.
+			  Galician uses spaces for compounds ("vinte e un", "trinta e dous"…):
+			  LastWord works for all forms.
 			  1 : un (m) / unha (f)
 			  2 : dous (m) / dúas (f)
-			  200 : douscentos (m) / douscentas (f) — seule centaine à varier.
-			  Les autres centaines (trescentos…) sont invariables en galicien.
-			  Limitation : le multiplicateur avant "mil" (ex. "dous mil") n'est pas
-			  modifié car le dernier mot est "mil".
+			  200 : douscentos (m) / douscentas (f) — only hundred that varies.
+			  All other hundreds (trescentos…) are invariable in Galician.
+			  Limitation: the multiplier before "mil" (e.g. "dous mil") is not
+			  changed because the last word is "mil".
 			-->
 			<Dimension name="gender" values="masculino,feminino" />
 
 			<Variant gender="feminino">
-				<!-- Unités variables en genre -->
+				<!-- Gender-variable units -->
 				<Replacement oldValue="un"   newValue="unha" scope="LastWord" />
 				<Replacement oldValue="dous" newValue="dúas" scope="LastWord" />
-				<!-- 200 : seule centaine variable en galicien -->
+				<!-- 200: only variable hundred in Galician -->
 				<Replacement oldValue="douscentos" newValue="douscentas" scope="Anywhere" />
 			</Variant>
 		</Variants>
