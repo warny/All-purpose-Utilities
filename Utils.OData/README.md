@@ -1,4 +1,4 @@
-# Utils.OData
+﻿# Utils.OData
 
 `Utils.OData` delivers an HTTP client, LINQ provider, and metadata helpers that simplify consuming OData services from **.NET 9** applications. The library can be used on its own or together with the `Utils.OData.Generators` package to produce strongly typed contexts from EDMX metadata.
 
@@ -194,3 +194,7 @@ public class AuthorizedODataClient : QueryOData
 
 Customizing the request ensures headers, cookies, or diagnostics are consistently applied before
 the HTTP call is sent.
+
+## API Documentation
+
+Full API reference for this release: [https://warny.github.io/All-purpose-Utilities/v1.2.1/](https://warny.github.io/All-purpose-Utilities/v1.2.1/)

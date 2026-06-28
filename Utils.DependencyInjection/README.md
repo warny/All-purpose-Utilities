@@ -1,4 +1,4 @@
-# Utils.DependencyInjection Library
+﻿# Utils.DependencyInjection Library
 
 **Utils.DependencyInjection** enables attribute-based registration of services with
 the `Microsoft.Extensions.DependencyInjection` framework. It targets **.NET 9** and
@@ -148,3 +148,7 @@ new GreetingConfigurator().ConfigureServices(services);
 var provider = services.BuildServiceProvider();
 var service = provider.GetRequiredService<IGreetingService>();
 ```
+
+## API Documentation
+
+Full API reference for this release: [https://warny.github.io/All-purpose-Utilities/v1.2.1/](https://warny.github.io/All-purpose-Utilities/v1.2.1/)

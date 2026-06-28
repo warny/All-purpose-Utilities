@@ -1,4 +1,4 @@
-# Utils.Fonts Library
+﻿# Utils.Fonts Library
 
 **Utils.Fonts** handles font parsing and metrics extraction for TrueType and PostScript fonts.
 It targets **.NET 9** and is used by the imaging library to render glyphs accurately.
@@ -17,3 +17,7 @@ var font = Utils.Fonts.TTF.TrueTypeFont.ParseFont(bytes);
 float width = font.GetGlyph('A').Width;
 string name = Utils.Fonts.FontSupport.GetName(65); // "A"
 ```
+
+## API Documentation
+
+Full API reference for this release: [https://warny.github.io/All-purpose-Utilities/v1.2.1/](https://warny.github.io/All-purpose-Utilities/v1.2.1/)

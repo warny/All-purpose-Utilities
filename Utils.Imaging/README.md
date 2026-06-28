@@ -1,4 +1,4 @@
-# Utils.Imaging Library
+﻿# Utils.Imaging Library
 
 The **Utils.Imaging** package contains bitmap accessors, color structures and drawing primitives built on top of `System.Drawing`.
 It targets **.NET 9** and provides the graphical foundation used by the sample applications in this repository.
@@ -16,3 +16,7 @@ var hsv = new ColorAhsv(0.5, 180, 1, 1); // cyan
 ColorArgb argb = hsv.ToArgbColor();
 ColorAhsv32 compact = ColorAhsv32.FromArgbColor((ColorArgb32)argb);
 ```
+
+## API Documentation
+
+Full API reference for this release: [https://warny.github.io/All-purpose-Utilities/v1.2.1/](https://warny.github.io/All-purpose-Utilities/v1.2.1/)

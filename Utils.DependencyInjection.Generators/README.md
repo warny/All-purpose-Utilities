@@ -1,4 +1,4 @@
-# Utils.DependencyInjection.Generators
+﻿# Utils.DependencyInjection.Generators
 
 `Utils.DependencyInjection.Generators` provides a Roslyn source generator that implements `IServiceConfigurator` classes marked
 with the `[StaticAuto]` attribute. It targets **.NET 9** and complements the `Utils.DependencyInjection` runtime library by wiring
@@ -225,3 +225,7 @@ public partial class MessagingConfigurator : IServiceConfigurator
 Because the generator never rewrites the partial file, developers can evolve their manual
 registrations at their own pace while still benefiting from automated discovery for routine
 services.
+
+## API Documentation
+
+Full API reference for this release: [https://warny.github.io/All-purpose-Utilities/v1.2.1/](https://warny.github.io/All-purpose-Utilities/v1.2.1/)

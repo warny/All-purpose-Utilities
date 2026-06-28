@@ -1,4 +1,4 @@
-# Utils.Net Library
+﻿# Utils.Net Library
 
 The **Utils.Net** package groups network-related helpers and a minimal DNS protocol implementation.
 It targets **.NET 9** and is designed to be portable across platforms.
@@ -134,3 +134,7 @@ var store = new MemoryStore();
 var smtpServer = new Utils.Net.SmtpServer(store, d => d == "example.com", authenticator);
 await smtpServer.StartAsync(tcp.GetStream());
 ```
+
+## API Documentation
+
+Full API reference for this release: [https://warny.github.io/All-purpose-Utilities/v1.2.1/](https://warny.github.io/All-purpose-Utilities/v1.2.1/)

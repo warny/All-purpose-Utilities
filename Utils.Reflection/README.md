@@ -1,4 +1,4 @@
-# Utils.Reflection Library
+﻿# Utils.Reflection Library
 
 **Utils.Reflection** extends the .NET reflection APIs with helpers for dynamic loading and runtime code generation.
 It targets **.NET 9** and provides abstractions that help split platform-specific logic from high level processing.
@@ -26,3 +26,7 @@ class KernelApi : Utils.Reflection.LibraryMapper
 using var kernel = Utils.Reflection.LibraryMapper.Create<KernelApi>("kernel32.dll");
 uint ticks = kernel.GetTickCount();
 ```
+
+## API Documentation
+
+Full API reference for this release: [https://warny.github.io/All-purpose-Utilities/v1.2.1/](https://warny.github.io/All-purpose-Utilities/v1.2.1/)

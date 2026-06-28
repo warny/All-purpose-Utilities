@@ -1,4 +1,4 @@
-# Utils.XML Library
+﻿# Utils.XML Library
 
 The **Utils.XML** package groups the XML helpers extracted from the base Utils assembly.
 It targets **.NET 8** and provides infrastructure to process XML documents using
@@ -37,3 +37,7 @@ using XmlReader reader = XmlReader.Create(new StringReader("<items><item id=\"A\
 var processor = new ItemProcessor();
 processor.Read(reader);
 ```
+
+## API Documentation
+
+Full API reference for this release: [https://warny.github.io/All-purpose-Utilities/v1.2.1/](https://warny.github.io/All-purpose-Utilities/v1.2.1/)

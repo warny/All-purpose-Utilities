@@ -1,4 +1,4 @@
-# Utils.IO Library
+﻿# Utils.IO Library
 
 **Utils.IO** provides input/output helpers used across the other utility packages.
 It targets **.NET 9** and focuses on working with streams and binary data while keeping processing logic separate from data structures.
@@ -29,3 +29,7 @@ using var validator = new Utils.IO.StreamValidator(target);
 validator.Write(chunk, 0, chunk.Length);
 validator.Validate();
 ```
+
+## API Documentation
+
+Full API reference for this release: [https://warny.github.io/All-purpose-Utilities/v1.2.1/](https://warny.github.io/All-purpose-Utilities/v1.2.1/)

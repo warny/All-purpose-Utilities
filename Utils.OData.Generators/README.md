@@ -1,4 +1,4 @@
-# Utils.OData.Generators
+﻿# Utils.OData.Generators
 
 `Utils.OData.Generators` offers a Roslyn source generator that materializes entity classes and helpers for contexts derived from `Utils.OData.ODataContext`. It targets **.NET 9** and consumes EDMX metadata so OData payloads can be accessed through strongly typed models.
 
@@ -146,3 +146,7 @@ Diagnostics surfaced by the generator can be acted upon quickly during developme
 | ODATA004  | Duplicate entity names detected across merged EDMX documents.      | Rename the entities or split them into distinct models. |
 
 Keeping this table handy speeds up troubleshooting when metadata moves or services change.
+
+## API Documentation
+
+Full API reference for this release: [https://warny.github.io/All-purpose-Utilities/v1.2.1/](https://warny.github.io/All-purpose-Utilities/v1.2.1/)

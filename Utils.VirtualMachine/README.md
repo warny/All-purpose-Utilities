@@ -1,4 +1,4 @@
-# Utils.VirtualMachine Library
+﻿# Utils.VirtualMachine Library
 
 The **Utils.VirtualMachine** package implements a small and extensible byte-code interpreter.
 It targets **.NET 9** and uses attributes to define instructions, making it easy to build custom instruction sets.
@@ -39,3 +39,7 @@ byte[] program =
 var context = new DefaultContext(program);
 new SampleMachine().Execute(context);
 ```
+
+## API Documentation
+
+Full API reference for this release: [https://warny.github.io/All-purpose-Utilities/v1.2.1/](https://warny.github.io/All-purpose-Utilities/v1.2.1/)

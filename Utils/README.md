@@ -1,4 +1,4 @@
-# Utils Library
+﻿# Utils Library
 
 The **Utils** library is a large collection of helper namespaces covering many common programming needs.
 It targets **.NET 9** and is the base dependency for the other utility packages contained in this repository.
@@ -203,3 +203,6 @@ foreach (var child in reader.ReadChildElements())
 }
 ```
 
+## API Documentation
+
+Full API reference for this release: [https://warny.github.io/All-purpose-Utilities/v1.2.1/](https://warny.github.io/All-purpose-Utilities/v1.2.1/)

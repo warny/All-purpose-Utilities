@@ -1,4 +1,4 @@
-# Utils.Geography Library
+﻿# Utils.Geography Library
 
 **Utils.Geography** provides models and helpers for working with geographic coordinates, map projections and tile systems.
 It targets **.NET 9** and is suitable for GIS style applications and mapping tools.
@@ -22,3 +22,7 @@ var dest = Utils.Geography.Model.Planets<double>.Earth.Travel(vector, 1000);
 var lambert = Utils.Geography.Projections.Projections<double>.Lambert;
 var lambertPoint = lambert.GeoPointToMapPoint(paris);
 ```
+
+## API Documentation
+
+Full API reference for this release: [https://warny.github.io/All-purpose-Utilities/v1.2.1/](https://warny.github.io/All-purpose-Utilities/v1.2.1/)

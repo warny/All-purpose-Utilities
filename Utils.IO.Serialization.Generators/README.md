@@ -1,4 +1,4 @@
-# Utils.IO.Serialization.Generators
+﻿# Utils.IO.Serialization.Generators
 
 `Utils.IO.Serialization.Generators` ships a Roslyn source generator that produces strongly typed reader and writer extension methods for DTOs annotated with `GenerateReaderWriterAttribute`. It targets **.NET 9** and extends the `Utils.IO.Serialization` primitives by removing repetitive serialization boilerplate.
 
@@ -228,3 +228,7 @@ foreach (InventoryEntry item in inventory)
 
 Because flushing is under the caller's control you can batch messages, append framing headers,
 or interleave generated payloads with custom metadata before sending them over the network.
+
+## API Documentation
+
+Full API reference for this release: [https://warny.github.io/All-purpose-Utilities/v1.2.1/](https://warny.github.io/All-purpose-Utilities/v1.2.1/)

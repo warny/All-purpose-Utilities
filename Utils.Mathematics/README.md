@@ -1,4 +1,4 @@
-# Utils.Mathematics Library
+﻿# Utils.Mathematics Library
 
 The **Utils.Mathematics** package offers advanced math helpers and generic algebra types used by other utilities.
 It targets **.NET 9** and is built for extensibility so algorithms can operate on generic numeric types.
@@ -32,3 +32,6 @@ string text = converter.Convert(12.34m); // "twelve point thirty four hundredths
 var limit = converter.MaxNumber; // null when unlimited
 ```
 
+## API Documentation
+
+Full API reference for this release: [https://warny.github.io/All-purpose-Utilities/v1.2.1/](https://warny.github.io/All-purpose-Utilities/v1.2.1/)
