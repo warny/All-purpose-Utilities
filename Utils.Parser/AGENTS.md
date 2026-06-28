@@ -216,3 +216,8 @@ Before completing any PR, verify:
 - Lexer grammar-level named actions are limited to `@lexer::header`, `@lexer::members`, and `@lexer::footer` source-generator C# injection. Simple lexer inline actions and simple lexer predicates are supported only in the explicit generated-C# opt-in path; lexer predicates remain separate from parser predicates and lexer actions.
 - `@parser::members` and `@lexer::members` are emitted into the generated execution context only.
 - `$...` current-rule rewriting is rule-bound and must not run for parser header/member/footer content.
+
+
+## Lexer embedded-code attribute rewriting
+
+Lexer `$...` conveniences must follow the same optional-transformer model as parser attributes. Keep lexer attribute rewriting in the C# embedded-code transformer and dedicated rewriter code, not in `LexerEngine`, `ParserEngine`, or `ParserRuntimeFeaturePolicy`. Supported generated-C# lexer action reads are intentionally narrow (`$text`, `$type`, `$channel`, `$mode`); writes and lexer predicate attributes must remain deterministic diagnostics unless a documented runtime-neutral action-result model is added.

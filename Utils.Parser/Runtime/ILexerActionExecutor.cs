@@ -22,7 +22,11 @@ public interface ILexerActionExecutor
 /// <param name="ActionCode">Raw action code without ANTLR braces.</param>
 /// <param name="AlternativeIndex">Best-effort deterministic alternative index, or <c>-1</c> when not represented.</param>
 /// <param name="ElementIndex">Best-effort deterministic element index, or <c>-1</c> when not represented.</param>
-public sealed record LexerActionExecutionContext(Rule Rule, string ActionCode, int AlternativeIndex, int ElementIndex);
+/// <param name="Text">Accepted lexer text for the current rule match before <c>more</c> accumulation is appended.</param>
+/// <param name="TokenType">Current token type before lexer commands are applied.</param>
+/// <param name="Channel">Current token channel before lexer commands are applied.</param>
+/// <param name="Mode">Lexer mode that accepted the current rule match.</param>
+public sealed record LexerActionExecutionContext(Rule Rule, string ActionCode, int AlternativeIndex, int ElementIndex, string Text, string TokenType, string Channel, string Mode);
 
 /// <summary>
 /// Result of attempting to execute a lexer inline action.

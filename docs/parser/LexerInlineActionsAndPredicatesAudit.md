@@ -173,3 +173,8 @@ This audit explicitly excludes:
 
 
 > Lexer inline actions and predicates: simple source-generator C# lexer inline actions and simple lexer predicates are now supported only through the explicit opt-in generated path. `Parse(...)` remains conservative. Predicates run during lexer matching and reject only the current path; actions run after token acceptance and before accepted lexer commands are applied. Commands from rejected paths are not applied. `AlternativeIndex` and `ElementIndex` identify the source hook location and are reused across quantified iterations. The tested command/mode boundary covers `skip`, `channel(...)`, `type(...)`, `more`, `mode(...)`, and `pushMode(...)`/`popMode`. Lexer `$...` rewriting, runtime-inline lexer execution, a separate runtime lexer, complete ANTLR command/mode semantics, generalized action buffering/replay, and external side-effect rollback remain unsupported.
+
+
+## Lexer `$...` rewrite audit note
+
+The generated-C# opt-in path now has an optional C# transformer-only lexer attribute rewrite aligned with parser attribute rewriting. Inline lexer actions support reads of `$text`, `$type`, `$channel`, and `$mode`; these are emitted as helper calls in the generated execution context. The values are taken from passive `LexerActionExecutionContext` metadata for the accepted rule chunk before commands execute. Writes are deliberately not implemented because token mutation ordering is not modeled as an action result in this phase. Lexer predicates reject all `$...` attributes with deterministic diagnostics rather than compiling raw invalid C#. The default no-op transformer still preserves source unchanged, and runtime-inline lexer actions/predicates remain unsupported.

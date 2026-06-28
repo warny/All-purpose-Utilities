@@ -273,3 +273,14 @@ The generated-C# path supports grammar-level `@lexer::header`, `@lexer::members`
 
 
 > Lexer inline actions and predicates: simple source-generator C# lexer inline actions and simple lexer predicates are now supported only through the explicit opt-in generated path. `Parse(...)` remains conservative. Predicates are evaluated during lexer matching and can reject only the current token path; actions execute after token acceptance and do not run when an earlier predicate rejects that path. Fragments, lexer rule references, simple quantifiers, duplicate source text at distinct positions, and already-supported commands such as `skip` are covered by regression tests. `AlternativeIndex` and `ElementIndex` identify the source hook location rather than a quantified runtime iteration. Lexer `$...` rewriting, runtime-inline lexer execution, a separate runtime lexer, generalized action buffering/replay, and external side-effect rollback remain unsupported.
+
+
+## Limited lexer attribute rewrite status
+
+| Feature | Default/no-op | Runtime-inline | Generated C# with optional C# transformer |
+|---|---|---|---|
+| Lexer action `$text`, `$type`, `$channel`, `$mode` reads | Preserved as raw target code | Unsupported | Rewritten to generated execution-context helpers |
+| Lexer action `$type = ...` / `$channel = ...` writes | Preserved as raw target code | Unsupported | Deterministic transformer error |
+| Lexer predicate `$...` attributes | Preserved as raw target code | Unsupported | Deterministic transformer error |
+
+The generated-C# helper values are passive lexer-action metadata and do not add a separate lexer runtime or target-language logic to the runtime engine.

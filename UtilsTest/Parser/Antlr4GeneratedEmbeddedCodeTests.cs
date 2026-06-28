@@ -17,6 +17,208 @@ namespace UtilsTest.Parser;
 [TestClass]
 public class Antlr4GeneratedEmbeddedCodeTests
 {
+
+    /// <summary>
+    /// Ensures the optional C# transformer rewrites lexer <c>$text</c> actions to generated helpers.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerTextAttribute_RewritesAndReadsAcceptedText()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public string Seen = "";
+            }
+
+            start : A ;
+            A : 'a' { Seen = $text; } ;
+            """;
+
+        string source = EmitWithAntlrStyleTransformer(grammar);
+        StringAssert.Contains(source, "Seen = GetRequiredLexerText(context);");
+        int hookStart = source.IndexOf("private void __LexerAction_A_0_1_0", StringComparison.Ordinal);
+        Assert.IsTrue(hookStart >= 0, source);
+        Assert.IsFalse(source.Substring(hookStart).Contains("Seen = $text;", StringComparison.Ordinal), source);
+        var assembly = CompileGeneratedSource(source);
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "a", context);
+        var conservativeContext = CreateExecutionContext(assembly);
+        _ = InvokeParse(assembly, "Parse", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual("a", ReadInstanceStringField(context, "Seen"));
+        Assert.AreEqual("", ReadInstanceStringField(conservativeContext, "Seen"));
+    }
+
+    /// <summary>
+    /// Ensures lexer <c>$text</c> exposes the full accepted token chunk for quantified matches.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerTextAttribute_ReadsLongTokenText()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public string Seen = "";
+            }
+
+            start : A ;
+            A : 'a'+ { Seen = $text; } ;
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "aaa", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual("aaa", ReadInstanceStringField(context, "Seen"));
+    }
+
+    /// <summary>
+    /// Ensures readable lexer attributes expose passive runtime metadata before lexer commands are applied.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerMetadataAttributes_ReadCurrentMatchMetadata()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public string SeenType = "";
+                public string SeenChannel = "";
+                public string SeenMode = "";
+            }
+
+            start : A ;
+            A : 'a' { SeenType = $type; SeenChannel = $channel; SeenMode = $mode; } ;
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "a", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual("A", ReadInstanceStringField(context, "SeenType"));
+        Assert.AreEqual("DEFAULT_CHANNEL", ReadInstanceStringField(context, "SeenChannel"));
+        Assert.AreEqual("DEFAULT_MODE", ReadInstanceStringField(context, "SeenMode"));
+    }
+
+    /// <summary>
+    /// Ensures the no-op transformer preserves lexer attribute source unchanged.
+    /// </summary>
+    [TestMethod]
+    public void Emit_DefaultTransformer_PreservesLexerAttributes()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public string Seen = "";
+            }
+
+            start : A ;
+            A : 'a' { Seen = $text; } ;
+            """;
+
+        string source = Emit(grammar);
+
+        StringAssert.Contains(source, "Seen = $text;");
+    }
+
+    /// <summary>
+    /// Ensures unsupported lexer attributes in predicates are rejected by the transformer before raw C# compilation.
+    /// </summary>
+    [TestMethod]
+    public void EmitWithAntlrStyleTransformer_LexerPredicateAttribute_ReportsDiagnostic()
+    {
+        const string grammar = """
+            grammar P;
+
+            start : A ;
+            A : { $text == "a" }? 'a' ;
+            """;
+
+        InvalidOperationException exception = Assert.ThrowsException<InvalidOperationException>(() => EmitWithAntlrStyleTransformer(grammar));
+
+        StringAssert.Contains(exception.Message, "APU0105");
+        StringAssert.Contains(exception.Message, "not supported in lexer predicates");
+    }
+
+    /// <summary>
+    /// Ensures unsupported lexer attribute writes report deterministic transformer diagnostics.
+    /// </summary>
+    [TestMethod]
+    public void EmitWithAntlrStyleTransformer_LexerAttributeWrite_ReportsDiagnostic()
+    {
+        const string grammar = """
+            grammar P;
+
+            start : A ;
+            A : 'a' { $type = B; } ;
+            B : 'b' ;
+            """;
+
+        InvalidOperationException exception = Assert.ThrowsException<InvalidOperationException>(() => EmitWithAntlrStyleTransformer(grammar));
+
+        StringAssert.Contains(exception.Message, "APU0105");
+        StringAssert.Contains(exception.Message, "Lexer attribute writes are not supported");
+    }
+
+    /// <summary>
+    /// Ensures unsupported lexer attributes report deterministic transformer diagnostics.
+    /// </summary>
+    [TestMethod]
+    public void EmitWithAntlrStyleTransformer_UnknownLexerAttribute_ReportsDiagnostic()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public string Seen = "";
+            }
+
+            start : A ;
+            A : 'a' { Seen = $foo; } ;
+            """;
+
+        InvalidOperationException exception = Assert.ThrowsException<InvalidOperationException>(() => EmitWithAntlrStyleTransformer(grammar));
+
+        StringAssert.Contains(exception.Message, "APU0105");
+        StringAssert.Contains(exception.Message, "Lexer attribute '$foo' is not supported");
+    }
+
+    /// <summary>
+    /// Ensures lexer attribute-looking text inside strings and comments is ignored by the transformer.
+    /// </summary>
+    [TestMethod]
+    public void EmitWithAntlrStyleTransformer_LexerAttributesInStringsAndComments_AreIgnored()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public string Seen = "";
+            }
+
+            start : A ;
+            A : 'a' { Seen = "$text"; /* $text */ } ;
+            """;
+
+        string source = EmitWithAntlrStyleTransformer(grammar);
+        var assembly = CompileGeneratedSource(source);
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "a", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual("$text", ReadInstanceStringField(context, "Seen"));
+    }
+
     /// <summary>
     /// Ensures conservative generated Parse does not execute lexer inline actions.
     /// </summary>
@@ -4198,6 +4400,19 @@ public class Antlr4GeneratedEmbeddedCodeTests
     {
         var field = executionContext.GetType().GetField(fieldName, BindingFlags.Public | BindingFlags.Instance)!;
         return (int)field.GetValue(executionContext)!;
+    }
+
+
+    /// <summary>
+    /// Reads a named string field from a generated execution context instance.
+    /// </summary>
+    /// <param name="executionContext">Generated execution context instance.</param>
+    /// <param name="fieldName">Public string field name.</param>
+    /// <returns>Current string field value.</returns>
+    private static string? ReadInstanceStringField(object executionContext, string fieldName)
+    {
+        var field = executionContext.GetType().GetField(fieldName, BindingFlags.Public | BindingFlags.Instance)!;
+        return (string?)field.GetValue(executionContext);
     }
 
     /// <summary>
