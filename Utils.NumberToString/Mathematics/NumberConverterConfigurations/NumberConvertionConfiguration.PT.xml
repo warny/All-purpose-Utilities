@@ -71,5 +71,30 @@
 			<Number value="18" string="dezoito" />
 			<Number value="19" string="dezenove" />
 		</Exceptions>
+		<Variants>
+			<!--
+			  Portuguese uses spaces for all compounds ("vinte e um", "trinta e dois"…),
+			  so LastWord works for every form, including composites.
+			  Hundreds vary in gender (-entos/-entas).
+			  Limitation: the multiplier before "mil" (e.g. "dois mil") is not
+			  changed because the last word is "mil", not the multiplier.
+			-->
+			<Dimension name="gender" values="masculino,feminino" />
+
+			<Variant gender="feminino">
+				<!-- Gender-variable units -->
+				<Replacement oldValue="um"   newValue="uma"  scope="LastWord" />
+				<Replacement oldValue="dois" newValue="duas" scope="LastWord" />
+				<!-- Hundreds: -entos → -entas (safe because these words do not appear in scale names) -->
+				<Replacement oldValue="duzentos"     newValue="duzentas"     scope="Anywhere" />
+				<Replacement oldValue="trezentos"    newValue="trezentas"    scope="Anywhere" />
+				<Replacement oldValue="quatrocentos" newValue="quatrocentas" scope="Anywhere" />
+				<Replacement oldValue="quinhentos"   newValue="quinhentas"   scope="Anywhere" />
+				<Replacement oldValue="seiscentos"   newValue="seiscentas"   scope="Anywhere" />
+				<Replacement oldValue="setecentos"   newValue="setecentas"   scope="Anywhere" />
+				<Replacement oldValue="oitocentos"   newValue="oitocentas"   scope="Anywhere" />
+				<Replacement oldValue="novecentos"   newValue="novecentas"   scope="Anywhere" />
+			</Variant>
+		</Variants>
 	</Language>
 </Numbers>

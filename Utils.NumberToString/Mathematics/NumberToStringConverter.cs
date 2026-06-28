@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
@@ -75,6 +75,15 @@ namespace Utils.Mathematics
             Fractions = options.Fractions?.ToImmutableDictionary() ?? ImmutableDictionary<int, string>.Empty;
             MaxNumber = options.MaxNumber;
             FractionSeparator = string.IsNullOrWhiteSpace(options.FractionSeparator) ? "/" : options.FractionSeparator;
+
+            OrdinalSuffix = options.OrdinalSuffix;
+            StripTrailingEForOrdinal = options.StripTrailingEForOrdinal;
+            OrdinalExceptions = (options.OrdinalExceptions ?? new Dictionary<long, string>()).ToImmutableDictionary();
+            OrdinalWordRules = (options.OrdinalWordRules ?? new Dictionary<string, string>()).ToImmutableDictionary();
+
+            VariantDimensions = (options.VariantDimensions ?? []).ToImmutableArray();
+            VariantRules = (options.VariantRules ?? []).ToImmutableArray();
+            _dimensionIndex = VariantDimensions.ToImmutableDictionary(d => d.Name, StringComparer.OrdinalIgnoreCase);
         }
 
         /// <summary>
@@ -142,8 +151,41 @@ namespace Utils.Mathematics
         /// </summary>
         public NumberScale Scale { get; }
 
+        /// <summary>
+        /// Ordinal suffix appended to the last word of the cardinal when no word-level rule matches.
+        /// </summary>
+        public string? OrdinalSuffix { get; }
+
+        /// <summary>
+        /// Whether to strip a trailing 'e' from the last cardinal word before appending <see cref="OrdinalSuffix"/>.
+        /// </summary>
+        public bool StripTrailingEForOrdinal { get; }
+
+        /// <summary>
+        /// Integer-level ordinal exceptions (whole number → ordinal text).
+        /// </summary>
+        public IReadOnlyDictionary<long, string> OrdinalExceptions { get; }
+
+        /// <summary>
+        /// Word-level ordinal transformation rules applied to the last word of the cardinal.
+        /// </summary>
+        public IReadOnlyDictionary<string, string> OrdinalWordRules { get; }
+
+        /// <summary>
+        /// Declared variant dimensions for this language (e.g. "gender", "case").
+        /// The first value of each dimension is the default when no explicit variant is requested.
+        /// </summary>
+        public IReadOnlyList<VariantDimension> VariantDimensions { get; }
+
+        /// <summary>
+        /// Variant rules that map dimension constraints to replacement rules.
+        /// Applied in order of ascending specificity between raw adjustment and finalization.
+        /// </summary>
+        public IReadOnlyList<VariantRule> VariantRules { get; }
+
         private readonly ImmutableDictionary<string, string> _replacementLookup;
         private readonly ImmutableArray<ReplacementRule> _substringReplacements;
+        private readonly ImmutableDictionary<string, VariantDimension> _dimensionIndex;
         private readonly Func<string, string>? _rawAdjustFunction;
 
         /// <summary>
@@ -161,6 +203,22 @@ namespace Utils.Mathematics
         /// Converts a long integer to its string representation.
         /// </summary>
         public string Convert(long number) => Convert((BigInteger)number);
+
+        /// <summary>
+        /// Converts an integer to its string representation, applying the specified variant parameters.
+        /// </summary>
+        /// <param name="number">The value to convert.</param>
+        /// <param name="variants">Zero or more <c>"dimension=value"</c> strings.</param>
+        /// <returns>The formatted number with the requested variants applied.</returns>
+        public string Convert(int number, params string[] variants) => Convert((BigInteger)number, variants);
+
+        /// <summary>
+        /// Converts a long integer to its string representation, applying the specified variant parameters.
+        /// </summary>
+        /// <param name="number">The value to convert.</param>
+        /// <param name="variants">Zero or more <c>"dimension=value"</c> strings.</param>
+        /// <returns>The formatted number with the requested variants applied.</returns>
+        public string Convert(long number, params string[] variants) => Convert((BigInteger)number, variants);
 
         /// <summary>
         /// Converts a decimal number to its string representation.
@@ -225,52 +283,154 @@ namespace Utils.Mathematics
         }
 
         /// <summary>
-        /// Converts a BigInteger to its string representation.
+        /// Converts a BigInteger to its string representation using the default variant
+        /// (the first declared value of each dimension).
         /// </summary>
-        public string Convert(BigInteger number)
+        /// <exception cref="ArgumentOutOfRangeException">
+        /// Thrown when <paramref name="number"/> exceeds <see cref="MaxNumber"/>.
+        /// </exception>
+        public string Convert(BigInteger number) => Convert(number, []);
+
+        /// <summary>
+        /// Converts a BigInteger to its string representation, applying the specified morphological
+        /// variant parameters. The pipeline is: raw text → user adjust → variant rules → language finalization.
+        /// When no parameters are supplied, the first declared value of each dimension is used as default.
+        /// </summary>
+        /// <param name="number">The value to convert.</param>
+        /// <param name="variants">
+        /// Zero or more <c>"dimension=value"</c> strings. Unrecognised dimensions fall back silently.
+        /// </param>
+        /// <returns>The formatted number with variants applied.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">
+        /// Thrown when <paramref name="number"/> exceeds <see cref="MaxNumber"/>.
+        /// </exception>
+        public string Convert(BigInteger number, params string[] variants)
         {
+            if (MaxNumber.HasValue && BigInteger.Abs(number) > MaxNumber.Value)
+                throw new ArgumentOutOfRangeException(nameof(number), $"The value exceeds the maximum supported number ({MaxNumber.Value}).");
+
             if (number == 0) return Zero;
 
-            // Check for exceptions
-            if (number.Between(long.MinValue, long.MaxValue) && Exceptions.TryGetValue((long)number, out var value))
-            {
-                return AdjustFunction(value);
-            }
+            bool isNegative = number.Sign == -1;
+            BigInteger abs = isNegative ? BigInteger.Abs(number) : number;
+
+            string raw = ConvertRaw(abs);
+            if (_rawAdjustFunction != null) raw = _rawAdjustFunction(raw);
+            raw = ApplyVariantRules(raw, BuildVariantQuery(variants));
+            string final = LanguageSpecifics.FinalizeWriting(LanguageIdentifier, raw);
+
+            return isNegative ? Minus.Replace("*", final) : final;
+        }
+
+        /// <summary>
+        /// Produces the raw text for a positive number without any adjustment or finalization.
+        /// </summary>
+        private string ConvertRaw(BigInteger abs)
+        {
+            if (abs.Between(long.MinValue, long.MaxValue) && Exceptions.TryGetValue((long)abs, out var exValue))
+                return exValue;
 
             var maxGroup = Groups.Keys.Max();
             var groupValue = BigInteger.Pow(10, maxGroup);
-
-            bool isNegative = number.Sign == -1;
-            if (isNegative) number = BigInteger.Abs(number);
-
             int groupNumber = 0;
             var groupsValues = new Stack<string>();
 
-            // Group the number
-            while (number != 0)
+            BigInteger remaining = abs;
+            while (remaining != 0)
             {
-                var group = (long)(number % groupValue);
+                var group = (long)(remaining % groupValue);
                 if (group != 0)
                 {
                     string resValue = ConvertGroup(maxGroup, group) + Separator + Scale.GetScaleName(groupNumber).ToPlural(group);
                     resValue = ApplyReplacements(resValue);
                     groupsValues.Push(resValue.Trim());
                 }
-                number /= groupValue;
+                remaining /= groupValue;
                 groupNumber++;
             }
 
-            // Build the final string
             var result = new StringBuilder();
             while (groupsValues.Count > 0)
-            {
                 result.Append(groupsValues.Pop().Trim()).Append(GroupSeparator).Append(Separator);
-            }
 
             var finalResult = result.ToString().TrimEnd(GroupSeparator.ToCharArray().Union(Separator.ToCharArray()).ToArray());
-            finalResult = ApplyReplacements(finalResult);
-            finalResult = isNegative ? Minus.Replace("*", finalResult) : AdjustFunction(finalResult);
-            return AdjustFunction(finalResult);
+            return ApplyReplacements(finalResult);
+        }
+
+        /// <summary>
+        /// Builds the full variant query by merging explicit parameters with dimension defaults.
+        /// For each declared dimension not mentioned in <paramref name="variants"/>, the first
+        /// declared value is inserted as the default.
+        /// </summary>
+        private IReadOnlyDictionary<string, string> BuildVariantQuery(string[] variants)
+        {
+            var query = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var param in variants)
+            {
+                int eq = param.IndexOf('=');
+                if (eq > 0)
+                    query[param[..eq].Trim()] = param[(eq + 1)..].Trim();
+            }
+
+            foreach (var dimension in VariantDimensions)
+            {
+                if (!query.ContainsKey(dimension.Name) && dimension.DefaultValue != null)
+                    query[dimension.Name] = dimension.DefaultValue;
+            }
+
+            return query;
+        }
+
+        /// <summary>
+        /// Applies variant rules to <paramref name="text"/> in order of ascending specificity.
+        /// A rule matches when all its dimension constraints are satisfied by <paramref name="query"/>.
+        /// </summary>
+        private string ApplyVariantRules(string text, IReadOnlyDictionary<string, string> query)
+        {
+            if (VariantRules.Count == 0 || query.Count == 0) return text;
+
+            foreach (var rule in VariantRules.OrderBy(r => r.Specificity))
+            {
+                bool matches = rule.Constraints.All(c =>
+                    query.TryGetValue(c.Key, out var v) &&
+                    string.Equals(v, c.Value, StringComparison.OrdinalIgnoreCase));
+
+                if (!matches) continue;
+
+                foreach (var replacement in rule.Replacements)
+                    text = ApplyVariantReplacement(text, replacement);
+            }
+
+            return text;
+        }
+
+        /// <summary>
+        /// Applies a single replacement rule to <paramref name="text"/> according to its scope.
+        /// </summary>
+        private static string ApplyVariantReplacement(string text, ReplacementRule replacement) =>
+            replacement.Scope switch
+            {
+                ReplacementScope.Standalone => text == replacement.OldValue ? replacement.NewValue : text,
+                ReplacementScope.Anywhere   => text.Replace(replacement.OldValue, replacement.NewValue),
+                ReplacementScope.LastWord   => ApplyLastWordReplacement(text, replacement.OldValue, replacement.NewValue),
+                _                           => text,
+            };
+
+        /// <summary>
+        /// Replaces <paramref name="oldValue"/> at the end of <paramref name="text"/> when it
+        /// forms a complete word boundary (preceded by space, hyphen, or start-of-string).
+        /// </summary>
+        private static string ApplyLastWordReplacement(string text, string oldValue, string newValue)
+        {
+            if (text.Length < oldValue.Length) return text;
+            if (!text.EndsWith(oldValue, StringComparison.Ordinal)) return text;
+
+            int prefixLength = text.Length - oldValue.Length;
+            if (prefixLength > 0 && text[prefixLength - 1] is not (' ' or '-'))
+                return text;
+
+            return text[..prefixLength] + newValue;
         }
 
         /// <summary>
@@ -344,6 +504,62 @@ namespace Utils.Mathematics
         }
 
         /// <summary>
+        /// Declares one dimension of grammatical variation (e.g. "gender") with its ordered
+        /// set of values. The first value is the default applied when no explicit variant is requested.
+        /// </summary>
+        public sealed class VariantDimension
+        {
+            /// <summary>
+            /// Initializes a new instance of the <see cref="VariantDimension"/> class.
+            /// </summary>
+            /// <param name="name">The dimension name.</param>
+            /// <param name="values">The ordered list of valid values; the first is the default.</param>
+            public VariantDimension(string name, IReadOnlyList<string> values)
+            {
+                Name = name;
+                Values = values;
+            }
+
+            /// <summary>Gets the dimension name (e.g. "gender").</summary>
+            public string Name { get; }
+
+            /// <summary>Gets the ordered list of valid values. The first value is the default.</summary>
+            public IReadOnlyList<string> Values { get; }
+
+            /// <summary>Gets the default value (first declared), or <see langword="null"/> when the list is empty.</summary>
+            public string? DefaultValue => Values.Count > 0 ? Values[0] : null;
+        }
+
+        /// <summary>
+        /// Associates a set of dimension constraints with replacement rules to apply
+        /// when all constraints are satisfied.
+        /// </summary>
+        public sealed class VariantRule
+        {
+            /// <summary>
+            /// Initializes a new instance of the <see cref="VariantRule"/> class.
+            /// </summary>
+            /// <param name="constraints">Dimension name → required value pairs.</param>
+            /// <param name="replacements">Replacement rules applied when this variant is active.</param>
+            public VariantRule(IReadOnlyDictionary<string, string> constraints, IReadOnlyList<ReplacementRule> replacements)
+            {
+                Constraints = constraints;
+                Replacements = replacements;
+            }
+
+            /// <summary>Gets the dimension constraints (name → required value).</summary>
+            public IReadOnlyDictionary<string, string> Constraints { get; }
+
+            /// <summary>Gets the replacement rules applied when all constraints are satisfied.</summary>
+            public IReadOnlyList<ReplacementRule> Replacements { get; }
+
+            /// <summary>
+            /// Gets the number of dimension constraints. Used to order rules from least to most specific.
+            /// </summary>
+            public int Specificity => Constraints.Count;
+        }
+
+        /// <summary>
         /// Converts a group of digits to its string representation based on its group number.
         /// </summary>
         public string ConvertGroup(int groupNumber, long number)
@@ -384,6 +600,101 @@ namespace Utils.Mathematics
 
             string connector = FractionSeparator;
             return string.Concat(numeratorText, Separator, connector, Separator, denominatorText).Trim();
+        }
+
+        /// <summary>
+        /// Converts a positive integer to its ordinal string representation
+        /// (e.g. 1 → "first", 2 → "second" in English).
+        /// Integer-level exceptions in <see cref="OrdinalExceptions"/> are checked first,
+        /// then word-level rules in <see cref="OrdinalWordRules"/>, then <see cref="OrdinalSuffix"/>.
+        /// Ordinal rules are applied on the raw cardinal text before <see cref="AdjustFunction"/>
+        /// so that word-level rules can match unmodified text regardless of any finalization
+        /// transform (e.g. an uppercase adjust function or <see cref="INumberToStringLanguageSpecifics"/>).
+        /// </summary>
+        /// <param name="number">The value to convert. Negative values use the minus template.</param>
+        /// <returns>The ordinal string for <paramref name="number"/>.</returns>
+        public string ConvertOrdinal(int number)
+        {
+            bool isNegative = number < 0;
+            int absNumber = Math.Abs(number);
+
+            if (OrdinalExceptions.TryGetValue(absNumber, out var exception))
+                return isNegative ? Minus.Replace("*", exception) : exception;
+
+            // Apply ordinal rules on the raw cardinal before AdjustFunction so that
+            // word-level rules can match unmodified text (e.g. before an uppercase
+            // AdjustFunction or LanguageSpecifics finalizer transforms it).
+            string raw = absNumber == 0 ? Zero : ConvertRaw((BigInteger)absNumber);
+            raw = ApplyVariantRules(raw, BuildVariantQuery([]));
+            string ordinal = ApplyOrdinalTransform(raw);
+            string final = AdjustFunction(ordinal);
+            return isNegative ? Minus.Replace("*", final) : final;
+        }
+
+        /// <summary>
+        /// Converts a decimal currency amount to words using the supplied currency definition.
+        /// </summary>
+        /// <param name="amount">The amount to convert.</param>
+        /// <param name="currency">The currency names and configuration.</param>
+        /// <returns>The amount expressed as words (e.g. "twenty euros and fifty centimes").</returns>
+        public string ConvertCurrency(decimal amount, CurrencyDefinition currency)
+        {
+            ArgumentNullException.ThrowIfNull(currency);
+
+            bool isNegative = amount < 0;
+            decimal absAmount = isNegative ? -amount : amount;
+
+            long units = (long)decimal.Truncate(absAmount);
+            decimal fractional = absAmount - units;
+            long subunitFactor = (long)Math.Pow(10, currency.SubunitDigits);
+            long subunits = (long)Math.Round((double)fractional * subunitFactor);
+
+            // Carry: rounding may push subunits to subunitFactor (e.g. 1.999m → subunits=100).
+            units += subunits / subunitFactor;
+            subunits %= subunitFactor;
+
+            string unitName = units == 1 ? currency.UnitSingular : currency.UnitPlural;
+            string result = Convert(units) + Separator + unitName;
+
+            if (subunits > 0)
+            {
+                string subunitName = subunits == 1 ? currency.SubunitSingular : currency.SubunitPlural;
+                string subunitsText = Convert(subunits) + Separator + subunitName;
+                result = result + Separator + currency.Connector + Separator + subunitsText;
+            }
+
+            return isNegative ? Minus.Replace("*", result) : result;
+        }
+
+        /// <summary>
+        /// Transforms a cardinal string into its ordinal form by applying word-level rules
+        /// or the ordinal suffix to the last word.
+        /// </summary>
+        private string ApplyOrdinalTransform(string cardinal)
+        {
+            if (OrdinalWordRules.Count == 0 && OrdinalSuffix == null) return cardinal;
+
+            int lastSpace = cardinal.LastIndexOf(' ');
+            string prefix = lastSpace >= 0 ? cardinal[..(lastSpace + 1)] : "";
+            string lastComponent = lastSpace >= 0 ? cardinal[(lastSpace + 1)..] : cardinal;
+
+            // Handle hyphenated last component (e.g. "twenty-one" → "twenty-first")
+            int lastHyphen = lastComponent.LastIndexOf('-');
+            string hyphenPrefix = lastHyphen >= 0 ? lastComponent[..(lastHyphen + 1)] : "";
+            string lastWord = lastHyphen >= 0 ? lastComponent[(lastHyphen + 1)..] : lastComponent;
+
+            if (OrdinalWordRules.TryGetValue(lastWord, out var replacement))
+                return prefix + hyphenPrefix + replacement;
+
+            if (OrdinalSuffix != null)
+            {
+                string transformed = lastWord;
+                if (StripTrailingEForOrdinal && transformed.EndsWith('e'))
+                    transformed = transformed[..^1];
+                return prefix + hyphenPrefix + transformed + OrdinalSuffix;
+            }
+
+            return cardinal;
         }
 
         /// <summary>

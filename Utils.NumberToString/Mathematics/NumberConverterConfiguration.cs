@@ -39,6 +39,67 @@ public class NumberType
 }
 
 /// <summary>
+/// Describes a single ordinal exception that maps an integer to its ordinal text.
+/// </summary>
+public class OrdinalExceptionType
+{
+    /// <summary>Gets or sets the numeric value of the exception.</summary>
+    [XmlAttribute("value")]
+    public long Value { get; set; }
+
+    /// <summary>Gets or sets the ordinal text for <see cref="Value"/>.</summary>
+    [XmlAttribute("string")]
+    public string StringValue { get; set; }
+}
+
+/// <summary>
+/// Describes a word-level transformation rule for ordinal conversion: when the last
+/// word of a cardinal equals <see cref="From"/>, it is replaced with <see cref="To"/>.
+/// </summary>
+public class OrdinalRuleType
+{
+    /// <summary>Gets or sets the cardinal word to match.</summary>
+    [XmlAttribute("from")]
+    public string From { get; set; }
+
+    /// <summary>Gets or sets the ordinal replacement word.</summary>
+    [XmlAttribute("to")]
+    public string To { get; set; }
+}
+
+/// <summary>
+/// Holds the complete ordinal configuration for a language: whole-number exceptions,
+/// word-level transformation rules, and a default suffix.
+/// </summary>
+public class OrdinalsType
+{
+    /// <summary>
+    /// Gets or sets the suffix appended to the last word of the cardinal when no rule matches.
+    /// </summary>
+    [XmlAttribute("suffix")]
+    public string Suffix { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether a trailing 'e' on the last word is stripped before appending the suffix.
+    /// </summary>
+    [XmlAttribute("stripTrailingE")]
+    public bool StripTrailingE { get; set; }
+
+    /// <summary>
+    /// Gets or sets integer-level ordinal exceptions (e.g. 1 → "premier" in French).
+    /// These take priority over word-level rules.
+    /// </summary>
+    [XmlElement("OrdinalException")]
+    public List<OrdinalExceptionType> Exceptions { get; set; }
+
+    /// <summary>
+    /// Gets or sets the word-level ordinal rules applied to the last word of the cardinal.
+    /// </summary>
+    [XmlElement("Ordinal")]
+    public List<OrdinalRuleType> Rules { get; set; }
+}
+
+/// <summary>
 /// Collection wrapper for <see cref="NumberType"/> records to simplify XML serialization.
 /// </summary>
 [XmlRoot("NumberList")]
@@ -192,6 +253,82 @@ public enum ReplacementScope
     /// Indicates that the replacement may occur within a larger phrase when the words match.
     /// </summary>
     Anywhere,
+
+    /// <summary>
+    /// Indicates that the replacement applies only when <c>oldValue</c> matches the last word of
+    /// the text (the part after the last space or hyphen), treating the old value as a word-boundary
+    /// suffix rather than a substring.
+    /// </summary>
+    LastWord,
+}
+
+/// <summary>
+/// Declares one dimension of grammatical variation for a language (e.g. "gender" or "case")
+/// together with its ordered set of values. The first value is the default when no explicit
+/// variant is requested.
+/// </summary>
+public class VariantDimensionType
+{
+    /// <summary>Gets or sets the dimension name (e.g. "gender").</summary>
+    [XmlAttribute("name")]
+    public string Name { get; set; }
+
+    /// <summary>
+    /// Gets or sets the comma-separated ordered list of valid values for this dimension
+    /// (e.g. "masculin,feminin,neutrum"). The first value is the default.
+    /// </summary>
+    [XmlAttribute("values")]
+    public string ValuesRaw { get; set; }
+}
+
+/// <summary>
+/// Describes a morphological variant: a set of dimension constraints (encoded as arbitrary
+/// XML attributes, e.g. <c>gender="feminin"</c>) and the replacement rules to apply when
+/// the constraints are satisfied.
+/// </summary>
+public class VariantType
+{
+    /// <summary>
+    /// Gets or sets the dimension constraints supplied as XML attributes (e.g. gender="feminin").
+    /// Captured via <see cref="XmlAnyAttributeAttribute"/>; standard XML attributes are excluded.
+    /// </summary>
+    [XmlAnyAttribute]
+    public XmlAttribute[]? DimensionAttributes { get; set; }
+
+    /// <summary>Gets or sets the replacement rules applied when this variant is active.</summary>
+    [XmlElement("Replacement")]
+    public List<ReplacementType>? Replacements { get; set; }
+
+    /// <summary>
+    /// Returns the dimension constraints as a case-insensitive dictionary.
+    /// </summary>
+    [XmlIgnore]
+    public IReadOnlyDictionary<string, string> Dimensions
+    {
+        get
+        {
+            if (DimensionAttributes == null || DimensionAttributes.Length == 0)
+                return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            return DimensionAttributes
+                .Where(a => string.IsNullOrEmpty(a.NamespaceURI))
+                .ToDictionary(a => a.LocalName, a => a.Value, StringComparer.OrdinalIgnoreCase);
+        }
+    }
+}
+
+/// <summary>
+/// Holds the complete variant configuration for a language: the declared dimensions
+/// and the list of variant rules.
+/// </summary>
+public class VariantsType
+{
+    /// <summary>Gets or sets the declared variant dimensions.</summary>
+    [XmlElement("Dimension")]
+    public List<VariantDimensionType>? Dimensions { get; set; }
+
+    /// <summary>Gets or sets the list of variant rules.</summary>
+    [XmlElement("Variant")]
+    public List<VariantType>? Variants { get; set; }
 }
 
 /// <summary>
@@ -325,6 +462,19 @@ public class LanguageType
     /// </summary>
     [XmlElement(ElementName = "Fractions")]
     public FractionListType Fractions { get; set; }
+
+    /// <summary>
+    /// Gets or sets the ordinal configuration for this language.
+    /// </summary>
+    [XmlElement(ElementName = "Ordinals")]
+    public OrdinalsType Ordinals { get; set; }
+
+    /// <summary>
+    /// Gets or sets the morphological variant configuration for this language.
+    /// Declares the available dimensions and the replacement rules for each combination.
+    /// </summary>
+    [XmlElement(ElementName = "Variants")]
+    public VariantsType Variants { get; set; }
 }
 
 /// <summary>

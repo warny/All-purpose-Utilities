@@ -112,5 +112,16 @@
                         <Number value="18" string="hemezortzi" />
                         <Number value="19" string="hemeretzi" />
                 </Exceptions>
+                <!--
+                  Basque ordinals are formed by appending -garren to the cardinal.
+                  The only irregular form is 1 → lehenengo (alternatively lehen).
+                  All other forms follow the suffix rule: bi+garren=bigarren,
+                  hiru+garren=hirugarren, hamar+garren=hamargarren, etc.
+                  For compounds ("hogeita bat", "ehun eta bi") the last word
+                  receives the suffix: "hogeita batgarren", "ehun eta bigarren".
+                -->
+                <Ordinals suffix="garren">
+                        <OrdinalException value="1" string="lehenengo" />
+                </Ordinals>
         </Language>
 </Numbers>

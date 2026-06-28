@@ -64,16 +64,34 @@
                 <Replacements>
                         <Replacement oldValue="un mil" newValue="mil" />
                 </Replacements>
-                <Exceptions>
-                        <Number value="11" string="onze" />
-                        <Number value="12" string="dotze" />
-                        <Number value="13" string="tretze" />
-                        <Number value="14" string="catorze" />
-                        <Number value="15" string="quinze" />
-                        <Number value="16" string="setze" />
-                        <Number value="17" string="disset" />
-                        <Number value="18" string="divuit" />
-                        <Number value="19" string="dinou" />
-                </Exceptions>
-        </Language>
+		<Exceptions>
+			<Number value="11" string="onze" />
+			<Number value="12" string="dotze" />
+			<Number value="13" string="tretze" />
+			<Number value="14" string="catorze" />
+			<Number value="15" string="quinze" />
+			<Number value="16" string="setze" />
+			<Number value="17" string="disset" />
+			<Number value="18" string="divuit" />
+			<Number value="19" string="dinou" />
+		</Exceptions>
+		<Variants>
+			<!--
+			  In Catalan, digits 1 (un/una) and 2 (dos/dues) vary in gender,
+			  as does two-hundred (dos-cents/dues-centes). All other hundreds
+			  are invariable. Tens compounds use hyphens (vint-i-un, trenta-un…):
+			  the hyphen is a word boundary for LastWord, so the rule applies
+			  correctly to compound numbers.
+			-->
+			<Dimension name="gender" values="masculí,femení" />
+
+			<Variant gender="femení">
+				<!-- Gender-variable units (works on compounds because hyphens are word boundaries) -->
+				<Replacement oldValue="un"  newValue="una"  scope="LastWord" />
+				<Replacement oldValue="dos" newValue="dues" scope="LastWord" />
+				<!-- Only the 200-hundred has a feminine form in Catalan -->
+				<Replacement oldValue="dos-cents" newValue="dues-centes" scope="Anywhere" />
+			</Variant>
+		</Variants>
+	</Language>
 </Numbers>

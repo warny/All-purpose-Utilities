@@ -80,5 +80,65 @@
 			<Number value="17" string="siebzehn" />
 		</Exceptions>
 		<LanguageSpecifics>GermanNumberToStringLanguageSpecifics</LanguageSpecifics>
+		<Variants>
+			<!--
+			  Declension of "ein" (the only variable digit in German).
+			  Compound words (einundzwanzig…) are not declined.
+
+			  Rule order: genus=feminin must be declared FIRST because the
+			  single-constraint kasus=dativ/genitiv rules look for "ein".
+			  If genus=feminin transforms "ein"→"eine" first, the two-constraint
+			  overrides (kasus+genus=feminin) correctly target "eine".
+
+			  Full inflection table:
+			    Nominativ : maskulin=ein→eins*, feminin=eine, neutrum=ein→eins*
+			    Akkusativ : maskulin=einen,     feminin=eine, neutrum=ein→eins*
+			    Dativ     : maskulin=einem,     feminin=einer, neutrum=einem
+			    Genitiv   : maskulin=eines,     feminin=einer, neutrum=eines
+
+			  * GermanNumberToStringLanguageSpecifics converts standalone "ein" → "eins"
+			    (counting form). Adjectival "ein" forms (e.g. Akk Neutr) also become
+			    "eins" as they are indistinguishable without syntactic context.
+			-->
+			<Dimension name="genus" values="maskulin,feminin,neutrum" />
+			<Dimension name="kasus" values="nominativ,akkusativ,dativ,genitiv" />
+
+			<!-- ── 1 constraint ── -->
+
+			<!-- genus=feminin: Nom/Akk feminine → "eine" -->
+			<Variant genus="feminin">
+				<Replacement oldValue="ein" newValue="eine" scope="LastWord" />
+			</Variant>
+
+			<!-- kasus=dativ: maskulin + neutrum → "einem"
+			     (feminin+dativ is overridden to "einer" by the 2-constraint rule) -->
+			<Variant kasus="dativ">
+				<Replacement oldValue="ein" newValue="einem" scope="LastWord" />
+			</Variant>
+
+			<!-- kasus=genitiv: maskulin + neutrum → "eines"
+			     (feminin+genitiv is overridden to "einer" by the 2-constraint rule) -->
+			<Variant kasus="genitiv">
+				<Replacement oldValue="ein" newValue="eines" scope="LastWord" />
+			</Variant>
+
+			<!-- ── 2 constraints (override the 1-constraint rules) ── -->
+
+			<!-- Akkusativ maskulin → "einen" -->
+			<Variant kasus="akkusativ" genus="maskulin">
+				<Replacement oldValue="ein" newValue="einen" scope="LastWord" />
+			</Variant>
+
+			<!-- Dativ feminin → "einer"
+			     genus=feminin has already transformed "ein"→"eine", hence oldValue="eine" -->
+			<Variant kasus="dativ" genus="feminin">
+				<Replacement oldValue="eine" newValue="einer" scope="LastWord" />
+			</Variant>
+
+			<!-- Genitiv feminin → "einer" (same logic) -->
+			<Variant kasus="genitiv" genus="feminin">
+				<Replacement oldValue="eine" newValue="einer" scope="LastWord" />
+			</Variant>
+		</Variants>
 	</Language>
 </Numbers>

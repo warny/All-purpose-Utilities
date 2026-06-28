@@ -70,5 +70,31 @@
 			<Number value="15" string="quince" />
 			<Number value="16" string="dieciséis" />
 		</Exceptions>
+		<Variants>
+			<!--
+			  In Spanish, only "uno" (1) and compound hundreds (-cientos) vary in
+			  gender. The 21-29 compounds are fused words (veintiuno, veintidós…):
+			  LastWord does not transform "uno" inside "veintiuno" because the
+			  preceding character ('i') is neither a space nor a hyphen. Fixing
+			  the buildStrings (adding a space and "y") would extend coverage to
+			  the 31-99 forms.
+			-->
+			<Dimension name="gender" values="masculino,femenino" />
+
+			<Variant gender="femenino">
+				<!-- Units: "uno" alone or at end of group (preceded by a space or hyphen) -->
+				<Replacement oldValue="uno" newValue="una" scope="LastWord" />
+				<!-- Hundreds: replaces the -cientos form with -cientas everywhere
+				     (safe because these words do not appear in scale names) -->
+				<Replacement oldValue="doscientos"    newValue="doscientas"    scope="Anywhere" />
+				<Replacement oldValue="trescientos"   newValue="trescientas"   scope="Anywhere" />
+				<Replacement oldValue="cuatrocientos" newValue="cuatrocientas" scope="Anywhere" />
+				<Replacement oldValue="quinientos"    newValue="quinientas"    scope="Anywhere" />
+				<Replacement oldValue="seiscientos"   newValue="seiscientas"   scope="Anywhere" />
+				<Replacement oldValue="setecientos"   newValue="setecientas"   scope="Anywhere" />
+				<Replacement oldValue="ochocientos"   newValue="ochocientas"   scope="Anywhere" />
+				<Replacement oldValue="novecientos"   newValue="novecientas"   scope="Anywhere" />
+			</Variant>
+		</Variants>
 	</Language>
 </Numbers>

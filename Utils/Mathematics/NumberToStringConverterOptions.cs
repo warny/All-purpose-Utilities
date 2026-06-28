@@ -67,6 +67,39 @@ public sealed class NumberToStringConverterOptions
     /// <summary>Connector word between numerator and denominator when rendering non-decimal fractions.</summary>
     public string? FractionSeparator { get; set; }
 
+    /// <summary>
+    /// Ordinal suffix appended to the last word of a cardinal when no word-level rule matches
+    /// (e.g. "th" for English, "ième" for French).
+    /// </summary>
+    public string? OrdinalSuffix { get; set; }
+
+    /// <summary>Whether to strip a trailing 'e' from the last cardinal word before appending <see cref="OrdinalSuffix"/>.</summary>
+    public bool StripTrailingEForOrdinal { get; set; }
+
+    /// <summary>
+    /// Integer-level ordinal exceptions (whole-number → ordinal text, e.g. 1 → "premier" in French).
+    /// These take priority over word-level rules.
+    /// </summary>
+    public IReadOnlyDictionary<long, string> OrdinalExceptions { get; set; } = new Dictionary<long, string>();
+
+    /// <summary>
+    /// Word-level ordinal transformation rules applied to the last word of a cardinal
+    /// (e.g. "one" → "first" in English).
+    /// </summary>
+    public IReadOnlyDictionary<string, string> OrdinalWordRules { get; set; } = new Dictionary<string, string>();
+
+    /// <summary>
+    /// Declared variant dimensions (e.g. "gender", "case") with their ordered values.
+    /// The first value of each dimension is the default when no explicit variant is requested.
+    /// </summary>
+    public IReadOnlyList<NumberToStringConverter.VariantDimension> VariantDimensions { get; set; } = [];
+
+    /// <summary>
+    /// Variant rules that associate a set of dimension constraints with replacement rules.
+    /// Applied between the raw adjustment function and <see cref="INumberToStringLanguageSpecifics.FinalizeWriting"/>.
+    /// </summary>
+    public IReadOnlyList<NumberToStringConverter.VariantRule> VariantRules { get; set; } = [];
+
     /// <summary>Creates an options object with sensible defaults. Required properties
     /// (<see cref="Zero"/>, <see cref="Minus"/>, <see cref="Groups"/>, <see cref="Scale"/>)
     /// must be set before passing to the constructor.</summary>
@@ -96,6 +129,12 @@ public sealed class NumberToStringConverterOptions
         Fractions = source.Fractions;
         MaxNumber = source.MaxNumber;
         FractionSeparator = source.FractionSeparator;
+        OrdinalSuffix = source.OrdinalSuffix;
+        StripTrailingEForOrdinal = source.StripTrailingEForOrdinal;
+        OrdinalExceptions = source.OrdinalExceptions;
+        OrdinalWordRules = source.OrdinalWordRules;
+        VariantDimensions = source.VariantDimensions;
+        VariantRules = source.VariantRules;
     }
 
     /// <summary>
