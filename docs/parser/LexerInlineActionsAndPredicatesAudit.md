@@ -12,7 +12,7 @@ The current implementation has intentionally narrow lexer embedded-code support:
 - `@lexer::members` is injected into the existing generated execution context.
 - Injecting `@lexer::members` does not create a separate ANTLR-style lexer runtime type or a separate runtime lexer execution context.
 - Lexer inline actions remain unsupported.
-- Lexer predicates remain unsupported.
+- Simple lexer predicates are supported only in the generated-C# opt-in path.
 - Runtime discovery classifies lexer actions and lexer predicates as unsupported.
 - The source-generator C# path collects executable hooks from parser rules only; lexer rules do not produce executable hooks.
 - `Parse(...)` remains conservative and must not execute lexer inline actions, lexer predicates, or lexer hooks.
@@ -60,7 +60,7 @@ The audit scope includes these concerns:
 - Lexer predicates must be designed separately from lexer inline actions.
 - Lexer predicates require a lexer-state-aware model that can account for input position, active mode, mode stack, token type decisions, channels, commands, and any future generated execution state.
 - Lexer predicates must not be executed by conservative `Parse(...)`.
-- Lexer predicates must remain unsupported until a dedicated predicate phase is designed, implemented, tested, and documented.
+- Simple lexer predicates now have a dedicated generated-C# opt-in evaluator. Runtime-inline predicate execution, `$...` rewriting, rollback of external effects, and full ANTLR lexer compatibility remain unsupported.
 
 ## Interaction with grammar-level lexer members
 
@@ -139,7 +139,7 @@ Existing test families to preserve include:
 - `@lexer::*` supported in combined grammars.
 - Parser grammars with `@lexer::*` remain unsupported.
 - Lexer inline actions remain unsupported.
-- Lexer predicates remain unsupported.
+- Simple lexer predicates are supported only in the generated-C# opt-in path.
 - Generated source does not contain executable lexer hooks.
 
 Possible future test families include:
@@ -171,4 +171,4 @@ This audit explicitly excludes:
 - any change to `Parse(...)`.
 
 
-> Lexer inline actions: simple source-generator C# lexer inline actions are now supported only through the explicit opt-in generated path. `Parse(...)` remains conservative; lexer predicates, lexer `$...` rewriting, lexer modes/channels/commands action semantics, runtime-inline lexer execution, a separate runtime lexer, and external side-effect rollback remain unsupported.
+> Lexer inline actions and predicates: simple source-generator C# lexer inline actions and simple lexer predicates are now supported only through the explicit opt-in generated path. `Parse(...)` remains conservative. Predicates run during lexer matching; actions run after token acceptance. Lexer `$...` rewriting, lexer modes/channels/commands action semantics, runtime-inline lexer execution, a separate runtime lexer, and external side-effect rollback remain unsupported.

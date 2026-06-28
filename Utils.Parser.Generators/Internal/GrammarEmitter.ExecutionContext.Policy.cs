@@ -206,6 +206,49 @@ internal static partial class GrammarEmitter
         sb.AppendLine();
     }
 
+
+    /// <summary>
+    /// Emits the grammar-specific lexer predicate evaluator.
+    /// </summary>
+    /// <param name="sb">Source builder receiving generated C#.</param>
+    /// <param name="lexerPredicates">Lexer predicate hooks available to the evaluator.</param>
+    /// <param name="contextClassName">Generated execution context class name.</param>
+    private static void EmitLexerPredicateEvaluator(StringBuilder sb, IReadOnlyList<LexerEmbeddedCodeHook> lexerPredicates, string contextClassName)
+    {
+        sb.AppendLine("    /// <summary>Dispatches lexer predicate contexts to generated C# lexer predicate hooks.</summary>");
+        sb.AppendLine("    private sealed class GeneratedLexerPredicateEvaluator : ILexerPredicateEvaluator");
+        sb.AppendLine("    {");
+        sb.AppendLine($"        private readonly {contextClassName} _executionContext;");
+        sb.AppendLine("        private readonly ILexerPredicateEvaluator _fallback;");
+        sb.AppendLine();
+        sb.AppendLine("        /// <summary>Initializes a generated lexer predicate evaluator for one execution context.</summary>");
+        sb.AppendLine($"        public GeneratedLexerPredicateEvaluator({contextClassName} executionContext, ILexerPredicateEvaluator fallback)");
+        sb.AppendLine("        {");
+        sb.AppendLine("            _executionContext = executionContext;");
+        sb.AppendLine("            _fallback = fallback;");
+        sb.AppendLine("        }");
+        sb.AppendLine();
+        sb.AppendLine("        /// <summary>Evaluates a generated lexer predicate hook when the runtime context matches.</summary>");
+        sb.AppendLine("        public LexerPredicateEvaluationOutcome Evaluate(LexerPredicateEvaluationContext context)");
+        sb.AppendLine("        {");
+        foreach (var predicate in lexerPredicates)
+        {
+            sb.AppendLine($"            if (string.Equals(context.Rule.Name, \"{Escape(predicate.RuleName)}\", global::System.StringComparison.Ordinal)");
+            sb.AppendLine($"                && string.Equals(context.PredicateCode, \"{Escape(predicate.Code)}\", global::System.StringComparison.Ordinal)");
+            sb.AppendLine($"                && context.AlternativeIndex == {predicate.AlternativeIndex}");
+            sb.AppendLine($"                && context.ElementIndex == {predicate.ElementIndex})");
+            sb.AppendLine("            {");
+            sb.AppendLine($"                return _executionContext.{predicate.MethodName}(context) ? LexerPredicateEvaluationOutcome.True : LexerPredicateEvaluationOutcome.False;");
+            sb.AppendLine("            }");
+            sb.AppendLine();
+        }
+
+        sb.AppendLine("            return _fallback.Evaluate(context);");
+        sb.AppendLine("        }");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+    }
+
     /// <summary>
     /// Emits a generated C# method for a semantic predicate body.
     /// </summary>
@@ -254,6 +297,24 @@ internal static partial class GrammarEmitter
 
         sb.AppendLine($"    /// <summary>Executes inline lexer action hook for rule <c>{EscapeXml(hook.RuleName)}</c>.</summary>");
         sb.AppendLine($"    private void {hook.MethodName}(LexerActionExecutionContext context)");
+        sb.AppendLine("    {");
+        EmitGeneratedEmbeddedCodeBody(sb, body, "        ");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+    }
+
+
+    /// <summary>
+    /// Emits a generated C# method for an inline lexer predicate body.
+    /// </summary>
+    /// <param name="sb">Source builder receiving generated C#.</param>
+    /// <param name="hook">Lexer predicate hook metadata.</param>
+    private static void EmitLexerPredicateHook(StringBuilder sb, LexerEmbeddedCodeHook hook)
+    {
+        var body = GeneratedEmbeddedCodeBody.ForPredicate(hook.EmittedCode);
+
+        sb.AppendLine($"    /// <summary>Executes inline lexer predicate hook for rule <c>{EscapeXml(hook.RuleName)}</c>.</summary>");
+        sb.AppendLine($"    private bool {hook.MethodName}(LexerPredicateEvaluationContext context)");
         sb.AppendLine("    {");
         EmitGeneratedEmbeddedCodeBody(sb, body, "        ");
         sb.AppendLine("    }");

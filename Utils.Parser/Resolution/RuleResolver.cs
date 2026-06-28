@@ -544,7 +544,7 @@ public static class RuleResolver
             Quantifier q              => InferKindFromBuilders(q.Inner, rules),
             Negation n                => InferKindFromBuilders(n.Inner, rules),
             Alternative alt           => InferKindFromBuilders(alt.Content, rules),
-            ValidatingPredicate       => RuleKind.Parser,
+            ValidatingPredicate       => RuleKind.Unresolved,
             PrecedencePredicate       => RuleKind.Parser,
             GatingPredicate           => RuleKind.Parser,
             EmbeddedAction            => RuleKind.Unresolved, // Neutral; inherits from context.
@@ -576,7 +576,7 @@ public static class RuleResolver
             Quantifier q              => InferKind(q.Inner, rules),
             Negation n                => InferKind(n.Inner, rules),
             Alternative alt           => InferKind(alt.Content, rules),
-            ValidatingPredicate       => RuleKind.Parser,
+            ValidatingPredicate       => RuleKind.Unresolved,
             PrecedencePredicate       => RuleKind.Parser,
             GatingPredicate           => RuleKind.Parser,
             EmbeddedAction            => RuleKind.Unresolved, // Neutral; inherits from context.
