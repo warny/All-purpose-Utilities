@@ -597,7 +597,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
 
         var result = InvokeParse(assembly, "Parse", "a");
 
-        Assert.IsNotNull(result);
+        Assert.IsInstanceOfType(result, typeof(ErrorNode));
         Assert.AreEqual(0, ReadIntField(assembly, "Count"));
     }
 
