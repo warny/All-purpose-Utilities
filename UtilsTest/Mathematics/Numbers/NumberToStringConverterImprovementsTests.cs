@@ -236,14 +236,14 @@ public class NumberToStringConverterImprovementsTests
             Assert.AreEqual(expected, converter.ConvertOrdinal(number), $"Ordinal FR de {number}");
     }
 
-    // ─── C2 — Grammatical gender ───────────────────────────────────────────
+    // ─── C2 — Variants grammaticaux (genre) ───────────────────────────────
 
     [TestMethod]
     public void Convert_FR_Feminine_OneBecomesUne()
     {
         var converter = NumberToStringConverter.GetConverter("FR");
 
-        Assert.AreEqual("une", converter.Convert(1, NumberGender.Feminine));
+        Assert.AreEqual("une", converter.Convert(1, "gender=feminin"));
     }
 
     [TestMethod]
@@ -258,25 +258,56 @@ public class NumberToStringConverterImprovementsTests
         ];
 
         foreach (var (number, expected) in cases)
-            Assert.AreEqual(expected, converter.Convert(number, NumberGender.Feminine), $"Féminin FR de {number}");
+            Assert.AreEqual(expected, converter.Convert(number, "gender=feminin"), $"Féminin FR de {number}");
     }
 
     [TestMethod]
-    public void Convert_FR_Masculine_Unchanged()
+    public void Convert_FR_Masculine_IsDefault()
     {
+        // "masculin" est la première valeur de la dimension → même résultat qu'avec ou sans paramètre
         var converter = NumberToStringConverter.GetConverter("FR");
 
-        Assert.AreEqual("un", converter.Convert(1, NumberGender.Masculine));
-        Assert.AreEqual("vingt et un", converter.Convert(21, NumberGender.Masculine));
+        Assert.AreEqual("un", converter.Convert(1));
+        Assert.AreEqual("un", converter.Convert(1, "gender=masculin"));
+        Assert.AreEqual("vingt et un", converter.Convert(21));
+        Assert.AreEqual("vingt et un", converter.Convert(21, "gender=masculin"));
     }
 
     [TestMethod]
-    public void Interface_ConvertWithGender_Exists()
+    public void Convert_FR_Feminine_MillionNotAffected()
+    {
+        // "un million" ends with "million", not "un" → variant gender=feminin must NOT apply
+        var converter = NumberToStringConverter.GetConverter("FR");
+
+        Assert.AreEqual("un million", converter.Convert(1_000_000, "gender=feminin"));
+    }
+
+    [TestMethod]
+    public void Convert_FR_Feminine_LargeCompound()
+    {
+        // "un million vingt et un" ends with "un" → only last word is replaced
+        var converter = NumberToStringConverter.GetConverter("FR");
+
+        Assert.AreEqual("un million vingt et une", converter.Convert(1_000_021, "gender=feminin"));
+    }
+
+    [TestMethod]
+    public void Interface_ConvertWithVariants_Exists()
     {
         INumberToStringConverter converter = NumberToStringConverter.GetConverter("FR");
 
-        string result = converter.Convert(new BigInteger(1), NumberGender.Feminine);
+        string result = converter.Convert(new BigInteger(1), "gender=feminin");
         Assert.AreEqual("une", result);
+    }
+
+    [TestMethod]
+    public void Convert_UnknownVariantDimension_FallsBackSilently()
+    {
+        // Une dimension inconnue est ignorée silencieusement → résultat identique à Convert(1)
+        var converter = NumberToStringConverter.GetConverter("FR");
+
+        string result = converter.Convert(1, "cas=inconnu");
+        Assert.AreEqual("un", result);
     }
 
     // ─── C3 — Currency conversion ──────────────────────────────────────────

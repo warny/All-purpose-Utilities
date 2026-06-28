@@ -34,12 +34,6 @@ public class NumberType
     [XmlAttribute("string")]
     public string StringValue { get; set; }
 
-    /// <summary>
-    /// Gets or sets the feminine form of the literal, when the language requires it.
-    /// </summary>
-    [XmlAttribute("feminineString")]
-    public string FeminineString { get; set; }
-
     /// <inheritdoc />
     public override string ToString() => $"N : {Value} => {StringValue}";
 }
@@ -259,6 +253,82 @@ public enum ReplacementScope
     /// Indicates that the replacement may occur within a larger phrase when the words match.
     /// </summary>
     Anywhere,
+
+    /// <summary>
+    /// Indicates that the replacement applies only when <c>oldValue</c> matches the last word of
+    /// the text (the part after the last space or hyphen), treating the old value as a word-boundary
+    /// suffix rather than a substring.
+    /// </summary>
+    LastWord,
+}
+
+/// <summary>
+/// Declares one dimension of grammatical variation for a language (e.g. "gender" or "case")
+/// together with its ordered set of values. The first value is the default when no explicit
+/// variant is requested.
+/// </summary>
+public class VariantDimensionType
+{
+    /// <summary>Gets or sets the dimension name (e.g. "gender").</summary>
+    [XmlAttribute("name")]
+    public string Name { get; set; }
+
+    /// <summary>
+    /// Gets or sets the comma-separated ordered list of valid values for this dimension
+    /// (e.g. "masculin,feminin,neutrum"). The first value is the default.
+    /// </summary>
+    [XmlAttribute("values")]
+    public string ValuesRaw { get; set; }
+}
+
+/// <summary>
+/// Describes a morphological variant: a set of dimension constraints (encoded as arbitrary
+/// XML attributes, e.g. <c>gender="feminin"</c>) and the replacement rules to apply when
+/// the constraints are satisfied.
+/// </summary>
+public class VariantType
+{
+    /// <summary>
+    /// Gets or sets the dimension constraints supplied as XML attributes (e.g. gender="feminin").
+    /// Captured via <see cref="XmlAnyAttributeAttribute"/>; standard XML attributes are excluded.
+    /// </summary>
+    [XmlAnyAttribute]
+    public XmlAttribute[]? DimensionAttributes { get; set; }
+
+    /// <summary>Gets or sets the replacement rules applied when this variant is active.</summary>
+    [XmlElement("Replacement")]
+    public List<ReplacementType>? Replacements { get; set; }
+
+    /// <summary>
+    /// Returns the dimension constraints as a case-insensitive dictionary.
+    /// </summary>
+    [XmlIgnore]
+    public IReadOnlyDictionary<string, string> Dimensions
+    {
+        get
+        {
+            if (DimensionAttributes == null || DimensionAttributes.Length == 0)
+                return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            return DimensionAttributes
+                .Where(a => string.IsNullOrEmpty(a.NamespaceURI))
+                .ToDictionary(a => a.LocalName, a => a.Value, StringComparer.OrdinalIgnoreCase);
+        }
+    }
+}
+
+/// <summary>
+/// Holds the complete variant configuration for a language: the declared dimensions
+/// and the list of variant rules.
+/// </summary>
+public class VariantsType
+{
+    /// <summary>Gets or sets the declared variant dimensions.</summary>
+    [XmlElement("Dimension")]
+    public List<VariantDimensionType>? Dimensions { get; set; }
+
+    /// <summary>Gets or sets the list of variant rules.</summary>
+    [XmlElement("Variant")]
+    public List<VariantType>? Variants { get; set; }
 }
 
 /// <summary>
@@ -400,11 +470,11 @@ public class LanguageType
     public OrdinalsType Ordinals { get; set; }
 
     /// <summary>
-    /// Gets or sets the replacement rules applied when converting with feminine gender.
-    /// Uses the same format as <see cref="Replacements"/>.
+    /// Gets or sets the morphological variant configuration for this language.
+    /// Declares the available dimensions and the replacement rules for each combination.
     /// </summary>
-    [XmlElement(ElementName = "FeminineReplacements")]
-    public ReplacementsListType FeminineReplacements { get; set; }
+    [XmlElement(ElementName = "Variants")]
+    public VariantsType Variants { get; set; }
 }
 
 /// <summary>

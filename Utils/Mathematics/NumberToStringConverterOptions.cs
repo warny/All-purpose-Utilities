@@ -89,10 +89,16 @@ public sealed class NumberToStringConverterOptions
     public IReadOnlyDictionary<string, string> OrdinalWordRules { get; set; } = new Dictionary<string, string>();
 
     /// <summary>
-    /// Replacement rules applied to the converted text when feminine gender is requested.
-    /// Uses the same format as <see cref="Replacements"/>.
+    /// Declared variant dimensions (e.g. "gender", "case") with their ordered values.
+    /// The first value of each dimension is the default when no explicit variant is requested.
     /// </summary>
-    public IEnumerable<NumberToStringConverter.ReplacementRule> FeminineReplacements { get; set; } = [];
+    public IReadOnlyList<NumberToStringConverter.VariantDimension> VariantDimensions { get; set; } = [];
+
+    /// <summary>
+    /// Variant rules that associate a set of dimension constraints with replacement rules.
+    /// Applied between the raw adjustment function and <see cref="INumberToStringLanguageSpecifics.FinalizeWriting"/>.
+    /// </summary>
+    public IReadOnlyList<NumberToStringConverter.VariantRule> VariantRules { get; set; } = [];
 
     /// <summary>Creates an options object with sensible defaults. Required properties
     /// (<see cref="Zero"/>, <see cref="Minus"/>, <see cref="Groups"/>, <see cref="Scale"/>)
@@ -127,7 +133,8 @@ public sealed class NumberToStringConverterOptions
         StripTrailingEForOrdinal = source.StripTrailingEForOrdinal;
         OrdinalExceptions = source.OrdinalExceptions;
         OrdinalWordRules = source.OrdinalWordRules;
-        FeminineReplacements = source.FeminineReplacements;
+        VariantDimensions = source.VariantDimensions;
+        VariantRules = source.VariantRules;
     }
 
     /// <summary>

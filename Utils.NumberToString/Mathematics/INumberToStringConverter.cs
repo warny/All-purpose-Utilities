@@ -51,13 +51,36 @@ namespace Utils.Mathematics
         string Convert(Number number);
 
         /// <summary>
-        /// Converts an arbitrarily large integer into its string representation using
-        /// the specified grammatical gender.
+        /// Converts an arbitrarily large integer into its string representation,
+        /// applying the specified variant parameters (e.g. <c>"gender=feminin"</c>,
+        /// <c>"case=akkusativ"</c>). When no parameter is supplied the first declared
+        /// value of each dimension is used as the default.
         /// </summary>
         /// <param name="number">The value to convert.</param>
-        /// <param name="gender">The grammatical gender to apply.</param>
-        /// <returns>The formatted number in the requested gender.</returns>
-        string Convert(BigInteger number, NumberGender gender);
+        /// <param name="variants">
+        /// Zero or more <c>"dimension=value"</c> strings that select morphological variants.
+        /// Unrecognised dimensions or values fall back to the default silently.
+        /// </param>
+        /// <returns>The formatted number with the requested variants applied.</returns>
+        string Convert(BigInteger number, params string[] variants);
+
+        /// <summary>
+        /// Converts a 32-bit signed integer into its string representation,
+        /// applying the specified variant parameters.
+        /// </summary>
+        /// <param name="number">The value to convert.</param>
+        /// <param name="variants">Zero or more <c>"dimension=value"</c> strings.</param>
+        /// <returns>The formatted number with the requested variants applied.</returns>
+        string Convert(int number, params string[] variants);
+
+        /// <summary>
+        /// Converts a 64-bit signed integer into its string representation,
+        /// applying the specified variant parameters.
+        /// </summary>
+        /// <param name="number">The value to convert.</param>
+        /// <param name="variants">Zero or more <c>"dimension=value"</c> strings.</param>
+        /// <returns>The formatted number with the requested variants applied.</returns>
+        string Convert(long number, params string[] variants);
 
         /// <summary>
         /// Converts a positive integer into its ordinal string representation

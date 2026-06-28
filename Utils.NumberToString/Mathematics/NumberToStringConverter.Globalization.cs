@@ -143,6 +143,25 @@ namespace Utils.Mathematics
                 list?.Replacements?.Select(r => new NumberToStringConverter.ReplacementRule(r.OldValue, r.NewValue, r.Scope))
                 ?? [];
 
+            static IReadOnlyList<NumberToStringConverter.VariantDimension> ParseVariantDimensions(VariantsType variants) =>
+                variants?.Dimensions?
+                    .Select(d => new NumberToStringConverter.VariantDimension(
+                        d.Name,
+                        d.ValuesRaw?.Split(',').Select(v => v.Trim()).Where(v => v.Length > 0).ToList()
+                            ?? new List<string>()))
+                    .ToList()
+                ?? new List<NumberToStringConverter.VariantDimension>();
+
+            static IReadOnlyList<NumberToStringConverter.VariantRule> ParseVariantRules(VariantsType variants) =>
+                variants?.Variants?
+                    .Select(v => new NumberToStringConverter.VariantRule(
+                        v.Dimensions.ToDictionary(kv => kv.Key, kv => kv.Value, StringComparer.OrdinalIgnoreCase),
+                        (v.Replacements ?? [])
+                            .Select(r => new NumberToStringConverter.ReplacementRule(r.OldValue, r.NewValue, r.Scope))
+                            .ToList()))
+                    .ToList()
+                ?? new List<NumberToStringConverter.VariantRule>();
+
             var options = new NumberToStringConverterOptions
             {
                 Group = language.GroupSize,
@@ -170,7 +189,8 @@ namespace Utils.Mathematics
                     ?? new Dictionary<long, string>(),
                 OrdinalWordRules = language.Ordinals?.Rules?.ToDictionary(r => r.From, r => r.To)
                     ?? new Dictionary<string, string>(),
-                FeminineReplacements = ParseReplacements(language.FeminineReplacements),
+                VariantDimensions = ParseVariantDimensions(language.Variants),
+                VariantRules = ParseVariantRules(language.Variants),
             };
 
             return new NumberToStringConverter(options);

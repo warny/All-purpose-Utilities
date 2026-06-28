@@ -101,9 +101,11 @@
 			<Ordinal from="cinq" to="cinquième" />
 			<Ordinal from="neuf" to="neuvième" />
 		</Ordinals>
-		<FeminineReplacements>
-			<Replacement oldValue="un" newValue="une" />
-			<Replacement oldValue=" un" newValue=" une" scope="Anywhere" />
-		</FeminineReplacements>
+		<Variants>
+			<Dimension name="gender" values="masculin,feminin" />
+			<Variant gender="feminin">
+				<Replacement oldValue="un" newValue="une" scope="LastWord" />
+			</Variant>
+		</Variants>
 	</Language>
 </Numbers>
