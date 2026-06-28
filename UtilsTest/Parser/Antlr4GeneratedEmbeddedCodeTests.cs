@@ -444,7 +444,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
     }
 
     /// <summary>
-    /// Ensures duplicate lexer action source at multiple positions dispatches by source position, not source text alone.
+    /// Ensures duplicate lexer action source at multiple positions emits and dispatches with distinct source-position keys.
     /// </summary>
     [TestMethod]
     public void ParseWithEmbeddedCode_LexerActionsAtMultiplePositions_DispatchByPosition()
@@ -458,12 +458,17 @@ public class Antlr4GeneratedEmbeddedCodeTests
 
             start : A ;
             A
-                : 'a' { Count += context.AlternativeIndex == 0 && context.ElementIndex == 1 ? 1 : 100; }
-                | 'b' { Count += context.AlternativeIndex == 1 && context.ElementIndex == 1 ? 10 : 1000; }
+                : 'a' { Count++; }
+                | 'b' { Count++; }
                 ;
             """;
 
         string source = Emit(grammar);
+        StringAssert.Contains(source, "private void __LexerAction_A_0_1_0");
+        StringAssert.Contains(source, "private void __LexerAction_A_1_1_1");
+        StringAssert.Contains(source, "&& string.Equals(context.ActionCode, \" Count++; \", global::System.StringComparison.Ordinal)");
+        StringAssert.Contains(source, "&& context.AlternativeIndex == 0");
+        StringAssert.Contains(source, "&& context.AlternativeIndex == 1");
         var assembly = CompileGeneratedSource(source);
         object aContext = CreateExecutionContext(assembly);
         object bContext = CreateExecutionContext(assembly);
@@ -474,11 +479,11 @@ public class Antlr4GeneratedEmbeddedCodeTests
         Assert.IsNotInstanceOfType(aResult, typeof(ErrorNode));
         Assert.AreEqual(1, ReadInstanceIntField(aContext, "Count"));
         Assert.IsNotInstanceOfType(bResult, typeof(ErrorNode));
-        Assert.AreEqual(10, ReadInstanceIntField(bContext, "Count"));
+        Assert.AreEqual(1, ReadInstanceIntField(bContext, "Count"));
     }
 
     /// <summary>
-    /// Ensures similar lexer predicates at multiple positions dispatch through the runtime alternative index.
+    /// Ensures duplicate lexer predicate source at multiple positions emits and dispatches with distinct source-position keys.
     /// </summary>
     [TestMethod]
     public void ParseWithEmbeddedCode_LexerPredicatesAtMultiplePositions_DispatchByPosition()
@@ -493,12 +498,17 @@ public class Antlr4GeneratedEmbeddedCodeTests
 
             start : A ;
             A
-                : { context.AlternativeIndex == 0 && UseA }? 'a'
-                | { context.AlternativeIndex == 1 && UseB }? 'b'
+                : { (context.AlternativeIndex == 0 && UseA) || (context.AlternativeIndex == 1 && UseB) }? 'a'
+                | { (context.AlternativeIndex == 0 && UseA) || (context.AlternativeIndex == 1 && UseB) }? 'b'
                 ;
             """;
 
         string source = Emit(grammar);
+        StringAssert.Contains(source, "private bool __LexerPredicate_A_0_0_0");
+        StringAssert.Contains(source, "private bool __LexerPredicate_A_1_0_1");
+        StringAssert.Contains(source, "&& string.Equals(context.PredicateCode, \" (context.AlternativeIndex == 0 && UseA) || (context.AlternativeIndex == 1 && UseB) \", global::System.StringComparison.Ordinal)");
+        StringAssert.Contains(source, "&& context.AlternativeIndex == 0");
+        StringAssert.Contains(source, "&& context.AlternativeIndex == 1");
         var assembly = CompileGeneratedSource(source);
         object aContext = CreateExecutionContext(assembly);
         object bContext = CreateExecutionContext(assembly);
