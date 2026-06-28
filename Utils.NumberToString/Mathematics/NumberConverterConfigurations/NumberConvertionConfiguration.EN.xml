@@ -75,5 +75,22 @@
 			<Fraction digits="2" string="hundredth(s)" />
 			<Fraction digits="3" string="thousandth(s)" />
 		</Fractions>
+		<Ordinals suffix="th">
+			<Ordinal from="one" to="first" />
+			<Ordinal from="two" to="second" />
+			<Ordinal from="three" to="third" />
+			<Ordinal from="five" to="fifth" />
+			<Ordinal from="eight" to="eighth" />
+			<Ordinal from="nine" to="ninth" />
+			<Ordinal from="twelve" to="twelfth" />
+			<Ordinal from="twenty" to="twentieth" />
+			<Ordinal from="thirty" to="thirtieth" />
+			<Ordinal from="forty" to="fortieth" />
+			<Ordinal from="fifty" to="fiftieth" />
+			<Ordinal from="sixty" to="sixtieth" />
+			<Ordinal from="seventy" to="seventieth" />
+			<Ordinal from="eighty" to="eightieth" />
+			<Ordinal from="ninety" to="ninetieth" />
+		</Ordinals>
 	</Language>
 </Numbers>

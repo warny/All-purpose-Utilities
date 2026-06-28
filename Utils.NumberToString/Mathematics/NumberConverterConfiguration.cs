@@ -34,8 +34,75 @@ public class NumberType
     [XmlAttribute("string")]
     public string StringValue { get; set; }
 
+    /// <summary>
+    /// Gets or sets the feminine form of the literal, when the language requires it.
+    /// </summary>
+    [XmlAttribute("feminineString")]
+    public string FeminineString { get; set; }
+
     /// <inheritdoc />
     public override string ToString() => $"N : {Value} => {StringValue}";
+}
+
+/// <summary>
+/// Describes a single ordinal exception that maps an integer to its ordinal text.
+/// </summary>
+public class OrdinalExceptionType
+{
+    /// <summary>Gets or sets the numeric value of the exception.</summary>
+    [XmlAttribute("value")]
+    public long Value { get; set; }
+
+    /// <summary>Gets or sets the ordinal text for <see cref="Value"/>.</summary>
+    [XmlAttribute("string")]
+    public string StringValue { get; set; }
+}
+
+/// <summary>
+/// Describes a word-level transformation rule for ordinal conversion: when the last
+/// word of a cardinal equals <see cref="From"/>, it is replaced with <see cref="To"/>.
+/// </summary>
+public class OrdinalRuleType
+{
+    /// <summary>Gets or sets the cardinal word to match.</summary>
+    [XmlAttribute("from")]
+    public string From { get; set; }
+
+    /// <summary>Gets or sets the ordinal replacement word.</summary>
+    [XmlAttribute("to")]
+    public string To { get; set; }
+}
+
+/// <summary>
+/// Holds the complete ordinal configuration for a language: whole-number exceptions,
+/// word-level transformation rules, and a default suffix.
+/// </summary>
+public class OrdinalsType
+{
+    /// <summary>
+    /// Gets or sets the suffix appended to the last word of the cardinal when no rule matches.
+    /// </summary>
+    [XmlAttribute("suffix")]
+    public string Suffix { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether a trailing 'e' on the last word is stripped before appending the suffix.
+    /// </summary>
+    [XmlAttribute("stripTrailingE")]
+    public bool StripTrailingE { get; set; }
+
+    /// <summary>
+    /// Gets or sets integer-level ordinal exceptions (e.g. 1 → "premier" in French).
+    /// These take priority over word-level rules.
+    /// </summary>
+    [XmlElement("OrdinalException")]
+    public List<OrdinalExceptionType> Exceptions { get; set; }
+
+    /// <summary>
+    /// Gets or sets the word-level ordinal rules applied to the last word of the cardinal.
+    /// </summary>
+    [XmlElement("Ordinal")]
+    public List<OrdinalRuleType> Rules { get; set; }
 }
 
 /// <summary>
@@ -325,6 +392,19 @@ public class LanguageType
     /// </summary>
     [XmlElement(ElementName = "Fractions")]
     public FractionListType Fractions { get; set; }
+
+    /// <summary>
+    /// Gets or sets the ordinal configuration for this language.
+    /// </summary>
+    [XmlElement(ElementName = "Ordinals")]
+    public OrdinalsType Ordinals { get; set; }
+
+    /// <summary>
+    /// Gets or sets the replacement rules applied when converting with feminine gender.
+    /// Uses the same format as <see cref="Replacements"/>.
+    /// </summary>
+    [XmlElement(ElementName = "FeminineReplacements")]
+    public ReplacementsListType FeminineReplacements { get; set; }
 }
 
 /// <summary>

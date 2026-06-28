@@ -75,6 +75,17 @@ namespace Utils.Mathematics
             Fractions = options.Fractions?.ToImmutableDictionary() ?? ImmutableDictionary<int, string>.Empty;
             MaxNumber = options.MaxNumber;
             FractionSeparator = string.IsNullOrWhiteSpace(options.FractionSeparator) ? "/" : options.FractionSeparator;
+
+            OrdinalSuffix = options.OrdinalSuffix;
+            StripTrailingEForOrdinal = options.StripTrailingEForOrdinal;
+            OrdinalExceptions = (options.OrdinalExceptions ?? new Dictionary<long, string>()).ToImmutableDictionary();
+            OrdinalWordRules = (options.OrdinalWordRules ?? new Dictionary<string, string>()).ToImmutableDictionary();
+
+            FeminineReplacements = (options.FeminineReplacements ?? [])
+                .Select(r => r ?? throw new ArgumentNullException(nameof(options), "Feminine replacement entries must not be null."))
+                .ToImmutableArray();
+            _feminineReplacementLookup = FeminineReplacements.ToImmutableDictionary(r => r.OldValue, r => r.NewValue, StringComparer.Ordinal);
+            _feminineSubstringReplacements = FeminineReplacements.Where(r => r.Scope == ReplacementScope.Anywhere).ToImmutableArray();
         }
 
         /// <summary>
@@ -142,8 +153,35 @@ namespace Utils.Mathematics
         /// </summary>
         public NumberScale Scale { get; }
 
+        /// <summary>
+        /// Ordinal suffix appended to the last word of the cardinal when no word-level rule matches.
+        /// </summary>
+        public string? OrdinalSuffix { get; }
+
+        /// <summary>
+        /// Whether to strip a trailing 'e' from the last cardinal word before appending <see cref="OrdinalSuffix"/>.
+        /// </summary>
+        public bool StripTrailingEForOrdinal { get; }
+
+        /// <summary>
+        /// Integer-level ordinal exceptions (whole number → ordinal text).
+        /// </summary>
+        public IReadOnlyDictionary<long, string> OrdinalExceptions { get; }
+
+        /// <summary>
+        /// Word-level ordinal transformation rules applied to the last word of the cardinal.
+        /// </summary>
+        public IReadOnlyDictionary<string, string> OrdinalWordRules { get; }
+
+        /// <summary>
+        /// Replacement rules applied to the result when converting with feminine gender.
+        /// </summary>
+        public IReadOnlyList<ReplacementRule> FeminineReplacements { get; }
+
         private readonly ImmutableDictionary<string, string> _replacementLookup;
         private readonly ImmutableArray<ReplacementRule> _substringReplacements;
+        private readonly ImmutableDictionary<string, string> _feminineReplacementLookup;
+        private readonly ImmutableArray<ReplacementRule> _feminineSubstringReplacements;
         private readonly Func<string, string>? _rawAdjustFunction;
 
         /// <summary>
@@ -227,8 +265,14 @@ namespace Utils.Mathematics
         /// <summary>
         /// Converts a BigInteger to its string representation.
         /// </summary>
+        /// <exception cref="ArgumentOutOfRangeException">
+        /// Thrown when <paramref name="number"/> exceeds <see cref="MaxNumber"/>.
+        /// </exception>
         public string Convert(BigInteger number)
         {
+            if (MaxNumber.HasValue && BigInteger.Abs(number) > MaxNumber.Value)
+                throw new ArgumentOutOfRangeException(nameof(number), $"The value exceeds the maximum supported number ({MaxNumber.Value}).");
+
             if (number == 0) return Zero;
 
             // Check for exceptions
@@ -269,8 +313,7 @@ namespace Utils.Mathematics
 
             var finalResult = result.ToString().TrimEnd(GroupSeparator.ToCharArray().Union(Separator.ToCharArray()).ToArray());
             finalResult = ApplyReplacements(finalResult);
-            finalResult = isNegative ? Minus.Replace("*", finalResult) : AdjustFunction(finalResult);
-            return AdjustFunction(finalResult);
+            return isNegative ? Minus.Replace("*", AdjustFunction(finalResult)) : AdjustFunction(finalResult);
         }
 
         /// <summary>
@@ -384,6 +427,128 @@ namespace Utils.Mathematics
 
             string connector = FractionSeparator;
             return string.Concat(numeratorText, Separator, connector, Separator, denominatorText).Trim();
+        }
+
+        /// <summary>
+        /// Converts an integer to its string representation using the specified grammatical gender.
+        /// The base cardinal is produced by <see cref="Convert(BigInteger)"/>, then feminine
+        /// replacement rules are applied when <paramref name="gender"/> is <see cref="NumberGender.Feminine"/>.
+        /// </summary>
+        /// <param name="number">The value to convert.</param>
+        /// <param name="gender">The grammatical gender to apply.</param>
+        /// <returns>The formatted number in the requested gender.</returns>
+        public string Convert(BigInteger number, NumberGender gender)
+        {
+            string result = Convert(number);
+            return gender == NumberGender.Feminine ? ApplyFeminineReplacements(result) : result;
+        }
+
+        /// <summary>
+        /// Converts a 32-bit integer to its string representation using the specified gender.
+        /// </summary>
+        public string Convert(int number, NumberGender gender) => Convert((BigInteger)number, gender);
+
+        /// <summary>
+        /// Converts a 64-bit integer to its string representation using the specified gender.
+        /// </summary>
+        public string Convert(long number, NumberGender gender) => Convert((BigInteger)number, gender);
+
+        /// <summary>
+        /// Converts a positive integer to its ordinal string representation
+        /// (e.g. 1 → "first", 2 → "second" in English).
+        /// Integer-level exceptions in <see cref="OrdinalExceptions"/> are checked first,
+        /// then word-level rules in <see cref="OrdinalWordRules"/>, then <see cref="OrdinalSuffix"/>.
+        /// </summary>
+        /// <param name="number">The value to convert. Negative values use the minus template.</param>
+        /// <returns>The ordinal string for <paramref name="number"/>.</returns>
+        public string ConvertOrdinal(int number)
+        {
+            bool isNegative = number < 0;
+            int absNumber = Math.Abs(number);
+
+            if (OrdinalExceptions.TryGetValue(absNumber, out var exception))
+                return isNegative ? Minus.Replace("*", exception) : exception;
+
+            string cardinal = Convert(absNumber);
+            string ordinal = ApplyOrdinalTransform(cardinal);
+            return isNegative ? Minus.Replace("*", ordinal) : ordinal;
+        }
+
+        /// <summary>
+        /// Converts a decimal currency amount to words using the supplied currency definition.
+        /// </summary>
+        /// <param name="amount">The amount to convert.</param>
+        /// <param name="currency">The currency names and configuration.</param>
+        /// <returns>The amount expressed as words (e.g. "twenty euros and fifty centimes").</returns>
+        public string ConvertCurrency(decimal amount, CurrencyDefinition currency)
+        {
+            ArgumentNullException.ThrowIfNull(currency);
+
+            bool isNegative = amount < 0;
+            decimal absAmount = isNegative ? -amount : amount;
+
+            long units = (long)decimal.Truncate(absAmount);
+            decimal fractional = absAmount - units;
+            long subunitFactor = (long)Math.Pow(10, currency.SubunitDigits);
+            long subunits = (long)Math.Round((double)fractional * subunitFactor);
+
+            string unitName = units == 1 ? currency.UnitSingular : currency.UnitPlural;
+            string result = Convert(units) + Separator + unitName;
+
+            if (subunits > 0)
+            {
+                string subunitName = subunits == 1 ? currency.SubunitSingular : currency.SubunitPlural;
+                string subunitsText = Convert(subunits) + Separator + subunitName;
+                result = result + Separator + currency.Connector + Separator + subunitsText;
+            }
+
+            return isNegative ? Minus.Replace("*", result) : result;
+        }
+
+        /// <summary>
+        /// Transforms a cardinal string into its ordinal form by applying word-level rules
+        /// or the ordinal suffix to the last word.
+        /// </summary>
+        private string ApplyOrdinalTransform(string cardinal)
+        {
+            if (OrdinalWordRules.Count == 0 && OrdinalSuffix == null) return cardinal;
+
+            int lastSpace = cardinal.LastIndexOf(' ');
+            string prefix = lastSpace >= 0 ? cardinal[..(lastSpace + 1)] : "";
+            string lastComponent = lastSpace >= 0 ? cardinal[(lastSpace + 1)..] : cardinal;
+
+            // Handle hyphenated last component (e.g. "twenty-one" → "twenty-first")
+            int lastHyphen = lastComponent.LastIndexOf('-');
+            string hyphenPrefix = lastHyphen >= 0 ? lastComponent[..(lastHyphen + 1)] : "";
+            string lastWord = lastHyphen >= 0 ? lastComponent[(lastHyphen + 1)..] : lastComponent;
+
+            if (OrdinalWordRules.TryGetValue(lastWord, out var replacement))
+                return prefix + hyphenPrefix + replacement;
+
+            if (OrdinalSuffix != null)
+            {
+                string transformed = lastWord;
+                if (StripTrailingEForOrdinal && transformed.EndsWith('e'))
+                    transformed = transformed[..^1];
+                return prefix + hyphenPrefix + transformed + OrdinalSuffix;
+            }
+
+            return cardinal;
+        }
+
+        /// <summary>
+        /// Applies the feminine replacement rules to a converted string.
+        /// </summary>
+        private string ApplyFeminineReplacements(string value)
+        {
+            if (string.IsNullOrEmpty(value) || FeminineReplacements.Count == 0) return value;
+
+            if (_feminineReplacementLookup.TryGetValue(value, out var exactMatch)) return exactMatch;
+
+            foreach (var replacement in _feminineSubstringReplacements)
+                value = value.Replace(replacement.OldValue, replacement.NewValue);
+
+            return value;
         }
 
         /// <summary>

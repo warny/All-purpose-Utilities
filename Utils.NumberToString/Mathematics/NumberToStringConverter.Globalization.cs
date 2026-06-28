@@ -45,8 +45,26 @@ namespace Utils.Mathematics
         // Caches configurations for different cultures
         private static readonly Dictionary<string, NumberToStringConverter> CachedConfigurations = new(StringComparer.InvariantCultureIgnoreCase);
 
+        // Explicitly registered language-specifics instances, consulted before reflection
+        private static readonly Dictionary<string, INumberToStringLanguageSpecifics> _registeredSpecifics = new(StringComparer.Ordinal);
+
+        /// <summary>
+        /// Registers an <see cref="INumberToStringLanguageSpecifics"/> instance under a given type name
+        /// so that XML configurations referencing that name find it without reflection.
+        /// </summary>
+        /// <param name="typeName">
+        /// The type name as it appears in <c>&lt;LanguageSpecifics&gt;</c> elements (full or short name).
+        /// </param>
+        /// <param name="instance">The instance to register.</param>
+        public static void RegisterLanguageSpecifics(string typeName, INumberToStringLanguageSpecifics instance)
+        {
+            ArgumentNullException.ThrowIfNull(instance);
+            _registeredSpecifics[typeName] = instance;
+        }
+
         /// <summary>
         /// Loads number-to-string configurations embedded as XML strings.
+        /// Duplicate culture keys are silently ignored (first registration wins).
         /// </summary>
         /// <param name="configs">The XML documents describing language configurations.</param>
         public static void InitializeConfigurations(params string[] configs)
@@ -54,6 +72,7 @@ namespace Utils.Mathematics
 
         /// <summary>
         /// Registers the provided language configurations for later lookup.
+        /// Duplicate culture keys are silently ignored (first registration wins).
         /// </summary>
         /// <param name="configs">The XML configuration documents to load.</param>
         public static void RegisterConfigurations(IEnumerable<string> configs)
@@ -63,7 +82,7 @@ namespace Utils.Mathematics
                 var languages = ReadConfiguration(configuration);
                 foreach (var language in languages)
                 {
-                    CachedConfigurations.Add(language.Key, language.Value);
+                    CachedConfigurations.TryAdd(language.Key, language.Value);
                 }
             }
         }
@@ -120,6 +139,10 @@ namespace Utils.Mathematics
                 confScale.FirstLetterUpperCase
             );
 
+            static IEnumerable<NumberToStringConverter.ReplacementRule> ParseReplacements(ReplacementsListType list) =>
+                list?.Replacements?.Select(r => new NumberToStringConverter.ReplacementRule(r.OldValue, r.NewValue, r.Scope))
+                ?? [];
+
             var options = new NumberToStringConverterOptions
             {
                 Group = language.GroupSize,
@@ -131,8 +154,7 @@ namespace Utils.Mathematics
                 Groups = language.Groups.Groups.ToDictionary(g => g.Level, g => (DigitListType)g),
                 Exceptions = language.Exceptions?.Numbers?.ToDictionary(e => (long)e.Value, e => e.StringValue)
                     ?? new Dictionary<long, string>(),
-                Replacements = language.Replacements?.Replacements
-                    .Select(r => new NumberToStringConverter.ReplacementRule(r.OldValue, r.NewValue, r.Scope)),
+                Replacements = ParseReplacements(language.Replacements),
                 Scale = scale,
                 LanguageSpecifics = ResolveLanguageSpecifics(language.LanguageSpecificsTypeName),
                 LanguageIdentifier = languageIdentifier,
@@ -142,6 +164,13 @@ namespace Utils.Mathematics
                     ? null
                     : BigInteger.Parse(language.MaxNumber, CultureInfo.InvariantCulture),
                 FractionSeparator = language.FractionSeparator,
+                OrdinalSuffix = language.Ordinals?.Suffix,
+                StripTrailingEForOrdinal = language.Ordinals?.StripTrailingE ?? false,
+                OrdinalExceptions = language.Ordinals?.Exceptions?.ToDictionary(e => e.Value, e => e.StringValue)
+                    ?? new Dictionary<long, string>(),
+                OrdinalWordRules = language.Ordinals?.Rules?.ToDictionary(r => r.From, r => r.To)
+                    ?? new Dictionary<string, string>(),
+                FeminineReplacements = ParseReplacements(language.FeminineReplacements),
             };
 
             return new NumberToStringConverter(options);
@@ -149,6 +178,8 @@ namespace Utils.Mathematics
 
         /// <summary>
         /// Resolves a language-specific finalizer from a configured type name.
+        /// Explicitly registered instances (via <see cref="RegisterLanguageSpecifics"/>) take
+        /// priority over the reflection-based lookup.
         /// </summary>
         /// <param name="typeName">The configured type name.</param>
         /// <returns>The resolved instance, or a no-op implementation when the type cannot be resolved.</returns>
@@ -157,6 +188,11 @@ namespace Utils.Mathematics
             if (string.IsNullOrWhiteSpace(typeName))
             {
                 return new DefaultNumberToStringLanguageSpecifics();
+            }
+
+            if (_registeredSpecifics.TryGetValue(typeName, out var registered))
+            {
+                return registered;
             }
 
             Type specificsType = Type.GetType(typeName, throwOnError: false);
