@@ -350,6 +350,285 @@ public class Antlr4GeneratedEmbeddedCodeTests
     }
 
     /// <summary>
+    /// Ensures a lexer predicate declared inside a fragment participates in generated opt-in matching while conservative parsing remains disconnected.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerPredicateInFragment_EvaluatesForOwningFragmentRule()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public bool Enabled = true;
+            }
+
+            start : A ;
+            A : F ;
+            fragment F : { Enabled }? 'a' ;
+            """;
+
+        string source = Emit(grammar);
+        var assembly = CompileGeneratedSource(source);
+        object enabledContext = CreateExecutionContext(assembly);
+        object disabledContext = CreateExecutionContext(assembly);
+        WriteInstanceBoolField(disabledContext, "Enabled", false);
+
+        var enabledResult = InvokeParseWithContext(assembly, "a", enabledContext);
+        var disabledResult = InvokeParseWithContext(assembly, "a", disabledContext);
+        var conservativeResult = InvokeParse(assembly, "Parse", "a");
+
+        Assert.IsNotInstanceOfType(enabledResult, typeof(ErrorNode));
+        Assert.IsInstanceOfType(disabledResult, typeof(ErrorNode));
+        Assert.IsInstanceOfType(conservativeResult, typeof(ErrorNode));
+    }
+
+    /// <summary>
+    /// Ensures lexer actions collected through a fragment execute only after the owning token is accepted.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerActionInFragment_ExecutesAfterTokenAcceptance()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public static int Count;
+            }
+
+            start : A ;
+            A : F ;
+            fragment F : 'a' { Count++; } ;
+            """;
+
+        string source = Emit(grammar);
+        var assembly = CompileGeneratedSource(source);
+        object embeddedContext = CreateExecutionContext(assembly);
+        var conservativeResult = InvokeParse(assembly, "Parse", "a");
+
+        Assert.IsNotInstanceOfType(conservativeResult, typeof(ErrorNode));
+        Assert.AreEqual(0, ReadIntField(assembly, "Count"));
+
+        var embeddedResult = InvokeParseWithContext(assembly, "a", embeddedContext);
+
+        Assert.IsNotInstanceOfType(embeddedResult, typeof(ErrorNode));
+        Assert.AreEqual(1, ReadIntField(assembly, "Count"));
+    }
+
+    /// <summary>
+    /// Ensures a false lexer predicate in a fragment rejects the token path and prevents later accepted-token actions from running.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerPredicateFalseInFragment_PreventsFollowingAction()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public bool Enabled = false;
+                public int Count;
+            }
+
+            start : A ;
+            A : F { Count++; } ;
+            fragment F : { Enabled }? 'a' ;
+            """;
+
+        string source = Emit(grammar);
+        var assembly = CompileGeneratedSource(source);
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "a", context);
+
+        Assert.IsInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(0, ReadInstanceIntField(context, "Count"));
+    }
+
+    /// <summary>
+    /// Ensures duplicate lexer action source at multiple positions dispatches by source position, not source text alone.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerActionsAtMultiplePositions_DispatchByPosition()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public int Count;
+            }
+
+            start : A ;
+            A
+                : 'a' { Count += context.AlternativeIndex == 0 && context.ElementIndex == 1 ? 1 : 100; }
+                | 'b' { Count += context.AlternativeIndex == 1 && context.ElementIndex == 1 ? 10 : 1000; }
+                ;
+            """;
+
+        string source = Emit(grammar);
+        var assembly = CompileGeneratedSource(source);
+        object aContext = CreateExecutionContext(assembly);
+        object bContext = CreateExecutionContext(assembly);
+
+        var aResult = InvokeParseWithContext(assembly, "a", aContext);
+        var bResult = InvokeParseWithContext(assembly, "b", bContext);
+
+        Assert.IsNotInstanceOfType(aResult, typeof(ErrorNode));
+        Assert.AreEqual(1, ReadInstanceIntField(aContext, "Count"));
+        Assert.IsNotInstanceOfType(bResult, typeof(ErrorNode));
+        Assert.AreEqual(10, ReadInstanceIntField(bContext, "Count"));
+    }
+
+    /// <summary>
+    /// Ensures similar lexer predicates at multiple positions dispatch through the runtime alternative index.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerPredicatesAtMultiplePositions_DispatchByPosition()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public bool UseA = false;
+                public bool UseB = true;
+            }
+
+            start : A ;
+            A
+                : { context.AlternativeIndex == 0 && UseA }? 'a'
+                | { context.AlternativeIndex == 1 && UseB }? 'b'
+                ;
+            """;
+
+        string source = Emit(grammar);
+        var assembly = CompileGeneratedSource(source);
+        object aContext = CreateExecutionContext(assembly);
+        object bContext = CreateExecutionContext(assembly);
+
+        var aResult = InvokeParseWithContext(assembly, "a", aContext);
+        var bResult = InvokeParseWithContext(assembly, "b", bContext);
+
+        Assert.IsInstanceOfType(aResult, typeof(ErrorNode));
+        Assert.IsNotInstanceOfType(bResult, typeof(ErrorNode));
+    }
+
+    /// <summary>
+    /// Ensures lexer predicates and actions in simple quantifiers are evaluated per matched iteration without leaking failed attempts.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerPredicateAndActionInQuantifier_DoNotLeakFailedAttempts()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public bool Enabled = true;
+                public int Count;
+            }
+
+            start : A ;
+            A : ({ Enabled }? 'a' { Count++; })+ ;
+            """;
+
+        string source = Emit(grammar);
+        var assembly = CompileGeneratedSource(source);
+        object enabledContext = CreateExecutionContext(assembly);
+        object disabledContext = CreateExecutionContext(assembly);
+        WriteInstanceBoolField(disabledContext, "Enabled", false);
+
+        var enabledResult = InvokeParseWithContext(assembly, "aaa", enabledContext);
+        var disabledResult = InvokeParseWithContext(assembly, "aaa", disabledContext);
+
+        Assert.IsNotInstanceOfType(enabledResult, typeof(ErrorNode));
+        Assert.AreEqual(3, ReadInstanceIntField(enabledContext, "Count"));
+        Assert.IsInstanceOfType(disabledResult, typeof(ErrorNode));
+        Assert.AreEqual(0, ReadInstanceIntField(disabledContext, "Count"));
+    }
+
+    /// <summary>
+    /// Ensures a false lexer predicate rejects only its current alternative and still allows another alternative to match.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerPredicateFalseInAlternative_AllowsOtherAlternative()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public bool UseB = true;
+            }
+
+            start : A ;
+            A
+                : { false }? 'a'
+                | { UseB }? 'b'
+                ;
+            """;
+
+        string source = Emit(grammar);
+        var assembly = CompileGeneratedSource(source);
+        object context = CreateExecutionContext(assembly);
+
+        var bResult = InvokeParseWithContext(assembly, "b", context);
+        var aResult = InvokeParseWithContext(assembly, "a", context);
+
+        Assert.IsNotInstanceOfType(bResult, typeof(ErrorNode));
+        Assert.IsInstanceOfType(aResult, typeof(ErrorNode));
+    }
+
+    /// <summary>
+    /// Ensures conservative parsing does not execute generated lexer predicates or lexer actions.
+    /// </summary>
+    [TestMethod]
+    public void Parse_LexerPredicateAndAction_RemainsConservative()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public static int Count;
+                public bool Enabled = true;
+            }
+
+            start : A ;
+            A : { Enabled }? 'a' { Count++; } ;
+            """;
+
+        string source = Emit(grammar);
+        var assembly = CompileGeneratedSource(source);
+
+        var result = InvokeParse(assembly, "Parse", "a");
+
+        Assert.IsNotNull(result);
+        Assert.AreEqual(0, ReadIntField(assembly, "Count"));
+    }
+
+    /// <summary>
+    /// Ensures generated lexer actions still run before supported lexer commands are applied by the language-neutral lexer engine.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerActionWithSkipCommand_ExecutesActionAndSkipsToken()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public int Count;
+            }
+
+            start : ;
+            A : 'a' { Count++; } -> skip ;
+            """;
+
+        string source = Emit(grammar);
+        var assembly = CompileGeneratedSource(source);
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "a", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(1, ReadInstanceIntField(context, "Count"));
+    }
+
+    /// <summary>
     /// Ensures a generated <c>true</c> predicate hook is compiled and allows parsing to succeed.
     /// </summary>
     [TestMethod]

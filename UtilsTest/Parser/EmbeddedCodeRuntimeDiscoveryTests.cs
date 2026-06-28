@@ -238,6 +238,34 @@ public class EmbeddedCodeRuntimeDiscoveryTests
     }
 
     /// <summary>
+    /// Verifies that lexer actions and predicates remain unsupported for runtime-inline discovery.
+    /// </summary>
+    [TestMethod]
+    public void Discover_WhenLexerActionAndPredicateExist_MarksThemUnsupportedForRuntimeInlineExecution()
+    {
+        var lexerRule = CreateLexerRule(
+            "A",
+            new Sequence([
+                new ValidatingPredicate(" IsEnabled() "),
+                new LiteralMatch("a"),
+                new EmbeddedAction(" OnLex(); ", ActionContext.Alternative, ActionPosition.Inline, [])
+            ]));
+        var parserRule = CreateParserRule("start", new RuleRef("A"));
+
+        var result = EmbeddedCodeRuntimeDiscovery.Discover(CreateDefinition(parserRule, lexerRules: [lexerRule]));
+        var unsupported = result.UnsupportedEntries;
+
+        Assert.AreEqual(0, result.ExecutableEntries.Count);
+        Assert.AreEqual(2, unsupported.Count);
+        Assert.AreEqual(EmbeddedCodeKind.LexerPredicate, unsupported[0].Kind);
+        Assert.AreEqual(EmbeddedCodeUnsupportedReason.LexerPredicate, unsupported[0].UnsupportedReason);
+        Assert.AreEqual(EmbeddedCodeKind.LexerAction, unsupported[1].Kind);
+        Assert.AreEqual(EmbeddedCodeUnsupportedReason.LexerAction, unsupported[1].UnsupportedReason);
+        Assert.IsFalse(unsupported[0].IsRuntimeExecutable);
+        Assert.IsFalse(unsupported[1].IsRuntimeExecutable);
+    }
+
+    /// <summary>
     /// Returns the single discovered executable entry for a test definition.
     /// </summary>
     /// <param name="definition">Parser definition to inspect.</param>
