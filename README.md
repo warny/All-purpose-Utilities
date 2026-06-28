@@ -2,6 +2,10 @@
 
 This repository contains a collection of utility libraries and sample applications targeting **.NET 9**. The solution aggregates several projects under the `Utils` family, ranging from low level helpers to Windows Forms samples.
 
+## API Documentation
+
+Full API reference for this release: [https://warny.github.io/All-purpose-Utilities/v1.2.1/](https://warny.github.io/All-purpose-Utilities/v1.2.1/)
+
 ## Requirements
 
 The solution uses the .NET SDK version 9 (preview). Build all projects with:
