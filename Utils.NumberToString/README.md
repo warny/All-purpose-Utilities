@@ -18,13 +18,13 @@ dotnet add package omy.Utils.NumberToString
 |------|----------|----------|---------|
 | EN, EN-uk, EN-us | English | ✓ | — (numbers are invariable) |
 | FR, FR-fr, FR-ca | French | ✓ | gender (masculin/feminin) |
-| FR-be, FR-ch | Belgian/Swiss French | — | gender (masculin/feminin) |
+| FR-be, FR-ch | Belgian/Swiss French | ✓ | gender (masculin/feminin) |
 | DE | German | — | genus (maskulin/feminin/neutrum) × kasus (nominativ/akkusativ/dativ/genitiv) |
 | ES | Spanish | — | gender (masculino/femenino) |
 | IT | Italian | — | gender (maschile/femminile) |
 | PT | Portuguese | — | gender (masculino/feminino) |
 | PL | Polish | — | — (not yet implemented) |
-| NL | Dutch | — | — (numbers are invariable) |
+| NL | Dutch | ✓ | — (numbers are invariable) |
 | RU | Russian | — | — (cases not yet implemented) |
 | AR | Arabic | — | — (not yet implemented) |
 | HE | Hebrew | — | gender (standalone/zachar/nekeva) |
@@ -35,7 +35,7 @@ dotnet add package omy.Utils.NumberToString
 | EL | Greek | — | — (not yet implemented) |
 | FI | Finnish | — | sijamuoto (nominatiivi/partitiivi/genetiivi) |
 | CA | Catalan | — | gender (masculí/femení) |
-| EU | Basque | — | — (no grammatical gender) |
+| EU | Basque | ✓ | — (no grammatical gender) |
 | GL | Galician | — | gender (masculino/feminino) |
 | ZU | Zulu | — | — (not yet implemented) |
 | EE | Ewe | — | — (not yet implemented) |
@@ -90,6 +90,48 @@ fr.ConvertOrdinal(9);    // "neuvième"      ← word rule: neuf → neuvième
 fr.ConvertOrdinal(21);   // "vingt et unième"
 fr.ConvertOrdinal(1000); // "millième"      ← stripTrailingE + suffix ième
 ```
+
+```csharp
+NumberToStringConverter frBe = NumberToStringConverter.GetConverter("FR-be");
+
+frBe.ConvertOrdinal(1);   // "premier"           ← exception
+frBe.ConvertOrdinal(71);  // "septante et unième" ← Belgian 70 + word rule for "un"
+frBe.ConvertOrdinal(80);  // "huitantième"        ← Belgian 80 + stripTrailingE
+frBe.ConvertOrdinal(90);  // "nonantième"
+```
+
+```csharp
+NumberToStringConverter nl = NumberToStringConverter.GetConverter("NL");
+
+nl.ConvertOrdinal(1);   // "eerste"           ← exception
+nl.ConvertOrdinal(2);   // "tweede"           ← word rule
+nl.ConvertOrdinal(8);   // "achtste"          ← suffix "ste"
+nl.ConvertOrdinal(11);  // "elfde"            ← word rule (exception 11=elf)
+nl.ConvertOrdinal(20);  // "twintigste"       ← suffix "ste"
+nl.ConvertOrdinal(21);  // "eenentwintigste"  ← fused compound + suffix "ste"
+nl.ConvertOrdinal(101); // "honderd eerste"   ← word rule for "een"
+```
+
+```csharp
+NumberToStringConverter eu = NumberToStringConverter.GetConverter("EU");
+
+eu.ConvertOrdinal(1);    // "lehenengo"           ← irregular first
+eu.ConvertOrdinal(2);    // "bigarren"            ← suffix "garren"
+eu.ConvertOrdinal(10);   // "hamargarren"
+eu.ConvertOrdinal(11);   // "hamaikagarren"       ← exception 11=hamaika + suffix
+eu.ConvertOrdinal(21);   // "hogeita batgarren"   ← "bat" in compound gets suffix
+```
+
+> **Ordinal pipeline**: word-level rules are matched against the raw cardinal text, before
+> `AdjustFunction` and `INumberToStringLanguageSpecifics.FinalizeWriting` are applied.
+> `AdjustFunction` (and `FinalizeWriting`) then run on the ordinal result. This means a
+> converter with an uppercase `AdjustFunction` correctly produces `"TWENTY-FIRST"`, not
+> `"TWENTY-ONEth"`.
+
+> **Languages without ordinals**: DE, IT, ES, PT, CA, GL, FI, HE, RU, PL, ZH, JA, KO, AR,
+> HI, EL, ZU, EE, WO. German and Italian are technically feasible but their ordinals require
+> complex agreement (gender × case) or — for German — fused compounds that cannot be handled
+> with a single suffix in the current XML model.
 
 ---
 
@@ -553,6 +595,22 @@ number
   → FinalizeWriting     (INumberToStringLanguageSpecifics)
   → sign wrapping       (Minus template if negative)
 ```
+
+**Ordinal pipeline** (via `ConvertOrdinal`):
+
+```
+number
+  → OrdinalExceptions   (integer-level early exit, e.g. 1 → "premier")
+  → ConvertRaw          (raw cardinal text, no adjustment)
+  → ApplyVariantRules   (default variant values)
+  → ApplyOrdinalTransform  (word rules + suffix on last word)
+  → AdjustFunction      (user transform + FinalizeWriting)
+  → sign wrapping
+```
+
+Applying ordinal rules **before** `AdjustFunction` ensures that word-level rules always match
+the raw cardinal text, regardless of any uppercase transformation or language-specific
+finalizer applied later.
 
 Variants are applied *before* `FinalizeWriting`. This ensures that for German, a variant can act
 on the raw form `"ein"` before `GermanNumberToStringLanguageSpecifics` converts it to `"eins"`.

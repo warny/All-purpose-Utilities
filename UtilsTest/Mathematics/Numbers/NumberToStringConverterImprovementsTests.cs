@@ -635,6 +635,27 @@ public class NumberToStringConverterImprovementsTests
         Assert.AreEqual("vingt et un euros et cinquante centimes", converter.ConvertCurrency(21.50m, currency));
     }
 
+    [TestMethod]
+    public void ConvertCurrency_EN_SubunitRoundingCarry()
+    {
+        // Regression: when the fractional part rounds up to the subunit factor
+        // (e.g. 1.999m → subunits = Math.Round(99.9) = 100), the carry must
+        // propagate into the unit count. Before the fix the result was
+        // "one dollar and one hundred cents".
+        var converter = NumberToStringConverter.GetConverter("EN");
+        var currency = new CurrencyDefinition
+        {
+            UnitSingular = "dollar",
+            UnitPlural = "dollars",
+            SubunitSingular = "cent",
+            SubunitPlural = "cents",
+            Connector = "and",
+        };
+
+        Assert.AreEqual("two dollars", converter.ConvertCurrency(1.999m, currency));
+        Assert.AreEqual("one dollar",  converter.ConvertCurrency(0.995m, currency));
+    }
+
     // ─── D1 — RegisterLanguageSpecifics factory ────────────────────────────
 
     [TestMethod]
@@ -782,6 +803,168 @@ public class NumberToStringConverterImprovementsTests
             new[] { "nominatiivi", "partitiivi", "genetiivi" },
             dims[0].Values.ToArray()
         );
+    }
+
+    // ─── C3 — Ordinal pipeline: rules applied before AdjustFunction ────────
+
+    [TestMethod]
+    public void ConvertOrdinal_WordRulesMatchBeforeAdjustFunction()
+    {
+        // Regression: before the fix, AdjustFunction ran before ordinal rules,
+        // so an uppercase AdjustFunction turned "twenty-one" into "TWENTY-ONE"
+        // and the word rule "one"→"first" never matched, producing "TWENTY-ONEth".
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        {
+            AdjustFunction = s => s.ToUpperInvariant()
+        };
+        var converter = new NumberToStringConverter(options);
+
+        Assert.AreEqual("TWENTY-FIRST", converter.ConvertOrdinal(21));
+        Assert.AreEqual("THIRTIETH",    converter.ConvertOrdinal(30));
+        Assert.AreEqual("FORTY-SECOND", converter.ConvertOrdinal(42));
+    }
+
+    // ─── C4 — Ordinal conversion (Belgian/Swiss French) ────────────────────
+
+    [TestMethod]
+    public void ConvertOrdinal_FRbe_FirstIsException()
+    {
+        var converter = NumberToStringConverter.GetConverter("FR-be");
+        Assert.AreEqual("premier", converter.ConvertOrdinal(1));
+    }
+
+    [TestMethod]
+    public void ConvertOrdinal_FRbe_BelgianNumbers()
+    {
+        var converter = NumberToStringConverter.GetConverter("FR-be");
+
+        (int number, string expected)[] cases = [
+            (2,  "deuxième"),
+            (5,  "cinquième"),           // word rule
+            (9,  "neuvième"),            // word rule
+            (21, "vingt et unième"),     // "un" via word rule
+            (70, "septantième"),         // Belgian 70
+            (71, "septante et unième"),
+            (80, "huitantième"),         // Belgian 80
+            (81, "huitante et unième"),
+            (90, "nonantième"),          // Belgian 90
+            (91, "nonante et unième"),
+        ];
+
+        foreach (var (number, expected) in cases)
+            Assert.AreEqual(expected, converter.ConvertOrdinal(number), $"FR-be ordinal of {number}");
+    }
+
+    // ─── C5 — Ordinal conversion (Dutch) ───────────────────────────────────
+
+    [TestMethod]
+    public void ConvertOrdinal_NL_FirstIsException()
+    {
+        var converter = NumberToStringConverter.GetConverter("NL");
+        Assert.AreEqual("eerste", converter.ConvertOrdinal(1));
+    }
+
+    [TestMethod]
+    public void ConvertOrdinal_NL_WordRulesForUnitsAndTeens()
+    {
+        var converter = NumberToStringConverter.GetConverter("NL");
+
+        (int number, string expected)[] cases = [
+            (2,  "tweede"),
+            (3,  "derde"),
+            (4,  "vierde"),
+            (5,  "vijfde"),
+            (6,  "zesde"),
+            (7,  "zevende"),
+            (8,  "achtste"),      // suffix "ste" on "acht" (no explicit rule needed)
+            (9,  "negende"),
+            (10, "tiende"),
+            (11, "elfde"),
+            (12, "twaalfde"),
+            (13, "dertiende"),
+            (19, "negentiende"),
+        ];
+
+        foreach (var (number, expected) in cases)
+            Assert.AreEqual(expected, converter.ConvertOrdinal(number), $"NL ordinal of {number}");
+    }
+
+    [TestMethod]
+    public void ConvertOrdinal_NL_SuffixSteForTensAndCompounds()
+    {
+        var converter = NumberToStringConverter.GetConverter("NL");
+
+        (int number, string expected)[] cases = [
+            (20,  "twintigste"),
+            (21,  "eenentwintigste"),  // fused compound → suffix "ste" applies to whole
+            (100, "honderdste"),
+            (101, "honderd eerste"),   // "een" word rule in compound context
+        ];
+
+        foreach (var (number, expected) in cases)
+            Assert.AreEqual(expected, converter.ConvertOrdinal(number), $"NL ordinal of {number}");
+    }
+
+    // ─── C6 — Ordinal conversion (Basque) ──────────────────────────────────
+
+    [TestMethod]
+    public void ConvertOrdinal_EU_FirstIsException()
+    {
+        var converter = NumberToStringConverter.GetConverter("EU");
+        Assert.AreEqual("lehenengo", converter.ConvertOrdinal(1));
+    }
+
+    [TestMethod]
+    public void ConvertOrdinal_EU_SuffixGarren()
+    {
+        var converter = NumberToStringConverter.GetConverter("EU");
+
+        (int number, string expected)[] cases = [
+            (2,    "bigarren"),
+            (3,    "hirugarren"),
+            (10,   "hamargarren"),
+            (11,   "hamaikagarren"),       // exception 11=hamaika
+            (20,   "hogeigarren"),
+            (21,   "hogeita batgarren"),   // "bat" in compound → suffix on last word
+            (1000, "milagarren"),
+        ];
+
+        foreach (var (number, expected) in cases)
+            Assert.AreEqual(expected, converter.ConvertOrdinal(number), $"EU ordinal of {number}");
+    }
+
+    // ─── D2 — INumberToStringConverter default implementations ─────────────
+
+    [TestMethod]
+    public void Interface_NewMembersHaveDefaultImplementations()
+    {
+        // A minimal implementation that only provides the original members must
+        // still compile and work against the extended interface — new members
+        // fall back to their default implementations.
+        INumberToStringConverter converter = new MinimalConverter();
+
+        // VariantDimensions → empty list
+        Assert.AreEqual(0, converter.VariantDimensions.Count);
+
+        // Variant overloads → delegate to non-variant Convert, ignore parameters
+        Assert.AreEqual("42", converter.Convert((BigInteger)42, "gender=feminin"));
+        Assert.AreEqual("7",  converter.Convert(7,  "gender=feminin"));
+        Assert.AreEqual("99", converter.Convert(99L, "gender=feminin"));
+
+        // Convert(Number) → delegates to Convert(Numerator)
+        Assert.AreEqual("3", converter.Convert(new Number(3, 2)));  // 3/2 → Numerator=3
+
+        // ConvertOrdinal → throws NotSupportedException
+        Assert.ThrowsException<NotSupportedException>(() => converter.ConvertOrdinal(1));
+    }
+
+    private sealed class MinimalConverter : INumberToStringConverter
+    {
+        public BigInteger? MaxNumber => null;
+        public string Convert(BigInteger number) => number.ToString();
+        public string Convert(int     number)    => number.ToString();
+        public string Convert(long    number)    => number.ToString();
+        public string Convert(decimal number)    => number.ToString();
     }
 
     private sealed class StubLanguageSpecifics(Action onCall) : INumberToStringLanguageSpecifics

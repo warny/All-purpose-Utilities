@@ -71,5 +71,35 @@
             <Number value="18" string="achttien" />
             <Number value="19" string="negentien" />
         </Exceptions>
+        <!--
+          Dutch ordinal suffix is -de for most words and -ste for words ending
+          in a vowel or when the stem already ends in -t. In practice all round
+          tens (twintig, dertig, …), compounds fused with them (eenentwintig,
+          tweeëndertig, …), and scale words (honderd, duizend) take -ste, while
+          units 2-7, 9 and teens 10-19 need -de. We model this with suffix "ste"
+          and explicit Ordinal rules for every word that takes -de instead.
+          "acht" correctly gets "achtste" from the suffix alone.
+        -->
+        <Ordinals suffix="ste">
+            <OrdinalException value="1" string="eerste" />
+            <Ordinal from="een"       to="eerste" />
+            <Ordinal from="twee"      to="tweede" />
+            <Ordinal from="drie"      to="derde" />
+            <Ordinal from="vier"      to="vierde" />
+            <Ordinal from="vijf"      to="vijfde" />
+            <Ordinal from="zes"       to="zesde" />
+            <Ordinal from="zeven"     to="zevende" />
+            <Ordinal from="negen"     to="negende" />
+            <Ordinal from="tien"      to="tiende" />
+            <Ordinal from="elf"       to="elfde" />
+            <Ordinal from="twaalf"    to="twaalfde" />
+            <Ordinal from="dertien"   to="dertiende" />
+            <Ordinal from="veertien"  to="veertiende" />
+            <Ordinal from="vijftien"  to="vijftiende" />
+            <Ordinal from="zestien"   to="zestiende" />
+            <Ordinal from="zeventien" to="zeventiende" />
+            <Ordinal from="achttien"  to="achttiende" />
+            <Ordinal from="negentien" to="negentiende" />
+        </Ordinals>
     </Language>
 </Numbers>

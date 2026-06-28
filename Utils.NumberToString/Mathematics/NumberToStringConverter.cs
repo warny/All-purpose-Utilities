@@ -607,6 +607,9 @@ namespace Utils.Mathematics
         /// (e.g. 1 → "first", 2 → "second" in English).
         /// Integer-level exceptions in <see cref="OrdinalExceptions"/> are checked first,
         /// then word-level rules in <see cref="OrdinalWordRules"/>, then <see cref="OrdinalSuffix"/>.
+        /// Ordinal rules are applied on the raw cardinal text before <see cref="AdjustFunction"/>
+        /// so that word-level rules can match unmodified text regardless of any finalization
+        /// transform (e.g. an uppercase adjust function or <see cref="INumberToStringLanguageSpecifics"/>).
         /// </summary>
         /// <param name="number">The value to convert. Negative values use the minus template.</param>
         /// <returns>The ordinal string for <paramref name="number"/>.</returns>
@@ -618,9 +621,14 @@ namespace Utils.Mathematics
             if (OrdinalExceptions.TryGetValue(absNumber, out var exception))
                 return isNegative ? Minus.Replace("*", exception) : exception;
 
-            string cardinal = Convert(absNumber);
-            string ordinal = ApplyOrdinalTransform(cardinal);
-            return isNegative ? Minus.Replace("*", ordinal) : ordinal;
+            // Apply ordinal rules on the raw cardinal before AdjustFunction so that
+            // word-level rules can match unmodified text (e.g. before an uppercase
+            // AdjustFunction or LanguageSpecifics finalizer transforms it).
+            string raw = absNumber == 0 ? Zero : ConvertRaw((BigInteger)absNumber);
+            raw = ApplyVariantRules(raw, BuildVariantQuery([]));
+            string ordinal = ApplyOrdinalTransform(raw);
+            string final = AdjustFunction(ordinal);
+            return isNegative ? Minus.Replace("*", final) : final;
         }
 
         /// <summary>
@@ -640,6 +648,10 @@ namespace Utils.Mathematics
             decimal fractional = absAmount - units;
             long subunitFactor = (long)Math.Pow(10, currency.SubunitDigits);
             long subunits = (long)Math.Round((double)fractional * subunitFactor);
+
+            // Carry: rounding may push subunits to subunitFactor (e.g. 1.999m → subunits=100).
+            units += subunits / subunitFactor;
+            subunits %= subunitFactor;
 
             string unitName = units == 1 ? currency.UnitSingular : currency.UnitPlural;
             string result = Convert(units) + Separator + unitName;
