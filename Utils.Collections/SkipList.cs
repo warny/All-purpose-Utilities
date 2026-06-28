@@ -152,6 +152,30 @@ public class SkipList<T> : ICollection<T>
     }
 
     /// <summary>
+    /// Searches for an element that compares equal to <paramref name="item"/> and returns
+    /// the stored instance. This is useful when the comparer considers only a subset of
+    /// the element's fields (e.g. a key), allowing the caller to retrieve the full stored
+    /// object rather than just a membership check.
+    /// </summary>
+    /// <param name="item">The element to locate.</param>
+    /// <param name="found">
+    /// When this method returns <see langword="true"/>, contains the stored element that
+    /// matched <paramref name="item"/>; otherwise the default value.
+    /// </param>
+    /// <returns><see langword="true"/> if a matching element was found; otherwise, <see langword="false"/>.</returns>
+    public bool TryGet(T item, out T found)
+    {
+        var (elementBefore, elementAfter) = FindElementPosition(item);
+        if (elementBefore is not null && elementBefore == elementAfter)
+        {
+            found = elementBefore.Value;
+            return true;
+        }
+        found = default!;
+        return false;
+    }
+
+    /// <summary>
     /// Copies the elements of the skip list to an array, starting at a particular array index.
     /// </summary>
     /// <param name="array">The destination array.</param>
@@ -172,7 +196,7 @@ public class SkipList<T> : ICollection<T>
     public bool Remove(T item)
     {
         var (elementBefore, elementAfter) = FindElementPosition(item);
-        if (elementBefore != elementAfter) return false;
+        if (elementBefore is null || elementBefore != elementAfter) return false;
         var element = elementBefore;
 
         if (element.Previous is null && element.Next is not null)
