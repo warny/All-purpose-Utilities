@@ -299,6 +299,257 @@ Les variantes sont appliquées *avant* `FinalizeWriting`. Cela garantit que pour
 
 ---
 
+## Configuration XML
+
+Les configurations des langues sont des fichiers XML dont la structure est décrite par
+`NumberConvertionConfiguration.xsd` (namespace `Utils/NumberConvertionConfiguration.xsd`).
+
+### Structure générale
+
+```xml
+<?xml version="1.0" encoding="utf-8" ?>
+<Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+    <Language groupSize="3" separator=" " groupSeparator=""
+              zero="zéro" minus="moins *"
+              decimalSeparator="virgule" fractionSeparator="sur">
+
+        <Culture>FR</Culture>      <!-- code 2 lettres -->
+        <Culture>FR-fr</Culture>   <!-- code région optionnel -->
+
+        <Groups>…</Groups>
+        <NumberScale>…</NumberScale>
+        <Replacements>…</Replacements>   <!-- optionnel -->
+        <Exceptions>…</Exceptions>       <!-- optionnel -->
+        <LanguageSpecifics>…</LanguageSpecifics> <!-- optionnel -->
+        <Fractions>…</Fractions>         <!-- optionnel -->
+        <Ordinals suffix="…">…</Ordinals>        <!-- optionnel -->
+        <Variants>…</Variants>           <!-- optionnel -->
+
+    </Language>
+</Numbers>
+```
+
+Un même fichier peut contenir plusieurs éléments `<Language>`. Plusieurs éléments
+`<Culture>` sur une même langue enregistrent le même convertisseur sous plusieurs codes.
+
+### Attributs de `<Language>`
+
+| Attribut | Requis | Description |
+|----------|--------|-------------|
+| `groupSize` | ✓ | Nombre de chiffres par groupe (toujours 3 pour le millier). |
+| `separator` | ✓ | Séparateur de mots à l'intérieur d'un groupe (généralement `" "`). |
+| `groupSeparator` | ✓ | Texte entre groupes (ex. `","` en anglais, `""` en français). |
+| `zero` | ✓ | Texte pour la valeur 0. |
+| `minus` | ✓ | Template pour les négatifs ; `*` est remplacé par la valeur absolue. |
+| `decimalSeparator` | | Mot entre partie entière et décimale (ex. `"point"`, `"virgule"`). |
+| `fractionSeparator` | | Connecteur numérateur/dénominateur pour les fractions (ex. `"sur"`). |
+| `maxNumber` | | Valeur maximale acceptée ; au-delà, `ArgumentOutOfRangeException`. |
+| `baseOn` | | Réservé (héritage futur). |
+
+---
+
+### `<Groups>` — tables de chiffres
+
+Chaque `<Group level="N">` déclare comment les chiffres 0–9 sont écrits à la position N
+d'un groupe : `level="1"` = unités, `level="2"` = dizaines, `level="3"` = centaines.
+
+Chaque `<Digit digit="N" string="…" buildString="…"/>` :
+- `string` — texte quand ce chiffre est seul dans sa position.
+- `buildString` — template avec `*` remplacé par le sous-groupe inférieur.
+
+```xml
+<Groups>
+    <Group level="1">
+        <Digit digit="0" string="" />
+        <Digit digit="1" string="et un" />
+        <Digit digit="2" string="deux" />
+        <!-- … -->
+    </Group>
+    <Group level="2">
+        <Digit digit="0" string="" buildString="*" />
+        <Digit digit="2" string="vingt" buildString="vingt *" />
+        <!-- digit=2, group=2, sub="et un" → buildString="vingt *" → "vingt et un" -->
+        <!-- … -->
+    </Group>
+    <Group level="3">
+        <Digit digit="1" string="cent" buildString="cent *" />
+        <!-- … -->
+    </Group>
+</Groups>
+```
+
+---
+
+### `<NumberScale>` — noms des grandes puissances
+
+```xml
+<NumberScale firstLetterUpperCase="false" voidGroup="ni" groupSeparator="lli" startIndex="0">
+
+    <!-- Noms fixes pour les premiers niveaux -->
+    <StaticNames>
+        <Scale value="0" string=""/>        <!-- groupe des unités (pas de suffixe) -->
+        <Scale value="1" string="mille"/>   <!-- 10^3 -->
+        <!-- Les suivants peuvent aussi être listés : million, milliard, … -->
+    </StaticNames>
+
+    <!-- Suffixes pour les niveaux générés dynamiquement (Latin + suffixe) -->
+    <Suffixes>
+        <Suffix>on(s)</Suffix>    <!-- million, billion, trillion… -->
+        <Suffix>ard(s)</Suffix>   <!-- milliard, billiard…         -->
+    </Suffixes>
+
+    <!-- Tables de préfixes optionnelles (surcharge les valeurs latines par défaut) -->
+    <Scale0Prefixes>…</Scale0Prefixes>
+    <UnitsPrefixes>…</UnitsPrefixes>
+    <TensPrefixes>…</TensPrefixes>
+    <HundredsPrefixes>…</HundredsPrefixes>
+
+</NumberScale>
+```
+
+`firstLetterUpperCase="true"` capitalise les noms de scale générés (utile en allemand :
+"Million", "Milliarde"). La chaîne `"(s)"` dans les noms est un marqueur de pluriel.
+
+---
+
+### `<Replacements>` — substitutions globales
+
+Appliquées **après** l'assemblage du texte brut et **avant** les variantes.
+
+```xml
+<Replacements>
+    <!-- scope omis → Standalone : remplace uniquement si tout le texte = oldValue -->
+    <Replacement oldValue="un mille" newValue="mille" />
+
+    <!-- Anywhere : remplace toutes les occurrences dans le texte -->
+    <Replacement oldValue="vingt et " newValue="vingt-" scope="Anywhere" />
+
+    <!-- LastWord : remplace uniquement si oldValue est le dernier mot -->
+    <Replacement oldValue="un" newValue="une" scope="LastWord" />
+</Replacements>
+```
+
+| Scope | Comportement |
+|-------|-------------|
+| `Standalone` (défaut) | Remplace si le texte entier est égal à `oldValue`. |
+| `Anywhere` | Remplace toutes les occurrences sous-chaîne. |
+| `LastWord` | Remplace `oldValue` uniquement s'il correspond au dernier mot (précédé d'un espace, d'un tiret ou début de chaîne). |
+
+---
+
+### `<Exceptions>` — formes irrégulières
+
+Vérifiées en **priorité absolue** avant l'algorithme de groupement. Utiles pour les
+nombres dont la forme est complètement irrégulière.
+
+```xml
+<Exceptions>
+    <Number value="1"  string="un" />      <!-- forme dans un groupe (≠ "et un") -->
+    <Number value="11" string="onze" />
+    <Number value="71" string="soixante onze" />
+    <!-- … -->
+</Exceptions>
+```
+
+---
+
+### `<LanguageSpecifics>` — hook de finalisation
+
+Nom du type (complet ou court) d'une implémentation `INumberToStringLanguageSpecifics`
+appelée en dernière étape du pipeline. Peut être pré-enregistré via
+`RegisterLanguageSpecifics()` pour éviter la recherche par réflexion.
+
+```xml
+<LanguageSpecifics>GermanNumberToStringLanguageSpecifics</LanguageSpecifics>
+```
+
+---
+
+### `<Fractions>` — suffixes de dénominateurs décimaux
+
+Permettent d'exprimer la partie décimale d'un nombre avec un dénominateur nommé.
+`"(s)"` est un marqueur de pluriel.
+
+```xml
+<Fractions>
+    <Fraction digits="1" string="dixième(s)" />    <!-- 0.5 → "cinq dixièmes" -->
+    <Fraction digits="2" string="centième(s)" />   <!-- 0.25 → "vingt-cinq centièmes" -->
+    <Fraction digits="3" string="millième(s)" />
+</Fractions>
+```
+
+---
+
+### `<Ordinals>` — conversion en ordinaux
+
+Requis pour activer `ConvertOrdinal()`. Priorité de résolution :
+`OrdinalException` → règle `Ordinal` (dernier mot) → suffixe (± suppression du `e` final).
+
+```xml
+<Ordinals suffix="ième" stripTrailingE="true">
+
+    <!-- Exceptions entières (priorité maximale) -->
+    <OrdinalException value="1" string="premier" />
+
+    <!-- Règles sur le dernier mot du cardinal -->
+    <Ordinal from="un"   to="unième" />
+    <Ordinal from="cinq" to="cinquième" />
+    <Ordinal from="neuf" to="neuvième" />
+
+    <!-- Tous les autres : dernier mot + suppression 'e' + "ième"  -->
+    <!-- "quatre" → "quatr" + "ième" → "quatrième"                -->
+    <!-- "mille"  → "mill"  + "ième" → "millième"                 -->
+
+</Ordinals>
+```
+
+| Attribut | Description |
+|----------|-------------|
+| `suffix` | Suffixe ajouté quand aucune règle ne correspond. |
+| `stripTrailingE` | Si `true`, supprime le `e` final du dernier mot avant d'ajouter `suffix`. |
+
+---
+
+### `<Variants>` — variantes morphologiques
+
+Déclare les dimensions de variation et les règles de remplacement associées.
+Activée par des appels `Convert(number, "dimension=value", …)`.
+
+```xml
+<Variants>
+
+    <!-- 1. Déclaration des dimensions (doivent précéder les Variant) -->
+    <!-- La première valeur de chaque dimension est le DÉFAUT -->
+    <Dimension name="gender" values="masculin,feminin" />
+    <!-- Exemple multi-dimensions : -->
+    <!-- <Dimension name="kasus" values="nominativ,akkusativ,dativ,genitiv" /> -->
+
+    <!-- 2. Règles de variante -->
+    <!-- Variant sans attributs = wildcard (toujours appliqué en premier) -->
+    <!-- Variant avec N attributs = N contraintes → priorité plus haute -->
+
+    <Variant gender="feminin">
+        <!-- scope="LastWord" : ne remplace "un" que s'il est le dernier mot -->
+        <!-- "un million" → dernier mot = "million" ≠ "un" → pas de remplacement -->
+        <!-- "vingt et un" → dernier mot = "un" → "vingt et une"              -->
+        <Replacement oldValue="un" newValue="une" scope="LastWord" />
+    </Variant>
+
+    <!-- Exemple hypothétique à 2 contraintes (priorité supérieure à gender seul) -->
+    <!-- <Variant kasus="akkusativ" gender="maskulin"> -->
+    <!--     <Replacement oldValue="ein" newValue="einen" scope="LastWord" /> -->
+    <!-- </Variant> -->
+
+</Variants>
+```
+
+**Règles de cascade** : les variantes sont appliquées dans l'ordre croissant du nombre
+de contraintes. Une variante à 2 contraintes peut donc surcharger le résultat d'une
+variante à 1 contrainte. Les dimensions non déclarées et les valeurs inconnues sont
+ignorées silencieusement.
+
+---
+
 ## Related packages
 
 - `omy.Utils` — contains `NumberToStringConverter`, `NumberToStringConverterOptions`, and all built-in culture XML configurations.

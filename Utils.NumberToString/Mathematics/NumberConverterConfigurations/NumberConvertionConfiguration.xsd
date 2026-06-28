@@ -1,147 +1,850 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xs:schema id="NumberConvertionConfiguration"
     xmlns:xs="http://www.w3.org/2001/XMLSchema"
     targetNamespace="Utils/NumberConvertionConfiguration.xsd"
     xmlns="Utils/NumberConvertionConfiguration.xsd"
     elementFormDefault="qualified"
 >
-	<xs:complexType name="DigitType">
-		<xs:attribute name="digit">
-			<xs:simpleType>
-				<xs:restriction base="xs:long">
-					<xs:totalDigits value="1"/>
-				</xs:restriction>
-			</xs:simpleType>
-		</xs:attribute>
-		<xs:attribute name="string" type="xs:string" use="required"/>
-		<xs:attribute name="buildString" type="xs:string"/>
-	</xs:complexType>
-	
-	<xs:complexType name="DigitListType">
-		<xs:sequence>
-			<xs:element name="Digit" type="DigitType" minOccurs="10" maxOccurs="10"/>
-		</xs:sequence>
-	</xs:complexType>
 
-	<xs:complexType name="NumberType">
-		<xs:attribute name="value" use="required">
-			<xs:simpleType>
-				<xs:restriction base="xs:long" />
-			</xs:simpleType>
-		</xs:attribute>
-		<xs:attribute name="string" type="xs:string" use="required"/>
-	</xs:complexType>
-	
-        <xs:complexType name="NumberListType">
-                <xs:sequence>
-                        <xs:element name="Number" type="NumberType" maxOccurs="unbounded"/>
-                </xs:sequence>
-        </xs:complexType>
+    <xs:annotation>
+        <xs:documentation>
+            Schema for number-to-string conversion configuration files used by
+            NumberToStringConverter (omy.Utils.NumberToString).
 
-        <xs:complexType name="FractionType">
-                <xs:attribute name="digits" type="xs:int" use="required"/>
-                <xs:attribute name="string" type="xs:string" use="required"/>
-        </xs:complexType>
+            Each file contains one or more Language elements. Each Language defines:
+            - How digits are written in each positional group (Groups)
+            - How large-number scale names are built (NumberScale)
+            - Optional post-processing replacement rules (Replacements)
+            - Irregular number forms that bypass the algorithm (Exceptions)
+            - An optional language-specific finalisation hook (LanguageSpecifics)
+            - Optional fraction suffixes for decimal conversion (Fractions)
+            - Optional ordinal-conversion rules (Ordinals)
+            - Optional morphological variant declarations (Variants)
 
-        <xs:complexType name="FractionListType">
-                <xs:sequence>
-                        <xs:element name="Fraction" type="FractionType" maxOccurs="unbounded"/>
-                </xs:sequence>
-        </xs:complexType>
+            The namespace URI used in XML files must match the targetNamespace:
+                xmlns="Utils/NumberConvertionConfiguration.xsd"
+        </xs:documentation>
+    </xs:annotation>
 
-	<xs:element name="Numbers">
-		<xs:complexType>
-			<xs:sequence>
-				<xs:element name="Language">
-					<xs:complexType>
-						<xs:sequence>
-							<xs:element name="Culture" type="xs:string" minOccurs="1" maxOccurs="unbounded" />
-							<xs:element name="Groups">
-								<xs:complexType>
-									<xs:sequence>
-										<xs:element name="Group" maxOccurs="3">
-											<xs:complexType>
-												<xs:complexContent>
-													<xs:extension base="DigitListType">
-														<xs:attribute name="level" type="xs:long" use="required"/>
-													</xs:extension>
-												</xs:complexContent>
-											</xs:complexType>
-										</xs:element>
-									</xs:sequence>
-								</xs:complexType>
-							</xs:element>
-							<xs:element name="NumberScale">
-								<xs:complexType>
-									<xs:sequence>
-										<xs:element name="StaticNames">
-											<xs:complexType>
-												<xs:sequence>
-													<xs:element name="Scale" type="NumberType" minOccurs="0" maxOccurs="unbounded" />
-												</xs:sequence>
-											</xs:complexType>
-										</xs:element>
-										<xs:element name="Suffixes">
-											<xs:complexType>
-												<xs:sequence>
-													<xs:element name="Suffix" type="xs:string" minOccurs="1" maxOccurs="unbounded" />
-												</xs:sequence>
-											</xs:complexType>
-										</xs:element>
-										<xs:element name="Scale0Prefixes" type="DigitListType" minOccurs="0" maxOccurs="1"/>
-										<xs:element name="UnitsPrefixes" type="DigitListType" minOccurs="0" maxOccurs="1"/>
-										<xs:element name="TensPrefixes" type="DigitListType" minOccurs="0" maxOccurs="1"/>
-										<xs:element name="HundredsPrefixes" type="DigitListType" minOccurs="0" maxOccurs="1"/>
-									</xs:sequence>
-									<xs:attribute name="firstLetterUpperCase" type="xs:boolean" use="required"/>
-									<xs:attribute name="voidGroup" type="xs:string" />
-									<xs:attribute name="groupSeparator" type="xs:string" />
-									<xs:attribute name="startIndex" type="xs:integer" />
-								</xs:complexType>
-							</xs:element>
-							<xs:element name="Replacements">
-								<xs:complexType>
-									<xs:sequence>
-										<xs:element name="Replacement" maxOccurs="unbounded">
-											<xs:complexType>
-                                                                                                <xs:attribute name="oldValue" type="xs:string" use="required"/>
-                                                                                                <xs:attribute name="newValue" type="xs:string" use="required"/>
-                                                                                                <xs:attribute name="scope" use="optional">
-                                                                                                        <xs:simpleType>
-                                                                                                                <xs:restriction base="xs:string">
-                                                                                                                        <xs:enumeration value="Standalone" />
-                                                                                                                        <xs:enumeration value="Anywhere" />
-                                                                                                                </xs:restriction>
-                                                                                                        </xs:simpleType>
-                                                                                                </xs:attribute>
-                                                                                        </xs:complexType>
-                                                                                </xs:element>
-                                                                        </xs:sequence>
-                                                                </xs:complexType>
-                                                        </xs:element>
-							<xs:element name="Exceptions" type="NumberListType" />
-                                                        <xs:element name="LanguageSpecifics" minOccurs="0" maxOccurs="1">
-                                                                <xs:complexType>
-                                                                        <xs:simpleContent>
-                                                                                <xs:extension base="xs:string"/>
-                                                                        </xs:simpleContent>
-                                                                </xs:complexType>
-                                                        </xs:element>
-                                                        <xs:element name="Fractions" type="FractionListType" minOccurs="0" />
+    <!-- ═══════════════════════════ Simple types ══════════════════════════════════════ -->
+
+    <xs:simpleType name="ReplacementScopeType">
+        <xs:annotation>
+            <xs:documentation>
+                Controls where in the converted text a Replacement rule is applied.
+
+                Standalone (default)
+                    Replaces only when the entire text exactly equals oldValue.
+                    Use for whole-number aliases such as "un mille" → "mille".
+
+                Anywhere
+                    Replaces every occurrence of oldValue as a substring.
+                    Use when the pattern can appear at any position within the text.
+
+                LastWord
+                    Replaces oldValue only when it matches the last word of the text,
+                    where "word boundary" means preceded by a space, a hyphen, or
+                    the start of the string. The oldValue may itself span several words
+                    (it is tested with EndsWith + boundary check).
+                    Use for morphological variants that inflect the terminal unit only,
+                    e.g. "un" → "une" in French feminine without touching "un million".
+            </xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="Standalone"/>
+            <xs:enumeration value="Anywhere"/>
+            <xs:enumeration value="LastWord"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- ═══════════════════════════ Shared complex types ══════════════════════════════ -->
+
+    <xs:complexType name="DigitType">
+        <xs:annotation>
+            <xs:documentation>
+                Maps a single decimal digit (0–9) to its textual representation within
+                a positional group.
+
+                string
+                    Standalone text used when this digit appears alone in its group and
+                    there is no lower-order sub-group text to attach.
+                    Example: "twenty" for digit 2 in the tens group.
+
+                buildString (optional)
+                    Template for composing this digit with a lower-order sub-group.
+                    The placeholder "*" is replaced by the sub-group text.
+                    Example: "twenty-*" → "twenty-one", "twenty-two", …
+                    Omit at level 1 (units) where there is no lower group.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="digit" use="required">
+            <xs:annotation>
+                <xs:documentation>The digit value, 0 through 9.</xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:long">
+                    <xs:minInclusive value="0"/>
+                    <xs:maxInclusive value="9"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="string" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The text produced when this digit stands alone in its group.
+                    Use an empty string for digit 0 when zero in this position produces
+                    no output (e.g. "0 tens" is silent in most languages).
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="buildString" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    Composite template with "*" replaced by the lower-order sub-group text.
+                    Required at levels 2+ when the digit can precede sub-group text.
+                    At level 1 (units) the attribute is ignored and may be omitted.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="DigitListType">
+        <xs:annotation>
+            <xs:documentation>
+                An ordered list of Digit definitions for a positional group or a prefix table.
+                Digit entries should cover the digits 0–9 in order; entries for digits
+                that produce no text may omit the buildString attribute.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="Digit" type="DigitType" minOccurs="0" maxOccurs="10"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="NumberType">
+        <xs:annotation>
+            <xs:documentation>
+                Maps a specific integer value to its literal text.
+                Used for named scale levels (StaticNames) and for irregular number
+                exceptions (Exceptions).
+                The string attribute may contain "(s)" as a plural placeholder
+                (e.g. "thousand(s)" → "thousand" or "thousands" depending on quantity).
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="value" type="xs:long" use="required">
+            <xs:annotation>
+                <xs:documentation>The integer value this entry represents.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="string" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The literal text for this value.
+                    May contain "(s)" for plural handling when used in scale names.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="NumberListType">
+        <xs:annotation>
+            <xs:documentation>A list of integer-to-text exception mappings.</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="Number" type="NumberType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="FractionType">
+        <xs:annotation>
+            <xs:documentation>
+                Maps a count of decimal digits to a named fraction denominator suffix.
+                Used when converting a decimal number to give a named fractional part.
+
+                Example (English):
+                    digits="1" string="tenth(s)"   → 0.5 = "five tenths"
+                    digits="2" string="hundredth(s)" → 0.25 = "twenty-five hundredths"
+
+                The string may contain "(s)" as a plural placeholder.
+                When no entry matches the actual digit count, digits are spelled individually.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="digits" type="xs:int" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    Number of decimal digits. 1 = tenths, 2 = hundredths, 3 = thousandths, …
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="string" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    Fraction denominator text. May contain "(s)" for plural handling.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="FractionListType">
+        <xs:annotation>
+            <xs:documentation>
+                List of Fraction entries mapping digit counts to denominator suffixes.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="Fraction" type="FractionType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="ReplacementType">
+        <xs:annotation>
+            <xs:documentation>
+                A single text substitution rule. The scope attribute controls where the
+                replacement is applied; see ReplacementScopeType for semantics.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="oldValue" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>The text pattern to search for.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="newValue" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>The replacement text.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="scope" type="ReplacementScopeType" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Where the replacement is applied. Defaults to Standalone when omitted.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="ReplacementsListType">
+        <xs:annotation>
+            <xs:documentation>An ordered list of Replacement rules.</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="Replacement" type="ReplacementType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="OrdinalExceptionType">
+        <xs:annotation>
+            <xs:documentation>
+                Maps a specific whole-number value directly to its ordinal text.
+                Checked with highest priority in ConvertOrdinal, before word-level rules
+                and before the suffix.
+
+                Example (French): value="1" string="premier"
+                Example (Spanish): value="1" string="primero"
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="value" type="xs:long" use="required">
+            <xs:annotation>
+                <xs:documentation>The integer value this exception applies to.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="string" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>The ordinal text for this specific value.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="OrdinalRuleType">
+        <xs:annotation>
+            <xs:documentation>
+                A word-level ordinal transformation rule: when the last word of the cardinal
+                equals "from" (exact match, case-sensitive), it is replaced by "to".
+
+                Rules are checked after whole-number OrdinalException entries and before
+                the default suffix.
+
+                Example (English): from="one" to="first", from="two" to="second"
+                Example (French):  from="cinq" to="cinquième", from="neuf" to="neuvième"
+
+                The match is applied to the terminal word only (after the last space and
+                the last hyphen), so compound numbers are handled correctly:
+                "twenty-one" → last word = "one" → "twenty-first".
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="from" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>The cardinal word to match (last word of the cardinal text).</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="to" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>The ordinal word that replaces it (the full last word including suffix).</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="OrdinalsType">
+        <xs:annotation>
+            <xs:documentation>
+                Complete ordinal-conversion configuration for a language.
+                When this element is present, ConvertOrdinal(int) is supported.
+
+                Resolution order (highest to lowest priority):
+                  1. OrdinalException — whole-number match.
+                  2. Ordinal word rule — last-word match.
+                  3. Default suffix — appended to the last word (stripping a trailing "e" first
+                     when stripTrailingE="true").
+
+                OrdinalException and Ordinal elements may be freely interleaved; their
+                relative order within the element does not matter.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="OrdinalException" type="OrdinalExceptionType">
+                <xs:annotation>
+                    <xs:documentation>
+                        Whole-number ordinal exception checked before word-level rules.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="Ordinal" type="OrdinalRuleType">
+                <xs:annotation>
+                    <xs:documentation>
+                        Word-level rule applied to the last word of the cardinal.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:choice>
+        <xs:attribute name="suffix" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    Default suffix appended to the (possibly trimmed) last word of the cardinal
+                    when no OrdinalException and no Ordinal word rule matches.
+                    Examples: "th" (English), "ième" (French).
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="stripTrailingE" type="xs:boolean">
+            <xs:annotation>
+                <xs:documentation>
+                    When true, a trailing "e" on the last cardinal word is removed before
+                    appending the suffix. Defaults to false.
+                    Example (French): "quatre" → "quatr" + "ième" → "quatrième".
+                    Has no effect when a word rule matches (the "to" value is used as-is).
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="VariantDimensionType">
+        <xs:annotation>
+            <xs:documentation>
+                Declares one dimension of morphological variation for the language, together
+                with an ordered list of its valid values.
+
+                The first value in the "values" list is the default: when Convert() is called
+                without an explicit parameter for this dimension, the first value is used.
+
+                Examples:
+                    name="gender"  values="masculin,feminin,neutrum"
+                    name="case"    values="nominativ,akkusativ,dativ,genitiv"
+                    name="kasus"   values="nominativ,akkusativ,dativ,genitiv"
+
+                Dimension names are matched case-insensitively at runtime.
+                All Dimension elements must appear before any Variant element within Variants.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The dimension identifier used as the key in "dimension=value" API calls.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="values" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    Comma-separated ordered list of valid values. Whitespace around commas
+                    is trimmed. The first value is the default.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="VariantType">
+        <xs:annotation>
+            <xs:documentation>
+                A morphological variant rule: a set of dimension constraints encoded as
+                XML attributes plus replacement rules to apply when all constraints match.
+
+                Dimension constraints are written as plain XML attributes whose name matches
+                a declared Dimension name and whose value matches one of its declared values.
+                Example: gender="feminin" or case="akkusativ" gender="maskulin".
+
+                A Variant with no dimension attributes is a wildcard applied unconditionally
+                (before all constrained variants).
+
+                Variants are applied in order of ascending specificity (number of constraints).
+                A more specific variant can therefore override results from a less specific one.
+
+                The Replacement rules within a variant use the same scope semantics as the
+                top-level Replacements. LastWord is especially useful here because it restricts
+                the substitution to the terminal unit, preventing changes in prefixes like
+                "un million" when the intent is only to inflect the terminal digit.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="Replacement" type="ReplacementType" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>
+                        Replacement rule applied when all dimension constraints of this variant
+                        are satisfied. Rules are applied in declaration order.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+        <xs:anyAttribute processContents="lax">
+            <xs:annotation>
+                <xs:documentation>
+                    Dimension constraint attributes (e.g. gender="feminin").
+                    Each attribute name must match a declared Dimension/@name.
+                    Attributes not matching any dimension are ignored at runtime.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:anyAttribute>
+    </xs:complexType>
+
+    <xs:complexType name="VariantsType">
+        <xs:annotation>
+            <xs:documentation>
+                Complete morphological variant configuration for a language.
+                Enables the Convert(number, "dimension=value", …) API.
+
+                Structure:
+                  1. Zero or more Dimension elements (must appear before Variant elements).
+                  2. Zero or more Variant elements.
+
+                At runtime the converter:
+                  - Fills missing dimensions with their first declared value (the default).
+                  - Applies matching Variant rules in order from least to most specific.
+                  - Ignores unrecognised dimension names or values silently.
+
+                Variants are applied after the user-supplied AdjustFunction and before
+                INumberToStringLanguageSpecifics.FinalizeWriting.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="Dimension" type="VariantDimensionType" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>
+                        Dimension declaration. All Dimension elements must precede Variant elements.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="Variant" type="VariantType" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>Variant rule with dimension constraints and replacement rules.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <!-- ═══════════════════════════ Root element ══════════════════════════════════════ -->
+
+    <xs:element name="Numbers">
+        <xs:annotation>
+            <xs:documentation>
+                Root element of a number-to-string configuration file.
+                A single file may contain multiple Language definitions.
+                Use RegisterConfigurations() or InitializeConfigurations() to load a file.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="Language" minOccurs="1" maxOccurs="unbounded">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Defines conversion rules for one language or culture group.
+                            Multiple Culture child elements register the same converter under
+                            different culture codes.
+
+                            Mandatory child elements: Culture, Groups, NumberScale.
+                            All other child elements are optional and may be omitted when
+                            the corresponding feature is not needed.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:sequence>
+
+                            <xs:element name="Culture" type="xs:string"
+                                        minOccurs="1" maxOccurs="unbounded">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Culture code that maps to this Language definition.
+                                        Accepts 2-letter language codes (e.g. "FR") and 5-letter
+                                        region codes (e.g. "FR-fr", "FR-ca").
+                                        Lookup falls back from the 5-letter code to the 2-letter
+                                        code and then to "EN" when no match is found.
+                                        Multiple Culture elements register the same converter under
+                                        different codes; duplicate registrations are silently ignored.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+
+                            <xs:element name="Groups">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Digit tables for each positional level within a chunk.
+                                        A chunk contains groupSize digits. Groups declares how each
+                                        positional level renders its digit:
+                                          level="1" = units within the chunk (always required)
+                                          level="2" = tens  (required when groupSize >= 2)
+                                          level="3" = hundreds (required when groupSize >= 3)
+
+                                        Algorithm (for a 3-digit chunk, value=N):
+                                          hundreds = N / 100         → Group level=3, digit=(hundreds)
+                                          tens     = (N % 100) / 10  → Group level=2, digit=(tens)
+                                          units    = N % 10          → Group level=1, digit=(units)
+                                        The buildString of each level inserts the lower level via "*".
+                                    </xs:documentation>
+                                </xs:annotation>
+                                <xs:complexType>
+                                    <xs:sequence>
+                                        <xs:element name="Group" minOccurs="1" maxOccurs="unbounded">
+                                            <xs:annotation>
+                                                <xs:documentation>
+                                                    Digit table for one positional level within a chunk.
+                                                </xs:documentation>
+                                            </xs:annotation>
+                                            <xs:complexType>
+                                                <xs:complexContent>
+                                                    <xs:extension base="DigitListType">
+                                                        <xs:attribute name="level" type="xs:long" use="required">
+                                                            <xs:annotation>
+                                                                <xs:documentation>
+                                                                    Positional level: 1=units, 2=tens, 3=hundreds.
+                                                                    Higher values are supported for languages with groupSize > 3.
+                                                                </xs:documentation>
+                                                            </xs:annotation>
+                                                        </xs:attribute>
+                                                    </xs:extension>
+                                                </xs:complexContent>
+                                            </xs:complexType>
+                                        </xs:element>
+                                    </xs:sequence>
+                                </xs:complexType>
+                            </xs:element>
+
+                            <xs:element name="NumberScale">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Configures the names of large-number scale levels
+                                        (thousands, millions, billions, …).
+
+                                        Scale names at level k represent 10^(k×groupSize).
+                                          level 0 → units chunk (empty string)
+                                          level 1 → thousands  (StaticNames or Suffixes)
+                                          level 2 → millions   (StaticNames or Suffixes)
+                                          …
+
+                                        For levels covered by StaticNames the name is looked up
+                                        directly. For higher levels a name is generated by combining
+                                        Latin prefix tables (Scale0Prefixes, UnitsPrefixes, …) with
+                                        a suffix from the Suffixes list.
+
+                                        The string in StaticNames/Scale may contain "(s)" as a plural
+                                        placeholder handled by the ToPlural extension.
+                                    </xs:documentation>
+                                </xs:annotation>
+                                <xs:complexType>
+                                    <xs:sequence>
+                                        <xs:element name="StaticNames">
+                                            <xs:annotation>
+                                                <xs:documentation>
+                                                    Fixed scale names for the first levels, ordered by value.
+                                                    value="0" must be an empty string (units chunk produces no scale suffix).
+                                                    value="1" is typically "thousand" / "mille" / "tausend".
+                                                    Higher static levels (million, milliard, …) may also be listed here.
+                                                </xs:documentation>
+                                            </xs:annotation>
+                                            <xs:complexType>
+                                                <xs:sequence>
+                                                    <xs:element name="Scale" type="NumberType"
+                                                                 minOccurs="0" maxOccurs="unbounded"/>
                                                 </xs:sequence>
-                                                <xs:attribute name="baseOn" type="xs:string"/>
-                                                <xs:attribute name="groupSize" type="xs:long" use="required"/>
-                                                <xs:attribute name="separator" type="xs:string" use="required"/>
-                                                <xs:attribute name="groupSeparator" type="xs:string" use="required"/>
-						<xs:attribute name="zero" type="xs:string" use="required"/>
-                                                <xs:attribute name="minus" type="xs:string" use="required"/>
-                                                <xs:attribute name="decimalSeparator" type="xs:string" use="optional"/>
-                                                <xs:attribute name="fractionSeparator" type="xs:string" use="optional"/>
-                                                <xs:attribute name="maxNumber" type="xs:integer" use="optional"/>
-                                        </xs:complexType>
-                                </xs:element>
-			</xs:sequence>
-		</xs:complexType>
-	</xs:element>
+                                            </xs:complexType>
+                                        </xs:element>
+                                        <xs:element name="Suffixes" minOccurs="0" maxOccurs="1">
+                                            <xs:annotation>
+                                                <xs:documentation>
+                                                    Suffixes used to build generated scale names beyond the
+                                                    static entries. Each suffix is combined with Latin prefix
+                                                    tables to produce names like "million", "milliard", "billion".
+                                                    Suffixes cycle in order: "on(s)", "ard(s)" for French gives
+                                                    million / milliard / billion / billiard / …
+                                                    Omit when all scale names are covered by StaticNames.
+                                                </xs:documentation>
+                                            </xs:annotation>
+                                            <xs:complexType>
+                                                <xs:sequence>
+                                                    <xs:element name="Suffix" type="xs:string"
+                                                                 minOccurs="1" maxOccurs="unbounded"/>
+                                                </xs:sequence>
+                                            </xs:complexType>
+                                        </xs:element>
+                                        <xs:element name="Scale0Prefixes" type="DigitListType"
+                                                    minOccurs="0" maxOccurs="1">
+                                            <xs:annotation>
+                                                <xs:documentation>
+                                                    Overrides the default Latin base-scale prefixes
+                                                    ("", "mi", "bi", "tri", …).
+                                                </xs:documentation>
+                                            </xs:annotation>
+                                        </xs:element>
+                                        <xs:element name="UnitsPrefixes" type="DigitListType"
+                                                    minOccurs="0" maxOccurs="1">
+                                            <xs:annotation>
+                                                <xs:documentation>
+                                                    Overrides the default unit-position prefixes used in
+                                                    compound scale names ("", "uni", "duo", "tre(s)", …).
+                                                </xs:documentation>
+                                            </xs:annotation>
+                                        </xs:element>
+                                        <xs:element name="TensPrefixes" type="DigitListType"
+                                                    minOccurs="0" maxOccurs="1">
+                                            <xs:annotation>
+                                                <xs:documentation>
+                                                    Overrides the default tens-position prefixes
+                                                    ("", "(n)deci", "(ms)vingti", …).
+                                                </xs:documentation>
+                                            </xs:annotation>
+                                        </xs:element>
+                                        <xs:element name="HundredsPrefixes" type="DigitListType"
+                                                    minOccurs="0" maxOccurs="1">
+                                            <xs:annotation>
+                                                <xs:documentation>
+                                                    Overrides the default hundreds-position prefixes
+                                                    ("", "(nx)centi", "(ms)ducenti", …).
+                                                </xs:documentation>
+                                            </xs:annotation>
+                                        </xs:element>
+                                    </xs:sequence>
+                                    <xs:attribute name="firstLetterUpperCase" type="xs:boolean" use="required">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                When true, the first letter of generated scale names is
+                                                capitalised. Set to true for languages that capitalise nouns
+                                                (German: "Million", "Milliarde").
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+                                    <xs:attribute name="voidGroup" type="xs:string">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                Placeholder for a zero-valued group in the prefix chain of a
+                                                compound scale name. Defaults to "ni".
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+                                    <xs:attribute name="groupSeparator" type="xs:string">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                Separator inserted between prefix segments when building
+                                                compound scale names. Defaults to "lli".
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+                                    <xs:attribute name="startIndex" type="xs:integer">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                Index offset applied when computing generated scale names
+                                                beyond the static entries. Defaults to 0.
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+                                </xs:complexType>
+                            </xs:element>
+
+                            <xs:element name="Replacements" type="ReplacementsListType"
+                                        minOccurs="0" maxOccurs="1">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Post-processing substitution rules applied to the raw number
+                                        text immediately after assembly. Evaluated before variant rules
+                                        and before INumberToStringLanguageSpecifics.FinalizeWriting.
+
+                                        Common use: elide redundant words.
+                                        Example (French): "un mille" → "mille" (one thousand = just "mille").
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+
+                            <xs:element name="Exceptions" type="NumberListType"
+                                        minOccurs="0" maxOccurs="1">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Irregular number forms that bypass the normal grouping algorithm.
+                                        Exceptions are checked first during conversion; when matched, the
+                                        stored string is returned directly (before any replacements).
+
+                                        Use for truly irregular forms only:
+                                        - English: 11 → "eleven", 12 → "twelve", … 19 → "nineteen"
+                                        - French:  71 → "soixante onze", 91 → "quatre-vingt onze", …
+                                          (the decade-based constructions above 70)
+
+                                        Also used inside ConvertGroup for sub-group exceptions: when a
+                                        number appears as part of a larger chunk, the exception provides
+                                        its form within that context (e.g. German "ein" vs standalone "eins").
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+
+                            <xs:element name="LanguageSpecifics" minOccurs="0" maxOccurs="1">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Type name of an INumberToStringLanguageSpecifics implementation
+                                        to use as the finalisation hook. The value may be the full CLR
+                                        type name or the short class name; both are searched in the
+                                        loaded assemblies via reflection.
+
+                                        Pre-register an instance with RegisterLanguageSpecifics() to
+                                        avoid the reflection lookup entirely.
+
+                                        When omitted, DefaultNumberToStringLanguageSpecifics is used
+                                        (returns the text unchanged).
+
+                                        Built-in value: GermanNumberToStringLanguageSpecifics
+                                    </xs:documentation>
+                                </xs:annotation>
+                                <xs:complexType>
+                                    <xs:simpleContent>
+                                        <xs:extension base="xs:string"/>
+                                    </xs:simpleContent>
+                                </xs:complexType>
+                            </xs:element>
+
+                            <xs:element name="Fractions" type="FractionListType"
+                                        minOccurs="0" maxOccurs="1">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Named denominator suffixes for the fractional part of a decimal number.
+                                        When converting a decimal, if the number of fractional digits matches
+                                        a Fraction entry, the fractional part is expressed as
+                                        "digits-as-words suffix-plural" (e.g. "five tenths").
+                                        When no entry matches, each fractional digit is spelled individually.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+
+                            <xs:element name="Ordinals" type="OrdinalsType"
+                                        minOccurs="0" maxOccurs="1">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Ordinal-conversion configuration. When present, ConvertOrdinal(int)
+                                        is supported for this language.
+
+                                        Priority (highest to lowest):
+                                          1. OrdinalException — exact whole-number match.
+                                          2. Ordinal word rule — last-word match.
+                                          3. suffix attribute — appended after optional trailing-e stripping.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+
+                            <xs:element name="Variants" type="VariantsType"
+                                        minOccurs="0" maxOccurs="1">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Morphological variant declarations. When present, enables
+                                        Convert(number, "dimension=value", …) calls.
+
+                                        Declare all Dimension elements before any Variant element.
+                                        Variants are applied after Replacements and AdjustFunction
+                                        but before INumberToStringLanguageSpecifics.FinalizeWriting,
+                                        so that language-specific post-processing can see the inflected form.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+
+                        </xs:sequence>
+
+                        <xs:attribute name="baseOn" type="xs:string">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Reserved for future inheritance: the culture code of a base language
+                                    from which this Language inherits settings.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="groupSize" type="xs:long" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Number of digits per chunk. Typically 3 (thousands grouping).
+                                    Must match the highest level defined in Groups.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="separator" type="xs:string" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Word separator inserted between parts of a number name within a chunk.
+                                    Typically a single space " ". May be empty for agglutinative languages.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="groupSeparator" type="xs:string" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Text inserted between chunk groups (thousands, millions, …).
+                                    English: "," giving "one thousand, two hundred …"
+                                    French: "" (no separator between groups).
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="zero" type="xs:string" use="required">
+                            <xs:annotation>
+                                <xs:documentation>Literal text for the value zero (not passed through Replacements).</xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="minus" type="xs:string" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Template for negative numbers. "*" is replaced by the absolute-value text.
+                                    Examples: "minus *" (EN), "moins *" (FR), "minus *" (DE).
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="decimalSeparator" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Word inserted between integer and fractional parts when converting
+                                    a decimal number. Examples: "point" (EN), "virgule" (FR).
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="fractionSeparator" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Connector word between numerator and denominator when expressing
+                                    a rational fraction. Examples: "over" (EN), "sur" (FR).
+                                    Defaults to "/" when omitted.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="maxNumber" type="xs:integer" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Maximum integer value the converter accepts (absolute value).
+                                    Attempts to convert a larger value throw ArgumentOutOfRangeException.
+                                    Omit for unlimited.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+
+                    </xs:complexType>
+                </xs:element>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
 
 </xs:schema>
