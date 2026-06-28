@@ -33,7 +33,7 @@ dotnet add package omy.Utils.NumberToString
 | KO | Korean | — | — |
 | HI | Hindi | — | — |
 | EL | Greek | — | — |
-| FI | Finnish | — | — |
+| FI | Finnish | — | sijamuoto (nominatiivi/partitiivi/genetiivi) |
 | CA | Catalan | — | gender (masculí/femení) |
 | EU | Basque | — | — (pas de genre en basque) |
 | GL | Galician | — | gender (masculino/feminino) |
@@ -236,6 +236,53 @@ gl.Convert(201, "gender=feminino"); // "douscentas unha"
 Le basque est une langue isolat sans genre grammatical : aucune variante morphologique
 n'est disponible pour cette langue.
 
+### Finnois — cas grammaticaux (sijamuoto)
+
+Le finnois n'a pas de genre grammatical mais dispose de 15 cas. Trois cas sont
+implémentés : le nominatif (défaut), le partitif (`partitiivi`) et le génitif
+(`genetiivi`).
+
+**Particularités d'implémentation :**
+
+- Les dizaines composées (`kaksikymmentä`…) et centaines composées (`kaksisataa`…)
+  sont déjà sous une forme compatible avec le partitif dans la configuration :
+  seules les unités et les mots d'échelle seuls ont besoin de règles `LastWord`.
+- Au génitif, les dizaines et centaines composées changent complètement
+  (`kaksikymmentä` → `kahdenkymmenen`) via `Anywhere`.
+- `seitsemän`, `kahdeksan`, `yhdeksän` (7, 8, 9) sont invariables au génitif.
+
+```csharp
+NumberToStringConverter fi = NumberToStringConverter.GetConverter("FI");
+
+// Nominatif (défaut)
+fi.Convert(1);    // "yksi"
+fi.Convert(21);   // "kaksikymmentä yksi"
+fi.Convert(100);  // "sata"
+
+// Partitif
+fi.Convert(1,   "sijamuoto=partitiivi"); // "yhtä"
+fi.Convert(2,   "sijamuoto=partitiivi"); // "kahta"
+fi.Convert(5,   "sijamuoto=partitiivi"); // "viittä"
+fi.Convert(10,  "sijamuoto=partitiivi"); // "kymmentä"
+fi.Convert(11,  "sijamuoto=partitiivi"); // "yhtätoista"
+fi.Convert(21,  "sijamuoto=partitiivi"); // "kaksikymmentä yhtä"
+fi.Convert(100, "sijamuoto=partitiivi"); // "sataa"
+fi.Convert(201, "sijamuoto=partitiivi"); // "kaksisataa yhtä"
+
+// Génitif
+fi.Convert(2,   "sijamuoto=genetiivi"); // "kahden"
+fi.Convert(20,  "sijamuoto=genetiivi"); // "kahdenkymmenen"
+fi.Convert(21,  "sijamuoto=genetiivi"); // "kahdenkymmenen yhden"
+fi.Convert(200, "sijamuoto=genetiivi"); // "kahdensadan"
+fi.Convert(221, "sijamuoto=genetiivi"); // "kahdensadan kahdenkymmenen yhden"
+fi.Convert(11,  "sijamuoto=genetiivi"); // "yhdentoista"
+```
+
+> **Limitation** : dans un nombre composé comme `sata yksi` (101), le mot `sata` (cent)
+> n'est pas converti en `sadan` au génitif, car il n'est ni en dernière position, ni
+> seul dans le texte. Un `Anywhere "sata"→"sadan"` corromprait les formes composées
+> comme `kaksisataa`. De même, `yksi tuhat` (1000) produit `yksi tuhatta` au partitif.
+
 ### Français belge/suisse — même genre, mots différents
 
 FR-be et FR-ch utilisent septante/huitante/nonante au lieu de soixante-dix/quatre-vingts/quatre-vingt-dix,
@@ -347,6 +394,30 @@ La configuration XML déclare chaque dimension, puis les règles de remplacement
 **Scope `LastWord`** : le remplacement ne s'applique que si `oldValue` correspond exactement au dernier mot du résultat (séparé par un espace ou un tiret). Cela empêche de modifier `ein` à l'intérieur de `einundzwanzig` ou dans `ein million` quand le dernier mot est `million`.
 
 **Dimensions inconnues** : si le code appelant passe une dimension non déclarée pour une langue, elle est ignorée silencieusement — le résultat est identique à un appel sans variante.
+
+### Langues sans variantes morphologiques
+
+Les langues suivantes n'ont pas de variantes déclarées, soit parce que leur morphologie
+numérale est invariable dans les contextes courants, soit parce que la distinction
+morphologique n'est pas applicable.
+
+| Code | Langue | Raison |
+|------|--------|--------|
+| EN | English | Les nombres anglais sont invariables (pas de genre ni de cas) |
+| KO | Korean | Les nombres sont invariables en coréen |
+| HI | Hindi | Pas de variantes déclarées (le hindi a un genre mais les nombres sont souvent invariables en usage courant) |
+| EL | Greek | Pas de variantes déclarées |
+| EU | Basque | Langue isolat sans genre grammatical |
+| AR | Arabic | Pas de variantes déclarées |
+| ZH | Chinese | Pas de variantes (pas de flexion) |
+| JA | Japanese | Pas de variantes (pas de flexion) |
+| RU | Russian | Pas de variantes déclarées (le russe a des cas mais ils ne sont pas encore implémentés) |
+| PL | Polish | Pas de variantes déclarées |
+| CS | Czech | Pas de variantes déclarées |
+| HU | Hungarian | Pas de variantes déclarées |
+
+Pour toutes ces langues, `VariantDimensions` renvoie une liste vide et tout paramètre
+passé à `Convert()` est ignoré sans erreur.
 
 ---
 

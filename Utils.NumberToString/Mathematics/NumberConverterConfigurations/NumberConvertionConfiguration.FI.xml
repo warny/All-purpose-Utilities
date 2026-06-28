@@ -69,5 +69,100 @@
             <Number value="18" string="kahdeksantoista" />
             <Number value="19" string="yhdeksäntoista" />
         </Exceptions>
+        <Variants>
+            <!--
+              Le finnois décline les nombres selon 15 cas (sijamuoto).
+              Nominatiivi (défaut), partitiivi et genetiivi sont implémentés.
+
+              PARTITIIVI
+                Les unités (yksi…yhdeksän) changent via LastWord.
+                Les dizaines composées (kaksikymmentä…) et centaines composées
+                (kaksisataa…) sont DÉJÀ dans une forme compatible avec le partitif
+                dans la configuration actuelle : aucune règle supplémentaire ne les
+                concerne. Les exceptions 11-19 changent via Anywhere car elles
+                peuvent apparaître en position intermédiaire.
+
+              GENETIIVI
+                Les unités changent via LastWord.
+                Les dizaines et centaines composées sont remplacées intégralement
+                via Anywhere (ex. kaksikymmentä → kahdenkymmenen).
+                Les mots d'échelle isolés (sata, tuhat) utilisent Standalone : une
+                règle Anywhere corromprait les formes composées (kaksisataa, etc.).
+                Limitation : dans un composé comme "sata yksi" (101), "sata" reste
+                inchangé car il n'est ni en dernière position ni seul dans le texte.
+                seitsemän/kahdeksan/yhdeksän et leurs dérivés sont invariables au
+                génitif (même forme qu'au nominatif).
+            -->
+            <Dimension name="sijamuoto" values="nominatiivi,partitiivi,genetiivi" />
+
+            <!-- ── Partitiivi ─────────────────────────────────────────────── -->
+            <Variant sijamuoto="partitiivi">
+                <!-- Unités (LastWord) -->
+                <Replacement oldValue="yksi"      newValue="yhtä"      scope="LastWord" />
+                <Replacement oldValue="kaksi"     newValue="kahta"     scope="LastWord" />
+                <Replacement oldValue="kolme"     newValue="kolmea"    scope="LastWord" />
+                <Replacement oldValue="neljä"     newValue="neljää"    scope="LastWord" />
+                <Replacement oldValue="viisi"     newValue="viittä"    scope="LastWord" />
+                <Replacement oldValue="kuusi"     newValue="kuutta"    scope="LastWord" />
+                <Replacement oldValue="seitsemän" newValue="seitsemää" scope="LastWord" />
+                <Replacement oldValue="kahdeksan" newValue="kahdeksaa" scope="LastWord" />
+                <Replacement oldValue="yhdeksän"  newValue="yhdeksää"  scope="LastWord" />
+                <!-- Mots d'échelle isolés (LastWord) -->
+                <Replacement oldValue="kymmenen" newValue="kymmentä"  scope="LastWord" />
+                <Replacement oldValue="sata"     newValue="sataa"     scope="LastWord" />
+                <Replacement oldValue="tuhat"    newValue="tuhatta"   scope="LastWord" />
+                <Replacement oldValue="miljoona" newValue="miljoonaa" scope="LastWord" />
+                <!-- Exceptions 11-19 (Anywhere : mots composés, position variable) -->
+                <Replacement oldValue="yksitoista"      newValue="yhtätoista"      scope="Anywhere" />
+                <Replacement oldValue="kaksitoista"     newValue="kahtatoista"     scope="Anywhere" />
+                <Replacement oldValue="kolmetoista"     newValue="kolmeatoista"    scope="Anywhere" />
+                <Replacement oldValue="neljätoista"     newValue="neljäätoista"    scope="Anywhere" />
+                <Replacement oldValue="viisitoista"     newValue="viittätoista"    scope="Anywhere" />
+                <Replacement oldValue="kuusitoista"     newValue="kuuttatoista"    scope="Anywhere" />
+                <Replacement oldValue="seitsemäntoista" newValue="seitsemäätoista" scope="Anywhere" />
+                <Replacement oldValue="kahdeksantoista" newValue="kahdeksaatoista" scope="Anywhere" />
+                <Replacement oldValue="yhdeksäntoista"  newValue="yhdeksäätoista"  scope="Anywhere" />
+            </Variant>
+
+            <!-- ── Genetiivi ──────────────────────────────────────────────── -->
+            <Variant sijamuoto="genetiivi">
+                <!-- Unités (LastWord) — seitsemän/kahdeksan/yhdeksän invariables -->
+                <Replacement oldValue="yksi"  newValue="yhden"  scope="LastWord" />
+                <Replacement oldValue="kaksi" newValue="kahden" scope="LastWord" />
+                <Replacement oldValue="kolme" newValue="kolmen" scope="LastWord" />
+                <Replacement oldValue="neljä" newValue="neljän" scope="LastWord" />
+                <Replacement oldValue="viisi" newValue="viiden" scope="LastWord" />
+                <Replacement oldValue="kuusi" newValue="kuuden" scope="LastWord" />
+                <!-- Mots d'échelle isolés (Standalone : safe, Anywhere corromprait les composés) -->
+                <Replacement oldValue="sata"     newValue="sadan"     scope="Standalone" />
+                <Replacement oldValue="tuhat"    newValue="tuhannen"  scope="Standalone" />
+                <Replacement oldValue="miljoona" newValue="miljoonan" scope="LastWord"   />
+                <!-- Dizaines composées (Anywhere : structure entière remplacée) -->
+                <Replacement oldValue="kaksikymmentä"     newValue="kahdenkymmenen"    scope="Anywhere" />
+                <Replacement oldValue="kolmekymmentä"     newValue="kolmenkymmenen"    scope="Anywhere" />
+                <Replacement oldValue="neljäkymmentä"     newValue="neljänkymmenen"    scope="Anywhere" />
+                <Replacement oldValue="viisikymmentä"     newValue="viidenkymmenen"    scope="Anywhere" />
+                <Replacement oldValue="kuusikymmentä"     newValue="kuudenkymmenen"    scope="Anywhere" />
+                <Replacement oldValue="seitsemänkymmentä" newValue="seitsemänkymmenen" scope="Anywhere" />
+                <Replacement oldValue="kahdeksankymmentä" newValue="kahdeksankymmenen" scope="Anywhere" />
+                <Replacement oldValue="yhdeksänkymmentä"  newValue="yhdeksänkymmenen"  scope="Anywhere" />
+                <!-- Centaines composées (Anywhere) -->
+                <Replacement oldValue="kaksisataa"     newValue="kahdensadan"    scope="Anywhere" />
+                <Replacement oldValue="kolmesataa"     newValue="kolmensadan"    scope="Anywhere" />
+                <Replacement oldValue="neljäsataa"     newValue="neljänsadan"    scope="Anywhere" />
+                <Replacement oldValue="viisisataa"     newValue="viidensadan"    scope="Anywhere" />
+                <Replacement oldValue="kuusisataa"     newValue="kuudensadan"    scope="Anywhere" />
+                <Replacement oldValue="seitsemänsataa" newValue="seitsemänsadan" scope="Anywhere" />
+                <Replacement oldValue="kahdeksansataa" newValue="kahdeksansadan" scope="Anywhere" />
+                <Replacement oldValue="yhdeksänsataa"  newValue="yhdeksänsadan"  scope="Anywhere" />
+                <!-- Exceptions 11-16 (Anywhere) — 17-19 invariables au génitif -->
+                <Replacement oldValue="yksitoista"  newValue="yhdentoista"  scope="Anywhere" />
+                <Replacement oldValue="kaksitoista" newValue="kahdentoista" scope="Anywhere" />
+                <Replacement oldValue="kolmetoista" newValue="kolmentoista" scope="Anywhere" />
+                <Replacement oldValue="neljätoista" newValue="neljäntoista" scope="Anywhere" />
+                <Replacement oldValue="viisitoista" newValue="viidentoista" scope="Anywhere" />
+                <Replacement oldValue="kuusitoista" newValue="kuudentoista" scope="Anywhere" />
+            </Variant>
+        </Variants>
     </Language>
 </Numbers>

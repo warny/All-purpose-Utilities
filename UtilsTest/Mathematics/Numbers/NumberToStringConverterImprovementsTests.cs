@@ -654,6 +654,136 @@ public class NumberToStringConverterImprovementsTests
         Assert.AreEqual(1, callCount);
     }
 
+    // ─── C2i — Variants FI (sijamuoto : cas grammaticaux) ────────────────────
+
+    [TestMethod]
+    public void Convert_FI_Partitiivi_Units()
+    {
+        var converter = NumberToStringConverter.GetConverter("FI");
+
+        // Nominatif (défaut)
+        Assert.AreEqual("yksi",  converter.Convert(1));
+        Assert.AreEqual("kaksi", converter.Convert(2));
+        // Partitif
+        Assert.AreEqual("yhtä",      converter.Convert(1, "sijamuoto=partitiivi"));
+        Assert.AreEqual("kahta",     converter.Convert(2, "sijamuoto=partitiivi"));
+        Assert.AreEqual("kolmea",    converter.Convert(3, "sijamuoto=partitiivi"));
+        Assert.AreEqual("neljää",    converter.Convert(4, "sijamuoto=partitiivi"));
+        Assert.AreEqual("viittä",    converter.Convert(5, "sijamuoto=partitiivi"));
+        Assert.AreEqual("kuutta",    converter.Convert(6, "sijamuoto=partitiivi"));
+        Assert.AreEqual("seitsemää", converter.Convert(7, "sijamuoto=partitiivi"));
+        Assert.AreEqual("kahdeksaa", converter.Convert(8, "sijamuoto=partitiivi"));
+        Assert.AreEqual("yhdeksää",  converter.Convert(9, "sijamuoto=partitiivi"));
+    }
+
+    [TestMethod]
+    public void Convert_FI_Partitiivi_ScaleAndCompound()
+    {
+        var converter = NumberToStringConverter.GetConverter("FI");
+
+        // Mots d'échelle seuls
+        Assert.AreEqual("kymmentä",      converter.Convert(10,  "sijamuoto=partitiivi"));
+        Assert.AreEqual("sataa",         converter.Convert(100, "sijamuoto=partitiivi"));
+        // 1000 : FI n'a pas de remplacement "yksi tuhat"→"tuhat", donc "yksi" reste
+        Assert.AreEqual("yksi tuhatta",  converter.Convert(1000, "sijamuoto=partitiivi"));
+        // Composés : dizaine + unité
+        Assert.AreEqual("kaksikymmentä yhtä", converter.Convert(21, "sijamuoto=partitiivi"));
+        Assert.AreEqual("kaksikymmentä kahta", converter.Convert(22, "sijamuoto=partitiivi"));
+        // Centaine composée (déjà compatible partitif) + unité
+        Assert.AreEqual("kaksisataa yhtä", converter.Convert(201, "sijamuoto=partitiivi"));
+    }
+
+    [TestMethod]
+    public void Convert_FI_Partitiivi_Exceptions11To19()
+    {
+        var converter = NumberToStringConverter.GetConverter("FI");
+
+        Assert.AreEqual("yhtätoista",      converter.Convert(11, "sijamuoto=partitiivi"));
+        Assert.AreEqual("kahtatoista",     converter.Convert(12, "sijamuoto=partitiivi"));
+        Assert.AreEqual("seitsemäätoista", converter.Convert(17, "sijamuoto=partitiivi"));
+        Assert.AreEqual("kahdeksaatoista", converter.Convert(18, "sijamuoto=partitiivi"));
+        Assert.AreEqual("yhdeksäätoista",  converter.Convert(19, "sijamuoto=partitiivi"));
+        // En contexte composé : sata + exception
+        Assert.AreEqual("kaksisataa yhtätoista", converter.Convert(211, "sijamuoto=partitiivi"));
+    }
+
+    [TestMethod]
+    public void Convert_FI_Genetiivi_Units()
+    {
+        var converter = NumberToStringConverter.GetConverter("FI");
+
+        Assert.AreEqual("yhden",    converter.Convert(1, "sijamuoto=genetiivi"));
+        Assert.AreEqual("kahden",   converter.Convert(2, "sijamuoto=genetiivi"));
+        Assert.AreEqual("kolmen",   converter.Convert(3, "sijamuoto=genetiivi"));
+        Assert.AreEqual("neljän",   converter.Convert(4, "sijamuoto=genetiivi"));
+        Assert.AreEqual("viiden",   converter.Convert(5, "sijamuoto=genetiivi"));
+        Assert.AreEqual("kuuden",   converter.Convert(6, "sijamuoto=genetiivi"));
+        // seitsemän/kahdeksan/yhdeksän : invariables au génitif
+        Assert.AreEqual("seitsemän", converter.Convert(7, "sijamuoto=genetiivi"));
+        Assert.AreEqual("kahdeksan", converter.Convert(8, "sijamuoto=genetiivi"));
+        Assert.AreEqual("yhdeksän",  converter.Convert(9, "sijamuoto=genetiivi"));
+    }
+
+    [TestMethod]
+    public void Convert_FI_Genetiivi_TensAndHundreds()
+    {
+        var converter = NumberToStringConverter.GetConverter("FI");
+
+        // Dizaines composées
+        Assert.AreEqual("kahdenkymmenen",    converter.Convert(20, "sijamuoto=genetiivi"));
+        Assert.AreEqual("kolmenkymmenen",    converter.Convert(30, "sijamuoto=genetiivi"));
+        Assert.AreEqual("seitsemänkymmenen", converter.Convert(70, "sijamuoto=genetiivi"));
+        // Dizaine + unité
+        Assert.AreEqual("kahdenkymmenen yhden",  converter.Convert(21, "sijamuoto=genetiivi"));
+        Assert.AreEqual("kahdenkymmenen kahden", converter.Convert(22, "sijamuoto=genetiivi"));
+        // Centaines composées
+        Assert.AreEqual("kahdensadan",   converter.Convert(200, "sijamuoto=genetiivi"));
+        Assert.AreEqual("kolmensadan",   converter.Convert(300, "sijamuoto=genetiivi"));
+        Assert.AreEqual("yhdeksänsadan", converter.Convert(900, "sijamuoto=genetiivi"));
+        // Composé complet : centaine + dizaine + unité
+        Assert.AreEqual("kahdensadan kahdenkymmenen yhden",  converter.Convert(221, "sijamuoto=genetiivi"));
+        Assert.AreEqual("kahdensadan kahdenkymmenen kahden", converter.Convert(222, "sijamuoto=genetiivi"));
+    }
+
+    [TestMethod]
+    public void Convert_FI_Genetiivi_Exceptions11To16()
+    {
+        var converter = NumberToStringConverter.GetConverter("FI");
+
+        Assert.AreEqual("yhdentoista",  converter.Convert(11, "sijamuoto=genetiivi"));
+        Assert.AreEqual("kahdentoista", converter.Convert(12, "sijamuoto=genetiivi"));
+        Assert.AreEqual("kuudentoista", converter.Convert(16, "sijamuoto=genetiivi"));
+        // 17-19 invariables au génitif
+        Assert.AreEqual("seitsemäntoista", converter.Convert(17, "sijamuoto=genetiivi"));
+        Assert.AreEqual("kahdeksantoista", converter.Convert(18, "sijamuoto=genetiivi"));
+        Assert.AreEqual("yhdeksäntoista",  converter.Convert(19, "sijamuoto=genetiivi"));
+    }
+
+    [TestMethod]
+    public void Convert_FI_Nominatiivi_IsDefaultAndExplicit()
+    {
+        var converter = NumberToStringConverter.GetConverter("FI");
+
+        Assert.AreEqual("yksi",          converter.Convert(1));
+        Assert.AreEqual("yksi",          converter.Convert(1, "sijamuoto=nominatiivi"));
+        Assert.AreEqual("kaksikymmentä", converter.Convert(20));
+        Assert.AreEqual("kaksikymmentä", converter.Convert(20, "sijamuoto=nominatiivi"));
+    }
+
+    [TestMethod]
+    public void Convert_FI_ListsVariantDimensions()
+    {
+        var converter = NumberToStringConverter.GetConverter("FI");
+        var dims = converter.VariantDimensions.ToList();
+
+        Assert.AreEqual(1, dims.Count);
+        Assert.AreEqual("sijamuoto", dims[0].Name);
+        CollectionAssert.AreEqual(
+            new[] { "nominatiivi", "partitiivi", "genetiivi" },
+            dims[0].Values.ToArray()
+        );
+    }
+
     private sealed class StubLanguageSpecifics(Action onCall) : INumberToStringLanguageSpecifics
     {
         public string FinalizeWriting(string languageIdentifier, string text)
