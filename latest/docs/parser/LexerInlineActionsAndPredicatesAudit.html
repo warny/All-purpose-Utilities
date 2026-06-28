@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Lexer Inline Actions and Predicates Audit | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Lexer Inline Actions and Predicates Audit | omy.Utils Documentation ">
+      
+      
+      <link rel="icon" href="../../favicon.ico">
+      <link rel="stylesheet" href="../../public/docfx.min.css">
+      <link rel="stylesheet" href="../../public/main.css">
+      <meta name="docfx:navrel" content="../../toc.html">
+      <meta name="docfx:tocrel" content="../../toc.html">
+      
+      <meta name="docfx:rel" content="../../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/blob/master/docs/parser/LexerInlineActionsAndPredicatesAudit.md/#L1">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../../index.html">
+            <img id="logo" class="svg" src="../../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+
+      <div class="content">
+        <div class="actionbar">
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="lexer-inline-actions-and-predicates-audit">Lexer Inline Actions and Predicates Audit</h1>
+
+<p>This document records Phase 0 of the lexer inline actions and predicates roadmap. It is an audit only: it does not define support, does not authorize execution, and does not change parser, lexer, source-generator, or runtime behavior.</p>
+<h2 id="current-implementation-state">Current implementation state</h2>
+<p>The current implementation has intentionally narrow lexer embedded-code support:</p>
+<ul>
+<li>Grammar-level <code>@lexer::header</code>, <code>@lexer::members</code>, and <code>@lexer::footer</code> are supported only by the source-generator C# path.</li>
+<li>The grammar-level <code>@lexer::*</code> support is limited to combined grammars and lexer grammars.</li>
+<li>Parser grammars with <code>@lexer::*</code> remain unsupported because no lexer is generated for that grammar shape.</li>
+<li><code>@lexer::members</code> is injected into the existing generated execution context.</li>
+<li>Injecting <code>@lexer::members</code> does not create a separate ANTLR-style lexer runtime type or a separate runtime lexer execution context.</li>
+<li>Simple lexer inline actions are supported only in the generated-C# opt-in path.</li>
+<li>Simple lexer predicates are supported only in the generated-C# opt-in path.</li>
+<li>Generated-C# opt-in regression coverage includes lexer rule references, fragments, simple quantifiers, repeated source text at distinct positions, false-predicate/action ordering, and already-supported lexer commands/modes: <code>skip</code>, <code>channel(...)</code>, <code>type(...)</code>, <code>more</code>, <code>mode(...)</code>, <code>pushMode(...)</code>, and <code>popMode</code>.</li>
+<li>Runtime discovery classifies lexer actions and lexer predicates as unsupported.</li>
+<li>The source-generator C# path collects parser executable hooks and limited generated-C# opt-in lexer action/predicate hooks; runtime-inline discovery still treats lexer hooks as non-executable.</li>
+<li><code>Parse(...)</code> remains conservative and must not execute lexer inline actions, lexer predicates, or lexer hooks.</li>
+</ul>
+<h2 id="scope-of-lexer-inline-actions">Scope of lexer inline actions</h2>
+<p>Future design work must account for the ANTLR lexer inline action forms below without treating them as currently supported:</p>
+<pre><code class="lang-antlr">A : 'a' { OnLex(); } ;
+A : 'a' { OnLex(); } 'b' ;
+A : ('a' { OnLex(); })+ ;
+A : 'a' | 'b' { OnLex(); } ;
+</code></pre>
+<p>The audit scope includes these concerns:</p>
+<ul>
+<li>The position of an action inside a lexer rule matters: end-of-rule actions, mid-sequence actions, grouped actions, quantified actions, and alternative-specific actions have different execution points.</li>
+<li>The alternative containing the action must be known so a future implementation can avoid treating actions from non-selected alternatives as executed behavior.</li>
+<li>A stable hook index may be needed if future generated code maps each lexer inline action to generated methods or metadata records.</li>
+<li>The expected execution order must follow the lexer tokenization path, including the order of actions inside a single sequence.</li>
+<li>An action in a sequence such as <code>'a' { OnLex(); } 'b'</code> raises ordering questions when later elements fail after the action point.</li>
+<li>An action in an alternative such as <code>'a' | 'b' { OnLex(); }</code> is alternative-specific and must not be generalized to the whole rule.</li>
+<li>An action inside a quantifier such as <code>('a' { OnLex(); })+</code> may execute zero, one, or many times depending on the matched iterations and future rollback rules.</li>
+<li>An action inside a negation must be considered if the grammar model represents such a placement; this audit does not define how to execute it.</li>
+<li>An action inside a lexer mode must be associated with the active mode and any future mode-stack behavior.</li>
+<li>An action inside a combined grammar must remain distinct from parser inline actions and from grammar-level parser named actions.</li>
+</ul>
+<p>Lexer inline actions are not currently executable hooks. Any future support must be explicitly designed, explicitly enabled, and source-generator C# first.</p>
+<h2 id="scope-of-lexer-predicates">Scope of lexer predicates</h2>
+<p>Future design work must account for lexer predicate forms such as:</p>
+<pre><code class="lang-antlr">A : { IsEnabled() }? 'a' ;
+A : 'a' { IsAllowed() }? ;
+A : { IsModeEnabled() }? 'a' | 'b' ;
+</code></pre>
+<p>The audit scope includes these concerns:</p>
+<ul>
+<li>Lexer predicates change tokenization decisions; they decide whether a token path is viable.</li>
+<li>Lexer predicates are not equivalent to lexer actions because predicates influence recognition, while actions are side-effecting code after a path reaches an action point.</li>
+<li>Lexer predicates must be designed separately from lexer inline actions.</li>
+<li>Lexer predicates require a lexer-state-aware model that can account for input position, active mode, mode stack, token type decisions, channels, commands, and any future generated execution state.</li>
+<li>Lexer predicates must not be executed by conservative <code>Parse(...)</code>.</li>
+<li>Simple lexer predicates now have a dedicated generated-C# opt-in evaluator. Runtime-inline predicate execution, <code>$...</code> rewriting, rollback of external effects, and full ANTLR lexer compatibility remain unsupported.</li>
+</ul>
+<h2 id="interaction-with-grammar-level-lexer-members">Interaction with grammar-level lexer members</h2>
+<p>Grammar-level <code>@lexer::members</code> already exists in the generated-C# compatibility surface. Its content is injected into the existing generated execution context.</p>
+<p>Future lexer inline actions or lexer predicates may want to call members declared by <code>@lexer::members</code>. That possibility must not be confused with the existence of a separate lexer runtime. The current implementation has no separate runtime lexer context, no separate ANTLR-style lexer class, and no executable lexer hook pipeline.</p>
+<p>A later design phase must decide whether lexer execution should use:</p>
+<ul>
+<li>the existing generated execution context,</li>
+<li>a lexer-specific sub-context inside that generated context, or</li>
+<li>a separate lexer execution context with explicit copy, restore, and state-key responsibilities.</li>
+</ul>
+<p>That decision must be made before enabling lexer inline actions or lexer predicates.</p>
+<h2 id="modes-channels-commands-and-tokenization-concerns">Modes, channels, commands, and tokenization concerns</h2>
+<p>The audit accounts for lexer constructs that affect tokenization and records the currently tested generated-C# opt-in boundary for the subset already supported by the runtime:</p>
+<ul>
+<li>lexer modes;</li>
+<li>lexer commands;</li>
+<li>channels;</li>
+<li><code>skip</code>;</li>
+<li><code>more</code>;</li>
+<li><code>type</code>;</li>
+<li><code>pushMode</code>, <code>popMode</code>, and <code>mode</code>;</li>
+<li>interactions between inline actions and command execution;</li>
+<li>interactions between predicates and command or mode decisions;</li>
+<li>ordering between ANTLR commands and target-language actions.</li>
+</ul>
+<p>The current generated-C# opt-in regression suite covers the already-supported runtime command/mode subset listed above. It confirms that accepted actions run before accepted commands, predicates reject only the current path, and commands from rejected paths are not applied. This does not add advanced ANTLR mode/channel/command semantics beyond what the runtime already supports.</p>
+<h2 id="rollback-and-side-effect-risks">Rollback and side-effect risks</h2>
+<p>Lexer inline actions and predicates introduce risks that are separate from parser rollback:</p>
+<ul>
+<li>A lexer action could run during a tokenization attempt that is later abandoned.</li>
+<li>External side effects from a lexer action may not be rollback-safe.</li>
+<li>Parser rollback and lexer rollback are different concerns and must not be conflated.</li>
+<li>Parser memoization currently does not imply that a future lexer execution state is captured, restored, or hashed correctly.</li>
+<li>A future design may require a separate lexer state model for input position, mode stack, command effects, pending token decisions, and generated execution state.</li>
+<li>There is currently no general action buffering or replay mechanism for lexer actions.</li>
+<li>There is currently no general rollback mechanism for external side effects.</li>
+</ul>
+<p>Any future implementation must state which side effects are parser-managed, lexer-managed, or external and non-rollback-safe.</p>
+<h2 id="source-generator-path-versus-runtime-inline-path">Source-generator path versus runtime-inline path</h2>
+<p>Any future support should start as an explicitly enabled source-generator C# feature. It must not make default runtime parsing execute lexer code.</p>
+<p>The runtime-inline expression path remains separate. Lexer execution must not add C# target-language logic to the parser core, <code>ParserEngine</code>, <code>ParserRuntimeFeaturePolicy</code>, runtime frames, or the grammar model. The generator must not depend on a Roslyn semantic model for deciding lexer action or predicate behavior. This audit does not introduce a new compiler API.</p>
+<p>ANTLR-style lexer <code>$...</code> rewriting must remain optional and must stay behind an explicit embedded-code transformer. No implicit lexer <code>$...</code> rewriting should be added as part of the parser core, source-generator core, or runtime-inline path.</p>
+<h2 id="proposed-future-pr-sequence">Proposed future PR sequence</h2>
+<p>The sequence below is indicative and non-binding:</p>
+<pre><code class="lang-text">PR A — audit documentation only
+PR B — metadata/indexing tests only, if needed
+PR C — lexer context design documentation
+PR D — source-generator opt-in lexer inline actions, no predicates
+PR E — tests and docs for lexer inline actions
+PR F — lexer predicates design
+PR G — source-generator opt-in lexer predicates
+</code></pre>
+<p>Each future PR should restate whether it is documentation-only, test-only, behavior-changing, or API-changing.</p>
+<h2 id="existing-tests-and-future-tests">Existing tests and future tests</h2>
+<p>Existing test families to preserve include:</p>
+<ul>
+<li><code>@lexer::*</code> supported in lexer grammars.</li>
+<li><code>@lexer::*</code> supported in combined grammars.</li>
+<li>Parser grammars with <code>@lexer::*</code> remain unsupported.</li>
+<li>Simple lexer inline actions are supported only in the generated-C# opt-in path.</li>
+<li>Simple lexer predicates are supported only in the generated-C# opt-in path.</li>
+<li>Generated source does not contain executable lexer hooks.</li>
+</ul>
+<p>Possible future test families include:</p>
+<ul>
+<li>stable indexing for lexer actions;</li>
+<li>lexer modes;</li>
+<li>quantifiers;</li>
+<li>alternatives;</li>
+<li>predicates before a token fragment;</li>
+<li>predicates after a token fragment;</li>
+<li>disabled lexer execution paths;</li>
+<li>enabled lexer execution paths after explicit opt-in;</li>
+<li>absence of lexer-code execution through conservative <code>Parse(...)</code>.</li>
+</ul>
+<h2 id="non-goals">Non-goals</h2>
+<p>This audit explicitly excludes:</p>
+<ul>
+<li>complete ANTLR compatibility;</li>
+<li>a separate runtime lexer in this PR;</li>
+<li>runtime-inline lexer hooks;</li>
+<li>runtime-inline lexer predicates;</li>
+<li>general replay or action buffering;</li>
+<li>rollback of external side effects;</li>
+<li>implicit support for advanced modes, channels, or commands;</li>
+<li>implicit lexer <code>$...</code> rewriting;</li>
+<li>a new public API;</li>
+<li>a new compiler API;</li>
+<li>any change to <code>Parse(...)</code>.</li>
+</ul>
+<blockquote>
+<p>Lexer inline actions and predicates: simple source-generator C# lexer inline actions and simple lexer predicates are now supported only through the explicit opt-in generated path. <code>Parse(...)</code> remains conservative. Predicates run during lexer matching and reject only the current path; actions run after token acceptance and before accepted lexer commands are applied. Commands from rejected paths are not applied. <code>AlternativeIndex</code> and <code>ElementIndex</code> identify the source hook location and are reused across quantified iterations. The tested command/mode boundary covers <code>skip</code>, <code>channel(...)</code>, <code>type(...)</code>, <code>more</code>, <code>mode(...)</code>, and <code>pushMode(...)</code>/<code>popMode</code>. Lexer <code>$...</code> rewriting, runtime-inline lexer execution, a separate runtime lexer, complete ANTLR command/mode semantics, generalized action buffering/replay, and external side-effect rollback remain unsupported.</p>
+</blockquote>
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/docs/parser/LexerInlineActionsAndPredicatesAudit.md/#L1" class="edit-link">Edit this page</a>
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Class ParserEngine | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Class ParserEngine | omy.Utils Documentation ">
+      
+      <meta name="description" content="Builds a parse tree from a flat token list using the rules in a . This engine is the runtime authority for token consumption, diagnostics, parse-tree construction, and final parse outcomes.  The engine is a recursive-descent parser with full backtracking. It tries each alternative in priority order and rolls back the token position plus configured parser execution state on parser attempt-boundary failure. Left-recursive rules are handled by a cycle-detection stack that returns null when the same rule is re-entered at the same token position.   Additional runtime guards stop repeated parser-state exploration and non-progressive iterations in quantifiers and left-recursive extensions. Backtracking remains active in this implementation and may be revisited in a future PR.   Semantic predicates (, ) and embedded actions () are controlled by the configured . The default policy preserves conservative behavior: semantic predicates return  and parser actions return . Custom injected policies may reject alternatives and may execute action handlers, which can influence parse outcomes.   Scheduling and metadata components do not own parse decisions: continuation descriptors are descriptive only, shared-prefix plans are informational only, and neither metadata pipeline executes runtime continuations.">
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_Parser_Runtime_ParserEngine.md&amp;value=---%0Auid%3A%20Utils.Parser.Runtime.ParserEngine%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="Utils.Parser.Runtime.ParserEngine">
+
+
+
+  <h1 id="Utils_Parser_Runtime_ParserEngine" data-uid="Utils.Parser.Runtime.ParserEngine" class="text-break">
+Class ParserEngine  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserEngine.cs/#L44"><i class="bi bi-code-slash"></i></a>
+  </h1>
+
+  <div class="facts text-secondary">
+    <dl><dt>Namespace</dt><dd><a class="xref" href="Utils.html">Utils</a>.<a class="xref" href="Utils.Parser.html">Parser</a>.<a class="xref" href="Utils.Parser.Runtime.html">Runtime</a></dd></dl>
+  <dl><dt>Assembly</dt><dd>Utils.Parser.dll</dd></dl>
+  </div>
+
+  <div class="markdown summary"><p>Builds a parse tree from a flat token list using the rules in a
+<a class="xref" href="Utils.Parser.Model.ParserDefinition.html">ParserDefinition</a>.
+This engine is the runtime authority for token consumption, diagnostics, parse-tree
+construction, and final parse outcomes.</p>
+<p>
+The engine is a recursive-descent parser with full backtracking.
+It tries each alternative in priority order and rolls back the token position plus
+configured parser execution state on parser attempt-boundary failure.
+Left-recursive rules are handled by a cycle-detection stack that returns <code>null</code>
+when the same rule is re-entered at the same token position.
+</p>
+<p>
+Additional runtime guards stop repeated parser-state exploration and non-progressive
+iterations in quantifiers and left-recursive extensions. Backtracking remains active
+in this implementation and may be revisited in a future PR.
+</p>
+<p>
+Semantic predicates (<a class="xref" href="Utils.Parser.Model.ValidatingPredicate.html">ValidatingPredicate</a>, <a class="xref" href="Utils.Parser.Model.GatingPredicate.html">GatingPredicate</a>)
+and embedded actions (<a class="xref" href="Utils.Parser.Model.EmbeddedAction.html">EmbeddedAction</a>) are controlled by the configured
+<a class="xref" href="Utils.Parser.Runtime.ParserRuntimeFeaturePolicy.html">ParserRuntimeFeaturePolicy</a>.
+The default policy preserves conservative behavior:
+semantic predicates return <a class="xref" href="Utils.Parser.Runtime.SemanticPredicateEvaluationStatus.html#Utils_Parser_Runtime_SemanticPredicateEvaluationStatus_NotEvaluated">NotEvaluated</a>
+and parser actions return <a class="xref" href="Utils.Parser.Runtime.ParserActionExecutionOutcome.html#Utils_Parser_Runtime_ParserActionExecutionOutcome_NotExecuted">NotExecuted()</a>.
+Custom injected policies may reject alternatives and may execute action handlers,
+which can influence parse outcomes.
+</p>
+<p>
+Scheduling and metadata components do not own parse decisions:
+continuation descriptors are descriptive only, shared-prefix plans are informational only,
+and neither metadata pipeline executes runtime continuations.
+</p>
+</div>
+  <div class="markdown conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public sealed class ParserEngine</code></pre>
+  </div>
+
+
+
+
+  <dl class="typelist inheritance">
+    <dt>Inheritance</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
+      <div><span class="xref">ParserEngine</span></div>
+    </dd>
+  </dl>
+
+
+
+  <dl class="typelist inheritedMembers">
+    <dt>Inherited Members</dt>
+    <dd>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)">object.Equals(object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)">object.Equals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gethashcode">object.GetHashCode()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.tostring">object.ToString()</a>
+    </div>
+  </dd></dl>
+
+  <dl class="typelist extensionMethods">
+    <dt>Extension Methods</dt>
+    <dd>
+  <div>
+      <a class="xref" href="Utils.Data.DataUtils.html#Utils_Data_DataUtils_ToDbValue_System_Object_">DataUtils.ToDbValue(object?)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Mathematics.MathEx.html#Utils_Mathematics_MathEx_Clamp__1___0___0___0_System_Collections_Generic_IComparer___0__">MathEx.Clamp&lt;T&gt;(T, T, T, IComparer&lt;T&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Failure__1___0_">FluentExtensions.Failure&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsEqualTo__2___0___1_">FluentExtensions.IsEqualTo&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterOrEqualsThan__2___0___1_">FluentExtensions.IsGreaterOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterThan__2___0___1_">FluentExtensions.IsGreaterThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsIn__1___0___0___">FluentExtensions.IsIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerOrEqualsThan__2___0___1_">FluentExtensions.IsLowerOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerThan__2___0___1_">FluentExtensions.IsLowerThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotIn__1___0___0___">FluentExtensions.IsNotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotNull__1___0_">FluentExtensions.IsNotNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNull__1___0_">FluentExtensions.IsNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Success__1___0_">FluentExtensions.Success&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Test__1___0_System_Func___0_System_Boolean__">FluentExtensions.Test&lt;T&gt;(T, Func&lt;T, bool&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_System_Boolean_System_Boolean_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T, bool, bool)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1____1_">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1____1_">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_In__1___0___0___">ObjectUtils.In&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_NotIn__1___0___0___">ObjectUtils.NotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustNotBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustNotBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Arg__1___0_System_String_">Validations.Arg&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ValueMustNotBeNull__1___0_System_String_">Validations.ValueMustNotBeNull&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Variable__1___0_System_String_">Validations.Variable&lt;T&gt;(T, string)</a>
+  </div>
+  </dd></dl>
+
+
+
+  <h2 id="Utils_Parser_Runtime_ParserEngine_remarks">Remarks</h2>
+  <div class="markdown level0 remarks"><p>This class is not thread-safe. Each concurrent parse must use a separate
+<a class="xref" href="Utils.Parser.Runtime.ParserEngine.html">ParserEngine</a> instance.</p>
+</div>
+
+
+  <h2 class="section" id="constructors">Constructors
+</h2>
+
+
+  <a id="Utils_Parser_Runtime_ParserEngine__ctor_" data-uid="Utils.Parser.Runtime.ParserEngine.#ctor*"></a>
+
+  <h3 id="Utils_Parser_Runtime_ParserEngine__ctor_Utils_Parser_Model_ParserDefinition_" data-uid="Utils.Parser.Runtime.ParserEngine.#ctor(Utils.Parser.Model.ParserDefinition)">
+  ParserEngine(ParserDefinition)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserEngine.cs/#L118"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Initializes a parser engine with the conservative default runtime feature policy.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ParserEngine(ParserDefinition definition)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>definition</code> <a class="xref" href="Utils.Parser.Model.ParserDefinition.html">ParserDefinition</a></dt>
+    <dd><p>Resolved parser definition.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Parser_Runtime_ParserEngine__ctor_" data-uid="Utils.Parser.Runtime.ParserEngine.#ctor*"></a>
+
+  <h3 id="Utils_Parser_Runtime_ParserEngine__ctor_Utils_Parser_Model_ParserDefinition_Utils_Parser_Runtime_ParserRuntimeFeaturePolicy_" data-uid="Utils.Parser.Runtime.ParserEngine.#ctor(Utils.Parser.Model.ParserDefinition,Utils.Parser.Runtime.ParserRuntimeFeaturePolicy)">
+  ParserEngine(ParserDefinition, ParserRuntimeFeaturePolicy)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserEngine.cs/#L128"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Initializes a parser engine with an explicit runtime feature policy.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ParserEngine(ParserDefinition definition, ParserRuntimeFeaturePolicy runtimeFeaturePolicy)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>definition</code> <a class="xref" href="Utils.Parser.Model.ParserDefinition.html">ParserDefinition</a></dt>
+    <dd><p>Resolved parser definition.</p>
+</dd>
+    <dt><code>runtimeFeaturePolicy</code> <a class="xref" href="Utils.Parser.Runtime.ParserRuntimeFeaturePolicy.html">ParserRuntimeFeaturePolicy</a></dt>
+    <dd><p>Runtime feature policy for optional parser behavior.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <h2 class="section" id="methods">Methods
+</h2>
+
+
+  <a id="Utils_Parser_Runtime_ParserEngine_Parse_" data-uid="Utils.Parser.Runtime.ParserEngine.Parse*"></a>
+
+  <h3 id="Utils_Parser_Runtime_ParserEngine_Parse_System_Collections_Generic_IEnumerable_Utils_Parser_Runtime_Token__Utils_Parser_Model_Rule_Utils_Parser_Diagnostics_DiagnosticBag_" data-uid="Utils.Parser.Runtime.ParserEngine.Parse(System.Collections.Generic.IEnumerable{Utils.Parser.Runtime.Token},Utils.Parser.Model.Rule,Utils.Parser.Diagnostics.DiagnosticBag)">
+  Parse(IEnumerable&lt;Token&gt;, Rule?, DiagnosticBag?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserEngine.cs/#L158"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Parses <code class="paramref">tokens</code> starting from <code class="paramref">startRule</code>
+(or the definition's root rule when <code>null</code>) and returns the root
+<a class="xref" href="Utils.Parser.Runtime.ParseNode.html">ParseNode</a>.
+If parsing fails completely an <a class="xref" href="Utils.Parser.Runtime.ErrorNode.html">ErrorNode</a> is returned rather than
+throwing an exception.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ParseNode Parse(IEnumerable&lt;Token&gt; tokens, Rule? startRule = null, DiagnosticBag? diagnostics = null)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>tokens</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<a class="xref" href="Utils.Parser.Runtime.Token.html">Token</a>&gt;</dt>
+    <dd><p>Flat list of tokens produced by <a class="xref" href="Utils.Parser.Runtime.LexerEngine.html">LexerEngine</a>.</p>
+</dd>
+    <dt><code>startRule</code> <a class="xref" href="Utils.Parser.Model.Rule.html">Rule</a></dt>
+    <dd><p>Override for the start rule, or <code>null</code> to use the definition's root.</p>
+</dd>
+    <dt><code>diagnostics</code> <a class="xref" href="Utils.Parser.Diagnostics.DiagnosticBag.html">DiagnosticBag</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Runtime.ParseNode.html">ParseNode</a></dt>
+    <dd><p>Root parse-tree node.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a></dt>
+    <dd><p>Thrown when no start rule is available (neither <code class="paramref">startRule</code>
+nor <a class="xref" href="Utils.Parser.Model.ParserDefinition.html#Utils_Parser_Model_ParserDefinition_RootRule">RootRule</a> is set).</p>
+</dd>
+  </dl>
+
+
+
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserEngine.cs/#L44" class="edit-link">Edit this page</a>
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

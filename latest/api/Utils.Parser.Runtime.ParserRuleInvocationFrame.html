@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Class ParserRuleInvocationFrame | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Class ParserRuleInvocationFrame | omy.Utils Documentation ">
+      
+      <meta name="description" content="Represents passive per-invocation parser rule metadata state. Parameters, locals, returns, and labeled completed child calls remain untyped managed metadata; the frame does not bind ANTLR type syntax or expose implicit grammar variables.">
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_Parser_Runtime_ParserRuleInvocationFrame.md&amp;value=---%0Auid%3A%20Utils.Parser.Runtime.ParserRuleInvocationFrame%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame">
+
+
+
+  <h1 id="Utils_Parser_Runtime_ParserRuleInvocationFrame" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame" class="text-break">
+Class ParserRuleInvocationFrame  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserRuleInvocationFrame.cs/#L8"><i class="bi bi-code-slash"></i></a>
+  </h1>
+
+  <div class="facts text-secondary">
+    <dl><dt>Namespace</dt><dd><a class="xref" href="Utils.html">Utils</a>.<a class="xref" href="Utils.Parser.html">Parser</a>.<a class="xref" href="Utils.Parser.Runtime.html">Runtime</a></dd></dl>
+  <dl><dt>Assembly</dt><dd>Utils.Parser.dll</dd></dl>
+  </div>
+
+  <div class="markdown summary"><p>Represents passive per-invocation parser rule metadata state.
+Parameters, locals, returns, and labeled completed child calls remain untyped managed metadata;
+the frame does not bind ANTLR type syntax or expose implicit grammar variables.</p>
+</div>
+  <div class="markdown conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public sealed class ParserRuleInvocationFrame</code></pre>
+  </div>
+
+
+
+
+  <dl class="typelist inheritance">
+    <dt>Inheritance</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
+      <div><span class="xref">ParserRuleInvocationFrame</span></div>
+    </dd>
+  </dl>
+
+
+
+  <dl class="typelist inheritedMembers">
+    <dt>Inherited Members</dt>
+    <dd>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)">object.Equals(object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)">object.Equals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gethashcode">object.GetHashCode()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.tostring">object.ToString()</a>
+    </div>
+  </dd></dl>
+
+  <dl class="typelist extensionMethods">
+    <dt>Extension Methods</dt>
+    <dd>
+  <div>
+      <a class="xref" href="Utils.Data.DataUtils.html#Utils_Data_DataUtils_ToDbValue_System_Object_">DataUtils.ToDbValue(object?)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Mathematics.MathEx.html#Utils_Mathematics_MathEx_Clamp__1___0___0___0_System_Collections_Generic_IComparer___0__">MathEx.Clamp&lt;T&gt;(T, T, T, IComparer&lt;T&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Failure__1___0_">FluentExtensions.Failure&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsEqualTo__2___0___1_">FluentExtensions.IsEqualTo&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterOrEqualsThan__2___0___1_">FluentExtensions.IsGreaterOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterThan__2___0___1_">FluentExtensions.IsGreaterThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsIn__1___0___0___">FluentExtensions.IsIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerOrEqualsThan__2___0___1_">FluentExtensions.IsLowerOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerThan__2___0___1_">FluentExtensions.IsLowerThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotIn__1___0___0___">FluentExtensions.IsNotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotNull__1___0_">FluentExtensions.IsNotNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNull__1___0_">FluentExtensions.IsNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Success__1___0_">FluentExtensions.Success&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Test__1___0_System_Func___0_System_Boolean__">FluentExtensions.Test&lt;T&gt;(T, Func&lt;T, bool&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_System_Boolean_System_Boolean_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T, bool, bool)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1____1_">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1____1_">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_In__1___0___0___">ObjectUtils.In&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_NotIn__1___0___0___">ObjectUtils.NotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustNotBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustNotBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Arg__1___0_System_String_">Validations.Arg&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ValueMustNotBeNull__1___0_System_String_">Validations.ValueMustNotBeNull&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Variable__1___0_System_String_">Validations.Variable&lt;T&gt;(T, string)</a>
+  </div>
+  </dd></dl>
+
+
+
+
+
+  <h2 class="section" id="constructors">Constructors
+</h2>
+
+
+  <a id="Utils_Parser_Runtime_ParserRuleInvocationFrame__ctor_" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.#ctor*"></a>
+
+  <h3 id="Utils_Parser_Runtime_ParserRuleInvocationFrame__ctor_System_String_System_Int32_" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.#ctor(System.String,System.Int32)">
+  ParserRuleInvocationFrame(string, int)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserRuleInvocationFrame.cs/#L35"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Initializes an empty parser rule invocation frame.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ParserRuleInvocationFrame(string ruleName, int inputPosition)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>ruleName</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Name of the parser rule being invoked.</p>
+</dd>
+    <dt><code>inputPosition</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Token-stream position at the time of rule entry.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Parser_Runtime_ParserRuleInvocationFrame__ctor_" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.#ctor*"></a>
+
+  <h3 id="Utils_Parser_Runtime_ParserRuleInvocationFrame__ctor_System_String_System_Int32_System_Collections_Generic_IReadOnlyDictionary_System_String_System_Object__" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.#ctor(System.String,System.Int32,System.Collections.Generic.IReadOnlyDictionary{System.String,System.Object})">
+  ParserRuleInvocationFrame(string, int, IReadOnlyDictionary&lt;string, object?&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserRuleInvocationFrame.cs/#L46"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Initializes a parser rule invocation frame with passive parameter values.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ParserRuleInvocationFrame(string ruleName, int inputPosition, IReadOnlyDictionary&lt;string, object?&gt; parameters)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>ruleName</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Name of the parser rule being invoked.</p>
+</dd>
+    <dt><code>inputPosition</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Token-stream position at the time of rule entry.</p>
+</dd>
+    <dt><code>parameters</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlydictionary-2">IReadOnlyDictionary</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a>&gt;</dt>
+    <dd><p>Passive parameter values to expose through the frame.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Parser_Runtime_ParserRuleInvocationFrame__ctor_" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.#ctor*"></a>
+
+  <h3 id="Utils_Parser_Runtime_ParserRuleInvocationFrame__ctor_System_String_System_Int32_System_Collections_Generic_IReadOnlyDictionary_System_String_System_Object__Utils_Parser_Runtime_ParserRuleInvocationDescriptor_" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.#ctor(System.String,System.Int32,System.Collections.Generic.IReadOnlyDictionary{System.String,System.Object},Utils.Parser.Runtime.ParserRuleInvocationDescriptor)">
+  ParserRuleInvocationFrame(string, int, IReadOnlyDictionary&lt;string, object?&gt;, ParserRuleInvocationDescriptor?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserRuleInvocationFrame.cs/#L58"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Initializes a parser rule invocation frame with passive parameter values and rule metadata.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ParserRuleInvocationFrame(string ruleName, int inputPosition, IReadOnlyDictionary&lt;string, object?&gt; parameters, ParserRuleInvocationDescriptor? descriptor)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>ruleName</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Name of the parser rule being invoked.</p>
+</dd>
+    <dt><code>inputPosition</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Token-stream position at the time of rule entry.</p>
+</dd>
+    <dt><code>parameters</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlydictionary-2">IReadOnlyDictionary</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a>&gt;</dt>
+    <dd><p>Passive parameter values to expose through the frame.</p>
+</dd>
+    <dt><code>descriptor</code> <a class="xref" href="Utils.Parser.Runtime.ParserRuleInvocationDescriptor.html">ParserRuleInvocationDescriptor</a></dt>
+    <dd><p>Passive rule metadata descriptor to expose through the frame.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Parser_Runtime_ParserRuleInvocationFrame__ctor_" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.#ctor*"></a>
+
+  <h3 id="Utils_Parser_Runtime_ParserRuleInvocationFrame__ctor_System_String_System_Int32_System_Collections_Generic_IReadOnlyDictionary_System_String_System_Object__Utils_Parser_Runtime_ParserRuleInvocationDescriptor_Utils_Parser_Runtime_ParserRuleInvocationFrame_" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.#ctor(System.String,System.Int32,System.Collections.Generic.IReadOnlyDictionary{System.String,System.Object},Utils.Parser.Runtime.ParserRuleInvocationDescriptor,Utils.Parser.Runtime.ParserRuleInvocationFrame)">
+  ParserRuleInvocationFrame(string, int, IReadOnlyDictionary&lt;string, object?&gt;, ParserRuleInvocationDescriptor?, ParserRuleInvocationFrame?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserRuleInvocationFrame.cs/#L75"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Initializes a parser rule invocation frame with passive parameter values, rule metadata, and a parent frame.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ParserRuleInvocationFrame(string ruleName, int inputPosition, IReadOnlyDictionary&lt;string, object?&gt; parameters, ParserRuleInvocationDescriptor? descriptor, ParserRuleInvocationFrame? parent)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>ruleName</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Name of the parser rule being invoked.</p>
+</dd>
+    <dt><code>inputPosition</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Token-stream position at the time of rule entry.</p>
+</dd>
+    <dt><code>parameters</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlydictionary-2">IReadOnlyDictionary</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a>&gt;</dt>
+    <dd><p>Passive parameter values to expose through the frame.</p>
+</dd>
+    <dt><code>descriptor</code> <a class="xref" href="Utils.Parser.Runtime.ParserRuleInvocationDescriptor.html">ParserRuleInvocationDescriptor</a></dt>
+    <dd><p>Passive rule metadata descriptor to expose through the frame.</p>
+</dd>
+    <dt><code>parent</code> <a class="xref" href="Utils.Parser.Runtime.ParserRuleInvocationFrame.html">ParserRuleInvocationFrame</a></dt>
+    <dd><p>Parent invocation frame in the current call stack, or <code>null</code> for root-level rules.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <h2 class="section" id="properties">Properties
+</h2>
+
+
+  <a id="Utils_Parser_Runtime_ParserRuleInvocationFrame_Depth_" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.Depth*"></a>
+
+  <h3 id="Utils_Parser_Runtime_ParserRuleInvocationFrame_Depth" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.Depth">
+  Depth
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserRuleInvocationFrame.cs/#L131"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the zero-based call-stack depth of this invocation frame.
+Root-level rule frames have depth 0; each nested rule invocation increments the depth by 1.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int Depth { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Parser_Runtime_ParserRuleInvocationFrame_Descriptor_" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.Descriptor*"></a>
+
+  <h3 id="Utils_Parser_Runtime_ParserRuleInvocationFrame_Descriptor" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.Descriptor">
+  Descriptor
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserRuleInvocationFrame.cs/#L120"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets passive rule-level metadata associated with this invocation frame, when supplied by the runtime.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ParserRuleInvocationDescriptor? Descriptor { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Runtime.ParserRuleInvocationDescriptor.html">ParserRuleInvocationDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Parser_Runtime_ParserRuleInvocationFrame_InputPosition_" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.InputPosition*"></a>
+
+  <h3 id="Utils_Parser_Runtime_ParserRuleInvocationFrame_InputPosition" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.InputPosition">
+  InputPosition
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserRuleInvocationFrame.cs/#L100"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the token-stream position at the time of rule entry.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int InputPosition { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Parser_Runtime_ParserRuleInvocationFrame_LabeledCallResults_" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.LabeledCallResults*"></a>
+
+  <h3 id="Utils_Parser_Runtime_ParserRuleInvocationFrame_LabeledCallResults" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.LabeledCallResults">
+  LabeledCallResults
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserRuleInvocationFrame.cs/#L155"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the immutable assignment and list label results produced by successful direct child calls in this frame.
+Store replacement is synchronized with managed execution-state snapshots so failed parser attempts roll back changes.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ParserLabeledRuleCallResultStore LabeledCallResults { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Runtime.ParserLabeledRuleCallResultStore.html">ParserLabeledRuleCallResultStore</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Parser_Runtime_ParserRuleInvocationFrame_LastCompletedChildCall_" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.LastCompletedChildCall*"></a>
+
+  <h3 id="Utils_Parser_Runtime_ParserRuleInvocationFrame_LastCompletedChildCall" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.LastCompletedChildCall">
+  LastCompletedChildCall
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserRuleInvocationFrame.cs/#L149"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the call result from the most recently completed successful direct child rule invocation,
+or <code>null</code> when no child rule has yet completed successfully in the current rule context.
+This value is set by the invocation-frame manager on successful child exit and is synchronized
+with the managed execution-state snapshot during parser backtracking restoration.
+It must not be stored in static or global fields; its rollback safety relies on the
+managed execution-state snapshot mechanism being active.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ParserRuleCallResult? LastCompletedChildCall { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Runtime.ParserRuleCallResult.html">ParserRuleCallResult</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Parser_Runtime_ParserRuleInvocationFrame_Locals_" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.Locals*"></a>
+
+  <h3 id="Utils_Parser_Runtime_ParserRuleInvocationFrame_Locals" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.Locals">
+  Locals
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserRuleInvocationFrame.cs/#L110"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets passive local values associated with this invocation frame.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public IReadOnlyDictionary&lt;string, object?&gt; Locals { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlydictionary-2">IReadOnlyDictionary</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a>&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Parser_Runtime_ParserRuleInvocationFrame_Parameters_" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.Parameters*"></a>
+
+  <h3 id="Utils_Parser_Runtime_ParserRuleInvocationFrame_Parameters" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.Parameters">
+  Parameters
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserRuleInvocationFrame.cs/#L105"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets passive parameter values associated with this invocation frame.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public IReadOnlyDictionary&lt;string, object?&gt; Parameters { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlydictionary-2">IReadOnlyDictionary</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a>&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Parser_Runtime_ParserRuleInvocationFrame_Parent_" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.Parent*"></a>
+
+  <h3 id="Utils_Parser_Runtime_ParserRuleInvocationFrame_Parent" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.Parent">
+  Parent
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserRuleInvocationFrame.cs/#L125"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the parent invocation frame in the current parser rule call stack, or <code>null</code> when this is a root-level rule.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ParserRuleInvocationFrame? Parent { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Runtime.ParserRuleInvocationFrame.html">ParserRuleInvocationFrame</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Parser_Runtime_ParserRuleInvocationFrame_Returns_" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.Returns*"></a>
+
+  <h3 id="Utils_Parser_Runtime_ParserRuleInvocationFrame_Returns" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.Returns">
+  Returns
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserRuleInvocationFrame.cs/#L115"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets passive return values associated with this invocation frame.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public IReadOnlyDictionary&lt;string, object?&gt; Returns { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlydictionary-2">IReadOnlyDictionary</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a>&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Parser_Runtime_ParserRuleInvocationFrame_RuleName_" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.RuleName*"></a>
+
+  <h3 id="Utils_Parser_Runtime_ParserRuleInvocationFrame_RuleName" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.RuleName">
+  RuleName
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserRuleInvocationFrame.cs/#L95"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the name of the parser rule associated with this invocation frame.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string RuleName { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h2 class="section" id="methods">Methods
+</h2>
+
+
+  <a id="Utils_Parser_Runtime_ParserRuleInvocationFrame_ClearPendingChildParameters_" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.ClearPendingChildParameters*"></a>
+
+  <h3 id="Utils_Parser_Runtime_ParserRuleInvocationFrame_ClearPendingChildParameters_System_String_" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.ClearPendingChildParameters(System.String)">
+  ClearPendingChildParameters(string?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserRuleInvocationFrame.cs/#L298"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Removes all pending child-parameter seeds for <code class="paramref">ruleName</code>, or all seeds when <code class="paramref">ruleName</code> is <code>null</code>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void ClearPendingChildParameters(string? ruleName = null)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>ruleName</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Parser_Runtime_ParserRuleInvocationFrame_GetParameter_" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.GetParameter*"></a>
+
+  <h3 id="Utils_Parser_Runtime_ParserRuleInvocationFrame_GetParameter_System_String_" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.GetParameter(System.String)">
+  GetParameter(string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserRuleInvocationFrame.cs/#L163"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets a parameter value by name.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public object? GetParameter(string name)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>name</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Parameter metadata name.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></dt>
+    <dd><p>The parameter value associated with <code class="paramref">name</code>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.keynotfoundexception">KeyNotFoundException</a></dt>
+    <dd><p>Thrown when the parameter name is not present.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Parser_Runtime_ParserRuleInvocationFrame_SetLocal_" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.SetLocal*"></a>
+
+  <h3 id="Utils_Parser_Runtime_ParserRuleInvocationFrame_SetLocal_System_String_System_Object_" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.SetLocal(System.String,System.Object)">
+  SetLocal(string, object?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserRuleInvocationFrame.cs/#L186"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Sets a passive local value by metadata name.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void SetLocal(string name, object? value)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>name</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Local metadata name.</p>
+</dd>
+    <dt><code>value</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></dt>
+    <dd><p>Local value to store.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Parser_Runtime_ParserRuleInvocationFrame_SetPendingChildParameter_" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.SetPendingChildParameter*"></a>
+
+  <h3 id="Utils_Parser_Runtime_ParserRuleInvocationFrame_SetPendingChildParameter_System_String_System_String_System_Object_" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.SetPendingChildParameter(System.String,System.String,System.Object)">
+  SetPendingChildParameter(string, string, object?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserRuleInvocationFrame.cs/#L253"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Seeds an untyped parameter value for the next invocation of <code class="paramref">ruleName</code> as a direct child of this frame.
+Seeds are consumed and copied into the matching child frame when that rule is entered through the stack frame manager.
+Parameters are not auto-bound; rule call arguments are not evaluated.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void SetPendingChildParameter(string ruleName, string parameterName, object? value)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>ruleName</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Name of the child rule that will receive the seed.</p>
+</dd>
+    <dt><code>parameterName</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Parameter metadata name.</p>
+</dd>
+    <dt><code>value</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></dt>
+    <dd><p>Untyped parameter value to seed.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Parser_Runtime_ParserRuleInvocationFrame_SetPendingChildParameters_" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.SetPendingChildParameters*"></a>
+
+  <h3 id="Utils_Parser_Runtime_ParserRuleInvocationFrame_SetPendingChildParameters_System_String_System_Collections_Generic_IReadOnlyDictionary_System_String_System_Object__" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.SetPendingChildParameters(System.String,System.Collections.Generic.IReadOnlyDictionary{System.String,System.Object})">
+  SetPendingChildParameters(string, IReadOnlyDictionary&lt;string, object?&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserRuleInvocationFrame.cs/#L266"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Atomically merges untyped parameter values for the next invocation of a named child rule.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void SetPendingChildParameters(string ruleName, IReadOnlyDictionary&lt;string, object?&gt; values)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>ruleName</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Name of the child rule that will receive the seeds.</p>
+</dd>
+    <dt><code>values</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlydictionary-2">IReadOnlyDictionary</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a>&gt;</dt>
+    <dd><p>Parameter metadata names and untyped values to seed.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Parser_Runtime_ParserRuleInvocationFrame_SetReturnValue_" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.SetReturnValue*"></a>
+
+  <h3 id="Utils_Parser_Runtime_ParserRuleInvocationFrame_SetReturnValue_System_String_System_Object_" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.SetReturnValue(System.String,System.Object)">
+  SetReturnValue(string, object?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserRuleInvocationFrame.cs/#L209"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Sets a passive return value by metadata name.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void SetReturnValue(string name, object? value)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>name</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Return metadata name.</p>
+</dd>
+    <dt><code>value</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></dt>
+    <dd><p>Return value to store.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Parser_Runtime_ParserRuleInvocationFrame_TryConsumePendingChildParameters_" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.TryConsumePendingChildParameters*"></a>
+
+  <h3 id="Utils_Parser_Runtime_ParserRuleInvocationFrame_TryConsumePendingChildParameters_System_String_System_Collections_Generic_IReadOnlyDictionary_System_String_System_Object___" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.TryConsumePendingChildParameters(System.String,System.Collections.Generic.IReadOnlyDictionary{System.String,System.Object}@)">
+  TryConsumePendingChildParameters(string, out IReadOnlyDictionary&lt;string, object?&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserRuleInvocationFrame.cs/#L278"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Attempts to consume and remove the pending parameter seed for <code class="paramref">ruleName</code>.
+On success, the seeds are removed from this frame and returned as a read-only snapshot.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool TryConsumePendingChildParameters(string ruleName, out IReadOnlyDictionary&lt;string, object?&gt; parameters)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>ruleName</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Name of the child rule whose seeds to consume.</p>
+</dd>
+    <dt><code>parameters</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlydictionary-2">IReadOnlyDictionary</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a>&gt;</dt>
+    <dd><p>Receives the pending parameter snapshot when present.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><code>true</code> when seeds for <code class="paramref">ruleName</code> were present; otherwise, <code>false</code>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Parser_Runtime_ParserRuleInvocationFrame_TryGetLocal_" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.TryGetLocal*"></a>
+
+  <h3 id="Utils_Parser_Runtime_ParserRuleInvocationFrame_TryGetLocal_System_String_System_Object__" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.TryGetLocal(System.String,System.Object@)">
+  TryGetLocal(string, out object?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserRuleInvocationFrame.cs/#L198"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Attempts to get a passive local value by metadata name.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool TryGetLocal(string name, out object? value)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>name</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Local metadata name.</p>
+</dd>
+    <dt><code>value</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></dt>
+    <dd><p>Receives the local value when present.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><code>true</code> when the local name is present; otherwise, <code>false</code>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Parser_Runtime_ParserRuleInvocationFrame_TryGetParameter_" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.TryGetParameter*"></a>
+
+  <h3 id="Utils_Parser_Runtime_ParserRuleInvocationFrame_TryGetParameter_System_String_System_Object__" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.TryGetParameter(System.String,System.Object@)">
+  TryGetParameter(string, out object?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserRuleInvocationFrame.cs/#L175"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Attempts to get a parameter value by name.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool TryGetParameter(string name, out object? value)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>name</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Parameter metadata name.</p>
+</dd>
+    <dt><code>value</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></dt>
+    <dd><p>Receives the parameter value when present.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><code>true</code> when the parameter name is present; otherwise, <code>false</code>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Parser_Runtime_ParserRuleInvocationFrame_TryGetReturnValue_" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.TryGetReturnValue*"></a>
+
+  <h3 id="Utils_Parser_Runtime_ParserRuleInvocationFrame_TryGetReturnValue_System_String_System_Object__" data-uid="Utils.Parser.Runtime.ParserRuleInvocationFrame.TryGetReturnValue(System.String,System.Object@)">
+  TryGetReturnValue(string, out object?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserRuleInvocationFrame.cs/#L239"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Attempts to get a passive return value by metadata name.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool TryGetReturnValue(string name, out object? value)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>name</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Return metadata name.</p>
+</dd>
+    <dt><code>value</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></dt>
+    <dd><p>Receives the return value when present.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><code>true</code> when the return name is present; otherwise, <code>false</code>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserRuleInvocationFrame.cs/#L8" class="edit-link">Edit this page</a>
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

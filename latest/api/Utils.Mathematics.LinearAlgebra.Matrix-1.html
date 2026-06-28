@@ -1,0 +1,2253 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Class Matrix&lt;T&gt; | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Class Matrix&lt;T&gt; | omy.Utils Documentation ">
+      
+      <meta name="description" content="Provides advanced computations for the  type.">
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_Mathematics_LinearAlgebra_Matrix_1.md&amp;value=---%0Auid%3A%20Utils.Mathematics.LinearAlgebra.Matrix%601%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1">
+
+
+
+  <h1 id="Utils_Mathematics_LinearAlgebra_Matrix_1" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1" class="text-break">
+Class Matrix&lt;T&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Solve.cs/#L8"><i class="bi bi-code-slash"></i></a>
+  </h1>
+
+  <div class="facts text-secondary">
+    <dl><dt>Namespace</dt><dd><a class="xref" href="Utils.html">Utils</a>.<a class="xref" href="Utils.Mathematics.html">Mathematics</a>.<a class="xref" href="Utils.Mathematics.LinearAlgebra.html">LinearAlgebra</a></dd></dl>
+  <dl><dt>Assembly</dt><dd>Utils.Mathematics.dll</dd></dl>
+  </div>
+
+  <div class="markdown summary"><p>Provides advanced computations for the <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix&lt;T&gt;</a> type.</p>
+</div>
+  <div class="markdown conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public sealed class Matrix&lt;T&gt; : IFormattable, IEquatable&lt;Matrix&lt;T&gt;&gt;, IEquatable&lt;T[,]&gt;, IEquatable&lt;T[][]&gt;, IEquatable&lt;Vector&lt;T&gt;[]&gt;, ICloneable, IAdditionOperators&lt;Matrix&lt;T&gt;, Matrix&lt;T&gt;, Matrix&lt;T&gt;&gt;, ISubtractionOperators&lt;Matrix&lt;T&gt;, Matrix&lt;T&gt;, Matrix&lt;T&gt;&gt;, IEqualityOperators&lt;Matrix&lt;T&gt;, Matrix&lt;T&gt;, bool&gt;, IEqualityOperators&lt;Matrix&lt;T&gt;, object, bool&gt;, IMultiplyOperators&lt;Matrix&lt;T&gt;, Matrix&lt;T&gt;, Matrix&lt;T&gt;&gt;, IMultiplyOperators&lt;Matrix&lt;T&gt;, T, Matrix&lt;T&gt;&gt;, IMultiplyOperators&lt;Matrix&lt;T&gt;, Vector&lt;T&gt;, Vector&lt;T&gt;&gt;, IDivisionOperators&lt;Matrix&lt;T&gt;, T, Matrix&lt;T&gt;&gt;, IUnaryNegationOperators&lt;Matrix&lt;T&gt;, Matrix&lt;T&gt;&gt;, IUnaryPlusOperators&lt;Matrix&lt;T&gt;, Matrix&lt;T&gt;&gt; where T : struct, IFloatingPoint&lt;T&gt;, IRootFunctions&lt;T&gt;</code></pre>
+  </div>
+
+
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd></dd>
+  </dl>
+
+  <dl class="typelist inheritance">
+    <dt>Inheritance</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
+      <div><span class="xref">Matrix&lt;T&gt;</span></div>
+    </dd>
+  </dl>
+
+  <dl class="typelist implements">
+    <dt>Implements</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.iformattable">IFormattable</a></div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;&gt;</div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;T[,]&gt;</div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;T[][]&gt;</div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a class="xref" href="Utils.Mathematics.LinearAlgebra.Vector-1.html">Vector</a>&lt;T&gt;[]&gt;</div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.icloneable">ICloneable</a></div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.iadditionoperators-3">IAdditionOperators</a>&lt;<a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;, <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;, <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;&gt;</div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.isubtractionoperators-3">ISubtractionOperators</a>&lt;<a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;, <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;, <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;&gt;</div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.iequalityoperators-3">IEqualityOperators</a>&lt;<a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;, <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a>&gt;</div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.iequalityoperators-3">IEqualityOperators</a>&lt;<a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a>&gt;</div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.imultiplyoperators-3">IMultiplyOperators</a>&lt;<a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;, <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;, <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;&gt;</div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.imultiplyoperators-3">IMultiplyOperators</a>&lt;<a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;, T, <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;&gt;</div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.imultiplyoperators-3">IMultiplyOperators</a>&lt;<a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;, <a class="xref" href="Utils.Mathematics.LinearAlgebra.Vector-1.html">Vector</a>&lt;T&gt;, <a class="xref" href="Utils.Mathematics.LinearAlgebra.Vector-1.html">Vector</a>&lt;T&gt;&gt;</div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.idivisionoperators-3">IDivisionOperators</a>&lt;<a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;, T, <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;&gt;</div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.iunarynegationoperators-2">IUnaryNegationOperators</a>&lt;<a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;, <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;&gt;</div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.iunaryplusoperators-2">IUnaryPlusOperators</a>&lt;<a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;, <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;&gt;</div>
+    </dd>
+  </dl>
+
+
+  <dl class="typelist inheritedMembers">
+    <dt>Inherited Members</dt>
+    <dd>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)">object.Equals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
+    </div>
+  </dd></dl>
+
+  <dl class="typelist extensionMethods">
+    <dt>Extension Methods</dt>
+    <dd>
+  <div>
+      <a class="xref" href="Utils.Data.DataUtils.html#Utils_Data_DataUtils_ToDbValue_System_Object_">DataUtils.ToDbValue(object?)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Mathematics.MathEx.html#Utils_Mathematics_MathEx_Clamp__1___0___0___0_System_Collections_Generic_IComparer___0__">MathEx.Clamp&lt;T&gt;(T, T, T, IComparer&lt;T&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Failure__1___0_">FluentExtensions.Failure&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsEqualTo__2___0___1_">FluentExtensions.IsEqualTo&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterOrEqualsThan__2___0___1_">FluentExtensions.IsGreaterOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterThan__2___0___1_">FluentExtensions.IsGreaterThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsIn__1___0___0___">FluentExtensions.IsIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerOrEqualsThan__2___0___1_">FluentExtensions.IsLowerOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerThan__2___0___1_">FluentExtensions.IsLowerThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotIn__1___0___0___">FluentExtensions.IsNotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotNull__1___0_">FluentExtensions.IsNotNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNull__1___0_">FluentExtensions.IsNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Success__1___0_">FluentExtensions.Success&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Test__1___0_System_Func___0_System_Boolean__">FluentExtensions.Test&lt;T&gt;(T, Func&lt;T, bool&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_System_Boolean_System_Boolean_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T, bool, bool)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1____1_">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1____1_">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_In__1___0___0___">ObjectUtils.In&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_NotIn__1___0___0___">ObjectUtils.NotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustNotBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustNotBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Arg__1___0_System_String_">Validations.Arg&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ValueMustNotBeNull__1___0_System_String_">Validations.ValueMustNotBeNull&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Variable__1___0_System_String_">Validations.Variable&lt;T&gt;(T, string)</a>
+  </div>
+  </dd></dl>
+
+
+
+
+
+  <h2 class="section" id="constructors">Constructors
+</h2>
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1__ctor_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.#ctor*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1__ctor_System_Int32_System_Int32_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.#ctor(System.Int32,System.Int32)">
+  Matrix(int, int)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Constructors.cs/#L15"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Initializes a matrix with the specified dimensions.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Matrix(int dimensionX, int dimensionY)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>dimensionX</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Number of rows.</p>
+</dd>
+    <dt><code>dimensionY</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Number of columns.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1__ctor_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.#ctor*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1__ctor_Utils_Mathematics_LinearAlgebra_Matrix__0__" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.#ctor(Utils.Mathematics.LinearAlgebra.Matrix{`0})">
+  Matrix(Matrix&lt;T&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Constructors.cs/#L105"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Creates a copy of an existing matrix.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Matrix(Matrix&lt;T&gt; matrix)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>matrix</code> <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;</dt>
+    <dd><p>Matrix to copy.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1__ctor_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.#ctor*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1__ctor_Utils_Mathematics_LinearAlgebra_Vector__0____" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.#ctor(Utils.Mathematics.LinearAlgebra.Vector{`0}[])">
+  Matrix(params Vector&lt;T&gt;[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Constructors.cs/#L82"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Initializes a matrix from column vectors.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Matrix(params Vector&lt;T&gt;[] vectors)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>vectors</code> <a class="xref" href="Utils.Mathematics.LinearAlgebra.Vector-1.html">Vector</a>&lt;T&gt;[]</dt>
+    <dd><p>Column vectors.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when vectors do not share the same dimension.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1__ctor_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.#ctor*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1__ctor__0_0__0___" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.#ctor(`0[0:,0:])">
+  Matrix(T[,])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Constructors.cs/#L42"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Initializes a matrix from a 2D array.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Matrix(T[,] array)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>array</code> T[,]</dt>
+    <dd><p>Array containing the matrix values.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1__ctor_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.#ctor*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1__ctor__0_____" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.#ctor(`0[][])">
+  Matrix(T[][])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Constructors.cs/#L58"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Initializes a matrix from a jagged array.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Matrix(T[][] array)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>array</code> T[][]</dt>
+    <dd><p>Jagged array containing the matrix values.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <h2 class="section" id="properties">Properties
+</h2>
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_Columns_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.Columns*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_Columns" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.Columns">
+  Columns
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.cs/#L30"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the number of columns in the matrix.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int Columns { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_Determinant_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.Determinant*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_Determinant" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.Determinant">
+  Determinant
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.cs/#L213"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the determinant of the matrix.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public T Determinant { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><span class="xref">T</span></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_IsDiagonal_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.IsDiagonal*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_IsDiagonal" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.IsDiagonal">
+  IsDiagonal
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.cs/#L104"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Indicates whether the matrix is diagonal (all off-diagonal elements are zero).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool IsDiagonal { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_IsIdentity_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.IsIdentity*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_IsIdentity" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.IsIdentity">
+  IsIdentity
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.cs/#L116"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Indicates if the matrix is an identity matrix.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool IsIdentity { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_IsNormalSpace_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.IsNormalSpace*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_IsNormalSpace" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.IsNormalSpace">
+  IsNormalSpace
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.cs/#L128"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Indicates if the matrix represents a normal space.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool IsNormalSpace { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_IsSquare_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.IsSquare*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_IsSquare" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.IsSquare">
+  IsSquare
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.cs/#L35"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Indicates if the matrix is square.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool IsSquare { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_IsTriangular_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.IsTriangular*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_IsTriangular" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.IsTriangular">
+  IsTriangular
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.cs/#L92"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Indicates whether the matrix is triangular (upper or lower).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool IsTriangular { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_Item_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.Item*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_Item_System_Int32_System_Int32_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.Item(System.Int32,System.Int32)">
+  this[int, int]
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.cs/#L43"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the value of an element at the specified position.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public T this[int row, int col] { get; }</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>row</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Row index.</p>
+</dd>
+    <dt><code>col</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Column index.</p>
+</dd>
+  </dl>
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><span class="xref">T</span></dt>
+    <dd><p>The element at the specified position.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_Rows_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.Rows*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_Rows" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.Rows">
+  Rows
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.cs/#L25"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the number of rows in the matrix.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int Rows { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h2 class="section" id="methods">Methods
+</h2>
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_Clone_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.Clone*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_Clone" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.Clone">
+  Clone()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.cs/#L438"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Creates a copy of the matrix.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public object Clone()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_ComputeEigenvalues_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.ComputeEigenvalues*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_ComputeEigenvalues_System_Int32_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.ComputeEigenvalues(System.Int32)">
+  ComputeEigenvalues(int)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Eigenvalues.cs/#L28"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Computes the real eigenvalues and corresponding eigenvectors of a symmetric matrix
+using the QR iteration algorithm.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public (T[] Eigenvalues, Matrix&lt;T&gt; Eigenvectors) ComputeEigenvalues(int maxIterations = 1000)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>maxIterations</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Maximum number of QR iterations before giving up.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt>(T[] <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple--0[],utils.mathematics.linearalgebra.matrix-1-.eigenvalues">Eigenvalues</a>, <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt; <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple--0[],utils.mathematics.linearalgebra.matrix-1-.eigenvectors">Eigenvectors</a>)</dt>
+    <dd><p>A tuple containing an array of eigenvalues (descending by magnitude) and a matrix whose
+columns are the corresponding eigenvectors.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section" id="Utils_Mathematics_LinearAlgebra_Matrix_1_ComputeEigenvalues_System_Int32__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Only real symmetric matrices are supported; all eigenvalues of such matrices are guaranteed real.
+Eigenvalues are returned in descending order of absolute value.</p>
+</div>
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a></dt>
+    <dd><p>Thrown when the matrix is not square, not symmetric, or fails to converge.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_DecomposeQR_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.DecomposeQR*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_DecomposeQR" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.DecomposeQR">
+  DecomposeQR()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.QR.cs/#L23"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Performs a QR decomposition of this matrix using the modified Gram–Schmidt algorithm.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public (Matrix&lt;T&gt; Q, Matrix&lt;T&gt; R) DecomposeQR()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt>(<a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt; <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple-utils.mathematics.linearalgebra.matrix-1,utils.mathematics.linearalgebra.matrix-1-.l">L</a>, <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt; <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple-utils.mathematics.linearalgebra.matrix-1,utils.mathematics.linearalgebra.matrix-1-.u">U</a>)</dt>
+    <dd><p>A tuple containing the orthogonal matrix Q and the upper-triangular matrix R.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section" id="Utils_Mathematics_LinearAlgebra_Matrix_1_DecomposeQR_remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>For an m×n matrix A with m ≥ n and full column rank, returns Q (m×n, orthonormal columns)
+and R (n×n, upper triangular) such that A = Q·R.</p>
+</div>
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a></dt>
+    <dd><p>Thrown when the matrix has more columns than rows, or when its columns are not linearly independent.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_Diagonal_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.Diagonal*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_Diagonal_System_Collections_Generic_IEnumerable__0__" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.Diagonal(System.Collections.Generic.IEnumerable{`0})">
+  Diagonal(params IEnumerable&lt;T&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Factories.cs/#L39"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns a square diagonal matrix whose diagonal entries are <code class="paramref">values</code>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Matrix&lt;T&gt; Diagonal(params IEnumerable&lt;T&gt; values)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>values</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T&gt;</dt>
+    <dd><p>Diagonal values, left to right.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_DiagonalizeLU_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.DiagonalizeLU*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_DiagonalizeLU" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.DiagonalizeLU">
+  DiagonalizeLU()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Compute.cs/#L74"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Performs LU decomposition of the current square matrix, resulting in a lower triangular matrix L
+and an upper triangular matrix U such that the original matrix equals L multiplied by U.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public (Matrix&lt;T&gt; L, Matrix&lt;T&gt; U) DiagonalizeLU()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt>(<a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt; <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple-utils.mathematics.linearalgebra.matrix-1,utils.mathematics.linearalgebra.matrix-1-.l">L</a>, <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt; <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple-utils.mathematics.linearalgebra.matrix-1,utils.mathematics.linearalgebra.matrix-1-.u">U</a>)</dt>
+    <dd><p>A tuple containing the lower and upper triangular matrices.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section" id="Utils_Mathematics_LinearAlgebra_Matrix_1_DiagonalizeLU_remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>The decomposition uses the same sequence of elementary row operations as the original mutable implementation
+but operates entirely on local array copies to preserve immutability.</p>
+</div>
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a></dt>
+    <dd><p>Thrown when the matrix is not square or is singular.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_Equals_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.Equals*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_Equals_System_Object_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.Equals(System.Object)">
+  Equals(object?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.cs/#L352"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Checks if this matrix is equal to another object.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override bool Equals(object? obj)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>obj</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_Equals_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.Equals*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_Equals_Utils_Mathematics_LinearAlgebra_Matrix__0__" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.Equals(Utils.Mathematics.LinearAlgebra.Matrix{`0})">
+  Equals(Matrix&lt;T&gt;?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.cs/#L364"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Checks if this matrix is equal to another matrix.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool Equals(Matrix&lt;T&gt;? other)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>other</code> <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_Equals_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.Equals*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_Equals_Utils_Mathematics_LinearAlgebra_Vector__0____" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.Equals(Utils.Mathematics.LinearAlgebra.Vector{`0}[])">
+  Equals(params Vector&lt;T&gt;[]?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.cs/#L409"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Checks if this matrix is equal to an array of vectors.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool Equals(params Vector&lt;T&gt;[]? other)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>other</code> <a class="xref" href="Utils.Mathematics.LinearAlgebra.Vector-1.html">Vector</a>&lt;T&gt;[]</dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_Equals_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.Equals*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_Equals__0_0__0___" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.Equals(`0[0:,0:])">
+  Equals(T[,]?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.cs/#L374"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Checks if this matrix is equal to a 2D array.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool Equals(T[,]? other)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>other</code> T[,]</dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_Equals_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.Equals*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_Equals__0_____" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.Equals(`0[][])">
+  Equals(T[][]?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.cs/#L391"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Checks if this matrix is equal to a jagged array.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool Equals(T[][]? other)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>other</code> T[][]</dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_GetColumn_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.GetColumn*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_GetColumn_System_Int32_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.GetColumn(System.Int32)">
+  GetColumn(int)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.cs/#L200"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns the specified column as a vector.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Vector&lt;T&gt; GetColumn(int col)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>col</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Zero-based column index.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Mathematics.LinearAlgebra.Vector-1.html">Vector</a>&lt;T&gt;</dt>
+    <dd><p>A new <a class="xref" href="Utils.Mathematics.LinearAlgebra.Vector-1.html">Vector&lt;T&gt;</a> containing the column elements.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when <code class="paramref">col</code> is out of range.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_GetHashCode_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.GetHashCode*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_GetHashCode" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.GetHashCode">
+  GetHashCode()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.cs/#L428"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the hash code for the matrix.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override int GetHashCode()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_GetRow_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.GetRow*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_GetRow_System_Int32_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.GetRow(System.Int32)">
+  GetRow(int)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.cs/#L184"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns the specified row as a vector.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Vector&lt;T&gt; GetRow(int row)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>row</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Zero-based row index.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Mathematics.LinearAlgebra.Vector-1.html">Vector</a>&lt;T&gt;</dt>
+    <dd><p>A new <a class="xref" href="Utils.Mathematics.LinearAlgebra.Vector-1.html">Vector&lt;T&gt;</a> containing the row elements.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when <code class="paramref">row</code> is out of range.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_Identity_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.Identity*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_Identity_System_Int32_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.Identity(System.Int32)">
+  Identity(int)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Factories.cs/#L14"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns an n×n identity matrix.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Matrix&lt;T&gt; Identity(int size)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>size</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Number of rows and columns.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_Invert_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.Invert*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_Invert" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.Invert">
+  Invert()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Compute.cs/#L136"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Inverts the matrix if it is invertible.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Matrix&lt;T&gt; Invert()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;</dt>
+    <dd><p>A new matrix representing the inverse of the current matrix.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a></dt>
+    <dd><p>Thrown when the matrix is not square.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_IsSymmetric_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.IsSymmetric*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_IsSymmetric" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.IsSymmetric">
+  IsSymmetric()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Eigenvalues.cs/#L92"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when this square matrix is symmetric (A[i,j] == A[j,i]).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool IsSymmetric()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_Pad_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.Pad*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_Pad_System_Int32_System_Int32_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.Pad(System.Int32,System.Int32)">
+  Pad(int, int)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.cs/#L149"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Pads the matrix to the specified new dimensions.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Matrix&lt;T&gt; Pad(int newRows, int newColumns)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>newRows</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>The new number of rows.</p>
+</dd>
+    <dt><code>newColumns</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>The new number of columns.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;</dt>
+    <dd><p>A new matrix with the padded dimensions.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_Solve_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.Solve*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_Solve_Utils_Mathematics_LinearAlgebra_Vector__0__" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.Solve(Utils.Mathematics.LinearAlgebra.Vector{`0})">
+  Solve(Vector&lt;T&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Solve.cs/#L18"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Solves the linear system <code>A·x = b</code> and returns <code>x</code>.
+Uses Gaussian elimination with partial pivoting.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Vector&lt;T&gt; Solve(Vector&lt;T&gt; b)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>b</code> <a class="xref" href="Utils.Mathematics.LinearAlgebra.Vector-1.html">Vector</a>&lt;T&gt;</dt>
+    <dd><p>Right-hand-side vector. Its dimension must equal the number of rows.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Mathematics.LinearAlgebra.Vector-1.html">Vector</a>&lt;T&gt;</dt>
+    <dd><p>The solution vector <code>x</code>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a></dt>
+    <dd><p>Thrown when the matrix is not square or is singular.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when <code class="paramref">b</code> has the wrong dimension.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_ToArray_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.ToArray*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_ToArray" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.ToArray">
+  ToArray()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.cs/#L433"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Converts the matrix to a 2D array.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public T[,] ToArray()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt>T[,]</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_ToString_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.ToString*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_ToString" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.ToString">
+  ToString()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.cs/#L291"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns a string representation of the matrix.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override string ToString()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_ToString_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.ToString*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_ToString_System_String_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.ToString(System.String)">
+  ToString(string?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.cs/#L296"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns a formatted string representation of the matrix.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string ToString(string? format)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>format</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_ToString_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.ToString*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_ToString_System_String_System_IFormatProvider_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.ToString(System.String,System.IFormatProvider)">
+  ToString(string?, IFormatProvider?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.cs/#L301"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns a formatted string representation of the matrix using the specified format provider.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string ToString(string? format, IFormatProvider? formatProvider)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>format</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+    <dt><code>formatProvider</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.iformatprovider">IFormatProvider</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_ToVectors_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.ToVectors*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_ToVectors" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.ToVectors">
+  ToVectors()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.cs/#L273"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Converts the matrix to an array of vectors.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Vector&lt;T&gt;[] ToVectors()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Mathematics.LinearAlgebra.Vector-1.html">Vector</a>&lt;T&gt;[]</dt>
+    <dd><p>An array of vectors representing the matrix columns.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_Transpose_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.Transpose*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_Transpose" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.Transpose">
+  Transpose()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.cs/#L169"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns the transpose of this matrix (rows and columns swapped).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Matrix&lt;T&gt; Transpose()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;</dt>
+    <dd><p>A new <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix&lt;T&gt;</a> with dimensions <code>Columns × Rows</code>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_Zero_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.Zero*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_Zero_System_Int32_System_Int32_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.Zero(System.Int32,System.Int32)">
+  Zero(int, int)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Factories.cs/#L28"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns a matrix of the specified dimensions with all elements set to zero.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Matrix&lt;T&gt; Zero(int rows, int columns)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>rows</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Number of rows.</p>
+</dd>
+    <dt><code>columns</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Number of columns.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <h2 class="section" id="operators">Operators
+</h2>
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_op_Addition_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.op_Addition*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_op_Addition_Utils_Mathematics_LinearAlgebra_Matrix__0__Utils_Mathematics_LinearAlgebra_Matrix__0__" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.op_Addition(Utils.Mathematics.LinearAlgebra.Matrix{`0},Utils.Mathematics.LinearAlgebra.Matrix{`0})">
+  operator +(Matrix&lt;T&gt;, Matrix&lt;T&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Operators.cs/#L21"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Adds two matrices element-wise.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Matrix&lt;T&gt; operator +(Matrix&lt;T&gt; matrix1, Matrix&lt;T&gt; matrix2)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>matrix1</code> <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;</dt>
+    <dd></dd>
+    <dt><code>matrix2</code> <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a></dt>
+    <dd><p>Thrown if the matrices have different dimensions.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_op_Division_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.op_Division*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_op_Division_Utils_Mathematics_LinearAlgebra_Matrix__0___0_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.op_Division(Utils.Mathematics.LinearAlgebra.Matrix{`0},`0)">
+  operator /(Matrix&lt;T&gt;, T)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Operators.cs/#L101"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Divides a matrix by a scalar.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Matrix&lt;T&gt; operator /(Matrix&lt;T&gt; matrix, T scalar)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>matrix</code> <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;</dt>
+    <dd></dd>
+    <dt><code>scalar</code> <span class="xref">T</span></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_op_Equality_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.op_Equality*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_op_Equality_Utils_Mathematics_LinearAlgebra_Matrix__0__System_Object_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.op_Equality(Utils.Mathematics.LinearAlgebra.Matrix{`0},System.Object)">
+  operator ==(Matrix&lt;T&gt;?, object?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Operators.cs/#L183"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Checks if the matrix is equal to an object.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator ==(Matrix&lt;T&gt;? matrix, object? obj)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>matrix</code> <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;</dt>
+    <dd></dd>
+    <dt><code>obj</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_op_Equality_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.op_Equality*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_op_Equality_Utils_Mathematics_LinearAlgebra_Matrix__0__Utils_Mathematics_LinearAlgebra_Matrix__0__" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.op_Equality(Utils.Mathematics.LinearAlgebra.Matrix{`0},Utils.Mathematics.LinearAlgebra.Matrix{`0})">
+  operator ==(Matrix&lt;T&gt;?, Matrix&lt;T&gt;?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Operators.cs/#L173"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Checks if two matrices are equal.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator ==(Matrix&lt;T&gt;? matrix1, Matrix&lt;T&gt;? matrix2)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>matrix1</code> <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;</dt>
+    <dd></dd>
+    <dt><code>matrix2</code> <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_op_Inequality_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.op_Inequality*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_op_Inequality_Utils_Mathematics_LinearAlgebra_Matrix__0__System_Object_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.op_Inequality(Utils.Mathematics.LinearAlgebra.Matrix{`0},System.Object)">
+  operator !=(Matrix&lt;T&gt;?, object?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Operators.cs/#L188"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Checks if the matrix is not equal to an object.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator !=(Matrix&lt;T&gt;? matrix, object? obj)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>matrix</code> <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;</dt>
+    <dd></dd>
+    <dt><code>obj</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_op_Inequality_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.op_Inequality*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_op_Inequality_Utils_Mathematics_LinearAlgebra_Matrix__0__Utils_Mathematics_LinearAlgebra_Matrix__0__" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.op_Inequality(Utils.Mathematics.LinearAlgebra.Matrix{`0},Utils.Mathematics.LinearAlgebra.Matrix{`0})">
+  operator !=(Matrix&lt;T&gt;?, Matrix&lt;T&gt;?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Operators.cs/#L178"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Checks if two matrices are not equal.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator !=(Matrix&lt;T&gt;? matrix1, Matrix&lt;T&gt;? matrix2)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>matrix1</code> <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;</dt>
+    <dd></dd>
+    <dt><code>matrix2</code> <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_op_Multiply_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.op_Multiply*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_op_Multiply_Utils_Mathematics_LinearAlgebra_Matrix__0__Utils_Mathematics_LinearAlgebra_Matrix__0__" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.op_Multiply(Utils.Mathematics.LinearAlgebra.Matrix{`0},Utils.Mathematics.LinearAlgebra.Matrix{`0})">
+  operator *(Matrix&lt;T&gt;, Matrix&lt;T&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Operators.cs/#L118"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Multiplies two matrices.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Matrix&lt;T&gt; operator *(Matrix&lt;T&gt; matrix1, Matrix&lt;T&gt; matrix2)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>matrix1</code> <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;</dt>
+    <dd></dd>
+    <dt><code>matrix2</code> <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a></dt>
+    <dd><p>Thrown if the matrices have incompatible dimensions for multiplication.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_op_Multiply_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.op_Multiply*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_op_Multiply_Utils_Mathematics_LinearAlgebra_Matrix__0__Utils_Mathematics_LinearAlgebra_Vector__0__" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.op_Multiply(Utils.Mathematics.LinearAlgebra.Matrix{`0},Utils.Mathematics.LinearAlgebra.Vector{`0})">
+  operator *(Matrix&lt;T&gt;, Vector&lt;T&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Operators.cs/#L145"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Multiplies a matrix by a vector.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Vector&lt;T&gt; operator *(Matrix&lt;T&gt; matrix, Vector&lt;T&gt; vector)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>matrix</code> <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;</dt>
+    <dd></dd>
+    <dt><code>vector</code> <a class="xref" href="Utils.Mathematics.LinearAlgebra.Vector-1.html">Vector</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Mathematics.LinearAlgebra.Vector-1.html">Vector</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a></dt>
+    <dd><p>Thrown if the matrix and vector have incompatible dimensions.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_op_Multiply_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.op_Multiply*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_op_Multiply_Utils_Mathematics_LinearAlgebra_Matrix__0___0_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.op_Multiply(Utils.Mathematics.LinearAlgebra.Matrix{`0},`0)">
+  operator *(Matrix&lt;T&gt;, T)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Operators.cs/#L96"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Multiplies a matrix by a scalar.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Matrix&lt;T&gt; operator *(Matrix&lt;T&gt; matrix, T scalar)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>matrix</code> <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;</dt>
+    <dd></dd>
+    <dt><code>scalar</code> <span class="xref">T</span></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_op_Multiply_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.op_Multiply*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_op_Multiply__0_Utils_Mathematics_LinearAlgebra_Matrix__0__" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.op_Multiply(`0,Utils.Mathematics.LinearAlgebra.Matrix{`0})">
+  operator *(T, Matrix&lt;T&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Operators.cs/#L80"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Multiplies a matrix by a scalar.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Matrix&lt;T&gt; operator *(T scalar, Matrix&lt;T&gt; matrix)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>scalar</code> <span class="xref">T</span></dt>
+    <dd></dd>
+    <dt><code>matrix</code> <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_op_Subtraction_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.op_Subtraction*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_op_Subtraction_Utils_Mathematics_LinearAlgebra_Matrix__0__Utils_Mathematics_LinearAlgebra_Matrix__0__" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.op_Subtraction(Utils.Mathematics.LinearAlgebra.Matrix{`0},Utils.Mathematics.LinearAlgebra.Matrix{`0})">
+  operator -(Matrix&lt;T&gt;, Matrix&lt;T&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Operators.cs/#L43"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Subtracts one matrix from another element-wise.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Matrix&lt;T&gt; operator -(Matrix&lt;T&gt; matrix1, Matrix&lt;T&gt; matrix2)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>matrix1</code> <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;</dt>
+    <dd></dd>
+    <dt><code>matrix2</code> <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a></dt>
+    <dd><p>Thrown if the matrices have different dimensions.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_op_UnaryNegation_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.op_UnaryNegation*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_op_UnaryNegation_Utils_Mathematics_LinearAlgebra_Matrix__0__" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.op_UnaryNegation(Utils.Mathematics.LinearAlgebra.Matrix{`0})">
+  operator -(Matrix&lt;T&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Operators.cs/#L64"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Negates all elements of the matrix.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Matrix&lt;T&gt; operator -(Matrix&lt;T&gt; matrix)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>matrix</code> <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1_op_UnaryPlus_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.op_UnaryPlus*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_op_UnaryPlus_Utils_Mathematics_LinearAlgebra_Matrix__0__" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.op_UnaryPlus(Utils.Mathematics.LinearAlgebra.Matrix{`0})">
+  operator +(Matrix&lt;T&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Operators.cs/#L168"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns the matrix itself (unary plus).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Matrix&lt;T&gt; operator +(Matrix&lt;T&gt; value)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>value</code> <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Solve.cs/#L8" class="edit-link">Edit this page</a>
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

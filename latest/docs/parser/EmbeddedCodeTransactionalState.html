@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Embedded Code Transactional State Plan | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Embedded Code Transactional State Plan | omy.Utils Documentation ">
+      
+      
+      <link rel="icon" href="../../favicon.ico">
+      <link rel="stylesheet" href="../../public/docfx.min.css">
+      <link rel="stylesheet" href="../../public/main.css">
+      <meta name="docfx:navrel" content="../../toc.html">
+      <meta name="docfx:tocrel" content="../../toc.html">
+      
+      <meta name="docfx:rel" content="../../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/blob/master/docs/parser/EmbeddedCodeTransactionalState.md/#L1">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../../index.html">
+            <img id="logo" class="svg" src="../../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+
+      <div class="content">
+        <div class="actionbar">
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="embedded-code-transactional-state-plan">Embedded Code Transactional State Plan</h1>
+
+<p>This document records the current audit and the required implementation sequence for transactional embedded-code state.</p>
+<p>It is intentionally a design note, not a complete ANTLR feature announcement. <code>ParserEngine</code> now captures and restores managed parser execution state around parser backtracking attempt boundaries: ordinary alternatives, left-recursive extensions, quantifier attempts, and negation probes. Rule lifecycle hooks (<code>@init</code>/<code>@after</code>) are now supported in the source-generator C# opt-in path. Generated policies install the generated execution-state manager for generated parser execution contexts, so parser predicates, inline parser actions, and lifecycle hooks share the same state-aware memoization and rollback infrastructure. The runtime still does not provide replay, action buffering, or external side-effect rollback. Completed rule-result memoization is semantic-state-aware through an opaque execution-state key, completed results carry opaque post-rule execution-state snapshots for memoization hits, and rollback restores the key before later cache lookups.</p>
+<h2 id="current-state">Current state</h2>
+<p>The parser runtime already performs token-cursor backtracking. <code>ParserEngine</code> saves and restores <code>ParseContext.Position</code> around failed alternatives, recursive-extension candidates, quantifier attempts, and negation probes. It now also captures and restores the configured managed parser execution state at those parser backtracking attempt boundaries.</p>
+<p>Generated C# embedded-code execution now has the following preparatory pieces:</p>
+<ul>
+<li>generated <code>{ClassName}ExecutionContext</code> instances own generated parser predicate/action hooks and injected parser <code>@members</code> / <code>@parser::members</code> state;</li>
+<li><code>ParseWithEmbeddedCode(string)</code> creates a fresh execution context per call;</li>
+<li><code>ParseWithEmbeddedCode(string, {ClassName}ExecutionContext)</code> lets callers provide a context explicitly;</li>
+<li><code>CreateRuntimePolicy({ClassName}ExecutionContext, ParserRuntimeFeaturePolicy?)</code> binds generated dispatchers to a supplied context;</li>
+<li><code>ParserExecutionContextCopier&lt;TContext&gt;</code> can shallow-copy execution contexts;</li>
+<li>generated execution contexts expose internal <code>Fork()</code> and <code>CopyFrom(...)</code> helpers that delegate to that copier;</li>
+<li><code>IParserExecutionStateManager</code> is exposed through <code>ParserRuntimeFeaturePolicy</code>;</li>
+<li><code>ParserRuntimeFeaturePolicy.Default</code> uses <code>NullParserExecutionStateManager.Instance</code>;</li>
+<li>generated runtime policies install a generated state manager whose <code>Capture()</code> calls <code>Fork()</code> and whose <code>Restore(...)</code> calls <code>CopyFrom(...)</code>;</li>
+<li><code>IParserExecutionStateManager.GetCurrentStateKey()</code> supplies the opaque semantic-state key used by completed-result memoization;</li>
+<li>generated state managers delegate <code>GetCurrentStateKey()</code> to the generated execution context, which hashes supported context fields through <code>ParserExecutionContextHasher&lt;TContext&gt;</code>.</li>
+</ul>
+<p>These pieces are now runtime rollback authority for managed parser execution state at parser backtracking attempt boundaries and for memoization-hit state restoration. <code>ParserEngine</code> validates the policy state-manager contract, reads <code>GetCurrentStateKey()</code> for completed-rule memoization, stores post-rule snapshots in reusable rule results, restores those snapshots on memoization hits, captures state before ordinary alternatives, left-recursive extensions, quantifier attempts, and negation probes, restores discarded attempts, and commits only retained parser-attempt state. Rule lifecycle hooks (<code>@init</code>/<code>@after</code>) are now supported; they fire through <code>IParserRuleLifecycleExecutor</code> in <code>ParserRuntimeFeaturePolicy.RuleLifecycleExecutor</code>. Generated policies always install a <code>GeneratedExecutionStateManager</code>, so predicates, inline actions, and lifecycle hooks all share the same state-aware memoization and rollback infrastructure. <code>GeneratedRuleLifecycleExecutor</code> is installed only when the grammar declares <code>@init</code> or <code>@after</code> hooks; otherwise <code>RuleLifecycleExecutor</code> remains the base no-op executor. Action buffering, replay, lexer embedded-code state, and rollback of external side effects remain unsupported.</p>
+<h2 id="problem-being-solved">Problem being solved</h2>
+<p>Parser backtracking attempt boundaries now restore both the token cursor and mutable managed embedded-code state through the configured execution-state manager. The remaining gaps are outside managed parser execution state: action buffering/replay, lexer embedded-code state, external side effects, and final top-level parse rejection after a locally successful root rule.</p>
+<p>For example:</p>
+<pre><code class="lang-antlr">start
+    : { Count++; } A
+    | B
+    ;
+</code></pre>
+<p>For ordinary parser alternatives, if the first alternative executes the action and then fails, the token cursor and managed execution-context state are restored before the second alternative is tried. The same managed-state guarantee now applies to the parser attempt kinds listed below, while external side effects remain outside the rollback contract.</p>
+<p>The same issue applies to:</p>
+<ul>
+<li>inline parser actions;</li>
+<li>semantic predicates with side effects;</li>
+<li>future <code>@init</code> actions;</li>
+<li>future <code>@after</code> actions;</li>
+<li>negation probes;</li>
+<li>failed quantifier iterations;</li>
+<li>left-recursive extension candidates that are tested and discarded.</li>
+</ul>
+<h2 id="runtime-audit">Runtime audit</h2>
+<h3 id="alternatives">Alternatives</h3>
+<p><code>TryParseScheduledAlternatives(...)</code> delegates each alternative attempt to <code>ScheduledAlternativeExecutor.Execute(...)</code>.</p>
+<p><code>ScheduledAlternativeExecutor.Execute(...)</code> now aligns ordinary parser alternative attempts with this transactional boundary:</p>
+<ol>
+<li>capture semantic state before the attempt;</li>
+<li>parse the alternative;</li>
+<li>if the attempt fails, restore the pre-attempt state;</li>
+<li>if the attempt succeeds, capture the post-attempt state, restore the pre-attempt state while scheduling continues, and carry the post-attempt state on the completed branch;</li>
+<li>when the scheduler selects the winner, restore the winner's post-attempt state together with the winner's end token position.</li>
+</ol>
+<h3 id="left-recursive-extensions">Left-recursive extensions</h3>
+<p><code>TryExtendLeft(...)</code> tests recursive-extension candidates and keeps the best branch. It restores token position after each candidate attempt and later restores the selected branch position.</p>
+<p>The selected branch now carries a semantic-state snapshot. Non-selected candidates do not leak managed embedded-code mutations.</p>
+<h3 id="quantifiers">Quantifiers</h3>
+<p><code>TryParseQuantifier(...)</code> saves the token position before each iteration. If the inner element fails or produces no progress, the token position is restored.</p>
+<p>The semantic state follows the same rule:</p>
+<ul>
+<li>a successful retained iteration commits its state into the current context;</li>
+<li>a failed iteration restores the state from before that iteration;</li>
+<li>a non-progressive iteration restores the state from before that iteration.</li>
+</ul>
+<h3 id="negation">Negation</h3>
+<p><code>TryParseNegation(...)</code> probes the inner element and always restores token position before deciding whether the negation succeeds.</p>
+<p>The inner probe must never commit semantic state. Regardless of whether the negation succeeds or fails, embedded-code mutations made while probing the negated content must be discarded.</p>
+<p>This is stricter than ordinary alternatives because the negated content is not part of the accepted parse tree.</p>
+<h3 id="rule-entry-and-rule-exit">Rule entry and rule exit</h3>
+<p><code>ParseRule(...)</code> is the natural future boundary for <code>@init</code> and <code>@after</code>, but it is not enough for branch-level transactional state on its own.</p>
+<p>A rule invocation may occur inside an alternative, quantifier, recursive extension, or negation probe that is later discarded. Rule lifecycle actions must therefore be added only after branch-level state capture/restore exists.</p>
+<h2 id="memoization-concern">Memoization concern</h2>
+<p><code>ParseRule(...)</code> reuses completed rule results through <code>ParserStateRegistry</code> using rule name, input position, precedence, and <code>IParserExecutionStateManager.GetCurrentStateKey()</code> as the key. The no-op manager returns <code>ParserExecutionStateKey.Stateless</code>, so stateless/default policies keep the same effective cache behavior as the former <code>(rule, input position, precedence)</code> key.</p>
+<p>Stateful policies must obey the correction rule: if two semantic states can influence parsing differently, they must produce two different parser execution-state keys. This prevents a completed result observed under one semantic state from being reused under another state that could accept, reject, or consume differently. Equivalent states may conservatively produce different keys, but incompatible states must not share a key.</p>
+<p>Generated execution contexts compute keys with <code>ParserExecutionContextHasher&lt;TContext&gt;</code>. The hasher ignores static fields and field-like event backing fields, includes auto-property backing fields as state, supports deterministic scalar values and common ordered/unordered collections, and requires explicit <code>IParserExecutionStateHashable</code> support for complex user objects. Unsupported complex objects fail explicitly rather than falling back to reference identity or <code>object.GetHashCode()</code>.</p>
+<p>Dictionary and set hashing is deterministic and independent from native enumeration order. Dictionary entries are sorted by canonical structural representations of their keys and then values; set elements are sorted by the canonical structural representation of the whole element. Enumeration index is never used as a tie-breaker. If distinct dictionary keys or set elements produce identical canonical representations and cannot be ordered safely, hashing fails explicitly instead of falling back to insertion order, <code>object.GetHashCode()</code>, or reference identity. <code>OrderedDictionary</code> or any business collection whose order is meaningful should be modeled as an ordered sequence rather than as an unordered dictionary/set state.</p>
+<p>This state-aware memoization now works together with parser attempt rollback: after a discarded ordinary alternative, left-recursive extension, quantifier attempt, or negation probe is restored, <code>GetCurrentStateKey()</code> reflects the restored state before later parser work queries completed-result cache entries. Successful and failed completed rule results also store the opaque execution-state snapshot captured when the result was recorded; on a memoization hit, <code>ParserEngine</code> restores that snapshot and the end position so cached rule reuse reflects the semantic state produced by the original invocation without replaying actions. It still does not enable action buffering, replay, lifecycle actions, lexer embedded-code state, or external side-effect rollback.</p>
+<h2 id="top-level-parse-rejection-boundary">Top-level parse rejection boundary</h2>
+<p>Managed execution-state rollback covers parser backtracking attempt boundaries. It does not imply automatic rollback of a caller-supplied execution context after a top-level parse is rejected for trailing tokens or other final validation failures. For example, a generated C# opt-in <code>@after</code> hook on the root rule can mutate the supplied execution context after the root rule succeeds locally; if the final parse result is then rejected because unconsumed trailing tokens remain, that completed root-rule mutation is preserved.</p>
+<h2 id="required-runtime-abstraction">Required runtime abstraction</h2>
+<p><code>ParserEngine</code> must not know about generated <code>{ClassName}ExecutionContext</code> types directly.</p>
+<p>A runtime abstraction should be introduced through <code>ParserRuntimeFeaturePolicy</code>, for example:</p>
+<pre><code class="lang-csharp">public interface IParserExecutionStateManager
+{
+    object Capture();
+    void Restore(object snapshot);
+
+    ParserExecutionStateKey GetCurrentStateKey();
+}
+</code></pre>
+<p>The default policy uses <code>NullParserExecutionStateManager.Instance</code>, a singleton no-op implementation, so the default parser remains conservative and behavior-compatible.</p>
+<p>A generated policy now provides an implementation backed by the generated execution context:</p>
+<pre><code class="lang-text">Capture() -&gt; executionContext.Fork()
+Restore(snapshot) -&gt; executionContext.CopyFrom((PExecutionContext)snapshot)
+</code></pre>
+<p>The addition of <code>ParserRuntimeFeaturePolicy.ExecutionStateManager</code> is an API compatibility concern for callers that instantiate policies directly. Code based on <code>ParserRuntimeFeaturePolicy.Default with { ... }</code> remains compatible because the default policy already carries the no-op manager:</p>
+<pre><code class="lang-csharp">var policy = ParserRuntimeFeaturePolicy.Default with
+{
+    SemanticPredicateEvaluator = customEvaluator
+};
+</code></pre>
+<p>Direct policy construction must now provide the required execution-state manager and invocation-frame manager. Use <code>NullParserExecutionStateManager.Instance</code> and <code>NullParserRuleInvocationFrameManager.Instance</code> to keep the same conservative/no-op behavior:</p>
+<pre><code class="lang-csharp">var policy = new ParserRuntimeFeaturePolicy
+{
+    SemanticPredicateEvaluator = new DefaultSemanticPredicateEvaluator(),
+    ParserActionExecutor = new DefaultParserActionExecutor(),
+    ExecutionStateManager = NullParserExecutionStateManager.Instance,
+    RuleInvocationFrameManager = NullParserRuleInvocationFrameManager.Instance
+};
+</code></pre>
+<p>This is now active for parser backtracking attempt boundaries: ordinary parser alternatives, left-recursive extensions, quantifier attempts, and negation probes. <code>ParserEngine</code> validates that the property is non-null and uses it to capture/restore managed parser execution state at those boundaries. Parser lifecycle hooks can participate in that managed rollback through generated C# opt-in policies, and lifecycle contexts can carry passive parser rule invocation frames. Generated execution contexts expose explicit lifecycle helper methods that can read or write the active frame-local store. In the generated C# opt-in path only, the lifecycle executor allocates missing declared local names as <code>null</code> before <code>@init</code>, without overwriting pre-seeded values. Frames still do not type or bind locals, create array or value-type defaults, expose implicit local variables, or execute rule parameters, returns, throws/catch/finally metadata, or rule options. Automatic action buffering, replay, lexer embedded-code state, and external side-effect rollback are not active.</p>
+<p>The exact type names may differ, but the ownership must remain the same:</p>
+<ul>
+<li><code>ParserEngine</code> captures and restores opaque snapshots;</li>
+<li>generated code owns how the context is copied;</li>
+<li><code>ParserEngine</code> does not depend on source-generator-specific types.</li>
+</ul>
+<h2 id="required-implementation-sequence">Required implementation sequence</h2>
+<h3 id="step-1--execution-state-manager-contract">Step 1 — Execution-state manager contract</h3>
+<p>Status: implemented as contract-only infrastructure.</p>
+<p>Implemented scope:</p>
+<ul>
+<li><code>IParserExecutionStateManager</code> exists in <code>Utils.Parser.Runtime</code>;</li>
+<li><code>NullParserExecutionStateManager</code> provides the singleton no-op default implementation;</li>
+<li><code>ParserRuntimeFeaturePolicy.ExecutionStateManager</code> exposes the manager;</li>
+<li><code>ParserRuntimeFeaturePolicy.Default</code> supplies the no-op manager;</li>
+<li>generated policies supply a generated manager backed by <code>Fork()</code> / <code>CopyFrom(...)</code>;</li>
+<li><code>ParserEngine</code> validates the manager and invokes it for parser backtracking attempt boundaries;</li>
+<li>default parser behavior with <code>NullParserExecutionStateManager.Instance</code> remains no-op/stateless;</li>
+<li>generated <code>Parse(...)</code> remains conservative for embedded-code execution, while <code>ParseWithEmbeddedCode(...)</code> can now benefit from managed parser-attempt rollback when generated policies provide stateful managers.</li>
+</ul>
+<h3 id="step-2--alternative-transaction-transport">Step 2 — Alternative transaction transport</h3>
+<p>Status: complete.</p>
+<p>Implemented scope:</p>
+<ul>
+<li>capture semantic state before each scheduled alternative attempt;</li>
+<li>restore pre-attempt state after each attempt while scheduling continues;</li>
+<li>carry post-attempt state on successful branch state;</li>
+<li>restore the selected branch semantic state when the selected branch is committed;</li>
+<li>keep completed-result reuse keyed by semantic execution state whenever transactional state is active;</li>
+<li>add tests proving that actions in failed alternatives do not leak into the winning alternative state.</li>
+</ul>
+<p>This step does not by itself provide complete ANTLR transactional semantics. Lifecycle hooks participate through the generated C# opt-in path, but action buffering, replay, lexer embedded-code state, top-level final parse rejection rollback, and external side-effect rollback remain separate unsupported concerns.</p>
+<h3 id="step-3--left-recursive-extension-transactions">Step 3 — Left-recursive extension transactions</h3>
+<p>Status: implemented for managed parser execution state.</p>
+<p>The same model now applies to left-recursive extension candidates.</p>
+<p>Expected scope:</p>
+<ul>
+<li>isolate each candidate extension;</li>
+<li>discard mutations from rejected candidates;</li>
+<li>commit only the selected extension state;</li>
+<li>add tests with action mutations inside rejected and retained recursive extensions.</li>
+</ul>
+<h3 id="step-4--quantifier-transactions">Step 4 — Quantifier transactions</h3>
+<p>Status: implemented for managed parser execution state.</p>
+<p>Capture/restore now wraps quantified inner attempts.</p>
+<p>Expected scope:</p>
+<ul>
+<li>restore semantic state when a quantified inner attempt fails;</li>
+<li>restore semantic state when a quantified inner attempt is rejected as non-progressive;</li>
+<li>retain state only for successful iterations that remain part of the parse;</li>
+<li>add tests for <code>*</code>, <code>+</code>, <code>?</code>, and bounded quantifier cases when applicable.</li>
+</ul>
+<h3 id="step-5--negation-probe-isolation">Step 5 — Negation probe isolation</h3>
+<p>Status: implemented for managed parser execution state.</p>
+<p>Negation probes no longer commit managed semantic state.</p>
+<p>Expected scope:</p>
+<ul>
+<li>capture state before probing the negated inner content;</li>
+<li>restore that state after the probe regardless of probe success/failure;</li>
+<li>add tests proving actions/predicates inside negated content do not mutate the retained context.</li>
+</ul>
+<h3 id="step-6--parser-rule-lifecycle-hooks">Step 6 — Parser rule lifecycle hooks</h3>
+<p>Status: <strong>complete for the source-generator C# opt-in path</strong>.</p>
+<p>Implemented scope:</p>
+<ul>
+<li><code>IParserRuleLifecycleExecutor</code> interface and <code>NullParserRuleLifecycleExecutor</code> singleton added;</li>
+<li><code>ParserRuntimeFeaturePolicy.RuleLifecycleExecutor</code> property added;</li>
+<li><code>ParserEngine</code> fires <code>@init</code> at rule entry before any alternative is tried, and <code>@after</code> after a successful rule result;</li>
+<li>lifecycle hook state mutations are automatically rolled back for failed alternatives, quantifier iterations, and negation probes via the generated <code>IParserExecutionStateManager</code>;</li>
+<li>generated <code>Parse(...)</code> remains conservative; lifecycle hooks execute only through <code>ParseWithEmbeddedCode(...)</code> or an explicit-context <code>CreateRuntimePolicy(executionContext, basePolicy)</code> result;</li>
+<li>lifecycle hook methods and <code>GeneratedRuleLifecycleExecutor</code> are generated only when the grammar declares <code>@init</code> or <code>@after</code> on at least one rule; <code>GeneratedExecutionStateManager</code> is always installed for all generated execution contexts;</li>
+<li>tests cover successful rules, failed rule attempts, alternatives, quantifiers, negation probes, memoization hits, and nested rules.</li>
+</ul>
+<h3 id="step-7--lexer-embedded-code-design">Step 7 — Lexer embedded-code design</h3>
+<p>Lexer actions, lexer predicates, lexer members, and mode-sensitive lexer state require a separate design.</p>
+<p>They must not be added as a side effect of parser transactional state work.</p>
+<h2 id="non-goals">Non-goals</h2>
+<p>This plan does not approve:</p>
+<ul>
+<li>a new parser engine;</li>
+<li>graph parsing;</li>
+<li>parallel parsing;</li>
+<li>continuation replay;</li>
+<li>shared-prefix execution;</li>
+<li>action replay;</li>
+<li>default execution of embedded code;</li>
+<li>lexer embedded-code execution;</li>
+<li>additional semantic-state-aware cache dimensions without a dedicated design.</li>
+</ul>
+<h2 id="current-safety-summary">Current safety summary</h2>
+<p>The safe current state is:</p>
+<ul>
+<li>generated contexts can be copied through the execution-state manager;</li>
+<li>runtime policies can execute generated parser predicates/actions in explicit opt-in paths;</li>
+<li>all parser backtracking boundaries restore token position and managed parser execution state;</li>
+<li>left-recursive extensions, quantifier attempts, and negation probes also restore managed parser execution state for discarded attempts;</li>
+<li>completed-result memoization is isolated by execution-state keys and memoization hits restore stored post-rule execution-state snapshots without replaying actions;</li>
+<li>rule lifecycle hooks (<code>@init</code>/<code>@after</code>) are supported in the source-generator C# path, activated only through <code>ParseWithEmbeddedCode(...)</code> or an explicit <code>CreateRuntimePolicy(executionContext, basePolicy)</code> result; grammars without lifecycle hooks use the no-op executor;</li>
+<li>complete ANTLR embedded-code transactional semantics are not active because action buffering, lexer embedded-code state, replay, and external side-effect rollback remain unsupported;</li>
+<li>lexer embedded code remains unsupported.</li>
+</ul>
+<h2 id="rule-call-policy-transaction-boundary">Rule-call policy transaction boundary</h2>
+<p>The optional <code>IParserRuleCallExecutionPolicy</code> receives <code>BeforeRuleCall(...)</code> before a parser child rule is invoked and <code>AfterRuleCall(...)</code> after that invocation succeeds, fails, or exits exceptionally. Raw argument text and labels remain metadata, and the parser performs no automatic evaluation or binding. An explicitly installed policy can request current-target seeds through the narrow managed API; the default no-op policy does not. On success, the engine annotates the current <code>ParserRuleCallResult</code> with the current call site's raw arguments and label before the after callback, preserving the existing rollback- and memoization-safe metadata ordering.</p>
+<p>Policy callbacks themselves are not transactional. Mutations of external objects, logging sinks, files, services, or other side effects performed by a policy are not automatically rolled back when a parser alternative fails. The positional literal policy intentionally routes seeds through the rollback-aware pending-child contract and does not expose broad mutable managers. Policies must not retain mutable caller frames across alternatives. The default <code>NullParserRuleCallExecutionPolicy</code> has no side effects and preserves current behavior.</p>
+<h2 id="positional-literal-seeds-and-memoization">Positional literal seeds and memoization</h2>
+<p>The opt-in positional literal policy validates the entire call before writing and submits the complete binding set through one all-or-none frame-manager batch. The stack manager constructs one immutable merged pending-seed-store snapshot and publishes it in a single frame mutation. Custom frame managers are contractually required to retain every supplied value or none. Consequently, both validation and application are atomic, while parser attempt snapshots restore failed-alternative seeds and prevent partial or stale bindings from leaking. A successfully parsed <code>null</code> is stored as a present dictionary entry and remains distinguishable from a missing parameter.</p>
+<p>Before a child memoization lookup, the generated execution-state manager synchronizes the active frame's pending seeds into the generated execution context. <code>ParserRuleParameterSeedStore</code> hashes rule names, parameter names, presence, runtime scalar type, and value deterministically for the policy's supported set: <code>null</code>, <code>bool</code>, <code>int</code>, <code>long</code>, <code>double</code>, <code>string</code>, and <code>char</code>. Additional scalar values historically accepted by explicit seeding, including decimal and enum values, also have deterministic representations. Arbitrary explicit objects remain accepted for compatibility, but when they do not implement <code>IParserExecutionStateHashable</code> they contribute a fresh volatile nonce on every state-key calculation. This conservatively prevents completed-result memoization while such a value is pending instead of using an unstable object hash code or aborting parsing. This ensures <code>child[1]</code> and <code>child[2]</code> receive distinct stable keys while arbitrary objects receive no unsupported memoization-safety claim. External side effects remain outside rollback guarantees.</p>
+<h2 id="named-literal-seed-batches">Named literal seed batches</h2>
+<p>The explicitly installed <code>NamedLiteralRuleCallExecutionPolicy</code> uses the same atomic pending-child state as positional binding. It first validates the target descriptor, exact ordinal parameter-name coverage, and every <code>ParserSimpleLiteralParser</code> value, then submits one complete dictionary through <code>TrySetParameterSeeds(...)</code>. No partial seed is visible when validation or a custom manager rejects the batch. Matching seeds are overwritten, unrelated seeds remain, present <code>null</code> is distinct from absence, and failed alternatives restore prior pending state. Supported named values therefore participate in the same deterministic execution-state hashing, preventing stale memoized child results across call sites such as <code>child[value: 1]</code> and <code>child[value: 2]</code>.</p>
+<p>This guarantee does not extend to policy external side effects, arbitrary expression evaluation, returns, labels, or lexer execution. The named policy remains opt-in and separate from the positional policy; default and generated <code>Parse(...)</code> behavior is metadata-only. Both colon and equals forms inherit the named splitter's nesting, quoted-separator, and duplicate-name last-wins behavior. Optional/default parameters, partial binding, declared-type validation, and mixed syntax remain unsupported.</p>
+<h2 id="converted-typed-seed-state">Converted typed seed state</h2>
+<p>The explicitly installed typed positional and named literal policies complete every declared-type validation and conversion for explicit arguments and required simple-literal defaults before submitting exactly one pending-child seed batch. Positional omission is trailing-only; named omission may occur in any order; explicit values override defaults and unused defaults are not evaluated. A failed conversion, unsupported declaration/default, missing required value, overflow, or manager rejection cannot expose a partial typed state. The resulting values use the same managed capture/restore path as untyped pending seeds, so failed alternatives cannot leak converted values.</p>
+<p><code>ParserRuleParameterSeedStore</code> hashes the converted effective runtime values, not their original source spelling. Supported converted scalars (<code>byte</code>, <code>sbyte</code>, <code>short</code>, <code>ushort</code>, <code>int</code>, <code>uint</code>, <code>long</code>, <code>ulong</code>, <code>float</code>, <code>double</code>, <code>decimal</code>, <code>bool</code>, <code>char</code>, <code>string</code>, and <code>null</code>) have deterministic representations. Runtime type metadata remains part of the hash, so <code>byte(1)</code>, <code>int(1)</code>, and <code>long(1)</code> are distinct, as are <code>float(1)</code> and <code>double(1)</code>. Conversely, explicit and default source forms may share a memoized result when both produce the same complete converted seed state, just as integer <code>1</code> and floating literal <code>1.0</code> may share after both convert to the same effective <code>double(1)</code> seed. Present nullable <code>null</code> defaults are hashed as present null seeds. No volatile hash is required for a value produced by the typed allowlist.</p>
+<p>This guarantee applies to managed generated execution state. It does not extend rollback to external side effects, enable lexer execution, evaluate arbitrary expressions, bind returns or labels, or add <code>$param</code>-style access.</p>
+<h2 id="labeled-completed-call-state">Labeled completed-call state</h2>
+<p>Each invocation frame owns an immutable <code>ParserLabeledRuleCallResultStore</code> for successful labeled child references executed by that frame. Generated managed execution contexts mirror that store before capture and state-key calculation, then synchronize it back to the active frame during restore. Therefore failed alternatives, failed optionals, final failed repetition probes, and failed list appends restore the earlier assignment/list snapshot. Nested child stores remain on the child frame; only the child's final immutable call result is bound into its parent.</p>
+<p>The state hash includes assignment label names/results and list label names, lengths, and item order. Call-result hashing includes rule identity, input/depth metadata, ordinal sorted return names and runtime-typed values, raw arguments, and label metadata. Present-null differs from an absent key. Deterministic scalar and <code>IParserExecutionStateHashable</code> values remain stable; arbitrary unsupported return objects contribute a volatile nonce so unsafe memoized reuse is bypassed. Memoized child snapshots are re-annotated and rebound using the current call-site label, preventing a failed <code>x=child</code> attempt from leaking <code>x</code> when a later <code>y=child</code> reference reuses the child computation.</p>
+<h2 id="parser-managed-helper-state-and-transactional-state">Parser-managed helper state and transactional state</h2>
+<p>Parser-managed frame state remains rollback-aware. Parameters, locals, returns, pending parameter seeds, and labeled child-call results are parser-managed values when accessed through generated helper APIs or runtime frame APIs. Generated helper calls such as <code>GetRequiredRuleParameter&lt;int&gt;(context, &quot;count&quot;)</code>, <code>SetRuleLocal(context, &quot;total&quot;, value)</code>, <code>SetRuleReturn(context, &quot;result&quot;, value + 1)</code>, <code>GetRequiredLabeledRuleCallReturn(context, &quot;x&quot;, &quot;value&quot;)</code>, and <code>GetLabeledRuleCallReturns(context, &quot;xs&quot;, &quot;value&quot;)</code> participate in the managed state model provided by the generated execution context and invocation frames.</p>
+<p>ANTLR-style convenience forms such as <code>$x.value</code>, <code>$xs.value</code>, <code>$rule.value</code>, <code>$param</code>, and <code>$local</code> are not parser transactional primitives. They are not core parser syntax and are not rewritten by default. With <code>NoOpParserEmbeddedCodeTransformer</code>, these forms remain unchanged target-language text. An optional C# ANTLR-style transformer may rewrite them to generated helper calls, but that transformer remains a compatibility layer outside parser core behavior.</p>
+<h2 id="transformer-boundary-and-transactional-state">Transformer boundary and transactional state</h2>
+<p>Embedded-code transformation is a pre-emission or pre-compilation step. The default no-op transformer does not read or mutate parser transactional state. Optional transformers may rewrite target-language text, but generated helper APIs and dynamic compiler/preparer integration remain the execution boundary; transformation alone does not grant runtime authority, local writes, return writes, rollback control, or parse acceptance control.</p>
+<p>Embedded code can still cause arbitrary target-language side effects, including external side effects. External side effects are not automatically rolled back by parser backtracking, memoization restore, or generated execution-state copying. Transformers do not change that rule. Users should prefer parser-managed APIs for rollback-aware parser state and isolate external side effects so they do not depend on speculative parser attempts.</p>
+<blockquote>
+<p>Current-rule return writes: with the optional C# ANTLR-style transformer, bare declared returns such as <code>$value = ...</code>, <code>$value += ...</code>, and standalone increments are supported in <code>@after</code> and inline parser actions. The default no-op transformer preserves the syntax unchanged. Runtime writes use parser-managed invocation-frame return state, are rollback-safe, are captured into successful <code>ParserRuleCallResult</code> snapshots for parent assignment/list labels, distinguish present-null from missing, and do not auto-initialize returns. Dotted writes (<code>$rule.value = ...</code>), predicates, <code>@init</code>, parameters, labels, list projections, tokens, lexer attributes, and <code>ref</code>/<code>out</code> writes remain unsupported.</p>
+</blockquote>
+<h2 id="lexer-grammar-level-named-actions">Lexer grammar-level named actions</h2>
+<p><code>@lexer::header</code>, <code>@lexer::members</code>, and <code>@lexer::footer</code> are generated-C# source injection compatibility blocks for combined and lexer grammars only. They do not participate in parser-managed transactional execution beyond any ordinary fields they add to the existing generated execution context. <code>@lexer::members</code> is copied, hashed, and rolled back only to the same extent as other fields on that generated execution context; no separate lexer runtime state, lexer action buffering, lexer predicate execution, or complete ANTLR lexer transactional model is introduced. Parser-only grammars keep scoped <code>@lexer::*</code> actions unsupported because no lexer is generated.</p>
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/docs/parser/EmbeddedCodeTransactionalState.md/#L1" class="edit-link">Edit this page</a>
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

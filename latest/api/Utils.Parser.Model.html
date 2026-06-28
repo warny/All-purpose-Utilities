@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Namespace Utils.Parser.Model | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Namespace Utils.Parser.Model | omy.Utils Documentation ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="Utils.Parser.Model">
+
+  <h1 id="Utils_Parser_Model" data-uid="Utils.Parser.Model" class="text-break">Namespace Utils.Parser.Model</h1>
+  <div class="markdown level0 summary"></div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="markdown level0 remarks"></div>
+
+    <h3 id="classes">
+Classes
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Model.Alternation.html">Alternation</a></dt>
+      <dd><p>A set of mutually exclusive alternatives: <code>A | B | C</code>.
+This is the top-level content of every <a class="xref" href="Utils.Parser.Model.Rule.html">Rule</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Model.Alternative.html">Alternative</a></dt>
+      <dd><p>A single alternative inside an <a class="xref" href="Utils.Parser.Model.Alternation.html">Alternation</a>, with its priority,
+associativity, content, and optional label.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Model.AnyChar.html">AnyChar</a></dt>
+      <dd><p>Matches any single character (the <code>.</code> wildcard in lexer rules).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Model.CharSetMatch.html">CharSetMatch</a></dt>
+      <dd><p>Matches a single character that is (or is not) a member of an explicit set,
+e.g. <code>[a-zA-Z_]</code> or <code>[^0-9]</code>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Model.EffectiveGrammarOptions.html">EffectiveGrammarOptions</a></dt>
+      <dd><p>Represents normalized and runtime-consumable grammar options.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Model.EmbeddedAction.html">EmbeddedAction</a></dt>
+      <dd><p>An opaque action block embedded in the grammar, captured with its context.
+Label references (<code>$xxx</code>) are extracted from the raw code to allow
+later resolution without re-parsing the action text.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Model.GatingPredicate.html">GatingPredicate</a></dt>
+      <dd><p>A gating semantic predicate in ANTLR3 syntax: <code>{ condition }? =&gt;</code>.
+Retained for compatibility with grammars that still use this older form.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Model.GrammarAction.html">GrammarAction</a></dt>
+      <dd><p>Represents a named action block declared at grammar level,
+such as <code>@header { import ... }</code> or <code>@members { int count = 0; }</code>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Model.GrammarExtensionBinding.html">GrammarExtensionBinding</a></dt>
+      <dd><p>Binds a grammar declared <code>superClass</code> to runtime lexer extensions.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Model.GrammarImport.html">GrammarImport</a></dt>
+      <dd><p>Represents a grammar import directive: <code>import CommonLexer;</code>
+or an aliased import: <code>import alias=CommonLexer;</code>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Model.GrammarOptions.html">GrammarOptions</a></dt>
+      <dd><p>Represents the key/value pairs declared in an <code>options { ... }</code> block,
+such as <code>tokenVocab=MyLexer</code> or <code>superClass=MyBase</code>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Model.LabelRef.html">LabelRef</a></dt>
+      <dd><p>A reference to a labelled value inside action code: <code>$e.text</code>, <code>$value</code>, <code>$ctx.start</code>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Model.LeftRecursiveRuleInfo.html">LeftRecursiveRuleInfo</a></dt>
+      <dd><p>Describes a parser rule that uses direct left recursion and how its
+alternatives are split for seed parsing and left-push extension.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Model.LexerCommand.html">LexerCommand</a></dt>
+      <dd><p>A structured lexer command such as <code>-&gt; skip</code>, <code>-&gt; channel(HIDDEN)</code>,
+or <code>-&gt; pushMode(MyMode)</code>.
+Unlike <a class="xref" href="Utils.Parser.Model.EmbeddedAction.html">EmbeddedAction</a>, these commands have direct runtime semantics
+and are not opaque code.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Model.LexerMode.html">LexerMode</a></dt>
+      <dd><p>A named lexer mode containing an ordered list of lexer rules.
+The default mode is always named <code>DEFAULT_MODE</code>.
+Additional modes are declared via <code>mode NAME;</code> in the grammar.
+Rules are ordered by <a class="xref" href="Utils.Parser.Model.Rule.html#Utils_Parser_Model_Rule_DeclarationOrder">DeclarationOrder</a> to ensure correct
+maximal-munch priority during tokenization.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Model.LiteralMatch.html">LiteralMatch</a></dt>
+      <dd><p>Matches an exact literal string, e.g. <code>'class'</code> or <code>'=='</code>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Model.ModeSwitch.html">ModeSwitch</a></dt>
+      <dd><p>A lexer mode switch: <code>pushMode</code>, <code>popMode</code>, or <code>mode</code> directive.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Model.Negation.html">Negation</a></dt>
+      <dd><p>Negation of an element (<code>~expr</code>): matches any single token or character
+that does <em>not</em> match <a class="xref" href="Utils.Parser.Model.Negation.html#Utils_Parser_Model_Negation_Inner">Inner</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Model.ParserDefinition.html">ParserDefinition</a></dt>
+      <dd><p>Complete, immutable description of a grammar produced either by loading a <code>.g4</code>
+file through <code>Antlr4GrammarConverter</code> or by constructing the meta-grammar
+programmatically (as done in <code>Antlr4Grammar.Build()</code>).</p>
+<p>
+A <a class="xref" href="Utils.Parser.Model.ParserDefinition.html">ParserDefinition</a> is consumed by:
+<ul><li><a class="xref" href="Utils.Parser.Runtime.LexerEngine.html">LexerEngine</a> — to tokenize an input stream,</li><li><a class="xref" href="Utils.Parser.Runtime.ParserEngine.html">ParserEngine</a> — to build a parse tree.</li></ul>
+
+<p>After construction, call <code>RuleResolver.Resolve(definition)</code> to populate
+<a class="xref" href="Utils.Parser.Model.ParserDefinition.html#Utils_Parser_Model_ParserDefinition_AllRules">AllRules</a> and validate rule references.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Model.PrecedencePredicate.html">PrecedencePredicate</a></dt>
+      <dd><p>A precedence predicate of the form <code>{ precpred(_ctx, n) }?</code>,
+used by ANTLR4 to handle left-recursive rules.
+The numeric level is parsed from the raw code rather than stored verbatim.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Model.Quantifier.html">Quantifier</a></dt>
+      <dd><p>A quantified repetition: <code><em></em></code>, <code>+</code>, <code>?</code>, or <code>{n,m}</code>.
+<a class="xref" href="Utils.Parser.Model.Quantifier.html#Utils_Parser_Model_Quantifier_Greedy">Greedy</a> is <code>true</code> by default; setting it to <code>false</code>
+enables non-greedy matching (the <code>??</code>, <code>?</code>, <code>+?</code> suffixes).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Model.RangeMatch.html">RangeMatch</a></dt>
+      <dd><p>Matches any single character within an inclusive range, e.g. <code>'a'..'z'</code>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Model.Rule.html">Rule</a></dt>
+      <dd><p>A single grammar rule — either a lexer rule (upper-case name by convention)
+or a parser rule (lower-case name by convention).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Model.RuleCatchClause.html">RuleCatchClause</a></dt>
+      <dd><p>A parser rule catch clause preserved as passive metadata only.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Model.RuleContent.html">RuleContent</a></dt>
+      <dd><p>Abstract root for all grammar elements that can appear inside a rule body.
+Concrete subtypes fall into three categories:
+tokenizer content (character-level matching), composite structures
+(sequences, alternations, quantifiers), and meta-instructions
+(predicates, embedded actions, lexer commands).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Model.RuleExceptionMetadata.html">RuleExceptionMetadata</a></dt>
+      <dd><p>Parser rule exception metadata preserved without runtime exception semantics.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Model.RuleLabel.html">RuleLabel</a></dt>
+      <dd><p>A label attached to a rule reference inside a parser alternative.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Model.RuleLocal.html">RuleLocal</a></dt>
+      <dd><p>A parser rule local declaration preserved as passive metadata only.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Model.RuleOptions.html">RuleOptions</a></dt>
+      <dd><p>Key/value options attached to an individual rule:
+<code>options { greedy=false; }</code>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Model.RuleParameter.html">RuleParameter</a></dt>
+      <dd><p>A typed parameter declared on a parser rule:
+<code>rule[int x, String y]</code>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Model.RuleRef.html">RuleRef</a></dt>
+      <dd><p>A reference to another rule, either lexer or parser depending on context.
+Optionally carries a label (<code>x=child</code> or <code>xs+=child</code>) and raw call-site argument text
+preserved from <code>callee[...]</code> syntax.
+Labels and raw arguments are metadata only: they are not evaluated, not bound automatically,
+and do not populate invocation-frame parameters.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Model.RuleReturn.html">RuleReturn</a></dt>
+      <dd><p>A typed return value declared on a parser rule:
+<code>rule returns [int value]</code>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Model.Sequence.html">Sequence</a></dt>
+      <dd><p>An ordered sequence of grammar elements that must all match in order: <code>A B C</code>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Model.TokenizerContent.html">TokenizerContent</a></dt>
+      <dd><p>Base for all character-level match operations used inside lexer rules.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Model.ValidatingPredicate.html">ValidatingPredicate</a></dt>
+      <dd><p>A validating semantic predicate <code>{ condition }?</code> placed before an element.
+If the condition evaluates to <code>false</code> the enclosing alternative is rejected.</p>
+</dd>
+    </dl>
+    <h3 id="enums">
+Enums
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Model.ActionContext.html">ActionContext</a></dt>
+      <dd><p>Describes where in a grammar an embedded action or predicate was declared.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Model.ActionPosition.html">ActionPosition</a></dt>
+      <dd><p>Describes where relative to the surrounding element an action appears.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Model.Associativity.html">Associativity</a></dt>
+      <dd><p>Left/right/no associativity for an alternative, used when resolving
+left-recursive ambiguity.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Model.GrammarType.html">GrammarType</a></dt>
+      <dd><p>Indicates the kind of grammar declared in a <code>.g4</code> file.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Model.LexerCommandType.html">LexerCommandType</a></dt>
+      <dd><p>Identifies the kind of a structured lexer command.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Model.RuleKind.html">RuleKind</a></dt>
+      <dd><p>Identifies whether a rule belongs to the lexer or parser.</p>
+</dd>
+    </dl>
+
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

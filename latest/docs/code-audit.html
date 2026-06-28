@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Audit global du code — All-purpose-Utilities | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Audit global du code — All-purpose-Utilities | omy.Utils Documentation ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="../toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/blob/master/docs/code-audit.md/#L1">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+
+      <div class="content">
+        <div class="actionbar">
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="audit-global-du-code--all-purpose-utilities">Audit global du code — All-purpose-Utilities</h1>
+
+<p>Date: 2026-02-21
+Mise à jour: 2026-02-21</p>
+<h2 id="objectif-de-ce-document">Objectif de ce document</h2>
+<p>Ce document ne liste plus que les éléments <strong>restant à traiter</strong> après les actions déjà réalisées sur:</p>
+<ul>
+<li>la centralisation des métadonnées NuGet,</li>
+<li>la suppression du projet backup,</li>
+<li>la clarification du périmètre packable,</li>
+<li>l'adaptation du workflow de publication NuGet.</li>
+</ul>
+<h2 id="reste-à-faire">Reste à faire</h2>
+<h3 id="1-dette-technique-explicite-dans-utilsfonts">1) Dette technique explicite dans <code>Utils.Fonts</code></h3>
+<p>Des <code>TODO</code> indiquent des sous-tables non implémentées pour la lecture/écriture des tables de polices.</p>
+<p>Actions recommandées:</p>
+<ul>
+<li>créer des issues dédiées pour chaque TODO,</li>
+<li>documenter explicitement les limites actuelles dans <code>Utils.Fonts/README.md</code>,</li>
+<li>ajouter des tests de non-régression au moment de l'implémentation.</li>
+</ul>
+<h3 id="2-documentation-de-compatibilité-tfm">2) Documentation de compatibilité TFM</h3>
+<p>Les TFMs présents dans le dépôt sont <code>net8.0</code>, <code>net9.0</code>, <code>netstandard2.0</code> et <code>net8.0-windows</code>.</p>
+<p>Actions recommandées:</p>
+<ul>
+<li>publier une matrice de compatibilité claire par package dans <code>docs/getting-started.md</code>,</li>
+<li>distinguer explicitement les packages runtime, generators et projets applicatifs d'exemple,</li>
+<li>préciser la politique de support minimal côté consommateurs.</li>
+</ul>
+<h3 id="3-renforcement-qualité-ci--analyzers">3) Renforcement qualité CI / analyzers</h3>
+<p>Le dépôt gagnerait à homogénéiser les contrôles de qualité entre modules.</p>
+<p>Actions recommandées:</p>
+<ul>
+<li>activer/standardiser les analyzers .NET au niveau solution,</li>
+<li>définir une stratégie progressive pour transformer certains warnings en erreurs,</li>
+<li>ajouter un contrôle CI dédié aux conventions (docs + packaging + analyzers).</li>
+</ul>
+<h2 id="plan-proposé">Plan proposé</h2>
+<h3 id="court-terme-1-2-sprints">Court terme (1-2 sprints)</h3>
+<ul>
+<li>transformer les TODO critiques en tickets priorisés,</li>
+<li>compléter <code>docs/getting-started.md</code> avec une matrice TFM exploitable,</li>
+<li>ajouter un premier niveau de contrôle CI de conformité.</li>
+</ul>
+<h3 id="moyen-terme-1-2-mois">Moyen terme (1-2 mois)</h3>
+<ul>
+<li>harmoniser les règles analyzers à l'échelle de la solution,</li>
+<li>formaliser la politique de support par famille de packages.</li>
+</ul>
+<h3 id="long-terme">Long terme</h3>
+<ul>
+<li>suivre des indicateurs de dette technique et de qualité (stabilité build, warning trend, couverture ciblée).</li>
+</ul>
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/docs/code-audit.md/#L1" class="edit-link">Edit this page</a>
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

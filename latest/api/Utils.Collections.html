@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Namespace Utils.Collections | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Namespace Utils.Collections | omy.Utils Documentation ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="Utils.Collections">
+
+  <h1 id="Utils_Collections" data-uid="Utils.Collections" class="text-break">Namespace Utils.Collections</h1>
+  <div class="markdown level0 summary"></div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="markdown level0 remarks"></div>
+
+    <h3 id="classes">
+Classes
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Collections.CachedLoader-2.html">CachedLoader&lt;TKey, TValue&gt;</a></dt>
+      <dd><p>A class that provides a caching mechanism for loading resources. If a resource is not already loaded,
+it will be loaded and cached upon first access.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Collections.DictionaryExtensions.html">DictionaryExtensions</a></dt>
+      <dd><p>Provides thread-safe helper methods for working with <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.dictionary-2">Dictionary&lt;TKey, TValue&gt;</a> instances.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Collections.DictionaryMap-2.html">DictionaryMap&lt;K, V&gt;</a></dt>
+      <dd><p>Implementation of <a class="xref" href="Utils.Collections.IDictionaryMap-2.html">IDictionaryMap&lt;K, V&gt;</a> that wraps custom handlers for dictionary operations.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Collections.DoubleIndexedDictionary-2.html">DoubleIndexedDictionary&lt;T1, T2&gt;</a></dt>
+      <dd><p>Represents a dictionary that maintains two-way mappings between keys of type <code class="typeparamref">T1</code>
+and values of type <code class="typeparamref">T2</code>. This allows bidirectional access by both key and value.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Collections.EnumerableComparer-1.html">EnumerableComparer&lt;T&gt;</a></dt>
+      <dd><p>Compares two sequences of values of comparable types.
+Supports custom comparers and optimizations for <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1">IReadOnlyList&lt;T&gt;</a>
+and <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.span-1">Span&lt;T&gt;</a> where applicable.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Collections.EnumerableEqualityComparer-1.html">EnumerableEqualityComparer&lt;T&gt;</a></dt>
+      <dd><p>A comparer for enumerables that allows comparison of sequences
+based on custom or default equality logic for each element.</p>
+<p>If both sequences implement <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1">IReadOnlyList&lt;T&gt;</a>,
+the comparison first checks <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlycollection-1.count">Count</a> for an early exit.
+Uses <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.span-1">Span&lt;T&gt;</a> when applicable for performance.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Collections.EnumerableEx.html">EnumerableEx</a></dt>
+      <dd><p>Extension methods for working with <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable&lt;T&gt;</a> and related collections.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Collections.ForwardFusion-2.html">ForwardFusion&lt;T1, T2&gt;</a></dt>
+      <dd><p>Merges two sorted <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable&lt;T&gt;</a> collections based on the specified join type.
+The left list is considered the primary list in a left join, and vice versa for a right join.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Collections.IndexedList-2.html">IndexedList&lt;K, V&gt;</a></dt>
+      <dd><p>Indexed list.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Collections.LRUCache-2.html">LRUCache&lt;K, V&gt;</a></dt>
+      <dd><p>A Least Recently Used (LRU) cache implementation. This cache evicts the least recently accessed items when it reaches its capacity.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Collections.MappedDictionary-2.html">MappedDictionary&lt;K, V&gt;</a></dt>
+      <dd><p>A dictionary that uses a custom mapping for its operations. It allows customization of
+how the dictionary handles additions, removals, and value retrievals.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Collections.ReadOnlyDictionaryMap-2.html">ReadOnlyDictionaryMap&lt;K, V&gt;</a></dt>
+      <dd><p>Default implementation of <a class="xref" href="Utils.Collections.IReadOnlyDictionaryMap-2.html">IReadOnlyDictionaryMap&lt;K, V&gt;</a> that relies on delegate accessors.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Collections.ReadOnlyMappedDictionary-2.html">ReadOnlyMappedDictionary&lt;K, V&gt;</a></dt>
+      <dd><p>List whose source is defined by accessors.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Collections.SkipListDictionary-2.html">SkipListDictionary&lt;K, V&gt;</a></dt>
+      <dd><p>A dictionary whose keys are kept in sorted order using a <a class="xref" href="Utils.Collections.SkipList-1.html">SkipList&lt;T&gt;</a>
+as the underlying data structure. All keyed operations run in O(log n) time on average.
+Iteration yields entries in ascending key order.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Collections.SkipList-1.html">SkipList&lt;T&gt;</a></dt>
+      <dd><p>Represents a skip list, which is a probabilistic data structure that allows for fast search, insertion, and deletion operations.</p>
+</dd>
+    </dl>
+    <h3 id="structs">
+Structs
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Collections.Pack-1.html">Pack&lt;T&gt;</a></dt>
+      <dd><p>Represents a value and its consecutive repetition count (used in packing).</p>
+</dd>
+    </dl>
+    <h3 id="interfaces">
+Interfaces
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Collections.IDictionaryMap-2.html">IDictionaryMap&lt;K, V&gt;</a></dt>
+      <dd><p>Interface representing a modifiable map that supports dictionary operations.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Collections.IReadOnlyDictionaryMap-2.html">IReadOnlyDictionaryMap&lt;K, V&gt;</a></dt>
+      <dd><p>Defines accessor methods required to expose dictionary data without granting mutation capabilities.</p>
+</dd>
+    </dl>
+    <h3 id="enums">
+Enums
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Collections.JoinType.html">JoinType</a></dt>
+      <dd><p>Specifies the type of join operation.</p>
+</dd>
+    </dl>
+    <h3 id="delegates">
+Delegates
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Collections.CachedLoader-2.TryLoadValueDelegate.html">CachedLoader&lt;TKey, TValue&gt;.TryLoadValueDelegate</a></dt>
+      <dd><p>Represents a method that attempts to load a value associated with the specified key.</p>
+</dd>
+    </dl>
+
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

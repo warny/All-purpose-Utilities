@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Class GeoVector&lt;T&gt; | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Class GeoVector&lt;T&gt; | omy.Utils Documentation ">
+      
+      <meta name="description" content="Represents a vector of displacement on a spherical geodesic with a bearing (heading direction).">
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_Geography_Model_GeoVector_1.md&amp;value=---%0Auid%3A%20Utils.Geography.Model.GeoVector%601%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="Utils.Geography.Model.GeoVector`1">
+
+
+
+  <h1 id="Utils_Geography_Model_GeoVector_1" data-uid="Utils.Geography.Model.GeoVector`1" class="text-break">
+Class GeoVector&lt;T&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoVector.cs/#L13"><i class="bi bi-code-slash"></i></a>
+  </h1>
+
+  <div class="facts text-secondary">
+    <dl><dt>Namespace</dt><dd><a class="xref" href="Utils.html">Utils</a>.<a class="xref" href="Utils.Geography.html">Geography</a>.<a class="xref" href="Utils.Geography.Model.html">Model</a></dd></dl>
+  <dl><dt>Assembly</dt><dd>Utils.Geography.dll</dd></dl>
+  </div>
+
+  <div class="markdown summary"><p>Represents a vector of displacement on a spherical geodesic with a bearing (heading direction).</p>
+</div>
+  <div class="markdown conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public sealed class GeoVector&lt;T&gt; : GeoPoint&lt;T&gt;, IEquatable&lt;GeoPoint&lt;T&gt;&gt;, IFormattable, IEqualityOperators&lt;GeoPoint&lt;T&gt;, GeoPoint&lt;T&gt;, bool&gt;, IEquatable&lt;GeoVector&lt;T&gt;&gt;, IUnaryNegationOperators&lt;GeoVector&lt;T&gt;, GeoVector&lt;T&gt;&gt;, IEqualityOperators&lt;GeoVector&lt;T&gt;, GeoVector&lt;T&gt;, bool&gt; where T : struct, IFloatingPointIeee754&lt;T&gt;, IDivisionOperators&lt;T, T, T&gt;</code></pre>
+  </div>
+
+
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>The numeric type used for calculations, typically a floating point.</p>
+</dd>
+  </dl>
+
+  <dl class="typelist inheritance">
+    <dt>Inheritance</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
+      <div><a class="xref" href="Utils.Geography.Model.GeoPoint-1.html">GeoPoint</a>&lt;T&gt;</div>
+      <div><span class="xref">GeoVector&lt;T&gt;</span></div>
+    </dd>
+  </dl>
+
+  <dl class="typelist implements">
+    <dt>Implements</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a class="xref" href="Utils.Geography.Model.GeoPoint-1.html">GeoPoint</a>&lt;T&gt;&gt;</div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.iformattable">IFormattable</a></div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.iequalityoperators-3">IEqualityOperators</a>&lt;<a class="xref" href="Utils.Geography.Model.GeoPoint-1.html">GeoPoint</a>&lt;T&gt;, <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html">GeoPoint</a>&lt;T&gt;, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a>&gt;</div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a class="xref" href="Utils.Geography.Model.GeoVector-1.html">GeoVector</a>&lt;T&gt;&gt;</div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.iunarynegationoperators-2">IUnaryNegationOperators</a>&lt;<a class="xref" href="Utils.Geography.Model.GeoVector-1.html">GeoVector</a>&lt;T&gt;, <a class="xref" href="Utils.Geography.Model.GeoVector-1.html">GeoVector</a>&lt;T&gt;&gt;</div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.iequalityoperators-3">IEqualityOperators</a>&lt;<a class="xref" href="Utils.Geography.Model.GeoVector-1.html">GeoVector</a>&lt;T&gt;, <a class="xref" href="Utils.Geography.Model.GeoVector-1.html">GeoVector</a>&lt;T&gt;, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a>&gt;</div>
+    </dd>
+  </dl>
+
+
+  <dl class="typelist inheritedMembers">
+    <dt>Inherited Members</dt>
+    <dd>
+    <div>
+      <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html#Utils_Geography_Model_GeoPoint_1_MaxLatitude">GeoPoint&lt;T&gt;.MaxLatitude</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html#Utils_Geography_Model_GeoPoint_1_MinLatitude">GeoPoint&lt;T&gt;.MinLatitude</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html#Utils_Geography_Model_GeoPoint_1_Latitude">GeoPoint&lt;T&gt;.Latitude</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html#Utils_Geography_Model_GeoPoint_1_Longitude">GeoPoint&lt;T&gt;.Longitude</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html#Utils_Geography_Model_GeoPoint_1__">GeoPoint&lt;T&gt;.φ</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html#Utils_Geography_Model_GeoPoint_1__">GeoPoint&lt;T&gt;.λ</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html#Utils_Geography_Model_GeoPoint_1_AngleWith_Utils_Geography_Model_GeoPoint__0__">GeoPoint&lt;T&gt;.AngleWith(GeoPoint&lt;T&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html#Utils_Geography_Model_GeoPoint_1_Equals_Utils_Geography_Model_GeoPoint__0__">GeoPoint&lt;T&gt;.Equals(GeoPoint&lt;T&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html#Utils_Geography_Model_GeoPoint_1_ToString">GeoPoint&lt;T&gt;.ToString()</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html#Utils_Geography_Model_GeoPoint_1_ToString_System_String_">GeoPoint&lt;T&gt;.ToString(string)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html#Utils_Geography_Model_GeoPoint_1_TryParse_System_String_Utils_Geography_Model_GeoPoint__0___">GeoPoint&lt;T&gt;.TryParse(string, out GeoPoint&lt;T&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html#Utils_Geography_Model_GeoPoint_1_TryParse_System_String_System_Globalization_CultureInfo___Utils_Geography_Model_GeoPoint__0___">GeoPoint&lt;T&gt;.TryParse(string, CultureInfo[], out GeoPoint&lt;T&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html#Utils_Geography_Model_GeoPoint_1_TryParse_System_String_System_String_Utils_Geography_Model_GeoPoint__0___">GeoPoint&lt;T&gt;.TryParse(string, string, out GeoPoint&lt;T&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html#Utils_Geography_Model_GeoPoint_1_TryParse_System_String_System_String_System_Globalization_CultureInfo___Utils_Geography_Model_GeoPoint__0___">GeoPoint&lt;T&gt;.TryParse(string, string, CultureInfo[], out GeoPoint&lt;T&gt;)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html#Utils_Geography_Model_GeoPoint_1_Deconstruct__0___0__">GeoPoint&lt;T&gt;.Deconstruct(out T, out T)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)">object.Equals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
+    </div>
+  </dd></dl>
+
+  <dl class="typelist extensionMethods">
+    <dt>Extension Methods</dt>
+    <dd>
+  <div>
+      <a class="xref" href="Utils.Data.DataUtils.html#Utils_Data_DataUtils_ToDbValue_System_Object_">DataUtils.ToDbValue(object?)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Mathematics.MathEx.html#Utils_Mathematics_MathEx_Clamp__1___0___0___0_System_Collections_Generic_IComparer___0__">MathEx.Clamp&lt;T&gt;(T, T, T, IComparer&lt;T&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Failure__1___0_">FluentExtensions.Failure&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsEqualTo__2___0___1_">FluentExtensions.IsEqualTo&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterOrEqualsThan__2___0___1_">FluentExtensions.IsGreaterOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterThan__2___0___1_">FluentExtensions.IsGreaterThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsIn__1___0___0___">FluentExtensions.IsIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerOrEqualsThan__2___0___1_">FluentExtensions.IsLowerOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerThan__2___0___1_">FluentExtensions.IsLowerThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotIn__1___0___0___">FluentExtensions.IsNotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotNull__1___0_">FluentExtensions.IsNotNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNull__1___0_">FluentExtensions.IsNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Success__1___0_">FluentExtensions.Success&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Test__1___0_System_Func___0_System_Boolean__">FluentExtensions.Test&lt;T&gt;(T, Func&lt;T, bool&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_System_Boolean_System_Boolean_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T, bool, bool)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1____1_">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1____1_">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_In__1___0___0___">ObjectUtils.In&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_NotIn__1___0___0___">ObjectUtils.NotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustNotBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustNotBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Arg__1___0_System_String_">Validations.Arg&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ValueMustNotBeNull__1___0_System_String_">Validations.ValueMustNotBeNull&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Variable__1___0_System_String_">Validations.Variable&lt;T&gt;(T, string)</a>
+  </div>
+  </dd></dl>
+
+
+
+
+
+  <h2 class="section" id="constructors">Constructors
+</h2>
+
+
+  <a id="Utils_Geography_Model_GeoVector_1__ctor_" data-uid="Utils.Geography.Model.GeoVector`1.#ctor*"></a>
+
+  <h3 id="Utils_Geography_Model_GeoVector_1__ctor_System_String_System_Globalization_CultureInfo___" data-uid="Utils.Geography.Model.GeoVector`1.#ctor(System.String,System.Globalization.CultureInfo[])">
+  GeoVector(string, params CultureInfo[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoVector.cs/#L35"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Creates a <a class="xref" href="Utils.Geography.Model.GeoVector-1.html">GeoVector&lt;T&gt;</a> from a single string containing latitude, longitude, and bearing.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public GeoVector(string coordinates, params CultureInfo[] cultureInfos)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>coordinates</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>A string with three parts (latitude, longitude, bearing) separated by the culture's list separator.</p>
+</dd>
+    <dt><code>cultureInfos</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.globalization.cultureinfo">CultureInfo</a>[]</dt>
+    <dd><p>Optional cultures to parse; defaults to <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.globalization.cultureinfo.currentculture">CurrentCulture</a> and <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.globalization.cultureinfo.invariantculture">InvariantCulture</a>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown if parsing fails or the string is invalid.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Geography_Model_GeoVector_1__ctor_" data-uid="Utils.Geography.Model.GeoVector`1.#ctor*"></a>
+
+  <h3 id="Utils_Geography_Model_GeoVector_1__ctor_System_String_System_String__0_System_Globalization_CultureInfo___" data-uid="Utils.Geography.Model.GeoVector`1.#ctor(System.String,System.String,`0,System.Globalization.CultureInfo[])">
+  GeoVector(string, string, T, params CultureInfo[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoVector.cs/#L83"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Creates a <a class="xref" href="Utils.Geography.Model.GeoVector-1.html">GeoVector&lt;T&gt;</a> from string representations of latitude, longitude, and a numeric bearing.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public GeoVector(string latitudeString, string longitudeString, T bearing, params CultureInfo[] cultureInfos)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>latitudeString</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Latitude string.</p>
+</dd>
+    <dt><code>longitudeString</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Longitude string.</p>
+</dd>
+    <dt><code>bearing</code> <span class="xref">T</span></dt>
+    <dd><p>Bearing direction in degrees.</p>
+</dd>
+    <dt><code>cultureInfos</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.globalization.cultureinfo">CultureInfo</a>[]</dt>
+    <dd><p>Culture information used to parse the coordinates.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_GeoVector_1__ctor_" data-uid="Utils.Geography.Model.GeoVector`1.#ctor*"></a>
+
+  <h3 id="Utils_Geography_Model_GeoVector_1__ctor_Utils_Geography_Model_GeoPoint__0__Utils_Geography_Model_GeoPoint__0__" data-uid="Utils.Geography.Model.GeoVector`1.#ctor(Utils.Geography.Model.GeoPoint{`0},Utils.Geography.Model.GeoPoint{`0})">
+  GeoVector(GeoPoint&lt;T&gt;, GeoPoint&lt;T&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoVector.cs/#L58"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Creates a <a class="xref" href="Utils.Geography.Model.GeoVector-1.html">GeoVector&lt;T&gt;</a> from two geographic points, calculating the bearing from <code class="paramref">geoPoint</code> to <code class="paramref">destination</code>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public GeoVector(GeoPoint&lt;T&gt; geoPoint, GeoPoint&lt;T&gt; destination)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>geoPoint</code> <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html">GeoPoint</a>&lt;T&gt;</dt>
+    <dd><p>Start point.</p>
+</dd>
+    <dt><code>destination</code> <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html">GeoPoint</a>&lt;T&gt;</dt>
+    <dd><p>Destination point.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_GeoVector_1__ctor_" data-uid="Utils.Geography.Model.GeoVector`1.#ctor*"></a>
+
+  <h3 id="Utils_Geography_Model_GeoVector_1__ctor_Utils_Geography_Model_GeoPoint__0___0_" data-uid="Utils.Geography.Model.GeoVector`1.#ctor(Utils.Geography.Model.GeoPoint{`0},`0)">
+  GeoVector(GeoPoint&lt;T&gt;, T)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoVector.cs/#L47"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Creates a <a class="xref" href="Utils.Geography.Model.GeoVector-1.html">GeoVector&lt;T&gt;</a> from a <code class="paramref">geoPoint</code> plus a given <code class="paramref">bearing</code>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public GeoVector(GeoPoint&lt;T&gt; geoPoint, T bearing)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>geoPoint</code> <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html">GeoPoint</a>&lt;T&gt;</dt>
+    <dd><p>Base geographic point (latitude/longitude).</p>
+</dd>
+    <dt><code>bearing</code> <span class="xref">T</span></dt>
+    <dd><p>Heading direction in degrees.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_GeoVector_1__ctor_" data-uid="Utils.Geography.Model.GeoVector`1.#ctor*"></a>
+
+  <h3 id="Utils_Geography_Model_GeoVector_1__ctor__0__0__0_" data-uid="Utils.Geography.Model.GeoVector`1.#ctor(`0,`0,`0)">
+  GeoVector(T, T, T)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoVector.cs/#L70"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Creates a <a class="xref" href="Utils.Geography.Model.GeoVector-1.html">GeoVector&lt;T&gt;</a> from numeric latitude, longitude, and bearing.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public GeoVector(T latitude, T longitude, T bearing)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>latitude</code> <span class="xref">T</span></dt>
+    <dd><p>Latitude in degrees.</p>
+</dd>
+    <dt><code>longitude</code> <span class="xref">T</span></dt>
+    <dd><p>Longitude in degrees.</p>
+</dd>
+    <dt><code>bearing</code> <span class="xref">T</span></dt>
+    <dd><p>Heading direction in degrees.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <h2 class="section" id="properties">Properties
+</h2>
+
+
+  <a id="Utils_Geography_Model_GeoVector_1_Bearing_" data-uid="Utils.Geography.Model.GeoVector`1.Bearing*"></a>
+
+  <h3 id="Utils_Geography_Model_GeoVector_1_Bearing" data-uid="Utils.Geography.Model.GeoVector`1.Bearing">
+  Bearing
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoVector.cs/#L19"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Bearing in degrees relative to north, measured clockwise. Immutable.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public T Bearing { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><span class="xref">T</span></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_GeoVector_1___" data-uid="Utils.Geography.Model.GeoVector`1.θ*"></a>
+
+  <h3 id="Utils_Geography_Model_GeoVector_1__" data-uid="Utils.Geography.Model.GeoVector`1.θ">
+  θ
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoVector.cs/#L25"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Bearing in degrees relative to north, measured clockwise.
+This is an alias for the Bearing property.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public T θ { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><span class="xref">T</span></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h2 class="section" id="methods">Methods
+</h2>
+
+
+  <a id="Utils_Geography_Model_GeoVector_1_ComputeBearing_" data-uid="Utils.Geography.Model.GeoVector`1.ComputeBearing*"></a>
+
+  <h3 id="Utils_Geography_Model_GeoVector_1_ComputeBearing_Utils_Geography_Model_GeoPoint__0__Utils_Geography_Model_GeoPoint__0__" data-uid="Utils.Geography.Model.GeoVector`1.ComputeBearing(Utils.Geography.Model.GeoPoint{`0},Utils.Geography.Model.GeoPoint{`0})">
+  ComputeBearing(GeoPoint&lt;T&gt;, GeoPoint&lt;T&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoVector.cs/#L188"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Computes the bearing from point A to point B in degrees.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static T ComputeBearing(GeoPoint&lt;T&gt; A, GeoPoint&lt;T&gt; B)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>A</code> <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html">GeoPoint</a>&lt;T&gt;</dt>
+    <dd><p>Start point.</p>
+</dd>
+    <dt><code>B</code> <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html">GeoPoint</a>&lt;T&gt;</dt>
+    <dd><p>Destination point.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><span class="xref">T</span></dt>
+    <dd><p>The bearing from A to B, normalized to [0..360).</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_GeoVector_1_Deconstruct_" data-uid="Utils.Geography.Model.GeoVector`1.Deconstruct*"></a>
+
+  <h3 id="Utils_Geography_Model_GeoVector_1_Deconstruct__0___0___0__" data-uid="Utils.Geography.Model.GeoVector`1.Deconstruct(`0@,`0@,`0@)">
+  Deconstruct(out T, out T, out T)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoVector.cs/#L171"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Deconstructs the <a class="xref" href="Utils.Geography.Model.GeoVector-1.html">GeoVector&lt;T&gt;</a> into latitude, longitude, and bearing.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void Deconstruct(out T latitude, out T longitude, out T bearing)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>latitude</code> <span class="xref">T</span></dt>
+    <dd><p>Latitude.</p>
+</dd>
+    <dt><code>longitude</code> <span class="xref">T</span></dt>
+    <dd><p>Longitude.</p>
+</dd>
+    <dt><code>bearing</code> <span class="xref">T</span></dt>
+    <dd><p>Bearing, in degrees.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_GeoVector_1_Equals_" data-uid="Utils.Geography.Model.GeoVector`1.Equals*"></a>
+
+  <h3 id="Utils_Geography_Model_GeoVector_1_Equals_System_Object_" data-uid="Utils.Geography.Model.GeoVector`1.Equals(System.Object)">
+  Equals(object?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoVector.cs/#L461"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether the specified object is equal to the current object.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override bool Equals(object? obj)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>obj</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></dt>
+    <dd><p>The object to compare with the current object.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if the specified object  is equal to the current object; otherwise, <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_GeoVector_1_Equals_" data-uid="Utils.Geography.Model.GeoVector`1.Equals*"></a>
+
+  <h3 id="Utils_Geography_Model_GeoVector_1_Equals_Utils_Geography_Model_GeoVector__0__" data-uid="Utils.Geography.Model.GeoVector`1.Equals(Utils.Geography.Model.GeoVector{`0})">
+  Equals(GeoVector&lt;T&gt;?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoVector.cs/#L469"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Indicates whether the current object is equal to another object of the same type.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool Equals(GeoVector&lt;T&gt;? other)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>other</code> <a class="xref" href="Utils.Geography.Model.GeoVector-1.html">GeoVector</a>&lt;T&gt;</dt>
+    <dd><p>An object to compare with this object.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if the current object is equal to the <code class="paramref">other</code> parameter; otherwise, <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_GeoVector_1_GetHashCode_" data-uid="Utils.Geography.Model.GeoVector`1.GetHashCode*"></a>
+
+  <h3 id="Utils_Geography_Model_GeoVector_1_GetHashCode" data-uid="Utils.Geography.Model.GeoVector`1.GetHashCode">
+  GetHashCode()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoVector.cs/#L473"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Serves as the default hash function.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override int GetHashCode()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>A hash code for the current object.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_GeoVector_1_Intersections_" data-uid="Utils.Geography.Model.GeoVector`1.Intersections*"></a>
+
+  <h3 id="Utils_Geography_Model_GeoVector_1_Intersections_Utils_Geography_Model_GeoVector__0__" data-uid="Utils.Geography.Model.GeoVector`1.Intersections(Utils.Geography.Model.GeoVector{`0})">
+  Intersections(GeoVector&lt;T&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoVector.cs/#L347"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Calculates intersection points between two great circles defined by this <a class="xref" href="Utils.Geography.Model.GeoVector-1.html">GeoVector&lt;T&gt;</a>
+and the <code class="paramref">other</code> one.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public GeoPoint&lt;T&gt;[] Intersections(GeoVector&lt;T&gt; other)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>other</code> <a class="xref" href="Utils.Geography.Model.GeoVector-1.html">GeoVector</a>&lt;T&gt;</dt>
+    <dd><p>The second vector/great circle.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Geography.Model.GeoPoint-1.html">GeoPoint</a>&lt;T&gt;[]</dt>
+    <dd><p>An array of 2 intersection points, or an empty array if the circles are identical.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_GeoVector_1_Recenter_" data-uid="Utils.Geography.Model.GeoVector`1.Recenter*"></a>
+
+  <h3 id="Utils_Geography_Model_GeoVector_1_Recenter_Utils_Geography_Model_GeoVector__0__" data-uid="Utils.Geography.Model.GeoVector`1.Recenter(Utils.Geography.Model.GeoVector{`0})">
+  Recenter(GeoVector&lt;T&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoVector.cs/#L307"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns a new GeoVector such that:</p>
+<ul>
+<li>The current vector (&quot;this&quot;) is mapped to (0°, 0°, 0°).</li>
+<li>The new latitude = spherical distance (central angle) from &quot;this&quot; to &quot;other&quot;.</li>
+<li>The new longitude = difference in initial bearings, so that &quot;this.Bearing&quot; becomes 0°.</li>
+<li>The new bearing = difference in heading from &quot;this.Bearing&quot;.</li>
+</ul>
+<p>Change the reference so that the current vector is effectively the new origin with heading=0.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public GeoVector&lt;T&gt; Recenter(GeoVector&lt;T&gt; other)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>other</code> <a class="xref" href="Utils.Geography.Model.GeoVector-1.html">GeoVector</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Geography.Model.GeoVector-1.html">GeoVector</a>&lt;T&gt;</dt>
+    <dd><p>The point recentered with the current vector as new reference</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_GeoVector_1_ToString_" data-uid="Utils.Geography.Model.GeoVector`1.ToString*"></a>
+
+  <h3 id="Utils_Geography_Model_GeoVector_1_ToString_System_String_System_IFormatProvider_" data-uid="Utils.Geography.Model.GeoVector`1.ToString(System.String,System.IFormatProvider)">
+  ToString(string?, IFormatProvider?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoVector.cs/#L510"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns a string representation of the vector using the specified format and provider.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override string ToString(string? format, IFormatProvider? formatProvider)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>format</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Format string applied to latitude, longitude, and bearing.</p>
+</dd>
+    <dt><code>formatProvider</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.iformatprovider">IFormatProvider</a></dt>
+    <dd><p>Culture-specific format provider.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>A formatted string representing the vector.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_GeoVector_1_Travel_" data-uid="Utils.Geography.Model.GeoVector`1.Travel*"></a>
+
+  <h3 id="Utils_Geography_Model_GeoVector_1_Travel__0_" data-uid="Utils.Geography.Model.GeoVector`1.Travel(`0)">
+  Travel(T)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoVector.cs/#L217"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Calculates the resulting vector after traveling a certain angular distance from this vector’s position.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public GeoVector&lt;T&gt; Travel(T angle)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>angle</code> <span class="xref">T</span></dt>
+    <dd><p>Angular distance to travel (in degrees).</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Geography.Model.GeoVector-1.html">GeoVector</a>&lt;T&gt;</dt>
+    <dd><p>A new <a class="xref" href="Utils.Geography.Model.GeoVector-1.html">GeoVector&lt;T&gt;</a> representing the position and bearing after traveling.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <h2 class="section" id="operators">Operators
+</h2>
+
+
+  <a id="Utils_Geography_Model_GeoVector_1_op_Equality_" data-uid="Utils.Geography.Model.GeoVector`1.op_Equality*"></a>
+
+  <h3 id="Utils_Geography_Model_GeoVector_1_op_Equality_Utils_Geography_Model_GeoVector__0__Utils_Geography_Model_GeoVector__0__" data-uid="Utils.Geography.Model.GeoVector`1.op_Equality(Utils.Geography.Model.GeoVector{`0},Utils.Geography.Model.GeoVector{`0})">
+  operator ==(GeoVector&lt;T&gt;?, GeoVector&lt;T&gt;?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoVector.cs/#L495"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether two geographic vectors are equal.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator ==(GeoVector&lt;T&gt;? left, GeoVector&lt;T&gt;? right)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>left</code> <a class="xref" href="Utils.Geography.Model.GeoVector-1.html">GeoVector</a>&lt;T&gt;</dt>
+    <dd></dd>
+    <dt><code>right</code> <a class="xref" href="Utils.Geography.Model.GeoVector-1.html">GeoVector</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_GeoVector_1_op_Inequality_" data-uid="Utils.Geography.Model.GeoVector`1.op_Inequality*"></a>
+
+  <h3 id="Utils_Geography_Model_GeoVector_1_op_Inequality_Utils_Geography_Model_GeoVector__0__Utils_Geography_Model_GeoVector__0__" data-uid="Utils.Geography.Model.GeoVector`1.op_Inequality(Utils.Geography.Model.GeoVector{`0},Utils.Geography.Model.GeoVector{`0})">
+  operator !=(GeoVector&lt;T&gt;?, GeoVector&lt;T&gt;?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoVector.cs/#L501"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether two geographic vectors are not equal.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator !=(GeoVector&lt;T&gt;? left, GeoVector&lt;T&gt;? right)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>left</code> <a class="xref" href="Utils.Geography.Model.GeoVector-1.html">GeoVector</a>&lt;T&gt;</dt>
+    <dd></dd>
+    <dt><code>right</code> <a class="xref" href="Utils.Geography.Model.GeoVector-1.html">GeoVector</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_GeoVector_1_op_UnaryNegation_" data-uid="Utils.Geography.Model.GeoVector`1.op_UnaryNegation*"></a>
+
+  <h3 id="Utils_Geography_Model_GeoVector_1_op_UnaryNegation_Utils_Geography_Model_GeoVector__0__" data-uid="Utils.Geography.Model.GeoVector`1.op_UnaryNegation(Utils.Geography.Model.GeoVector{`0})">
+  operator -(GeoVector&lt;T&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoVector.cs/#L485"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Negation operator for <a class="xref" href="Utils.Geography.Model.GeoVector-1.html">GeoVector&lt;T&gt;</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static GeoVector&lt;T&gt; operator -(GeoVector&lt;T&gt; geoVector)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>geoVector</code> <a class="xref" href="Utils.Geography.Model.GeoVector-1.html">GeoVector</a>&lt;T&gt;</dt>
+    <dd><p>The vector to negate.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Geography.Model.GeoVector-1.html">GeoVector</a>&lt;T&gt;</dt>
+    <dd><p>A new <a class="xref" href="Utils.Geography.Model.GeoVector-1.html">GeoVector&lt;T&gt;</a> whose bearing is reversed 180° from <code class="paramref">geoVector</code>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoVector.cs/#L13" class="edit-link">Edit this page</a>
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

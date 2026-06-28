@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Class XmlDataProcessor | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Class XmlDataProcessor | omy.Utils Documentation ">
+      
+      <meta name="description" content="Abstract base class for XML-driven functionality. The class automatically calls methods based on  triggers (XPath expressions).">
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_XML_XmlDataProcessor.md&amp;value=---%0Auid%3A%20Utils.XML.XmlDataProcessor%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="Utils.XML.XmlDataProcessor">
+
+
+
+  <h1 id="Utils_XML_XmlDataProcessor" data-uid="Utils.XML.XmlDataProcessor" class="text-break">
+Class XmlDataProcessor  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Xml/XmlDataProcessor.cs/#L21"><i class="bi bi-code-slash"></i></a>
+  </h1>
+
+  <div class="facts text-secondary">
+    <dl><dt>Namespace</dt><dd><a class="xref" href="Utils.html">Utils</a>.<a class="xref" href="Utils.XML.html">XML</a></dd></dl>
+  <dl><dt>Assembly</dt><dd>Utils.XML.dll</dd></dl>
+  </div>
+
+  <div class="markdown summary"><p>Abstract base class for XML-driven functionality.
+The class automatically calls methods based on <a class="xref" href="Utils.XML.MatchAttribute.html">MatchAttribute</a> triggers (XPath expressions).</p>
+</div>
+  <div class="markdown conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public abstract class XmlDataProcessor</code></pre>
+  </div>
+
+
+
+
+  <dl class="typelist inheritance">
+    <dt>Inheritance</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
+      <div><span class="xref">XmlDataProcessor</span></div>
+    </dd>
+  </dl>
+
+
+
+  <dl class="typelist inheritedMembers">
+    <dt>Inherited Members</dt>
+    <dd>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)">object.Equals(object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)">object.Equals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gethashcode">object.GetHashCode()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone">object.MemberwiseClone()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.tostring">object.ToString()</a>
+    </div>
+  </dd></dl>
+
+  <dl class="typelist extensionMethods">
+    <dt>Extension Methods</dt>
+    <dd>
+  <div>
+      <a class="xref" href="Utils.Data.DataUtils.html#Utils_Data_DataUtils_ToDbValue_System_Object_">DataUtils.ToDbValue(object?)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Mathematics.MathEx.html#Utils_Mathematics_MathEx_Clamp__1___0___0___0_System_Collections_Generic_IComparer___0__">MathEx.Clamp&lt;T&gt;(T, T, T, IComparer&lt;T&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Failure__1___0_">FluentExtensions.Failure&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsEqualTo__2___0___1_">FluentExtensions.IsEqualTo&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterOrEqualsThan__2___0___1_">FluentExtensions.IsGreaterOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterThan__2___0___1_">FluentExtensions.IsGreaterThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsIn__1___0___0___">FluentExtensions.IsIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerOrEqualsThan__2___0___1_">FluentExtensions.IsLowerOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerThan__2___0___1_">FluentExtensions.IsLowerThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotIn__1___0___0___">FluentExtensions.IsNotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotNull__1___0_">FluentExtensions.IsNotNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNull__1___0_">FluentExtensions.IsNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Success__1___0_">FluentExtensions.Success&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Test__1___0_System_Func___0_System_Boolean__">FluentExtensions.Test&lt;T&gt;(T, Func&lt;T, bool&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_System_Boolean_System_Boolean_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T, bool, bool)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1____1_">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1____1_">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_In__1___0___0___">ObjectUtils.In&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_NotIn__1___0___0___">ObjectUtils.NotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustNotBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustNotBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Arg__1___0_System_String_">Validations.Arg&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ValueMustNotBeNull__1___0_System_String_">Validations.ValueMustNotBeNull&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Variable__1___0_System_String_">Validations.Variable&lt;T&gt;(T, string)</a>
+  </div>
+  </dd></dl>
+
+
+
+  <h2 id="Utils_XML_XmlDataProcessor_remarks">Remarks</h2>
+  <div class="markdown level0 remarks"><p>Derive from this class to define XML-processing logic. Annotate your handler methods
+with <a class="xref" href="Utils.XML.MatchAttribute.html">MatchAttribute</a> to match specific XPath expressions, and optionally
+use <a class="xref" href="Utils.XML.XmlNamespaceAttribute.html">XmlNamespaceAttribute</a> at the class level to register namespace prefixes.</p>
+</div>
+
+
+  <h2 class="section" id="constructors">Constructors
+</h2>
+
+
+  <a id="Utils_XML_XmlDataProcessor__ctor_" data-uid="Utils.XML.XmlDataProcessor.#ctor*"></a>
+
+  <h3 id="Utils_XML_XmlDataProcessor__ctor" data-uid="Utils.XML.XmlDataProcessor.#ctor">
+  XmlDataProcessor()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Xml/XmlDataProcessor.cs/#L88"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Initializes the <a class="xref" href="Utils.XML.XmlDataProcessor.html">XmlDataProcessor</a>, sets up namespace management, and prepares method triggers
+based on <a class="xref" href="Utils.XML.MatchAttribute.html">MatchAttribute</a> usage.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected XmlDataProcessor()</code></pre>
+  </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <h2 class="section" id="properties">Properties
+</h2>
+
+
+  <a id="Utils_XML_XmlDataProcessor_Current_" data-uid="Utils.XML.XmlDataProcessor.Current*"></a>
+
+  <h3 id="Utils_XML_XmlDataProcessor_Current" data-uid="Utils.XML.XmlDataProcessor.Current">
+  Current
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Xml/XmlDataProcessor.cs/#L36"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>The current XML node being processed.
+This is updated internally while methods are being invoked.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected XPathNavigator Current { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.xml.xpath.xpathnavigator">XPathNavigator</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_XML_XmlDataProcessor_NamespaceManager_" data-uid="Utils.XML.XmlDataProcessor.NamespaceManager*"></a>
+
+  <h3 id="Utils_XML_XmlDataProcessor_NamespaceManager" data-uid="Utils.XML.XmlDataProcessor.NamespaceManager">
+  NamespaceManager
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Xml/XmlDataProcessor.cs/#L30"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Manages XML namespaces for the XPath expressions.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public XmlNamespaceManager NamespaceManager { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.xml.xmlnamespacemanager">XmlNamespaceManager</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+  <h4 class="section" id="Utils_XML_XmlDataProcessor_NamespaceManager_remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Populate this using <a class="xref" href="Utils.XML.XmlNamespaceAttribute.html">XmlNamespaceAttribute</a> or manually by adding calls to
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.xml.xmlnamespacemanager.addnamespace">AddNamespace(string, string)</a>.</p>
+</div>
+
+
+
+
+  <h2 class="section" id="methods">Methods
+</h2>
+
+
+  <a id="Utils_XML_XmlDataProcessor_Apply_" data-uid="Utils.XML.XmlDataProcessor.Apply*"></a>
+
+  <h3 id="Utils_XML_XmlDataProcessor_Apply_System_String_System_Object___" data-uid="Utils.XML.XmlDataProcessor.Apply(System.String,System.Object[])">
+  Apply(string, params object[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Xml/XmlDataProcessor.cs/#L137"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Evaluates the specified <code class="paramref">xPath</code> string from the current node
+and invokes any matching handler methods on each resulting node.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected void Apply(string xPath, params object[] parameters)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>xPath</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>The XPath string to evaluate.</p>
+</dd>
+    <dt><code>parameters</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a>[]</dt>
+    <dd><p>Parameters passed to the invoked methods.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_XML_XmlDataProcessor_Apply_" data-uid="Utils.XML.XmlDataProcessor.Apply*"></a>
+
+  <h3 id="Utils_XML_XmlDataProcessor_Apply_System_Xml_XPath_XPathExpression_System_Object___" data-uid="Utils.XML.XmlDataProcessor.Apply(System.Xml.XPath.XPathExpression,System.Object[])">
+  Apply(XPathExpression, params object[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Xml/XmlDataProcessor.cs/#L125"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Evaluates the specified compiled <code class="paramref">xPath</code> from the current node
+and invokes any matching handler methods on each resulting node.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected void Apply(XPathExpression xPath, params object[] parameters)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>xPath</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.xml.xpath.xpathexpression">XPathExpression</a></dt>
+    <dd><p>The pre-compiled XPath expression.</p>
+</dd>
+    <dt><code>parameters</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a>[]</dt>
+    <dd><p>Parameters passed to the invoked methods.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_XML_XmlDataProcessor_Apply_" data-uid="Utils.XML.XmlDataProcessor.Apply*"></a>
+
+  <h3 id="Utils_XML_XmlDataProcessor_Apply_System_Xml_XPath_XPathNavigator_System_Object___" data-uid="Utils.XML.XmlDataProcessor.Apply(System.Xml.XPath.XPathNavigator,System.Object[])">
+  Apply(XPathNavigator, params object[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Xml/XmlDataProcessor.cs/#L148"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Invokes any matching handler method(s) on the single <code class="paramref">node</code>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected void Apply(XPathNavigator node, params object[] parameters)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>node</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.xml.xpath.xpathnavigator">XPathNavigator</a></dt>
+    <dd><p>The XML node to process.</p>
+</dd>
+    <dt><code>parameters</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a>[]</dt>
+    <dd><p>Parameters passed to the invoked methods.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_XML_XmlDataProcessor_Apply_" data-uid="Utils.XML.XmlDataProcessor.Apply*"></a>
+
+  <h3 id="Utils_XML_XmlDataProcessor_Apply_System_Xml_XPath_XPathNavigator_System_String_System_Object___" data-uid="Utils.XML.XmlDataProcessor.Apply(System.Xml.XPath.XPathNavigator,System.String,System.Object[])">
+  Apply(XPathNavigator, string, params object[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Xml/XmlDataProcessor.cs/#L173"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Evaluates the specified <code class="paramref">xPath</code> string from the given <code class="paramref">node</code>
+and invokes any matching handler methods on each resulting node.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected void Apply(XPathNavigator node, string xPath, params object[] parameters)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>node</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.xml.xpath.xpathnavigator">XPathNavigator</a></dt>
+    <dd><p>The starting node.</p>
+</dd>
+    <dt><code>xPath</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>XPath string to evaluate.</p>
+</dd>
+    <dt><code>parameters</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a>[]</dt>
+    <dd><p>Parameters passed to the invoked methods.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_XML_XmlDataProcessor_Apply_" data-uid="Utils.XML.XmlDataProcessor.Apply*"></a>
+
+  <h3 id="Utils_XML_XmlDataProcessor_Apply_System_Xml_XPath_XPathNavigator_System_Xml_XPath_XPathExpression_System_Object___" data-uid="Utils.XML.XmlDataProcessor.Apply(System.Xml.XPath.XPathNavigator,System.Xml.XPath.XPathExpression,System.Object[])">
+  Apply(XPathNavigator, XPathExpression, params object[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Xml/XmlDataProcessor.cs/#L160"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Evaluates the specified pre-compiled <code class="paramref">xPath</code> from the given <code class="paramref">node</code>
+and invokes any matching handler methods on each resulting node.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected void Apply(XPathNavigator node, XPathExpression xPath, params object[] parameters)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>node</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.xml.xpath.xpathnavigator">XPathNavigator</a></dt>
+    <dd><p>The starting node.</p>
+</dd>
+    <dt><code>xPath</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.xml.xpath.xpathexpression">XPathExpression</a></dt>
+    <dd><p>A pre-compiled XPath expression.</p>
+</dd>
+    <dt><code>parameters</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a>[]</dt>
+    <dd><p>Parameters passed to the invoked methods.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_XML_XmlDataProcessor_CreateExpression_" data-uid="Utils.XML.XmlDataProcessor.CreateExpression*"></a>
+
+  <h3 id="Utils_XML_XmlDataProcessor_CreateExpression_System_String_" data-uid="Utils.XML.XmlDataProcessor.CreateExpression(System.String)">
+  CreateExpression(string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Xml/XmlDataProcessor.cs/#L116"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Creates and compiles an <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.xml.xpath.xpathexpression">XPathExpression</a> using the current <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.xml.xmlnamespacemanager">XmlNamespaceManager</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected XPathExpression CreateExpression(string xPath)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>xPath</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>The XPath string to be compiled.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.xml.xpath.xpathexpression">XPathExpression</a></dt>
+    <dd><p>A compiled <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.xml.xpath.xpathexpression">XPathExpression</a>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_XML_XmlDataProcessor_GetNodes_" data-uid="Utils.XML.XmlDataProcessor.GetNodes*"></a>
+
+  <h3 id="Utils_XML_XmlDataProcessor_GetNodes_System_String_" data-uid="Utils.XML.XmlDataProcessor.GetNodes(System.String)">
+  GetNodes(string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Xml/XmlDataProcessor.cs/#L192"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Retrieves nodes matching the specified <code class="paramref">xPath</code> from the current node.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected XPathNodeIterator GetNodes(string xPath)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>xPath</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>The XPath string to evaluate.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.xml.xpath.xpathnodeiterator">XPathNodeIterator</a></dt>
+    <dd><p>An <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.xml.xpath.xpathnodeiterator">XPathNodeIterator</a> over the matching nodes.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_XML_XmlDataProcessor_GetNodes_" data-uid="Utils.XML.XmlDataProcessor.GetNodes*"></a>
+
+  <h3 id="Utils_XML_XmlDataProcessor_GetNodes_System_Xml_XPath_XPathExpression_" data-uid="Utils.XML.XmlDataProcessor.GetNodes(System.Xml.XPath.XPathExpression)">
+  GetNodes(XPathExpression)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Xml/XmlDataProcessor.cs/#L184"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Retrieves nodes matching the specified pre-compiled <code class="paramref">xPath</code> from the current node.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected XPathNodeIterator GetNodes(XPathExpression xPath)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>xPath</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.xml.xpath.xpathexpression">XPathExpression</a></dt>
+    <dd><p>The compiled XPath expression.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.xml.xpath.xpathnodeiterator">XPathNodeIterator</a></dt>
+    <dd><p>An <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.xml.xpath.xpathnodeiterator">XPathNodeIterator</a> over the matching nodes.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_XML_XmlDataProcessor_Read_" data-uid="Utils.XML.XmlDataProcessor.Read*"></a>
+
+  <h3 id="Utils_XML_XmlDataProcessor_Read_System_IO_Stream_" data-uid="Utils.XML.XmlDataProcessor.Read(System.IO.Stream)">
+  Read(Stream)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Xml/XmlDataProcessor.cs/#L252"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Reads and processes an XML document from the specified <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void Read(Stream stream)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>stream</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a></dt>
+    <dd><p>The <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a> containing the XML document.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_XML_XmlDataProcessor_Read_" data-uid="Utils.XML.XmlDataProcessor.Read*"></a>
+
+  <h3 id="Utils_XML_XmlDataProcessor_Read_System_String_" data-uid="Utils.XML.XmlDataProcessor.Read(System.String)">
+  Read(string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Xml/XmlDataProcessor.cs/#L227"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Reads and processes an XML document from the specified URI path.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">[Obsolete(&quot;Read(string) keeps legacy XML reader behavior. Use ReadSecure(string) for untrusted XML sources.&quot;, false)]
+public void Read(string uri)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>uri</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>The URI to the XML document.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section" id="Utils_XML_XmlDataProcessor_Read_System_String__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>This legacy entry point keeps the historical behavior for backward compatibility.
+For untrusted sources, prefer <a class="xref" href="Utils.XML.XmlDataProcessor.html#Utils_XML_XmlDataProcessor_ReadSecure_System_String_">ReadSecure(string)</a> which enforces secure reader settings.</p>
+</div>
+
+
+
+
+  <a id="Utils_XML_XmlDataProcessor_Read_" data-uid="Utils.XML.XmlDataProcessor.Read*"></a>
+
+  <h3 id="Utils_XML_XmlDataProcessor_Read_System_Xml_XPath_XPathNavigator_" data-uid="Utils.XML.XmlDataProcessor.Read(System.Xml.XPath.XPathNavigator)">
+  Read(XPathNavigator)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Xml/XmlDataProcessor.cs/#L212"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Reads and processes an XML document from a given <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.xml.xpath.xpathnavigator">XPathNavigator</a>.
+Invokes the <a class="xref" href="Utils.XML.XmlDataProcessor.html#Utils_XML_XmlDataProcessor_Root">Root()</a> method (or any other triggers matching &quot;/&quot;) on the root node.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void Read(XPathNavigator navigator)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>navigator</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.xml.xpath.xpathnavigator">XPathNavigator</a></dt>
+    <dd><p>The <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.xml.xpath.xpathnavigator">XPathNavigator</a> to process.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_XML_XmlDataProcessor_Read_" data-uid="Utils.XML.XmlDataProcessor.Read*"></a>
+
+  <h3 id="Utils_XML_XmlDataProcessor_Read_System_Xml_XmlReader_" data-uid="Utils.XML.XmlDataProcessor.Read(System.Xml.XmlReader)">
+  Read(XmlReader)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Xml/XmlDataProcessor.cs/#L259"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Reads and processes an XML document from the specified <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.xml.xmlreader">XmlReader</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void Read(XmlReader reader)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>reader</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.xml.xmlreader">XmlReader</a></dt>
+    <dd><p>The <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.xml.xmlreader">XmlReader</a> positioned at the start of the XML document.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_XML_XmlDataProcessor_ReadSecure_" data-uid="Utils.XML.XmlDataProcessor.ReadSecure*"></a>
+
+  <h3 id="Utils_XML_XmlDataProcessor_ReadSecure_System_String_" data-uid="Utils.XML.XmlDataProcessor.ReadSecure(System.String)">
+  ReadSecure(string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Xml/XmlDataProcessor.cs/#L239"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Reads and processes an XML document from the specified URI path using hardened parser settings.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void ReadSecure(string uri)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>uri</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>The URI to the XML document.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section" id="Utils_XML_XmlDataProcessor_ReadSecure_System_String__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>This method disables DTD processing, clears the XML resolver, and limits entity expansion
+to reduce XML external entity and expansion attacks when processing untrusted inputs.</p>
+</div>
+
+
+
+
+  <a id="Utils_XML_XmlDataProcessor_Root_" data-uid="Utils.XML.XmlDataProcessor.Root*"></a>
+
+  <h3 id="Utils_XML_XmlDataProcessor_Root" data-uid="Utils.XML.XmlDataProcessor.Root">
+  Root()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Xml/XmlDataProcessor.cs/#L281"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Abstract method that gets invoked for the XML root (&quot;/&quot;).
+Derived classes must implement this to handle root-level logic.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">[Match(&quot;/&quot;)]
+protected abstract void Root()</code></pre>
+  </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_XML_XmlDataProcessor_ValueOf_" data-uid="Utils.XML.XmlDataProcessor.ValueOf*"></a>
+
+  <h3 id="Utils_XML_XmlDataProcessor_ValueOf_System_String_" data-uid="Utils.XML.XmlDataProcessor.ValueOf(System.String)">
+  ValueOf(string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Xml/XmlDataProcessor.cs/#L201"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns the value of the current node, or the node matched by
+<code class="paramref">xPath</code> (if specified).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected string ValueOf(string xPath = &quot;.&quot;)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>xPath</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>An optional XPath string to evaluate (defaults to &quot;.&quot;).</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>The textual value of the matching node, or <code>null</code> if no match is found.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Xml/XmlDataProcessor.cs/#L21" class="edit-link">Edit this page</a>
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

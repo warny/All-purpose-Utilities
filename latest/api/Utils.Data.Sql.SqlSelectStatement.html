@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Class SqlSelectStatement | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Class SqlSelectStatement | omy.Utils Documentation ">
+      
+      <meta name="description" content="Represents a parsed SELECT statement.">
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_Data_Sql_SqlSelectStatement.md&amp;value=---%0Auid%3A%20Utils.Data.Sql.SqlSelectStatement%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="Utils.Data.Sql.SqlSelectStatement">
+
+
+
+  <h1 id="Utils_Data_Sql_SqlSelectStatement" data-uid="Utils.Data.Sql.SqlSelectStatement" class="text-break">
+Class SqlSelectStatement  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L292"><i class="bi bi-code-slash"></i></a>
+  </h1>
+
+  <div class="facts text-secondary">
+    <dl><dt>Namespace</dt><dd><a class="xref" href="Utils.html">Utils</a>.<a class="xref" href="Utils.Data.html">Data</a>.<a class="xref" href="Utils.Data.Sql.html">Sql</a></dd></dl>
+  <dl><dt>Assembly</dt><dd>Utils.Data.dll</dd></dl>
+  </div>
+
+  <div class="markdown summary"><p>Represents a parsed SELECT statement.</p>
+</div>
+  <div class="markdown conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public sealed class SqlSelectStatement : SqlStatement</code></pre>
+  </div>
+
+
+
+
+  <dl class="typelist inheritance">
+    <dt>Inheritance</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
+      <div><a class="xref" href="Utils.Data.Sql.SqlStatement.html">SqlStatement</a></div>
+      <div><span class="xref">SqlSelectStatement</span></div>
+    </dd>
+  </dl>
+
+
+
+  <dl class="typelist inheritedMembers">
+    <dt>Inherited Members</dt>
+    <dd>
+    <div>
+      <a class="xref" href="Utils.Data.Sql.SqlStatement.html#Utils_Data_Sql_SqlStatement_Segments">SqlStatement.Segments</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Data.Sql.SqlStatement.html#Utils_Data_Sql_SqlStatement_SyntaxOptions">SqlStatement.SyntaxOptions</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Data.Sql.SqlStatement.html#Utils_Data_Sql_SqlStatement_WithClause">SqlStatement.WithClause</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Data.Sql.SqlStatement.html#Utils_Data_Sql_SqlStatement_EnumerateStatements">SqlStatement.EnumerateStatements()</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Data.Sql.SqlStatement.html#Utils_Data_Sql_SqlStatement_ToSql_Utils_Data_Sql_SqlFormattingOptions_">SqlStatement.ToSql(SqlFormattingOptions)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)">object.Equals(object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)">object.Equals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gethashcode">object.GetHashCode()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.tostring">object.ToString()</a>
+    </div>
+  </dd></dl>
+
+  <dl class="typelist extensionMethods">
+    <dt>Extension Methods</dt>
+    <dd>
+  <div>
+      <a class="xref" href="Utils.Data.DataUtils.html#Utils_Data_DataUtils_ToDbValue_System_Object_">DataUtils.ToDbValue(object?)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Mathematics.MathEx.html#Utils_Mathematics_MathEx_Clamp__1___0___0___0_System_Collections_Generic_IComparer___0__">MathEx.Clamp&lt;T&gt;(T, T, T, IComparer&lt;T&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Failure__1___0_">FluentExtensions.Failure&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsEqualTo__2___0___1_">FluentExtensions.IsEqualTo&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterOrEqualsThan__2___0___1_">FluentExtensions.IsGreaterOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterThan__2___0___1_">FluentExtensions.IsGreaterThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsIn__1___0___0___">FluentExtensions.IsIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerOrEqualsThan__2___0___1_">FluentExtensions.IsLowerOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerThan__2___0___1_">FluentExtensions.IsLowerThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotIn__1___0___0___">FluentExtensions.IsNotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotNull__1___0_">FluentExtensions.IsNotNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNull__1___0_">FluentExtensions.IsNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Success__1___0_">FluentExtensions.Success&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Test__1___0_System_Func___0_System_Boolean__">FluentExtensions.Test&lt;T&gt;(T, Func&lt;T, bool&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_System_Boolean_System_Boolean_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T, bool, bool)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1____1_">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1____1_">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_In__1___0___0___">ObjectUtils.In&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_NotIn__1___0___0___">ObjectUtils.NotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustNotBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustNotBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Arg__1___0_System_String_">Validations.Arg&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ValueMustNotBeNull__1___0_System_String_">Validations.ValueMustNotBeNull&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Variable__1___0_System_String_">Validations.Variable&lt;T&gt;(T, string)</a>
+  </div>
+  </dd></dl>
+
+
+
+
+
+  <h2 class="section" id="constructors">Constructors
+</h2>
+
+
+  <a id="Utils_Data_Sql_SqlSelectStatement__ctor_" data-uid="Utils.Data.Sql.SqlSelectStatement.#ctor*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlSelectStatement__ctor_Utils_Data_Sql_SqlSegment_Utils_Data_Sql_SqlSegment_Utils_Data_Sql_SqlSegment_Utils_Data_Sql_SqlSegment_Utils_Data_Sql_SqlSegment_Utils_Data_Sql_SqlSegment_Utils_Data_Sql_SqlSegment_Utils_Data_Sql_SqlSegment_Utils_Data_Sql_SqlSegment_Utils_Data_Sql_WithClause_System_Boolean_" data-uid="Utils.Data.Sql.SqlSelectStatement.#ctor(Utils.Data.Sql.SqlSegment,Utils.Data.Sql.SqlSegment,Utils.Data.Sql.SqlSegment,Utils.Data.Sql.SqlSegment,Utils.Data.Sql.SqlSegment,Utils.Data.Sql.SqlSegment,Utils.Data.Sql.SqlSegment,Utils.Data.Sql.SqlSegment,Utils.Data.Sql.SqlSegment,Utils.Data.Sql.WithClause,System.Boolean)">
+  SqlSelectStatement(SqlSegment, SqlSegment?, SqlSegment?, SqlSegment?, SqlSegment?, SqlSegment?, SqlSegment?, SqlSegment?, SqlSegment?, WithClause?, bool)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L327"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Data.Sql.SqlSelectStatement.html">SqlSelectStatement</a> class.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SqlSelectStatement(SqlSegment select, SqlSegment? from, SqlSegment? where, SqlSegment? groupBy, SqlSegment? having, SqlSegment? orderBy, SqlSegment? limit, SqlSegment? offset, SqlSegment? tail, WithClause? withClause, bool isDistinct)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>select</code> <a class="xref" href="Utils.Data.Sql.SqlSegment.html">SqlSegment</a></dt>
+    <dd><p>The SELECT segment.</p>
+</dd>
+    <dt><code>from</code> <a class="xref" href="Utils.Data.Sql.SqlSegment.html">SqlSegment</a></dt>
+    <dd><p>The FROM segment.</p>
+</dd>
+    <dt><code>where</code> <a class="xref" href="Utils.Data.Sql.SqlSegment.html">SqlSegment</a></dt>
+    <dd><p>The WHERE segment.</p>
+</dd>
+    <dt><code>groupBy</code> <a class="xref" href="Utils.Data.Sql.SqlSegment.html">SqlSegment</a></dt>
+    <dd><p>The GROUP BY segment.</p>
+</dd>
+    <dt><code>having</code> <a class="xref" href="Utils.Data.Sql.SqlSegment.html">SqlSegment</a></dt>
+    <dd><p>The HAVING segment.</p>
+</dd>
+    <dt><code>orderBy</code> <a class="xref" href="Utils.Data.Sql.SqlSegment.html">SqlSegment</a></dt>
+    <dd><p>The ORDER BY segment.</p>
+</dd>
+    <dt><code>limit</code> <a class="xref" href="Utils.Data.Sql.SqlSegment.html">SqlSegment</a></dt>
+    <dd><p>The LIMIT segment.</p>
+</dd>
+    <dt><code>offset</code> <a class="xref" href="Utils.Data.Sql.SqlSegment.html">SqlSegment</a></dt>
+    <dd><p>The OFFSET segment.</p>
+</dd>
+    <dt><code>tail</code> <a class="xref" href="Utils.Data.Sql.SqlSegment.html">SqlSegment</a></dt>
+    <dd><p>Additional segments such as UNION clauses.</p>
+</dd>
+    <dt><code>withClause</code> <a class="xref" href="Utils.Data.Sql.WithClause.html">WithClause</a></dt>
+    <dd><p>Optional CTE definitions.</p>
+</dd>
+    <dt><code>isDistinct</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p>Indicates whether the SELECT statement is distinct.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <h2 class="section" id="properties">Properties
+</h2>
+
+
+  <a id="Utils_Data_Sql_SqlSelectStatement_From_" data-uid="Utils.Data.Sql.SqlSelectStatement.From*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlSelectStatement_From" data-uid="Utils.Data.Sql.SqlSelectStatement.From">
+  From
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L397"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the FROM segment describing the data sources.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SqlSegment? From { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Data.Sql.SqlSegment.html">SqlSegment</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Data_Sql_SqlSelectStatement_FromPart_" data-uid="Utils.Data.Sql.SqlSelectStatement.FromPart*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlSelectStatement_FromPart" data-uid="Utils.Data.Sql.SqlSelectStatement.FromPart">
+  FromPart
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L402"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the FROM clause represented as a typed part.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public FromPart? FromPart { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Data.Sql.FromPart.html">FromPart</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Data_Sql_SqlSelectStatement_GroupBy_" data-uid="Utils.Data.Sql.SqlSelectStatement.GroupBy*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlSelectStatement_GroupBy" data-uid="Utils.Data.Sql.SqlSelectStatement.GroupBy">
+  GroupBy
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L417"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the GROUP BY segment.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SqlSegment? GroupBy { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Data.Sql.SqlSegment.html">SqlSegment</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Data_Sql_SqlSelectStatement_GroupByPart_" data-uid="Utils.Data.Sql.SqlSelectStatement.GroupByPart*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlSelectStatement_GroupByPart" data-uid="Utils.Data.Sql.SqlSelectStatement.GroupByPart">
+  GroupByPart
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L422"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the GROUP BY clause represented as a typed part.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public GroupByPart? GroupByPart { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Data.Sql.GroupByPart.html">GroupByPart</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Data_Sql_SqlSelectStatement_Having_" data-uid="Utils.Data.Sql.SqlSelectStatement.Having*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlSelectStatement_Having" data-uid="Utils.Data.Sql.SqlSelectStatement.Having">
+  Having
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L427"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the HAVING segment.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SqlSegment? Having { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Data.Sql.SqlSegment.html">SqlSegment</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Data_Sql_SqlSelectStatement_HavingPart_" data-uid="Utils.Data.Sql.SqlSelectStatement.HavingPart*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlSelectStatement_HavingPart" data-uid="Utils.Data.Sql.SqlSelectStatement.HavingPart">
+  HavingPart
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L432"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the HAVING clause represented as a typed part.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public HavingPart? HavingPart { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Data.Sql.HavingPart.html">HavingPart</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Data_Sql_SqlSelectStatement_IsDistinct_" data-uid="Utils.Data.Sql.SqlSelectStatement.IsDistinct*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlSelectStatement_IsDistinct" data-uid="Utils.Data.Sql.SqlSelectStatement.IsDistinct">
+  IsDistinct
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L477"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets a value indicating whether the SELECT statement includes DISTINCT.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool IsDistinct { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Data_Sql_SqlSelectStatement_Limit_" data-uid="Utils.Data.Sql.SqlSelectStatement.Limit*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlSelectStatement_Limit" data-uid="Utils.Data.Sql.SqlSelectStatement.Limit">
+  Limit
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L447"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the LIMIT segment.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SqlSegment? Limit { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Data.Sql.SqlSegment.html">SqlSegment</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Data_Sql_SqlSelectStatement_LimitPart_" data-uid="Utils.Data.Sql.SqlSelectStatement.LimitPart*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlSelectStatement_LimitPart" data-uid="Utils.Data.Sql.SqlSelectStatement.LimitPart">
+  LimitPart
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L452"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the LIMIT clause represented as a typed part.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public LimitPart? LimitPart { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Data.Sql.LimitPart.html">LimitPart</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Data_Sql_SqlSelectStatement_Offset_" data-uid="Utils.Data.Sql.SqlSelectStatement.Offset*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlSelectStatement_Offset" data-uid="Utils.Data.Sql.SqlSelectStatement.Offset">
+  Offset
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L457"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the OFFSET segment.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SqlSegment? Offset { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Data.Sql.SqlSegment.html">SqlSegment</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Data_Sql_SqlSelectStatement_OffsetPart_" data-uid="Utils.Data.Sql.SqlSelectStatement.OffsetPart*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlSelectStatement_OffsetPart" data-uid="Utils.Data.Sql.SqlSelectStatement.OffsetPart">
+  OffsetPart
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L462"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the OFFSET clause represented as a typed part.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public OffsetPart? OffsetPart { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Data.Sql.OffsetPart.html">OffsetPart</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Data_Sql_SqlSelectStatement_OrderBy_" data-uid="Utils.Data.Sql.SqlSelectStatement.OrderBy*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlSelectStatement_OrderBy" data-uid="Utils.Data.Sql.SqlSelectStatement.OrderBy">
+  OrderBy
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L437"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the ORDER BY segment.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SqlSegment? OrderBy { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Data.Sql.SqlSegment.html">SqlSegment</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Data_Sql_SqlSelectStatement_OrderByPart_" data-uid="Utils.Data.Sql.SqlSelectStatement.OrderByPart*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlSelectStatement_OrderByPart" data-uid="Utils.Data.Sql.SqlSelectStatement.OrderByPart">
+  OrderByPart
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L442"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the ORDER BY clause represented as a typed part.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public OrderByPart? OrderByPart { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Data.Sql.OrderByPart.html">OrderByPart</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Data_Sql_SqlSelectStatement_Select_" data-uid="Utils.Data.Sql.SqlSelectStatement.Select*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlSelectStatement_Select" data-uid="Utils.Data.Sql.SqlSelectStatement.Select">
+  Select
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L387"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the SELECT segment describing the selected expressions.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SqlSegment Select { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Data.Sql.SqlSegment.html">SqlSegment</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Data_Sql_SqlSelectStatement_SelectPart_" data-uid="Utils.Data.Sql.SqlSelectStatement.SelectPart*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlSelectStatement_SelectPart" data-uid="Utils.Data.Sql.SqlSelectStatement.SelectPart">
+  SelectPart
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L392"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the SELECT clause represented as a typed part.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SelectPart SelectPart { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Data.Sql.SelectPart.html">SelectPart</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Data_Sql_SqlSelectStatement_Tail_" data-uid="Utils.Data.Sql.SqlSelectStatement.Tail*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlSelectStatement_Tail" data-uid="Utils.Data.Sql.SqlSelectStatement.Tail">
+  Tail
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L467"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets any trailing segments such as UNION clauses.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SqlSegment? Tail { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Data.Sql.SqlSegment.html">SqlSegment</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Data_Sql_SqlSelectStatement_TailPart_" data-uid="Utils.Data.Sql.SqlSelectStatement.TailPart*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlSelectStatement_TailPart" data-uid="Utils.Data.Sql.SqlSelectStatement.TailPart">
+  TailPart
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L472"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the trailing set operator clause represented as a typed part.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public TailPart? TailPart { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Data.Sql.TailPart.html">TailPart</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Data_Sql_SqlSelectStatement_Where_" data-uid="Utils.Data.Sql.SqlSelectStatement.Where*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlSelectStatement_Where" data-uid="Utils.Data.Sql.SqlSelectStatement.Where">
+  Where
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L407"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the WHERE segment containing the filtering conditions.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SqlSegment? Where { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Data.Sql.SqlSegment.html">SqlSegment</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Data_Sql_SqlSelectStatement_WherePart_" data-uid="Utils.Data.Sql.SqlSelectStatement.WherePart*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlSelectStatement_WherePart" data-uid="Utils.Data.Sql.SqlSelectStatement.WherePart">
+  WherePart
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L412"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the WHERE clause represented as a typed part.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public WherePart? WherePart { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Data.Sql.WherePart.html">WherePart</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h2 class="section" id="methods">Methods
+</h2>
+
+
+  <a id="Utils_Data_Sql_SqlSelectStatement_BuildSql_" data-uid="Utils.Data.Sql.SqlSelectStatement.BuildSql*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlSelectStatement_BuildSql" data-uid="Utils.Data.Sql.SqlSelectStatement.BuildSql">
+  BuildSql()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L552"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Builds the canonical inline SQL representation of the statement.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected override string BuildSql()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>The inline SQL string representing the statement.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Data_Sql_SqlSelectStatement_EnsureFromSegment_" data-uid="Utils.Data.Sql.SqlSelectStatement.EnsureFromSegment*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlSelectStatement_EnsureFromSegment" data-uid="Utils.Data.Sql.SqlSelectStatement.EnsureFromSegment">
+  EnsureFromSegment()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L483"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Ensures the FROM segment exists and returns it.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SqlSegment EnsureFromSegment()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Data.Sql.SqlSegment.html">SqlSegment</a></dt>
+    <dd><p>The existing or newly created FROM segment.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Data_Sql_SqlSelectStatement_EnsureGroupBySegment_" data-uid="Utils.Data.Sql.SqlSelectStatement.EnsureGroupBySegment*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlSelectStatement_EnsureGroupBySegment" data-uid="Utils.Data.Sql.SqlSelectStatement.EnsureGroupBySegment">
+  EnsureGroupBySegment()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L501"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Ensures the GROUP BY segment exists and returns it.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SqlSegment EnsureGroupBySegment()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Data.Sql.SqlSegment.html">SqlSegment</a></dt>
+    <dd><p>The existing or newly created GROUP BY segment.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Data_Sql_SqlSelectStatement_EnsureHavingSegment_" data-uid="Utils.Data.Sql.SqlSelectStatement.EnsureHavingSegment*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlSelectStatement_EnsureHavingSegment" data-uid="Utils.Data.Sql.SqlSelectStatement.EnsureHavingSegment">
+  EnsureHavingSegment()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L510"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Ensures the HAVING segment exists and returns it.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SqlSegment EnsureHavingSegment()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Data.Sql.SqlSegment.html">SqlSegment</a></dt>
+    <dd><p>The existing or newly created HAVING segment.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Data_Sql_SqlSelectStatement_EnsureLimitSegment_" data-uid="Utils.Data.Sql.SqlSelectStatement.EnsureLimitSegment*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlSelectStatement_EnsureLimitSegment" data-uid="Utils.Data.Sql.SqlSelectStatement.EnsureLimitSegment">
+  EnsureLimitSegment()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L528"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Ensures the LIMIT segment exists and returns it.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SqlSegment EnsureLimitSegment()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Data.Sql.SqlSegment.html">SqlSegment</a></dt>
+    <dd><p>The existing or newly created LIMIT segment.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Data_Sql_SqlSelectStatement_EnsureOffsetSegment_" data-uid="Utils.Data.Sql.SqlSelectStatement.EnsureOffsetSegment*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlSelectStatement_EnsureOffsetSegment" data-uid="Utils.Data.Sql.SqlSelectStatement.EnsureOffsetSegment">
+  EnsureOffsetSegment()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L537"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Ensures the OFFSET segment exists and returns it.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SqlSegment EnsureOffsetSegment()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Data.Sql.SqlSegment.html">SqlSegment</a></dt>
+    <dd><p>The existing or newly created OFFSET segment.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Data_Sql_SqlSelectStatement_EnsureOrderBySegment_" data-uid="Utils.Data.Sql.SqlSelectStatement.EnsureOrderBySegment*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlSelectStatement_EnsureOrderBySegment" data-uid="Utils.Data.Sql.SqlSelectStatement.EnsureOrderBySegment">
+  EnsureOrderBySegment()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L519"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Ensures the ORDER BY segment exists and returns it.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SqlSegment EnsureOrderBySegment()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Data.Sql.SqlSegment.html">SqlSegment</a></dt>
+    <dd><p>The existing or newly created ORDER BY segment.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Data_Sql_SqlSelectStatement_EnsureTailSegment_" data-uid="Utils.Data.Sql.SqlSelectStatement.EnsureTailSegment*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlSelectStatement_EnsureTailSegment" data-uid="Utils.Data.Sql.SqlSelectStatement.EnsureTailSegment">
+  EnsureTailSegment()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L546"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Ensures the trailing set operator segment exists and returns it.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SqlSegment EnsureTailSegment()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Data.Sql.SqlSegment.html">SqlSegment</a></dt>
+    <dd><p>The existing or newly created trailing segment.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Data_Sql_SqlSelectStatement_EnsureWhereSegment_" data-uid="Utils.Data.Sql.SqlSelectStatement.EnsureWhereSegment*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlSelectStatement_EnsureWhereSegment" data-uid="Utils.Data.Sql.SqlSelectStatement.EnsureWhereSegment">
+  EnsureWhereSegment()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L492"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Ensures the WHERE segment exists and returns it.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SqlSegment EnsureWhereSegment()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Data.Sql.SqlSegment.html">SqlSegment</a></dt>
+    <dd><p>The existing or newly created WHERE segment.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L292" class="edit-link">Edit this page</a>
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

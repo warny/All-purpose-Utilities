@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Namespace Utils.Parser.Runtime | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Namespace Utils.Parser.Runtime | omy.Utils Documentation ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="Utils.Parser.Runtime">
+
+  <h1 id="Utils_Parser_Runtime" data-uid="Utils.Parser.Runtime" class="text-break">Namespace Utils.Parser.Runtime</h1>
+  <div class="markdown level0 summary"></div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="markdown level0 remarks"></div>
+
+    <h3 id="classes">
+Classes
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.AlternativeRuntimeObservation.html">AlternativeRuntimeObservation</a></dt>
+      <dd><p>Describes a passive scheduler observation for a single alternative.
+This payload is immutable and descriptive-only.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.CompiledGrammar.html">CompiledGrammar</a></dt>
+      <dd><p>A ready-to-use grammar instance that encapsulates the full parse pipeline:
+<a class="xref" href="Utils.Parser.Runtime.LexerEngine.html">LexerEngine</a> tokenization followed by <a class="xref" href="Utils.Parser.Runtime.ParserEngine.html">ParserEngine</a> parsing.</p>
+<p>
+Obtain an instance from a resolved <a class="xref" href="Utils.Parser.Model.ParserDefinition.html">ParserDefinition</a> via the constructor,
+or compile directly from an ANTLR4 grammar source string via
+<code>Antlr4GrammarConverter.Compile(grammarText)</code>.
+</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ConventionSyntaxColorisation.html">ConventionSyntaxColorisation</a></dt>
+      <dd><p>Provides convention-based syntax colorization rules for grammars that do not declare explicit mappings.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.DefaultLexerActionExecutor.html">DefaultLexerActionExecutor</a></dt>
+      <dd><p>Conservative lexer action executor that never executes lexer inline actions.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.DefaultLexerPredicateEvaluator.html">DefaultLexerPredicateEvaluator</a></dt>
+      <dd><p>Conservative lexer predicate evaluator that never evaluates lexer target-language code.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ErrorNode.html">ErrorNode</a></dt>
+      <dd><p>A synthetic node inserted when parsing fails at a given position.
+An error node is never thrown as an exception; it is always embedded in the tree
+so that partial results remain accessible.
+<a class="xref" href="Utils.Parser.Runtime.ParseNode.html#Utils_Parser_Runtime_ParseNode_Rule">Rule</a> holds the rule that was being attempted when the failure occurred.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.G4SyntaxColorisation.html">G4SyntaxColorisation</a></dt>
+      <dd><p>Provides a built-in syntax colorization profile for ANTLR4 grammar files (<code>.g4</code>).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.LexerActionExecutionContext.html">LexerActionExecutionContext</a></dt>
+      <dd><p>Describes one accepted lexer inline action execution request.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.LexerEngine.html">LexerEngine</a></dt>
+      <dd><p>Converts a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.textreader">TextReader</a> into a sequence of <a class="xref" href="Utils.Parser.Runtime.Token.html">Token</a> values
+using the lexer rules in a <a class="xref" href="Utils.Parser.Model.ParserDefinition.html">ParserDefinition</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.LexerEngineOptions.html">LexerEngineOptions</a></dt>
+      <dd><p>Runtime options for <a class="xref" href="Utils.Parser.Runtime.LexerEngine.html">LexerEngine</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.LexerExtensionContext.html">LexerExtensionContext</a></dt>
+      <dd><p>Context object passed to lexer extensions.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.LexerNode.html">LexerNode</a></dt>
+      <dd><p>A leaf node corresponding to a single token produced by the lexer.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.LexerPredicateEvaluationContext.html">LexerPredicateEvaluationContext</a></dt>
+      <dd><p>Describes one lexer predicate evaluation request.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.LexerValidationException.html">LexerValidationException</a></dt>
+      <dd><p>Represents a blocking lexer validation failure.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.NamedLiteralRuleCallExecutionPolicy.html">NamedLiteralRuleCallExecutionPolicy</a></dt>
+      <dd><p>Explicitly binds named simple literals to declared parser rule parameter names by exact ordinal name.
+Declared parameter types are metadata only and are not validated by this policy.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.NullParserExecutionStateManager.html">NullParserExecutionStateManager</a></dt>
+      <dd><p>No-op parser execution-state manager used by conservative runtime policies.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.NullParserRuleCallExecutionPolicy.html">NullParserRuleCallExecutionPolicy</a></dt>
+      <dd><p>Provides the conservative no-op parser rule-call execution policy.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.NullParserRuleInvocationFrameManager.html">NullParserRuleInvocationFrameManager</a></dt>
+      <dd><p>Default passive parser rule invocation-frame manager.
+It creates inert frames for lifecycle context propagation and does not retain current-frame state.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.NullParserRuleLifecycleExecutor.html">NullParserRuleLifecycleExecutor</a></dt>
+      <dd><p>No-op parser rule lifecycle executor used by conservative runtime policies.
+Neither <code>@init</code> nor <code>@after</code> hooks are executed.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ParseNode.html">ParseNode</a></dt>
+      <dd><p>Abstract base for all nodes in a parse tree produced by <a class="xref" href="Utils.Parser.Runtime.ParserEngine.html">ParserEngine</a>.
+Every node records the source span it covers, the active lexer mode, and the grammar
+rule that produced it.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ParseTreeCompiler-2.html">ParseTreeCompiler&lt;TContext, TResult&gt;</a></dt>
+      <dd><p>Generic depth-first parse-tree compiler that separates traversal into two ordered phases
+for each node:</p>
+<ol><li><span class="term">Descent (top-down)</span>
+      Called when the node is first reached. Handlers can enrich the context for the
+      subtree below — for example pushing a new scope, recording parameter names, or
+      resolving a function signature before its body is compiled.
+    </li><li><span class="term">Ascent (bottom-up)</span>
+      Called after all children have been compiled. Handlers receive the ordered list
+      of child results and must return the compiled result for this node — for example
+      folding two sub-expressions into a binary operation.
+    </li></ol>
+<p>
+Handlers can be registered by grammar-rule name (exact match, O(1) lookup) or by an
+arbitrary predicate over the <a class="xref" href="Utils.Parser.Runtime.ParseTreeNavigator.html">ParseTreeNavigator</a> (checked in registration
+order). Rule-name handlers are always checked first; predicate handlers are tried only
+when no name-based handler matches. Fall-back <code>Default*</code> handlers are consulted last.
+</p>
+<p>
+The context is treated as <em>immutable per descent step</em>: each descent handler
+receives the context that was active when the node was entered and must return the
+context to hand to the node's children. Returning the same instance is always valid;
+creating a derived instance (e.g. a new scope) isolates sibling subtrees.
+</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ParseTreeNavigator.html">ParseTreeNavigator</a></dt>
+      <dd><p>Provides fluent, index- and name-based navigation over a <a class="xref" href="Utils.Parser.Runtime.ParseNode.html">ParseNode</a> tree
+produced by <a class="xref" href="Utils.Parser.Runtime.ParserEngine.html">ParserEngine</a>.</p>
+<p>
+Each navigation method returns a new <a class="xref" href="Utils.Parser.Runtime.ParseTreeNavigator.html">ParseTreeNavigator</a> wrapping the
+target node so that calls can be chained:
+<pre><code class="lang-csharp">var token = nav[0].Child("additionExp")[1][0].Token;</code></pre>
+
+<p>
+Methods that cannot guarantee a result have a <code>Try</code> variant that returns
+<code>null</code> instead of throwing.
+</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ParserActionExecutionContext.html">ParserActionExecutionContext</a></dt>
+      <dd><p>Immutable action execution data passed to <a class="xref" href="Utils.Parser.Runtime.IParserActionExecutor.html">IParserActionExecutor</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ParserActionExecutionOutcome.html">ParserActionExecutionOutcome</a></dt>
+      <dd><p>Represents a parser action execution outcome with optional diagnostic metadata.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ParserAttributeAccessException.html">ParserAttributeAccessException</a></dt>
+      <dd><p>Represents a deterministic failure to read a limited generated parser return attribute.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ParserEngine.html">ParserEngine</a></dt>
+      <dd><p>Builds a parse tree from a flat token list using the rules in a
+<a class="xref" href="Utils.Parser.Model.ParserDefinition.html">ParserDefinition</a>.
+This engine is the runtime authority for token consumption, diagnostics, parse-tree
+construction, and final parse outcomes.</p>
+<p>
+The engine is a recursive-descent parser with full backtracking.
+It tries each alternative in priority order and rolls back the token position plus
+configured parser execution state on parser attempt-boundary failure.
+Left-recursive rules are handled by a cycle-detection stack that returns <code>null</code>
+when the same rule is re-entered at the same token position.
+</p>
+<p>
+Additional runtime guards stop repeated parser-state exploration and non-progressive
+iterations in quantifiers and left-recursive extensions. Backtracking remains active
+in this implementation and may be revisited in a future PR.
+</p>
+<p>
+Semantic predicates (<a class="xref" href="Utils.Parser.Model.ValidatingPredicate.html">ValidatingPredicate</a>, <a class="xref" href="Utils.Parser.Model.GatingPredicate.html">GatingPredicate</a>)
+and embedded actions (<a class="xref" href="Utils.Parser.Model.EmbeddedAction.html">EmbeddedAction</a>) are controlled by the configured
+<a class="xref" href="Utils.Parser.Runtime.ParserRuntimeFeaturePolicy.html">ParserRuntimeFeaturePolicy</a>.
+The default policy preserves conservative behavior:
+semantic predicates return <a class="xref" href="Utils.Parser.Runtime.SemanticPredicateEvaluationStatus.html#Utils_Parser_Runtime_SemanticPredicateEvaluationStatus_NotEvaluated">NotEvaluated</a>
+and parser actions return <a class="xref" href="Utils.Parser.Runtime.ParserActionExecutionOutcome.html#Utils_Parser_Runtime_ParserActionExecutionOutcome_NotExecuted">NotExecuted()</a>.
+Custom injected policies may reject alternatives and may execute action handlers,
+which can influence parse outcomes.
+</p>
+<p>
+Scheduling and metadata components do not own parse decisions:
+continuation descriptors are descriptive only, shared-prefix plans are informational only,
+and neither metadata pipeline executes runtime continuations.
+</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ParserExecutionContextCopier-1.html">ParserExecutionContextCopier&lt;TContext&gt;</a></dt>
+      <dd><p>Copies parser execution-context instances with a cached, compiled field-copy delegate for each context type.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ParserExecutionContextHasher-1.html">ParserExecutionContextHasher&lt;TContext&gt;</a></dt>
+      <dd><p>Computes deterministic structural execution-state keys for generated parser execution contexts.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ParserExecutionStateIgnoredAttribute.html">ParserExecutionStateIgnoredAttribute</a></dt>
+      <dd><p>Marks an instance field as excluded from parser execution-state hashing and copying.
+Apply to infrastructure fields that are not part of the logical parser execution state,
+such as runtime policy objects or frame managers that must not be snapshotted or hashed.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ParserLabeledRuleCallResultStore.html">ParserLabeledRuleCallResultStore</a></dt>
+      <dd><p>Stores immutable snapshots of successful labeled child parser-rule call results for one invocation frame.
+Assignment labels and list labels use separate namespaces because grammar ingestion currently permits the
+same lexical label with both operators; callers must use the helper matching the call-site label kind.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ParserLiteralTypeConverter.html">ParserLiteralTypeConverter</a></dt>
+      <dd><p>Converts values produced by <a class="xref" href="Utils.Parser.Runtime.ParserSimpleLiteralParser.html">ParserSimpleLiteralParser</a> to a deliberately limited set of built-in declared types.
+No arbitrary type resolution, reflection-based construction, expression evaluation, or string-to-numeric parsing is performed.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ParserNode.html">ParserNode</a></dt>
+      <dd><p>An interior node produced by a parser rule, containing zero or more child nodes.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ParserRawArgumentSplitter.html">ParserRawArgumentSplitter</a></dt>
+      <dd><p>Provides syntactic top-level splitting of raw rule-call argument text preserved from
+<code>callee[...]</code> grammar clauses.
+Splitting is purely syntactic: no argument is evaluated, no parameter is bound, and no seed is set.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ParserRawNamedArgumentSplitter.html">ParserRawNamedArgumentSplitter</a></dt>
+      <dd><p>Provides syntactic top-level splitting of raw rule-call argument text into named key–value pairs,
+supporting forms such as <code>value: 42</code> and <code>value = 42</code>.
+Splitting is purely syntactic: no value is evaluated, no parameter is bound.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ParserRuleCallBindingException.html">ParserRuleCallBindingException</a></dt>
+      <dd><p>Reports deterministic validation failures from positional literal parser rule-call binding.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ParserRuleCallExecutionContext.html">ParserRuleCallExecutionContext</a></dt>
+      <dd><p>Carries passive metadata for an explicit parser rule-call execution policy invocation.
+Raw arguments are split syntactically only. The parser does not evaluate or bind them automatically;
+an explicitly installed policy may request an atomic managed seed batch through <a class="xref" href="Utils.Parser.Runtime.ParserRuleCallExecutionContext.html#Utils_Parser_Runtime_ParserRuleCallExecutionContext_TrySetParameterSeeds_System_Collections_Generic_IReadOnlyDictionary_System_String_System_Object__">TrySetParameterSeeds(IReadOnlyDictionary&lt;string, object?&gt;)</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ParserRuleCallResult.html">ParserRuleCallResult</a></dt>
+      <dd><p>Captures an immutable passive snapshot of a successfully completed child parser rule invocation.
+Return names remain ordinal metadata; no type conversion, implicit variable, or ANTLR attribute syntax is provided.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ParserRuleExceptionDescriptor.html">ParserRuleExceptionDescriptor</a></dt>
+      <dd><p>Describes parser rule exception metadata as passive metadata only.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ParserRuleInvocationDescriptor.html">ParserRuleInvocationDescriptor</a></dt>
+      <dd><p>Describes passive metadata associated with a parser rule invocation.
+The descriptor preserves grammar metadata for observation only and does not bind,
+allocate, propagate, or execute rule-level metadata.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ParserRuleInvocationFrame.html">ParserRuleInvocationFrame</a></dt>
+      <dd><p>Represents passive per-invocation parser rule metadata state.
+Parameters, locals, returns, and labeled completed child calls remain untyped managed metadata;
+the frame does not bind ANTLR type syntax or expose implicit grammar variables.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ParserRuleLifecycleContext.html">ParserRuleLifecycleContext</a></dt>
+      <dd><p>Immutable context passed to parser rule lifecycle hook executors.
+Provides positional metadata for rule entry and exit without granting parse-control authority.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ParserRuleLocalDescriptor.html">ParserRuleLocalDescriptor</a></dt>
+      <dd><p>Describes a parser rule local declaration as passive metadata only.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ParserRuleParameterDescriptor.html">ParserRuleParameterDescriptor</a></dt>
+      <dd><p>Describes a parser rule parameter declaration as passive metadata only.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ParserRuleParameterSeedStore.html">ParserRuleParameterSeedStore</a></dt>
+      <dd><p>Stores pending child-rule parameter seeds intended for the next invocation of named parser rules.
+Seeds are copied into matching child frames when those rules are entered.
+This type is immutable after construction; mutations produce a new instance.
+Implements <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.icloneable">ICloneable</a> so the execution-context copier can deep-copy it during
+parser backtracking snapshots, and <a class="xref" href="Utils.Parser.Runtime.IParserExecutionStateHashable.html">IParserExecutionStateHashable</a> so it contributes
+to the managed execution-state key used for rollback-safe memoization.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ParserRuleReturnDescriptor.html">ParserRuleReturnDescriptor</a></dt>
+      <dd><p>Describes a parser rule return declaration as passive metadata only.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ParserRuleReturnSnapshot.html">ParserRuleReturnSnapshot</a></dt>
+      <dd><p>Captures rollback-safe return values for one active parser rule invocation frame.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ParserRuntimeFeaturePolicy.html">ParserRuntimeFeaturePolicy</a></dt>
+      <dd><p>Immutable runtime feature policy used by parser components to centralize optional
+runtime strategies such as semantic predicate evaluation and parser action execution.
+The policy can affect branch acceptance and action execution, but does not change parser scheduling mechanics.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ParserSimpleLiteralParser.html">ParserSimpleLiteralParser</a></dt>
+      <dd><p>Parses the deliberately limited literal syntax supported by positional parser rule-call binding.
+This parser does not evaluate expressions and is not a complete C# or ANTLR literal parser.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.PositionalLiteralRuleCallExecutionPolicy.html">PositionalLiteralRuleCallExecutionPolicy</a></dt>
+      <dd><p>Explicitly binds exact-arity positional simple literals to declared parser rule parameter names.
+Declared parameter types are metadata only and are not validated by this policy.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.RuntimeObservationJsonWriter.html">RuntimeObservationJsonWriter</a></dt>
+      <dd><p>Serializes runtime observations to deterministic JSON arrays for tooling experiments.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.RuntimeObservationRecorder.html">RuntimeObservationRecorder</a></dt>
+      <dd><p>Records parser runtime observations in arrival order for tooling-oriented exports.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.RuntimeObservationTextWriter.html">RuntimeObservationTextWriter</a></dt>
+      <dd><p>Formats runtime observations as stable text lines for deterministic tooling traces.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.RuntimeTraceAnalyzer.html">RuntimeTraceAnalyzer</a></dt>
+      <dd><p>Provides deterministic, read-only analysis over runtime observations and exports.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.RuntimeTraceComparison.html">RuntimeTraceComparison</a></dt>
+      <dd><p>Represents a deterministic descriptive comparison between two observation sequences.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.RuntimeTraceSummary.html">RuntimeTraceSummary</a></dt>
+      <dd><p>Represents a deterministic, read-only summary of a runtime observation sequence.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.SemanticPredicateEvaluationContext.html">SemanticPredicateEvaluationContext</a></dt>
+      <dd><p>Carries immutable information required to evaluate a semantic predicate.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.SemanticPredicateEvaluationOutcome.html">SemanticPredicateEvaluationOutcome</a></dt>
+      <dd><p>Represents a semantic predicate evaluation outcome with optional diagnostic metadata.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.StackParserRuleInvocationFrameManager.html">StackParserRuleInvocationFrameManager</a></dt>
+      <dd><p>Stack-aware parser rule invocation-frame manager that tracks the active call chain.
+Each <a class="xref" href="Utils.Parser.Runtime.StackParserRuleInvocationFrameManager.html#Utils_Parser_Runtime_StackParserRuleInvocationFrameManager_Enter_System_String_System_Int32_Utils_Parser_Runtime_ParserRuleInvocationDescriptor_">Enter(string, int, ParserRuleInvocationDescriptor?)</a> call creates a child frame whose <a class="xref" href="Utils.Parser.Runtime.ParserRuleInvocationFrame.html#Utils_Parser_Runtime_ParserRuleInvocationFrame_Parent">Parent</a>
+is the previously current frame, and each matching <a class="xref" href="Utils.Parser.Runtime.StackParserRuleInvocationFrameManager.html#Utils_Parser_Runtime_StackParserRuleInvocationFrameManager_Exit_Utils_Parser_Runtime_ParserRuleInvocationFrame_System_Boolean_">Exit(ParserRuleInvocationFrame, bool)</a> call restores the parent as current.
+On successful child exit, a <a class="xref" href="Utils.Parser.Runtime.ParserRuleCallResult.html">ParserRuleCallResult</a> snapshot is captured from the child frame
+and stored on the parent frame's <a class="xref" href="Utils.Parser.Runtime.ParserRuleInvocationFrame.html#Utils_Parser_Runtime_ParserRuleInvocationFrame_LastCompletedChildCall">LastCompletedChildCall</a>; an optional
+callback is also invoked so the managed execution-state mechanism can include the call result in rollback snapshots.
+Returns and parameters remain untyped metadata and are not assigned automatically; labeled completed results
+are retained only in the parent frame's explicit managed store.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.SyntaxColorisationDescriptorSyntaxColorisation.html">SyntaxColorisationDescriptorSyntaxColorisation</a></dt>
+      <dd><p>Provides syntax colorization for <code>.syntaxcolor</code> descriptor files.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.Token.html">Token</a></dt>
+      <dd><p>An atomic lexical unit produced by <a class="xref" href="Utils.Parser.Runtime.LexerEngine.html">LexerEngine</a>.
+Each token records its source position, the rule that matched it,
+the active lexer mode at the time of the match, and the matched text.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.TokenizerRuntime.html">TokenizerRuntime</a></dt>
+      <dd><p>Provides reusable tokenization mechanics for parser-oriented consumers.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.TokenizerRuntimeException.html">TokenizerRuntimeException</a></dt>
+      <dd><p>Represents a tokenization error raised by <a class="xref" href="Utils.Parser.Runtime.TokenizerRuntime.html">TokenizerRuntime</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.TypedNamedLiteralRuleCallExecutionPolicy.html">TypedNamedLiteralRuleCallExecutionPolicy</a></dt>
+      <dd><p>Explicitly binds named simple literals and omitted literal defaults after validating and safely converting every value against the target
+rule's allowlisted declared parameter types.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.TypedPositionalLiteralRuleCallExecutionPolicy.html">TypedPositionalLiteralRuleCallExecutionPolicy</a></dt>
+      <dd><p>Explicitly binds positional simple literals and omitted trailing literal defaults after validating and safely converting every value
+against the target rule's allowlisted declared parameter types.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.VisualStudioClassificationNames.html">VisualStudioClassificationNames</a></dt>
+      <dd><p>Contains standard Visual Studio classification names used by the Fonts and Colors settings.</p>
+</dd>
+    </dl>
+    <h3 id="structs">
+Structs
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ParserExecutionStateKey.html">ParserExecutionStateKey</a></dt>
+      <dd><p>Identifies the semantic parser execution state that can affect rule-result memoization.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ParserLiteralConversionResult.html">ParserLiteralConversionResult</a></dt>
+      <dd><p>Describes the deterministic result of converting one parsed simple literal to a supported declared type.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ParserRawArgumentParameterMapping.html">ParserRawArgumentParameterMapping</a></dt>
+      <dd><p>Describes a single positional mapping from a raw call-site argument slice to a named child-rule parameter seed.
+Used with generated <code>SetNextRuleParametersFromRawArguments</code> helpers.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ParserRawNamedArgumentParameterMapping.html">ParserRawNamedArgumentParameterMapping</a></dt>
+      <dd><p>Describes a single named mapping from a raw call-site argument entry to a child-rule parameter seed.
+Used with generated <code>SetNextRuleParametersFromNamedRawArguments</code> helpers.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.RuntimeTokenizerPosition.html">RuntimeTokenizerPosition</a></dt>
+      <dd><p>Represents a read-only tokenizer position.</p>
+</dd>
+    </dl>
+    <h3 id="interfaces">
+Interfaces
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ILexerActionExecutor.html">ILexerActionExecutor</a></dt>
+      <dd><p>Executes lexer inline actions when an explicit runtime policy opts in to them.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ILexerExtension.html">ILexerExtension</a></dt>
+      <dd><p>Extends lexer behavior with runtime token injection hooks.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ILexerPredicateEvaluator.html">ILexerPredicateEvaluator</a></dt>
+      <dd><p>Evaluates lexer semantic predicates when an explicit runtime policy opts in to them.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.IParserActionExecutor.html">IParserActionExecutor</a></dt>
+      <dd><p>Defines policy-driven embedded action handling for <a class="xref" href="Utils.Parser.Runtime.ParserEngine.html">ParserEngine</a>.
+Implementations may execute side effects and can therefore influence observable runtime behavior.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.IParserExecutionStateHashable.html">IParserExecutionStateHashable</a></dt>
+      <dd><p>Provides an explicit structural hash contract for user objects stored inside parser execution contexts.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.IParserExecutionStateManager.html">IParserExecutionStateManager</a></dt>
+      <dd><p>Captures and restores opaque parser execution state for managed parser backtracking attempt boundaries.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.IParserRuleCallExecutionPolicy.html">IParserRuleCallExecutionPolicy</a></dt>
+      <dd><p>Defines explicit opt-in callbacks around parser rule calls.
+Implementations may observe call-site metadata and can explicitly request managed parameter seeds
+through the narrow current-target API on <a class="xref" href="Utils.Parser.Runtime.ParserRuleCallExecutionContext.html">ParserRuleCallExecutionContext</a>.
+The parser does not evaluate or bind arguments automatically.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.IParserRuleInvocationFrameManager.html">IParserRuleInvocationFrameManager</a></dt>
+      <dd><p>Manages passive parser rule invocation frames for optional runtime policies.
+Implementations may observe rule entry and exit, but they must not own parser control flow.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.IParserRuleLifecycleExecutor.html">IParserRuleLifecycleExecutor</a></dt>
+      <dd><p>Executes parser rule lifecycle hooks (<code>@init</code> and <code>@after</code>) under a runtime feature policy.
+Implementations may execute side effects that change observable parser execution-context state.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.IParserRuntimeObserver.html">IParserRuntimeObserver</a></dt>
+      <dd><p>Defines a passive runtime observation contract for parser scheduling events.
+Implementations must remain non-authoritative and must not attempt to influence parser behavior.
+Observer callback exceptions are isolated by the runtime scheduler and do not alter execution semantics.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ISemanticPredicateEvaluator.html">ISemanticPredicateEvaluator</a></dt>
+      <dd><p>Defines policy-driven semantic predicate handling for <a class="xref" href="Utils.Parser.Runtime.ParserEngine.html">ParserEngine</a>.
+Implementations can influence branch acceptance and therefore parse outcomes.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ISyntaxColorisation.html">ISyntaxColorisation</a></dt>
+      <dd><p>Defines a syntax colorization contract that can be discovered by Visual Studio tooling.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.TextReaderLookahead.html">TextReaderLookahead</a></dt>
+      <dd><p>Read-only forward lookahead abstraction over lexer input.</p>
+</dd>
+    </dl>
+    <h3 id="enums">
+Enums
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.LexerActionExecutionOutcome.html">LexerActionExecutionOutcome</a></dt>
+      <dd><p>Result of attempting to execute a lexer inline action.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.LexerPredicateEvaluationOutcome.html">LexerPredicateEvaluationOutcome</a></dt>
+      <dd><p>Result of attempting to evaluate a lexer predicate.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ParserActionExecutionStatus.html">ParserActionExecutionStatus</a></dt>
+      <dd><p>Represents the parser action execution status returned by runtime policy executors.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ParserRawNamedArgumentSeparatorMode.html">ParserRawNamedArgumentSeparatorMode</a></dt>
+      <dd><p>Specifies which separator characters are recognized when parsing named raw rule-call argument slices.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ParserRuleCallBindingFailureBehavior.html">ParserRuleCallBindingFailureBehavior</a></dt>
+      <dd><p>Defines how positional literal rule-call binding responds to invalid call metadata.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ParserRuleLifecyclePhase.html">ParserRuleLifecyclePhase</a></dt>
+      <dd><p>Identifies the phase of a parser rule lifecycle hook execution.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ParserRuleReferenceLabelKind.html">ParserRuleReferenceLabelKind</a></dt>
+      <dd><p>Identifies the kind of a parser rule-reference label.
+Labels are metadata only: no implicit variables, automatic binding, or typed fields are generated.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ParserRuntimeObservationKind.html">ParserRuntimeObservationKind</a></dt>
+      <dd><p>Defines normalized scheduler observation event kinds.
+This enum is descriptive-only and does not provide execution control.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ParserRuntimeObservationStatus.html">ParserRuntimeObservationStatus</a></dt>
+      <dd><p>Defines normalized observation status values exposed by the runtime observation contract.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.SemanticPredicateEvaluationStatus.html">SemanticPredicateEvaluationStatus</a></dt>
+      <dd><p>Represents the status of a semantic predicate evaluation.</p>
+</dd>
+    </dl>
+    <h3 id="delegates">
+Delegates
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.RuntimeStringTransformer.html">RuntimeStringTransformer</a></dt>
+      <dd><p>Represents a function that attempts to transform a token into a defined string value.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.RuntimeTryReadToken.html">RuntimeTryReadToken</a></dt>
+      <dd><p>Represents a function that attempts to read a token at a specific position.</p>
+</dd>
+    </dl>
+
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

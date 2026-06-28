@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Namespace Utils.Range | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Namespace Utils.Range | omy.Utils Documentation ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="Utils.Range">
+
+  <h1 id="Utils_Range" data-uid="Utils.Range" class="text-break">Namespace Utils.Range</h1>
+  <div class="markdown level0 summary"></div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="markdown level0 remarks"></div>
+
+    <h3 id="classes">
+Classes
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Range.CyclicRange-1.html">CyclicRange&lt;T&gt;</a></dt>
+      <dd><p>Represents an inclusive range on a cyclic domain.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Range.DateTimeRanges.html">DateTimeRanges</a></dt>
+      <dd><p>Represents a collection of ranges for DateTime values, with parsing support from string representations.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Range.DoubleRanges.html">DoubleRanges</a></dt>
+      <dd><p>Represents a collection of ranges for double values, with parsing support from string representations.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Range.IntRange-1.html">IntRange&lt;T&gt;</a></dt>
+      <dd><p>Represents a collection of integer intervals (ranges),
+each of which may include negative or positive infinity as an endpoint.</p>
+<p>Bitwise-like operators for set operations:
+| (Union),
+&amp; (Intersection),
+^ (Symmetric Difference),
+~ (Complement).</p>
+<p>Internally stores multiple non-overlapping intervals sorted by their (Min, Max).
+A null Minimum =&gt; -∞.
+A null Maximum =&gt; +∞.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Range.RangeUtils.html">RangeUtils</a></dt>
+      <dd><p>Provides extension methods for creating and manipulating ranges on read-only lists.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Range.Ranges-1.html">Ranges&lt;T&gt;</a></dt>
+      <dd><p>Represents a set of intervals (ranges) for an ordered type <code class="typeparamref">T</code>.
+Provides set-like operations (union, intersection, difference, symmetric difference)
+via bitwise operators:
+| =&gt; Union,
+&amp; =&gt; Intersection,
+^ =&gt; Symmetric Difference,
+~ =&gt; Complement (relative to entire domain, if desired),</p>
+<ul>
+<li>=&gt; Difference (Except).</li>
+</ul>
+<p>The intervals are stored internally as disjoint, sorted <a class="xref" href="Utils.Range.Range-1.html">Range&lt;T&gt;</a> objects.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Range.ReadOnlyRange-1.html">ReadOnlyRange&lt;T&gt;</a></dt>
+      <dd><p>Represents a read-only range of elements in a list, supporting custom stepping and indexing.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Range.SingleRanges.html">SingleRanges</a></dt>
+      <dd><p>Represents a collection of ranges for float values, with parsing support from string representations.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Range.TimeRange.html">TimeRange</a></dt>
+      <dd><p>Represents an inclusive cyclic range of <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.timeonly">TimeOnly</a> values.</p>
+</dd>
+    </dl>
+    <h3 id="structs">
+Structs
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Range.Range-1.html">Range&lt;T&gt;</a></dt>
+      <dd><p>Represents a range of values with a start and end, plus inclusivity flags.
+Stored as a struct for efficient copying.</p>
+</dd>
+    </dl>
+    <h3 id="interfaces">
+Interfaces
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Range.IRange-1.html">IRange&lt;T&gt;</a></dt>
+      <dd><p>Defines a range of ordered values with configurable boundary inclusiveness.</p>
+</dd>
+    </dl>
+
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

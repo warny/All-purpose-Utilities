@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Class DNSHeader | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Class DNSHeader | omy.Utils Documentation ">
+      
+      <meta name="description" content="Represents the DNS header section of a DNS packet, including standard bits from RFC 1035 &#167;4.1.1 and the AD/CD extensions introduced in RFC 2535. The header provides information about flags, counts for queries/answers/authorities/additionals, and other DNS-level metadata.">
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_Net_DNS_DNSHeader.md&amp;value=---%0Auid%3A%20Utils.Net.DNS.DNSHeader%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="Utils.Net.DNS.DNSHeader">
+
+
+
+  <h1 id="Utils_Net_DNS_DNSHeader" data-uid="Utils.Net.DNS.DNSHeader" class="text-break">
+Class DNSHeader  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/DNS/DNSHeader.cs/#L52"><i class="bi bi-code-slash"></i></a>
+  </h1>
+
+  <div class="facts text-secondary">
+    <dl><dt>Namespace</dt><dd><a class="xref" href="Utils.html">Utils</a>.<a class="xref" href="Utils.Net.html">Net</a>.<a class="xref" href="Utils.Net.DNS.html">DNS</a></dd></dl>
+  <dl><dt>Assembly</dt><dd>Utils.Net.dll</dd></dl>
+  </div>
+
+  <div class="markdown summary"><p>Represents the DNS header section of a DNS packet, including standard bits from
+<a href="https://www.rfc-editor.org/rfc/rfc1035#section-4.1.1">RFC 1035 §4.1.1</a> and the
+AD/CD extensions introduced in <a href="https://www.rfc-editor.org/rfc/rfc2535">RFC 2535</a>.
+The header provides information about flags, counts for queries/answers/authorities/additionals,
+and other DNS-level metadata.</p>
+</div>
+  <div class="markdown conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public class DNSHeader : DNSElement</code></pre>
+  </div>
+
+
+
+
+  <dl class="typelist inheritance">
+    <dt>Inheritance</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
+      <div><a class="xref" href="Utils.Net.DNS.DNSElement.html">DNSElement</a></div>
+      <div><span class="xref">DNSHeader</span></div>
+    </dd>
+  </dl>
+
+
+
+  <dl class="typelist inheritedMembers">
+    <dt>Inherited Members</dt>
+    <dd>
+    <div>
+      <a class="xref" href="Utils.Net.DNS.DNSElement.html#Utils_Net_DNS_DNSElement_DNSType">DNSElement.DNSType</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)">object.Equals(object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)">object.Equals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gethashcode">object.GetHashCode()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone">object.MemberwiseClone()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
+    </div>
+  </dd></dl>
+
+  <dl class="typelist extensionMethods">
+    <dt>Extension Methods</dt>
+    <dd>
+  <div>
+      <a class="xref" href="Utils.Data.DataUtils.html#Utils_Data_DataUtils_ToDbValue_System_Object_">DataUtils.ToDbValue(object?)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Mathematics.MathEx.html#Utils_Mathematics_MathEx_Clamp__1___0___0___0_System_Collections_Generic_IComparer___0__">MathEx.Clamp&lt;T&gt;(T, T, T, IComparer&lt;T&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Failure__1___0_">FluentExtensions.Failure&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsEqualTo__2___0___1_">FluentExtensions.IsEqualTo&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterOrEqualsThan__2___0___1_">FluentExtensions.IsGreaterOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterThan__2___0___1_">FluentExtensions.IsGreaterThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsIn__1___0___0___">FluentExtensions.IsIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerOrEqualsThan__2___0___1_">FluentExtensions.IsLowerOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerThan__2___0___1_">FluentExtensions.IsLowerThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotIn__1___0___0___">FluentExtensions.IsNotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotNull__1___0_">FluentExtensions.IsNotNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNull__1___0_">FluentExtensions.IsNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Success__1___0_">FluentExtensions.Success&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Test__1___0_System_Func___0_System_Boolean__">FluentExtensions.Test&lt;T&gt;(T, Func&lt;T, bool&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_System_Boolean_System_Boolean_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T, bool, bool)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1____1_">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1____1_">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_In__1___0___0___">ObjectUtils.In&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_NotIn__1___0___0___">ObjectUtils.NotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustNotBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustNotBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Arg__1___0_System_String_">Validations.Arg&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ValueMustNotBeNull__1___0_System_String_">Validations.ValueMustNotBeNull&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Variable__1___0_System_String_">Validations.Variable&lt;T&gt;(T, string)</a>
+  </div>
+  </dd></dl>
+
+
+
+  <h2 id="Utils_Net_DNS_DNSHeader_remarks">Remarks</h2>
+  <div class="markdown level0 remarks"><p>A DNS header contains:</p>
+<ul><li><a class="xref" href="Utils.Net.DNS.DNSHeader.html#Utils_Net_DNS_DNSHeader_ID">ID</a>: A 16-bit identifier assigned by the program that generates any kind of DNS query.</li><li><span class="xref">Utils.Net.DNS.DNSHeader.Flags</span>: A collection of DNS flags and codes packed into a 16-bit field (e.g., QR, OpCode, AA, etc.).</li><li>Counts of queries, answers, authority records, and additional records (see <span class="xref">Utils.Net.DNS.DNSHeader.QDCount</span>, <span class="xref">Utils.Net.DNS.DNSHeader.ANCount</span>, <span class="xref">Utils.Net.DNS.DNSHeader.NSCount</span>, <span class="xref">Utils.Net.DNS.DNSHeader.ARCount</span>).</li></ul>
+<p>The wire format defined in
+<a href="https://www.rfc-editor.org/rfc/rfc1035#section-4.1.1">RFC 1035 §4.1.1</a>
+(extended by <a href="https://www.rfc-editor.org/rfc/rfc2535">RFC 2535</a>) is:</p>
+<pre><code class="lang-csharp">+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+|                      ID                       |
++--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+|QR|   Opcode  |AA|TC|RD|RA| Z|AD|CD|   RCODE   |
++--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+|                    QDCOUNT                    |
++--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+|                    ANCOUNT                    |
++--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+|                    NSCOUNT                    |
++--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+|                    ARCOUNT                    |
++--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+</code></pre>
+<p>
+<a href="https://www.rfc-editor.org/rfc/rfc2535">RFC 2535</a> introduces the AD (Authenticated Data)
+and CD (Checking Disabled) bits. Clients should only trust AD when the upstream server is trusted,
+and the CD flag allows requesting unsigned data for local validation.
+</p>
+</div>
+
+
+  <h2 class="section" id="constructors">Constructors
+</h2>
+
+
+  <a id="Utils_Net_DNS_DNSHeader__ctor_" data-uid="Utils.Net.DNS.DNSHeader.#ctor*"></a>
+
+  <h3 id="Utils_Net_DNS_DNSHeader__ctor" data-uid="Utils.Net.DNS.DNSHeader.#ctor">
+  DNSHeader()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/DNS/DNSHeader.cs/#L58"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Net.DNS.DNSHeader.html">DNSHeader</a> class with a randomly generated
+<a class="xref" href="Utils.Net.DNS.DNSHeader.html#Utils_Net_DNS_DNSHeader_ID">ID</a> and default QR bit set to <a class="xref" href="Utils.Net.DNS.DNSQRBit.html#Utils_Net_DNS_DNSQRBit_Question">Question</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public DNSHeader()</code></pre>
+  </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <h2 class="section" id="properties">Properties
+</h2>
+
+
+  <a id="Utils_Net_DNS_DNSHeader_Additionals_" data-uid="Utils.Net.DNS.DNSHeader.Additionals*"></a>
+
+  <h3 id="Utils_Net_DNS_DNSHeader_Additionals" data-uid="Utils.Net.DNS.DNSHeader.Additionals">
+  Additionals
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/DNS/DNSHeader.cs/#L119"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets a list of DNS additional records associated with this header.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public IList&lt;DNSResponseRecord&gt; Additionals { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ilist-1">IList</a>&lt;<a class="xref" href="Utils.Net.DNS.DNSResponseRecord.html">DNSResponseRecord</a>&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_DNS_DNSHeader_AuthenticDatas_" data-uid="Utils.Net.DNS.DNSHeader.AuthenticDatas*"></a>
+
+  <h3 id="Utils_Net_DNS_DNSHeader_AuthenticDatas" data-uid="Utils.Net.DNS.DNSHeader.AuthenticDatas">
+  AuthenticDatas
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/DNS/DNSHeader.cs/#L196"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets a value indicating whether the Authentic Data (AD) bit is set.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool AuthenticDatas { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+  <h4 class="section" id="Utils_Net_DNS_DNSHeader_AuthenticDatas_remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>This bit (introduced in <a href="https://www.rfc-editor.org/rfc/rfc2535">RFC 2535</a>) indicates that all data
+included in the answer and authority sections of the response has been authenticated by the server according to the
+server's policies.</p>
+</div>
+
+
+
+
+  <a id="Utils_Net_DNS_DNSHeader_AuthoritativeAnswer_" data-uid="Utils.Net.DNS.DNSHeader.AuthoritativeAnswer*"></a>
+
+  <h3 id="Utils_Net_DNS_DNSHeader_AuthoritativeAnswer" data-uid="Utils.Net.DNS.DNSHeader.AuthoritativeAnswer">
+  AuthoritativeAnswer
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/DNS/DNSHeader.cs/#L146"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets a value indicating whether the Authoritative Answer (AA) bit is set.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool AuthoritativeAnswer { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+  <h4 class="section" id="Utils_Net_DNS_DNSHeader_AuthoritativeAnswer_remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>This bit is set in responses when the responding server is an authority for the domain in question.</p>
+</div>
+
+
+
+
+  <a id="Utils_Net_DNS_DNSHeader_Authorities_" data-uid="Utils.Net.DNS.DNSHeader.Authorities*"></a>
+
+  <h3 id="Utils_Net_DNS_DNSHeader_Authorities" data-uid="Utils.Net.DNS.DNSHeader.Authorities">
+  Authorities
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/DNS/DNSHeader.cs/#L114"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets a list of DNS authority records associated with this header.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public IList&lt;DNSResponseRecord&gt; Authorities { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ilist-1">IList</a>&lt;<a class="xref" href="Utils.Net.DNS.DNSResponseRecord.html">DNSResponseRecord</a>&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_DNS_DNSHeader_CheckingDisabled_" data-uid="Utils.Net.DNS.DNSHeader.CheckingDisabled*"></a>
+
+  <h3 id="Utils_Net_DNS_DNSHeader_CheckingDisabled" data-uid="Utils.Net.DNS.DNSHeader.CheckingDisabled">
+  CheckingDisabled
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/DNS/DNSHeader.cs/#L209"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets a value indicating whether the Checking Disabled (CD) bit is set.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool CheckingDisabled { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+  <h4 class="section" id="Utils_Net_DNS_DNSHeader_CheckingDisabled_remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>This bit (introduced in <a href="https://www.rfc-editor.org/rfc/rfc2535">RFC 2535</a>) is set in a query to
+indicate that Pending (non-authenticated) data is acceptable to the resolver sending the query.</p>
+</div>
+
+
+
+
+  <a id="Utils_Net_DNS_DNSHeader_ErrorCode_" data-uid="Utils.Net.DNS.DNSHeader.ErrorCode*"></a>
+
+  <h3 id="Utils_Net_DNS_DNSHeader_ErrorCode" data-uid="Utils.Net.DNS.DNSHeader.ErrorCode">
+  ErrorCode
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/DNS/DNSHeader.cs/#L234"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the error code (RCODE) in the DNS header.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public DNSError ErrorCode { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Net.DNS.DNSError.html">DNSError</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+  <h4 class="section" id="Utils_Net_DNS_DNSHeader_ErrorCode_remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>This indicates the status of the response (e.g., <a class="xref" href="Utils.Net.DNS.DNSError.html#Utils_Net_DNS_DNSError_FormatError">FormatError</a>, <a class="xref" href="Utils.Net.DNS.DNSError.html#Utils_Net_DNS_DNSError_ServerFailure">ServerFailure</a>, etc.).</p>
+</div>
+
+
+
+
+  <a id="Utils_Net_DNS_DNSHeader_ID_" data-uid="Utils.Net.DNS.DNSHeader.ID*"></a>
+
+  <h3 id="Utils_Net_DNS_DNSHeader_ID" data-uid="Utils.Net.DNS.DNSHeader.ID">
+  ID
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/DNS/DNSHeader.cs/#L67"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the 16-bit DNS packet identifier.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">[DNSField]
+public ushort ID { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint16">ushort</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_DNS_DNSHeader_MessageTruncated_" data-uid="Utils.Net.DNS.DNSHeader.MessageTruncated*"></a>
+
+  <h3 id="Utils_Net_DNS_DNSHeader_MessageTruncated" data-uid="Utils.Net.DNS.DNSHeader.MessageTruncated">
+  MessageTruncated
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/DNS/DNSHeader.cs/#L158"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets a value indicating whether the Message Truncated (TC) bit is set.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool MessageTruncated { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+  <h4 class="section" id="Utils_Net_DNS_DNSHeader_MessageTruncated_remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>If true, the total size of the DNS packet exceeded the allowable size, and the message was truncated.</p>
+</div>
+
+
+
+
+  <a id="Utils_Net_DNS_DNSHeader_OpCode_" data-uid="Utils.Net.DNS.DNSHeader.OpCode*"></a>
+
+  <h3 id="Utils_Net_DNS_DNSHeader_OpCode" data-uid="Utils.Net.DNS.DNSHeader.OpCode">
+  OpCode
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/DNS/DNSHeader.cs/#L134"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the <a class="xref" href="Utils.Net.DNS.DNSOpCode.html">DNSOpCode</a> portion of the DNS flags, indicating the
+requested operation (e.g., Standard query, Inverse, Status).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public DNSOpCode OpCode { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Net.DNS.DNSOpCode.html">DNSOpCode</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_DNS_DNSHeader_QrBit_" data-uid="Utils.Net.DNS.DNSHeader.QrBit*"></a>
+
+  <h3 id="Utils_Net_DNS_DNSHeader_QrBit" data-uid="Utils.Net.DNS.DNSHeader.QrBit">
+  QrBit
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/DNS/DNSHeader.cs/#L124"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the <a class="xref" href="Utils.Net.DNS.DNSQRBit.html">DNSQRBit</a> (query or response) portion of the DNS flags.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public DNSQRBit QrBit { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Net.DNS.DNSQRBit.html">DNSQRBit</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_DNS_DNSHeader_RecursionDesired_" data-uid="Utils.Net.DNS.DNSHeader.RecursionDesired*"></a>
+
+  <h3 id="Utils_Net_DNS_DNSHeader_RecursionDesired" data-uid="Utils.Net.DNS.DNSHeader.RecursionDesired">
+  RecursionDesired
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/DNS/DNSHeader.cs/#L170"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets a value indicating whether the Recursion Desired (RD) bit is set.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool RecursionDesired { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+  <h4 class="section" id="Utils_Net_DNS_DNSHeader_RecursionDesired_remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>In a query, setting this bit requests that the DNS server perform recursive resolution on behalf of the client.</p>
+</div>
+
+
+
+
+  <a id="Utils_Net_DNS_DNSHeader_RecursionPossible_" data-uid="Utils.Net.DNS.DNSHeader.RecursionPossible*"></a>
+
+  <h3 id="Utils_Net_DNS_DNSHeader_RecursionPossible" data-uid="Utils.Net.DNS.DNSHeader.RecursionPossible">
+  RecursionPossible
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/DNS/DNSHeader.cs/#L182"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets a value indicating whether the Recursion Available (RA) bit is set.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool RecursionPossible { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+  <h4 class="section" id="Utils_Net_DNS_DNSHeader_RecursionPossible_remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>In a response, if this bit is set, the DNS server supports recursive queries.</p>
+</div>
+
+
+
+
+  <a id="Utils_Net_DNS_DNSHeader_Requests_" data-uid="Utils.Net.DNS.DNSHeader.Requests*"></a>
+
+  <h3 id="Utils_Net_DNS_DNSHeader_Requests" data-uid="Utils.Net.DNS.DNSHeader.Requests">
+  Requests
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/DNS/DNSHeader.cs/#L104"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets a list of DNS question records associated with this header.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public IList&lt;DNSRequestRecord&gt; Requests { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ilist-1">IList</a>&lt;<a class="xref" href="Utils.Net.DNS.DNSRequestRecord.html">DNSRequestRecord</a>&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_DNS_DNSHeader_ReservedFlags_" data-uid="Utils.Net.DNS.DNSHeader.ReservedFlags*"></a>
+
+  <h3 id="Utils_Net_DNS_DNSHeader_ReservedFlags" data-uid="Utils.Net.DNS.DNSHeader.ReservedFlags">
+  ReservedFlags
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/DNS/DNSHeader.cs/#L222"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the portion of the header reserved for future use (Z bits).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public byte ReservedFlags { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+  <h4 class="section" id="Utils_Net_DNS_DNSHeader_ReservedFlags_remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Historically, these bits must be zero, but with <a href="https://www.rfc-editor.org/rfc/rfc2535">RFC 2535</a>,
+some of them were repurposed for AD/CD.</p>
+</div>
+
+
+
+
+  <a id="Utils_Net_DNS_DNSHeader_Responses_" data-uid="Utils.Net.DNS.DNSHeader.Responses*"></a>
+
+  <h3 id="Utils_Net_DNS_DNSHeader_Responses" data-uid="Utils.Net.DNS.DNSHeader.Responses">
+  Responses
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/DNS/DNSHeader.cs/#L109"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets a list of DNS answer records associated with this header.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public IList&lt;DNSResponseRecord&gt; Responses { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ilist-1">IList</a>&lt;<a class="xref" href="Utils.Net.DNS.DNSResponseRecord.html">DNSResponseRecord</a>&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h2 class="section" id="methods">Methods
+</h2>
+
+
+  <a id="Utils_Net_DNS_DNSHeader_Append_" data-uid="Utils.Net.DNS.DNSHeader.Append*"></a>
+
+  <h3 id="Utils_Net_DNS_DNSHeader_Append_Utils_Net_DNS_DNSHeader_" data-uid="Utils.Net.DNS.DNSHeader.Append(Utils.Net.DNS.DNSHeader)">
+  Append(DNSHeader)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/DNS/DNSHeader.cs/#L246"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Merges (appends) the requests, responses, authority, and additional records from another
+<a class="xref" href="Utils.Net.DNS.DNSHeader.html">DNSHeader</a> into the current one, provided the IDs do not match.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void Append(DNSHeader header)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>header</code> <a class="xref" href="Utils.Net.DNS.DNSHeader.html">DNSHeader</a></dt>
+    <dd><p>Another <a class="xref" href="Utils.Net.DNS.DNSHeader.html">DNSHeader</a> to merge from.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.exception">Exception</a></dt>
+    <dd><p>Thrown if the <code class="paramref">header</code> has the same <a class="xref" href="Utils.Net.DNS.DNSHeader.html#Utils_Net_DNS_DNSHeader_ID">ID</a> as the current header.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Net_DNS_DNSHeader_ToString_" data-uid="Utils.Net.DNS.DNSHeader.ToString*"></a>
+
+  <h3 id="Utils_Net_DNS_DNSHeader_ToString" data-uid="Utils.Net.DNS.DNSHeader.ToString">
+  ToString()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/DNS/DNSHeader.cs/#L290"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns a string describing the current header fields and associated request/response sets.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override string ToString()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>A human-readable <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a> representation of this DNS header.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/DNS/DNSHeader.cs/#L52" class="edit-link">Edit this page</a>
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

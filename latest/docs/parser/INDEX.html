@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Utils.Parser Documentation Index | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Utils.Parser Documentation Index | omy.Utils Documentation ">
+      
+      
+      <link rel="icon" href="../../favicon.ico">
+      <link rel="stylesheet" href="../../public/docfx.min.css">
+      <link rel="stylesheet" href="../../public/main.css">
+      <meta name="docfx:navrel" content="../../toc.html">
+      <meta name="docfx:tocrel" content="../../toc.html">
+      
+      <meta name="docfx:rel" content="../../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/blob/master/docs/parser/INDEX.md/#L1">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../../index.html">
+            <img id="logo" class="svg" src="../../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+
+      <div class="content">
+        <div class="actionbar">
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="utilsparser-documentation-index">Utils.Parser Documentation Index</h1>
+
+<p>This index consolidates the parser documentation set and gives a short summary of each file.</p>
+<h2 id="core-contracts-and-boundaries">Core contracts and boundaries</h2>
+<ul>
+<li><a href="RuntimeStateOwnership.html"><code>RuntimeStateOwnership.md</code></a>: Canonical authority map for runtime responsibilities (parse decisions, diagnostics, parse-tree ownership, scheduler/registry boundaries).</li>
+<li><a href="ParserMetadataAndRuntimeLimitations.html"><code>ParserMetadataAndRuntimeLimitations.md</code></a>: Limitations-first reference that clarifies metadata-only semantics, unsupported runtime semantics, and activation preconditions.</li>
+<li><a href="RuntimeObservationAndExportContract.html"><code>RuntimeObservationAndExportContract.md</code></a>: Defines what runtime observations are allowed to emit and how exporters must remain passive and non-authoritative.</li>
+<li><a href="DiagnosticsObservationCorrelation.html"><code>DiagnosticsObservationCorrelation.md</code></a>: Conservative rules for linking diagnostics to runtime observations without changing runtime authority.</li>
+</ul>
+<h2 id="metadata-and-preparation-documents">Metadata and preparation documents</h2>
+<ul>
+<li><a href="ContinuationMetadata.html"><code>ContinuationMetadata.md</code></a>: Describes continuation metadata lifecycle and explicitly states that metadata does not grant execution/resume authority.</li>
+<li><a href="SharedLookAheadPreparation.html"><code>SharedLookAheadPreparation.md</code></a>: Documents shared-prefix/look-ahead preparation as deterministic advisory metadata only.</li>
+<li><a href="RuntimeArchitecture.html"><code>RuntimeArchitecture.md</code></a>: Canonical pipeline and ownership map from preparation through analysis, including metadata authority boundaries.</li>
+</ul>
+<h2 id="compatibility-and-analysis">Compatibility and analysis</h2>
+<ul>
+<li><a href="EmbeddedCodeExecutionModel.html"><code>EmbeddedCodeExecutionModel.md</code></a>: Architecture boundary for ANTLR embedded code, including runtime-inline and generated-C# opt-in paths, the no-op embedded-code transformer default, optional target-language rewrites including C# transformer-only current-rule local writes and runtime current-rule return writes in <code>@after</code> and inline parser actions, explicit rollback-safe assignment/list labeled child-call result helpers, the no-op default rule-call policy, the separate explicitly opt-in untyped and typed positional/named simple-literal binding policies, the typed built-in conversion allowlist, their narrow atomic batch seed API, typed trailing positional and default-satisfied named coverage, passive raw default metadata, rollback/state-key integration, lexer named-action generated-C# transactional limits, generated lifecycle hooks, and unsupported execution boundaries.</li>
+<li><a href="EmbeddedCodeTransactionalState.html"><code>EmbeddedCodeTransactionalState.md</code></a>: Transactional-state audit covering managed backtracking rollback, immutable labeled child-call result stores and hashing, rollback-safe parser-managed helper state for scalar and ordered list-label access, atomic pending-seed batches, state-aware memoization, generated lifecycle state, external-side-effect limits, deterministic hashing of untyped and converted typed positional/named literal parameter seeds including default-derived effective values, and volatile memoization bypass for arbitrary explicit seed objects.</li>
+<li><a href="ANTLRCompatibility.html"><code>ANTLRCompatibility.md</code></a>: Canonical ANTLR compatibility reference, including conservative defaults, explicit labeled parser-rule return/result semantics, repeated list-label target validation, embedded-code preservation by default, optional target-language transformers for <code>$...</code> convenience syntax including C# transformer-only current-rule local writes and runtime current-rule return writes in <code>@after</code> and inline parser actions, embedded-code opt-in paths, represented metadata, deterministic named-action diagnostics for lexer grammars and unsupported scopes, the separate explicitly opt-in untyped and typed positional/named literal call policies, including typed simple-literal defaults, their conversion rules, and their non-goals.</li>
+<li><a href="Antlr4CompatibilityMatrix.html"><code>Antlr4CompatibilityMatrix.md</code></a>: Feature matrix for default, runtime-inline, and generated-C# behavior, including embedded-code preservation by default, optional ANTLR-style attribute rewriting plus local-write and runtime current-rule return-write rewriting for <code>@after</code> and inline parser actions through a target-language transformer, labeled assignment/list result access, source-generator C# parser and lexer named-action boundaries, deterministic unsupported named-action diagnostics, partial opt-in untyped and typed positional/named literal call binding, invocation-frame metadata, and state-aware memoization constraints.</li>
+<li><a href="LexerInlineActionsAndPredicatesAudit.html"><code>LexerInlineActionsAndPredicatesAudit.md</code></a>: Audits current minimal opt-in lexer inline action and lexer predicate support boundaries; documents supported generated-C# opt-in behavior for fragments, rule references, simple quantifiers, repeated hook positions, false-predicate/action ordering, tested lexer command/mode interactions, remaining unsupported runtime-inline behavior, risks, and phased prerequisites.</li>
+<li><a href="RuntimeTraceAnalysis.html"><code>RuntimeTraceAnalysis.md</code></a>: Tooling-oriented analysis model for runtime traces, focused on descriptive outputs rather than runtime control.</li>
+</ul>
+<h2 id="maintenance-rule-for-contributors-and-agents">Maintenance rule for contributors and agents</h2>
+<p>When adding, removing, or materially changing any file in <code>docs/parser/</code>, update this index in the same change so summaries stay accurate.</p>
+<h2 id="recent-metadata-note">Recent metadata note</h2>
+<p><code>ANTLRCompatibility.md</code> is the primary compatibility source for embedded code. <code>EmbeddedCodeExecutionModel.md</code> and <code>EmbeddedCodeTransactionalState.md</code> complement it with architecture and flow details, including the <code>IParserEmbeddedCodeTransformer</code> boundary, no-op default preservation, shared runtime indexing metadata, explicit unsupported reasons, fresh generated execution contexts for <code>ParseWithEmbeddedCode(string)</code>, explicit context-bound generated policies, the preparatory <code>ParserExecutionContextCopier&lt;TContext&gt;</code> helper, generated <code>Fork()</code> / <code>CopyFrom(...)</code> context helpers, state-aware completed-result memoization via <code>IParserExecutionStateManager.GetCurrentStateKey()</code> plus post-rule snapshot restoration, managed execution-state capture/restore for parser backtracking attempt boundaries, required-property compatibility guidance, passive parser rule invocation-frame descriptor infrastructure with preserved raw rule locals and exception metadata, explicit before/after rule-call policy callbacks with current-call-site metadata, generated C# opt-in <code>@init</code> / <code>@after</code> lifecycle support with missing-only untyped <code>null</code> allocation and explicit rule-local frame helper methods, generated C# parser <code>@header</code> / <code>@parser::header</code> source-file injection diagnostics (<code>UP1035</code>), generated C# parser <code>@parser::members</code> execution-context injection, generated C# parser <code>@footer</code> / <code>@parser::footer</code> trailing source injection diagnostics (<code>UP1036</code>), deterministic unsupported custom lexer/unknown named-action diagnostics including parser named actions and unscoped parser-compatible actions in lexer grammars, the top-level parse-rejection rollback boundary, <code>UP1030</code> predicate-options compatibility diagnostic, <code>UP1033</code>/<code>UP1034</code> rule options metadata diagnostics, <code>UP1031</code> parser-members injection diagnostics, and <code>UP1029</code> generator diagnostics for visible unsupported constructs used to keep runtime-inline preparation and source-generated hooks aligned with limited generated-C# opt-in lexer action and predicate execution.</p>
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/docs/parser/INDEX.md/#L1" class="edit-link">Edit this page</a>
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

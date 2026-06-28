@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Class DateUtils | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Class DateUtils | omy.Utils Documentation ">
+      
+      <meta name="description" content="Provides utility methods for date and time calculations and manipulations.">
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_Dates_DateUtils.md&amp;value=---%0Auid%3A%20Utils.Dates.DateUtils%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="Utils.Dates.DateUtils">
+
+
+
+  <h1 id="Utils_Dates_DateUtils" data-uid="Utils.Dates.DateUtils" class="text-break">
+Class DateUtils  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateUtils.cs/#L11"><i class="bi bi-code-slash"></i></a>
+  </h1>
+
+  <div class="facts text-secondary">
+    <dl><dt>Namespace</dt><dd><a class="xref" href="Utils.html">Utils</a>.<a class="xref" href="Utils.Dates.html">Dates</a></dd></dl>
+  <dl><dt>Assembly</dt><dd>Utils.dll</dd></dl>
+  </div>
+
+  <div class="markdown summary"><p>Provides utility methods for date and time calculations and manipulations.</p>
+</div>
+  <div class="markdown conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static class DateUtils</code></pre>
+  </div>
+
+
+
+
+  <dl class="typelist inheritance">
+    <dt>Inheritance</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
+      <div><span class="xref">DateUtils</span></div>
+    </dd>
+  </dl>
+
+
+
+  <dl class="typelist inheritedMembers">
+    <dt>Inherited Members</dt>
+    <dd>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)">object.Equals(object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)">object.Equals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gethashcode">object.GetHashCode()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone">object.MemberwiseClone()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.tostring">object.ToString()</a>
+    </div>
+  </dd></dl>
+
+
+
+
+
+
+  <h2 class="section" id="methods">Methods
+</h2>
+
+
+  <a id="Utils_Dates_DateUtils_AddWorkingDays_" data-uid="Utils.Dates.DateUtils.AddWorkingDays*"></a>
+
+  <h3 id="Utils_Dates_DateUtils_AddWorkingDays_System_DateTime_System_Int32_Utils_Dates_ICalendarProvider_" data-uid="Utils.Dates.DateUtils.AddWorkingDays(System.DateTime,System.Int32,Utils.Dates.ICalendarProvider)">
+  AddWorkingDays(DateTime, int, ICalendarProvider)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateUtils.cs/#L190"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Adds a number of working days to the specified <code class="paramref">date</code>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static DateTime AddWorkingDays(this DateTime date, int workingDays, ICalendarProvider calendarProvider)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>date</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a></dt>
+    <dd><p>Base date.</p>
+</dd>
+    <dt><code>workingDays</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Number of working days to add.</p>
+</dd>
+    <dt><code>calendarProvider</code> <a class="xref" href="Utils.Dates.ICalendarProvider.html">ICalendarProvider</a></dt>
+    <dd><p>Calendar providing working day information.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a></dt>
+    <dd><p>The resulting date including additional non working days.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Dates_DateUtils_ComputeEaster_" data-uid="Utils.Dates.DateUtils.ComputeEaster*"></a>
+
+  <h3 id="Utils_Dates_DateUtils_ComputeEaster_System_Int32_" data-uid="Utils.Dates.DateUtils.ComputeEaster(System.Int32)">
+  ComputeEaster(int)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateUtils.cs/#L249"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Calculates the date of Easter Sunday for the specified year using the Anonymous Gregorian algorithm.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static DateTime ComputeEaster(int year)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>year</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>The year to calculate Easter for.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a></dt>
+    <dd><p>The date of Easter Sunday for the specified year.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Dates_DateUtils_ComputeEasterRange_" data-uid="Utils.Dates.DateUtils.ComputeEasterRange*"></a>
+
+  <h3 id="Utils_Dates_DateUtils_ComputeEasterRange_System_Int32_System_Int32_" data-uid="Utils.Dates.DateUtils.ComputeEasterRange(System.Int32,System.Int32)">
+  ComputeEasterRange(int, int)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateUtils.cs/#L292"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Calculates the dates of Easter Sunday for a range of years.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;DateTime&gt; ComputeEasterRange(int startYear, int endYear)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>startYear</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>The start year of the range.</p>
+</dd>
+    <dt><code>endYear</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>The end year of the range.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a>&gt;</dt>
+    <dd><p>An enumerable of DateTime objects representing Easter Sunday for each year in the range.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Dates_DateUtils_EndOf_" data-uid="Utils.Dates.DateUtils.EndOf*"></a>
+
+  <h3 id="Utils_Dates_DateUtils_EndOf_System_DateTime_Utils_Dates_PeriodTypeEnum_" data-uid="Utils.Dates.DateUtils.EndOf(System.DateTime,Utils.Dates.PeriodTypeEnum)">
+  EndOf(DateTime, PeriodTypeEnum)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateUtils.cs/#L93"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the end date of the specified period that contains the given date.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static DateTime EndOf(this DateTime dateTime, PeriodTypeEnum period)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>dateTime</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a></dt>
+    <dd><p>The reference date.</p>
+</dd>
+    <dt><code>period</code> <a class="xref" href="Utils.Dates.PeriodTypeEnum.html">PeriodTypeEnum</a></dt>
+    <dd><p>The period type to calculate the end date for.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a></dt>
+    <dd><p>The end date of the specified period.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Dates_DateUtils_EndOf_" data-uid="Utils.Dates.DateUtils.EndOf*"></a>
+
+  <h3 id="Utils_Dates_DateUtils_EndOf_System_DateTime_Utils_Dates_PeriodTypeEnum_System_DayOfWeek_" data-uid="Utils.Dates.DateUtils.EndOf(System.DateTime,Utils.Dates.PeriodTypeEnum,System.DayOfWeek)">
+  EndOf(DateTime, PeriodTypeEnum, DayOfWeek)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateUtils.cs/#L123"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the end date of the specified period that contains the given date using the provided first day of the week.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static DateTime EndOf(this DateTime dateTime, PeriodTypeEnum period, DayOfWeek firstDayOfWeek)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>dateTime</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a></dt>
+    <dd><p>The reference date.</p>
+</dd>
+    <dt><code>period</code> <a class="xref" href="Utils.Dates.PeriodTypeEnum.html">PeriodTypeEnum</a></dt>
+    <dd><p>The period type to calculate the end date for.</p>
+</dd>
+    <dt><code>firstDayOfWeek</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.dayofweek">DayOfWeek</a></dt>
+    <dd><p>The first day of the week.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a></dt>
+    <dd><p>The end date of the specified period.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Dates_DateUtils_EndOf_" data-uid="Utils.Dates.DateUtils.EndOf*"></a>
+
+  <h3 id="Utils_Dates_DateUtils_EndOf_System_DateTime_Utils_Dates_PeriodTypeEnum_System_Globalization_CultureInfo_" data-uid="Utils.Dates.DateUtils.EndOf(System.DateTime,Utils.Dates.PeriodTypeEnum,System.Globalization.CultureInfo)">
+  EndOf(DateTime, PeriodTypeEnum, CultureInfo)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateUtils.cs/#L103"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the end date of the specified period that contains the given date using the provided culture info.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static DateTime EndOf(this DateTime dateTime, PeriodTypeEnum period, CultureInfo cultureInfo)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>dateTime</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a></dt>
+    <dd><p>The reference date.</p>
+</dd>
+    <dt><code>period</code> <a class="xref" href="Utils.Dates.PeriodTypeEnum.html">PeriodTypeEnum</a></dt>
+    <dd><p>The period type to calculate the end date for.</p>
+</dd>
+    <dt><code>cultureInfo</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.globalization.cultureinfo">CultureInfo</a></dt>
+    <dd><p>The culture info to determine the first day of the week.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a></dt>
+    <dd><p>The end date of the specified period.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Dates_DateUtils_EndOf_" data-uid="Utils.Dates.DateUtils.EndOf*"></a>
+
+  <h3 id="Utils_Dates_DateUtils_EndOf_System_DateTime_Utils_Dates_PeriodTypeEnum_System_Globalization_DateTimeFormatInfo_" data-uid="Utils.Dates.DateUtils.EndOf(System.DateTime,Utils.Dates.PeriodTypeEnum,System.Globalization.DateTimeFormatInfo)">
+  EndOf(DateTime, PeriodTypeEnum, DateTimeFormatInfo)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateUtils.cs/#L113"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the end date of the specified period that contains the given date using the provided DateTimeFormatInfo.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static DateTime EndOf(this DateTime dateTime, PeriodTypeEnum period, DateTimeFormatInfo dateTimeFormatInfo)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>dateTime</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a></dt>
+    <dd><p>The reference date.</p>
+</dd>
+    <dt><code>period</code> <a class="xref" href="Utils.Dates.PeriodTypeEnum.html">PeriodTypeEnum</a></dt>
+    <dd><p>The period type to calculate the end date for.</p>
+</dd>
+    <dt><code>dateTimeFormatInfo</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.globalization.datetimeformatinfo">DateTimeFormatInfo</a></dt>
+    <dd><p>The DateTimeFormatInfo to determine the first day of the week.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a></dt>
+    <dd><p>The end date of the specified period.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Dates_DateUtils_FromUnixTimeStamp_" data-uid="Utils.Dates.DateUtils.FromUnixTimeStamp*"></a>
+
+  <h3 id="Utils_Dates_DateUtils_FromUnixTimeStamp_System_Int64_" data-uid="Utils.Dates.DateUtils.FromUnixTimeStamp(System.Int64)">
+  FromUnixTimeStamp(long)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateUtils.cs/#L180"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Converts a Unix timestamp to a DateTime.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static DateTime FromUnixTimeStamp(long timestamp)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>timestamp</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int64">long</a></dt>
+    <dd><p>The Unix timestamp to convert.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a></dt>
+    <dd><p>A DateTime representing the specified Unix timestamp.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Dates_DateUtils_NextWorkingDay_" data-uid="Utils.Dates.DateUtils.NextWorkingDay*"></a>
+
+  <h3 id="Utils_Dates_DateUtils_NextWorkingDay_System_DateTime_Utils_Dates_ICalendarProvider_" data-uid="Utils.Dates.DateUtils.NextWorkingDay(System.DateTime,Utils.Dates.ICalendarProvider)">
+  NextWorkingDay(DateTime, ICalendarProvider)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateUtils.cs/#L214"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the next working day starting at the provided <code class="paramref">date</code>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static DateTime NextWorkingDay(this DateTime date, ICalendarProvider calendarProvider)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>date</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a></dt>
+    <dd><p>Base date.</p>
+</dd>
+    <dt><code>calendarProvider</code> <a class="xref" href="Utils.Dates.ICalendarProvider.html">ICalendarProvider</a></dt>
+    <dd><p>Calendar providing working day information.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a></dt>
+    <dd><p>The first working day on or after <code class="paramref">date</code>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Dates_DateUtils_PreviousWorkingDay_" data-uid="Utils.Dates.DateUtils.PreviousWorkingDay*"></a>
+
+  <h3 id="Utils_Dates_DateUtils_PreviousWorkingDay_System_DateTime_Utils_Dates_ICalendarProvider_" data-uid="Utils.Dates.DateUtils.PreviousWorkingDay(System.DateTime,Utils.Dates.ICalendarProvider)">
+  PreviousWorkingDay(DateTime, ICalendarProvider)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateUtils.cs/#L230"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the previous working day ending at the provided <code class="paramref">date</code>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static DateTime PreviousWorkingDay(this DateTime date, ICalendarProvider calendarProvider)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>date</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a></dt>
+    <dd><p>Base date.</p>
+</dd>
+    <dt><code>calendarProvider</code> <a class="xref" href="Utils.Dates.ICalendarProvider.html">ICalendarProvider</a></dt>
+    <dd><p>Calendar providing working day information.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a></dt>
+    <dd><p>The first working day on or before <code class="paramref">date</code>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Dates_DateUtils_StartOf_" data-uid="Utils.Dates.DateUtils.StartOf*"></a>
+
+  <h3 id="Utils_Dates_DateUtils_StartOf_System_DateTime_Utils_Dates_PeriodTypeEnum_" data-uid="Utils.Dates.DateUtils.StartOf(System.DateTime,Utils.Dates.PeriodTypeEnum)">
+  StartOf(DateTime, PeriodTypeEnum)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateUtils.cs/#L19"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the start date of the specified period that contains the given date.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static DateTime StartOf(this DateTime dateTime, PeriodTypeEnum period)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>dateTime</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a></dt>
+    <dd><p>The reference date.</p>
+</dd>
+    <dt><code>period</code> <a class="xref" href="Utils.Dates.PeriodTypeEnum.html">PeriodTypeEnum</a></dt>
+    <dd><p>The period type to calculate the start date for.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a></dt>
+    <dd><p>The start date of the specified period.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Dates_DateUtils_StartOf_" data-uid="Utils.Dates.DateUtils.StartOf*"></a>
+
+  <h3 id="Utils_Dates_DateUtils_StartOf_System_DateTime_Utils_Dates_PeriodTypeEnum_System_DayOfWeek_" data-uid="Utils.Dates.DateUtils.StartOf(System.DateTime,Utils.Dates.PeriodTypeEnum,System.DayOfWeek)">
+  StartOf(DateTime, PeriodTypeEnum, DayOfWeek)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateUtils.cs/#L49"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the start date of the specified period that contains the given date using the provided first day of the week.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static DateTime StartOf(this DateTime dateTime, PeriodTypeEnum period, DayOfWeek firstDayOfWeek)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>dateTime</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a></dt>
+    <dd><p>The reference date.</p>
+</dd>
+    <dt><code>period</code> <a class="xref" href="Utils.Dates.PeriodTypeEnum.html">PeriodTypeEnum</a></dt>
+    <dd><p>The period type to calculate the start date for.</p>
+</dd>
+    <dt><code>firstDayOfWeek</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.dayofweek">DayOfWeek</a></dt>
+    <dd><p>The first day of the week.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a></dt>
+    <dd><p>The start date of the specified period.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Dates_DateUtils_StartOf_" data-uid="Utils.Dates.DateUtils.StartOf*"></a>
+
+  <h3 id="Utils_Dates_DateUtils_StartOf_System_DateTime_Utils_Dates_PeriodTypeEnum_System_Globalization_CultureInfo_" data-uid="Utils.Dates.DateUtils.StartOf(System.DateTime,Utils.Dates.PeriodTypeEnum,System.Globalization.CultureInfo)">
+  StartOf(DateTime, PeriodTypeEnum, CultureInfo)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateUtils.cs/#L29"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the start date of the specified period that contains the given date using the provided culture info.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static DateTime StartOf(this DateTime dateTime, PeriodTypeEnum period, CultureInfo cultureInfo)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>dateTime</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a></dt>
+    <dd><p>The reference date.</p>
+</dd>
+    <dt><code>period</code> <a class="xref" href="Utils.Dates.PeriodTypeEnum.html">PeriodTypeEnum</a></dt>
+    <dd><p>The period type to calculate the start date for.</p>
+</dd>
+    <dt><code>cultureInfo</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.globalization.cultureinfo">CultureInfo</a></dt>
+    <dd><p>The culture info to determine the first day of the week.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a></dt>
+    <dd><p>The start date of the specified period.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Dates_DateUtils_StartOf_" data-uid="Utils.Dates.DateUtils.StartOf*"></a>
+
+  <h3 id="Utils_Dates_DateUtils_StartOf_System_DateTime_Utils_Dates_PeriodTypeEnum_System_Globalization_DateTimeFormatInfo_" data-uid="Utils.Dates.DateUtils.StartOf(System.DateTime,Utils.Dates.PeriodTypeEnum,System.Globalization.DateTimeFormatInfo)">
+  StartOf(DateTime, PeriodTypeEnum, DateTimeFormatInfo)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateUtils.cs/#L39"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the start date of the specified period that contains the given date using the provided DateTimeFormatInfo.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static DateTime StartOf(this DateTime dateTime, PeriodTypeEnum period, DateTimeFormatInfo dateTimeFormatInfo)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>dateTime</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a></dt>
+    <dd><p>The reference date.</p>
+</dd>
+    <dt><code>period</code> <a class="xref" href="Utils.Dates.PeriodTypeEnum.html">PeriodTypeEnum</a></dt>
+    <dd><p>The period type to calculate the start date for.</p>
+</dd>
+    <dt><code>dateTimeFormatInfo</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.globalization.datetimeformatinfo">DateTimeFormatInfo</a></dt>
+    <dd><p>The DateTimeFormatInfo to determine the first day of the week.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a></dt>
+    <dd><p>The start date of the specified period.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Dates_DateUtils_ToUnixTimeStamp_" data-uid="Utils.Dates.DateUtils.ToUnixTimeStamp*"></a>
+
+  <h3 id="Utils_Dates_DateUtils_ToUnixTimeStamp_System_DateTime_" data-uid="Utils.Dates.DateUtils.ToUnixTimeStamp(System.DateTime)">
+  ToUnixTimeStamp(DateTime)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateUtils.cs/#L172"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Converts the specified DateTime to a Unix timestamp.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static long ToUnixTimeStamp(this DateTime dateTime)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>dateTime</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a></dt>
+    <dd><p>The DateTime to convert.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int64">long</a></dt>
+    <dd><p>The Unix timestamp representing the specified DateTime.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateUtils.cs/#L11" class="edit-link">Edit this page</a>
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

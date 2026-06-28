@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Class SqlDeleteStatement | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Class SqlDeleteStatement | omy.Utils Documentation ">
+      
+      <meta name="description" content="Represents a parsed DELETE statement.">
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_Data_Sql_SqlDeleteStatement.md&amp;value=---%0Auid%3A%20Utils.Data.Sql.SqlDeleteStatement%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="Utils.Data.Sql.SqlDeleteStatement">
+
+
+
+  <h1 id="Utils_Data_Sql_SqlDeleteStatement" data-uid="Utils.Data.Sql.SqlDeleteStatement" class="text-break">
+Class SqlDeleteStatement  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L1077"><i class="bi bi-code-slash"></i></a>
+  </h1>
+
+  <div class="facts text-secondary">
+    <dl><dt>Namespace</dt><dd><a class="xref" href="Utils.html">Utils</a>.<a class="xref" href="Utils.Data.html">Data</a>.<a class="xref" href="Utils.Data.Sql.html">Sql</a></dd></dl>
+  <dl><dt>Assembly</dt><dd>Utils.Data.dll</dd></dl>
+  </div>
+
+  <div class="markdown summary"><p>Represents a parsed DELETE statement.</p>
+</div>
+  <div class="markdown conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public sealed class SqlDeleteStatement : SqlStatement</code></pre>
+  </div>
+
+
+
+
+  <dl class="typelist inheritance">
+    <dt>Inheritance</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
+      <div><a class="xref" href="Utils.Data.Sql.SqlStatement.html">SqlStatement</a></div>
+      <div><span class="xref">SqlDeleteStatement</span></div>
+    </dd>
+  </dl>
+
+
+
+  <dl class="typelist inheritedMembers">
+    <dt>Inherited Members</dt>
+    <dd>
+    <div>
+      <a class="xref" href="Utils.Data.Sql.SqlStatement.html#Utils_Data_Sql_SqlStatement_Segments">SqlStatement.Segments</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Data.Sql.SqlStatement.html#Utils_Data_Sql_SqlStatement_SyntaxOptions">SqlStatement.SyntaxOptions</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Data.Sql.SqlStatement.html#Utils_Data_Sql_SqlStatement_WithClause">SqlStatement.WithClause</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Data.Sql.SqlStatement.html#Utils_Data_Sql_SqlStatement_EnumerateStatements">SqlStatement.EnumerateStatements()</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Data.Sql.SqlStatement.html#Utils_Data_Sql_SqlStatement_ToSql_Utils_Data_Sql_SqlFormattingOptions_">SqlStatement.ToSql(SqlFormattingOptions)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)">object.Equals(object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)">object.Equals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gethashcode">object.GetHashCode()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.tostring">object.ToString()</a>
+    </div>
+  </dd></dl>
+
+  <dl class="typelist extensionMethods">
+    <dt>Extension Methods</dt>
+    <dd>
+  <div>
+      <a class="xref" href="Utils.Data.DataUtils.html#Utils_Data_DataUtils_ToDbValue_System_Object_">DataUtils.ToDbValue(object?)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Mathematics.MathEx.html#Utils_Mathematics_MathEx_Clamp__1___0___0___0_System_Collections_Generic_IComparer___0__">MathEx.Clamp&lt;T&gt;(T, T, T, IComparer&lt;T&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Failure__1___0_">FluentExtensions.Failure&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsEqualTo__2___0___1_">FluentExtensions.IsEqualTo&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterOrEqualsThan__2___0___1_">FluentExtensions.IsGreaterOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterThan__2___0___1_">FluentExtensions.IsGreaterThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsIn__1___0___0___">FluentExtensions.IsIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerOrEqualsThan__2___0___1_">FluentExtensions.IsLowerOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerThan__2___0___1_">FluentExtensions.IsLowerThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotIn__1___0___0___">FluentExtensions.IsNotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotNull__1___0_">FluentExtensions.IsNotNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNull__1___0_">FluentExtensions.IsNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Success__1___0_">FluentExtensions.Success&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Test__1___0_System_Func___0_System_Boolean__">FluentExtensions.Test&lt;T&gt;(T, Func&lt;T, bool&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_System_Boolean_System_Boolean_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T, bool, bool)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1____1_">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1____1_">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_In__1___0___0___">ObjectUtils.In&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_NotIn__1___0___0___">ObjectUtils.NotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustNotBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustNotBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Arg__1___0_System_String_">Validations.Arg&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ValueMustNotBeNull__1___0_System_String_">Validations.ValueMustNotBeNull&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Variable__1___0_System_String_">Validations.Variable&lt;T&gt;(T, string)</a>
+  </div>
+  </dd></dl>
+
+
+
+
+
+  <h2 class="section" id="constructors">Constructors
+</h2>
+
+
+  <a id="Utils_Data_Sql_SqlDeleteStatement__ctor_" data-uid="Utils.Data.Sql.SqlDeleteStatement.#ctor*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlDeleteStatement__ctor_Utils_Data_Sql_SqlSegment_Utils_Data_Sql_SqlSegment_Utils_Data_Sql_SqlSegment_Utils_Data_Sql_SqlSegment_Utils_Data_Sql_SqlSegment_Utils_Data_Sql_SqlSegment_Utils_Data_Sql_WithClause_" data-uid="Utils.Data.Sql.SqlDeleteStatement.#ctor(Utils.Data.Sql.SqlSegment,Utils.Data.Sql.SqlSegment,Utils.Data.Sql.SqlSegment,Utils.Data.Sql.SqlSegment,Utils.Data.Sql.SqlSegment,Utils.Data.Sql.SqlSegment,Utils.Data.Sql.WithClause)">
+  SqlDeleteStatement(SqlSegment?, SqlSegment, SqlSegment?, SqlSegment?, SqlSegment?, SqlSegment?, WithClause?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L1099"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Data.Sql.SqlDeleteStatement.html">SqlDeleteStatement</a> class.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SqlDeleteStatement(SqlSegment? target, SqlSegment from, SqlSegment? @using, SqlSegment? where, SqlSegment? output, SqlSegment? returning, WithClause? withClause)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>target</code> <a class="xref" href="Utils.Data.Sql.SqlSegment.html">SqlSegment</a></dt>
+    <dd><p>The DELETE target segment when explicitly stated.</p>
+</dd>
+    <dt><code>from</code> <a class="xref" href="Utils.Data.Sql.SqlSegment.html">SqlSegment</a></dt>
+    <dd><p>The FROM segment.</p>
+</dd>
+    <dt><code>using</code> <a class="xref" href="Utils.Data.Sql.SqlSegment.html">SqlSegment</a></dt>
+    <dd><p>The USING segment when supported by the dialect.</p>
+</dd>
+    <dt><code>where</code> <a class="xref" href="Utils.Data.Sql.SqlSegment.html">SqlSegment</a></dt>
+    <dd><p>The WHERE segment.</p>
+</dd>
+    <dt><code>output</code> <a class="xref" href="Utils.Data.Sql.SqlSegment.html">SqlSegment</a></dt>
+    <dd><p>The OUTPUT segment.</p>
+</dd>
+    <dt><code>returning</code> <a class="xref" href="Utils.Data.Sql.SqlSegment.html">SqlSegment</a></dt>
+    <dd><p>The RETURNING segment.</p>
+</dd>
+    <dt><code>withClause</code> <a class="xref" href="Utils.Data.Sql.WithClause.html">WithClause</a></dt>
+    <dd><p>Optional CTE definitions.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <h2 class="section" id="properties">Properties
+</h2>
+
+
+  <a id="Utils_Data_Sql_SqlDeleteStatement_DeletePart_" data-uid="Utils.Data.Sql.SqlDeleteStatement.DeletePart*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlDeleteStatement_DeletePart" data-uid="Utils.Data.Sql.SqlDeleteStatement.DeletePart">
+  DeletePart
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L1126"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the DELETE clause represented as a typed part when present.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public DeletePart? DeletePart { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Data.Sql.DeletePart.html">DeletePart</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Data_Sql_SqlDeleteStatement_From_" data-uid="Utils.Data.Sql.SqlDeleteStatement.From*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlDeleteStatement_From" data-uid="Utils.Data.Sql.SqlDeleteStatement.From">
+  From
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L1131"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the FROM segment.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SqlSegment From { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Data.Sql.SqlSegment.html">SqlSegment</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Data_Sql_SqlDeleteStatement_FromPart_" data-uid="Utils.Data.Sql.SqlDeleteStatement.FromPart*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlDeleteStatement_FromPart" data-uid="Utils.Data.Sql.SqlDeleteStatement.FromPart">
+  FromPart
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L1136"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the FROM clause represented as a typed part.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public FromPart FromPart { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Data.Sql.FromPart.html">FromPart</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Data_Sql_SqlDeleteStatement_Output_" data-uid="Utils.Data.Sql.SqlDeleteStatement.Output*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlDeleteStatement_Output" data-uid="Utils.Data.Sql.SqlDeleteStatement.Output">
+  Output
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L1156"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the OUTPUT segment when present.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SqlSegment? Output { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Data.Sql.SqlSegment.html">SqlSegment</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Data_Sql_SqlDeleteStatement_Returning_" data-uid="Utils.Data.Sql.SqlDeleteStatement.Returning*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlDeleteStatement_Returning" data-uid="Utils.Data.Sql.SqlDeleteStatement.Returning">
+  Returning
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L1161"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the RETURNING segment when present.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SqlSegment? Returning { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Data.Sql.SqlSegment.html">SqlSegment</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Data_Sql_SqlDeleteStatement_Target_" data-uid="Utils.Data.Sql.SqlDeleteStatement.Target*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlDeleteStatement_Target" data-uid="Utils.Data.Sql.SqlDeleteStatement.Target">
+  Target
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L1121"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the optional target segment explicitly referenced after DELETE.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SqlSegment? Target { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Data.Sql.SqlSegment.html">SqlSegment</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Data_Sql_SqlDeleteStatement_Using_" data-uid="Utils.Data.Sql.SqlDeleteStatement.Using*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlDeleteStatement_Using" data-uid="Utils.Data.Sql.SqlDeleteStatement.Using">
+  Using
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L1141"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the USING segment when present.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SqlSegment? Using { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Data.Sql.SqlSegment.html">SqlSegment</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Data_Sql_SqlDeleteStatement_Where_" data-uid="Utils.Data.Sql.SqlDeleteStatement.Where*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlDeleteStatement_Where" data-uid="Utils.Data.Sql.SqlDeleteStatement.Where">
+  Where
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L1146"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the WHERE segment when present.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SqlSegment? Where { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Data.Sql.SqlSegment.html">SqlSegment</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Data_Sql_SqlDeleteStatement_WherePart_" data-uid="Utils.Data.Sql.SqlDeleteStatement.WherePart*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlDeleteStatement_WherePart" data-uid="Utils.Data.Sql.SqlDeleteStatement.WherePart">
+  WherePart
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L1151"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the WHERE clause represented as a typed part when present.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public WherePart? WherePart { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Data.Sql.WherePart.html">WherePart</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h2 class="section" id="methods">Methods
+</h2>
+
+
+  <a id="Utils_Data_Sql_SqlDeleteStatement_BuildSql_" data-uid="Utils.Data.Sql.SqlDeleteStatement.BuildSql*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlDeleteStatement_BuildSql" data-uid="Utils.Data.Sql.SqlDeleteStatement.BuildSql">
+  BuildSql()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L1194"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Builds the canonical inline SQL representation of the statement.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected override string BuildSql()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>The inline SQL string representing the statement.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Data_Sql_SqlDeleteStatement_EnsureOutputSegment_" data-uid="Utils.Data.Sql.SqlDeleteStatement.EnsureOutputSegment*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlDeleteStatement_EnsureOutputSegment" data-uid="Utils.Data.Sql.SqlDeleteStatement.EnsureOutputSegment">
+  EnsureOutputSegment()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L1185"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Ensures the OUTPUT segment exists and returns it.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SqlSegment EnsureOutputSegment()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Data.Sql.SqlSegment.html">SqlSegment</a></dt>
+    <dd><p>The existing or newly created OUTPUT segment.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Data_Sql_SqlDeleteStatement_EnsureReturningSegment_" data-uid="Utils.Data.Sql.SqlDeleteStatement.EnsureReturningSegment*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlDeleteStatement_EnsureReturningSegment" data-uid="Utils.Data.Sql.SqlDeleteStatement.EnsureReturningSegment">
+  EnsureReturningSegment()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L1191"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Ensures the RETURNING segment exists and returns it.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SqlSegment EnsureReturningSegment()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Data.Sql.SqlSegment.html">SqlSegment</a></dt>
+    <dd><p>The existing or newly created RETURNING segment.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Data_Sql_SqlDeleteStatement_EnsureTargetSegment_" data-uid="Utils.Data.Sql.SqlDeleteStatement.EnsureTargetSegment*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlDeleteStatement_EnsureTargetSegment" data-uid="Utils.Data.Sql.SqlDeleteStatement.EnsureTargetSegment">
+  EnsureTargetSegment()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L1167"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Ensures the DELETE target segment exists and returns it.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SqlSegment EnsureTargetSegment()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Data.Sql.SqlSegment.html">SqlSegment</a></dt>
+    <dd><p>The existing or newly created target segment.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Data_Sql_SqlDeleteStatement_EnsureUsingSegment_" data-uid="Utils.Data.Sql.SqlDeleteStatement.EnsureUsingSegment*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlDeleteStatement_EnsureUsingSegment" data-uid="Utils.Data.Sql.SqlDeleteStatement.EnsureUsingSegment">
+  EnsureUsingSegment()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L1173"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Ensures the USING segment exists and returns it.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SqlSegment EnsureUsingSegment()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Data.Sql.SqlSegment.html">SqlSegment</a></dt>
+    <dd><p>The existing or newly created USING segment.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Data_Sql_SqlDeleteStatement_EnsureWhereSegment_" data-uid="Utils.Data.Sql.SqlDeleteStatement.EnsureWhereSegment*"></a>
+
+  <h3 id="Utils_Data_Sql_SqlDeleteStatement_EnsureWhereSegment" data-uid="Utils.Data.Sql.SqlDeleteStatement.EnsureWhereSegment">
+  EnsureWhereSegment()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L1179"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Ensures the WHERE segment exists and returns it.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SqlSegment EnsureWhereSegment()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Data.Sql.SqlSegment.html">SqlSegment</a></dt>
+    <dd><p>The existing or newly created WHERE segment.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Data/Sql/SqlQueryAnalyzer.cs/#L1077" class="edit-link">Edit this page</a>
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

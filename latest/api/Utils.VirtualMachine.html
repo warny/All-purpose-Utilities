@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Namespace Utils.VirtualMachine | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Namespace Utils.VirtualMachine | omy.Utils Documentation ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="Utils.VirtualMachine">
+
+  <h1 id="Utils_VirtualMachine" data-uid="Utils.VirtualMachine" class="text-break">Namespace Utils.VirtualMachine</h1>
+  <div class="markdown level0 summary"></div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="markdown level0 remarks"></div>
+
+    <h3 id="classes">
+Classes
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.VirtualMachine.CallFrame.html">CallFrame</a></dt>
+      <dd><p>Represents a single activation frame on a <a class="xref" href="Utils.VirtualMachine.CallStack.html">CallStack</a>, carrying the return address
+and a per-frame local-variable store keyed by name.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.VirtualMachine.CallStack.html">CallStack</a></dt>
+      <dd><p>A frame-based call stack that stores a <a class="xref" href="Utils.VirtualMachine.CallFrame.html">CallFrame</a> per subroutine invocation,
+providing access to per-frame local variables.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.VirtualMachine.CallStackContext.html">CallStackContext</a></dt>
+      <dd><p>A <a class="xref" href="Utils.VirtualMachine.DefaultContext.html">DefaultContext</a> that carries an <a class="xref" href="Utils.VirtualMachine.ICallStack.html">ICallStack</a> for processors that
+implement subroutine calls.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.VirtualMachine.ConditionalBlock.html">ConditionalBlock</a></dt>
+      <dd><p>Represents an active if/else conditional block on a <a class="xref" href="Utils.VirtualMachine.ControlFlowStack.html">ControlFlowStack</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.VirtualMachine.Context.html">Context</a></dt>
+      <dd><p>Represents the base execution context used by <a class="xref" href="Utils.VirtualMachine.VirtualProcessor-1.html">VirtualProcessor&lt;T&gt;</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.VirtualMachine.ControlFlowContext.html">ControlFlowContext</a></dt>
+      <dd><p>A <a class="xref" href="Utils.VirtualMachine.DefaultContext.html">DefaultContext</a> that carries a <a class="xref" href="Utils.VirtualMachine.ControlFlowStack.html">ControlFlowStack</a> for processors
+implementing structured control flow (conditionals, loops, try/catch/finally).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.VirtualMachine.ControlFlowStack.html">ControlFlowStack</a></dt>
+      <dd><p>Manages the nesting of structured control flow blocks at runtime:
+conditionals (<a class="xref" href="Utils.VirtualMachine.ConditionalBlock.html">ConditionalBlock</a>), loops (<a class="xref" href="Utils.VirtualMachine.LoopBlock.html">LoopBlock</a>),
+and exception handlers (<a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html">ExceptionBlock</a>).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.VirtualMachine.DefaultContext.html">DefaultContext</a></dt>
+      <dd><p>A default context implementation providing an object stack.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html">ExceptionBlock</a></dt>
+      <dd><p>Represents an active try/catch/finally block on a <a class="xref" href="Utils.VirtualMachine.ControlFlowStack.html">ControlFlowStack</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.VirtualMachine.FullContext.html">FullContext</a></dt>
+      <dd><p>A <a class="xref" href="Utils.VirtualMachine.DefaultContext.html">DefaultContext</a> combining an <a class="xref" href="Utils.VirtualMachine.ICallStack.html">ICallStack</a> for subroutine calls
+with a <a class="xref" href="Utils.VirtualMachine.ControlFlowStack.html">ControlFlowStack</a> for structured control flow.
+Use this when the VM needs both call/return and if/loop/try semantics.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.VirtualMachine.InstructionAttribute.html">InstructionAttribute</a></dt>
+      <dd><p>Identifies a method as a virtual machine instruction and stores its metadata.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.VirtualMachine.LoopBlock.html">LoopBlock</a></dt>
+      <dd><p>Represents an active loop on a <a class="xref" href="Utils.VirtualMachine.ControlFlowStack.html">ControlFlowStack</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.VirtualMachine.MemoryAccessException.html">MemoryAccessException</a></dt>
+      <dd><p>The exception thrown when a virtual memory access violates the page's mapped access rights,
+or when the target address is not mapped in the process's page table.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.VirtualMachine.NumberReader.html">NumberReader</a></dt>
+      <dd><p>Factory methods for obtaining <a class="xref" href="Utils.VirtualMachine.INumberReader.html">INumberReader</a> instances.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.VirtualMachine.ScheduledProcess-1.html">ScheduledProcess&lt;T&gt;</a></dt>
+      <dd><p>Wraps a context and dedicated processor pair with scheduling metadata, allowing
+<a class="xref" href="Utils.VirtualMachine.Scheduler-1.html">Scheduler&lt;T&gt;</a> to track lifecycle state, priority, and cooperative yield signals.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.VirtualMachine.Scheduler-1.html">Scheduler&lt;T&gt;</a></dt>
+      <dd><p>A cooperative, priority-based process scheduler that time-slices
+<a class="xref" href="Utils.VirtualMachine.ScheduledProcess-1.html">ScheduledProcess&lt;T&gt;</a> instances, giving each process its own
+<a class="xref" href="Utils.VirtualMachine.VirtualProcessor-1.html">VirtualProcessor&lt;T&gt;</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.VirtualMachine.SimpleCallStack.html">SimpleCallStack</a></dt>
+      <dd><p>A lightweight call stack that stores only return addresses, with no per-frame local-variable
+storage. Prefer this over <a class="xref" href="Utils.VirtualMachine.CallStack.html">CallStack</a> when frames do not need local variables.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.VirtualMachine.TypedStackContext-1.html">TypedStackContext&lt;TValue&gt;</a></dt>
+      <dd><p>A context providing a strongly-typed operand stack, avoiding boxing for value types.
+Use this instead of <a class="xref" href="Utils.VirtualMachine.DefaultContext.html">DefaultContext</a> when all stack values share a common type
+(e.g. <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a> for integer VMs, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a> for floating-point VMs).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.VirtualMachine.VirtualMemoryContext-1.html">VirtualMemoryContext&lt;TAddress&gt;</a></dt>
+      <dd><p>A <a class="xref" href="Utils.VirtualMachine.DefaultContext.html">DefaultContext</a> that associates an instruction stream with a specific
+<a class="xref" href="Utils.VirtualMachine.VirtualProcess-1.html">VirtualProcess&lt;TAddress&gt;</a>, allowing the executing processor to perform
+virtual memory reads and writes on behalf of that process.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.VirtualMachine.VirtualMemory-1.html">VirtualMemory&lt;TAddress&gt;</a></dt>
+      <dd><p>Manages a pool of physical <a class="xref" href="Utils.VirtualMachine.VirtualPage.html">VirtualPage</a> instances and a set of
+<a class="xref" href="Utils.VirtualMachine.VirtualProcess-1.html">VirtualProcess&lt;TAddress&gt;</a> objects, each with their own virtual address space.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.VirtualMachine.VirtualPage.html">VirtualPage</a></dt>
+      <dd><p>Represents a fixed-size physical memory page managed by a <a class="xref" href="Utils.VirtualMachine.VirtualMemory-1.html">VirtualMemory&lt;TAddress&gt;</a>.
+Pages are created exclusively by <a class="xref" href="Utils.VirtualMachine.VirtualMemory-1.html#Utils_VirtualMachine_VirtualMemory_1_AllocatePage">AllocatePage()</a> and mapped
+into process virtual address spaces with per-process access rights.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.VirtualMachine.VirtualProcess-1.html">VirtualProcess&lt;TAddress&gt;</a></dt>
+      <dd><p>Represents a virtual process with its own page table mapping virtual page indices to physical
+<a class="xref" href="Utils.VirtualMachine.VirtualPage.html">VirtualPage</a> instances and their per-process access rights.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.VirtualMachine.VirtualProcessorException.html">VirtualProcessorException</a></dt>
+      <dd><p>Represents errors that occur while executing a <a class="xref" href="Utils.VirtualMachine.VirtualProcessor-1.html">VirtualProcessor&lt;T&gt;</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.VirtualMachine.VirtualProcessor-1.html">VirtualProcessor&lt;T&gt;</a></dt>
+      <dd><p>Provides an abstract base class for a virtual processor that interprets and executes
+instructions from a byte array-based context. Instructions are defined by methods
+annotated with <a class="xref" href="Utils.VirtualMachine.InstructionAttribute.html">InstructionAttribute</a>.</p>
+</dd>
+    </dl>
+    <h3 id="interfaces">
+Interfaces
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.VirtualMachine.ICallStack.html">ICallStack</a></dt>
+      <dd><p>Represents a call stack that tracks return addresses for nested subroutine calls.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.VirtualMachine.IControlFlowBlock.html">IControlFlowBlock</a></dt>
+      <dd><p>Base interface for all structured control flow blocks that can be pushed onto
+a <a class="xref" href="Utils.VirtualMachine.ControlFlowStack.html">ControlFlowStack</a>: conditionals, loops, and exception handlers.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.VirtualMachine.INumberReader.html">INumberReader</a></dt>
+      <dd><p>Provides methods to read numbers from a virtual machine <a class="xref" href="Utils.VirtualMachine.Context.html">Context</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.VirtualMachine.IVmInspector-1.html">IVmInspector&lt;T&gt;</a></dt>
+      <dd><p>Optional inspector interface that receives notifications before each instruction is dispatched.
+Inject an implementation into <a class="xref" href="Utils.VirtualMachine.VirtualProcessor-1.html#Utils_VirtualMachine_VirtualProcessor_1_Inspector">Inspector</a> to enable step-by-step
+debugging, profiling, or instruction tracing without subclassing the processor.</p>
+</dd>
+    </dl>
+    <h3 id="enums">
+Enums
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.VirtualMachine.PageAccess.html">PageAccess</a></dt>
+      <dd><p>Specifies the access rights for a virtual memory page mapping.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.VirtualMachine.ProcessState.html">ProcessState</a></dt>
+      <dd><p>Represents the lifecycle state of a process managed by <a class="xref" href="Utils.VirtualMachine.Scheduler-1.html">Scheduler&lt;T&gt;</a>.</p>
+</dd>
+    </dl>
+    <h3 id="delegates">
+Delegates
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.VirtualMachine.VirtualProcessor-1.InstructionDelegate.html">VirtualProcessor&lt;T&gt;.InstructionDelegate</a></dt>
+      <dd><p>Represents a delegate to handle an instruction, given the current context.</p>
+</dd>
+    </dl>
+
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

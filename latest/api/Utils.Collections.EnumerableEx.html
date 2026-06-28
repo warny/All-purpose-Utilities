@@ -1,0 +1,1471 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Class EnumerableEx | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Class EnumerableEx | omy.Utils Documentation ">
+      
+      <meta name="description" content="Extension methods for working with  and related collections.">
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_Collections_EnumerableEx.md&amp;value=---%0Auid%3A%20Utils.Collections.EnumerableEx%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="Utils.Collections.EnumerableEx">
+
+
+
+  <h1 id="Utils_Collections_EnumerableEx" data-uid="Utils.Collections.EnumerableEx" class="text-break">
+Class EnumerableEx  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/EnumerableEx.Zip.cs/#L6"><i class="bi bi-code-slash"></i></a>
+  </h1>
+
+  <div class="facts text-secondary">
+    <dl><dt>Namespace</dt><dd><a class="xref" href="Utils.html">Utils</a>.<a class="xref" href="Utils.Collections.html">Collections</a></dd></dl>
+  <dl><dt>Assembly</dt><dd>Utils.dll</dd></dl>
+  </div>
+
+  <div class="markdown summary"><p>Extension methods for working with <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable&lt;T&gt;</a> and related collections.</p>
+</div>
+  <div class="markdown conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static class EnumerableEx</code></pre>
+  </div>
+
+
+
+
+  <dl class="typelist inheritance">
+    <dt>Inheritance</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
+      <div><span class="xref">EnumerableEx</span></div>
+    </dd>
+  </dl>
+
+
+
+  <dl class="typelist inheritedMembers">
+    <dt>Inherited Members</dt>
+    <dd>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)">object.Equals(object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)">object.Equals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gethashcode">object.GetHashCode()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone">object.MemberwiseClone()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.tostring">object.ToString()</a>
+    </div>
+  </dd></dl>
+
+
+
+
+
+
+  <h2 class="section" id="methods">Methods
+</h2>
+
+
+  <a id="Utils_Collections_EnumerableEx_Flatten_" data-uid="Utils.Collections.EnumerableEx.Flatten*"></a>
+
+  <h3 id="Utils_Collections_EnumerableEx_Flatten__1_System_Collections_Generic_IEnumerable_System_Collections_Generic_IEnumerable___0___" data-uid="Utils.Collections.EnumerableEx.Flatten``1(System.Collections.Generic.IEnumerable{System.Collections.Generic.IEnumerable{``0}})">
+  Flatten&lt;T&gt;(IEnumerable&lt;IEnumerable&lt;T&gt;&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/EnumerableEx.cs/#L366"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Flattens a sequence of sequences into a single, concatenated sequence.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;T&gt; Flatten&lt;T&gt;(this IEnumerable&lt;IEnumerable&lt;T&gt;&gt; sources)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>sources</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T&gt;&gt;</dt>
+    <dd><p>An <span class="xref">IEnumerable{IEnumerable{T}}</span> containing sub-sequences to flatten.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T&gt;</dt>
+    <dd><p>A single <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable&lt;T&gt;</a> containing all elements from the sub-sequences in order.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>The type of elements in the sub-sequences.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Collections_EnumerableEx_FollowedBy_" data-uid="Utils.Collections.EnumerableEx.FollowedBy*"></a>
+
+  <h3 id="Utils_Collections_EnumerableEx_FollowedBy__1_System_Collections_Generic_IEnumerable___0__System_Collections_Generic_IEnumerable___0__" data-uid="Utils.Collections.EnumerableEx.FollowedBy``1(System.Collections.Generic.IEnumerable{``0},System.Collections.Generic.IEnumerable{``0})">
+  FollowedBy&lt;T&gt;(IEnumerable&lt;T&gt;, params IEnumerable&lt;T&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/EnumerableEx.cs/#L179"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Enumerates all elements in <code class="paramref">enumerable</code> followed by
+additional <code class="paramref">elements</code>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;T&gt; FollowedBy&lt;T&gt;(this IEnumerable&lt;T&gt; enumerable, params IEnumerable&lt;T&gt; elements)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>enumerable</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T&gt;</dt>
+    <dd><p>The original sequence.</p>
+</dd>
+    <dt><code>elements</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T&gt;</dt>
+    <dd><p>The elements to append.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T&gt;</dt>
+    <dd><p>A sequence that first yields every element of <code class="paramref">enumerable</code>,
+and then yields every element of <code class="paramref">elements</code>.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>The type of elements in the sequences.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Collections_EnumerableEx_GetValueOrDefault_" data-uid="Utils.Collections.EnumerableEx.GetValueOrDefault*"></a>
+
+  <h3 id="Utils_Collections_EnumerableEx_GetValueOrDefault__2_System_Collections_Generic_IDictionary___0___1____0___1_" data-uid="Utils.Collections.EnumerableEx.GetValueOrDefault``2(System.Collections.Generic.IDictionary{``0,``1},``0,``1)">
+  GetValueOrDefault&lt;TKey, TValue&gt;(IDictionary&lt;TKey, TValue&gt;, TKey, TValue)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/EnumerableEx.Zip.cs/#L18"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns an element from a dictionary with the specific key or <code class="paramref">defaultValue</code> if if doesn't exists</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static TValue GetValueOrDefault&lt;TKey, TValue&gt;(this IDictionary&lt;TKey, TValue&gt; dictionary, TKey key, TValue defaultValue = default)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>dictionary</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.idictionary-2">IDictionary</a>&lt;TKey, TValue&gt;</dt>
+    <dd><p>Dictionary</p>
+</dd>
+    <dt><code>key</code> <span class="xref">TKey</span></dt>
+    <dd><p>Key whose value to get</p>
+</dd>
+    <dt><code>defaultValue</code> <span class="xref">TValue</span></dt>
+    <dd><p>Default value</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><span class="xref">TValue</span></dt>
+    <dd><p>Value of specific key or default value</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>TKey</code></dt>
+    <dd><p>Key type</p>
+</dd>
+    <dt><code>TValue</code></dt>
+    <dd><p>Value type</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Raise if dictionary is null</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Collections_EnumerableEx_HasAtLeastElements_" data-uid="Utils.Collections.EnumerableEx.HasAtLeastElements*"></a>
+
+  <h3 id="Utils_Collections_EnumerableEx_HasAtLeastElements__1_System_Collections_Generic_IEnumerable___0__System_Int32_" data-uid="Utils.Collections.EnumerableEx.HasAtLeastElements``1(System.Collections.Generic.IEnumerable{``0},System.Int32)">
+  HasAtLeastElements&lt;T&gt;(IEnumerable&lt;T&gt;, int)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/EnumerableEx.cs/#L101"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Indicates whether the <code class="paramref">enumerable</code> has at least
+<code class="paramref">count</code> elements.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool HasAtLeastElements&lt;T&gt;(this IEnumerable&lt;T&gt; enumerable, int count)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>enumerable</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T&gt;</dt>
+    <dd><p>The sequence to check.</p>
+</dd>
+    <dt><code>count</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>The minimum number of elements required.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if the sequence has at least <code class="paramref">count</code> elements;
+otherwise <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>The type of elements in the sequence.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown if <code class="paramref">enumerable</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Collections_EnumerableEx_HasManyElements_" data-uid="Utils.Collections.EnumerableEx.HasManyElements*"></a>
+
+  <h3 id="Utils_Collections_EnumerableEx_HasManyElements__1_System_Collections_Generic_IEnumerable___0__" data-uid="Utils.Collections.EnumerableEx.HasManyElements``1(System.Collections.Generic.IEnumerable{``0})">
+  HasManyElements&lt;T&gt;(IEnumerable&lt;T&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/EnumerableEx.cs/#L85"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Indicates whether the <code class="paramref">enumerable</code> contains more than one element.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool HasManyElements&lt;T&gt;(this IEnumerable&lt;T&gt; enumerable)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>enumerable</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T&gt;</dt>
+    <dd><p>The sequence to check.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if the sequence has more than one element; otherwise <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>The type of elements in the sequence.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Collections_EnumerableEx_IsNullOrEmptyCollection_" data-uid="Utils.Collections.EnumerableEx.IsNullOrEmptyCollection*"></a>
+
+  <h3 id="Utils_Collections_EnumerableEx_IsNullOrEmptyCollection__1_System_Collections_Generic_IEnumerable___0__" data-uid="Utils.Collections.EnumerableEx.IsNullOrEmptyCollection``1(System.Collections.Generic.IEnumerable{``0})">
+  IsNullOrEmptyCollection&lt;T&gt;(IEnumerable&lt;T&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/EnumerableEx.Zip.cs/#L29"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns true if collection is null or has no elements</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool IsNullOrEmptyCollection&lt;T&gt;(this IEnumerable&lt;T&gt; coll)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>coll</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Collections_EnumerableEx_Pack_" data-uid="Utils.Collections.EnumerableEx.Pack*"></a>
+
+  <h3 id="Utils_Collections_EnumerableEx_Pack__1_System_Collections_Generic_IEnumerable___0__" data-uid="Utils.Collections.EnumerableEx.Pack``1(System.Collections.Generic.IEnumerable{``0})">
+  Pack&lt;T&gt;(IEnumerable&lt;T&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/EnumerableEx.cs/#L236"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Packs consecutive identical elements from <code class="paramref">source</code> into
+groups, yielding a <a class="xref" href="Utils.Collections.EnumerableEx.html#Utils_Collections_EnumerableEx_Pack__1_System_Collections_Generic_IEnumerable___0__">Pack&lt;T&gt;(IEnumerable&lt;T&gt;)</a> for each group containing the
+value and its repetition count.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;Pack&lt;T&gt;&gt; Pack&lt;T&gt;(this IEnumerable&lt;T&gt; source)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>source</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T&gt;</dt>
+    <dd><p>The sequence of elements to pack.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<a class="xref" href="Utils.Collections.Pack-1.html">Pack</a>&lt;T&gt;&gt;</dt>
+    <dd><p>A sequence of <a class="xref" href="Utils.Collections.EnumerableEx.html#Utils_Collections_EnumerableEx_Pack__1_System_Collections_Generic_IEnumerable___0__">Pack&lt;T&gt;(IEnumerable&lt;T&gt;)</a> structures, each containing the
+element value and how many times it was repeated consecutively.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>The type of elements in the sequence.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+  <h4 class="section" id="Utils_Collections_EnumerableEx_Pack__1_System_Collections_Generic_IEnumerable___0___remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Uses <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.equalitycomparer-1.default">Default</a> for equality checks.</p>
+</div>
+
+
+
+
+  <a id="Utils_Collections_EnumerableEx_PrecededBy_" data-uid="Utils.Collections.EnumerableEx.PrecededBy*"></a>
+
+  <h3 id="Utils_Collections_EnumerableEx_PrecededBy__1_System_Collections_Generic_IEnumerable___0__System_Collections_Generic_IEnumerable___0__" data-uid="Utils.Collections.EnumerableEx.PrecededBy``1(System.Collections.Generic.IEnumerable{``0},System.Collections.Generic.IEnumerable{``0})">
+  PrecededBy&lt;T&gt;(IEnumerable&lt;T&gt;, params IEnumerable&lt;T&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/EnumerableEx.cs/#L206"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Enumerates the specified <code class="paramref">elements</code> first,
+then enumerates all elements in <code class="paramref">enumerable</code>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;T&gt; PrecededBy&lt;T&gt;(this IEnumerable&lt;T&gt; enumerable, params IEnumerable&lt;T&gt; elements)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>enumerable</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T&gt;</dt>
+    <dd><p>The original sequence.</p>
+</dd>
+    <dt><code>elements</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T&gt;</dt>
+    <dd><p>The elements to prepend.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T&gt;</dt>
+    <dd><p>A sequence that first yields every element of <code class="paramref">elements</code>,
+and then yields every element of <code class="paramref">enumerable</code>.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>The type of elements in the sequences.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Collections_EnumerableEx_Replace_" data-uid="Utils.Collections.EnumerableEx.Replace*"></a>
+
+  <h3 id="Utils_Collections_EnumerableEx_Replace__1_System_Collections_Generic_IEnumerable___0____0_____0___" data-uid="Utils.Collections.EnumerableEx.Replace``1(System.Collections.Generic.IEnumerable{``0},``0[],``0[])">
+  Replace&lt;T&gt;(IEnumerable&lt;T&gt;, T[], T[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/EnumerableEx.cs/#L406"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Scans the <code class="paramref">source</code> for occurrences of the subsequence <code class="paramref">toReplace</code>,
+and replaces them with the subsequence <code class="paramref">replacement</code>.
+A naive, non-overlapping approach is used.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;T&gt; Replace&lt;T&gt;(this IEnumerable&lt;T&gt; source, T[] toReplace, T[] replacement) where T : IEquatable&lt;T&gt;</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>source</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T&gt;</dt>
+    <dd><p>The source sequence in which to perform replacements.</p>
+</dd>
+    <dt><code>toReplace</code> T[]</dt>
+    <dd><p>The subsequence to find and replace.</p>
+</dd>
+    <dt><code>replacement</code> T[]</dt>
+    <dd><p>The subsequence to substitute in place of <code class="paramref">toReplace</code>.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T&gt;</dt>
+    <dd><p>A new sequence with the replacements applied where the pattern is matched.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>The element type; must implement <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable&lt;T&gt;</a> for equality checks.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+  <h4 class="section" id="Utils_Collections_EnumerableEx_Replace__1_System_Collections_Generic_IEnumerable___0____0_____0____remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>
+Overlapping matches are not recognized. For example, if <code>toReplace</code> is
+<code>[1, 2, 1]</code>, and the source is <code>[1, 2, 1, 2, 1]</code>, this method
+only replaces the first match, ignoring the second (overlapping) match.
+</p>
+<p>
+If <code class="paramref">toReplace</code> is empty, no replacement is done and the 
+original <code class="paramref">source</code> is returned as-is.
+</p>
+</div>
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown if any of the parameters (<code class="paramref">source</code>, <code class="paramref">toReplace</code>, or <code class="paramref">replacement</code>)
+is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Collections_EnumerableEx_SkipTake_" data-uid="Utils.Collections.EnumerableEx.SkipTake*"></a>
+
+  <h3 id="Utils_Collections_EnumerableEx_SkipTake__1_System_Collections_Generic_IEnumerable___0__System_Int32_System_Int32_" data-uid="Utils.Collections.EnumerableEx.SkipTake``1(System.Collections.Generic.IEnumerable{``0},System.Int32,System.Int32)">
+  SkipTake&lt;T&gt;(IEnumerable&lt;T&gt;, int, int)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/EnumerableEx.cs/#L137"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns a slice of <code class="paramref">source</code> starting at <code class="paramref">skip</code> and
+yielding at most <code class="paramref">take</code> elements, using a single enumerator.
+This is equivalent to <code>Skip(skip).Take(take)</code> but avoids the two LINQ
+enumerator allocations that the chained form incurs.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;T&gt; SkipTake&lt;T&gt;(this IEnumerable&lt;T&gt; source, int skip, int take)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>source</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T&gt;</dt>
+    <dd><p>The sequence to slice.</p>
+</dd>
+    <dt><code>skip</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Number of elements to skip from the start.</p>
+</dd>
+    <dt><code>take</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Maximum number of elements to return.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T&gt;</dt>
+    <dd><p>The requested slice of <code class="paramref">source</code>.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>The type of elements in the sequence.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown if <code class="paramref">source</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Collections_EnumerableEx_Slice_" data-uid="Utils.Collections.EnumerableEx.Slice*"></a>
+
+  <h3 id="Utils_Collections_EnumerableEx_Slice__1_System_Collections_Generic_IEnumerable___0__System_Collections_Generic_IEnumerable_System_Int32__" data-uid="Utils.Collections.EnumerableEx.Slice``1(System.Collections.Generic.IEnumerable{``0},System.Collections.Generic.IEnumerable{System.Int32})">
+  Slice&lt;T&gt;(IEnumerable&lt;T&gt;, params IEnumerable&lt;int&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/EnumerableEx.cs/#L302"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Slices the <code class="paramref">source</code> into multiple segments at the
+specified <code class="paramref">cutIndexes</code>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;IEnumerable&lt;T&gt;&gt; Slice&lt;T&gt;(this IEnumerable&lt;T&gt; source, params IEnumerable&lt;int&gt; cutIndexes)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>source</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T&gt;</dt>
+    <dd><p>The <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable&lt;T&gt;</a> to slice.</p>
+</dd>
+    <dt><code>cutIndexes</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a>&gt;</dt>
+    <dd><p>The indexes at which the sequence is sliced. They should be sorted in ascending order.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T&gt;&gt;</dt>
+    <dd><p>A sequence of segments (each itself an <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable&lt;T&gt;</a>),
+split at each index in <code class="paramref">cutIndexes</code>.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>The type of elements in the sequence.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+  <h4 class="section" id="Utils_Collections_EnumerableEx_Slice__1_System_Collections_Generic_IEnumerable___0__System_Collections_Generic_IEnumerable_System_Int32___remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>If <code class="paramref">cutIndexes</code> is empty, then the entire sequence
+is returned as a single segment.</p>
+</div>
+
+
+
+
+  <a id="Utils_Collections_EnumerableEx_SlideEnumerateBy_" data-uid="Utils.Collections.EnumerableEx.SlideEnumerateBy*"></a>
+
+  <h3 id="Utils_Collections_EnumerableEx_SlideEnumerateBy__1_System_Collections_Generic_IEnumerable___0__System_Int32_System_Int32_" data-uid="Utils.Collections.EnumerableEx.SlideEnumerateBy``1(System.Collections.Generic.IEnumerable{``0},System.Int32,System.Int32)">
+  SlideEnumerateBy&lt;T&gt;(IEnumerable&lt;T&gt;, int, int)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/EnumerableEx.cs/#L25"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Enumerates a sliding window of size <code class="paramref">windowSize</code> over
+the source <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable&lt;T&gt;</a>. Each yielded array shares
+elements with the previous one in a sliding fashion.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;T[]&gt; SlideEnumerateBy&lt;T&gt;(this IEnumerable&lt;T&gt; source, int windowSize, int skipCount = 0)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>source</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T&gt;</dt>
+    <dd><p>The sequence to read.</p>
+</dd>
+    <dt><code>windowSize</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>The size of each sliding window.</p>
+</dd>
+    <dt><code>skipCount</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>The number of elements to skip from the start before beginning.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T[]&gt;</dt>
+    <dd><p>An <span class="xref">IEnumerable{Array{T}}</span> where each array represents a window
+of size <code class="paramref">windowSize</code>, except possibly the last one if there
+are not enough remaining elements.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>The element type of the source sequence.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Collections_EnumerableEx_Unpack_" data-uid="Utils.Collections.EnumerableEx.Unpack*"></a>
+
+  <h3 id="Utils_Collections_EnumerableEx_Unpack__1_System_Collections_Generic_IEnumerable_Utils_Collections_Pack___0___" data-uid="Utils.Collections.EnumerableEx.Unpack``1(System.Collections.Generic.IEnumerable{Utils.Collections.Pack{``0}})">
+  Unpack&lt;T&gt;(IEnumerable&lt;Pack&lt;T&gt;&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/EnumerableEx.cs/#L274"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Unpacks a sequence of <a class="xref" href="Utils.Collections.EnumerableEx.html#Utils_Collections_EnumerableEx_Pack__1_System_Collections_Generic_IEnumerable___0__">Pack&lt;T&gt;(IEnumerable&lt;T&gt;)</a> into a flat sequence,
+repeating each value according to its repetition count.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;T&gt; Unpack&lt;T&gt;(this IEnumerable&lt;Pack&lt;T&gt;&gt; source)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>source</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<a class="xref" href="Utils.Collections.Pack-1.html">Pack</a>&lt;T&gt;&gt;</dt>
+    <dd><p>The packed sequence to unpack.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T&gt;</dt>
+    <dd><p>A flat <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable&lt;T&gt;</a> restoring the original sequence before packing.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>The type of the elements in the packed sequence.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Collections_EnumerableEx_Zip_" data-uid="Utils.Collections.EnumerableEx.Zip*"></a>
+
+  <h3 id="Utils_Collections_EnumerableEx_Zip_System_Boolean_System_Collections_IEnumerable___" data-uid="Utils.Collections.EnumerableEx.Zip(System.Boolean,System.Collections.IEnumerable[])">
+  Zip(bool, params IEnumerable[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/EnumerableEx.Zip.cs/#L54"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Read several <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.ienumerable">IEnumerable</a> in parallel and returns an array of object of elments from the same indexes</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;object[]&gt; Zip(bool continueAfterShortestListEnds, params IEnumerable[] enumerations)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>continueAfterShortestListEnds</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p>Continue when the shortest list ends</p>
+</dd>
+    <dt><code>enumerations</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.ienumerable">IEnumerable</a>[]</dt>
+    <dd><p><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.ienumerable">IEnumerable</a> to be read</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a>[]&gt;</dt>
+    <dd><p>Array of objects</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Collections_EnumerableEx_Zip_" data-uid="Utils.Collections.EnumerableEx.Zip*"></a>
+
+  <h3 id="Utils_Collections_EnumerableEx_Zip_System_Boolean_System_ValueTuple_System_Collections_IEnumerable_System_Object____" data-uid="Utils.Collections.EnumerableEx.Zip(System.Boolean,System.ValueTuple{System.Collections.IEnumerable,System.Object}[])">
+  Zip(bool, params (IEnumerable enumeration, object defaultValue)[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/EnumerableEx.Zip.cs/#L90"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Read several <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.ienumerable">IEnumerable</a> in parallel and returns an array of object of elments from the same indexes</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;object[]&gt; Zip(bool continueAfterShortestListEnds, params (IEnumerable enumeration, object defaultValue)[] enumerations)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>continueAfterShortestListEnds</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p>Continue when the shortest list ends</p>
+</dd>
+    <dt><code>enumerations</code> (<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.ienumerable">IEnumerable</a> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple-system.collections.ienumerable,system.object-.enumeration">enumeration</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple-system.collections.ienumerable,system.object-.defaultvalue">defaultValue</a>)[]</dt>
+    <dd><p><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.ienumerable">IEnumerable</a> to be read</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a>[]&gt;</dt>
+    <dd><p>Array of objects</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Collections_EnumerableEx_Zip_" data-uid="Utils.Collections.EnumerableEx.Zip*"></a>
+
+  <h3 id="Utils_Collections_EnumerableEx_Zip_System_Collections_IEnumerable___" data-uid="Utils.Collections.EnumerableEx.Zip(System.Collections.IEnumerable[])">
+  Zip(params IEnumerable[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/EnumerableEx.Zip.cs/#L36"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Read several <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.ienumerable">IEnumerable</a> in parallel and returns an array of object of elments from the same indexes</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;object[]&gt; Zip(params IEnumerable[] enumerations)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>enumerations</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.ienumerable">IEnumerable</a>[]</dt>
+    <dd><p><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.ienumerable">IEnumerable</a> to be read</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a>[]&gt;</dt>
+    <dd><p>Array of objects</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Collections_EnumerableEx_Zip_" data-uid="Utils.Collections.EnumerableEx.Zip*"></a>
+
+  <h3 id="Utils_Collections_EnumerableEx_Zip_System_ValueTuple_System_Collections_IEnumerable_System_Object____" data-uid="Utils.Collections.EnumerableEx.Zip(System.ValueTuple{System.Collections.IEnumerable,System.Object}[])">
+  Zip(params (IEnumerable enumeration, object defaultValue)[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/EnumerableEx.Zip.cs/#L72"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Read several <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.ienumerable">IEnumerable</a> in parallel and returns an array of object of elments from the same indexes</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;object[]&gt; Zip(params (IEnumerable enumeration, object defaultValue)[] enumerations)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>enumerations</code> (<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.ienumerable">IEnumerable</a> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple-system.collections.ienumerable,system.object-.enumeration">enumeration</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple-system.collections.ienumerable,system.object-.defaultvalue">defaultValue</a>)[]</dt>
+    <dd><p><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.ienumerable">IEnumerable</a> to be read</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a>[]&gt;</dt>
+    <dd><p>Array of objects</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Collections_EnumerableEx_Zip_" data-uid="Utils.Collections.EnumerableEx.Zip*"></a>
+
+  <h3 id="Utils_Collections_EnumerableEx_Zip__1_System_Boolean_System_Func_System_Object_____0__System_Collections_IEnumerable___" data-uid="Utils.Collections.EnumerableEx.Zip``1(System.Boolean,System.Func{System.Object[],``0},System.Collections.IEnumerable[])">
+  Zip&lt;TResult&gt;(bool, Func&lt;object[], TResult&gt;, params IEnumerable[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/EnumerableEx.Zip.cs/#L64"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Read several <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.ienumerable">IEnumerable</a> in parallel and returns an array of object of elments from the same indexes</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;TResult&gt; Zip&lt;TResult&gt;(bool continueAfterShortestListEnds, Func&lt;object[], TResult&gt; transform, params IEnumerable[] enumerations)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>continueAfterShortestListEnds</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p>Continue when the shortest list ends</p>
+</dd>
+    <dt><code>transform</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.func-2">Func</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a>[], TResult&gt;</dt>
+    <dd><p>Transform function</p>
+</dd>
+    <dt><code>enumerations</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.ienumerable">IEnumerable</a>[]</dt>
+    <dd><p><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.ienumerable">IEnumerable</a> to be read</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;TResult&gt;</dt>
+    <dd><p>Array of objects</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>TResult</code></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Collections_EnumerableEx_Zip_" data-uid="Utils.Collections.EnumerableEx.Zip*"></a>
+
+  <h3 id="Utils_Collections_EnumerableEx_Zip__1_System_Boolean_System_Func_System_Object_____0__System_ValueTuple_System_Collections_IEnumerable_System_Object____" data-uid="Utils.Collections.EnumerableEx.Zip``1(System.Boolean,System.Func{System.Object[],``0},System.ValueTuple{System.Collections.IEnumerable,System.Object}[])">
+  Zip&lt;TResult&gt;(bool, Func&lt;object[], TResult&gt;, params (IEnumerable enumeration, object defaultValue)[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/EnumerableEx.Zip.cs/#L105"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Read several <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.ienumerable">IEnumerable</a> in parallel and returns an array of object of elments from the same indexes</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;TResult&gt; Zip&lt;TResult&gt;(bool continueAfterShortestListEnds, Func&lt;object[], TResult&gt; transform, params (IEnumerable enumeration, object defaultValue)[] enumerations)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>continueAfterShortestListEnds</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p>Continue when the shortest list ends</p>
+</dd>
+    <dt><code>transform</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.func-2">Func</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a>[], TResult&gt;</dt>
+    <dd><p>transformation function of input object to output object</p>
+</dd>
+    <dt><code>enumerations</code> (<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.ienumerable">IEnumerable</a> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple-system.collections.ienumerable,system.object-.enumeration">enumeration</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple-system.collections.ienumerable,system.object-.defaultvalue">defaultValue</a>)[]</dt>
+    <dd><p><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.ienumerable">IEnumerable</a> to be read</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;TResult&gt;</dt>
+    <dd><p>Array of objects</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>TResult</code></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Collections_EnumerableEx_Zip_" data-uid="Utils.Collections.EnumerableEx.Zip*"></a>
+
+  <h3 id="Utils_Collections_EnumerableEx_Zip__1_System_Func_System_Object_____0__System_Collections_IEnumerable___" data-uid="Utils.Collections.EnumerableEx.Zip``1(System.Func{System.Object[],``0},System.Collections.IEnumerable[])">
+  Zip&lt;TResult&gt;(Func&lt;object[], TResult&gt;, params IEnumerable[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/EnumerableEx.Zip.cs/#L45"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Read several <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.ienumerable">IEnumerable</a> in parallel and returns an array of object of elments from the same indexes</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;TResult&gt; Zip&lt;TResult&gt;(Func&lt;object[], TResult&gt; transform, params IEnumerable[] enumerations)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>transform</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.func-2">Func</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a>[], TResult&gt;</dt>
+    <dd></dd>
+    <dt><code>enumerations</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.ienumerable">IEnumerable</a>[]</dt>
+    <dd><p><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.ienumerable">IEnumerable</a> to be read</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;TResult&gt;</dt>
+    <dd><p>Array of objects</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>TResult</code></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Collections_EnumerableEx_Zip_" data-uid="Utils.Collections.EnumerableEx.Zip*"></a>
+
+  <h3 id="Utils_Collections_EnumerableEx_Zip__1_System_Func_System_Object_____0__System_ValueTuple_System_Collections_IEnumerable_System_Object____" data-uid="Utils.Collections.EnumerableEx.Zip``1(System.Func{System.Object[],``0},System.ValueTuple{System.Collections.IEnumerable,System.Object}[])">
+  Zip&lt;TResult&gt;(Func&lt;object[], TResult&gt;, params (IEnumerable enumeration, object defaultValue)[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/EnumerableEx.Zip.cs/#L81"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Read several <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.ienumerable">IEnumerable</a> in parallel and returns an array of object of elments from the same indexes</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;TResult&gt; Zip&lt;TResult&gt;(Func&lt;object[], TResult&gt; transform, params (IEnumerable enumeration, object defaultValue)[] enumerations)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>transform</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.func-2">Func</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a>[], TResult&gt;</dt>
+    <dd></dd>
+    <dt><code>enumerations</code> (<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.ienumerable">IEnumerable</a> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple-system.collections.ienumerable,system.object-.enumeration">enumeration</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple-system.collections.ienumerable,system.object-.defaultvalue">defaultValue</a>)[]</dt>
+    <dd><p><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.ienumerable">IEnumerable</a> to be read</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;TResult&gt;</dt>
+    <dd><p>Array of objects</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>TResult</code></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Collections_EnumerableEx_Zip_" data-uid="Utils.Collections.EnumerableEx.Zip*"></a>
+
+  <h3 id="Utils_Collections_EnumerableEx_Zip__2_System_Collections_Generic_IEnumerable___0__System_Collections_Generic_IEnumerable___1____0___1_System_Boolean_" data-uid="Utils.Collections.EnumerableEx.Zip``2(System.Collections.Generic.IEnumerable{``0},System.Collections.Generic.IEnumerable{``1},``0,``1,System.Boolean)">
+  Zip&lt;T1, T2&gt;(IEnumerable&lt;T1&gt;, IEnumerable&lt;T2&gt;, T1, T2, bool)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/EnumerableEx.Zip.cs/#L152"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns an enumerator with each element is the combination of the combined enumeration of <code class="paramref">enumeration1</code> and <code class="paramref">enumeration2</code> enumerations</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;(T1 Item1, T2 Item2)&gt; Zip&lt;T1, T2&gt;(IEnumerable&lt;T1&gt; enumeration1, IEnumerable&lt;T2&gt; enumeration2, T1 default1 = default, T2 default2 = default, bool continueAfterShortestListEnds = true)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>enumeration1</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T1&gt;</dt>
+    <dd><p>Enumeration 1</p>
+</dd>
+    <dt><code>enumeration2</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T2&gt;</dt>
+    <dd><p>Enumeration 2</p>
+</dd>
+    <dt><code>default1</code> <span class="xref">T1</span></dt>
+    <dd><p>Default value after <code class="paramref">enumeration1</code> has end</p>
+</dd>
+    <dt><code>default2</code> <span class="xref">T2</span></dt>
+    <dd><p>Default value after <code class="paramref">enumeration2</code> has end</p>
+</dd>
+    <dt><code>continueAfterShortestListEnds</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p>Continue to enumerate the longuest enumeration when the shortest has end</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;(T1 <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple--0,-1-.key">Key</a>, T2 <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple--0,-1-.value">Value</a>)&gt;</dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T1</code></dt>
+    <dd><p>Type for <code class="paramref">enumeration1</code> elements</p>
+</dd>
+    <dt><code>T2</code></dt>
+    <dd><p>Type for <code class="paramref">enumeration2</code> elements</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Collections_EnumerableEx_Zip_" data-uid="Utils.Collections.EnumerableEx.Zip*"></a>
+
+  <h3 id="Utils_Collections_EnumerableEx_Zip__3_System_Collections_Generic_IEnumerable___0__System_Collections_Generic_IEnumerable___1__System_Collections_Generic_IEnumerable___2____0___1___2_System_Boolean_" data-uid="Utils.Collections.EnumerableEx.Zip``3(System.Collections.Generic.IEnumerable{``0},System.Collections.Generic.IEnumerable{``1},System.Collections.Generic.IEnumerable{``2},``0,``1,``2,System.Boolean)">
+  Zip&lt;T1, T2, T3&gt;(IEnumerable&lt;T1&gt;, IEnumerable&lt;T2&gt;, IEnumerable&lt;T3&gt;, T1, T2, T3, bool)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/EnumerableEx.Zip.cs/#L193"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns an enumerator with each element is the combination of the combined enumeration of <code class="paramref">enumeration1</code> and <code class="paramref">enumeration2</code> enumerations</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;(T1 Item1, T2 Item2, T3 Item3)&gt; Zip&lt;T1, T2, T3&gt;(IEnumerable&lt;T1&gt; enumeration1, IEnumerable&lt;T2&gt; enumeration2, IEnumerable&lt;T3&gt; enumeration3, T1 default1 = default, T2 default2 = default, T3 default3 = default, bool continueAfterShortestListEnds = true)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>enumeration1</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T1&gt;</dt>
+    <dd><p>Enumeration 1</p>
+</dd>
+    <dt><code>enumeration2</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T2&gt;</dt>
+    <dd><p>Enumeration 2</p>
+</dd>
+    <dt><code>enumeration3</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T3&gt;</dt>
+    <dd><p>Enumeration 2</p>
+</dd>
+    <dt><code>default1</code> <span class="xref">T1</span></dt>
+    <dd><p>Default value after <code class="paramref">enumeration1</code> has end</p>
+</dd>
+    <dt><code>default2</code> <span class="xref">T2</span></dt>
+    <dd><p>Default value after <code class="paramref">enumeration2</code> has end</p>
+</dd>
+    <dt><code>default3</code> <span class="xref">T3</span></dt>
+    <dd><p>Default value after <code class="paramref">enumeration3</code> has end</p>
+</dd>
+    <dt><code>continueAfterShortestListEnds</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p>Continue to enumerate the longuest enumeration when the shortest has end</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;(T1 <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple-3.item1">Item1</a>, T2 <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple-3.item2">Item2</a>, T3 <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple-3.item3">Item3</a>)&gt;</dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T1</code></dt>
+    <dd><p>Type for <code class="paramref">enumeration1</code> elements</p>
+</dd>
+    <dt><code>T2</code></dt>
+    <dd><p>Type for <code class="paramref">enumeration2</code> elements</p>
+</dd>
+    <dt><code>T3</code></dt>
+    <dd><p>Type for <code class="paramref">enumeration3</code> elements</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Collections_EnumerableEx_Zip_" data-uid="Utils.Collections.EnumerableEx.Zip*"></a>
+
+  <h3 id="Utils_Collections_EnumerableEx_Zip__3_System_Collections_Generic_IEnumerable___0__System_Collections_Generic_IEnumerable___1__System_Func___0___1___2__System_Boolean_" data-uid="Utils.Collections.EnumerableEx.Zip``3(System.Collections.Generic.IEnumerable{``0},System.Collections.Generic.IEnumerable{``1},System.Func{``0,``1,``2},System.Boolean)">
+  Zip&lt;T1, T2, TResult&gt;(IEnumerable&lt;T1&gt;, IEnumerable&lt;T2&gt;, Func&lt;T1, T2, TResult&gt;, bool)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/EnumerableEx.Zip.cs/#L173"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns an enumerator with each element is the combination of the combined enumeration of <code class="paramref">enumeration1</code> and <code class="paramref">enumeration2</code> enumerations</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;TResult&gt; Zip&lt;T1, T2, TResult&gt;(IEnumerable&lt;T1&gt; enumeration1, IEnumerable&lt;T2&gt; enumeration2, Func&lt;T1, T2, TResult&gt; func, bool continueAfterShortestListEnds = true)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>enumeration1</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T1&gt;</dt>
+    <dd><p>Enumeration 1</p>
+</dd>
+    <dt><code>enumeration2</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T2&gt;</dt>
+    <dd><p>Enumeration 2</p>
+</dd>
+    <dt><code>func</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.func-3">Func</a>&lt;T1, T2, TResult&gt;</dt>
+    <dd><p>transformation function</p>
+</dd>
+    <dt><code>continueAfterShortestListEnds</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p>Continue to enumerate the longuest enumeration when the shortest has end</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;TResult&gt;</dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T1</code></dt>
+    <dd><p>Type for <code class="paramref">enumeration1</code> elements</p>
+</dd>
+    <dt><code>T2</code></dt>
+    <dd><p>Type for <code class="paramref">enumeration2</code> elements</p>
+</dd>
+    <dt><code>TResult</code></dt>
+    <dd><p>Resulting type</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Collections_EnumerableEx_Zip_" data-uid="Utils.Collections.EnumerableEx.Zip*"></a>
+
+  <h3 id="Utils_Collections_EnumerableEx_Zip__4_System_Collections_Generic_IEnumerable___0__System_Collections_Generic_IEnumerable___1__System_Collections_Generic_IEnumerable___2__System_Func___0___1___2___3__System_Boolean_" data-uid="Utils.Collections.EnumerableEx.Zip``4(System.Collections.Generic.IEnumerable{``0},System.Collections.Generic.IEnumerable{``1},System.Collections.Generic.IEnumerable{``2},System.Func{``0,``1,``2,``3},System.Boolean)">
+  Zip&lt;T1, T2, T3, TResult&gt;(IEnumerable&lt;T1&gt;, IEnumerable&lt;T2&gt;, IEnumerable&lt;T3&gt;, Func&lt;T1, T2, T3, TResult&gt;, bool)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/EnumerableEx.Zip.cs/#L216"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns an enumerator with each element is the combination of the combined enumeration of <code class="paramref">enumeration1</code> and <code class="paramref">enumeration2</code> enumerations</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;TResult&gt; Zip&lt;T1, T2, T3, TResult&gt;(IEnumerable&lt;T1&gt; enumeration1, IEnumerable&lt;T2&gt; enumeration2, IEnumerable&lt;T3&gt; enumeration3, Func&lt;T1, T2, T3, TResult&gt; func, bool continueAfterShortestListEnds = true)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>enumeration1</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T1&gt;</dt>
+    <dd><p>Enumeration 1</p>
+</dd>
+    <dt><code>enumeration2</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T2&gt;</dt>
+    <dd><p>Enumeration 2</p>
+</dd>
+    <dt><code>enumeration3</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T3&gt;</dt>
+    <dd><p>Enumeration 2</p>
+</dd>
+    <dt><code>func</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.func-4">Func</a>&lt;T1, T2, T3, TResult&gt;</dt>
+    <dd><p>transformation function</p>
+</dd>
+    <dt><code>continueAfterShortestListEnds</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p>Continue to enumerate the longuest enumeration when the shortest has end</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;TResult&gt;</dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T1</code></dt>
+    <dd><p>Type for <code class="paramref">enumeration1</code> elements</p>
+</dd>
+    <dt><code>T2</code></dt>
+    <dd><p>Type for <code class="paramref">enumeration2</code> elements</p>
+</dd>
+    <dt><code>T3</code></dt>
+    <dd><p>Type for <code class="paramref">enumeration3</code> elements</p>
+</dd>
+    <dt><code>TResult</code></dt>
+    <dd><p>Type for resulting elements</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/EnumerableEx.Zip.cs/#L6" class="edit-link">Edit this page</a>
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

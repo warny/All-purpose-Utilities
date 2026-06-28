@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Parser Metadata and Runtime Limitations | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Parser Metadata and Runtime Limitations | omy.Utils Documentation ">
+      
+      
+      <link rel="icon" href="../../favicon.ico">
+      <link rel="stylesheet" href="../../public/docfx.min.css">
+      <link rel="stylesheet" href="../../public/main.css">
+      <meta name="docfx:navrel" content="../../toc.html">
+      <meta name="docfx:tocrel" content="../../toc.html">
+      
+      <meta name="docfx:rel" content="../../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/blob/master/docs/parser/ParserMetadataAndRuntimeLimitations.md/#L1">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../../index.html">
+            <img id="logo" class="svg" src="../../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+
+      <div class="content">
+        <div class="actionbar">
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="parser-metadata-and-runtime-limitations">Parser Metadata and Runtime Limitations</h1>
+
+<h2 id="purpose">Purpose</h2>
+<p>This file is the canonical <strong>limitations-first</strong> reference for metadata-only semantics, unsupported runtime semantics, and future activation preconditions.</p>
+<h2 id="how-to-read-this-document">How to read this document</h2>
+<p>Use this file for <strong>what is not runtime-authoritative today</strong> and what requires explicit future design.</p>
+<ul>
+<li>Canonical here: metadata-only semantics, unsupported semantics, compatibility boundaries, execution-sharing constraints, and activation preconditions.</li>
+<li>Canonical in companion file: parse authority, diagnostics authority, parse-tree authority, scheduling ownership, and registry authority boundaries.</li>
+<li>Companion: <a href="RuntimeStateOwnership.html"><code>RuntimeStateOwnership.md</code></a>.</li>
+<li>Process obligations remain in <a href="../../Utils.Parser/AGENTS.md"><code>Utils.Parser/AGENTS.md</code></a>; roadmap direction remains in <a href="../../Utils.Parser/ROADMAP.md"><code>Utils.Parser/ROADMAP.md</code></a>.</li>
+</ul>
+<h2 id="topic-ownership-map-canonical--companion">Topic ownership map (canonical + companion)</h2>
+<table>
+<thead>
+<tr>
+<th>Topic</th>
+<th>Canonical document</th>
+<th>Companion summary</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Runtime authority and component ownership</td>
+<td>RuntimeStateOwnership.md</td>
+<td>ParserMetadataAndRuntimeLimitations.md</td>
+</tr>
+<tr>
+<td>Metadata-only limitations</td>
+<td>ParserMetadataAndRuntimeLimitations.md</td>
+<td>RuntimeStateOwnership.md</td>
+</tr>
+<tr>
+<td>Diagnostics authority</td>
+<td>RuntimeStateOwnership.md</td>
+<td>ParserMetadataAndRuntimeLimitations.md</td>
+</tr>
+<tr>
+<td>Lookahead fallback semantics</td>
+<td>ParserMetadataAndRuntimeLimitations.md</td>
+<td>RuntimeStateOwnership.md</td>
+</tr>
+<tr>
+<td>Registry lifecycle ownership</td>
+<td>RuntimeStateOwnership.md</td>
+<td>ParserMetadataAndRuntimeLimitations.md</td>
+</tr>
+<tr>
+<td>Duplicated-work/execution-sharing constraints</td>
+<td>ParserMetadataAndRuntimeLimitations.md</td>
+<td>RuntimeStateOwnership.md</td>
+</tr>
+<tr>
+<td>Compatibility boundaries</td>
+<td>ParserMetadataAndRuntimeLimitations.md</td>
+<td>RuntimeStateOwnership.md</td>
+</tr>
+</tbody>
+</table>
+<h2 id="compatibility-and-conservative-fallback-boundaries">Compatibility and conservative fallback boundaries</h2>
+<h3 id="supported-runtime-semantics-current-compatibility-guarantees">Supported runtime semantics (current compatibility guarantees)</h3>
+<p>Current runtime support remains conservative:</p>
+<ul>
+<li>deterministic syntax-oriented parser-authoritative execution;</li>
+<li>non-authoritative orchestration observability;</li>
+<li>advisory lookahead with parse-required fallback for non-reject outcomes;</li>
+<li>invocation-local metadata/reuse lifecycle and deterministic discardability;</li>
+<li>deterministic diagnostics ownership boundaries.</li>
+</ul>
+<h3 id="unsupported-runtime-semantics-no-compatibility-guarantee">Unsupported runtime semantics (no compatibility guarantee)</h3>
+<p>Current runtime does not support:</p>
+<ul>
+<li>semantic-aware memoization;</li>
+<li>adaptive parsing;</li>
+<li>parser replay;</li>
+<li>rollback parsing;</li>
+<li>branch merge execution;</li>
+<li>resumable continuation execution;</li>
+<li>semantic-aware pruning;</li>
+<li>speculative parser execution;</li>
+<li>execution sharing.</li>
+</ul>
+<p>Unsupported semantics have no compatibility guarantee.
+Implementation accident != supported contract.</p>
+<h3 id="parseableobservable-boundary">Parseable/observable boundary</h3>
+<ul>
+<li>parseable or observable != supported compatibility contract.</li>
+<li>Unsupported semantics have no compatibility guarantee.</li>
+<li>Future support requires explicit runtime contracts, diagnostics expectations, tests, documentation, and roadmap updates.</li>
+</ul>
+<h2 id="lookahead-limitations-and-fallback-to-parse-contract">Lookahead limitations and fallback-to-parse contract</h2>
+<p>Lookahead remains metadata-only and advisory.</p>
+<ul>
+<li>lookahead is advisory;</li>
+<li>lookahead cannot independently finalize parse acceptance;</li>
+<li>lookahead cannot independently finalize diagnostics authority;</li>
+<li>lookahead cannot accept a branch;</li>
+<li>no adaptive parsing exists.</li>
+</ul>
+<p>Fallback boundary:</p>
+<ul>
+<li><code>ImmediateReject</code> may be used only as deterministic local reject evidence in allowed contexts;</li>
+<li><code>RequiresParse</code>, <code>Unknown</code>, and <code>EpsilonPossible</code> require real parsing;</li>
+<li>ambiguous or parser-rule-dependent outcomes require real parsing;</li>
+<li>cached lookahead entries are advisory metadata only.</li>
+</ul>
+<p>For authority ownership, see <a href="RuntimeStateOwnership.html#lookahead-authority-boundaries-ownership-view"><code>RuntimeStateOwnership.md#lookahead-authority-boundaries-ownership-view</code></a>.</p>
+<h2 id="memoization-and-registry-limitations-view">Memoization and registry limitations view</h2>
+<p>Authority remains in <a href="RuntimeStateOwnership.html#parserstateregistry-lifecycle-ownership"><code>RuntimeStateOwnership.md</code></a>. This section captures limitations:</p>
+<ul>
+<li>registry state is parse-lifecycle scoped;</li>
+<li><code>Clear()</code> resets registry-owned state;</li>
+<li>reusable results are invocation-local completion artifacts;</li>
+<li>reusable result selection is not final parse acceptance;</li>
+<li>invocation reuse != execution reuse;</li>
+<li>current memoization is syntax-oriented and non-semantic;</li>
+<li>semantic evaluator external state is not modeled by memoization keys;</li>
+<li>parser action side effects are not modeled by memoization keys.</li>
+</ul>
+<p>Registry cleanup is discardability-oriented, with no semantic rollback model.</p>
+<h2 id="diagnostics-limitations-view">Diagnostics limitations view</h2>
+<p>Diagnostics authority is owned by <code>ParserEngine</code> (canonical in <a href="RuntimeStateOwnership.html#diagnostics-authority-boundaries-canonical"><code>RuntimeStateOwnership.md</code></a>).</p>
+<p>Limitation boundaries:</p>
+<ul>
+<li>pruning != syntax failure;</li>
+<li>backtracking observation != syntax failure;</li>
+<li>metadata transport != diagnostics authority;</li>
+<li>branch equivalence != parse rejection;</li>
+<li>trailing-token validation is parser-authoritative.</li>
+</ul>
+<p>Orchestration/pruning/backtracking observations are non-authoritative even when observable.</p>
+<h2 id="runtime-policy-boundaries-semantic-predicates-and-actions">Runtime policy boundaries (semantic predicates and actions)</h2>
+<p><code>ParserEngine</code> delegates semantic predicates and embedded actions to <code>ParserRuntimeFeaturePolicy</code>.</p>
+<ul>
+<li>Default policy remains conservative (<code>NotEvaluated</code> / <code>NotExecuted</code>).</li>
+<li>Custom policies may evaluate predicates or execute actions.</li>
+</ul>
+<p>Runtime limitation boundaries remain explicit:</p>
+<ul>
+<li>actions may execute in branches that are later rejected or pruned;</li>
+<li>no rollback is provided for external action side effects;</li>
+<li>no exactly-once guarantee exists across backtracked attempts;</li>
+<li>no transactional isolation exists across competing alternatives.</li>
+</ul>
+<h2 id="antlr-parametersreturns-parsed-metadata-vs-runtime-support">ANTLR parameters/returns: parsed metadata vs runtime support</h2>
+<p>ANTLR4-style parameter and <code>returns</code> signatures are parsed and preserved as metadata text.</p>
+<p>Current runtime does <strong>not</strong> provide:</p>
+<ul>
+<li>invocation-frame parameter binding,</li>
+<li>return-value propagation,</li>
+<li>runtime parameter/return scopes,</li>
+<li>semantic type-resolution for parameter/return runtime semantics.</li>
+</ul>
+<p>So: parsed/preserved metadata != supported runtime invocation semantics.</p>
+<h2 id="shared-prefix-pipeline-metadata-production-only">Shared-prefix pipeline (metadata production only)</h2>
+<p>Shared-prefix infrastructure is analysis/observability metadata only.
+The current metadata production path is:</p>
+<p><code>ParserLookaheadProbe -&gt; ParserLookaheadSharedPrefixDetector -&gt; ParserContinuationFactory -&gt; ParserSharedPrefixPlanFactory</code></p>
+<p>Validation/inspection components remain descriptive and non-authoritative.</p>
+<h2 id="capability-model-note">Capability model note</h2>
+<p><code>ParserFeatureCapabilities</code> is descriptive metadata for support visibility.
+It is not used to alter parse authority, parsing behavior, or diagnostics authority.</p>
+<h2 id="continuation-metadata-model-current-metadata-only">Continuation metadata model (current, metadata-only)</h2>
+<p>Continuation metadata is metadata-only and non-authoritative.</p>
+<ul>
+<li>continuation metadata does not authorize replay;</li>
+<li>continuation metadata does not authorize continuation execution;</li>
+<li>continuation metadata does not authorize resumable parsing;</li>
+<li>continuation metadata does not authorize branch merging;</li>
+<li>continuation metadata does not establish semantic equivalence;</li>
+<li>continuation metadata does not imply rollback safety;</li>
+<li>continuation metadata is discardable.</li>
+</ul>
+<p>No continuation execution runtime is implemented.</p>
+<h2 id="shared-prefix-metadata-authority-limitations-and-lifecycle">Shared-prefix metadata authority, limitations, and lifecycle</h2>
+<p>Shared-prefix infrastructure remains metadata-only.</p>
+<ul>
+<li>shared-prefix grouping != execution sharing;</li>
+<li>grouping != semantic equivalence;</li>
+<li>grouping != branch merge permission;</li>
+<li>shared-prefix metadata is discardable;</li>
+<li>no shared-prefix execution exists.</li>
+</ul>
+<p>No parser-graph execution, replay, or rollback model is provided by shared-prefix metadata.</p>
+<h2 id="duplicated-work-reduction-constraint-model-limitations-view">Duplicated-work-reduction constraint model (limitations view)</h2>
+<p>Current metadata may support future analysis/preparation only.
+It does not activate execution-sharing semantics.</p>
+<ul>
+<li>duplicated-work reduction is analysis/preparation only;</li>
+<li>no replay;</li>
+<li>no rollback;</li>
+<li>no execution sharing;</li>
+<li>no branch merge execution;</li>
+<li>no resumable continuation execution;</li>
+<li>no semantic-aware memoization;</li>
+<li>no semantic-state ownership model is currently provided.</li>
+</ul>
+<h2 id="execution-sharing-safety-boundaries-limitations-view">Execution-sharing safety boundaries (limitations view)</h2>
+<p>Invalid assumptions in current runtime:</p>
+<ul>
+<li>metadata grouping != execution sharing,</li>
+<li>reusable completion != branch replay,</li>
+<li>invocation reuse != execution reuse,</li>
+<li>continuation transport != resumable execution,</li>
+<li>deterministic observability != semantic equivalence.</li>
+</ul>
+<h3 id="future-activation-preconditions">Future activation preconditions</h3>
+<p>Any future activation requires explicit future design and dedicated tests, including:</p>
+<ul>
+<li>semantic-state ownership,</li>
+<li>replay safety,</li>
+<li>rollback guarantees,</li>
+<li>merge semantics,</li>
+<li>diagnostics ownership resolution,</li>
+<li>parse-tree authority preservation,</li>
+<li>explicit compatibility contracts and documentation.</li>
+</ul>
+<p>These are boundary-only preconditions, not active capabilities.</p>
+<h3 id="future-execution-oriented-pr-review-gates">Future execution-oriented PR review gates</h3>
+<p>Any future execution-oriented PR must show, at minimum:</p>
+<ol>
+<li>which invariants are preserved and how equivalence was validated;</li>
+<li>why diagnostics content/ordering remain equivalent;</li>
+<li>why parse-tree shape remains equivalent;</li>
+<li>which unsupported cases remain rejected by default;</li>
+<li>a rollback path to baseline behavior.</li>
+</ol>
+<h2 id="compatibility-matrix-reference">Compatibility matrix reference</h2>
+<p>For feature-level support status, see:</p>
+<ul>
+<li><a href="Antlr4CompatibilityMatrix.html">ANTLR4 Compatibility Matrix</a></li>
+</ul>
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/docs/parser/ParserMetadataAndRuntimeLimitations.md/#L1" class="edit-link">Edit this page</a>
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

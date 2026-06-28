@@ -1,0 +1,1699 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Class Os2Table | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Class Os2Table | omy.Utils Documentation ">
+      
+      <meta name="description" content="The &#39;OS/2&#39; table contains metrics and other data required for correct rendering on Windows and OS/2 platforms. It is present in virtually every TrueType/OpenType font and describes properties such as weight, width, style, typographic metrics, Unicode character ranges and vendor identification.">
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_Fonts_TTF_Tables_Os2Table.md&amp;value=---%0Auid%3A%20Utils.Fonts.TTF.Tables.Os2Table%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="Utils.Fonts.TTF.Tables.Os2Table">
+
+
+
+  <h1 id="Utils_Fonts_TTF_Tables_Os2Table" data-uid="Utils.Fonts.TTF.Tables.Os2Table" class="text-break">
+Class Os2Table  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L23"><i class="bi bi-code-slash"></i></a>
+  </h1>
+
+  <div class="facts text-secondary">
+    <dl><dt>Namespace</dt><dd><a class="xref" href="Utils.html">Utils</a>.<a class="xref" href="Utils.Fonts.html">Fonts</a>.<a class="xref" href="Utils.Fonts.TTF.html">TTF</a>.<a class="xref" href="Utils.Fonts.TTF.Tables.html">Tables</a></dd></dl>
+  <dl><dt>Assembly</dt><dd>Utils.Fonts.dll</dd></dl>
+  </div>
+
+  <div class="markdown summary"><p>The 'OS/2' table contains metrics and other data required for correct rendering on Windows and OS/2
+platforms. It is present in virtually every TrueType/OpenType font and describes properties such as
+weight, width, style, typographic metrics, Unicode character ranges and vendor identification.</p>
+</div>
+  <div class="markdown conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">[TTFTable(TableTypes.Tags.OS_2, new TableTypes.Tags[] { })]
+public class Os2Table : TrueTypeTable</code></pre>
+  </div>
+
+
+
+
+  <dl class="typelist inheritance">
+    <dt>Inheritance</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
+      <div><a class="xref" href="Utils.Fonts.TTF.TrueTypeTable.html">TrueTypeTable</a></div>
+      <div><span class="xref">Os2Table</span></div>
+    </dd>
+  </dl>
+
+
+
+  <dl class="typelist inheritedMembers">
+    <dt>Inherited Members</dt>
+    <dd>
+    <div>
+      <a class="xref" href="Utils.Fonts.TTF.TrueTypeTable.html#Utils_Fonts_TTF_TrueTypeTable_Tag">TrueTypeTable.Tag</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Fonts.TTF.TrueTypeTable.html#Utils_Fonts_TTF_TrueTypeTable_TrueTypeFont">TrueTypeTable.TrueTypeFont</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)">object.Equals(object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)">object.Equals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gethashcode">object.GetHashCode()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone">object.MemberwiseClone()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
+    </div>
+  </dd></dl>
+
+  <dl class="typelist extensionMethods">
+    <dt>Extension Methods</dt>
+    <dd>
+  <div>
+      <a class="xref" href="Utils.Data.DataUtils.html#Utils_Data_DataUtils_ToDbValue_System_Object_">DataUtils.ToDbValue(object?)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Mathematics.MathEx.html#Utils_Mathematics_MathEx_Clamp__1___0___0___0_System_Collections_Generic_IComparer___0__">MathEx.Clamp&lt;T&gt;(T, T, T, IComparer&lt;T&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Failure__1___0_">FluentExtensions.Failure&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsEqualTo__2___0___1_">FluentExtensions.IsEqualTo&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterOrEqualsThan__2___0___1_">FluentExtensions.IsGreaterOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterThan__2___0___1_">FluentExtensions.IsGreaterThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsIn__1___0___0___">FluentExtensions.IsIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerOrEqualsThan__2___0___1_">FluentExtensions.IsLowerOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerThan__2___0___1_">FluentExtensions.IsLowerThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotIn__1___0___0___">FluentExtensions.IsNotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotNull__1___0_">FluentExtensions.IsNotNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNull__1___0_">FluentExtensions.IsNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Success__1___0_">FluentExtensions.Success&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Test__1___0_System_Func___0_System_Boolean__">FluentExtensions.Test&lt;T&gt;(T, Func&lt;T, bool&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_System_Boolean_System_Boolean_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T, bool, bool)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1____1_">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1____1_">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_In__1___0___0___">ObjectUtils.In&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_NotIn__1___0___0___">ObjectUtils.NotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustNotBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustNotBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Arg__1___0_System_String_">Validations.Arg&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ValueMustNotBeNull__1___0_System_String_">Validations.ValueMustNotBeNull&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Variable__1___0_System_String_">Validations.Variable&lt;T&gt;(T, string)</a>
+  </div>
+  </dd></dl>
+
+
+
+  <h2 id="Utils_Fonts_TTF_Tables_Os2Table_remarks">Remarks</h2>
+  <div class="markdown level0 remarks"><p>The table exists in six versions (0–5) that grow in size; <a class="xref" href="Utils.Fonts.TTF.Tables.Os2Table.html#Utils_Fonts_TTF_Tables_Os2Table_ReadData_Utils_IO_Serialization_Reader_">ReadData(Reader)</a> and
+<a class="xref" href="Utils.Fonts.TTF.Tables.Os2Table.html#Utils_Fonts_TTF_Tables_Os2Table_WriteData_Utils_IO_Serialization_Writer_">WriteData(Writer)</a> adapt automatically to the stored <a class="xref" href="Utils.Fonts.TTF.Tables.Os2Table.html#Utils_Fonts_TTF_Tables_Os2Table_Version">Version</a>.</p>
+<ul><li>v0 — 78 bytes (base)</li><li>v1 — 86 bytes (adds code-page ranges)</li><li>v2/v3/v4 — 96 bytes (adds typographic height, cap height, break/default chars)</li><li>v5 — 100 bytes (adds optical size range)</li></ul>
+</div>
+
+
+  <h2 class="section" id="constructors">Constructors
+</h2>
+
+
+  <a id="Utils_Fonts_TTF_Tables_Os2Table__ctor_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.#ctor*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_Os2Table__ctor" data-uid="Utils.Fonts.TTF.Tables.Os2Table.#ctor">
+  Os2Table()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L77"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Fonts.TTF.Tables.Os2Table.html">Os2Table</a> class.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Os2Table()</code></pre>
+  </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <h2 class="section" id="properties">Properties
+</h2>
+
+
+  <a id="Utils_Fonts_TTF_Tables_Os2Table_AchVendId_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.AchVendId*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_Os2Table_AchVendId" data-uid="Utils.Fonts.TTF.Tables.Os2Table.AchVendId">
+  AchVendId
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L160"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the four-character ASCII vendor identifier string (e.g. &quot;ADBE&quot;, &quot;MSFT&quot;).
+Stored as exactly 4 bytes; padded with spaces if shorter.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string AchVendId { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Tables_Os2Table_FsSelection_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.FsSelection*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_Os2Table_FsSelection" data-uid="Utils.Fonts.TTF.Tables.Os2Table.FsSelection">
+  FsSelection
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L163"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the font style selection flags (<a class="xref" href="Utils.Fonts.TTF.Tables.Os2Table.SelectionFlags.html">Os2Table.SelectionFlags</a>).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Os2Table.SelectionFlags FsSelection { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Fonts.TTF.Tables.Os2Table.html">Os2Table</a>.<a class="xref" href="Utils.Fonts.TTF.Tables.Os2Table.SelectionFlags.html">SelectionFlags</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Tables_Os2Table_FsType_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.FsType*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_Os2Table_FsType" data-uid="Utils.Fonts.TTF.Tables.Os2Table.FsType">
+  FsType
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L100"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the font embedding-permission flags (<a class="xref" href="Utils.Fonts.TTF.Tables.Os2Table.EmbeddingFlags.html">Os2Table.EmbeddingFlags</a>).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Os2Table.EmbeddingFlags FsType { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Fonts.TTF.Tables.Os2Table.html">Os2Table</a>.<a class="xref" href="Utils.Fonts.TTF.Tables.Os2Table.EmbeddingFlags.html">EmbeddingFlags</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Tables_Os2Table_Length_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.Length*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_Os2Table_Length" data-uid="Utils.Fonts.TTF.Tables.Os2Table.Length">
+  Length
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L234"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the length, in bytes, of the table data.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override int Length { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Tables_Os2Table_Panose_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.Panose*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_Os2Table_Panose" data-uid="Utils.Fonts.TTF.Tables.Os2Table.Panose">
+  Panose
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L142"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the 10-byte PANOSE classification numbers.
+Index 0 = FamilyType, 1 = SerifStyle, … 9 = LetterForm.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public byte[] Panose { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Tables_Os2Table_SCapHeight_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.SCapHeight*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_Os2Table_SCapHeight" data-uid="Utils.Fonts.TTF.Tables.Os2Table.SCapHeight">
+  SCapHeight
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L200"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the height of an uppercase letter relative to the baseline. Version ≥ 2.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public short SCapHeight { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int16">short</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Tables_Os2Table_SFamilyClass_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.SFamilyClass*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_Os2Table_SFamilyClass" data-uid="Utils.Fonts.TTF.Tables.Os2Table.SFamilyClass">
+  SFamilyClass
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L136"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the font-family class and subclass codes.
+High byte = class (0–14), low byte = subclass.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public short SFamilyClass { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int16">short</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Tables_Os2Table_STypoAscender_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.STypoAscender*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_Os2Table_STypoAscender" data-uid="Utils.Fonts.TTF.Tables.Os2Table.STypoAscender">
+  STypoAscender
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L172"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the typographic ascender above the baseline, in font design units.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public short STypoAscender { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int16">short</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Tables_Os2Table_STypoDescender_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.STypoDescender*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_Os2Table_STypoDescender" data-uid="Utils.Fonts.TTF.Tables.Os2Table.STypoDescender">
+  STypoDescender
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L175"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the typographic descender below the baseline (negative), in font design units.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public short STypoDescender { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int16">short</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Tables_Os2Table_STypoLineGap_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.STypoLineGap*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_Os2Table_STypoLineGap" data-uid="Utils.Fonts.TTF.Tables.Os2Table.STypoLineGap">
+  STypoLineGap
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L178"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the typographic line gap, in font design units.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public short STypoLineGap { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int16">short</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Tables_Os2Table_SxHeight_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.SxHeight*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_Os2Table_SxHeight" data-uid="Utils.Fonts.TTF.Tables.Os2Table.SxHeight">
+  SxHeight
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L197"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the height of a lowercase 'x' relative to the baseline. Version ≥ 2.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public short SxHeight { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int16">short</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Tables_Os2Table_UlCodePageRange1_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.UlCodePageRange1*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_Os2Table_UlCodePageRange1" data-uid="Utils.Fonts.TTF.Tables.Os2Table.UlCodePageRange1">
+  UlCodePageRange1
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L189"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the code-page coverage bit flags (bits 0–31). Version ≥ 1.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public uint UlCodePageRange1 { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint32">uint</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Tables_Os2Table_UlCodePageRange2_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.UlCodePageRange2*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_Os2Table_UlCodePageRange2" data-uid="Utils.Fonts.TTF.Tables.Os2Table.UlCodePageRange2">
+  UlCodePageRange2
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L192"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the code-page coverage bit flags (bits 32–63). Version ≥ 1.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public uint UlCodePageRange2 { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint32">uint</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Tables_Os2Table_UlUnicodeRange1_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.UlUnicodeRange1*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_Os2Table_UlUnicodeRange1" data-uid="Utils.Fonts.TTF.Tables.Os2Table.UlUnicodeRange1">
+  UlUnicodeRange1
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L145"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the Unicode character range bit flags (bits 0–31).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public uint UlUnicodeRange1 { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint32">uint</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Tables_Os2Table_UlUnicodeRange2_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.UlUnicodeRange2*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_Os2Table_UlUnicodeRange2" data-uid="Utils.Fonts.TTF.Tables.Os2Table.UlUnicodeRange2">
+  UlUnicodeRange2
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L148"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the Unicode character range bit flags (bits 32–63).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public uint UlUnicodeRange2 { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint32">uint</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Tables_Os2Table_UlUnicodeRange3_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.UlUnicodeRange3*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_Os2Table_UlUnicodeRange3" data-uid="Utils.Fonts.TTF.Tables.Os2Table.UlUnicodeRange3">
+  UlUnicodeRange3
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L151"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the Unicode character range bit flags (bits 64–95).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public uint UlUnicodeRange3 { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint32">uint</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Tables_Os2Table_UlUnicodeRange4_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.UlUnicodeRange4*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_Os2Table_UlUnicodeRange4" data-uid="Utils.Fonts.TTF.Tables.Os2Table.UlUnicodeRange4">
+  UlUnicodeRange4
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L154"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the Unicode character range bit flags (bits 96–127).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public uint UlUnicodeRange4 { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint32">uint</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Tables_Os2Table_UsBreakChar_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.UsBreakChar*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_Os2Table_UsBreakChar" data-uid="Utils.Fonts.TTF.Tables.Os2Table.UsBreakChar">
+  UsBreakChar
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L211"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the Unicode code point of the word-break character (typically 0x0020 SPACE). Version ≥ 2.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ushort UsBreakChar { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint16">ushort</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Tables_Os2Table_UsDefaultChar_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.UsDefaultChar*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_Os2Table_UsDefaultChar" data-uid="Utils.Fonts.TTF.Tables.Os2Table.UsDefaultChar">
+  UsDefaultChar
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L206"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the Unicode code point to use for missing characters.
+0 means no default character is defined. Version ≥ 2.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ushort UsDefaultChar { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint16">ushort</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Tables_Os2Table_UsFirstCharIndex_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.UsFirstCharIndex*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_Os2Table_UsFirstCharIndex" data-uid="Utils.Fonts.TTF.Tables.Os2Table.UsFirstCharIndex">
+  UsFirstCharIndex
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L166"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the Unicode code point of the first character in the font.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ushort UsFirstCharIndex { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint16">ushort</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Tables_Os2Table_UsLastCharIndex_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.UsLastCharIndex*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_Os2Table_UsLastCharIndex" data-uid="Utils.Fonts.TTF.Tables.Os2Table.UsLastCharIndex">
+  UsLastCharIndex
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L169"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the Unicode code point of the last character in the font.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ushort UsLastCharIndex { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint16">ushort</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Tables_Os2Table_UsLowerOpticalPointSize_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.UsLowerOpticalPointSize*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_Os2Table_UsLowerOpticalPointSize" data-uid="Utils.Fonts.TTF.Tables.Os2Table.UsLowerOpticalPointSize">
+  UsLowerOpticalPointSize
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L224"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the lower end of the optical size range (in twentieths of a point). Version ≥ 5.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ushort UsLowerOpticalPointSize { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint16">ushort</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Tables_Os2Table_UsMaxContext_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.UsMaxContext*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_Os2Table_UsMaxContext" data-uid="Utils.Fonts.TTF.Tables.Os2Table.UsMaxContext">
+  UsMaxContext
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L217"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the maximum length of a target glyph context for any feature in the font.
+Version ≥ 2.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ushort UsMaxContext { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint16">ushort</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Tables_Os2Table_UsUpperOpticalPointSize_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.UsUpperOpticalPointSize*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_Os2Table_UsUpperOpticalPointSize" data-uid="Utils.Fonts.TTF.Tables.Os2Table.UsUpperOpticalPointSize">
+  UsUpperOpticalPointSize
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L229"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the upper end of the optical size range (in twentieths of a point). Version ≥ 5.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ushort UsUpperOpticalPointSize { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint16">ushort</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Tables_Os2Table_UsWeightClass_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.UsWeightClass*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_Os2Table_UsWeightClass" data-uid="Utils.Fonts.TTF.Tables.Os2Table.UsWeightClass">
+  UsWeightClass
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L91"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the visual weight of the font in the range 1–1000.
+Typical values: 400 = Regular, 700 = Bold.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ushort UsWeightClass { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint16">ushort</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Tables_Os2Table_UsWidthClass_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.UsWidthClass*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_Os2Table_UsWidthClass" data-uid="Utils.Fonts.TTF.Tables.Os2Table.UsWidthClass">
+  UsWidthClass
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L97"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the relative change in arm-widths (condensed/expanded).
+Values 1–9 map from ultra-condensed to ultra-expanded.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ushort UsWidthClass { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint16">ushort</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Tables_Os2Table_UsWinAscent_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.UsWinAscent*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_Os2Table_UsWinAscent" data-uid="Utils.Fonts.TTF.Tables.Os2Table.UsWinAscent">
+  UsWinAscent
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L181"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the Windows-specific ascender (used as the top of the em square on screen).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ushort UsWinAscent { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint16">ushort</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Tables_Os2Table_UsWinDescent_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.UsWinDescent*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_Os2Table_UsWinDescent" data-uid="Utils.Fonts.TTF.Tables.Os2Table.UsWinDescent">
+  UsWinDescent
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L184"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the Windows-specific descender (unsigned, below baseline).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ushort UsWinDescent { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint16">ushort</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Tables_Os2Table_Version_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.Version*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_Os2Table_Version" data-uid="Utils.Fonts.TTF.Tables.Os2Table.Version">
+  Version
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L82"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the OS/2 table version (0–5).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ushort Version { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint16">ushort</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Tables_Os2Table_XAvgCharWidth_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.XAvgCharWidth*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_Os2Table_XAvgCharWidth" data-uid="Utils.Fonts.TTF.Tables.Os2Table.XAvgCharWidth">
+  XAvgCharWidth
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L85"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the arithmetic mean of the width of all non-zero-width glyphs.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public short XAvgCharWidth { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int16">short</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Tables_Os2Table_YStrikeoutPosition_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.YStrikeoutPosition*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_Os2Table_YStrikeoutPosition" data-uid="Utils.Fonts.TTF.Tables.Os2Table.YStrikeoutPosition">
+  YStrikeoutPosition
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L130"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the position of the strikeout stroke relative to the baseline.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public short YStrikeoutPosition { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int16">short</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Tables_Os2Table_YStrikeoutSize_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.YStrikeoutSize*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_Os2Table_YStrikeoutSize" data-uid="Utils.Fonts.TTF.Tables.Os2Table.YStrikeoutSize">
+  YStrikeoutSize
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L127"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the thickness of the strikeout stroke, in font design units.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public short YStrikeoutSize { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int16">short</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Tables_Os2Table_YSubscriptXOffset_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.YSubscriptXOffset*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_Os2Table_YSubscriptXOffset" data-uid="Utils.Fonts.TTF.Tables.Os2Table.YSubscriptXOffset">
+  YSubscriptXOffset
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L109"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the recommended horizontal offset for subscripts, in font design units.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public short YSubscriptXOffset { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int16">short</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Tables_Os2Table_YSubscriptXSize_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.YSubscriptXSize*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_Os2Table_YSubscriptXSize" data-uid="Utils.Fonts.TTF.Tables.Os2Table.YSubscriptXSize">
+  YSubscriptXSize
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L103"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the recommended horizontal size for subscripts, in font design units.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public short YSubscriptXSize { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int16">short</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Tables_Os2Table_YSubscriptYOffset_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.YSubscriptYOffset*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_Os2Table_YSubscriptYOffset" data-uid="Utils.Fonts.TTF.Tables.Os2Table.YSubscriptYOffset">
+  YSubscriptYOffset
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L112"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the recommended vertical offset for subscripts, in font design units.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public short YSubscriptYOffset { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int16">short</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Tables_Os2Table_YSubscriptYSize_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.YSubscriptYSize*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_Os2Table_YSubscriptYSize" data-uid="Utils.Fonts.TTF.Tables.Os2Table.YSubscriptYSize">
+  YSubscriptYSize
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L106"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the recommended vertical size for subscripts, in font design units.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public short YSubscriptYSize { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int16">short</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Tables_Os2Table_YSuperscriptXOffset_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.YSuperscriptXOffset*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_Os2Table_YSuperscriptXOffset" data-uid="Utils.Fonts.TTF.Tables.Os2Table.YSuperscriptXOffset">
+  YSuperscriptXOffset
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L121"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the recommended horizontal offset for superscripts, in font design units.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public short YSuperscriptXOffset { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int16">short</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Tables_Os2Table_YSuperscriptXSize_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.YSuperscriptXSize*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_Os2Table_YSuperscriptXSize" data-uid="Utils.Fonts.TTF.Tables.Os2Table.YSuperscriptXSize">
+  YSuperscriptXSize
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L115"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the recommended horizontal size for superscripts, in font design units.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public short YSuperscriptXSize { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int16">short</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Tables_Os2Table_YSuperscriptYOffset_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.YSuperscriptYOffset*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_Os2Table_YSuperscriptYOffset" data-uid="Utils.Fonts.TTF.Tables.Os2Table.YSuperscriptYOffset">
+  YSuperscriptYOffset
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L124"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the recommended vertical offset for superscripts, in font design units.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public short YSuperscriptYOffset { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int16">short</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Tables_Os2Table_YSuperscriptYSize_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.YSuperscriptYSize*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_Os2Table_YSuperscriptYSize" data-uid="Utils.Fonts.TTF.Tables.Os2Table.YSuperscriptYSize">
+  YSuperscriptYSize
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L118"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the recommended vertical size for superscripts, in font design units.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public short YSuperscriptYSize { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int16">short</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h2 class="section" id="methods">Methods
+</h2>
+
+
+  <a id="Utils_Fonts_TTF_Tables_Os2Table_ReadData_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.ReadData*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_Os2Table_ReadData_Utils_IO_Serialization_Reader_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.ReadData(Utils.IO.Serialization.Reader)">
+  ReadData(Reader)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L245"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Reads the table data from the specified reader.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override void ReadData(Reader data)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>data</code> <a class="xref" href="Utils.IO.Serialization.Reader.html">Reader</a></dt>
+    <dd><p>The reader from which to read the table data.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Tables_Os2Table_ToString_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.ToString*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_Os2Table_ToString" data-uid="Utils.Fonts.TTF.Tables.Os2Table.ToString">
+  ToString()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L383"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns a string representation of the table.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override string ToString()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>A string that includes the table tag and whether its data is set.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Fonts_TTF_Tables_Os2Table_WriteData_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.WriteData*"></a>
+
+  <h3 id="Utils_Fonts_TTF_Tables_Os2Table_WriteData_Utils_IO_Serialization_Writer_" data-uid="Utils.Fonts.TTF.Tables.Os2Table.WriteData(Utils.IO.Serialization.Writer)">
+  WriteData(Writer)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L314"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Writes the table data to the specified writer.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override void WriteData(Writer data)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>data</code> <a class="xref" href="Utils.IO.Serialization.Writer.html">Writer</a></dt>
+    <dd><p>The writer to which the table data is written.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Os2Table.cs/#L23" class="edit-link">Edit this page</a>
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

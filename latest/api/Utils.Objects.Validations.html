@@ -1,0 +1,1333 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Class Validations | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Class Validations | omy.Utils Documentation ">
+      
+      <meta name="description" content="Provides helper methods for validating arguments and values with consistent exception messages.">
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_Objects_Validations.md&amp;value=---%0Auid%3A%20Utils.Objects.Validations%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="Utils.Objects.Validations">
+
+
+
+  <h1 id="Utils_Objects_Validations" data-uid="Utils.Objects.Validations" class="text-break">
+Class Validations  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Objects/Validations.cs/#L158"><i class="bi bi-code-slash"></i></a>
+  </h1>
+
+  <div class="facts text-secondary">
+    <dl><dt>Namespace</dt><dd><a class="xref" href="Utils.html">Utils</a>.<a class="xref" href="Utils.Objects.html">Objects</a></dd></dl>
+  <dl><dt>Assembly</dt><dd>Utils.dll</dd></dl>
+  </div>
+
+  <div class="markdown summary"><p>Provides helper methods for validating arguments and values with consistent exception messages.</p>
+</div>
+  <div class="markdown conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static class Validations</code></pre>
+  </div>
+
+
+
+
+  <dl class="typelist inheritance">
+    <dt>Inheritance</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
+      <div><span class="xref">Validations</span></div>
+    </dd>
+  </dl>
+
+
+
+  <dl class="typelist inheritedMembers">
+    <dt>Inherited Members</dt>
+    <dd>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)">object.Equals(object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)">object.Equals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gethashcode">object.GetHashCode()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone">object.MemberwiseClone()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.tostring">object.ToString()</a>
+    </div>
+  </dd></dl>
+
+
+
+
+
+
+  <h2 class="section" id="methods">Methods
+</h2>
+
+
+  <a id="Utils_Objects_Validations_ArgMustBeANumber_" data-uid="Utils.Objects.Validations.ArgMustBeANumber*"></a>
+
+  <h3 id="Utils_Objects_Validations_ArgMustBeANumber__1___0_System_String_" data-uid="Utils.Objects.Validations.ArgMustBeANumber``1(``0,System.String)">
+  ArgMustBeANumber&lt;T&gt;(T, string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Objects/Validations.cs/#L500"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Ensures that the numeric argument is not <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double.nan">NaN</a> (or the type-specific equivalent).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static T ArgMustBeANumber&lt;T&gt;(this T value, string valueName = &quot;&quot;) where T : INumberBase&lt;T&gt;</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>value</code> <span class="xref">T</span></dt>
+    <dd><p>Value to validate.</p>
+</dd>
+    <dt><code>valueName</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Name of the argument for diagnostic messages.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><span class="xref">T</span></dt>
+    <dd><p>The validated value.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Numeric type of the value.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when the value represents an undefined number.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Objects_Validations_ArgMustBeBetween_" data-uid="Utils.Objects.Validations.ArgMustBeBetween*"></a>
+
+  <h3 id="Utils_Objects_Validations_ArgMustBeBetween__1___0___0___0_System_String_" data-uid="Utils.Objects.Validations.ArgMustBeBetween``1(``0,``0,``0,System.String)">
+  ArgMustBeBetween&lt;T&gt;(T, T, T, string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Objects/Validations.cs/#L483"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Ensures that the argument falls within the specified inclusive range.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static T ArgMustBeBetween&lt;T&gt;(this T value, T min, T max, string valueName = &quot;&quot;) where T : IComparable</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>value</code> <span class="xref">T</span></dt>
+    <dd><p>Value to validate.</p>
+</dd>
+    <dt><code>min</code> <span class="xref">T</span></dt>
+    <dd><p>Minimum inclusive value.</p>
+</dd>
+    <dt><code>max</code> <span class="xref">T</span></dt>
+    <dd><p>Maximum inclusive value.</p>
+</dd>
+    <dt><code>valueName</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Name of the argument for diagnostic messages.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><span class="xref">T</span></dt>
+    <dd><p>The validated value.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Type of the compared values.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when the value is outside the allowed range.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Objects_Validations_ArgMustBeEqualsTo_" data-uid="Utils.Objects.Validations.ArgMustBeEqualsTo*"></a>
+
+  <h3 id="Utils_Objects_Validations_ArgMustBeEqualsTo__1___0___0_System_String_" data-uid="Utils.Objects.Validations.ArgMustBeEqualsTo``1(``0,``0,System.String)">
+  ArgMustBeEqualsTo&lt;T&gt;(T, T, string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Objects/Validations.cs/#L374"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Ensures that the argument is equal to the specified target value.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static T ArgMustBeEqualsTo&lt;T&gt;(this T value, T targetValue, string valueName = &quot;&quot;) where T : IComparable</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>value</code> <span class="xref">T</span></dt>
+    <dd><p>Value to validate.</p>
+</dd>
+    <dt><code>targetValue</code> <span class="xref">T</span></dt>
+    <dd><p>Value that <code class="paramref">value</code> must equal.</p>
+</dd>
+    <dt><code>valueName</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Name of the argument for diagnostic messages.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><span class="xref">T</span></dt>
+    <dd><p>The validated value.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Type of the compared values.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when the values are not equal.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Objects_Validations_ArgMustBeGreaterOrEqualsThan_" data-uid="Utils.Objects.Validations.ArgMustBeGreaterOrEqualsThan*"></a>
+
+  <h3 id="Utils_Objects_Validations_ArgMustBeGreaterOrEqualsThan__1___0___0_System_String_" data-uid="Utils.Objects.Validations.ArgMustBeGreaterOrEqualsThan``1(``0,``0,System.String)">
+  ArgMustBeGreaterOrEqualsThan&lt;T&gt;(T, T, string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Objects/Validations.cs/#L446"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Ensures that the argument is greater than or equal to the specified minimum value.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static T ArgMustBeGreaterOrEqualsThan&lt;T&gt;(this T value, T min, string valueName = &quot;&quot;) where T : IComparable</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>value</code> <span class="xref">T</span></dt>
+    <dd><p>Value to validate.</p>
+</dd>
+    <dt><code>min</code> <span class="xref">T</span></dt>
+    <dd><p>Minimum allowed value.</p>
+</dd>
+    <dt><code>valueName</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Name of the argument for diagnostic messages.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><span class="xref">T</span></dt>
+    <dd><p>The validated value.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Type of the compared values.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when the value is less than the allowed minimum.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Objects_Validations_ArgMustBeGreaterThan_" data-uid="Utils.Objects.Validations.ArgMustBeGreaterThan*"></a>
+
+  <h3 id="Utils_Objects_Validations_ArgMustBeGreaterThan__1___0___0_System_String_" data-uid="Utils.Objects.Validations.ArgMustBeGreaterThan``1(``0,``0,System.String)">
+  ArgMustBeGreaterThan&lt;T&gt;(T, T, string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Objects/Validations.cs/#L464"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Ensures that the argument is strictly greater than the specified minimum value.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static T ArgMustBeGreaterThan&lt;T&gt;(this T value, T min, string valueName = &quot;&quot;) where T : IComparable</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>value</code> <span class="xref">T</span></dt>
+    <dd><p>Value to validate.</p>
+</dd>
+    <dt><code>min</code> <span class="xref">T</span></dt>
+    <dd><p>Minimum exclusive value.</p>
+</dd>
+    <dt><code>valueName</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Name of the argument for diagnostic messages.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><span class="xref">T</span></dt>
+    <dd><p>The validated value.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Type of the compared values.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when the value is less than or equal to the allowed minimum.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Objects_Validations_ArgMustBeIn_" data-uid="Utils.Objects.Validations.ArgMustBeIn*"></a>
+
+  <h3 id="Utils_Objects_Validations_ArgMustBeIn__1___0___0___System_String_" data-uid="Utils.Objects.Validations.ArgMustBeIn``1(``0,``0[],System.String)">
+  ArgMustBeIn&lt;T&gt;(T, T[], string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Objects/Validations.cs/#L392"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Ensures that the argument is present in the provided list of allowed values.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static T ArgMustBeIn&lt;T&gt;(this T value, T[] targetValue, string valueName = &quot;&quot;) where T : IComparable</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>value</code> <span class="xref">T</span></dt>
+    <dd><p>Value to validate.</p>
+</dd>
+    <dt><code>targetValue</code> T[]</dt>
+    <dd><p>Collection of allowed values.</p>
+</dd>
+    <dt><code>valueName</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Name of the argument for diagnostic messages.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><span class="xref">T</span></dt>
+    <dd><p>The validated value.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Type of the compared values.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when the value is not present in the collection.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Objects_Validations_ArgMustBeLesserOrEqualsThan_" data-uid="Utils.Objects.Validations.ArgMustBeLesserOrEqualsThan*"></a>
+
+  <h3 id="Utils_Objects_Validations_ArgMustBeLesserOrEqualsThan__1___0___0_System_String_" data-uid="Utils.Objects.Validations.ArgMustBeLesserOrEqualsThan``1(``0,``0,System.String)">
+  ArgMustBeLesserOrEqualsThan&lt;T&gt;(T, T, string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Objects/Validations.cs/#L410"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Ensures that the argument is less than or equal to a maximum value.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static T ArgMustBeLesserOrEqualsThan&lt;T&gt;(this T value, T max, string valueName = &quot;&quot;) where T : IComparable</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>value</code> <span class="xref">T</span></dt>
+    <dd><p>Value to validate.</p>
+</dd>
+    <dt><code>max</code> <span class="xref">T</span></dt>
+    <dd><p>Maximum allowed value.</p>
+</dd>
+    <dt><code>valueName</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Name of the argument for diagnostic messages.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><span class="xref">T</span></dt>
+    <dd><p>The validated value.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Type of the compared values.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when the value is greater than the allowed maximum.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Objects_Validations_ArgMustBeLesserThan_" data-uid="Utils.Objects.Validations.ArgMustBeLesserThan*"></a>
+
+  <h3 id="Utils_Objects_Validations_ArgMustBeLesserThan__1___0___0_System_String_" data-uid="Utils.Objects.Validations.ArgMustBeLesserThan``1(``0,``0,System.String)">
+  ArgMustBeLesserThan&lt;T&gt;(T, T, string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Objects/Validations.cs/#L428"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Ensures that the argument is strictly less than a maximum value.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static T ArgMustBeLesserThan&lt;T&gt;(this T value, T max, string valueName = &quot;&quot;) where T : IComparable</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>value</code> <span class="xref">T</span></dt>
+    <dd><p>Value to validate.</p>
+</dd>
+    <dt><code>max</code> <span class="xref">T</span></dt>
+    <dd><p>Maximum exclusive value.</p>
+</dd>
+    <dt><code>valueName</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Name of the argument for diagnostic messages.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><span class="xref">T</span></dt>
+    <dd><p>The validated value.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Type of the compared values.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when the value is greater than or equal to the maximum.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Objects_Validations_ArgMustBeOfBounds_" data-uid="Utils.Objects.Validations.ArgMustBeOfBounds*"></a>
+
+  <h3 id="Utils_Objects_Validations_ArgMustBeOfBounds_System_Array_System_ValueTuple_System_Nullable_System_Int32__System_Nullable_System_Int32_____System_String_" data-uid="Utils.Objects.Validations.ArgMustBeOfBounds(System.Array,System.ValueTuple{System.Nullable{System.Int32},System.Nullable{System.Int32}}[],System.String)">
+  ArgMustBeOfBounds(Array, (int? lBound, int? uBound)[], string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Objects/Validations.cs/#L277"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Validates that an array argument matches the specified bounds for each dimension.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static void ArgMustBeOfBounds(this Array value, (int? lBound, int? uBound)[] bounds, string valueName = &quot;&quot;)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>value</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.array">Array</a></dt>
+    <dd><p>Array to validate.</p>
+</dd>
+    <dt><code>bounds</code> (<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a>? <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple-system.nullable-system.int32-,system.nullable-system.int32--.lbound">lBound</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a>? <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple-system.nullable-system.int32-,system.nullable-system.int32--.ubound">uBound</a>)[]</dt>
+    <dd><p>Expected lower and upper bounds for each dimension.</p>
+</dd>
+    <dt><code>valueName</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Name of the argument for diagnostic messages.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when any bound does not match the requested value.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Objects_Validations_ArgMustBeOfRank_" data-uid="Utils.Objects.Validations.ArgMustBeOfRank*"></a>
+
+  <h3 id="Utils_Objects_Validations_ArgMustBeOfRank_System_Array_System_Int32_System_String_" data-uid="Utils.Objects.Validations.ArgMustBeOfRank(System.Array,System.Int32,System.String)">
+  ArgMustBeOfRank(Array, int, string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Objects/Validations.cs/#L234"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Validates that an array argument has the specified rank.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static void ArgMustBeOfRank(this Array value, int size, string valueName = &quot;&quot;)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>value</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.array">Array</a></dt>
+    <dd><p>Array to validate.</p>
+</dd>
+    <dt><code>size</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Expected rank.</p>
+</dd>
+    <dt><code>valueName</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Name of the argument for diagnostic messages.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when the array rank is not the expected value.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Objects_Validations_ArgMustBeOfSize_" data-uid="Utils.Objects.Validations.ArgMustBeOfSize*"></a>
+
+  <h3 id="Utils_Objects_Validations_ArgMustBeOfSize__1_System_Collections_Generic_IReadOnlyCollection___0__System_Int32_System_String_" data-uid="Utils.Objects.Validations.ArgMustBeOfSize``1(System.Collections.Generic.IReadOnlyCollection{``0},System.Int32,System.String)">
+  ArgMustBeOfSize&lt;T&gt;(IReadOnlyCollection&lt;T&gt;, int, string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Objects/Validations.cs/#L310"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Validates that a collection argument contains exactly the specified number of elements.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static void ArgMustBeOfSize&lt;T&gt;(this IReadOnlyCollection&lt;T&gt; value, int size, string valueName = &quot;&quot;)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>value</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlycollection-1">IReadOnlyCollection</a>&lt;T&gt;</dt>
+    <dd><p>Collection to validate.</p>
+</dd>
+    <dt><code>size</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Expected number of elements.</p>
+</dd>
+    <dt><code>valueName</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Name of the argument for diagnostic messages.</p>
+</dd>
+  </dl>
+
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Type of elements in the collection.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when the collection length does not match the expected value.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Objects_Validations_ArgMustBeOfSizes_" data-uid="Utils.Objects.Validations.ArgMustBeOfSizes*"></a>
+
+  <h3 id="Utils_Objects_Validations_ArgMustBeOfSizes_System_Array_System_Nullable_System_Int32____System_String_" data-uid="Utils.Objects.Validations.ArgMustBeOfSizes(System.Array,System.Nullable{System.Int32}[],System.String)">
+  ArgMustBeOfSizes(Array, int?[], string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Objects/Validations.cs/#L251"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Validates that an array argument matches the specified dimension sizes.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static void ArgMustBeOfSizes(this Array value, int?[] sizes, string valueName = &quot;&quot;)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>value</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.array">Array</a></dt>
+    <dd><p>Array to validate.</p>
+</dd>
+    <dt><code>sizes</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a>?[]</dt>
+    <dd><p>Expected sizes per dimension, or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> for unconstrained dimensions.</p>
+</dd>
+    <dt><code>valueName</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Name of the argument for diagnostic messages.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when the array shape does not match the requested sizes.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Objects_Validations_ArgMustBe_" data-uid="Utils.Objects.Validations.ArgMustBe*"></a>
+
+  <h3 id="Utils_Objects_Validations_ArgMustBe__1___0_System_Func___0_System_Boolean__System_String_System_String_" data-uid="Utils.Objects.Validations.ArgMustBe``1(``0,System.Func{``0,System.Boolean},System.String,System.String)">
+  ArgMustBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Objects/Validations.cs/#L517"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Validates that a predicate evaluates to <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> for the provided value.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static T ArgMustBe&lt;T&gt;(this T value, Func&lt;T, bool&gt; validationFunction, string message, string valueName = &quot;&quot;)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>value</code> <span class="xref">T</span></dt>
+    <dd><p>Value to validate.</p>
+</dd>
+    <dt><code>validationFunction</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.func-2">Func</a>&lt;T, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a>&gt;</dt>
+    <dd><p>Predicate that defines the validation rule.</p>
+</dd>
+    <dt><code>message</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Error message used when the predicate fails.</p>
+</dd>
+    <dt><code>valueName</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Name of the argument for diagnostic messages.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><span class="xref">T</span></dt>
+    <dd><p>The validated value.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Type of the value.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">validationFunction</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when the predicate evaluates to <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Objects_Validations_ArgMustNotBeEmpty_" data-uid="Utils.Objects.Validations.ArgMustNotBeEmpty*"></a>
+
+  <h3 id="Utils_Objects_Validations_ArgMustNotBeEmpty__1_System_Collections_Generic_IReadOnlyCollection___0__System_String_" data-uid="Utils.Objects.Validations.ArgMustNotBeEmpty``1(System.Collections.Generic.IReadOnlyCollection{``0},System.String)">
+  ArgMustNotBeEmpty&lt;T&gt;(IReadOnlyCollection&lt;T&gt;, string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Objects/Validations.cs/#L325"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Validates that a collection argument contains at least one element.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static void ArgMustNotBeEmpty&lt;T&gt;(this IReadOnlyCollection&lt;T&gt; value, string valueName = &quot;&quot;)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>value</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlycollection-1">IReadOnlyCollection</a>&lt;T&gt;</dt>
+    <dd><p>Collection to validate.</p>
+</dd>
+    <dt><code>valueName</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Name of the argument for diagnostic messages.</p>
+</dd>
+  </dl>
+
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Type of elements in the collection.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when the collection is empty.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Objects_Validations_ArgMustNotBe_" data-uid="Utils.Objects.Validations.ArgMustNotBe*"></a>
+
+  <h3 id="Utils_Objects_Validations_ArgMustNotBe__1___0_System_Func___0_System_Boolean__System_String_System_String_" data-uid="Utils.Objects.Validations.ArgMustNotBe``1(``0,System.Func{``0,System.Boolean},System.String,System.String)">
+  ArgMustNotBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Objects/Validations.cs/#L535"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Validates that a predicate evaluates to <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> for the provided value.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static T ArgMustNotBe&lt;T&gt;(this T value, Func&lt;T, bool&gt; validationFunction, string message, string valueName = &quot;&quot;)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>value</code> <span class="xref">T</span></dt>
+    <dd><p>Value to validate.</p>
+</dd>
+    <dt><code>validationFunction</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.func-2">Func</a>&lt;T, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a>&gt;</dt>
+    <dd><p>Predicate that defines the invalid condition.</p>
+</dd>
+    <dt><code>message</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Error message used when the predicate succeeds.</p>
+</dd>
+    <dt><code>valueName</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Name of the argument for diagnostic messages.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><span class="xref">T</span></dt>
+    <dd><p>The validated value.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Type of the value.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">validationFunction</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when the predicate evaluates to <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a>.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Objects_Validations_ArgSizeMustBeMultipleOf_" data-uid="Utils.Objects.Validations.ArgSizeMustBeMultipleOf*"></a>
+
+  <h3 id="Utils_Objects_Validations_ArgSizeMustBeMultipleOf__1_System_Collections_Generic_IReadOnlyCollection___0__System_Int32_System_String_" data-uid="Utils.Objects.Validations.ArgSizeMustBeMultipleOf``1(System.Collections.Generic.IReadOnlyCollection{``0},System.Int32,System.String)">
+  ArgSizeMustBeMultipleOf&lt;T&gt;(IReadOnlyCollection&lt;T&gt;, int, string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Objects/Validations.cs/#L357"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Ensures that the size of a collection argument is a multiple of the specified value.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static void ArgSizeMustBeMultipleOf&lt;T&gt;(this IReadOnlyCollection&lt;T&gt; value, int multiple, string valueName = &quot;&quot;)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>value</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlycollection-1">IReadOnlyCollection</a>&lt;T&gt;</dt>
+    <dd><p>Collection to validate.</p>
+</dd>
+    <dt><code>multiple</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Expected divisor of the collection length.</p>
+</dd>
+    <dt><code>valueName</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Name of the argument for diagnostic messages.</p>
+</dd>
+  </dl>
+
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Type of elements in the collection.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when the collection length is not a multiple of <code class="paramref">multiple</code>.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Objects_Validations_Arg_" data-uid="Utils.Objects.Validations.Arg*"></a>
+
+  <h3 id="Utils_Objects_Validations_Arg__1___0_System_String_" data-uid="Utils.Objects.Validations.Arg``1(``0,System.String)">
+  Arg&lt;T&gt;(T, string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Objects/Validations.cs/#L167"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Creates an <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Arg__1___0_System_String_">Arg&lt;T&gt;(T, string)</a> validator for the provided value.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Arg&lt;T&gt; Arg&lt;T&gt;(this T value, string name = &quot;&quot;)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>value</code> <span class="xref">T</span></dt>
+    <dd><p>Value to validate.</p>
+</dd>
+    <dt><code>name</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Name of the argument, automatically captured when possible.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Objects.Arg-1.html">Arg</a>&lt;T&gt;</dt>
+    <dd><p>A validator that can be used to chain additional checks.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Type of the value to validate.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_Validations_MustBeOfRank_" data-uid="Utils.Objects.Validations.MustBeOfRank*"></a>
+
+  <h3 id="Utils_Objects_Validations_MustBeOfRank_System_Array_System_Int32_" data-uid="Utils.Objects.Validations.MustBeOfRank(System.Array,System.Int32)">
+  MustBeOfRank(Array, int)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Objects/Validations.cs/#L184"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns an exception describing the required rank for the provided array.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Exception MustBeOfRank(this Array value, int rank)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>value</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.array">Array</a></dt>
+    <dd><p>Array to inspect.</p>
+</dd>
+    <dt><code>rank</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Expected rank.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.exception">Exception</a></dt>
+    <dd><p>An exception describing the rank constraint when it is met; otherwise <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_Validations_MustBeOfSize_" data-uid="Utils.Objects.Validations.MustBeOfSize*"></a>
+
+  <h3 id="Utils_Objects_Validations_MustBeOfSize_System_Array_System_Nullable_System_Int32____" data-uid="Utils.Objects.Validations.MustBeOfSize(System.Array,System.Nullable{System.Int32}[])">
+  MustBeOfSize(Array, int?[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Objects/Validations.cs/#L196"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns an exception describing the required dimension sizes for the provided array.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Exception MustBeOfSize(this Array value, int?[] sizes)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>value</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.array">Array</a></dt>
+    <dd><p>Array to inspect.</p>
+</dd>
+    <dt><code>sizes</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a>?[]</dt>
+    <dd><p>Expected sizes per dimension, or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> for unconstrained dimensions.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.exception">Exception</a></dt>
+    <dd><p>An exception describing the size constraint when it is met; otherwise <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Objects_Validations_ValueMustNotBeNull_" data-uid="Utils.Objects.Validations.ValueMustNotBeNull*"></a>
+
+  <h3 id="Utils_Objects_Validations_ValueMustNotBeNull__1___0_System_String_" data-uid="Utils.Objects.Validations.ValueMustNotBeNull``1(``0,System.String)">
+  ValueMustNotBeNull&lt;T&gt;(T, string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Objects/Validations.cs/#L217"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Ensures that a reference-type value is not <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static T ValueMustNotBeNull&lt;T&gt;(this T value, string valueName = &quot;&quot;) where T : class</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>value</code> <span class="xref">T</span></dt>
+    <dd><p>Value to validate.</p>
+</dd>
+    <dt><code>valueName</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Name of the value for diagnostic messages.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><span class="xref">T</span></dt>
+    <dd><p>The original value when it is not <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Type of the value being checked.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a></dt>
+    <dd><p>Thrown when <code class="paramref">value</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Objects_Validations_ValueSizeMustBeMultipleOf_" data-uid="Utils.Objects.Validations.ValueSizeMustBeMultipleOf*"></a>
+
+  <h3 id="Utils_Objects_Validations_ValueSizeMustBeMultipleOf__1_System_Collections_Generic_IReadOnlyCollection___0__System_Int32_System_String_" data-uid="Utils.Objects.Validations.ValueSizeMustBeMultipleOf``1(System.Collections.Generic.IReadOnlyCollection{``0},System.Int32,System.String)">
+  ValueSizeMustBeMultipleOf&lt;T&gt;(IReadOnlyCollection&lt;T&gt;, int, string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Objects/Validations.cs/#L341"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Ensures that a collection size is a multiple of the specified value.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static void ValueSizeMustBeMultipleOf&lt;T&gt;(this IReadOnlyCollection&lt;T&gt; value, int multiple, string valueName = &quot;&quot;)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>value</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlycollection-1">IReadOnlyCollection</a>&lt;T&gt;</dt>
+    <dd><p>Collection to validate.</p>
+</dd>
+    <dt><code>multiple</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Expected divisor of the collection length.</p>
+</dd>
+    <dt><code>valueName</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Name of the argument for diagnostic messages.</p>
+</dd>
+  </dl>
+
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Type of elements in the collection.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><span class="xref">ArrayDimensionException</span></dt>
+    <dd><p>Thrown when the collection length is not a multiple of <code class="paramref">multiple</code>.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Objects_Validations_Variable_" data-uid="Utils.Objects.Validations.Variable*"></a>
+
+  <h3 id="Utils_Objects_Validations_Variable__1___0_System_String_" data-uid="Utils.Objects.Validations.Variable``1(``0,System.String)">
+  Variable&lt;T&gt;(T, string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Objects/Validations.cs/#L176"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Creates a <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Variable__1___0_System_String_">Variable&lt;T&gt;(T, string)</a> validator for the provided value.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Variable&lt;T&gt; Variable&lt;T&gt;(this T value, string name = &quot;&quot;)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>value</code> <span class="xref">T</span></dt>
+    <dd><p>Value to validate.</p>
+</dd>
+    <dt><code>name</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Name of the variable, automatically captured when possible.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Objects.Variable-1.html">Variable</a>&lt;T&gt;</dt>
+    <dd><p>A validator that can be used to chain additional checks.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Type of the value to validate.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Objects/Validations.cs/#L158" class="edit-link">Edit this page</a>
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Class PreparedExpressionEmbeddedCodeRegistry | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Class PreparedExpressionEmbeddedCodeRegistry | omy.Utils Documentation ">
+      
+      <meta name="description" content="Stores prepared expression embedded-code artifacts for explicit runtime lookup by parser policies.">
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_Parser_Expressions_PreparedExpressionEmbeddedCodeRegistry.md&amp;value=---%0Auid%3A%20Utils.Parser.Expressions.PreparedExpressionEmbeddedCodeRegistry%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="Utils.Parser.Expressions.PreparedExpressionEmbeddedCodeRegistry">
+
+
+
+  <h1 id="Utils_Parser_Expressions_PreparedExpressionEmbeddedCodeRegistry" data-uid="Utils.Parser.Expressions.PreparedExpressionEmbeddedCodeRegistry" class="text-break">
+Class PreparedExpressionEmbeddedCodeRegistry  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Expressions/PreparedExpressionEmbeddedCodeRegistry.cs/#L10"><i class="bi bi-code-slash"></i></a>
+  </h1>
+
+  <div class="facts text-secondary">
+    <dl><dt>Namespace</dt><dd><a class="xref" href="Utils.html">Utils</a>.<a class="xref" href="Utils.Parser.html">Parser</a>.<a class="xref" href="Utils.Parser.Expressions.html">Expressions</a></dd></dl>
+  <dl><dt>Assembly</dt><dd>Utils.Parser.Expressions.dll</dd></dl>
+  </div>
+
+  <div class="markdown summary"><p>Stores prepared expression embedded-code artifacts for explicit runtime lookup by parser policies.</p>
+</div>
+  <div class="markdown conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public sealed class PreparedExpressionEmbeddedCodeRegistry</code></pre>
+  </div>
+
+
+
+
+  <dl class="typelist inheritance">
+    <dt>Inheritance</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
+      <div><span class="xref">PreparedExpressionEmbeddedCodeRegistry</span></div>
+    </dd>
+  </dl>
+
+
+
+  <dl class="typelist inheritedMembers">
+    <dt>Inherited Members</dt>
+    <dd>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)">object.Equals(object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)">object.Equals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gethashcode">object.GetHashCode()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.tostring">object.ToString()</a>
+    </div>
+  </dd></dl>
+
+  <dl class="typelist extensionMethods">
+    <dt>Extension Methods</dt>
+    <dd>
+  <div>
+      <a class="xref" href="Utils.Data.DataUtils.html#Utils_Data_DataUtils_ToDbValue_System_Object_">DataUtils.ToDbValue(object?)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Mathematics.MathEx.html#Utils_Mathematics_MathEx_Clamp__1___0___0___0_System_Collections_Generic_IComparer___0__">MathEx.Clamp&lt;T&gt;(T, T, T, IComparer&lt;T&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Failure__1___0_">FluentExtensions.Failure&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsEqualTo__2___0___1_">FluentExtensions.IsEqualTo&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterOrEqualsThan__2___0___1_">FluentExtensions.IsGreaterOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterThan__2___0___1_">FluentExtensions.IsGreaterThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsIn__1___0___0___">FluentExtensions.IsIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerOrEqualsThan__2___0___1_">FluentExtensions.IsLowerOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerThan__2___0___1_">FluentExtensions.IsLowerThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotIn__1___0___0___">FluentExtensions.IsNotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotNull__1___0_">FluentExtensions.IsNotNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNull__1___0_">FluentExtensions.IsNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Success__1___0_">FluentExtensions.Success&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Test__1___0_System_Func___0_System_Boolean__">FluentExtensions.Test&lt;T&gt;(T, Func&lt;T, bool&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_System_Boolean_System_Boolean_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T, bool, bool)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1____1_">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1____1_">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_In__1___0___0___">ObjectUtils.In&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_NotIn__1___0___0___">ObjectUtils.NotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustNotBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustNotBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Arg__1___0_System_String_">Validations.Arg&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ValueMustNotBeNull__1___0_System_String_">Validations.ValueMustNotBeNull&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Variable__1___0_System_String_">Validations.Variable&lt;T&gt;(T, string)</a>
+  </div>
+  </dd></dl>
+
+
+
+
+
+  <h2 class="section" id="methods">Methods
+</h2>
+
+
+  <a id="Utils_Parser_Expressions_PreparedExpressionEmbeddedCodeRegistry_TryAddParserAction_" data-uid="Utils.Parser.Expressions.PreparedExpressionEmbeddedCodeRegistry.TryAddParserAction*"></a>
+
+  <h3 id="Utils_Parser_Expressions_PreparedExpressionEmbeddedCodeRegistry_TryAddParserAction_Utils_Parser_Expressions_PreparedExpressionEmbeddedCodeKey_Utils_Parser_Expressions_PreparedExpressionParserAction_" data-uid="Utils.Parser.Expressions.PreparedExpressionEmbeddedCodeRegistry.TryAddParserAction(Utils.Parser.Expressions.PreparedExpressionEmbeddedCodeKey,Utils.Parser.Expressions.PreparedExpressionParserAction)">
+  TryAddParserAction(PreparedExpressionEmbeddedCodeKey, PreparedExpressionParserAction)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Expressions/PreparedExpressionEmbeddedCodeRegistry.cs/#L65"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Adds a prepared parser action using an explicit key.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool TryAddParserAction(PreparedExpressionEmbeddedCodeKey key, PreparedExpressionParserAction artifact)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>key</code> <a class="xref" href="Utils.Parser.Expressions.PreparedExpressionEmbeddedCodeKey.html">PreparedExpressionEmbeddedCodeKey</a></dt>
+    <dd><p>Prepared artifact lookup key.</p>
+</dd>
+    <dt><code>artifact</code> <a class="xref" href="Utils.Parser.Expressions.PreparedExpressionParserAction.html">PreparedExpressionParserAction</a></dt>
+    <dd><p>Prepared parser action artifact.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><code>true</code> when the artifact was added; <code>false</code> when the key already exists.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Parser_Expressions_PreparedExpressionEmbeddedCodeRegistry_TryAddParserAction_" data-uid="Utils.Parser.Expressions.PreparedExpressionEmbeddedCodeRegistry.TryAddParserAction*"></a>
+
+  <h3 id="Utils_Parser_Expressions_PreparedExpressionEmbeddedCodeRegistry_TryAddParserAction_Utils_Parser_Expressions_PreparedExpressionParserAction_" data-uid="Utils.Parser.Expressions.PreparedExpressionEmbeddedCodeRegistry.TryAddParserAction(Utils.Parser.Expressions.PreparedExpressionParserAction)">
+  TryAddParserAction(PreparedExpressionParserAction)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Expressions/PreparedExpressionEmbeddedCodeRegistry.cs/#L50"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Adds a prepared parser action using the key derived from its source metadata.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool TryAddParserAction(PreparedExpressionParserAction artifact)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>artifact</code> <a class="xref" href="Utils.Parser.Expressions.PreparedExpressionParserAction.html">PreparedExpressionParserAction</a></dt>
+    <dd><p>Prepared parser action artifact.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><code>true</code> when the artifact was added; <code>false</code> when the key already exists.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Parser_Expressions_PreparedExpressionEmbeddedCodeRegistry_TryAddSemanticPredicate_" data-uid="Utils.Parser.Expressions.PreparedExpressionEmbeddedCodeRegistry.TryAddSemanticPredicate*"></a>
+
+  <h3 id="Utils_Parser_Expressions_PreparedExpressionEmbeddedCodeRegistry_TryAddSemanticPredicate_Utils_Parser_Expressions_PreparedExpressionEmbeddedCodeKey_Utils_Parser_Expressions_PreparedExpressionSemanticPredicate_" data-uid="Utils.Parser.Expressions.PreparedExpressionEmbeddedCodeRegistry.TryAddSemanticPredicate(Utils.Parser.Expressions.PreparedExpressionEmbeddedCodeKey,Utils.Parser.Expressions.PreparedExpressionSemanticPredicate)">
+  TryAddSemanticPredicate(PreparedExpressionEmbeddedCodeKey, PreparedExpressionSemanticPredicate)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Expressions/PreparedExpressionEmbeddedCodeRegistry.cs/#L35"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Adds a prepared semantic predicate using an explicit key.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool TryAddSemanticPredicate(PreparedExpressionEmbeddedCodeKey key, PreparedExpressionSemanticPredicate artifact)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>key</code> <a class="xref" href="Utils.Parser.Expressions.PreparedExpressionEmbeddedCodeKey.html">PreparedExpressionEmbeddedCodeKey</a></dt>
+    <dd><p>Prepared artifact lookup key.</p>
+</dd>
+    <dt><code>artifact</code> <a class="xref" href="Utils.Parser.Expressions.PreparedExpressionSemanticPredicate.html">PreparedExpressionSemanticPredicate</a></dt>
+    <dd><p>Prepared semantic predicate artifact.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><code>true</code> when the artifact was added; <code>false</code> when the key already exists.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Parser_Expressions_PreparedExpressionEmbeddedCodeRegistry_TryAddSemanticPredicate_" data-uid="Utils.Parser.Expressions.PreparedExpressionEmbeddedCodeRegistry.TryAddSemanticPredicate*"></a>
+
+  <h3 id="Utils_Parser_Expressions_PreparedExpressionEmbeddedCodeRegistry_TryAddSemanticPredicate_Utils_Parser_Expressions_PreparedExpressionSemanticPredicate_" data-uid="Utils.Parser.Expressions.PreparedExpressionEmbeddedCodeRegistry.TryAddSemanticPredicate(Utils.Parser.Expressions.PreparedExpressionSemanticPredicate)">
+  TryAddSemanticPredicate(PreparedExpressionSemanticPredicate)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Expressions/PreparedExpressionEmbeddedCodeRegistry.cs/#L20"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Adds a prepared semantic predicate using the key derived from its source metadata.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool TryAddSemanticPredicate(PreparedExpressionSemanticPredicate artifact)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>artifact</code> <a class="xref" href="Utils.Parser.Expressions.PreparedExpressionSemanticPredicate.html">PreparedExpressionSemanticPredicate</a></dt>
+    <dd><p>Prepared semantic predicate artifact.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><code>true</code> when the artifact was added; <code>false</code> when the key already exists.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Parser_Expressions_PreparedExpressionEmbeddedCodeRegistry_TryGetParserAction_" data-uid="Utils.Parser.Expressions.PreparedExpressionEmbeddedCodeRegistry.TryGetParserAction*"></a>
+
+  <h3 id="Utils_Parser_Expressions_PreparedExpressionEmbeddedCodeRegistry_TryGetParserAction_Utils_Parser_Expressions_PreparedExpressionEmbeddedCodeKey_Utils_Parser_Expressions_PreparedExpressionParserAction__" data-uid="Utils.Parser.Expressions.PreparedExpressionEmbeddedCodeRegistry.TryGetParserAction(Utils.Parser.Expressions.PreparedExpressionEmbeddedCodeKey,Utils.Parser.Expressions.PreparedExpressionParserAction@)">
+  TryGetParserAction(PreparedExpressionEmbeddedCodeKey, out PreparedExpressionParserAction?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Expressions/PreparedExpressionEmbeddedCodeRegistry.cs/#L122"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Looks up a prepared parser action by exact key.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool TryGetParserAction(PreparedExpressionEmbeddedCodeKey key, out PreparedExpressionParserAction? artifact)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>key</code> <a class="xref" href="Utils.Parser.Expressions.PreparedExpressionEmbeddedCodeKey.html">PreparedExpressionEmbeddedCodeKey</a></dt>
+    <dd><p>Prepared artifact lookup key.</p>
+</dd>
+    <dt><code>artifact</code> <a class="xref" href="Utils.Parser.Expressions.PreparedExpressionParserAction.html">PreparedExpressionParserAction</a></dt>
+    <dd><p>Prepared artifact when found.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><code>true</code> when a matching artifact exists; otherwise <code>false</code>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Parser_Expressions_PreparedExpressionEmbeddedCodeRegistry_TryGetParserAction_" data-uid="Utils.Parser.Expressions.PreparedExpressionEmbeddedCodeRegistry.TryGetParserAction*"></a>
+
+  <h3 id="Utils_Parser_Expressions_PreparedExpressionEmbeddedCodeRegistry_TryGetParserAction_Utils_Parser_Runtime_ParserActionExecutionContext_Utils_Parser_Expressions_PreparedExpressionParserAction__" data-uid="Utils.Parser.Expressions.PreparedExpressionEmbeddedCodeRegistry.TryGetParserAction(Utils.Parser.Runtime.ParserActionExecutionContext,Utils.Parser.Expressions.PreparedExpressionParserAction@)">
+  TryGetParserAction(ParserActionExecutionContext, out PreparedExpressionParserAction?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Expressions/PreparedExpressionEmbeddedCodeRegistry.cs/#L109"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Looks up a prepared parser action from runtime execution metadata.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool TryGetParserAction(ParserActionExecutionContext context, out PreparedExpressionParserAction? artifact)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>context</code> <a class="xref" href="Utils.Parser.Runtime.ParserActionExecutionContext.html">ParserActionExecutionContext</a></dt>
+    <dd><p>Current parser-action execution context.</p>
+</dd>
+    <dt><code>artifact</code> <a class="xref" href="Utils.Parser.Expressions.PreparedExpressionParserAction.html">PreparedExpressionParserAction</a></dt>
+    <dd><p>Prepared artifact when found.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><code>true</code> when a matching artifact exists; otherwise <code>false</code>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Parser_Expressions_PreparedExpressionEmbeddedCodeRegistry_TryGetSemanticPredicate_" data-uid="Utils.Parser.Expressions.PreparedExpressionEmbeddedCodeRegistry.TryGetSemanticPredicate*"></a>
+
+  <h3 id="Utils_Parser_Expressions_PreparedExpressionEmbeddedCodeRegistry_TryGetSemanticPredicate_Utils_Parser_Expressions_PreparedExpressionEmbeddedCodeKey_Utils_Parser_Expressions_PreparedExpressionSemanticPredicate__" data-uid="Utils.Parser.Expressions.PreparedExpressionEmbeddedCodeRegistry.TryGetSemanticPredicate(Utils.Parser.Expressions.PreparedExpressionEmbeddedCodeKey,Utils.Parser.Expressions.PreparedExpressionSemanticPredicate@)">
+  TryGetSemanticPredicate(PreparedExpressionEmbeddedCodeKey, out PreparedExpressionSemanticPredicate?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Expressions/PreparedExpressionEmbeddedCodeRegistry.cs/#L94"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Looks up a prepared semantic predicate by exact key.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool TryGetSemanticPredicate(PreparedExpressionEmbeddedCodeKey key, out PreparedExpressionSemanticPredicate? artifact)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>key</code> <a class="xref" href="Utils.Parser.Expressions.PreparedExpressionEmbeddedCodeKey.html">PreparedExpressionEmbeddedCodeKey</a></dt>
+    <dd><p>Prepared artifact lookup key.</p>
+</dd>
+    <dt><code>artifact</code> <a class="xref" href="Utils.Parser.Expressions.PreparedExpressionSemanticPredicate.html">PreparedExpressionSemanticPredicate</a></dt>
+    <dd><p>Prepared artifact when found.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><code>true</code> when a matching artifact exists; otherwise <code>false</code>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Parser_Expressions_PreparedExpressionEmbeddedCodeRegistry_TryGetSemanticPredicate_" data-uid="Utils.Parser.Expressions.PreparedExpressionEmbeddedCodeRegistry.TryGetSemanticPredicate*"></a>
+
+  <h3 id="Utils_Parser_Expressions_PreparedExpressionEmbeddedCodeRegistry_TryGetSemanticPredicate_Utils_Parser_Runtime_SemanticPredicateEvaluationContext_Utils_Parser_Expressions_PreparedExpressionSemanticPredicate__" data-uid="Utils.Parser.Expressions.PreparedExpressionEmbeddedCodeRegistry.TryGetSemanticPredicate(Utils.Parser.Runtime.SemanticPredicateEvaluationContext,Utils.Parser.Expressions.PreparedExpressionSemanticPredicate@)">
+  TryGetSemanticPredicate(SemanticPredicateEvaluationContext, out PreparedExpressionSemanticPredicate?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Expressions/PreparedExpressionEmbeddedCodeRegistry.cs/#L81"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Looks up a prepared semantic predicate from runtime evaluation metadata.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool TryGetSemanticPredicate(SemanticPredicateEvaluationContext context, out PreparedExpressionSemanticPredicate? artifact)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>context</code> <a class="xref" href="Utils.Parser.Runtime.SemanticPredicateEvaluationContext.html">SemanticPredicateEvaluationContext</a></dt>
+    <dd><p>Current semantic-predicate evaluation context.</p>
+</dd>
+    <dt><code>artifact</code> <a class="xref" href="Utils.Parser.Expressions.PreparedExpressionSemanticPredicate.html">PreparedExpressionSemanticPredicate</a></dt>
+    <dd><p>Prepared artifact when found.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><code>true</code> when a matching artifact exists; otherwise <code>false</code>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Expressions/PreparedExpressionEmbeddedCodeRegistry.cs/#L10" class="edit-link">Edit this page</a>
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

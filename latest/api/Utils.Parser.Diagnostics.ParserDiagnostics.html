@@ -1,0 +1,2285 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Class ParserDiagnostics | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Class ParserDiagnostics | omy.Utils Documentation ">
+      
+      <meta name="description" content="Central registry of parser diagnostic descriptors shared by runtime and generator pipelines.">
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_Parser_Diagnostics_ParserDiagnostics.md&amp;value=---%0Auid%3A%20Utils.Parser.Diagnostics.ParserDiagnostics%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="Utils.Parser.Diagnostics.ParserDiagnostics">
+
+
+
+  <h1 id="Utils_Parser_Diagnostics_ParserDiagnostics" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics" class="text-break">
+Class ParserDiagnostics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L8"><i class="bi bi-code-slash"></i></a>
+  </h1>
+
+  <div class="facts text-secondary">
+    <dl><dt>Namespace</dt><dd><a class="xref" href="Utils.html">Utils</a>.<a class="xref" href="Utils.Parser.html">Parser</a>.<a class="xref" href="Utils.Parser.Diagnostics.html">Diagnostics</a></dd></dl>
+  <dl><dt>Assembly</dt><dd>Utils.Parser.Diagnostics.dll</dd></dl>
+  </div>
+
+  <div class="markdown summary"><p>Central registry of parser diagnostic descriptors shared by runtime and generator pipelines.</p>
+</div>
+  <div class="markdown conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static class ParserDiagnostics</code></pre>
+  </div>
+
+
+
+
+  <dl class="typelist inheritance">
+    <dt>Inheritance</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
+      <div><span class="xref">ParserDiagnostics</span></div>
+    </dd>
+  </dl>
+
+
+
+  <dl class="typelist inheritedMembers">
+    <dt>Inherited Members</dt>
+    <dd>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)">object.Equals(object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)">object.Equals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gethashcode">object.GetHashCode()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone">object.MemberwiseClone()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.tostring">object.ToString()</a>
+    </div>
+  </dd></dl>
+
+
+
+
+
+
+  <h2 class="section" id="fields">Fields
+</h2>
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_ActionIgnored" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.ActionIgnored">
+  ActionIgnored
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L68"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Action ignored by the current pipeline.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor ActionIgnored</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_AmbiguousAlternativesPruned" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.AmbiguousAlternativesPruned">
+  AmbiguousAlternativesPruned
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L122"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Equivalent parse branches were pruned using alternative priority.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor AmbiguousAlternativesPruned</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_AmbiguousConstructResolvedHeuristically" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.AmbiguousConstructResolvedHeuristically">
+  AmbiguousConstructResolvedHeuristically
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L269"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Ambiguous construct resolved heuristically.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor AmbiguousConstructResolvedHeuristically</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_BacktrackingUsed" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.BacktrackingUsed">
+  BacktrackingUsed
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L308"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Debug trace for backtracking usage.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor BacktrackingUsed</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_BestEffortRecoveryUsed" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.BestEffortRecoveryUsed">
+  BestEffortRecoveryUsed
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L250"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Best-effort recovery used.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor BestEffortRecoveryUsed</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_ChannelsBlockIgnored" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.ChannelsBlockIgnored">
+  ChannelsBlockIgnored
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L64"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>channels block ignored.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor ChannelsBlockIgnored</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_DefaultBehaviorApplied" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.DefaultBehaviorApplied">
+  DefaultBehaviorApplied
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L286"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Default behavior applied.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor DefaultBehaviorApplied</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_DirectLeftRecursionDetected" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.DirectLeftRecursionDetected">
+  DirectLeftRecursionDetected
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L110"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Direct left recursion detected on a parser rule.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor DirectLeftRecursionDetected</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_ElementOptionIgnored" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.ElementOptionIgnored">
+  ElementOptionIgnored
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L237"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Element option on an alternative recognized but not applied by the current runtime model.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor ElementOptionIgnored</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_EmbeddedCodeCompilationFailed" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.EmbeddedCodeCompilationFailed">
+  EmbeddedCodeCompilationFailed
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L166"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Embedded ANTLR code compilation failed for the requested construct.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor EmbeddedCodeCompilationFailed</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_EmbeddedCodeCompilerNotConfigured" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.EmbeddedCodeCompilerNotConfigured">
+  EmbeddedCodeCompilerNotConfigured
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L162"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Embedded ANTLR code requires a compiler, but no compiler is configured.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor EmbeddedCodeCompilerNotConfigured</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_EmbeddedCodeConstructNotExecutedByGenerator" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.EmbeddedCodeConstructNotExecutedByGenerator">
+  EmbeddedCodeConstructNotExecutedByGenerator
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L178"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Embedded ANTLR code is visible to the source generator but is not promoted to executable hooks.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor EmbeddedCodeConstructNotExecutedByGenerator</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_EmbeddedCodeExecutionDisabled" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.EmbeddedCodeExecutionDisabled">
+  EmbeddedCodeExecutionDisabled
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L174"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Embedded ANTLR code execution is disabled by the current runtime policy.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor EmbeddedCodeExecutionDisabled</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_EmbeddedCodeLanguageUnsupported" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.EmbeddedCodeLanguageUnsupported">
+  EmbeddedCodeLanguageUnsupported
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L158"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Embedded ANTLR code language is not supported in the current execution path.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor EmbeddedCodeLanguageUnsupported</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_EmbeddedCodePreservedNotCompiled" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.EmbeddedCodePreservedNotCompiled">
+  EmbeddedCodePreservedNotCompiled
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L170"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Embedded ANTLR code is preserved as metadata and not compiled in the current execution path.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor EmbeddedCodePreservedNotCompiled</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_EmbeddedFooterInjectedByGenerator" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.EmbeddedFooterInjectedByGenerator">
+  EmbeddedFooterInjectedByGenerator
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L214"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Parser footer code is injected near the end of generated C# source by the source generator.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor EmbeddedFooterInjectedByGenerator</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_EmbeddedHeaderInjectedByGenerator" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.EmbeddedHeaderInjectedByGenerator">
+  EmbeddedHeaderInjectedByGenerator
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L198"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Parser header code is injected near the top of generated C# source by the source generator.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor EmbeddedHeaderInjectedByGenerator</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_EmbeddedMembersInjectedByGenerator" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.EmbeddedMembersInjectedByGenerator">
+  EmbeddedMembersInjectedByGenerator
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L190"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Parser members code is injected into the generated per-parse execution context by the source generator.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor EmbeddedMembersInjectedByGenerator</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_EnteringRule" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.EnteringRule">
+  EnteringRule
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L296"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Debug trace for entering a rule.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor EnteringRule</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_ExpectedTokenMissing" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.ExpectedTokenMissing">
+  ExpectedTokenMissing
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L257"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Expected token missing.
+Currently reserved for missing-token recovery diagnostics.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor ExpectedTokenMissing</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_FallbackStrategyUsed" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.FallbackStrategyUsed">
+  FallbackStrategyUsed
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L261"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Fallback strategy used.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor FallbackStrategyUsed</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_ImportCycleDetected" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.ImportCycleDetected">
+  ImportCycleDetected
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L43"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Import cycle detected while resolving grammars.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor ImportCycleDetected</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_ImportParsedButNotResolved" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.ImportParsedButNotResolved">
+  ImportParsedButNotResolved
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L56"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Import parsed but not resolved.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor ImportParsedButNotResolved</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_ImportedGrammarNotFound" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.ImportedGrammarNotFound">
+  ImportedGrammarNotFound
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L39"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Imported grammar could not be resolved.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor ImportedGrammarNotFound</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_ImportedRuleIgnoredBecauseAlreadyDefined" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.ImportedRuleIgnoredBecauseAlreadyDefined">
+  ImportedRuleIgnoredBecauseAlreadyDefined
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L291"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Imported rule ignored because a primary rule already exists.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor ImportedRuleIgnoredBecauseAlreadyDefined</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_IndirectLeftRecursionNotSupported" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.IndirectLeftRecursionNotSupported">
+  IndirectLeftRecursionNotSupported
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L114"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Indirect left recursion is currently unsupported.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor IndirectLeftRecursionNotSupported</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_InlineActionStoredNotExecuted" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.InlineActionStoredNotExecuted">
+  InlineActionStoredNotExecuted
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L72"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Inline action stored but not executed.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor InlineActionStoredNotExecuted</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_InternalInconsistency" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.InternalInconsistency">
+  InternalInconsistency
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L34"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Internal consistency failure.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor InternalInconsistency</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_InvalidEmbeddedParserAttribute" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.InvalidEmbeddedParserAttribute">
+  InvalidEmbeddedParserAttribute
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L206"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>An embedded parser attribute reference is invalid for the deliberately limited generated-C# compatibility subset.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor InvalidEmbeddedParserAttribute</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_InvalidGrammarRoot" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.InvalidGrammarRoot">
+  InvalidGrammarRoot
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L18"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Invalid grammar root node.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor InvalidGrammarRoot</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_LabelOnNonRuleReferenceIgnored" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.LabelOnNonRuleReferenceIgnored">
+  LabelOnNonRuleReferenceIgnored
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L233"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Label parsed on a non-rule-ref element and ignored.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor LabelOnNonRuleReferenceIgnored</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_LeavingRule" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.LeavingRule">
+  LeavingRule
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L300"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Debug trace for leaving a rule.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor LeavingRule</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_LeftRecursivePrecedencePartiallySupported" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.LeftRecursivePrecedencePartiallySupported">
+  LeftRecursivePrecedencePartiallySupported
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L142"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Left-recursive precedence support is partial compared to ANTLR4.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor LeftRecursivePrecedencePartiallySupported</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_LeftRecursiveRuleWithoutBaseAlternative" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.LeftRecursiveRuleWithoutBaseAlternative">
+  LeftRecursiveRuleWithoutBaseAlternative
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L118"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Left-recursive rule does not define any base alternative.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor LeftRecursiveRuleWithoutBaseAlternative</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_LexerRuleNotAllowedInParserGrammar" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.LexerRuleNotAllowedInParserGrammar">
+  LexerRuleNotAllowedInParserGrammar
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L51"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Lexer rule declared in a parser grammar.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor LexerRuleNotAllowedInParserGrammar</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_LexerRuleOptionsIgnored" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.LexerRuleOptionsIgnored">
+  LexerRuleOptionsIgnored
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L241"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Options block on a lexer rule recognized but ignored by the current runtime model.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor LexerRuleOptionsIgnored</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_LocalsIgnored" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.LocalsIgnored">
+  LocalsIgnored
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L102"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Compatibility alias for the legacy descriptor name.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">[Obsolete(&quot;Use RuleLocalsIgnored. This alias is kept for compatibility.&quot;)]
+public static readonly ParserDiagnosticDescriptor LocalsIgnored</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_NonProgressiveLeftRecursionStopped" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.NonProgressiveLeftRecursionStopped">
+  NonProgressiveLeftRecursionStopped
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L281"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Left-recursive extension stopped because no progress was observed.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor NonProgressiveLeftRecursionStopped</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_NonProgressiveQuantifierStopped" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.NonProgressiveQuantifierStopped">
+  NonProgressiveQuantifierStopped
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L277"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Quantifier iteration stopped because the inner rule made no progress.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor NonProgressiveQuantifierStopped</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_ParseBranchPruned" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.ParseBranchPruned">
+  ParseBranchPruned
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L130"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>A parse branch was pruned during runtime branch selection.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor ParseBranchPruned</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_ParseFailure" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.ParseFailure">
+  ParseFailure
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L30"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Parsing failure.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor ParseFailure</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_ParseMemoHit" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.ParseMemoHit">
+  ParseMemoHit
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L134"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Memoization hit for parser rule evaluation.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor ParseMemoHit</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_ParseMemoMiss" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.ParseMemoMiss">
+  ParseMemoMiss
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L138"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Memoization miss for parser rule evaluation.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor ParseMemoMiss</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_ParserRuleNotAllowedInLexerGrammar" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.ParserRuleNotAllowedInLexerGrammar">
+  ParserRuleNotAllowedInLexerGrammar
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L47"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Parser rule declared in a lexer grammar.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor ParserRuleNotAllowedInLexerGrammar</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_ParserRuleOptionsIgnored" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.ParserRuleOptionsIgnored">
+  ParserRuleOptionsIgnored
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L245"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Options block on a parser rule recognized but ignored by the current runtime model.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor ParserRuleOptionsIgnored</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_ParserStateCycleDetected" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.ParserStateCycleDetected">
+  ParserStateCycleDetected
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L273"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Parsing branch aborted because the parser entered a repeated state.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor ParserStateCycleDetected</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_ParserStateRejected" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.ParserStateRejected">
+  ParserStateRejected
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L312"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Debug trace for parser states rejected by runtime safeguards.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor ParserStateRejected</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_PredicateOptionsIgnored" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.PredicateOptionsIgnored">
+  PredicateOptionsIgnored
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L186"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Semantic predicate options block (<code>&lt;fail=...&gt;</code>) recognized but not applied by the current runtime model.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor PredicateOptionsIgnored</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_ReturnsPartiallyApplied" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.ReturnsPartiallyApplied">
+  ReturnsPartiallyApplied
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L87"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Compatibility alias for the legacy descriptor name.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">[Obsolete(&quot;Use RuleReturnsIgnored. This alias is kept for compatibility.&quot;)]
+public static readonly ParserDiagnosticDescriptor ReturnsPartiallyApplied</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_RuleCallArgumentsPreservedAsMetadata" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.RuleCallArgumentsPreservedAsMetadata">
+  RuleCallArgumentsPreservedAsMetadata
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L222"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Rule-call arguments preserved as raw metadata; not evaluated and not bound to child parameters.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor RuleCallArgumentsPreservedAsMetadata</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_RuleExceptionMetadataIgnored" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.RuleExceptionMetadataIgnored">
+  RuleExceptionMetadataIgnored
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L95"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Rule throws/catch/finally metadata recognized but ignored by runtime semantics.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor RuleExceptionMetadataIgnored</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_RuleLocalsIgnored" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.RuleLocalsIgnored">
+  RuleLocalsIgnored
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L91"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Rule locals clause lacks typed and implicit runtime semantics.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor RuleLocalsIgnored</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_RuleReturnsIgnored" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.RuleReturnsIgnored">
+  RuleReturnsIgnored
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L80"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>returns clause has no typed or implicit runtime semantics.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor RuleReturnsIgnored</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_RuntimeGeneratorMismatch" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.RuntimeGeneratorMismatch">
+  RuntimeGeneratorMismatch
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L106"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Runtime and generator support mismatch.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor RuntimeGeneratorMismatch</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_SemanticPredicateNotEnforced" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.SemanticPredicateNotEnforced">
+  SemanticPredicateNotEnforced
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L76"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Semantic predicate recognized but not enforced.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor SemanticPredicateNotEnforced</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_StaticDuplicateAlternativeRemoved" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.StaticDuplicateAlternativeRemoved">
+  StaticDuplicateAlternativeRemoved
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L126"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Strict duplicate alternatives were removed at resolution time.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor StaticDuplicateAlternativeRemoved</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_TokenMatched" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.TokenMatched">
+  TokenMatched
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L304"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Debug trace for matched token.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor TokenMatched</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_TokensBlockIgnored" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.TokensBlockIgnored">
+  TokensBlockIgnored
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L60"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>tokens block ignored.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor TokensBlockIgnored</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_TrailingTokensAfterParse" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.TrailingTokensAfterParse">
+  TrailingTokensAfterParse
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L265"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Trailing tokens remain after parse.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor TrailingTokensAfterParse</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_UnexpectedToken" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.UnexpectedToken">
+  UnexpectedToken
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L14"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Unexpected token encountered.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor UnexpectedToken</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_UnknownLexerMode" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.UnknownLexerMode">
+  UnknownLexerMode
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L26"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Unknown lexer mode referenced by a lexer command.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor UnknownLexerMode</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_UnknownRuleReference" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.UnknownRuleReference">
+  UnknownRuleReference
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L22"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Unknown referenced rule.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor UnknownRuleReference</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_UnsupportedAntlrLanguageOptionIgnored" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.UnsupportedAntlrLanguageOptionIgnored">
+  UnsupportedAntlrLanguageOptionIgnored
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L146"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>ANTLR language option ignored by this runtime.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor UnsupportedAntlrLanguageOptionIgnored</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_UnsupportedAntlrOptionIgnored" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.UnsupportedAntlrOptionIgnored">
+  UnsupportedAntlrOptionIgnored
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L154"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>ANTLR option parsed but not supported by this runtime.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor UnsupportedAntlrOptionIgnored</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_UnsupportedLexerCommand" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.UnsupportedLexerCommand">
+  UnsupportedLexerCommand
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L150"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Unsupported lexer command encountered in grammar source.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static readonly ParserDiagnosticDescriptor UnsupportedLexerCommand</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+  <h2 class="section" id="properties">Properties
+</h2>
+
+
+  <a id="Utils_Parser_Diagnostics_ParserDiagnostics_All_" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.All*"></a>
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_All" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.All">
+  All
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L322"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets all known parser diagnostics keyed by code.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IReadOnlyDictionary&lt;string, ParserDiagnosticDescriptor&gt; All { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlydictionary-2">IReadOnlyDictionary</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>, <a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a>&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+  <h4 class="section" id="Utils_Parser_Diagnostics_ParserDiagnostics_All_remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Compatibility aliases such as ReturnsPartiallyApplied and LocalsIgnored are intentionally not
+listed separately because <a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnostics.html#Utils_Parser_Diagnostics_ParserDiagnostics_All">All</a> is keyed by diagnostic code and exposes canonical descriptors.</p>
+</div>
+
+
+
+
+  <h2 class="section" id="methods">Methods
+</h2>
+
+
+  <a id="Utils_Parser_Diagnostics_ParserDiagnostics_TryGet_" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.TryGet*"></a>
+
+  <h3 id="Utils_Parser_Diagnostics_ParserDiagnostics_TryGet_System_String_Utils_Parser_Diagnostics_ParserDiagnosticDescriptor__" data-uid="Utils.Parser.Diagnostics.ParserDiagnostics.TryGet(System.String,Utils.Parser.Diagnostics.ParserDiagnosticDescriptor@)">
+  TryGet(string, out ParserDiagnosticDescriptor)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L396"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Looks up a descriptor by diagnostic code.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool TryGet(string code, out ParserDiagnosticDescriptor descriptor)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>code</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Diagnostic code.</p>
+</dd>
+    <dt><code>descriptor</code> <a class="xref" href="Utils.Parser.Diagnostics.ParserDiagnosticDescriptor.html">ParserDiagnosticDescriptor</a></dt>
+    <dd><p>Resolved descriptor when found.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><code>true</code> when the code exists.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/ParserDiagnostics.cs/#L8" class="edit-link">Edit this page</a>
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Namespace Utils.Net.DNS.RFC1035 | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Namespace Utils.Net.DNS.RFC1035 | omy.Utils Documentation ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="Utils.Net.DNS.RFC1035">
+
+  <h1 id="Utils_Net_DNS_RFC1035" data-uid="Utils.Net.DNS.RFC1035" class="text-break">Namespace Utils.Net.DNS.RFC1035</h1>
+  <div class="markdown level0 summary"></div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="markdown level0 remarks"></div>
+
+    <h3 id="classes">
+Classes
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.RFC1035.Address.html">Address</a></dt>
+      <dd><p>Represents an IP address record (A, AAAA, or NSAP) in DNS, as described by
+<a href="https://www.rfc-editor.org/rfc/rfc1035#section-3.4.1">RFC 1035 §3.4.1</a> (A records),
+<a href="https://www.rfc-editor.org/rfc/rfc1886">RFC 1886</a> (superseded but historically defining AAAA records),
+and the OSI NSAP address type. This class stores the IP address
+and reflects the correct numeric record ID based on the address family.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.RFC1035.CNAME.html">CNAME</a></dt>
+      <dd><p>Represents a DNS CNAME (Canonical Name) record, used to alias one domain name to another,
+as defined in <a href="https://www.rfc-editor.org/rfc/rfc1035#section-3.3.1">RFC 1035 §3.3.1</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.RFC1035.Default.html">Default</a></dt>
+      <dd><p>Represents a fallback or &quot;default&quot; DNS record for scenarios where the record type is unrecognized,
+or when a custom processing path is desired for type code zero (which is reserved/unused).
+Despite the TXT-like comment, this class is annotated with <code>[DNSRecord(DNSClass.IN, 0x00)]</code>,
+indicating it is treated as a placeholder for type <code>0</code>. The raw payload is stored in the
+<a class="xref" href="Utils.Net.DNS.RFC1035.Default.html#Utils_Net_DNS_RFC1035_Default_Datas">Datas</a> property.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.RFC1035.HINFO.html">HINFO</a></dt>
+      <dd><p>Represents an HINFO (Host Information) record, as defined in
+<a href="https://www.rfc-editor.org/rfc/rfc1035#section-3.3.2">RFC 1035 §3.3.2</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.RFC1035.MB.html">MB</a></dt>
+      <dd><p>Represents an MB (Mailbox) DNS record, as described in
+<a href="https://www.rfc-editor.org/rfc/rfc1035#section-3.3.3">RFC 1035 §3.3.3</a>
+(marked as experimental).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.RFC1035.MD.html">MD</a></dt>
+      <dd><p>Represents an MD (Mail Destination) record, which is an obsolete DNS record type
+as per <a href="https://www.rfc-editor.org/rfc/rfc1035#section-3.3.4">RFC 1035 §3.3.4</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.RFC1035.MF.html">MF</a></dt>
+      <dd><p>Represents an MF (Mail Forwarder) record, an older mail-routing DNS record type
+now considered obsolete per <a href="https://www.rfc-editor.org/rfc/rfc1035#section-3.3.5">RFC 1035 §3.3.5</a>.
+Similar to MD, the MF record has been superseded by MX.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.RFC1035.MG.html">MG</a></dt>
+      <dd><p>Represents an MG (Mail Group) record, classified as experimental in
+<a href="https://www.rfc-editor.org/rfc/rfc1035#section-3.3.6">RFC 1035 §3.3.6</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.RFC1035.MINFO.html">MINFO</a></dt>
+      <dd><p>Represents a MINFO record, considered experimental and largely obsolete as per
+<a href="https://www.rfc-editor.org/rfc/rfc1035#section-3.3.7">RFC 1035 §3.3.7</a>.
+The MINFO record provides mail-related information (responsible mailbox, error mailbox)
+for a mailing list or mailbox owner.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.RFC1035.MR.html">MR</a></dt>
+      <dd><p>Represents an MR (Mail Rename) record, marked as experimental and obsolete as per
+<a href="https://www.rfc-editor.org/rfc/rfc1035#section-3.3.8">RFC 1035 §3.3.8</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.RFC1035.MX.html">MX</a></dt>
+      <dd><p>Represents an MX (Mail Exchange) record in the DNS, as described in
+<a href="https://www.rfc-editor.org/rfc/rfc1035#section-3.3.9">RFC 1035 §3.3.9</a>
+and further clarified by <a href="https://www.rfc-editor.org/rfc/rfc974">RFC 974</a>.
+The MX record specifies a mail server responsible
+for accepting email on behalf of a domain, along with a preference value.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.RFC1035.NS.html">NS</a></dt>
+      <dd><p>Represents an NS (Name Server) record as specified in
+<a href="https://www.rfc-editor.org/rfc/rfc1035#section-3.3.11">RFC 1035 §3.3.11</a>.
+An NS record indicates the authoritative name server for a given domain.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.RFC1035.NULL.html">NULL</a></dt>
+      <dd><p>Represents a NULL (experimental) DNS record as described in
+<a href="https://www.rfc-editor.org/rfc/rfc1035#section-3.3.10">RFC 1035 §3.3.10</a>.
+This record type can hold arbitrary data (up to 65535 bytes) and is primarily
+a placeholder for experimental or interim purposes.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.RFC1035.PTR.html">PTR</a></dt>
+      <dd><p>Represents a PTR (Pointer) record in DNS, as specified by
+<a href="https://www.rfc-editor.org/rfc/rfc1035#section-3.3.12">RFC 1035 §3.3.12</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.RFC1035.SOA.html">SOA</a></dt>
+      <dd><p>Represents an SOA (Start of Authority) record, which defines zone-wide parameters
+including the primary name server, mailbox of the zone administrator, and various
+time intervals affecting caching and zone transfers, as described in
+<a href="https://www.rfc-editor.org/rfc/rfc1035#section-3.3.13">RFC 1035 §3.3.13</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.RFC1035.TXT.html">TXT</a></dt>
+      <dd><p>Represents a TXT record in DNS, as defined in
+<a href="https://www.rfc-editor.org/rfc/rfc1035#section-3.3.14">RFC 1035 §3.3.14</a>.
+TXT records store arbitrary human-readable text, often used for descriptive
+or application-specific data (e.g., SPF, DKIM, etc. in modern usage).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Net.DNS.RFC1035.WKS.html">WKS</a></dt>
+      <dd><p>Represents a WKS (Well Known Services) record, as specified by
+<a href="https://www.rfc-editor.org/rfc/rfc1035#section-3.4.2">RFC 1035 §3.4.2</a>.
+A WKS record details which well-known services are available for a given IPv4 address
+and IP protocol (e.g., TCP or UDP).</p>
+</dd>
+    </dl>
+
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
