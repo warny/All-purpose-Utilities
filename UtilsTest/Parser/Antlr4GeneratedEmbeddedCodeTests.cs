@@ -639,6 +639,294 @@ public class Antlr4GeneratedEmbeddedCodeTests
     }
 
     /// <summary>
+    /// Ensures a false lexer predicate prevents both later accepted-token actions and the skip command from taking effect.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerPredicateFalseWithSkipCommand_DoesNotExecuteActionOrSkip()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public bool Enabled = false;
+                public int Count;
+            }
+
+            start : ;
+            A : { Enabled }? 'a' { Count++; } -> skip ;
+            """;
+
+        string source = Emit(grammar);
+        var assembly = CompileGeneratedSource(source);
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "a", context);
+
+        Assert.IsInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(0, ReadInstanceIntField(context, "Count"));
+    }
+
+    /// <summary>
+    /// Ensures a true lexer predicate allows the accepted-token action and skip command to run.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerPredicateTrueWithSkipCommand_ExecutesActionAndSkipsToken()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public bool Enabled = true;
+                public int Count;
+            }
+
+            start : ;
+            A : { Enabled }? 'a' { Count++; } -> skip ;
+            """;
+
+        string source = Emit(grammar);
+        var assembly = CompileGeneratedSource(source);
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "a", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(1, ReadInstanceIntField(context, "Count"));
+    }
+
+    /// <summary>
+    /// Ensures accepted lexer actions run before a supported channel command moves the token off the default parser channel.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerActionWithChannelCommand_ExecutesActionAndHidesToken()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public int Count;
+            }
+
+            start : ;
+            A : 'a' { Count++; } -> channel(HIDDEN) ;
+            """;
+
+        string source = Emit(grammar);
+        var assembly = CompileGeneratedSource(source);
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "a", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(1, ReadInstanceIntField(context, "Count"));
+    }
+
+    /// <summary>
+    /// Ensures a false lexer predicate prevents a channel command and later action from the rejected path.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerPredicateFalseWithChannelCommand_DoesNotExecuteActionOrCommand()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public int Count;
+            }
+
+            start : ;
+            A : { false }? 'a' { Count++; } -> channel(HIDDEN) ;
+            """;
+
+        string source = Emit(grammar);
+        var assembly = CompileGeneratedSource(source);
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "a", context);
+
+        Assert.IsInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(0, ReadInstanceIntField(context, "Count"));
+    }
+
+    /// <summary>
+    /// Ensures accepted lexer actions run before a supported type command retags the emitted token.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerActionWithTypeCommand_ExecutesActionAndRetagsToken()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public int Count;
+            }
+
+            start : B ;
+            A : 'a' { Count++; } -> type(B) ;
+            B : 'b' ;
+            """;
+
+        string source = Emit(grammar);
+        var assembly = CompileGeneratedSource(source);
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "a", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(1, ReadInstanceIntField(context, "Count"));
+    }
+
+    /// <summary>
+    /// Ensures a false lexer predicate prevents a type command and later action from the rejected path.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerPredicateFalseWithTypeCommand_DoesNotExecuteActionOrCommand()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public int Count;
+            }
+
+            start : B ;
+            A : { false }? 'a' { Count++; } -> type(B) ;
+            B : 'b' ;
+            """;
+
+        string source = Emit(grammar);
+        var assembly = CompileGeneratedSource(source);
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "a", context);
+
+        Assert.IsInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(0, ReadInstanceIntField(context, "Count"));
+    }
+
+    /// <summary>
+    /// Ensures actions attached to a token using more execute at the current accepted-chunk point.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerActionWithMoreCommand_ExecutesActionAndContinuesToken()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public int Count;
+            }
+
+            start : A ;
+            M : 'm' { Count++; } -> more ;
+            A : 'a' ;
+            """;
+
+        string source = Emit(grammar);
+        var assembly = CompileGeneratedSource(source);
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "ma", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(1, ReadInstanceIntField(context, "Count"));
+    }
+
+    /// <summary>
+    /// Ensures accepted lexer actions work with pushMode and popMode commands.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerActionsWithModeCommands_ExecuteActionsAndSwitchModes()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public int Count;
+            }
+
+            start : A B ;
+
+            A : 'a' { Count++; } -> pushMode(SECOND) ;
+
+            mode SECOND;
+            B : 'b' { Count++; } -> popMode ;
+            """;
+
+        string source = Emit(grammar);
+        var assembly = CompileGeneratedSource(source);
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "ab", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(2, ReadInstanceIntField(context, "Count"));
+    }
+
+    /// <summary>
+    /// Ensures accepted lexer actions work with direct mode commands.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerActionsWithDirectModeCommand_ExecuteActionsAndSwitchModes()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public int Count;
+            }
+
+            start : A B C ;
+
+            A : 'a' { Count++; } -> mode(SECOND) ;
+            C : 'c' { Count++; } ;
+
+            mode SECOND;
+            B : 'b' { Count++; } -> mode(DEFAULT_MODE) ;
+            """;
+
+        string source = Emit(grammar);
+        var assembly = CompileGeneratedSource(source);
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "abc", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(3, ReadInstanceIntField(context, "Count"));
+    }
+
+    /// <summary>
+    /// Ensures a false predicate in a non-default mode rejects the path without executing its later action.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerPredicateFalseInMode_DoesNotExecuteFollowingAction()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public int Count;
+            }
+
+            start : A B ;
+
+            A : 'a' { Count++; } -> pushMode(SECOND) ;
+
+            mode SECOND;
+            B : { false }? 'b' { Count++; } -> popMode ;
+            """;
+
+        string source = Emit(grammar);
+        var assembly = CompileGeneratedSource(source);
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "ab", context);
+
+        Assert.IsInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(1, ReadInstanceIntField(context, "Count"));
+    }
+
+    /// <summary>
     /// Ensures a generated <c>true</c> predicate hook is compiled and allows parsing to succeed.
     /// </summary>
     [TestMethod]

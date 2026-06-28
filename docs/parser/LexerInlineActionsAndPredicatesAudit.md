@@ -13,7 +13,7 @@ The current implementation has intentionally narrow lexer embedded-code support:
 - Injecting `@lexer::members` does not create a separate ANTLR-style lexer runtime type or a separate runtime lexer execution context.
 - Simple lexer inline actions are supported only in the generated-C# opt-in path.
 - Simple lexer predicates are supported only in the generated-C# opt-in path.
-- Generated-C# opt-in regression coverage includes lexer rule references, fragments, simple quantifiers, repeated source text at distinct positions, false-predicate/action ordering, and already-supported lexer commands such as `skip`.
+- Generated-C# opt-in regression coverage includes lexer rule references, fragments, simple quantifiers, repeated source text at distinct positions, false-predicate/action ordering, and already-supported lexer commands/modes: `skip`, `channel(...)`, `type(...)`, `more`, `mode(...)`, `pushMode(...)`, and `popMode`.
 - Runtime discovery classifies lexer actions and lexer predicates as unsupported.
 - The source-generator C# path collects parser executable hooks and limited generated-C# opt-in lexer action/predicate hooks; runtime-inline discovery still treats lexer hooks as non-executable.
 - `Parse(...)` remains conservative and must not execute lexer inline actions, lexer predicates, or lexer hooks.
@@ -79,7 +79,7 @@ That decision must be made before enabling lexer inline actions or lexer predica
 
 ## Modes, channels, commands, and tokenization concerns
 
-The audit must account for lexer constructs that affect tokenization, without promising support for executing inline lexer code with those constructs:
+The audit accounts for lexer constructs that affect tokenization and records the currently tested generated-C# opt-in boundary for the subset already supported by the runtime:
 
 - lexer modes;
 - lexer commands;
@@ -92,7 +92,7 @@ The audit must account for lexer constructs that affect tokenization, without pr
 - interactions between predicates and command or mode decisions;
 - ordering between ANTLR commands and target-language actions.
 
-This document does not add support for advanced mode, channel, command, or inline execution semantics. It only records the cases that a future design must review.
+The current generated-C# opt-in regression suite covers the already-supported runtime command/mode subset listed above. It confirms that accepted actions run before accepted commands, predicates reject only the current path, and commands from rejected paths are not applied. This does not add advanced ANTLR mode/channel/command semantics beyond what the runtime already supports.
 
 ## Rollback and side-effect risks
 
@@ -161,8 +161,8 @@ This audit explicitly excludes:
 
 - complete ANTLR compatibility;
 - a separate runtime lexer in this PR;
-- executable lexer hooks in this PR;
-- executable lexer predicates in this PR;
+- runtime-inline lexer hooks;
+- runtime-inline lexer predicates;
 - general replay or action buffering;
 - rollback of external side effects;
 - implicit support for advanced modes, channels, or commands;
@@ -172,4 +172,4 @@ This audit explicitly excludes:
 - any change to `Parse(...)`.
 
 
-> Lexer inline actions and predicates: simple source-generator C# lexer inline actions and simple lexer predicates are now supported only through the explicit opt-in generated path. `Parse(...)` remains conservative. Predicates run during lexer matching and reject only the current path; actions run after token acceptance and are not executed after a predicate rejects that path. `AlternativeIndex` and `ElementIndex` identify the source hook location and are reused across quantified iterations. Lexer `$...` rewriting, runtime-inline lexer execution, a separate runtime lexer, generalized action buffering/replay, and external side-effect rollback remain unsupported.
+> Lexer inline actions and predicates: simple source-generator C# lexer inline actions and simple lexer predicates are now supported only through the explicit opt-in generated path. `Parse(...)` remains conservative. Predicates run during lexer matching and reject only the current path; actions run after token acceptance and before accepted lexer commands are applied. Commands from rejected paths are not applied. `AlternativeIndex` and `ElementIndex` identify the source hook location and are reused across quantified iterations. The tested command/mode boundary covers `skip`, `channel(...)`, `type(...)`, `more`, `mode(...)`, and `pushMode(...)`/`popMode`. Lexer `$...` rewriting, runtime-inline lexer execution, a separate runtime lexer, complete ANTLR command/mode semantics, generalized action buffering/replay, and external side-effect rollback remain unsupported.

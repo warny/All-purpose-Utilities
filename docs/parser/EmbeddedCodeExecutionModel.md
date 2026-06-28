@@ -324,9 +324,11 @@ Future source generator mapping may provide C#-specific explicit hooks. Runtime 
 
 ### Lexer actions and predicates
 
-Lexer embedded semantics are a separate, higher-risk domain because they can affect tokenization, mode transitions, channel/type behavior, and stateful lexing.
+Lexer embedded semantics are a separate, higher-risk domain because they can affect tokenization, mode transitions, channel/type behavior, and stateful lexing. The only executable lexer embedded-code surface is the explicit source-generator C# opt-in path. Conservative generated `Parse(...)` and the runtime-inline prepared expression path do not execute lexer actions or lexer predicates.
 
-They must be handled in dedicated future design/implementation work and not conflated with parser inline action support.
+In the generated-C# opt-in path, simple lexer predicates are evaluated during lexer matching and reject only the current token path. Simple lexer inline actions are collected while matching but execute only after the owning token rule has been accepted. Accepted lexer actions execute before the language-neutral lexer engine applies accepted lexer commands for that token/chunk. Commands from rejected paths are not applied. Current regression coverage locks this boundary for `skip`, `channel(...)`, `type(...)`, `more`, `mode(...)`, `pushMode(...)`, `popMode`, and mode-scoped predicate rejection as already supported by the lexer runtime.
+
+This support does not add lexer `$...` rewriting, runtime-inline lexer execution, a separate runtime lexer, generalized action buffering/replay, complete ANTLR mode/channel/command semantics, or rollback of external side effects performed by lexer actions.
 
 ## 10. Project responsibilities
 
