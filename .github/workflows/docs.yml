@@ -1,0 +1,41 @@
+name: Documentation
+
+on:
+    push:
+        branches:
+            - master
+            - release
+    workflow_dispatch:
+
+permissions:
+    contents: write
+
+jobs:
+    build-and-deploy:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Setup .NET 9.0.x
+              uses: actions/setup-dotnet@v4
+              with:
+                  dotnet-version: '9.0.x'
+
+            - name: Restore
+              run: dotnet restore
+
+            - name: Build (generate XML docs)
+              run: dotnet build --configuration Release --no-restore
+
+            - name: Install DocFX
+              run: dotnet tool install -g docfx
+
+            - name: Build documentation
+              run: docfx docfx.json
+
+            - name: Deploy to GitHub Pages
+              uses: peaceiris/actions-gh-pages@v4
+              with:
+                  github_token: ${{ secrets.GITHUB_TOKEN }}
+                  publish_dir: ./_site
+                  force_orphan: true
