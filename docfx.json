@@ -1,0 +1,68 @@
+{
+  "metadata": [
+    {
+      "src": [
+        {
+          "files": [
+            "Utils/**/*.csproj",
+            "Utils.Collections/**/*.csproj",
+            "Utils.Data/**/*.csproj",
+            "Utils.DependencyInjection/**/*.csproj",
+            "Utils.Expressions.CLike/**/*.csproj",
+            "Utils.Expressions.CSyntax/**/*.csproj",
+            "Utils.Expressions.VBSyntax/**/*.csproj",
+            "Utils.Fonts/**/*.csproj",
+            "Utils.Geography/**/*.csproj",
+            "Utils.IO/**/*.csproj",
+            "Utils.Imaging/**/*.csproj",
+            "Utils.Mathematics/**/*.csproj",
+            "Utils.Net/**/*.csproj",
+            "Utils.NumberToString/**/*.csproj",
+            "Utils.OData/**/*.csproj",
+            "Utils.Parser/**/*.csproj",
+            "Utils.Parser.Antlr4.Common/**/*.csproj",
+            "Utils.Parser.Diagnostics/**/*.csproj",
+            "Utils.Parser.Expressions/**/*.csproj",
+            "Utils.Parser.Source/**/*.csproj",
+            "Utils.Reflection/**/*.csproj",
+            "Utils.VirtualMachine/**/*.csproj",
+            "Utils.Xml/**/*.csproj"
+          ],
+          "exclude": [
+            "**/bin/**",
+            "**/obj/**"
+          ]
+        }
+      ],
+      "dest": "api",
+      "allowCompilationErrors": true
+    }
+  ],
+  "build": {
+    "content": [
+      {
+        "files": ["api/**.yml", "api/index.md"]
+      },
+      {
+        "files": [
+          "toc.yml",
+          "index.md",
+          "docs/**.md",
+          "docs/toc.yml"
+        ]
+      }
+    ],
+    "globalMetadata": {
+      "_appName": "All-purpose Utilities",
+      "_appTitle": "omy.Utils Documentation",
+      "_enableSearch": true,
+      "_appFooter": "All-purpose Utilities — Apache 2.0",
+      "_gitContribute": {
+        "repo": "https://github.com/warny/All-purpose-Utilities",
+        "branch": "master"
+      }
+    },
+    "dest": "_site",
+    "template": ["default", "modern"]
+  }
+}
