@@ -635,10 +635,10 @@ Current state:
 - Grammar-level `@lexer::header`, `@lexer::members`, and `@lexer::footer` are supported only by the source-generator C# path.
 - That support applies only to combined grammars and lexer grammars; parser grammars that declare `@lexer::*` remain unsupported because no lexer is generated.
 - `@lexer::members` is injected into the existing generated execution context and does not create a separate ANTLR lexer runtime type.
-- Lexer inline actions such as `A : 'a' { OnLex(); } ;` remain unsupported. They produce a conservative generator unsupported diagnostic, do not generate lexer hooks, and are not executed by the runtime.
+- Simple lexer inline actions such as `A : 'a' { OnLex(); } ;` are supported only by generated-C# opt-in policies. They execute after the owning token is accepted; conservative `Parse(...)` does not execute them.
 - Simple lexer predicates such as `A : { IsEnabled() }? 'a' ;` are supported only by generated-C# opt-in policies. They are evaluated during lexer matching and can reject the current rule or alternative; conservative `Parse(...)` does not execute them.
 - Runtime discovery still classifies lexer actions and lexer predicates as unsupported for runtime-inline execution. Only generated-C# opt-in policies make simple lexer actions and predicates executable.
-- The source-generator C# path currently collects executable hooks from parser rules only; lexer rules do not produce executable hooks.
+- The source-generator C# path now collects parser hooks and limited generated-C# opt-in lexer action/predicate hooks.
 
 Required invariants for any future work:
 
