@@ -24,23 +24,23 @@ dotnet add package omy.Utils.NumberToString
 | ES | Spanish | ✓ | gender (masculino/femenino) |
 | IT | Italian | ✓ | gender (maschile/femminile) |
 | PT | Portuguese | ✓ | gender (masculino/feminino) |
-| PL | Polish | — | — (not yet implemented) |
+| PL | Polish | ✓ | — (numbers are invariable in common usage) |
 | NL | Dutch | ✓ | — (numbers are invariable) |
-| RU | Russian | — | — (cases not yet implemented) |
-| AR | Arabic | — | — (not yet implemented) |
+| RU | Russian | ✓ | — |
+| AR | Arabic | ✓ (1–10 masculine) | — |
 | HE | Hebrew | ✓ | gender (standalone/zachar/nekeva) |
 | ZH | Chinese | ✓ (prefix 第) | — (no inflection) |
 | JA | Japanese | ✓ (prefix 第) | — (no inflection) |
 | KO | Korean | ✓ (prefix 제) | — (no inflection) |
-| HI | Hindi | — | — (not yet implemented) |
-| EL | Greek | — | — (not yet implemented) |
-| FI | Finnish | — | sijamuoto (nominatiivi/partitiivi/genetiivi) |
+| HI | Hindi | ✓ | — |
+| EL | Greek | ✓ | gender (αρσενικό/θηλυκό/ουδέτερο) for 1–12 |
+| FI | Finnish | ✓ | sijamuoto (nominatiivi/partitiivi/genetiivi) |
 | CA | Catalan | ✓ | gender (masculí/femení) |
 | EU | Basque | ✓ | — (no grammatical gender) |
 | GL | Galician | ✓ | gender (masculino/feminino) |
 | ZU | Zulu | — | — (not yet implemented) |
 | EE | Ewe | ✓ (prefix etsõ) | — |
-| WO | Wolof | — | — (not yet implemented) |
+| WO | Wolof | ✓ | — |
 
 ---
 
@@ -216,7 +216,7 @@ if (conv.SupportsOrdinals)
     Console.WriteLine(conv.ConvertOrdinal(5));  // "fünfte"
 ```
 
-`SupportsOrdinals` returns `false` for languages that have no ordinal configuration (FI, RU, PL, AR…) and for any `INumberToStringConverter` implementation that does not override the default.
+`SupportsOrdinals` returns `false` for languages that have no ordinal configuration (ZU…) and for any `INumberToStringConverter` implementation that does not override the default.
 
 > **Ordinal pipeline**: word-level rules are matched against the raw cardinal text, before
 > `AdjustFunction` and `INumberToStringLanguageSpecifics.FinalizeWriting` are applied.
@@ -224,8 +224,8 @@ if (conv.SupportsOrdinals)
 > converter with an uppercase `AdjustFunction` correctly produces `"TWENTY-FIRST"`, not
 > `"TWENTY-ONEth"`.
 
-> **Languages without ordinals**: FI, RU, PL, AR, HI, EL, ZU, WO.
-> Finnish, Russian, Polish and Arabic ordinals are not yet implemented.
+> **Languages without ordinals**: ZU (Zulu).
+> Zulu ordinals require noun-class agreement and are not yet implemented.
 > For languages that have ordinals, `converter.SupportsOrdinals` returns `true`.
 
 ---
@@ -561,14 +561,10 @@ is invariable in common contexts, or because the morphological distinction is no
 | ZH | Chinese | No inflection |
 | JA | Japanese | No inflection |
 | EU | Basque | No grammatical gender (language isolate) |
-| PL | Polish | Cases not yet implemented |
-| RU | Russian | Cases not yet implemented |
-| AR | Arabic | Not yet implemented |
-| HI | Hindi | Not yet implemented (Hindi has gender but numbers are often invariable in common usage) |
-| EL | Greek | Not yet implemented |
+| PL | Polish | Numbers are invariable in common usage (nominatif masculin only) |
+| HI | Hindi | Numbers are invariable in common usage |
 | ZU | Zulu | Not yet implemented |
 | EE | Ewe | Not yet implemented |
-| WO | Wolof | Not yet implemented |
 
 For all these languages, `VariantDimensions` returns an empty list and any parameter
 passed to `Convert()` is silently ignored.
