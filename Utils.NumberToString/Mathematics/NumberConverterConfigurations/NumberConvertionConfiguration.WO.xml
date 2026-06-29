@@ -68,5 +68,10 @@
             <Number value="18" string="fukk ak juróom-ñett" />
             <Number value="19" string="fukk ak juróom-ñent" />
         </Exceptions>
+        <Ordinals suffix="ël">
+            <!-- 1er : forme lexicalisée distincte -->
+            <OrdinalException value="1" string="bu njëkk" />
+            <!-- 2+ : suffixe -ël sur le dernier mot (ñaar → ñaarël, fukk → fukkël, etc.) -->
+        </Ordinals>
     </Language>
 </Numbers>

@@ -71,5 +71,15 @@
             <Number value="18" string="अठारह" />
             <Number value="19" string="उन्नीस" />
         </Exceptions>
+        <Ordinals suffix="वाँ">
+            <!-- 1-4 : formes entièrement irrégulières -->
+            <OrdinalException value="1" string="पहला" />
+            <OrdinalException value="2" string="दूसरा" />
+            <OrdinalException value="3" string="तीसरा" />
+            <OrdinalException value="4" string="चौथा" />
+            <!-- 6 : forme irrégulière (छह → छठा, le suffixe वाँ ne s'applique pas) -->
+            <Ordinal from="छह" to="छठा" />
+            <!-- 5, 7-9 et tous les nombres suivants reçoivent le suffixe वाँ directement -->
+        </Ordinals>
     </Language>
 </Numbers>

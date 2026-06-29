@@ -59,5 +59,19 @@
             </Suffixes>
         </NumberScale>
         <Exceptions />
+        <Ordinals>
+            <!-- Masculin indéfini, forme courte (sans article) — les ordinaux arabes
+                 sont indépendants des cardinaux et varient en genre avec le nom -->
+            <OrdinalException value="1"  string="أول" />
+            <OrdinalException value="2"  string="ثانٍ" />
+            <OrdinalException value="3"  string="ثالث" />
+            <OrdinalException value="4"  string="رابع" />
+            <OrdinalException value="5"  string="خامس" />
+            <OrdinalException value="6"  string="سادس" />
+            <OrdinalException value="7"  string="سابع" />
+            <OrdinalException value="8"  string="ثامن" />
+            <OrdinalException value="9"  string="تاسع" />
+            <OrdinalException value="10" string="عاشر" />
+        </Ordinals>
     </Language>
 </Numbers>

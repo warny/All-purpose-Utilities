@@ -71,5 +71,50 @@
             <Number value="18" string="osiemnaście" />
             <Number value="19" string="dziewiętnaście" />
         </Exceptions>
+        <Ordinals>
+            <!-- Nominatif masculin singulier — tous les stems diffèrent des cardinaux -->
+            <!-- Unités -->
+            <Ordinal from="jeden"    to="pierwszy" />
+            <Ordinal from="dwa"      to="drugi" />
+            <Ordinal from="trzy"     to="trzeci" />
+            <Ordinal from="cztery"   to="czwarty" />
+            <Ordinal from="pięć"     to="piąty" />
+            <Ordinal from="sześć"    to="szósty" />
+            <Ordinal from="siedem"   to="siódmy" />
+            <Ordinal from="osiem"    to="ósmy" />
+            <Ordinal from="dziewięć" to="dziewiąty" />
+            <Ordinal from="dziesięć" to="dziesiąty" />
+            <!-- Exceptions 11-19 -->
+            <Ordinal from="jedenaście"    to="jedenasty" />
+            <Ordinal from="dwanaście"     to="dwunasty" />
+            <Ordinal from="trzynaście"    to="trzynasty" />
+            <Ordinal from="czternaście"   to="czternasty" />
+            <Ordinal from="piętnaście"    to="piętnasty" />
+            <Ordinal from="szesnaście"    to="szesnasty" />
+            <Ordinal from="siedemnaście"  to="siedemnasty" />
+            <Ordinal from="osiemnaście"   to="osiemnasty" />
+            <Ordinal from="dziewiętnaście" to="dziewiętnasty" />
+            <!-- Dizaines -->
+            <Ordinal from="dwadzieścia"    to="dwudziesty" />
+            <Ordinal from="trzydzieści"    to="trzydziesty" />
+            <Ordinal from="czterdzieści"   to="czterdziesty" />
+            <Ordinal from="pięćdziesiąt"   to="pięćdziesiąty" />
+            <Ordinal from="sześćdziesiąt"  to="sześćdziesiąty" />
+            <Ordinal from="siedemdziesiąt" to="siedemdziesiąty" />
+            <Ordinal from="osiemdziesiąt"  to="osiemdziesiąty" />
+            <Ordinal from="dziewięćdziesiąt" to="dziewięćdziesiąty" />
+            <!-- Centaines -->
+            <Ordinal from="sto"         to="setny" />
+            <Ordinal from="dwieście"    to="dwusetny" />
+            <Ordinal from="trzysta"     to="trzechsetny" />
+            <Ordinal from="czterysta"   to="czterosetny" />
+            <Ordinal from="pięćset"     to="pięćsetny" />
+            <Ordinal from="sześćset"    to="sześćsetny" />
+            <Ordinal from="siedemset"   to="siedemsetny" />
+            <Ordinal from="osiemset"    to="osiemsetny" />
+            <Ordinal from="dziewięćset" to="dziewięćsetny" />
+            <!-- Millier -->
+            <Ordinal from="tysiąc" to="tysięczny" />
+        </Ordinals>
     </Language>
 </Numbers>
