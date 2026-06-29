@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added — `omy.Utils.NumberToString`
+- **Ordinaux EL** : Grec — word rules pour masculin (défaut) + `OrdinalVariants` gender=θηλυκό et gender=ουδέτερο pour 1-12, dizaines et centaines.
+- **Ordinaux FI** : Finnois — word rules exhaustives pour toutes les formes (unités 1-9, exceptions 11-19, dizaines 20-90, centaines, туhat).
+- **Ordinaux HI** : Hindi — suffixe `वाँ` pour 5-9 et 11+ ; exceptions explicites pour 1-4 et word rule pour 6 (छठा).
+- **Ordinaux PL** : Polonais — word rules pour toutes les formes nominatif masculin singulier (unités, 11-19, dizaines, centaines, tysiąc). Pour les ordinaux composés, seul le dernier mot est transformé (limitation XML).
+- **Ordinaux AR** : Arabe — exceptions masculines indéfinies pour 1-10.
+- **Ordinaux WO** : Wolof — suffixe `ël` + exception 1 (`bu njëkk`).
 - **FR ordinal féminin** : `ConvertOrdinal(1, "gender=feminin")` retourne "première" pour les cultures `FR-fr-ca` et `FR-be-ch` via `<OrdinalVariants>`.
 - **Ordinaux RU** : nouvelles règles d'ordinaux en russe — suffixe "ый" avec `removeTrailing="ь"`, word rules pour toutes les formes irrégulières (unités, dizaines, centaines, тысяча).
 - **`ConvertYear(int year)`** : nouvelle méthode pour lire une année en mots ; pour les langues configurées avec `<YearFormat>` et `<SplitRange>`, l'année est découpée en deux moitiés (ex. EN : 1984 → "nineteen eighty-four", 1900 → "nineteen hundred", 1905 → "nineteen oh five").

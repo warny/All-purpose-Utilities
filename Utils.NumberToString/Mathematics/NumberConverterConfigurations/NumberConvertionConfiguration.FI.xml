@@ -164,5 +164,52 @@
                 <Replacement oldValue="kuusitoista" newValue="kuudentoista" scope="Anywhere" />
             </Variant>
         </Variants>
+        <Ordinals>
+            <!-- Unités -->
+            <OrdinalException value="1" string="ensimmäinen" />
+            <OrdinalException value="2" string="toinen" />
+            <Ordinal from="yksi"      to="ensimmäinen" />
+            <Ordinal from="kaksi"     to="toinen" />
+            <Ordinal from="kolme"     to="kolmas" />
+            <Ordinal from="neljä"     to="neljäs" />
+            <Ordinal from="viisi"     to="viides" />
+            <Ordinal from="kuusi"     to="kuudes" />
+            <Ordinal from="seitsemän" to="seitsemäs" />
+            <Ordinal from="kahdeksan" to="kahdeksas" />
+            <Ordinal from="yhdeksän"  to="yhdeksäs" />
+            <!-- Dizaine de base -->
+            <Ordinal from="kymmenen"  to="kymmenes" />
+            <!-- Exceptions 11-19 -->
+            <Ordinal from="yksitoista"      to="yhdestoista" />
+            <Ordinal from="kaksitoista"     to="kahdestoista" />
+            <Ordinal from="kolmetoista"     to="kolmastoista" />
+            <Ordinal from="neljätoista"     to="neljästoista" />
+            <Ordinal from="viisitoista"     to="viidestoista" />
+            <Ordinal from="kuusitoista"     to="kuudestoista" />
+            <Ordinal from="seitsemäntoista" to="seitsemästoista" />
+            <Ordinal from="kahdeksantoista" to="kahdeksastoista" />
+            <Ordinal from="yhdeksäntoista"  to="yhdeksästoista" />
+            <!-- Dizaines 20-90 -->
+            <Ordinal from="kaksikymmentä"     to="kahdeskymmenes" />
+            <Ordinal from="kolmekymmentä"     to="kolmaskymmenes" />
+            <Ordinal from="neljäkymmentä"     to="neljäskymmenes" />
+            <Ordinal from="viisikymmentä"     to="viideskymmenes" />
+            <Ordinal from="kuusikymmentä"     to="kuudeskymmenes" />
+            <Ordinal from="seitsemänkymmentä" to="seitsemäskymmenes" />
+            <Ordinal from="kahdeksankymmentä" to="kahdeksaskymmenes" />
+            <Ordinal from="yhdeksänkymmentä"  to="yhdeksäskymmenes" />
+            <!-- Centaines -->
+            <Ordinal from="sata"           to="sadas" />
+            <Ordinal from="kaksisataa"     to="kahdessadas" />
+            <Ordinal from="kolmesataa"     to="kolmassadas" />
+            <Ordinal from="neljäsataa"     to="neljässadas" />
+            <Ordinal from="viisisataa"     to="viidessadas" />
+            <Ordinal from="kuusisataa"     to="kuudessadas" />
+            <Ordinal from="seitsemänsataa" to="seitsemässadas" />
+            <Ordinal from="kahdeksansataa" to="kahdeksassadas" />
+            <Ordinal from="yhdeksänsataa"  to="yhdeksässadas" />
+            <!-- Millier -->
+            <Ordinal from="tuhat" to="tuhannes" />
+        </Ordinals>
     </Language>
 </Numbers>

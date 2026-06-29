@@ -1398,6 +1398,110 @@ public class NumberToStringConverterImprovementsTests
             Assert.AreEqual(expected, converter.ConvertYear(year), $"EN year {year}");
     }
 
+    // ─── EL — Ordinals ───────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void ConvertOrdinal_EL_WordRulesAndVariants()
+    {
+        var converter = NumberToStringConverter.GetConverter("EL");
+        Assert.AreEqual("πρώτος",    converter.ConvertOrdinal(1));
+        Assert.AreEqual("δεύτερος",  converter.ConvertOrdinal(2));
+        Assert.AreEqual("τρίτος",    converter.ConvertOrdinal(3));
+        Assert.AreEqual("δέκατος",   converter.ConvertOrdinal(10));
+        Assert.AreEqual("ενδέκατος", converter.ConvertOrdinal(11));
+        Assert.AreEqual("εικοστός",  converter.ConvertOrdinal(20));
+        Assert.AreEqual("εκατοστός", converter.ConvertOrdinal(100));
+        Assert.AreEqual("πρώτη",     converter.ConvertOrdinal(1,  "gender=θηλυκό"));
+        Assert.AreEqual("δεύτερη",   converter.ConvertOrdinal(2,  "gender=θηλυκό"));
+        Assert.AreEqual("πρώτο",     converter.ConvertOrdinal(1,  "gender=ουδέτερο"));
+        Assert.AreEqual("εικοστή",   converter.ConvertOrdinal(20, "gender=θηλυκό"));
+    }
+
+    // ─── FI — Ordinals ───────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void ConvertOrdinal_FI_WordRules()
+    {
+        var converter = NumberToStringConverter.GetConverter("FI");
+        (int n, string expected)[] cases =
+        [
+            (1,   "ensimmäinen"),
+            (2,   "toinen"),
+            (3,   "kolmas"),
+            (4,   "neljäs"),
+            (5,   "viides"),
+            (10,  "kymmenes"),
+            (11,  "yhdestoista"),
+            (20,  "kahdeskymmenes"),
+            (100, "sadas"),
+        ];
+        foreach (var (n, expected) in cases)
+            Assert.AreEqual(expected, converter.ConvertOrdinal(n), $"FI ordinal of {n}");
+    }
+
+    // ─── HI — Ordinals ───────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void ConvertOrdinal_HI_SuffixAndExceptions()
+    {
+        var converter = NumberToStringConverter.GetConverter("HI");
+        Assert.AreEqual("पहला",       converter.ConvertOrdinal(1));
+        Assert.AreEqual("दूसरा",      converter.ConvertOrdinal(2));
+        Assert.AreEqual("तीसरा",      converter.ConvertOrdinal(3));
+        Assert.AreEqual("चौथा",       converter.ConvertOrdinal(4));
+        Assert.AreEqual("पांचवाँ",    converter.ConvertOrdinal(5));
+        Assert.AreEqual("छठा",        converter.ConvertOrdinal(6));
+        Assert.AreEqual("सातवाँ",     converter.ConvertOrdinal(7));
+        Assert.AreEqual("ग्यारहवाँ",  converter.ConvertOrdinal(11));
+        Assert.AreEqual("बीसवाँ",     converter.ConvertOrdinal(20));
+    }
+
+    // ─── PL — Ordinals ───────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void ConvertOrdinal_PL_WordRules()
+    {
+        var converter = NumberToStringConverter.GetConverter("PL");
+        (int n, string expected)[] cases =
+        [
+            (1,   "pierwszy"),
+            (2,   "drugi"),
+            (3,   "trzeci"),
+            (5,   "piąty"),
+            (10,  "dziesiąty"),
+            (11,  "jedenasty"),
+            (20,  "dwudziesty"),
+            (21,  "dwadzieścia pierwszy"), // limitation XML : seul le dernier mot est transformé
+            (100, "setny"),
+            (1000, "tysięczny"),
+        ];
+        foreach (var (n, expected) in cases)
+            Assert.AreEqual(expected, converter.ConvertOrdinal(n), $"PL ordinal of {n}");
+    }
+
+    // ─── AR — Ordinals ───────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void ConvertOrdinal_AR_Exceptions()
+    {
+        var converter = NumberToStringConverter.GetConverter("AR");
+        Assert.AreEqual("أول",  converter.ConvertOrdinal(1));
+        Assert.AreEqual("ثانٍ", converter.ConvertOrdinal(2));
+        Assert.AreEqual("ثالث", converter.ConvertOrdinal(3));
+        Assert.AreEqual("عاشر", converter.ConvertOrdinal(10));
+    }
+
+    // ─── WO — Ordinals ───────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void ConvertOrdinal_WO_SuffixAndException()
+    {
+        var converter = NumberToStringConverter.GetConverter("WO");
+        Assert.AreEqual("bu njëkk", converter.ConvertOrdinal(1));
+        Assert.AreEqual("ñaarël",   converter.ConvertOrdinal(2));
+        Assert.AreEqual("fukkël",   converter.ConvertOrdinal(10));
+    }
+
     private sealed class OrdinalPluginSpecifics
         : INumberToStringLanguageSpecifics, IOrdinalLanguageSpecifics
     {
