@@ -2,11 +2,11 @@
 <html>
   <head>
     <meta charset="utf-8">
-      <title>Class SuffixesType | omy.Utils Documentation </title>
+      <title>Class YearFormatType | omy.Utils Documentation </title>
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <meta name="title" content="Class SuffixesType | omy.Utils Documentation ">
+      <meta name="title" content="Class YearFormatType | omy.Utils Documentation ">
       
-      <meta name="description" content="Describes the suffixes appended to scale names.">
+      <meta name="description" content="Configures the year-format algorithm used by . When present, years within any declared  are split at the hundreds boundary.">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -16,7 +16,7 @@
       <meta name="docfx:rel" content="../">
       
       
-      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_NumberToString_SuffixesType.md&amp;value=---%0Auid%3A%20Utils.NumberToString.SuffixesType%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_NumberToString_YearFormatType.md&amp;value=---%0Auid%3A%20Utils.NumberToString.YearFormatType%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
       <meta name="loc:inThisArticle" content="In this article">
       <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
       <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
@@ -84,12 +84,12 @@
           <nav id="breadcrumb"></nav>
         </div>
 
-        <article data-uid="Utils.NumberToString.SuffixesType">
+        <article data-uid="Utils.NumberToString.YearFormatType">
 
 
 
-  <h1 id="Utils_NumberToString_SuffixesType" data-uid="Utils.NumberToString.SuffixesType" class="text-break">
-Class SuffixesType  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/Mathematics/NumberConverterConfiguration.cs/#L616"><i class="bi bi-code-slash"></i></a>
+  <h1 id="Utils_NumberToString_YearFormatType" data-uid="Utils.NumberToString.YearFormatType" class="text-break">
+Class YearFormatType  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/Mathematics/NumberConverterConfiguration.cs/#L568"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -97,12 +97,13 @@ Class SuffixesType  <a class="header-action link-secondary" title="View source" 
   <dl><dt>Assembly</dt><dd>Utils.NumberToString.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Describes the suffixes appended to scale names.</p>
+  <div class="markdown summary"><p>Configures the year-format algorithm used by <a class="xref" href="Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_ConvertYear_System_Int32_">ConvertYear(int)</a>.
+When present, years within any declared <a class="xref" href="Utils.NumberToString.YearFormatType.html#Utils_NumberToString_YearFormatType_SplitRanges">SplitRanges</a> are split at the hundreds boundary.</p>
 </div>
   <div class="markdown conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public class SuffixesType</code></pre>
+    <pre><code class="lang-csharp hljs">public class YearFormatType</code></pre>
   </div>
 
 
@@ -112,7 +113,7 @@ Class SuffixesType  <a class="header-action link-secondary" title="View source" 
     <dt>Inheritance</dt>
     <dd>
       <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
-      <div><span class="xref">SuffixesType</span></div>
+      <div><span class="xref">YearFormatType</span></div>
     </dd>
   </dl>
 
@@ -238,19 +239,20 @@ Class SuffixesType  <a class="header-action link-secondary" title="View source" 
 </h2>
 
 
-  <a id="Utils_NumberToString_SuffixesType_Values_" data-uid="Utils.NumberToString.SuffixesType.Values*"></a>
+  <a id="Utils_NumberToString_YearFormatType_HundredWord_" data-uid="Utils.NumberToString.YearFormatType.HundredWord*"></a>
 
-  <h3 id="Utils_NumberToString_SuffixesType_Values" data-uid="Utils.NumberToString.SuffixesType.Values">
-  Values
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/Mathematics/NumberConverterConfiguration.cs/#L621"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_NumberToString_YearFormatType_HundredWord" data-uid="Utils.NumberToString.YearFormatType.HundredWord">
+  HundredWord
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/Mathematics/NumberConverterConfiguration.cs/#L574"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets or sets the suffix values applied to scale prefixes.</p>
+  <div class="markdown level1 summary"><p>Gets or sets the word appended when the year is a round century (remainder == 0).
+Example: &quot;hundred&quot; → 1900 reads as &quot;nineteen hundred&quot;.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public List&lt;string&gt; Values { get; set; }</code></pre>
+    <pre><code class="lang-csharp hljs">public string? HundredWord { get; set; }</code></pre>
   </div>
 
 
@@ -259,7 +261,72 @@ Class SuffixesType  <a class="header-action link-secondary" title="View source" 
 
   <h4 class="section">Property Value</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1">List</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;</dt>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_NumberToString_YearFormatType_SplitRanges_" data-uid="Utils.NumberToString.YearFormatType.SplitRanges*"></a>
+
+  <h3 id="Utils_NumberToString_YearFormatType_SplitRanges" data-uid="Utils.NumberToString.YearFormatType.SplitRanges">
+  SplitRanges
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/Mathematics/NumberConverterConfiguration.cs/#L585"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the year ranges for which the split algorithm applies.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public List&lt;YearFormatSplitRangeType&gt; SplitRanges { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1">List</a>&lt;<a class="xref" href="Utils.NumberToString.YearFormatSplitRangeType.html">YearFormatSplitRangeType</a>&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_NumberToString_YearFormatType_ZeroConnector_" data-uid="Utils.NumberToString.YearFormatType.ZeroConnector*"></a>
+
+  <h3 id="Utils_NumberToString_YearFormatType_ZeroConnector" data-uid="Utils.NumberToString.YearFormatType.ZeroConnector">
+  ZeroConnector
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/Mathematics/NumberConverterConfiguration.cs/#L581"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the connector inserted before single-digit remainders (1–9).
+Example: &quot;oh&quot; → 2005 reads as &quot;twenty oh five&quot;.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string? ZeroConnector { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
     <dd></dd>
   </dl>
 
@@ -274,7 +341,7 @@ Class SuffixesType  <a class="header-action link-secondary" title="View source" 
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/Mathematics/NumberConverterConfiguration.cs/#L616" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/Mathematics/NumberConverterConfiguration.cs/#L568" class="edit-link">Edit this page</a>
         </div>
 
 

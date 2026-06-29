@@ -8230,6 +8230,48 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.YearFormatOptions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.YearFormatOptions.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.YearFormatOptions",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.YearFormatOptions.yml\" sourcestartlinenumber=\"1\">Immutable year-format options that drive <xref href=\"Utils.NumberToString.NumberToStringConverter.ConvertYear(System.Int32)\" data-throw-if-not-resolved=\"false\"></xref>.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.YearFormatSplitRangeType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.YearFormatSplitRangeType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.YearFormatSplitRangeType",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.YearFormatSplitRangeType.yml\" sourcestartlinenumber=\"1\">Describes a range of years for which the split-at-hundreds algorithm applies in <xref href=\"Utils.NumberToString.YearFormatType\" data-throw-if-not-resolved=\"false\"></xref>.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.YearFormatType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.YearFormatType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.YearFormatType",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.YearFormatType.yml\" sourcestartlinenumber=\"1\">Configures the year-format algorithm used by <xref href=\"Utils.NumberToString.NumberToStringConverter.ConvertYear(System.Int32)\" data-throw-if-not-resolved=\"false\"></xref>.\nWhen present, years within any declared <xref href=\"Utils.NumberToString.YearFormatType.SplitRanges\" data-throw-if-not-resolved=\"false\"></xref> are split at the hundreds boundary.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.NumberToString.yml",
       "output": {
         ".html": {
