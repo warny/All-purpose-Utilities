@@ -178,7 +178,7 @@ internal static class EmbeddedLexerAttributeRewriter
     private static bool IsWriteContext(string code, int start, int end)
     {
         int next = SkipWhitespace(code, end);
-        string[] followingOperators = ["++", "--", "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "<<=", ">>=", "="];
+        string[] followingOperators = ["++", "--", "??=", "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "<<=", ">>=", "="];
         if (followingOperators.Any(op => StartsWith(code, next, op)) && !StartsWith(code, next, "==") && !StartsWith(code, next, "=>")) return true;
         int previous = PreviousNonWhitespace(code, start - 1);
         if (previous >= 1 && ((code[previous - 1] == '+' && code[previous] == '+') || (code[previous - 1] == '-' && code[previous] == '-'))) return true;

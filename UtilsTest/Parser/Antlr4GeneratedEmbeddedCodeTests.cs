@@ -152,14 +152,16 @@ public class Antlr4GeneratedEmbeddedCodeTests
     /// <summary>
     /// Ensures unsupported lexer attribute writes report deterministic transformer diagnostics.
     /// </summary>
-    [TestMethod]
-    public void EmitWithAntlrStyleTransformer_LexerAttributeWrite_ReportsDiagnostic()
+    [DataTestMethod]
+    [DataRow("$type = B;")]
+    [DataRow("$text ??= \"fallback\";")]
+    public void EmitWithAntlrStyleTransformer_LexerAttributeWrite_ReportsDiagnostic(string actionCode)
     {
-        const string grammar = """
+        string grammar = $$"""
             grammar P;
 
             start : A ;
-            A : 'a' { $type = B; } ;
+            A : 'a' { {{actionCode}} } ;
             B : 'b' ;
             """;
 
