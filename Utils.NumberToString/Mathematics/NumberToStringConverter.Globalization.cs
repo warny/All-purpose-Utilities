@@ -162,6 +162,17 @@ namespace Utils.Mathematics
                     .ToList()
                 ?? new List<NumberToStringConverter.VariantRule>();
 
+            static IReadOnlyList<NumberToStringConverter.OrdinalVariantRule> ParseOrdinalVariants(OrdinalsType? ordinals) =>
+                ordinals?.Variants?
+                    .Select(v => new NumberToStringConverter.OrdinalVariantRule(
+                        v.Dimensions.ToDictionary(kv => kv.Key, kv => kv.Value, StringComparer.OrdinalIgnoreCase),
+                        v.Exceptions?.ToDictionary(e => e.Value, e => e.StringValue) ?? new Dictionary<long, string>(),
+                        v.Rules?.ToDictionary(r => r.From, r => r.To) ?? new Dictionary<string, string>(),
+                        v.Suffix,
+                        v.RemoveTrailing))
+                    .ToList()
+                ?? new List<NumberToStringConverter.OrdinalVariantRule>();
+
             var options = new NumberToStringConverterOptions
             {
                 Group = language.GroupSize,
@@ -184,11 +195,13 @@ namespace Utils.Mathematics
                     : BigInteger.Parse(language.MaxNumber, CultureInfo.InvariantCulture),
                 FractionSeparator = language.FractionSeparator,
                 OrdinalSuffix = language.Ordinals?.Suffix,
-                StripTrailingEForOrdinal = language.Ordinals?.StripTrailingE ?? false,
+                OrdinalRemoveTrailing = language.Ordinals?.RemoveTrailing,
                 OrdinalExceptions = language.Ordinals?.Exceptions?.ToDictionary(e => e.Value, e => e.StringValue)
                     ?? new Dictionary<long, string>(),
                 OrdinalWordRules = language.Ordinals?.Rules?.ToDictionary(r => r.From, r => r.To)
                     ?? new Dictionary<string, string>(),
+                OrdinalPrefix = language.Ordinals?.Prefix,
+                OrdinalVariants = ParseOrdinalVariants(language.Ordinals),
                 VariantDimensions = ParseVariantDimensions(language.Variants),
                 VariantRules = ParseVariantRules(language.Variants),
             };

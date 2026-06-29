@@ -113,5 +113,16 @@ namespace Utils.Mathematics
         /// <returns>The ordinal string for <paramref name="number"/>.</returns>
         string ConvertOrdinal(int number)
             => throw new NotSupportedException("Ordinal conversion is not supported by this converter.");
+
+        /// <summary>
+        /// Converts a positive integer into its ordinal string representation,
+        /// applying the specified variant parameters (e.g. <c>"gender=femenino"</c>).
+        /// The default implementation ignores variants and delegates to <see cref="ConvertOrdinal(int)"/>.
+        /// </summary>
+        /// <param name="number">The value to convert. Negative values use the minus template.</param>
+        /// <param name="variants">Zero or more <c>"dimension=value"</c> strings.</param>
+        /// <returns>The ordinal string for <paramref name="number"/>.</returns>
+        string ConvertOrdinal(int number, params string[] variants)
+            => ConvertOrdinal(number);
     }
 }

@@ -80,10 +80,17 @@ public class OrdinalsType
     public string Suffix { get; set; }
 
     /// <summary>
-    /// Gets or sets whether a trailing 'e' on the last word is stripped before appending the suffix.
+    /// Gets or sets the trailing string to remove from the last word before appending the suffix.
+    /// When set, the suffix is stripped from the end of the last word only if it ends with this value.
     /// </summary>
-    [XmlAttribute("stripTrailingE")]
-    public bool StripTrailingE { get; set; }
+    [XmlAttribute("removeTrailing")]
+    public string? RemoveTrailing { get; set; }
+
+    /// <summary>
+    /// Gets or sets the prefix prepended to the whole ordinal result (e.g. "第" for Chinese).
+    /// </summary>
+    [XmlAttribute("prefix")]
+    public string? Prefix { get; set; }
 
     /// <summary>
     /// Gets or sets integer-level ordinal exceptions (e.g. 1 → "premier" in French).
@@ -97,6 +104,55 @@ public class OrdinalsType
     /// </summary>
     [XmlElement("Ordinal")]
     public List<OrdinalRuleType> Rules { get; set; }
+
+    /// <summary>
+    /// Gets or sets the variant-specific ordinal blocks (checked in specificity order).
+    /// </summary>
+    [XmlElement("OrdinalVariant")]
+    public List<OrdinalVariantType>? Variants { get; set; }
+}
+
+/// <summary>
+/// Variant-specific ordinal overrides: dimension constraints (arbitrary XML attributes),
+/// optional suffix/removeTrailing overrides, plus variant exceptions and word rules.
+/// Exceptions and word rules fall through to the base ordinal config when the variant
+/// does not supply a match.
+/// </summary>
+public class OrdinalVariantType
+{
+    /// <summary>Gets or sets dimension constraints (e.g. gender="femenino").</summary>
+    [XmlAnyAttribute]
+    public XmlAttribute[]? DimensionAttributes { get; set; }
+
+    /// <summary>Suffix override for this variant; falls back to the base suffix when absent.</summary>
+    [XmlAttribute("suffix")]
+    public string? Suffix { get; set; }
+
+    /// <summary>RemoveTrailing override for this variant; falls back to the base value when absent.</summary>
+    [XmlAttribute("removeTrailing")]
+    public string? RemoveTrailing { get; set; }
+
+    /// <summary>Variant-specific whole-number exceptions (checked before base exceptions).</summary>
+    [XmlElement("OrdinalException")]
+    public List<OrdinalExceptionType>? Exceptions { get; set; }
+
+    /// <summary>Variant-specific word-level rules (checked before base word rules).</summary>
+    [XmlElement("Ordinal")]
+    public List<OrdinalRuleType>? Rules { get; set; }
+
+    /// <summary>Returns the dimension constraints as a case-insensitive dictionary.</summary>
+    [XmlIgnore]
+    public IReadOnlyDictionary<string, string> Dimensions
+    {
+        get
+        {
+            if (DimensionAttributes == null || DimensionAttributes.Length == 0)
+                return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            return DimensionAttributes
+                .Where(a => string.IsNullOrEmpty(a.NamespaceURI))
+                .ToDictionary(a => a.LocalName, a => a.Value, StringComparer.OrdinalIgnoreCase);
+        }
+    }
 }
 
 /// <summary>

@@ -59,5 +59,6 @@
             </Suffixes>
         </NumberScale>
         <Exceptions />
+        <Ordinals prefix="第" />
     </Language>
 </Numbers>

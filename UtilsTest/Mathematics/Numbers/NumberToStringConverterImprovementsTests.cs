@@ -1,5 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using Utils.Mathematics;
@@ -973,6 +974,107 @@ public class NumberToStringConverterImprovementsTests
         {
             onCall();
             return text;
+        }
+    }
+
+    // ── C7 ─ Prefix ordinals ────────────────────────────────────────────
+    [TestMethod]
+    public void ConvertOrdinal_ZH_Prefix()
+    {
+        var zh = NumberToStringConverter.GetConverter("ZH");
+        Assert.AreEqual("第一", zh.ConvertOrdinal(1));
+        Assert.AreEqual("第二", zh.ConvertOrdinal(2));
+        Assert.AreEqual("第十", zh.ConvertOrdinal(10));
+        Assert.AreEqual("第一百", zh.ConvertOrdinal(100));
+    }
+
+    [TestMethod]
+    public void ConvertOrdinal_JA_Prefix()
+    {
+        var ja = NumberToStringConverter.GetConverter("JA");
+        Assert.AreEqual("第一", ja.ConvertOrdinal(1));
+        Assert.AreEqual("第三", ja.ConvertOrdinal(3));
+    }
+
+    [TestMethod]
+    public void ConvertOrdinal_KO_Prefix()
+    {
+        var ko = NumberToStringConverter.GetConverter("KO");
+        Assert.AreEqual("제일", ko.ConvertOrdinal(1));
+        Assert.AreEqual("제이", ko.ConvertOrdinal(2));
+    }
+
+    // ── C8 ─ Variant ordinals ────────────────────────────────────────────
+    [TestMethod]
+    public void ConvertOrdinal_ES_MasculinoDefault()
+    {
+        var es = NumberToStringConverter.GetConverter("ES");
+        Assert.AreEqual("primero", es.ConvertOrdinal(1));
+        Assert.AreEqual("segundo", es.ConvertOrdinal(2));
+        Assert.AreEqual("décimo", es.ConvertOrdinal(10));
+        Assert.AreEqual("vigésimo", es.ConvertOrdinal(20));
+    }
+
+    [TestMethod]
+    public void ConvertOrdinal_ES_Femenino()
+    {
+        var es = NumberToStringConverter.GetConverter("ES");
+        Assert.AreEqual("primera",  es.ConvertOrdinal(1,  "gender=femenino"));
+        Assert.AreEqual("segunda",  es.ConvertOrdinal(2,  "gender=femenino"));
+        Assert.AreEqual("décima",   es.ConvertOrdinal(10, "gender=femenino"));
+        Assert.AreEqual("vigésima", es.ConvertOrdinal(20, "gender=femenino"));
+    }
+
+    [TestMethod]
+    public void ConvertOrdinal_IT_Default()
+    {
+        var it = NumberToStringConverter.GetConverter("IT");
+        Assert.AreEqual("primo",       it.ConvertOrdinal(1));
+        Assert.AreEqual("secondo",     it.ConvertOrdinal(2));
+        Assert.AreEqual("undicesimo",  it.ConvertOrdinal(11));
+        Assert.AreEqual("ventesimo",   it.ConvertOrdinal(20));
+        Assert.AreEqual("centesimo",   it.ConvertOrdinal(100));
+        Assert.AreEqual("millesimo",   it.ConvertOrdinal(1000));
+    }
+
+    [TestMethod]
+    public void ConvertOrdinal_IT_Femminile()
+    {
+        var it = NumberToStringConverter.GetConverter("IT");
+        Assert.AreEqual("prima",       it.ConvertOrdinal(1,    "gender=femminile"));
+        Assert.AreEqual("seconda",     it.ConvertOrdinal(2,    "gender=femminile"));
+        Assert.AreEqual("undicesima",  it.ConvertOrdinal(11,   "gender=femminile"));
+        Assert.AreEqual("ventesima",   it.ConvertOrdinal(20,   "gender=femminile"));
+        Assert.AreEqual("millesima",   it.ConvertOrdinal(1000, "gender=femminile"));
+    }
+
+    // ── C9 ─ IOrdinalLanguageSpecifics plugin ─────────────────────────
+    [TestMethod]
+    public void ConvertOrdinal_Plugin_OverridesXmlPipeline()
+    {
+        // Build a converter with a plugin that returns "ORDINAL_<n>" for any number > 0
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        {
+            LanguageSpecifics = new OrdinalPluginSpecifics()
+        };
+        var conv = new NumberToStringConverter(options);
+
+        Assert.AreEqual("ORDINAL_1",  conv.ConvertOrdinal(1));
+        Assert.AreEqual("ORDINAL_42", conv.ConvertOrdinal(42));
+        // The plugin returns false for 0, so the XML pipeline handles it → "zeroth"
+        Assert.AreEqual("zeroth", conv.ConvertOrdinal(0));
+    }
+
+    private sealed class OrdinalPluginSpecifics
+        : INumberToStringLanguageSpecifics, IOrdinalLanguageSpecifics
+    {
+        public string FinalizeWriting(string lang, string text) => text;
+
+        public bool TryConvertOrdinal(int number, IReadOnlyDictionary<string, string> variants, out string? result)
+        {
+            if (number == 0) { result = null; return false; }
+            result = $"ORDINAL_{number}";
+            return true;
         }
     }
 }

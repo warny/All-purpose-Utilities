@@ -292,8 +292,8 @@
                 Resolution order (highest to lowest priority):
                   1. OrdinalException — whole-number match.
                   2. Ordinal word rule — last-word match.
-                  3. Default suffix — appended to the last word (stripping a trailing "e" first
-                     when stripTrailingE="true").
+                  3. Default suffix — appended to the last word (stripping the removeTrailing
+                     string from the end first, if set).
 
                 OrdinalException and Ordinal elements may be freely interleaved; their
                 relative order within the element does not matter.
@@ -314,23 +314,55 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="OrdinalVariant" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>
+                        Variant-specific ordinal overrides. Constraints are expressed as arbitrary XML
+                        attributes matching declared dimension names (e.g. gender="femenino").
+                        When a variant is active (its constraints all match the caller's variant query),
+                        its exceptions and word rules are checked BEFORE the base ordinal config;
+                        its suffix/removeTrailing (if set) replace the base values.
+                        The most specific matching variant (most constraints) wins.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:choice minOccurs="0" maxOccurs="unbounded">
+                        <xs:element name="OrdinalException" type="OrdinalExceptionType" />
+                        <xs:element name="Ordinal" type="OrdinalRuleType" />
+                    </xs:choice>
+                    <xs:attribute name="suffix" type="xs:string" />
+                    <xs:attribute name="removeTrailing" type="xs:string" />
+                    <xs:anyAttribute namespace="##local" processContents="skip" />
+                </xs:complexType>
+            </xs:element>
         </xs:choice>
-        <xs:attribute name="suffix" type="xs:string" use="required">
+        <xs:attribute name="suffix" type="xs:string" use="optional">
             <xs:annotation>
                 <xs:documentation>
                     Default suffix appended to the (possibly trimmed) last word of the cardinal
                     when no OrdinalException and no Ordinal word rule matches.
                     Examples: "th" (English), "ième" (French).
+                    Optional: may be omitted for prefix-only ordinal configurations.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="stripTrailingE" type="xs:boolean">
+        <xs:attribute name="removeTrailing" type="xs:string">
             <xs:annotation>
                 <xs:documentation>
-                    When true, a trailing "e" on the last cardinal word is removed before
-                    appending the suffix. Defaults to false.
-                    Example (French): "quatre" → "quatr" + "ième" → "quatrième".
+                    When set, the given string is stripped from the end of the last cardinal
+                    word before appending the suffix (only if the word actually ends with it).
+                    Example (French): removeTrailing="e" — "quatre" → "quatr" + "ième" → "quatrième".
                     Has no effect when a word rule matches (the "to" value is used as-is).
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="prefix" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    Optional prefix prepended to the complete ordinal result after any suffix or
+                    word-rule transformation. Useful for languages where the ordinal marker is a
+                    leading particle rather than a suffix (e.g. Chinese/Japanese 第, Korean 제).
+                    May be combined with suffix/word rules or used alone (prefix-only ordinals).
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

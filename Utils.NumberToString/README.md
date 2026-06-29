@@ -88,7 +88,7 @@ fr.ConvertOrdinal(2);    // "deuxième"
 fr.ConvertOrdinal(5);    // "cinquième"     ← word rule: cinq → cinquième
 fr.ConvertOrdinal(9);    // "neuvième"      ← word rule: neuf → neuvième
 fr.ConvertOrdinal(21);   // "vingt et unième"
-fr.ConvertOrdinal(1000); // "millième"      ← stripTrailingE + suffix ième
+fr.ConvertOrdinal(1000); // "millième"      ← removeTrailing="e" + suffix ième
 ```
 
 ```csharp
@@ -96,7 +96,7 @@ NumberToStringConverter frBe = NumberToStringConverter.GetConverter("FR-be");
 
 frBe.ConvertOrdinal(1);   // "premier"           ← exception
 frBe.ConvertOrdinal(71);  // "septante et unième" ← Belgian 70 + word rule for "un"
-frBe.ConvertOrdinal(80);  // "huitantième"        ← Belgian 80 + stripTrailingE
+frBe.ConvertOrdinal(80);  // "huitantième"        ← Belgian 80 + removeTrailing="e"
 frBe.ConvertOrdinal(90);  // "nonantième"
 ```
 
@@ -801,10 +801,10 @@ Allow the decimal part of a number to be expressed with a named denominator.
 ### `<Ordinals>` — ordinal conversion
 
 Required to enable `ConvertOrdinal()`. Resolution priority:
-`OrdinalException` → `Ordinal` rule (last word) → suffix (± strip trailing `e`).
+`OrdinalException` → `Ordinal` rule (last word) → suffix (± strip trailing string).
 
 ```xml
-<Ordinals suffix="ième" stripTrailingE="true">
+<Ordinals suffix="ième" removeTrailing="e">
 
     <!-- Whole-number exceptions (highest priority) -->
     <OrdinalException value="1" string="premier" />
@@ -814,7 +814,7 @@ Required to enable `ConvertOrdinal()`. Resolution priority:
     <Ordinal from="cinq" to="cinquième" />
     <Ordinal from="neuf" to="neuvième" />
 
-    <!-- All others: last word + strip 'e' + "ième"  -->
+    <!-- All others: last word + strip "e" + "ième"  -->
     <!-- "quatre" → "quatr" + "ième" → "quatrième"  -->
     <!-- "mille"  → "mill"  + "ième" → "millième"   -->
 
@@ -824,7 +824,7 @@ Required to enable `ConvertOrdinal()`. Resolution priority:
 | Attribute | Description |
 |-----------|-------------|
 | `suffix` | Suffix added when no rule matches. |
-| `stripTrailingE` | If `true`, strips the trailing `e` from the last word before adding `suffix`. |
+| `removeTrailing` | String to strip from the end of the last word before adding `suffix` (only when the word ends with this value). |
 
 ---
 

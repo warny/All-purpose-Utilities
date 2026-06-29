@@ -82,7 +82,7 @@
 				<Replacement oldValue="un" newValue="une" scope="LastWord" />
 			</Variant>
 		</Variants>
-		<Ordinals suffix="ième" stripTrailingE="true">
+		<Ordinals suffix="ième" removeTrailing="e">
 			<OrdinalException value="1" string="premier" />
 			<Ordinal from="un"   to="unième" />
 			<Ordinal from="cinq" to="cinquième" />
