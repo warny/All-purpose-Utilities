@@ -569,6 +569,17 @@
         </xs:sequence>
     </xs:complexType>
 
+    <xs:complexType name="YearFormatSplitRangeType">
+        <xs:annotation>
+            <xs:documentation>
+                A range of year values for which the split-at-hundreds algorithm is applied.
+                Years in [from, to] are split: ConvertYear(y) = Convert(y/100) + " " + Convert(y%100).
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="from" type="xs:int" use="required" />
+        <xs:attribute name="to" type="xs:int" use="required" />
+    </xs:complexType>
+
     <!-- ═══════════════════════════ Root element ══════════════════════════════════════ -->
 
     <xs:element name="Numbers">
@@ -884,6 +895,29 @@
                                         so that language-specific post-processing can see the inflected form.
                                     </xs:documentation>
                                 </xs:annotation>
+                            </xs:element>
+
+                            <xs:element name="YearFormat" minOccurs="0" maxOccurs="1">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Year-format configuration. When present, ConvertYear(int) uses a
+                                        split-at-hundreds algorithm for year values within the declared
+                                        SplitRange elements. Years outside all ranges fall back to Convert(year).
+
+                                        hundredWord   — word appended when the year is a round century
+                                                        (e.g. "hundred" for 1900 → "nineteen hundred").
+                                        zeroConnector — connector inserted before single-digit remainders
+                                                        (e.g. "oh" for 2005 → "twenty oh five").
+                                    </xs:documentation>
+                                </xs:annotation>
+                                <xs:complexType>
+                                    <xs:sequence>
+                                        <xs:element name="SplitRange" type="YearFormatSplitRangeType"
+                                                    minOccurs="0" maxOccurs="unbounded" />
+                                    </xs:sequence>
+                                    <xs:attribute name="hundredWord" type="xs:string" use="optional" />
+                                    <xs:attribute name="zeroConnector" type="xs:string" use="optional" />
+                                </xs:complexType>
                             </xs:element>
 
                         </xs:sequence>

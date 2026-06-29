@@ -5,6 +5,9 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added — `omy.Utils.NumberToString`
+- **FR ordinal féminin** : `ConvertOrdinal(1, "gender=feminin")` retourne "première" pour les cultures `FR-fr-ca` et `FR-be-ch` via `<OrdinalVariants>`.
+- **Ordinaux RU** : nouvelles règles d'ordinaux en russe — suffixe "ый" avec `removeTrailing="ь"`, word rules pour toutes les formes irrégulières (unités, dizaines, centaines, тысяча).
+- **`ConvertYear(int year)`** : nouvelle méthode pour lire une année en mots ; pour les langues configurées avec `<YearFormat>` et `<SplitRange>`, l'année est découpée en deux moitiés (ex. EN : 1984 → "nineteen eighty-four", 1900 → "nineteen hundred", 1905 → "nineteen oh five").
 - **Ordinal variants**: `ConvertOrdinal(int, params string[])` — ordinals can now be inflected for gender and other dimensions using the same `"dimension=value"` syntax as `Convert`. Languages with variant ordinals: ES, IT, PT, CA, GL, HE.
 - **Prefix ordinals**: `<Ordinals prefix="…">` in the XML configuration produces ordinals by prepending a fixed string to the cardinal. Used by ZH (第), JA (第), KO (제), EE (etsõ).
 - **`IOrdinalLanguageSpecifics`**: new interface that can be implemented alongside `INumberToStringLanguageSpecifics` to override ordinal formation with custom logic (highest priority, falls back to XML pipeline when `TryConvertOrdinal` returns `false`).

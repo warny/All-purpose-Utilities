@@ -131,5 +131,15 @@ namespace Utils.NumberToString
         /// <returns>The ordinal string for <paramref name="number"/>.</returns>
         string ConvertOrdinal(int number, params string[] variants)
             => ConvertOrdinal(number);
+
+        /// <summary>
+        /// Converts a year number into its spoken string representation.
+        /// For languages with a <c>&lt;YearFormat&gt;</c> configuration, years within declared
+        /// split ranges are read as two halves (e.g. 1984 → "nineteen eighty-four" in English).
+        /// For all other years or unconfigured languages, falls back to <see cref="Convert(int)"/>.
+        /// </summary>
+        /// <param name="year">The year to convert (negative values use the minus template).</param>
+        /// <returns>The spoken form of the year.</returns>
+        string ConvertYear(int year) => Convert(year);
     }
 }
