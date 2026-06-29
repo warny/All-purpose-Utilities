@@ -79,6 +79,262 @@ public class Antlr4GeneratedEmbeddedCodeTests
     }
 
     /// <summary>
+    /// Ensures lexer <c>$text</c> before and after a fragment exposes the accepted token context text.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerTextAttribute_AroundFragmentReadsAcceptedTokenText()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public string Before = "";
+                public string After = "";
+            }
+
+            start : A ;
+            A : 'a' { Before = $text; } F { After = $text; } ;
+            fragment F : 'b' ;
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "ab", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual("ab", ReadInstanceStringField(context, "Before"));
+        Assert.AreEqual("ab", ReadInstanceStringField(context, "After"));
+    }
+
+    /// <summary>
+    /// Ensures lexer <c>$text</c> inside fragments exposes the owning accepted token context text.
+    /// </summary>
+    [DataTestMethod]
+    [DataRow("fragment F : 'a' { Seen = $text; } ;", "a")]
+    [DataRow("fragment F : 'a' 'b' { Seen = $text; } ;", "ab")]
+    public void ParseWithEmbeddedCode_LexerTextAttribute_InFragmentReadsAcceptedTokenText(string fragmentRule, string input)
+    {
+        string grammar = $$"""
+            grammar P;
+
+            @lexer::members {
+                public string Seen = "";
+            }
+
+            start : A ;
+            A : F ;
+            {{fragmentRule}}
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, input, context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(input, ReadInstanceStringField(context, "Seen"));
+    }
+
+    /// <summary>
+    /// Ensures lexer <c>$text</c> inside a referenced lexer rule exposes the accepted outer token context text.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerTextAttribute_InLexerRuleReferenceReadsAcceptedTokenText()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public string Seen = "";
+            }
+
+            start : A ;
+            A : B ;
+            B : 'b' { Seen = $text; } ;
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "b", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual("b", ReadInstanceStringField(context, "Seen"));
+    }
+
+    /// <summary>
+    /// Ensures lexer <c>$text</c> reads the text accepted by the selected alternative.
+    /// </summary>
+    [DataTestMethod]
+    [DataRow("a", "a")]
+    [DataRow("bc", "bc")]
+    public void ParseWithEmbeddedCode_LexerTextAttribute_InAlternativeReadsSelectedText(string input, string expectedText)
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public string Seen = "";
+            }
+
+            start : A ;
+            A
+                : 'a' { Seen = $text; }
+                | 'b' 'c' { Seen = $text; }
+                ;
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, input, context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(expectedText, ReadInstanceStringField(context, "Seen"));
+    }
+
+    /// <summary>
+    /// Ensures lexer <c>$text</c> is read only on accepted predicate paths.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerTextAttribute_WithPredicateReadsOnlyAcceptedPath()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public bool Enabled = false;
+                public string Seen = "";
+            }
+
+            start : A ;
+            A : { Enabled }? 'a' { Seen = $text; } ;
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object disabledContext = CreateExecutionContext(assembly);
+        object enabledContext = CreateExecutionContext(assembly);
+        WriteInstanceBoolField(enabledContext, "Enabled", true);
+
+        var disabledResult = InvokeParseWithContext(assembly, "a", disabledContext);
+        var enabledResult = InvokeParseWithContext(assembly, "a", enabledContext);
+
+        Assert.IsInstanceOfType(disabledResult, typeof(ErrorNode));
+        Assert.AreEqual("", ReadInstanceStringField(disabledContext, "Seen"));
+        Assert.IsNotInstanceOfType(enabledResult, typeof(ErrorNode));
+        Assert.AreEqual("a", ReadInstanceStringField(enabledContext, "Seen"));
+    }
+
+    /// <summary>
+    /// Ensures lexer <c>$text</c> reads the accepted token text before skip commands suppress token emission.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerTextAttribute_WithSkipCommandReadsSkippedText()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public string Seen = "";
+            }
+
+            start : ;
+            A : 'a' { Seen = $text; } -> skip ;
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "a", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual("a", ReadInstanceStringField(context, "Seen"));
+    }
+
+    /// <summary>
+    /// Ensures lexer <c>$text</c> reads accepted text before a type command retags the token.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerTextAttribute_WithTypeCommandReadsOriginalText()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public string Seen = "";
+            }
+
+            start : B ;
+            A : 'a' { Seen = $text; } -> type(B) ;
+            B : 'b' ;
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "a", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual("a", ReadInstanceStringField(context, "Seen"));
+    }
+
+    /// <summary>
+    /// Ensures lexer <c>$text</c> reads accepted text before a channel command hides the token.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerTextAttribute_WithChannelCommandReadsHiddenText()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public string Seen = "";
+            }
+
+            start : ;
+            A : 'a' { Seen = $text; } -> channel(HIDDEN) ;
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "a", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual("a", ReadInstanceStringField(context, "Seen"));
+    }
+
+    /// <summary>
+    /// Ensures lexer <c>$text</c> with more reads each accepted chunk before final accumulation.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerTextAttribute_WithMoreCommandReadsChunkText()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public string First = "";
+                public string Second = "";
+            }
+
+            start : A ;
+            M : 'm' { First = $text; } -> more ;
+            A : 'a' { Second = $text; } ;
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "ma", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual("m", ReadInstanceStringField(context, "First"));
+        Assert.AreEqual("a", ReadInstanceStringField(context, "Second"));
+    }
+
+    /// <summary>
     /// Ensures readable lexer attributes expose passive runtime metadata before lexer commands are applied.
     /// </summary>
     [TestMethod]
