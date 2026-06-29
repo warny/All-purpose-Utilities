@@ -10,7 +10,7 @@ using Utils.Numerics;
 using Utils.Objects;
 using Utils.String;
 
-namespace Utils.Mathematics
+namespace Utils.NumberToString
 {
     /// <summary>
     /// Provides functionality to convert numbers to their string representation according to a specific culture or custom configuration.
@@ -85,7 +85,12 @@ namespace Utils.Mathematics
 
             VariantDimensions = (options.VariantDimensions ?? []).ToImmutableArray();
             VariantRules = (options.VariantRules ?? []).ToImmutableArray();
-            _dimensionIndex = VariantDimensions.ToImmutableDictionary(d => d.Name, StringComparer.OrdinalIgnoreCase);
+            // Index both canonical name and localName so both are accepted in API calls and XML constraints.
+            _dimensionIndex = VariantDimensions
+                .SelectMany(d => string.IsNullOrEmpty(d.LocalName)
+                    ? (IEnumerable<(string, VariantDimension)>)[(d.Name, d)]
+                    : [(d.Name, d), (d.LocalName, d)])
+                .ToImmutableDictionary(t => t.Item1, t => t.Item2, StringComparer.OrdinalIgnoreCase);
         }
 
         /// <summary>
@@ -195,6 +200,13 @@ namespace Utils.Mathematics
         /// Applied in order of ascending specificity between raw adjustment and finalization.
         /// </summary>
         public IReadOnlyList<VariantRule> VariantRules { get; }
+
+        /// <inheritdoc/>
+        public bool SupportsOrdinals =>
+            OrdinalSuffix != null || OrdinalPrefix != null
+            || OrdinalExceptions.Count > 0
+            || OrdinalWordRules.Count > 0
+            || OrdinalVariants.Count > 0;
 
         private readonly ImmutableDictionary<string, string> _replacementLookup;
         private readonly ImmutableArray<ReplacementRule> _substringReplacements;
@@ -383,7 +395,12 @@ namespace Utils.Mathematics
             {
                 int eq = param.IndexOf('=');
                 if (eq > 0)
-                    query[param[..eq].Trim()] = param[(eq + 1)..].Trim();
+                {
+                    string rawName = param[..eq].Trim();
+                    // Normalize: localName (e.g. "genus") → canonical name (e.g. "gender")
+                    string canonical = _dimensionIndex.TryGetValue(rawName, out var dim) ? dim.Name : rawName;
+                    query[canonical] = param[(eq + 1)..].Trim();
+                }
             }
 
             foreach (var dimension in VariantDimensions)
@@ -525,16 +542,21 @@ namespace Utils.Mathematics
             /// <summary>
             /// Initializes a new instance of the <see cref="VariantDimension"/> class.
             /// </summary>
-            /// <param name="name">The dimension name.</param>
+            /// <param name="name">The canonical English dimension name (e.g. "gender", "case").</param>
             /// <param name="values">The ordered list of valid values; the first is the default.</param>
-            public VariantDimension(string name, IReadOnlyList<string> values)
+            /// <param name="localName">Optional language-specific alias (e.g. "genus" for German, "sijamuoto" for Finnish).</param>
+            public VariantDimension(string name, IReadOnlyList<string> values, string? localName = null)
             {
                 Name = name;
                 Values = values;
+                LocalName = localName;
             }
 
-            /// <summary>Gets the dimension name (e.g. "gender").</summary>
+            /// <summary>Gets the canonical English dimension name (e.g. "gender", "case").</summary>
             public string Name { get; }
+
+            /// <summary>Gets the optional language-specific alias for this dimension (e.g. "genus", "sijamuoto").</summary>
+            public string? LocalName { get; }
 
             /// <summary>Gets the ordered list of valid values. The first value is the default.</summary>
             public IReadOnlyList<string> Values { get; }

@@ -4,7 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Numerics;
 
-namespace Utils.Mathematics;
+namespace Utils.NumberToString;
 
 /// <summary>
 /// Holds all configuration parameters for a <see cref="NumberToStringConverter"/>.

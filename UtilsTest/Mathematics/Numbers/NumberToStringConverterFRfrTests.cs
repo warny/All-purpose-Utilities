@@ -6,7 +6,7 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
-using Utils.Mathematics;
+using Utils.NumberToString;
 using Utils.Numerics;
 
 namespace UtilsTest.Mathematics.Numbers

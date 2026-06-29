@@ -8,7 +8,7 @@ using System.Reflection;
 using System.Xml;
 using System.Xml.Serialization;
 
-namespace Utils.Mathematics
+namespace Utils.NumberToString
 {
     public partial class NumberToStringConverter
     {
@@ -18,6 +18,7 @@ namespace Utils.Mathematics
                 NumberConverterResources.NumberConvertionConfiguration_FR_fr_ca,
                 NumberConverterResources.NumberConvertionConfiguration_FR_be_ch,
                 NumberConverterResources.NumberConvertionConfiguration_DE,
+                NumberConverterResources.NumberConvertionConfiguration_DE_ch,
                 NumberConverterResources.NumberConvertionConfiguration_EN,
                 NumberConverterResources.NumberConvertionConfiguration_ES,
                 NumberConverterResources.NumberConvertionConfiguration_CA,
@@ -148,30 +149,85 @@ namespace Utils.Mathematics
                     .Select(d => new NumberToStringConverter.VariantDimension(
                         d.Name,
                         d.ValuesRaw?.Split(',').Select(v => v.Trim()).Where(v => v.Length > 0).ToList()
-                            ?? new List<string>()))
+                            ?? new List<string>(),
+                        string.IsNullOrWhiteSpace(d.LocalName) ? null : d.LocalName.Trim()))
                     .ToList()
                 ?? new List<NumberToStringConverter.VariantDimension>();
 
-            static IReadOnlyList<NumberToStringConverter.VariantRule> ParseVariantRules(VariantsType variants) =>
-                variants?.Variants?
-                    .Select(v => new NumberToStringConverter.VariantRule(
-                        v.Dimensions.ToDictionary(kv => kv.Key, kv => kv.Value, StringComparer.OrdinalIgnoreCase),
-                        (v.Replacements ?? [])
-                            .Select(r => new NumberToStringConverter.ReplacementRule(r.OldValue, r.NewValue, r.Scope))
-                            .ToList()))
-                    .ToList()
-                ?? new List<NumberToStringConverter.VariantRule>();
+            // Build a normalizer that maps both canonical name and localName to the canonical name.
+            // Used when loading variant constraints from XML attributes so that <Variant genus="…">
+            // and <Variant gender="…"> are treated identically after German was renamed.
+            var parsedDimensions = ParseVariantDimensions(language.Variants);
+            var nameNormalizer = parsedDimensions
+                .SelectMany(d => string.IsNullOrEmpty(d.LocalName)
+                    ? (IEnumerable<(string, string)>)[(d.Name, d.Name)]
+                    : [(d.Name, d.Name), (d.LocalName, d.Name)])
+                .ToDictionary(t => t.Item1, t => t.Item2, StringComparer.OrdinalIgnoreCase);
 
-            static IReadOnlyList<NumberToStringConverter.OrdinalVariantRule> ParseOrdinalVariants(OrdinalsType? ordinals) =>
-                ordinals?.Variants?
-                    .Select(v => new NumberToStringConverter.OrdinalVariantRule(
-                        v.Dimensions.ToDictionary(kv => kv.Key, kv => kv.Value, StringComparer.OrdinalIgnoreCase),
-                        v.Exceptions?.ToDictionary(e => e.Value, e => e.StringValue) ?? new Dictionary<long, string>(),
-                        v.Rules?.ToDictionary(r => r.From, r => r.To) ?? new Dictionary<string, string>(),
-                        v.Suffix,
-                        v.RemoveTrailing))
-                    .ToList()
-                ?? new List<NumberToStringConverter.OrdinalVariantRule>();
+            string NormalizeDimName(string raw) =>
+                nameNormalizer.TryGetValue(raw, out var canonical) ? canonical : raw;
+
+            IReadOnlyList<NumberToStringConverter.VariantRule> ParseVariantRules(VariantsType variants)
+            {
+                if (variants?.Variants == null || variants.Variants.Count == 0)
+                    return new List<NumberToStringConverter.VariantRule>();
+
+                var result = new List<NumberToStringConverter.VariantRule>();
+                foreach (var variant in variants.Variants)
+                    CollectVariantRules(variant, new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase), result);
+                return result;
+            }
+
+            void CollectVariantRules(
+                VariantType variant,
+                Dictionary<string, string> inheritedConstraints,
+                List<NumberToStringConverter.VariantRule> result)
+            {
+                var constraints = new Dictionary<string, string>(inheritedConstraints, StringComparer.OrdinalIgnoreCase);
+                if (!string.IsNullOrEmpty(variant.DimensionType) && !string.IsNullOrEmpty(variant.VariantValue))
+                    constraints[NormalizeDimName(variant.DimensionType)] = variant.VariantValue;
+
+                result.Add(new NumberToStringConverter.VariantRule(
+                    constraints,
+                    (variant.Replacements ?? [])
+                        .Select(r => new NumberToStringConverter.ReplacementRule(r.OldValue, r.NewValue, r.Scope))
+                        .ToList()));
+
+                foreach (var child in variant.NestedVariants ?? [])
+                    CollectVariantRules(child, constraints, result);
+            }
+
+            IReadOnlyList<NumberToStringConverter.OrdinalVariantRule> ParseOrdinalVariants(OrdinalsType? ordinals)
+            {
+                var container = ordinals?.OrdinalVariantsContainer;
+                if (container?.Variants == null || container.Variants.Count == 0)
+                    return new List<NumberToStringConverter.OrdinalVariantRule>();
+
+                var result = new List<NumberToStringConverter.OrdinalVariantRule>();
+                foreach (var variant in container.Variants)
+                    CollectOrdinalVariants(variant, new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase), result);
+                return result;
+            }
+
+            void CollectOrdinalVariants(
+                OrdinalVariantElementType variant,
+                Dictionary<string, string> inheritedConstraints,
+                List<NumberToStringConverter.OrdinalVariantRule> result)
+            {
+                var constraints = new Dictionary<string, string>(inheritedConstraints, StringComparer.OrdinalIgnoreCase);
+                if (!string.IsNullOrEmpty(variant.DimensionType) && !string.IsNullOrEmpty(variant.VariantValue))
+                    constraints[NormalizeDimName(variant.DimensionType)] = variant.VariantValue;
+
+                result.Add(new NumberToStringConverter.OrdinalVariantRule(
+                    constraints,
+                    variant.Exceptions?.ToDictionary(e => e.Value, e => e.StringValue) ?? new Dictionary<long, string>(),
+                    variant.Rules?.ToDictionary(r => r.From, r => r.To) ?? new Dictionary<string, string>(),
+                    variant.Suffix,
+                    variant.RemoveTrailing));
+
+                foreach (var child in variant.NestedVariants ?? [])
+                    CollectOrdinalVariants(child, constraints, result);
+            }
 
             var options = new NumberToStringConverterOptions
             {
@@ -202,7 +258,7 @@ namespace Utils.Mathematics
                     ?? new Dictionary<string, string>(),
                 OrdinalPrefix = language.Ordinals?.Prefix,
                 OrdinalVariants = ParseOrdinalVariants(language.Ordinals),
-                VariantDimensions = ParseVariantDimensions(language.Variants),
+                VariantDimensions = parsedDimensions,
                 VariantRules = ParseVariantRules(language.Variants),
             };
 

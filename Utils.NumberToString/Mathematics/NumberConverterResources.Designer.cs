@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Utils.Mathematics {
+namespace Utils.NumberToString {
     using System;
     
     
@@ -158,7 +158,13 @@ namespace Utils.Mathematics {
                 return ResourceManager.GetString("NumberConvertionConfiguration.DE", resourceCulture);
             }
         }
-        
+
+        internal static string NumberConvertionConfiguration_DE_ch {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.DE-ch", resourceCulture);
+            }
+        }
+
         /// <summary>
         ///   Recherche une chaîne localisée semblable à &lt;?xml version="1.0" encoding="utf-8" ?&gt;
         ///&lt;Numbers xmlns="Utils/NumberConvertionConfiguration.xsd"&gt;

@@ -102,8 +102,8 @@
 			<Ordinal from="neuf" to="neuvième" />
 		</Ordinals>
 		<Variants>
-			<Dimension name="gender" values="masculin,feminin" />
-			<Variant gender="feminin">
+			<Dimension name="gender" localName="genre" values="masculin,feminin" />
+			<Variant type="gender" variant="feminin">
 				<Replacement oldValue="un" newValue="une" scope="LastWord" />
 			</Variant>
 		</Variants>

@@ -1,4 +1,4 @@
-namespace Utils.Mathematics;
+namespace Utils.NumberToString;
 
 /// <summary>
 /// Defines the unit and subunit names used to convert a currency amount to words.

@@ -59,6 +59,39 @@
             </Suffixes>
         </NumberScale>
         <Exceptions />
+        <!--
+          Hebrew ordinals exist only for 1-10; higher ordinals are expressed
+          as cardinals in practice. The default (zachar / standalone) forms are
+          masculine; the nekeva variant provides feminine forms.
+        -->
+        <Ordinals>
+            <!-- Masculine / standalone ordinals 1-10 -->
+            <OrdinalException value="1"  string="ראשון" />
+            <OrdinalException value="2"  string="שני" />
+            <OrdinalException value="3"  string="שלישי" />
+            <OrdinalException value="4"  string="רביעי" />
+            <OrdinalException value="5"  string="חמישי" />
+            <OrdinalException value="6"  string="שישי" />
+            <OrdinalException value="7"  string="שביעי" />
+            <OrdinalException value="8"  string="שמיני" />
+            <OrdinalException value="9"  string="תשיעי" />
+            <OrdinalException value="10" string="עשירי" />
+            <!-- Feminine (nekeva) ordinals 1-10 -->
+            <OrdinalVariants>
+                <Variant type="gender" variant="nekeva">
+                    <OrdinalException value="1"  string="ראשונה" />
+                    <OrdinalException value="2"  string="שנייה" />
+                    <OrdinalException value="3"  string="שלישית" />
+                    <OrdinalException value="4"  string="רביעית" />
+                    <OrdinalException value="5"  string="חמישית" />
+                    <OrdinalException value="6"  string="שישית" />
+                    <OrdinalException value="7"  string="שביעית" />
+                    <OrdinalException value="8"  string="שמינית" />
+                    <OrdinalException value="9"  string="תשיעית" />
+                    <OrdinalException value="10" string="עשירית" />
+                </Variant>
+            </OrdinalVariants>
+        </Ordinals>
         <Variants>
             <!--
               In Hebrew, digits 3-10 exhibit a "gender paradox":
@@ -78,10 +111,10 @@
               Limitation: the multiplier before אלף (thousands) is not converted
               because "אלף" is the last word, not the unit.
             -->
-            <Dimension name="gender" values="standalone,zachar,nekeva" />
+            <Dimension name="gender" localName="מגדר" values="standalone,zachar,nekeva" />
 
             <!-- ── Zachar (masculine nouns) ──────────────────────────────── -->
-            <Variant gender="zachar">
+            <Variant type="gender" variant="zachar">
                 <!-- Units (LastWord: does not affect the interior of compound hundreds) -->
                 <Replacement oldValue="שתיים" newValue="שניים"  scope="LastWord" />
                 <Replacement oldValue="שלוש"  newValue="שלושה" scope="LastWord" />
@@ -95,7 +128,7 @@
             </Variant>
 
             <!-- ── Nekeva (feminine nouns) ───────────────────────────────── -->
-            <Variant gender="nekeva">
+            <Variant type="gender" variant="nekeva">
                 <!-- Only 1 changes; forms 2-9 are already correct for feminine nouns -->
                 <Replacement oldValue="אחד" newValue="אחת" scope="LastWord" />
             </Variant>

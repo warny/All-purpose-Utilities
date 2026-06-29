@@ -2,7 +2,7 @@ using System;
 using System.Numerics;
 using Utils.Numerics;
 
-namespace Utils.Mathematics
+namespace Utils.NumberToString
 {
     /// <summary>
     /// Converts numeric values into a formatted string representation while exposing
@@ -15,6 +15,13 @@ namespace Utils.Mathematics
         /// <see langword="null"/> if the converter does not impose a limit.
         /// </summary>
         BigInteger? MaxNumber { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether this converter has ordinal configuration.
+        /// Returns <see langword="false"/> by default; implementations backed by ordinal
+        /// exceptions, word rules, a suffix or a prefix return <see langword="true"/>.
+        /// </summary>
+        bool SupportsOrdinals => false;
 
         /// <summary>
         /// Gets the declared variant dimensions for this language, each with its ordered

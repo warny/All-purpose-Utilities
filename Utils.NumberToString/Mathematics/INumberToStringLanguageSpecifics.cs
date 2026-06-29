@@ -1,6 +1,6 @@
 using System;
 
-namespace Utils.Mathematics;
+namespace Utils.NumberToString;
 
 /// <summary>
 /// Defines language-specific post-processing behavior applied after number-to-text conversion.

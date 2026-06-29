@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Utils.Mathematics;
+namespace Utils.NumberToString;
 
 /// <summary>
 /// Provides language-specific ordinal conversion for cases where ordinal formation

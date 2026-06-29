@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Utils.Mathematics;
+using Utils.NumberToString;
 using Utils.Numerics;
 
 namespace UtilsTest.Mathematics.Numbers

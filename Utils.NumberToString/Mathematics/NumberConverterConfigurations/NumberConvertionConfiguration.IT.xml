@@ -80,9 +80,9 @@
 			  "uno" à l'intérieur de ces composés. Si les buildStrings étaient
 			  modifiés pour inclure une espace, la couverture serait complète.
 			-->
-			<Dimension name="gender" values="maschile,femminile" />
+			<Dimension name="gender" localName="genere" values="maschile,femminile" />
 
-			<Variant gender="femminile">
+			<Variant type="gender" variant="femminile">
 				<Replacement oldValue="uno" newValue="una" scope="LastWord" />
 			</Variant>
 		</Variants>
@@ -125,30 +125,32 @@
 			<Ordinal from="mille"  to="millesimo" />
 
 			<!-- Femminile variant -->
-			<OrdinalVariant gender="femminile" suffix="esima">
-				<OrdinalException value="1"  string="prima" />
-				<OrdinalException value="2"  string="seconda" />
-				<OrdinalException value="3"  string="terza" />
-				<OrdinalException value="4"  string="quarta" />
-				<OrdinalException value="5"  string="quinta" />
-				<OrdinalException value="6"  string="sesta" />
-				<OrdinalException value="7"  string="settima" />
-				<OrdinalException value="8"  string="ottava" />
-				<OrdinalException value="9"  string="nona" />
-				<OrdinalException value="10" string="decima" />
-				<Ordinal from="venti"       to="ventesima" />
-				<Ordinal from="trenta"      to="trentesima" />
-				<Ordinal from="quaranta"    to="quarantesima" />
-				<Ordinal from="cinquanta"   to="cinquantesima" />
-				<Ordinal from="sessanta"    to="sessantesima" />
-				<Ordinal from="settanta"    to="settantesima" />
-				<Ordinal from="ottanta"     to="ottantesima" />
-				<Ordinal from="novanta"     to="novantesima" />
-				<Ordinal from="diciassette" to="diciassettesima" />
-				<Ordinal from="diciotto"    to="diciottesima" />
-				<Ordinal from="cento"       to="centesima" />
-				<Ordinal from="mille"       to="millesima" />
-			</OrdinalVariant>
+			<OrdinalVariants>
+				<Variant type="gender" variant="femminile" suffix="esima">
+					<OrdinalException value="1"  string="prima" />
+					<OrdinalException value="2"  string="seconda" />
+					<OrdinalException value="3"  string="terza" />
+					<OrdinalException value="4"  string="quarta" />
+					<OrdinalException value="5"  string="quinta" />
+					<OrdinalException value="6"  string="sesta" />
+					<OrdinalException value="7"  string="settima" />
+					<OrdinalException value="8"  string="ottava" />
+					<OrdinalException value="9"  string="nona" />
+					<OrdinalException value="10" string="decima" />
+					<Ordinal from="venti"       to="ventesima" />
+					<Ordinal from="trenta"      to="trentesima" />
+					<Ordinal from="quaranta"    to="quarantesima" />
+					<Ordinal from="cinquanta"   to="cinquantesima" />
+					<Ordinal from="sessanta"    to="sessantesima" />
+					<Ordinal from="settanta"    to="settantesima" />
+					<Ordinal from="ottanta"     to="ottantesima" />
+					<Ordinal from="novanta"     to="novantesima" />
+					<Ordinal from="diciassette" to="diciassettesima" />
+					<Ordinal from="diciotto"    to="diciottesima" />
+					<Ordinal from="cento"       to="centesima" />
+					<Ordinal from="mille"       to="millesima" />
+				</Variant>
+			</OrdinalVariants>
 		</Ordinals>
 	</Language>
 </Numbers>
