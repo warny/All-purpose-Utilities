@@ -93,10 +93,10 @@
                 seitsemän/kahdeksan/yhdeksän and their derivatives are invariable
                 in the genitive (same form as nominative).
             -->
-            <Dimension name="sijamuoto" values="nominatiivi,partitiivi,genetiivi" />
+            <Dimension name="case" localName="sijamuoto" values="nominatiivi,partitiivi,genetiivi" />
 
             <!-- ── Partitiivi ─────────────────────────────────────────────── -->
-            <Variant sijamuoto="partitiivi">
+            <Variant type="case" variant="partitiivi">
                 <!-- Units (LastWord) -->
                 <Replacement oldValue="yksi"      newValue="yhtä"      scope="LastWord" />
                 <Replacement oldValue="kaksi"     newValue="kahta"     scope="LastWord" />
@@ -125,7 +125,7 @@
             </Variant>
 
             <!-- ── Genetiivi ──────────────────────────────────────────────── -->
-            <Variant sijamuoto="genetiivi">
+            <Variant type="case" variant="genetiivi">
                 <!-- Units (LastWord) — seitsemän/kahdeksan/yhdeksän are invariable -->
                 <Replacement oldValue="yksi"  newValue="yhden"  scope="LastWord" />
                 <Replacement oldValue="kaksi" newValue="kahden" scope="LastWord" />

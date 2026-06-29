@@ -57,6 +57,13 @@
 				<Suffix>miliɔn</Suffix>
 			</Suffixes>
 		</NumberScale>
+		<!--
+		  Ewe ordinals: "gbãtõ" is the irregular first ordinal; all others prefix
+		  "etsõ " to the cardinal (etsõ eve = second, etsõ eto = third, …).
+		-->
+		<Ordinals prefix="etsõ ">
+			<OrdinalException value="1" string="gbãtõ" />
+		</Ordinals>
 		<Exceptions>
 			<Number value="11" string="ewo kple deka" />
 			<Number value="12" string="ewo kple eve" />

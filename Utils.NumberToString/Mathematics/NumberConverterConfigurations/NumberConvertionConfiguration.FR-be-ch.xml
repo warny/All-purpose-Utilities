@@ -77,12 +77,12 @@
 			<Fraction digits="3" string="millième(s)" />
 		</Fractions>
 		<Variants>
-			<Dimension name="gender" values="masculin,feminin" />
-			<Variant gender="feminin">
+			<Dimension name="gender" localName="genre" values="masculin,feminin" />
+			<Variant type="gender" variant="feminin">
 				<Replacement oldValue="un" newValue="une" scope="LastWord" />
 			</Variant>
 		</Variants>
-		<Ordinals suffix="ième" stripTrailingE="true">
+		<Ordinals suffix="ième" removeTrailing="e">
 			<OrdinalException value="1" string="premier" />
 			<Ordinal from="un"   to="unième" />
 			<Ordinal from="cinq" to="cinquième" />

@@ -1,7 +1,7 @@
 using System;
 using System.Text.RegularExpressions;
 
-namespace Utils.Mathematics;
+namespace Utils.NumberToString;
 
 /// <summary>
 /// Applies German writing-specific finalization rules to converted numeric texts.

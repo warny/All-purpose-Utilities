@@ -1,8 +1,9 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using Utils.Mathematics;
+using Utils.NumberToString;
 using Utils.Numerics;
 
 namespace UtilsTest.Mathematics.Numbers;
@@ -546,23 +547,26 @@ public class NumberToStringConverterImprovementsTests
     }
 
     [TestMethod]
-    public void Convert_DE_VariantDimensions_ListsGenusAndKasus()
+    public void Convert_DE_VariantDimensions_ListsGenderAndCase()
     {
         var converter = NumberToStringConverter.GetConverter("DE");
 
+        // Canonical English names are exposed on Name; local-language aliases are on LocalName
         var names = converter.VariantDimensions.Select(d => d.Name).ToList();
-        CollectionAssert.Contains(names, "genus");
-        CollectionAssert.Contains(names, "kasus");
+        CollectionAssert.Contains(names, "gender");
+        CollectionAssert.Contains(names, "case");
 
-        var genus = converter.VariantDimensions.First(d => d.Name == "genus");
+        var gender = converter.VariantDimensions.First(d => d.Name == "gender");
+        Assert.AreEqual("genus", gender.LocalName);
         CollectionAssert.AreEqual(
             new[] { "maskulin", "feminin", "neutrum" },
-            genus.Values.ToArray());
+            gender.Values.ToArray());
 
-        var kasus = converter.VariantDimensions.First(d => d.Name == "kasus");
+        var cas = converter.VariantDimensions.First(d => d.Name == "case");
+        Assert.AreEqual("kasus", cas.LocalName);
         CollectionAssert.AreEqual(
             new[] { "nominativ", "akkusativ", "dativ", "genitiv" },
-            kasus.Values.ToArray());
+            cas.Values.ToArray());
     }
 
     // ─── C3 — Currency conversion ──────────────────────────────────────────
@@ -798,7 +802,8 @@ public class NumberToStringConverterImprovementsTests
         var dims = converter.VariantDimensions.ToList();
 
         Assert.AreEqual(1, dims.Count);
-        Assert.AreEqual("sijamuoto", dims[0].Name);
+        Assert.AreEqual("case", dims[0].Name);          // canonical English name
+        Assert.AreEqual("sijamuoto", dims[0].LocalName); // Finnish local alias
         CollectionAssert.AreEqual(
             new[] { "nominatiivi", "partitiivi", "genetiivi" },
             dims[0].Values.ToArray()
@@ -973,6 +978,375 @@ public class NumberToStringConverterImprovementsTests
         {
             onCall();
             return text;
+        }
+    }
+
+    // ── C7 ─ Prefix ordinals ────────────────────────────────────────────
+    [TestMethod]
+    public void ConvertOrdinal_ZH_Prefix()
+    {
+        var zh = NumberToStringConverter.GetConverter("ZH");
+        Assert.AreEqual("第一", zh.ConvertOrdinal(1));
+        Assert.AreEqual("第二", zh.ConvertOrdinal(2));
+        Assert.AreEqual("第十", zh.ConvertOrdinal(10));
+        Assert.AreEqual("第一百", zh.ConvertOrdinal(100));
+    }
+
+    [TestMethod]
+    public void ConvertOrdinal_JA_Prefix()
+    {
+        var ja = NumberToStringConverter.GetConverter("JA");
+        Assert.AreEqual("第一", ja.ConvertOrdinal(1));
+        Assert.AreEqual("第三", ja.ConvertOrdinal(3));
+    }
+
+    [TestMethod]
+    public void ConvertOrdinal_KO_Prefix()
+    {
+        var ko = NumberToStringConverter.GetConverter("KO");
+        Assert.AreEqual("제일", ko.ConvertOrdinal(1));
+        Assert.AreEqual("제이", ko.ConvertOrdinal(2));
+    }
+
+    // ── C8 ─ Variant ordinals ────────────────────────────────────────────
+    [TestMethod]
+    public void ConvertOrdinal_ES_MasculinoDefault()
+    {
+        var es = NumberToStringConverter.GetConverter("ES");
+        Assert.AreEqual("primero", es.ConvertOrdinal(1));
+        Assert.AreEqual("segundo", es.ConvertOrdinal(2));
+        Assert.AreEqual("décimo", es.ConvertOrdinal(10));
+        Assert.AreEqual("vigésimo", es.ConvertOrdinal(20));
+    }
+
+    [TestMethod]
+    public void ConvertOrdinal_ES_Femenino()
+    {
+        var es = NumberToStringConverter.GetConverter("ES");
+        Assert.AreEqual("primera",  es.ConvertOrdinal(1,  "gender=femenino"));
+        Assert.AreEqual("segunda",  es.ConvertOrdinal(2,  "gender=femenino"));
+        Assert.AreEqual("décima",   es.ConvertOrdinal(10, "gender=femenino"));
+        Assert.AreEqual("vigésima", es.ConvertOrdinal(20, "gender=femenino"));
+    }
+
+    [TestMethod]
+    public void ConvertOrdinal_IT_Default()
+    {
+        var it = NumberToStringConverter.GetConverter("IT");
+        Assert.AreEqual("primo",       it.ConvertOrdinal(1));
+        Assert.AreEqual("secondo",     it.ConvertOrdinal(2));
+        Assert.AreEqual("undicesimo",  it.ConvertOrdinal(11));
+        Assert.AreEqual("ventesimo",   it.ConvertOrdinal(20));
+        Assert.AreEqual("centesimo",   it.ConvertOrdinal(100));
+        Assert.AreEqual("millesimo",   it.ConvertOrdinal(1000));
+    }
+
+    [TestMethod]
+    public void ConvertOrdinal_IT_Femminile()
+    {
+        var it = NumberToStringConverter.GetConverter("IT");
+        Assert.AreEqual("prima",       it.ConvertOrdinal(1,    "gender=femminile"));
+        Assert.AreEqual("seconda",     it.ConvertOrdinal(2,    "gender=femminile"));
+        Assert.AreEqual("undicesima",  it.ConvertOrdinal(11,   "gender=femminile"));
+        Assert.AreEqual("ventesima",   it.ConvertOrdinal(20,   "gender=femminile"));
+        Assert.AreEqual("millesima",   it.ConvertOrdinal(1000, "gender=femminile"));
+    }
+
+    // ── C8b — SupportsOrdinals property ──────────────────────────────────
+
+    [TestMethod]
+    public void SupportsOrdinals_TrueForLanguagesWithOrdinals()
+    {
+        foreach (var culture in new[] { "EN", "FR", "ES", "IT", "NL", "EU", "ZH", "JA", "KO", "DE", "HE", "EE", "CA", "GL", "PT" })
+            Assert.IsTrue(NumberToStringConverter.GetConverter(culture).SupportsOrdinals, $"{culture}.SupportsOrdinals");
+    }
+
+    [TestMethod]
+    public void SupportsOrdinals_FalseForLanguagesWithoutOrdinals()
+    {
+        foreach (var culture in new[] { "FI", "RU", "PL", "AR" })
+            Assert.IsFalse(NumberToStringConverter.GetConverter(culture).SupportsOrdinals, $"{culture}.SupportsOrdinals");
+    }
+
+    [TestMethod]
+    public void SupportsOrdinals_DefaultInterfaceReturnsFalse()
+    {
+        INumberToStringConverter converter = new MinimalConverter();
+        Assert.IsFalse(converter.SupportsOrdinals);
+    }
+
+    // ── C8c — Ordinals DE ────────────────────────────────────────────────
+
+    [TestMethod]
+    public void ConvertOrdinal_DE_Irregulars()
+    {
+        var de = NumberToStringConverter.GetConverter("DE");
+
+        (int n, string expected)[] cases = [
+            (1, "erste"),
+            (3, "dritte"),
+            (7, "siebte"),
+            (8, "achte"),
+        ];
+        foreach (var (n, expected) in cases)
+            Assert.AreEqual(expected, de.ConvertOrdinal(n), $"DE ordinal of {n}");
+    }
+
+    [TestMethod]
+    public void ConvertOrdinal_DE_WordRulesAndSuffix()
+    {
+        var de = NumberToStringConverter.GetConverter("DE");
+
+        (int n, string expected)[] cases = [
+            (2,  "zweite"),
+            (4,  "vierte"),
+            (5,  "fünfte"),
+            (6,  "sechste"),
+            (9,  "neunte"),
+            (10, "zehnte"),
+            (11, "elfte"),
+            (12, "zwölfte"),
+            (13, "dreizehnte"),
+            (19, "neunzehnte"),
+            (20, "zwanzigste"),
+            (21, "einundzwanzigste"),
+            (30, "dreißigste"),
+        ];
+        foreach (var (n, expected) in cases)
+            Assert.AreEqual(expected, de.ConvertOrdinal(n), $"DE ordinal of {n}");
+    }
+
+    [TestMethod]
+    public void ConvertOrdinal_DE_Compounds()
+    {
+        var de = NumberToStringConverter.GetConverter("DE");
+
+        // "ein tausend" replacement is active → 1000 = "tausend"
+        Assert.AreEqual("tausendste",  de.ConvertOrdinal(1000));
+        // 1001 = "tausend ein" → last word "ein" → "erste"
+        Assert.AreEqual("tausend erste", de.ConvertOrdinal(1001));
+        // 1003 = "tausend drei" → last word "drei" → "dritte"
+        Assert.AreEqual("tausend dritte", de.ConvertOrdinal(1003));
+    }
+
+    // ── C8d — Ordinals HE ────────────────────────────────────────────────
+
+    [TestMethod]
+    public void ConvertOrdinal_HE_MasculineDefault()
+    {
+        var he = NumberToStringConverter.GetConverter("HE");
+
+        Assert.AreEqual("ראשון",  he.ConvertOrdinal(1));
+        Assert.AreEqual("שני",    he.ConvertOrdinal(2));
+        Assert.AreEqual("שלישי",  he.ConvertOrdinal(3));
+        Assert.AreEqual("עשירי",  he.ConvertOrdinal(10));
+    }
+
+    [TestMethod]
+    public void ConvertOrdinal_HE_Nekeva()
+    {
+        var he = NumberToStringConverter.GetConverter("HE");
+
+        Assert.AreEqual("ראשונה",  he.ConvertOrdinal(1,  "gender=nekeva"));
+        Assert.AreEqual("שנייה",   he.ConvertOrdinal(2,  "gender=nekeva"));
+        Assert.AreEqual("שלישית",  he.ConvertOrdinal(3,  "gender=nekeva"));
+        Assert.AreEqual("עשירית",  he.ConvertOrdinal(10, "gender=nekeva"));
+    }
+
+    [TestMethod]
+    public void ConvertOrdinal_HE_AboveTenFallsBackToCardinal()
+    {
+        var he = NumberToStringConverter.GetConverter("HE");
+        // No ordinal config above 10 → cardinal returned
+        Assert.AreEqual("עשרים", he.ConvertOrdinal(20));
+    }
+
+    // ── C8e — Ordinals EE ────────────────────────────────────────────────
+
+    [TestMethod]
+    public void ConvertOrdinal_EE_FirstIsIrregular()
+    {
+        var ee = NumberToStringConverter.GetConverter("EE");
+        Assert.AreEqual("gbãtõ", ee.ConvertOrdinal(1));
+    }
+
+    [TestMethod]
+    public void ConvertOrdinal_EE_OthersGetPrefix()
+    {
+        var ee = NumberToStringConverter.GetConverter("EE");
+        Assert.AreEqual("etsõ eve",  ee.ConvertOrdinal(2));
+        Assert.AreEqual("etsõ eto",  ee.ConvertOrdinal(3));
+        Assert.AreEqual("etsõ asea", ee.ConvertOrdinal(9));
+    }
+
+    // ── C8f — Ordinals CA ────────────────────────────────────────────────
+
+    [TestMethod]
+    public void ConvertOrdinal_CA_MasculiDefault()
+    {
+        var ca = NumberToStringConverter.GetConverter("CA");
+
+        (int n, string expected)[] cases = [
+            (1,  "primer"),
+            (2,  "segon"),
+            (3,  "tercer"),
+            (4,  "quart"),
+            (5,  "cinquè"),
+            (9,  "novè"),
+            (10, "desè"),
+            (11, "onzè"),
+            (19, "dinovè"),
+            (20, "vintè"),
+            (30, "trentè"),
+        ];
+        foreach (var (n, expected) in cases)
+            Assert.AreEqual(expected, ca.ConvertOrdinal(n), $"CA ordinal of {n}");
+    }
+
+    [TestMethod]
+    public void ConvertOrdinal_CA_Femeni()
+    {
+        var ca = NumberToStringConverter.GetConverter("CA");
+
+        Assert.AreEqual("primera",  ca.ConvertOrdinal(1,  "gender=femení"));
+        Assert.AreEqual("quarta",   ca.ConvertOrdinal(4,  "gender=femení"));
+        Assert.AreEqual("cinquena", ca.ConvertOrdinal(5,  "gender=femení"));
+        Assert.AreEqual("dinovena", ca.ConvertOrdinal(19, "gender=femení"));
+        Assert.AreEqual("vintena",  ca.ConvertOrdinal(20, "gender=femení"));
+        Assert.AreEqual("trentena", ca.ConvertOrdinal(30, "gender=femení"));
+    }
+
+    [TestMethod]
+    public void ConvertOrdinal_CA_Femeni_Compound()
+    {
+        var ca = NumberToStringConverter.GetConverter("CA");
+        // 21 = "vint-i-un" → femení → "vint-i-una" → suffix "ena" - trailing "a" = "unena"
+        Assert.AreEqual("vint-i-unena", ca.ConvertOrdinal(21, "gender=femení"));
+        // 22 = "vint-i-dos" → femení → "vint-i-dues" → word rule "dues"→"dosena"
+        Assert.AreEqual("vint-i-dosena", ca.ConvertOrdinal(22, "gender=femení"));
+    }
+
+    // ── C8g — Ordinals GL ────────────────────────────────────────────────
+
+    [TestMethod]
+    public void ConvertOrdinal_GL_MasculinoDefault()
+    {
+        var gl = NumberToStringConverter.GetConverter("GL");
+
+        (int n, string expected)[] cases = [
+            (1,  "primeiro"),
+            (6,  "sexto"),
+            (10, "décimo"),
+            (12, "duodécimo"),
+            (20, "vixésimo"),
+            (30, "trixésimo"),
+            (100, "centésimo"),
+            (1000, "milésimo"),
+        ];
+        foreach (var (n, expected) in cases)
+            Assert.AreEqual(expected, gl.ConvertOrdinal(n), $"GL ordinal of {n}");
+    }
+
+    [TestMethod]
+    public void ConvertOrdinal_GL_Feminino()
+    {
+        var gl = NumberToStringConverter.GetConverter("GL");
+
+        Assert.AreEqual("primeira",  gl.ConvertOrdinal(1,  "gender=feminino"));
+        Assert.AreEqual("décima",    gl.ConvertOrdinal(10, "gender=feminino"));
+        Assert.AreEqual("vixésima",  gl.ConvertOrdinal(20, "gender=feminino"));
+        Assert.AreEqual("centésima", gl.ConvertOrdinal(100, "gender=feminino"));
+        Assert.AreEqual("milésima",  gl.ConvertOrdinal(1000, "gender=feminino"));
+    }
+
+    [TestMethod]
+    public void ConvertOrdinal_GL_Feminino_Compound()
+    {
+        var gl = NumberToStringConverter.GetConverter("GL");
+        // 21 = "vinte e un" → femení cardinal → "vinte e unha" → ordinal "unha"→"primeira"
+        Assert.AreEqual("vinte e primeira", gl.ConvertOrdinal(21, "gender=feminino"));
+        // 22 = "vinte e dous" → femení cardinal → "vinte e dúas" → ordinal "dúas"→"segunda"
+        Assert.AreEqual("vinte e segunda",  gl.ConvertOrdinal(22, "gender=feminino"));
+        // 23 = "vinte e tres" → not transformed by cardinal → ordinal "tres"→"terceira"
+        Assert.AreEqual("vinte e terceira", gl.ConvertOrdinal(23, "gender=feminino"));
+    }
+
+    // ── C8h — Ordinals PT ────────────────────────────────────────────────
+
+    [TestMethod]
+    public void ConvertOrdinal_PT_MasculinoDefault()
+    {
+        var pt = NumberToStringConverter.GetConverter("PT");
+
+        (int n, string expected)[] cases = [
+            (1,  "primeiro"),
+            (9,  "nono"),
+            (10, "décimo"),
+            (11, "décimo primeiro"),
+            (19, "décimo nono"),
+            (20, "vigésimo"),
+            (30, "trigésimo"),
+            (100, "centésimo"),
+            (1000, "milésimo"),
+        ];
+        foreach (var (n, expected) in cases)
+            Assert.AreEqual(expected, pt.ConvertOrdinal(n), $"PT ordinal of {n}");
+    }
+
+    [TestMethod]
+    public void ConvertOrdinal_PT_Feminino()
+    {
+        var pt = NumberToStringConverter.GetConverter("PT");
+
+        Assert.AreEqual("primeira",       pt.ConvertOrdinal(1,  "gender=feminino"));
+        Assert.AreEqual("nona",           pt.ConvertOrdinal(9,  "gender=feminino"));
+        Assert.AreEqual("décima",         pt.ConvertOrdinal(10, "gender=feminino"));
+        Assert.AreEqual("décima primeira", pt.ConvertOrdinal(11, "gender=feminino"));
+        Assert.AreEqual("décima nona",    pt.ConvertOrdinal(19, "gender=feminino"));
+        Assert.AreEqual("vigésima",       pt.ConvertOrdinal(20, "gender=feminino"));
+        Assert.AreEqual("centésima",      pt.ConvertOrdinal(100, "gender=feminino"));
+        Assert.AreEqual("milésima",       pt.ConvertOrdinal(1000, "gender=feminino"));
+    }
+
+    [TestMethod]
+    public void ConvertOrdinal_PT_Feminino_Compound()
+    {
+        var pt = NumberToStringConverter.GetConverter("PT");
+        // 21 = "vinte e um" → femení cardinal → "vinte e uma" → ordinal "uma"→"primeira"
+        Assert.AreEqual("vinte e primeira", pt.ConvertOrdinal(21, "gender=feminino"));
+        // 22 = "vinte e dois" → femení → "vinte e duas" → ordinal "duas"→"segunda"
+        Assert.AreEqual("vinte e segunda",  pt.ConvertOrdinal(22, "gender=feminino"));
+        // 23 = "vinte e três" → not transformed → ordinal "três"→"terceira"
+        Assert.AreEqual("vinte e terceira", pt.ConvertOrdinal(23, "gender=feminino"));
+    }
+
+    // ── C9 ─ IOrdinalLanguageSpecifics plugin ─────────────────────────
+    [TestMethod]
+    public void ConvertOrdinal_Plugin_OverridesXmlPipeline()
+    {
+        // Build a converter with a plugin that returns "ORDINAL_<n>" for any number > 0
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        {
+            LanguageSpecifics = new OrdinalPluginSpecifics()
+        };
+        var conv = new NumberToStringConverter(options);
+
+        Assert.AreEqual("ORDINAL_1",  conv.ConvertOrdinal(1));
+        Assert.AreEqual("ORDINAL_42", conv.ConvertOrdinal(42));
+        // The plugin returns false for 0, so the XML pipeline handles it → "zeroth"
+        Assert.AreEqual("zeroth", conv.ConvertOrdinal(0));
+    }
+
+    private sealed class OrdinalPluginSpecifics
+        : INumberToStringLanguageSpecifics, IOrdinalLanguageSpecifics
+    {
+        public string FinalizeWriting(string lang, string text) => text;
+
+        public bool TryConvertOrdinal(int number, IReadOnlyDictionary<string, string> variants, out string? result)
+        {
+            if (number == 0) { result = null; return false; }
+            result = $"ORDINAL_{number}";
+            return true;
         }
     }
 }

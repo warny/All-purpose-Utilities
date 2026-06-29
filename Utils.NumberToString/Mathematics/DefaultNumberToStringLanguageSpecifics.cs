@@ -1,4 +1,4 @@
-namespace Utils.Mathematics;
+namespace Utils.NumberToString;
 
 /// <summary>
 /// Default no-op implementation used when no language-specific finalization is configured.

@@ -71,6 +71,109 @@
 			<Number value="18" string="dezoito" />
 			<Number value="19" string="dezenove" />
 		</Exceptions>
+		<!--
+		  Portuguese ordinals: 1-10 are fully irregular; 11-19 are expressed as
+		  compound ordinals ("décimo primeiro"…). Round tens and scale words have
+		  explicit word rules. Numbers not covered fall back to the cardinal.
+		  The feminine variant mirrors all of the above with feminine forms,
+		  including "uma"/"duas" (produced by the cardinal feminine variant)
+		  mapped to their correct ordinal forms.
+		-->
+		<Ordinals>
+			<!-- Masculine ordinals 1-10 (irregular) -->
+			<OrdinalException value="1"  string="primeiro" />
+			<OrdinalException value="2"  string="segundo" />
+			<OrdinalException value="3"  string="terceiro" />
+			<OrdinalException value="4"  string="quarto" />
+			<OrdinalException value="5"  string="quinto" />
+			<OrdinalException value="6"  string="sexto" />
+			<OrdinalException value="7"  string="sétimo" />
+			<OrdinalException value="8"  string="oitavo" />
+			<OrdinalException value="9"  string="nono" />
+			<OrdinalException value="10" string="décimo" />
+			<!-- Compound teens 11-19 -->
+			<OrdinalException value="11" string="décimo primeiro" />
+			<OrdinalException value="12" string="décimo segundo" />
+			<OrdinalException value="13" string="décimo terceiro" />
+			<OrdinalException value="14" string="décimo quarto" />
+			<OrdinalException value="15" string="décimo quinto" />
+			<OrdinalException value="16" string="décimo sexto" />
+			<OrdinalException value="17" string="décimo sétimo" />
+			<OrdinalException value="18" string="décimo oitavo" />
+			<OrdinalException value="19" string="décimo nono" />
+			<!-- Word rules for units in compounds -->
+			<Ordinal from="um"     to="primeiro" />
+			<Ordinal from="dois"   to="segundo" />
+			<Ordinal from="três"   to="terceiro" />
+			<Ordinal from="quatro" to="quarto" />
+			<Ordinal from="cinco"  to="quinto" />
+			<Ordinal from="seis"   to="sexto" />
+			<Ordinal from="sete"   to="sétimo" />
+			<Ordinal from="oito"   to="oitavo" />
+			<Ordinal from="nove"   to="nono" />
+			<!-- Round tens -->
+			<Ordinal from="vinte"     to="vigésimo" />
+			<Ordinal from="trinta"    to="trigésimo" />
+			<Ordinal from="quarenta"  to="quadragésimo" />
+			<Ordinal from="cinquenta" to="quinquagésimo" />
+			<Ordinal from="sessenta"  to="sexagésimo" />
+			<Ordinal from="setenta"   to="septuagésimo" />
+			<Ordinal from="oitenta"   to="octogésimo" />
+			<Ordinal from="noventa"   to="nonagésimo" />
+			<!-- Scale words -->
+			<Ordinal from="cem" to="centésimo" />
+			<Ordinal from="mil" to="milésimo" />
+
+			<!-- Feminine variant -->
+			<OrdinalVariants>
+				<Variant type="gender" variant="feminino">
+					<OrdinalException value="1"  string="primeira" />
+					<OrdinalException value="2"  string="segunda" />
+					<OrdinalException value="3"  string="terceira" />
+					<OrdinalException value="4"  string="quarta" />
+					<OrdinalException value="5"  string="quinta" />
+					<OrdinalException value="6"  string="sexta" />
+					<OrdinalException value="7"  string="sétima" />
+					<OrdinalException value="8"  string="oitava" />
+					<OrdinalException value="9"  string="nona" />
+					<OrdinalException value="10" string="décima" />
+					<OrdinalException value="11" string="décima primeira" />
+					<OrdinalException value="12" string="décima segunda" />
+					<OrdinalException value="13" string="décima terceira" />
+					<OrdinalException value="14" string="décima quarta" />
+					<OrdinalException value="15" string="décima quinta" />
+					<OrdinalException value="16" string="décima sexta" />
+					<OrdinalException value="17" string="décima sétima" />
+					<OrdinalException value="18" string="décima oitava" />
+					<OrdinalException value="19" string="décima nona" />
+					<!-- Original cardinal forms (for compounds not transformed by cardinal variant) -->
+					<Ordinal from="um"     to="primeira" />
+					<Ordinal from="dois"   to="segunda" />
+					<Ordinal from="três"   to="terceira" />
+					<Ordinal from="quatro" to="quarta" />
+					<Ordinal from="cinco"  to="quinta" />
+					<Ordinal from="seis"   to="sexta" />
+					<Ordinal from="sete"   to="sétima" />
+					<Ordinal from="oito"   to="oitava" />
+					<Ordinal from="nove"   to="nona" />
+					<!-- Feminized unit forms (after cardinal "um→uma", "dois→duas") -->
+					<Ordinal from="uma"  to="primeira" />
+					<Ordinal from="duas" to="segunda" />
+					<!-- Round tens (feminine) -->
+					<Ordinal from="vinte"     to="vigésima" />
+					<Ordinal from="trinta"    to="trigésima" />
+					<Ordinal from="quarenta"  to="quadragésima" />
+					<Ordinal from="cinquenta" to="quinquagésima" />
+					<Ordinal from="sessenta"  to="sexagésima" />
+					<Ordinal from="setenta"   to="septuagésima" />
+					<Ordinal from="oitenta"   to="octogésima" />
+					<Ordinal from="noventa"   to="nonagésima" />
+					<!-- Scale words (feminine) -->
+					<Ordinal from="cem" to="centésima" />
+					<Ordinal from="mil" to="milésima" />
+				</Variant>
+			</OrdinalVariants>
+		</Ordinals>
 		<Variants>
 			<!--
 			  Portuguese uses spaces for all compounds ("vinte e um", "trinta e dois"…),
@@ -79,9 +182,9 @@
 			  Limitation: the multiplier before "mil" (e.g. "dois mil") is not
 			  changed because the last word is "mil", not the multiplier.
 			-->
-			<Dimension name="gender" values="masculino,feminino" />
+			<Dimension name="gender" localName="género" values="masculino,feminino" />
 
-			<Variant gender="feminino">
+			<Variant type="gender" variant="feminino">
 				<!-- Gender-variable units -->
 				<Replacement oldValue="um"   newValue="uma"  scope="LastWord" />
 				<Replacement oldValue="dois" newValue="duas" scope="LastWord" />

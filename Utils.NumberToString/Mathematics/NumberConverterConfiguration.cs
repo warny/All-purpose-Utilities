@@ -2,7 +2,7 @@
 using System.Xml;
 using System.Xml.Serialization;
 
-namespace Utils.Mathematics;
+namespace Utils.NumberToString;
 
 /// <summary>
 /// Represents the root configuration element that aggregates number conversion definitions for multiple languages.
@@ -80,10 +80,17 @@ public class OrdinalsType
     public string Suffix { get; set; }
 
     /// <summary>
-    /// Gets or sets whether a trailing 'e' on the last word is stripped before appending the suffix.
+    /// Gets or sets the trailing string to remove from the last word before appending the suffix.
+    /// When set, the suffix is stripped from the end of the last word only if it ends with this value.
     /// </summary>
-    [XmlAttribute("stripTrailingE")]
-    public bool StripTrailingE { get; set; }
+    [XmlAttribute("removeTrailing")]
+    public string? RemoveTrailing { get; set; }
+
+    /// <summary>
+    /// Gets or sets the prefix prepended to the whole ordinal result (e.g. "第" for Chinese).
+    /// </summary>
+    [XmlAttribute("prefix")]
+    public string? Prefix { get; set; }
 
     /// <summary>
     /// Gets or sets integer-level ordinal exceptions (e.g. 1 → "premier" in French).
@@ -97,6 +104,63 @@ public class OrdinalsType
     /// </summary>
     [XmlElement("Ordinal")]
     public List<OrdinalRuleType> Rules { get; set; }
+
+    /// <summary>
+    /// Gets or sets the container for variant-specific ordinal blocks.
+    /// </summary>
+    [XmlElement("OrdinalVariants")]
+    public OrdinalVariants? OrdinalVariantsContainer { get; set; }
+}
+
+/// <summary>
+/// Container element <c>&lt;OrdinalVariants&gt;</c> that groups variant-specific ordinal override
+/// blocks. Each child <c>&lt;Variant&gt;</c> targets one dimension and can contain nested
+/// <c>&lt;Variant&gt;</c> elements to express cascaded multi-dimension constraints.
+/// </summary>
+public class OrdinalVariants
+{
+    /// <summary>Gets or sets the variant blocks inside this container.</summary>
+    [XmlElement("Variant")]
+    public List<OrdinalVariantElementType>? Variants { get; set; }
+}
+
+/// <summary>
+/// A single <c>&lt;Variant&gt;</c> inside <c>&lt;OrdinalVariants&gt;</c>: declares one constraint
+/// via <see cref="DimensionType"/> + <see cref="VariantValue"/>, optional suffix/removeTrailing
+/// overrides, ordinal exceptions, word rules, and nested sub-variants for cascaded constraints.
+/// </summary>
+public class OrdinalVariantElementType
+{
+    /// <summary>The canonical dimension name this constraint targets (e.g. "gender", "case").</summary>
+    [XmlAttribute("type")]
+    public string? DimensionType { get; set; }
+
+    /// <summary>The value that must be active for this variant to apply (e.g. "femenino").</summary>
+    [XmlAttribute("variant")]
+    public string? VariantValue { get; set; }
+
+    /// <summary>Suffix override for this variant; falls back to the base suffix when absent.</summary>
+    [XmlAttribute("suffix")]
+    public string? Suffix { get; set; }
+
+    /// <summary>RemoveTrailing override for this variant; falls back to the base value when absent.</summary>
+    [XmlAttribute("removeTrailing")]
+    public string? RemoveTrailing { get; set; }
+
+    /// <summary>Variant-specific whole-number exceptions (checked before base exceptions).</summary>
+    [XmlElement("OrdinalException")]
+    public List<OrdinalExceptionType>? Exceptions { get; set; }
+
+    /// <summary>Variant-specific word-level rules (checked before base word rules).</summary>
+    [XmlElement("Ordinal")]
+    public List<OrdinalRuleType>? Rules { get; set; }
+
+    /// <summary>
+    /// Nested sub-variants that inherit this variant's constraint and add further constraints.
+    /// Used to express combinations without listing all attribute permutations at a flat level.
+    /// </summary>
+    [XmlElement("Variant")]
+    public List<OrdinalVariantElementType>? NestedVariants { get; set; }
 }
 
 /// <summary>
@@ -269,9 +333,16 @@ public enum ReplacementScope
 /// </summary>
 public class VariantDimensionType
 {
-    /// <summary>Gets or sets the dimension name (e.g. "gender").</summary>
+    /// <summary>Gets or sets the canonical English dimension name (e.g. "gender", "case").</summary>
     [XmlAttribute("name")]
     public string Name { get; set; }
+
+    /// <summary>
+    /// Gets or sets an optional language-specific alias accepted alongside <see cref="Name"/>
+    /// in API calls and XML constraints (e.g. "genus" for German, "sijamuoto" for Finnish).
+    /// </summary>
+    [XmlAttribute("localName")]
+    public string? LocalName { get; set; }
 
     /// <summary>
     /// Gets or sets the comma-separated ordered list of valid values for this dimension
@@ -282,38 +353,30 @@ public class VariantDimensionType
 }
 
 /// <summary>
-/// Describes a morphological variant: a set of dimension constraints (encoded as arbitrary
-/// XML attributes, e.g. <c>gender="feminin"</c>) and the replacement rules to apply when
-/// the constraints are satisfied.
+/// Describes a morphological variant: one dimension constraint expressed as explicit
+/// <c>type</c> (dimension name) and <c>variant</c> (dimension value) attributes, plus
+/// replacement rules and optional nested sub-variants for cascaded constraints.
 /// </summary>
 public class VariantType
 {
-    /// <summary>
-    /// Gets or sets the dimension constraints supplied as XML attributes (e.g. gender="feminin").
-    /// Captured via <see cref="XmlAnyAttributeAttribute"/>; standard XML attributes are excluded.
-    /// </summary>
-    [XmlAnyAttribute]
-    public XmlAttribute[]? DimensionAttributes { get; set; }
+    /// <summary>The canonical dimension name this variant constrains (e.g. "gender", "case").</summary>
+    [XmlAttribute("type")]
+    public string? DimensionType { get; set; }
+
+    /// <summary>The value that must be active for this variant to apply (e.g. "feminin").</summary>
+    [XmlAttribute("variant")]
+    public string? VariantValue { get; set; }
 
     /// <summary>Gets or sets the replacement rules applied when this variant is active.</summary>
     [XmlElement("Replacement")]
     public List<ReplacementType>? Replacements { get; set; }
 
     /// <summary>
-    /// Returns the dimension constraints as a case-insensitive dictionary.
+    /// Nested sub-variants that inherit this variant's constraint and add further constraints.
+    /// Used to express multi-dimension combinations without listing flat attribute permutations.
     /// </summary>
-    [XmlIgnore]
-    public IReadOnlyDictionary<string, string> Dimensions
-    {
-        get
-        {
-            if (DimensionAttributes == null || DimensionAttributes.Length == 0)
-                return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            return DimensionAttributes
-                .Where(a => string.IsNullOrEmpty(a.NamespaceURI))
-                .ToDictionary(a => a.LocalName, a => a.Value, StringComparer.OrdinalIgnoreCase);
-        }
-    }
+    [XmlElement("Variant")]
+    public List<VariantType>? NestedVariants { get; set; }
 }
 
 /// <summary>

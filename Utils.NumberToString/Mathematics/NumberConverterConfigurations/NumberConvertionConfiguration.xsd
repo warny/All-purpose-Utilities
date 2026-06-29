@@ -283,6 +283,66 @@
         </xs:attribute>
     </xs:complexType>
 
+    <xs:complexType name="OrdinalVariantElementType">
+        <xs:annotation>
+            <xs:documentation>
+                A single variant block inside OrdinalVariants. Declares one constraint via
+                type (dimension name) + variant (dimension value), optional suffix/removeTrailing
+                overrides, ordinal exceptions, word rules, and nested Variant elements for
+                cascaded multi-dimension constraints.
+
+                Cascading example — feminine accusative:
+                    &lt;Variant type="gender" variant="feminin"&gt;
+                        &lt;OrdinalException value="1" string="prima" /&gt;
+                        &lt;Variant type="case" variant="accusative"&gt;
+                            &lt;OrdinalException value="1" string="primam" /&gt;
+                        &lt;/Variant&gt;
+                    &lt;/Variant&gt;
+
+                A nested Variant inherits all constraints from its ancestors and adds its own.
+                The most specific matching variant (most constraints) wins at runtime.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="OrdinalException" type="OrdinalExceptionType" />
+            <xs:element name="Ordinal" type="OrdinalRuleType" />
+            <xs:element name="Variant" type="OrdinalVariantElementType" />
+        </xs:choice>
+        <xs:attribute name="type" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The canonical dimension name this variant constrains (e.g. "gender", "case").
+                    Matches the name attribute of the corresponding Dimension declaration.
+                    The localName alias is also accepted (e.g. "genus" for German gender).
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="variant" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The dimension value that must be active for this block to apply
+                    (e.g. "femenino", "femminile", "feminin").
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="suffix" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    Suffix override for this variant. When set, replaces the base suffix
+                    for matching ordinals. Omit to fall back to the base suffix.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="removeTrailing" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    removeTrailing override for this variant. When set, replaces the base
+                    removeTrailing value. Omit to fall back to the base value.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
     <xs:complexType name="OrdinalsType">
         <xs:annotation>
             <xs:documentation>
@@ -290,47 +350,77 @@
                 When this element is present, ConvertOrdinal(int) is supported.
 
                 Resolution order (highest to lowest priority):
-                  1. OrdinalException — whole-number match.
-                  2. Ordinal word rule — last-word match.
-                  3. Default suffix — appended to the last word (stripping a trailing "e" first
-                     when stripTrailingE="true").
+                  1. Active OrdinalVariants/Variant exceptions — most-specific matching variant first.
+                  2. Base OrdinalException — whole-number match.
+                  3. Active OrdinalVariants/Variant word rules — most-specific first.
+                  4. Base Ordinal word rule — last-word match.
+                  5. Default suffix — appended to the last word (stripping removeTrailing first).
 
                 OrdinalException and Ordinal elements may be freely interleaved; their
                 relative order within the element does not matter.
             </xs:documentation>
         </xs:annotation>
-        <xs:choice minOccurs="0" maxOccurs="unbounded">
-            <xs:element name="OrdinalException" type="OrdinalExceptionType">
+        <xs:sequence>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element name="OrdinalException" type="OrdinalExceptionType">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Whole-number ordinal exception checked before word-level rules.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="Ordinal" type="OrdinalRuleType">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Word-level rule applied to the last word of the cardinal.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+            </xs:choice>
+            <xs:element name="OrdinalVariants" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
-                        Whole-number ordinal exception checked before word-level rules.
+                        Container for variant-specific ordinal overrides. Each child Variant
+                        targets one dimension value and may contain nested Variant elements
+                        for cascaded multi-dimension constraints.
+                        The most specific matching variant (most constraints) wins.
                     </xs:documentation>
                 </xs:annotation>
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="Variant" type="OrdinalVariantElementType"
+                                    minOccurs="0" maxOccurs="unbounded" />
+                    </xs:sequence>
+                </xs:complexType>
             </xs:element>
-            <xs:element name="Ordinal" type="OrdinalRuleType">
-                <xs:annotation>
-                    <xs:documentation>
-                        Word-level rule applied to the last word of the cardinal.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-        </xs:choice>
-        <xs:attribute name="suffix" type="xs:string" use="required">
+        </xs:sequence>
+        <xs:attribute name="suffix" type="xs:string" use="optional">
             <xs:annotation>
                 <xs:documentation>
                     Default suffix appended to the (possibly trimmed) last word of the cardinal
                     when no OrdinalException and no Ordinal word rule matches.
                     Examples: "th" (English), "ième" (French).
+                    Optional: may be omitted for prefix-only ordinal configurations.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="stripTrailingE" type="xs:boolean">
+        <xs:attribute name="removeTrailing" type="xs:string">
             <xs:annotation>
                 <xs:documentation>
-                    When true, a trailing "e" on the last cardinal word is removed before
-                    appending the suffix. Defaults to false.
-                    Example (French): "quatre" → "quatr" + "ième" → "quatrième".
+                    When set, the given string is stripped from the end of the last cardinal
+                    word before appending the suffix (only if the word actually ends with it).
+                    Example (French): removeTrailing="e" — "quatre" → "quatr" + "ième" → "quatrième".
                     Has no effect when a word rule matches (the "to" value is used as-is).
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="prefix" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    Optional prefix prepended to the complete ordinal result after any suffix or
+                    word-rule transformation. Useful for languages where the ordinal marker is a
+                    leading particle rather than a suffix (e.g. Chinese/Japanese 第, Korean 제).
+                    May be combined with suffix/word rules or used alone (prefix-only ordinals).
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -346,18 +436,29 @@
                 without an explicit parameter for this dimension, the first value is used.
 
                 Examples:
-                    name="gender"  values="masculin,feminin,neutrum"
-                    name="case"    values="nominativ,akkusativ,dativ,genitiv"
-                    name="kasus"   values="nominativ,akkusativ,dativ,genitiv"
+                    name="gender"  localName="genus"     values="maskulin,feminin,neutrum"
+                    name="case"    localName="sijamuoto"  values="nominatiivi,partitiivi,genetiivi"
 
                 Dimension names are matched case-insensitively at runtime.
+                Both the canonical name and the localName (if provided) are accepted in API
+                calls and XML constraint attributes; localName is normalized to name internally.
                 All Dimension elements must appear before any Variant element within Variants.
             </xs:documentation>
         </xs:annotation>
         <xs:attribute name="name" type="xs:string" use="required">
             <xs:annotation>
                 <xs:documentation>
-                    The dimension identifier used as the key in "dimension=value" API calls.
+                    The canonical English dimension identifier used as the key in
+                    "dimension=value" API calls (e.g. "gender", "case").
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="localName" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Optional language-specific alias accepted alongside the canonical name in
+                    API calls and XML constraint attributes (e.g. "genus" for German,
+                    "sijamuoto" for Finnish). Normalised to the canonical name at load time.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -374,27 +475,32 @@
     <xs:complexType name="VariantType">
         <xs:annotation>
             <xs:documentation>
-                A morphological variant rule: a set of dimension constraints encoded as
-                XML attributes plus replacement rules to apply when all constraints match.
+                A morphological variant rule: one dimension constraint (type + variant attributes)
+                plus replacement rules and optional nested Variant elements for cascaded constraints.
 
-                Dimension constraints are written as plain XML attributes whose name matches
-                a declared Dimension name and whose value matches one of its declared values.
-                Example: gender="feminin" or case="akkusativ" gender="maskulin".
+                type    — canonical dimension name (e.g. "gender", "case") or its localName alias.
+                variant — the value that must be active (e.g. "feminin", "akkusativ").
 
-                A Variant with no dimension attributes is a wildcard applied unconditionally
-                (before all constrained variants).
+                Nested Variant children inherit the parent constraint and add their own,
+                allowing multi-dimension rules without listing all attribute permutations
+                at the flat level. Example — feminine dative in German:
+                    &lt;Variant type="gender" variant="feminin"&gt;
+                        &lt;Replacement oldValue="ein" newValue="eine" scope="LastWord" /&gt;
+                        &lt;Variant type="case" variant="dativ"&gt;
+                            &lt;Replacement oldValue="eine" newValue="einer" scope="LastWord" /&gt;
+                        &lt;/Variant&gt;
+                    &lt;/Variant&gt;
 
-                Variants are applied in order of ascending specificity (number of constraints).
+                Variants are applied in order of ascending specificity (constraint count).
                 A more specific variant can therefore override results from a less specific one.
 
-                The Replacement rules within a variant use the same scope semantics as the
-                top-level Replacements. LastWord is especially useful here because it restricts
-                the substitution to the terminal unit, preventing changes in prefixes like
-                "un million" when the intent is only to inflect the terminal digit.
+                Replacement rules use the same scope semantics as top-level Replacements.
+                LastWord restricts the substitution to the terminal unit, preventing changes
+                inside prefixes like "un million" when only the terminal digit is inflected.
             </xs:documentation>
         </xs:annotation>
-        <xs:sequence>
-            <xs:element name="Replacement" type="ReplacementType" minOccurs="0" maxOccurs="unbounded">
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="Replacement" type="ReplacementType">
                 <xs:annotation>
                     <xs:documentation>
                         Replacement rule applied when all dimension constraints of this variant
@@ -402,16 +508,30 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-        </xs:sequence>
-        <xs:anyAttribute processContents="lax">
+            <xs:element name="Variant" type="VariantType">
+                <xs:annotation>
+                    <xs:documentation>
+                        Nested sub-variant that inherits this variant's constraint and adds its own.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:choice>
+        <xs:attribute name="type" type="xs:string" use="required">
             <xs:annotation>
                 <xs:documentation>
-                    Dimension constraint attributes (e.g. gender="feminin").
-                    Each attribute name must match a declared Dimension/@name.
-                    Attributes not matching any dimension are ignored at runtime.
+                    The canonical dimension name (e.g. "gender", "case") or its localName alias.
+                    Must match the name or localName of a declared Dimension element.
                 </xs:documentation>
             </xs:annotation>
-        </xs:anyAttribute>
+        </xs:attribute>
+        <xs:attribute name="variant" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The dimension value that must be active for this variant to apply
+                    (e.g. "feminin", "dativ", "partitiivi").
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="VariantsType">

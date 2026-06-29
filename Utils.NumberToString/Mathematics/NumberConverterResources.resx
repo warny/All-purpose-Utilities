@@ -127,6 +127,9 @@
   <data name="NumberConvertionConfiguration.DE" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>NumberConverterConfigurations\NumberConvertionConfiguration.DE.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
   </data>
+  <data name="NumberConvertionConfiguration.DE-ch" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>NumberConverterConfigurations\NumberConvertionConfiguration.DE-ch.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
+  </data>
   <data name="NumberConvertionConfiguration.EE" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>NumberConverterConfigurations\NumberConvertionConfiguration.EE.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
   </data>

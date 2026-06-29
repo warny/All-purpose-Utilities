@@ -10,7 +10,7 @@ using Utils.Numerics;
 using Utils.Objects;
 using Utils.String;
 
-namespace Utils.Mathematics
+namespace Utils.NumberToString
 {
     /// <summary>
     /// Provides functionality to convert numbers to their string representation according to a specific culture or custom configuration.
@@ -77,13 +77,20 @@ namespace Utils.Mathematics
             FractionSeparator = string.IsNullOrWhiteSpace(options.FractionSeparator) ? "/" : options.FractionSeparator;
 
             OrdinalSuffix = options.OrdinalSuffix;
-            StripTrailingEForOrdinal = options.StripTrailingEForOrdinal;
+            OrdinalRemoveTrailing = options.OrdinalRemoveTrailing;
             OrdinalExceptions = (options.OrdinalExceptions ?? new Dictionary<long, string>()).ToImmutableDictionary();
             OrdinalWordRules = (options.OrdinalWordRules ?? new Dictionary<string, string>()).ToImmutableDictionary();
+            OrdinalPrefix = options.OrdinalPrefix;
+            OrdinalVariants = (options.OrdinalVariants ?? []).ToImmutableArray();
 
             VariantDimensions = (options.VariantDimensions ?? []).ToImmutableArray();
             VariantRules = (options.VariantRules ?? []).ToImmutableArray();
-            _dimensionIndex = VariantDimensions.ToImmutableDictionary(d => d.Name, StringComparer.OrdinalIgnoreCase);
+            // Index both canonical name and localName so both are accepted in API calls and XML constraints.
+            _dimensionIndex = VariantDimensions
+                .SelectMany(d => string.IsNullOrEmpty(d.LocalName)
+                    ? (IEnumerable<(string, VariantDimension)>)[(d.Name, d)]
+                    : [(d.Name, d), (d.LocalName, d)])
+                .ToImmutableDictionary(t => t.Item1, t => t.Item2, StringComparer.OrdinalIgnoreCase);
         }
 
         /// <summary>
@@ -157,9 +164,10 @@ namespace Utils.Mathematics
         public string? OrdinalSuffix { get; }
 
         /// <summary>
-        /// Whether to strip a trailing 'e' from the last cardinal word before appending <see cref="OrdinalSuffix"/>.
+        /// Trailing string to remove from the last cardinal word before appending <see cref="OrdinalSuffix"/>.
+        /// When set, the string is stripped from the end of the last word only if it ends with this value.
         /// </summary>
-        public bool StripTrailingEForOrdinal { get; }
+        public string? OrdinalRemoveTrailing { get; }
 
         /// <summary>
         /// Integer-level ordinal exceptions (whole number → ordinal text).
@@ -172,6 +180,16 @@ namespace Utils.Mathematics
         public IReadOnlyDictionary<string, string> OrdinalWordRules { get; }
 
         /// <summary>
+        /// Prefix prepended to the whole ordinal result after <see cref="AdjustFunction"/> is applied.
+        /// </summary>
+        public string? OrdinalPrefix { get; }
+
+        /// <summary>
+        /// Variant-specific ordinal rules applied when their dimension constraints match the active variant query.
+        /// </summary>
+        public IReadOnlyList<OrdinalVariantRule> OrdinalVariants { get; }
+
+        /// <summary>
         /// Declared variant dimensions for this language (e.g. "gender", "case").
         /// The first value of each dimension is the default when no explicit variant is requested.
         /// </summary>
@@ -182,6 +200,13 @@ namespace Utils.Mathematics
         /// Applied in order of ascending specificity between raw adjustment and finalization.
         /// </summary>
         public IReadOnlyList<VariantRule> VariantRules { get; }
+
+        /// <inheritdoc/>
+        public bool SupportsOrdinals =>
+            OrdinalSuffix != null || OrdinalPrefix != null
+            || OrdinalExceptions.Count > 0
+            || OrdinalWordRules.Count > 0
+            || OrdinalVariants.Count > 0;
 
         private readonly ImmutableDictionary<string, string> _replacementLookup;
         private readonly ImmutableArray<ReplacementRule> _substringReplacements;
@@ -370,7 +395,12 @@ namespace Utils.Mathematics
             {
                 int eq = param.IndexOf('=');
                 if (eq > 0)
-                    query[param[..eq].Trim()] = param[(eq + 1)..].Trim();
+                {
+                    string rawName = param[..eq].Trim();
+                    // Normalize: localName (e.g. "genus") → canonical name (e.g. "gender")
+                    string canonical = _dimensionIndex.TryGetValue(rawName, out var dim) ? dim.Name : rawName;
+                    query[canonical] = param[(eq + 1)..].Trim();
+                }
             }
 
             foreach (var dimension in VariantDimensions)
@@ -512,16 +542,21 @@ namespace Utils.Mathematics
             /// <summary>
             /// Initializes a new instance of the <see cref="VariantDimension"/> class.
             /// </summary>
-            /// <param name="name">The dimension name.</param>
+            /// <param name="name">The canonical English dimension name (e.g. "gender", "case").</param>
             /// <param name="values">The ordered list of valid values; the first is the default.</param>
-            public VariantDimension(string name, IReadOnlyList<string> values)
+            /// <param name="localName">Optional language-specific alias (e.g. "genus" for German, "sijamuoto" for Finnish).</param>
+            public VariantDimension(string name, IReadOnlyList<string> values, string? localName = null)
             {
                 Name = name;
                 Values = values;
+                LocalName = localName;
             }
 
-            /// <summary>Gets the dimension name (e.g. "gender").</summary>
+            /// <summary>Gets the canonical English dimension name (e.g. "gender", "case").</summary>
             public string Name { get; }
+
+            /// <summary>Gets the optional language-specific alias for this dimension (e.g. "genus", "sijamuoto").</summary>
+            public string? LocalName { get; }
 
             /// <summary>Gets the ordered list of valid values. The first value is the default.</summary>
             public IReadOnlyList<string> Values { get; }
@@ -556,6 +591,44 @@ namespace Utils.Mathematics
             /// <summary>
             /// Gets the number of dimension constraints. Used to order rules from least to most specific.
             /// </summary>
+            public int Specificity => Constraints.Count;
+        }
+
+        /// <summary>
+        /// Associates dimension constraints with variant-specific ordinal configuration
+        /// (exceptions, word rules, suffix, and removeTrailing override).
+        /// All fields fall through to the base ordinal config when absent.
+        /// </summary>
+        public sealed class OrdinalVariantRule
+        {
+            /// <summary>
+            /// Initializes a new instance of <see cref="OrdinalVariantRule"/>.
+            /// </summary>
+            public OrdinalVariantRule(
+                IReadOnlyDictionary<string, string> constraints,
+                IReadOnlyDictionary<long, string> exceptions,
+                IReadOnlyDictionary<string, string> wordRules,
+                string? suffix,
+                string? removeTrailing)
+            {
+                Constraints = constraints;
+                Exceptions = exceptions;
+                WordRules = wordRules;
+                Suffix = suffix;
+                RemoveTrailing = removeTrailing;
+            }
+
+            /// <summary>Gets the dimension constraints that must all be satisfied for this variant to apply.</summary>
+            public IReadOnlyDictionary<string, string> Constraints { get; }
+            /// <summary>Gets variant-specific whole-number ordinal exceptions.</summary>
+            public IReadOnlyDictionary<long, string> Exceptions { get; }
+            /// <summary>Gets variant-specific last-word ordinal rules.</summary>
+            public IReadOnlyDictionary<string, string> WordRules { get; }
+            /// <summary>Gets the variant suffix override, or <see langword="null"/> to inherit the base suffix.</summary>
+            public string? Suffix { get; }
+            /// <summary>Gets the variant removeTrailing override, or <see langword="null"/> to inherit the base value.</summary>
+            public string? RemoveTrailing { get; }
+            /// <summary>Gets the number of dimension constraints (used for specificity ordering).</summary>
             public int Specificity => Constraints.Count;
         }
 
@@ -602,33 +675,54 @@ namespace Utils.Mathematics
             return string.Concat(numeratorText, Separator, connector, Separator, denominatorText).Trim();
         }
 
-        /// <summary>
-        /// Converts a positive integer to its ordinal string representation
-        /// (e.g. 1 → "first", 2 → "second" in English).
-        /// Integer-level exceptions in <see cref="OrdinalExceptions"/> are checked first,
-        /// then word-level rules in <see cref="OrdinalWordRules"/>, then <see cref="OrdinalSuffix"/>.
-        /// Ordinal rules are applied on the raw cardinal text before <see cref="AdjustFunction"/>
-        /// so that word-level rules can match unmodified text regardless of any finalization
-        /// transform (e.g. an uppercase adjust function or <see cref="INumberToStringLanguageSpecifics"/>).
-        /// </summary>
-        /// <param name="number">The value to convert. Negative values use the minus template.</param>
-        /// <returns>The ordinal string for <paramref name="number"/>.</returns>
-        public string ConvertOrdinal(int number)
+        /// <inheritdoc cref="INumberToStringConverter.ConvertOrdinal(int)"/>
+        public string ConvertOrdinal(int number) => ConvertOrdinal(number, []);
+
+        /// <inheritdoc cref="INumberToStringConverter.ConvertOrdinal(int, string[])"/>
+        public string ConvertOrdinal(int number, params string[] variants)
         {
             bool isNegative = number < 0;
             int absNumber = Math.Abs(number);
+            var activeVariants = BuildVariantQuery(variants);
 
+            // Plugin check: IOrdinalLanguageSpecifics takes highest priority
+            if (LanguageSpecifics is IOrdinalLanguageSpecifics ordinalPlugin
+                && ordinalPlugin.TryConvertOrdinal(absNumber, activeVariants, out var pluginResult))
+                return isNegative ? Minus.Replace("*", pluginResult!) : pluginResult!;
+
+            // Find the most specific matching ordinal variant
+            OrdinalVariantRule? activeVariant = FindBestOrdinalVariant(activeVariants);
+
+            // Exceptions: variant first, then base
+            if (activeVariant?.Exceptions.TryGetValue(absNumber, out var varException) == true)
+                return isNegative ? Minus.Replace("*", varException) : varException;
             if (OrdinalExceptions.TryGetValue(absNumber, out var exception))
                 return isNegative ? Minus.Replace("*", exception) : exception;
 
-            // Apply ordinal rules on the raw cardinal before AdjustFunction so that
-            // word-level rules can match unmodified text (e.g. before an uppercase
-            // AdjustFunction or LanguageSpecifics finalizer transforms it).
             string raw = absNumber == 0 ? Zero : ConvertRaw((BigInteger)absNumber);
-            raw = ApplyVariantRules(raw, BuildVariantQuery([]));
-            string ordinal = ApplyOrdinalTransform(raw);
+            raw = ApplyVariantRules(raw, activeVariants);
+            string ordinal = ApplyOrdinalTransform(raw, activeVariant);
             string final = AdjustFunction(ordinal);
+            if (!string.IsNullOrEmpty(OrdinalPrefix))
+                final = OrdinalPrefix + final;
             return isNegative ? Minus.Replace("*", final) : final;
+        }
+
+        private OrdinalVariantRule? FindBestOrdinalVariant(IReadOnlyDictionary<string, string> query)
+        {
+            if (OrdinalVariants.Count == 0) return null;
+            OrdinalVariantRule? best = null;
+            int bestScore = -1;
+            foreach (var variant in OrdinalVariants)
+            {
+                bool allMatch = variant.Constraints.All(c =>
+                    query.TryGetValue(c.Key, out var v) &&
+                    string.Equals(v, c.Value, StringComparison.OrdinalIgnoreCase));
+                if (!allMatch) continue;
+                int score = variant.Specificity;
+                if (score > bestScore) { best = variant; bestScore = score; }
+            }
+            return best;
         }
 
         /// <summary>
@@ -668,11 +762,16 @@ namespace Utils.Mathematics
 
         /// <summary>
         /// Transforms a cardinal string into its ordinal form by applying word-level rules
-        /// or the ordinal suffix to the last word.
+        /// or the ordinal suffix to the last word, optionally using a variant-specific override.
         /// </summary>
-        private string ApplyOrdinalTransform(string cardinal)
+        private string ApplyOrdinalTransform(string cardinal, OrdinalVariantRule? activeVariant = null)
         {
-            if (OrdinalWordRules.Count == 0 && OrdinalSuffix == null) return cardinal;
+            string? effectiveSuffix = activeVariant?.Suffix ?? OrdinalSuffix;
+            string? effectiveRemoveTrailing = activeVariant?.RemoveTrailing ?? OrdinalRemoveTrailing;
+
+            bool hasWordRules = (activeVariant != null && activeVariant.WordRules.Count > 0)
+                                || OrdinalWordRules.Count > 0;
+            if (!hasWordRules && effectiveSuffix == null) return cardinal;
 
             int lastSpace = cardinal.LastIndexOf(' ');
             string prefix = lastSpace >= 0 ? cardinal[..(lastSpace + 1)] : "";
@@ -683,15 +782,18 @@ namespace Utils.Mathematics
             string hyphenPrefix = lastHyphen >= 0 ? lastComponent[..(lastHyphen + 1)] : "";
             string lastWord = lastHyphen >= 0 ? lastComponent[(lastHyphen + 1)..] : lastComponent;
 
+            // Variant word rules take priority over base word rules
+            if (activeVariant?.WordRules.TryGetValue(lastWord, out var varReplacement) == true)
+                return prefix + hyphenPrefix + varReplacement;
             if (OrdinalWordRules.TryGetValue(lastWord, out var replacement))
                 return prefix + hyphenPrefix + replacement;
 
-            if (OrdinalSuffix != null)
+            if (effectiveSuffix != null)
             {
                 string transformed = lastWord;
-                if (StripTrailingEForOrdinal && transformed.EndsWith('e'))
-                    transformed = transformed[..^1];
-                return prefix + hyphenPrefix + transformed + OrdinalSuffix;
+                if (!string.IsNullOrEmpty(effectiveRemoveTrailing) && transformed.EndsWith(effectiveRemoveTrailing))
+                    transformed = transformed[..^effectiveRemoveTrailing.Length];
+                return prefix + hyphenPrefix + transformed + effectiveSuffix;
             }
 
             return cardinal;

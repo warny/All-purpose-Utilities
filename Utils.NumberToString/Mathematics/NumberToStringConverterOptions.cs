@@ -4,7 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Numerics;
 
-namespace Utils.Mathematics;
+namespace Utils.NumberToString;
 
 /// <summary>
 /// Holds all configuration parameters for a <see cref="NumberToStringConverter"/>.
@@ -73,8 +73,12 @@ public sealed class NumberToStringConverterOptions
     /// </summary>
     public string? OrdinalSuffix { get; set; }
 
-    /// <summary>Whether to strip a trailing 'e' from the last cardinal word before appending <see cref="OrdinalSuffix"/>.</summary>
-    public bool StripTrailingEForOrdinal { get; set; }
+    /// <summary>
+    /// Trailing string to remove from the last cardinal word before appending <see cref="OrdinalSuffix"/>.
+    /// When set, the string is stripped from the end of the last word only if it ends with this value.
+    /// Example: <c>"e"</c> for French ("quatre" → "quatr" + "ième" = "quatrième").
+    /// </summary>
+    public string? OrdinalRemoveTrailing { get; set; }
 
     /// <summary>
     /// Integer-level ordinal exceptions (whole-number → ordinal text, e.g. 1 → "premier" in French).
@@ -87,6 +91,18 @@ public sealed class NumberToStringConverterOptions
     /// (e.g. "one" → "first" in English).
     /// </summary>
     public IReadOnlyDictionary<string, string> OrdinalWordRules { get; set; } = new Dictionary<string, string>();
+
+    /// <summary>
+    /// Prefix prepended to the whole ordinal result after <see cref="AdjustFunction"/> is applied.
+    /// Example: <c>"第"</c> for Chinese/Japanese (第一, 第二…).
+    /// </summary>
+    public string? OrdinalPrefix { get; set; }
+
+    /// <summary>
+    /// Variant-specific ordinal rules applied when dimension constraints match the active variant query.
+    /// Each rule overrides exceptions, word rules, suffix, and/or removeTrailing for that variant.
+    /// </summary>
+    public IReadOnlyList<NumberToStringConverter.OrdinalVariantRule> OrdinalVariants { get; set; } = [];
 
     /// <summary>
     /// Declared variant dimensions (e.g. "gender", "case") with their ordered values.
@@ -130,9 +146,11 @@ public sealed class NumberToStringConverterOptions
         MaxNumber = source.MaxNumber;
         FractionSeparator = source.FractionSeparator;
         OrdinalSuffix = source.OrdinalSuffix;
-        StripTrailingEForOrdinal = source.StripTrailingEForOrdinal;
+        OrdinalRemoveTrailing = source.OrdinalRemoveTrailing;
         OrdinalExceptions = source.OrdinalExceptions;
         OrdinalWordRules = source.OrdinalWordRules;
+        OrdinalPrefix = source.OrdinalPrefix;
+        OrdinalVariants = source.OrdinalVariants;
         VariantDimensions = source.VariantDimensions;
         VariantRules = source.VariantRules;
     }

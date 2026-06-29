@@ -1,5 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Utils.Mathematics;
+using Utils.NumberToString;
 
 namespace UtilsTest.Mathematics.Numbers
 {

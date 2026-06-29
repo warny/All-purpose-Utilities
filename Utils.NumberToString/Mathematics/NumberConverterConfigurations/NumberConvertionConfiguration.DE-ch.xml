@@ -1,15 +1,16 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
-        <Language
-                groupSize="3"
-                separator=" "
-                groupSeparator=""
-                zero="null"
-                minus="minus *"
-                decimalSeparator="komma"
-                fractionSeparator="durch"
-        >
-		<Culture>DE</Culture>
+	<Language
+		groupSize="3"
+		separator=" "
+		groupSeparator=""
+		zero="null"
+		minus="minus *"
+		decimalSeparator="komma"
+		fractionSeparator="durch"
+	>
+		<Culture>de-CH</Culture>
+		<Culture>de-LI</Culture>
 		<Groups>
 			<Group level="1">
 				<Digit digit="0" string="" />
@@ -27,12 +28,12 @@
 				<Digit digit="0" string="" buildString="*" />
 				<Digit digit="1" string="zehn" buildString="*zehn" />
 				<Digit digit="2" string="zwanzig" buildString="*undzwanzig" />
-                                <Digit digit="3" string="dreißig" buildString="*unddreißig" />
+				<Digit digit="3" string="dreißig" buildString="*unddreißig" />
 				<Digit digit="4" string="vierzig" buildString="*undvierzig" />
 				<Digit digit="5" string="fünfzig" buildString="*undfünfzig" />
 				<Digit digit="6" string="sechzig" buildString="*undsechzig" />
 				<Digit digit="7" string="siebzig" buildString="*undsiebzig" />
-                                <Digit digit="8" string="achtzig" buildString="undachtzig" />
+				<Digit digit="8" string="achtzig" buildString="undachtzig" />
 				<Digit digit="9" string="neunzig" buildString="*undneunzig" />
 			</Group>
 			<Group level="3">
@@ -70,9 +71,6 @@
 				<Digit digit="9" string="nonaginta"/>
 			</TensPrefixes>
 		</NumberScale>
-		<Replacements>
-			<Replacement oldValue="ein tausend" newValue="tausend" />
-		</Replacements>
 		<Exceptions>
 			<Number value="11" string="elf" />
 			<Number value="12" string="zwölf" />
@@ -81,20 +79,18 @@
 		</Exceptions>
 		<LanguageSpecifics>GermanNumberToStringLanguageSpecifics</LanguageSpecifics>
 		<!--
-		  German ordinals: 1, 3, 7, 8 are fully irregular; 2, 4-6, 9-19 follow a
-		  "-te" pattern with minor stem changes; 20+ take "-ste" (default suffix).
-		  Word rules cover units and teens when they appear as space-separated last
-		  words inside compounds (e.g. "tausend drei" → "tausend dritte").
-		  German ordinal declension (gender × case) is adjectival and cannot be
-		  expressed as simple replacements; only the uninflected stem form is provided.
+		  Swiss German ordinals follow the same pattern as standard German.
+		  Since 1000 is rendered as "ein tausend" (not "tausend"), an explicit
+		  ordinal exception is added so "tausendste" is produced for 1000.
+		  Compounds such as "zwei tausend ein" → ordinal "zwei tausend erste"
+		  via the word rule "ein" → "erste".
 		-->
 		<Ordinals suffix="ste">
-			<!-- Irregular ordinals -->
-			<OrdinalException value="1"  string="erste" />
-			<OrdinalException value="3"  string="dritte" />
-			<OrdinalException value="7"  string="siebte" />
-			<OrdinalException value="8"  string="achte" />
-			<!-- Word rules for 1-19 units (apply when space-separated last word) -->
+			<OrdinalException value="1"    string="erste" />
+			<OrdinalException value="3"    string="dritte" />
+			<OrdinalException value="7"    string="siebte" />
+			<OrdinalException value="8"    string="achte" />
+			<OrdinalException value="1000" string="tausendste" />
 			<Ordinal from="ein"      to="erste" />
 			<Ordinal from="zwei"     to="zweite" />
 			<Ordinal from="drei"     to="dritte" />
@@ -114,56 +110,30 @@
 			<Ordinal from="siebzehn" to="siebzehnte" />
 			<Ordinal from="achtzehn" to="achtzehnte" />
 			<Ordinal from="neunzehn" to="neunzehnte" />
+			<Ordinal from="tausend"  to="tausendste" />
 		</Ordinals>
 		<Variants>
-			<!--
-			  Declension of "ein" (the only variable digit in German).
-			  Compound words (einundzwanzig…) are not declined.
-
-			  Rule order: genus=feminin must be declared FIRST because the
-			  single-constraint kasus=dativ/genitiv rules look for "ein".
-			  If genus=feminin transforms "ein"→"eine" first, the two-constraint
-			  overrides (kasus+genus=feminin) correctly target "eine".
-
-			  Full inflection table:
-			    Nominativ : maskulin=ein→eins*, feminin=eine, neutrum=ein→eins*
-			    Akkusativ : maskulin=einen,     feminin=eine, neutrum=ein→eins*
-			    Dativ     : maskulin=einem,     feminin=einer, neutrum=einem
-			    Genitiv   : maskulin=eines,     feminin=einer, neutrum=eines
-
-			  * GermanNumberToStringLanguageSpecifics converts standalone "ein" → "eins"
-			    (counting form). Adjectival "ein" forms (e.g. Akk Neutr) also become
-			    "eins" as they are indistinguishable without syntactic context.
-			-->
 			<Dimension name="gender" localName="genus" values="maskulin,feminin,neutrum" />
 			<Dimension name="case" localName="kasus" values="nominativ,akkusativ,dativ,genitiv" />
 
-			<!-- gender=feminin (Nom/Akk) → "eine";
-			     dativ/genitiv sub-variants handle the feminine case overrides -->
 			<Variant type="gender" variant="feminin">
 				<Replacement oldValue="ein" newValue="eine" scope="LastWord" />
-				<!-- Dativ feminin → "einer" (oldValue="eine": parent rule already applied) -->
 				<Variant type="case" variant="dativ">
 					<Replacement oldValue="eine" newValue="einer" scope="LastWord" />
 				</Variant>
-				<!-- Genitiv feminin → "einer" -->
 				<Variant type="case" variant="genitiv">
 					<Replacement oldValue="eine" newValue="einer" scope="LastWord" />
 				</Variant>
 			</Variant>
 
-			<!-- case=dativ (maskulin/neutrum): ein → "einem"
-			     (feminin+dativ is handled by the nested variant above) -->
 			<Variant type="case" variant="dativ">
 				<Replacement oldValue="ein" newValue="einem" scope="LastWord" />
 			</Variant>
 
-			<!-- case=genitiv (maskulin/neutrum): ein → "eines" -->
 			<Variant type="case" variant="genitiv">
 				<Replacement oldValue="ein" newValue="eines" scope="LastWord" />
 			</Variant>
 
-			<!-- gender=maskulin + case=akkusativ: ein → "einen" -->
 			<Variant type="gender" variant="maskulin">
 				<Variant type="case" variant="akkusativ">
 					<Replacement oldValue="ein" newValue="einen" scope="LastWord" />
