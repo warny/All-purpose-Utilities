@@ -85,6 +85,7 @@ namespace Utils.NumberToString
 
             VariantDimensions = (options.VariantDimensions ?? []).ToImmutableArray();
             VariantRules = (options.VariantRules ?? []).ToImmutableArray();
+            _yearFormat = options.YearFormat;
             // Index both canonical name and localName so both are accepted in API calls and XML constraints.
             _dimensionIndex = VariantDimensions
                 .SelectMany(d => string.IsNullOrEmpty(d.LocalName)
@@ -200,6 +201,11 @@ namespace Utils.NumberToString
         /// Applied in order of ascending specificity between raw adjustment and finalization.
         /// </summary>
         public IReadOnlyList<VariantRule> VariantRules { get; }
+
+        private readonly YearFormatOptions? _yearFormat;
+
+        /// <summary>Year-format options, or <see langword="null"/> when not configured.</summary>
+        internal YearFormatOptions? YearFormat => _yearFormat;
 
         /// <inheritdoc/>
         public bool SupportsOrdinals =>
@@ -758,6 +764,33 @@ namespace Utils.NumberToString
             }
 
             return isNegative ? Minus.Replace("*", result) : result;
+        }
+
+        /// <inheritdoc cref="INumberToStringConverter.ConvertYear(int)"/>
+        public string ConvertYear(int year)
+        {
+            bool isNegative = year < 0;
+            int abs = Math.Abs(year);
+
+            string body;
+            if (_yearFormat != null && _yearFormat.SplitRanges.Any(r => abs >= r.From && abs <= r.To))
+            {
+                int centuries = abs / 100;
+                int remainder = abs % 100;
+
+                if (remainder == 0 && _yearFormat.HundredWord != null)
+                    body = Convert(centuries) + Separator + _yearFormat.HundredWord;
+                else if (remainder is > 0 and < 10 && _yearFormat.ZeroConnector != null)
+                    body = Convert(centuries) + Separator + _yearFormat.ZeroConnector + Separator + Convert(remainder);
+                else
+                    body = Convert(centuries) + Separator + Convert(remainder);
+            }
+            else
+            {
+                body = Convert(abs);
+            }
+
+            return isNegative ? Minus.Replace("*", body) : body;
         }
 
         /// <summary>

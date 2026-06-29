@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8" ?>
 <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
     <Language
         groupSize="3"
@@ -71,5 +71,35 @@
             <Number value="18" string="восемнадцать" />
             <Number value="19" string="девятнадцать" />
         </Exceptions>
+        <Ordinals suffix="ый" removeTrailing="ь">
+            <OrdinalException value="1" string="первый" />
+            <!-- Unités irrégulières -->
+            <Ordinal from="один"          to="первый" />
+            <Ordinal from="два"           to="второй" />
+            <Ordinal from="три"           to="третий" />
+            <Ordinal from="четыре"        to="четвёртый" />
+            <Ordinal from="шесть"         to="шестой" />
+            <Ordinal from="семь"          to="седьмой" />
+            <Ordinal from="восемь"        to="восьмой" />
+            <!-- Dizaines irrégulières -->
+            <Ordinal from="сорок"         to="сороковой" />
+            <Ordinal from="пятьдесят"     to="пятидесятый" />
+            <Ordinal from="шестьдесят"    to="шестидесятый" />
+            <Ordinal from="семьдесят"     to="семидесятый" />
+            <Ordinal from="восемьдесят"   to="восьмидесятый" />
+            <Ordinal from="девяносто"     to="девяностый" />
+            <!-- Centaines irrégulières -->
+            <Ordinal from="сто"           to="сотый" />
+            <Ordinal from="двести"        to="двухсотый" />
+            <Ordinal from="триста"        to="трёхсотый" />
+            <Ordinal from="четыреста"     to="четырёхсотый" />
+            <Ordinal from="пятьсот"       to="пятисотый" />
+            <Ordinal from="шестьсот"      to="шестисотый" />
+            <Ordinal from="семьсот"       to="семисотый" />
+            <Ordinal from="восемьсот"     to="восьмисотый" />
+            <Ordinal from="девятьсот"     to="девятисотый" />
+            <!-- Mot d'échelle тысяча -->
+            <Ordinal from="тысяча"        to="тысячный" />
+        </Ordinals>
     </Language>
 </Numbers>
