@@ -5038,62 +5038,6 @@
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "api/Utils.Mathematics.CurrencyDefinition.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/Utils.Mathematics.CurrencyDefinition.html"
-        }
-      },
-      "version": "",
-      "Uid": null,
-      "IsMRef": true,
-      "Title": "Utils.Mathematics.CurrencyDefinition",
-      "Summary": "<p sourcefile=\"api/Utils.Mathematics.CurrencyDefinition.yml\" sourcestartlinenumber=\"1\">Defines the unit and subunit names used to convert a currency amount to words.</p>\n"
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/Utils.Mathematics.DefaultNumberToStringLanguageSpecifics.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/Utils.Mathematics.DefaultNumberToStringLanguageSpecifics.html"
-        }
-      },
-      "version": "",
-      "Uid": null,
-      "IsMRef": true,
-      "Title": "Utils.Mathematics.DefaultNumberToStringLanguageSpecifics",
-      "Summary": "<p sourcefile=\"api/Utils.Mathematics.DefaultNumberToStringLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Default no-op implementation used when no language-specific finalization is configured.</p>\n"
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/Utils.Mathematics.DigitListType.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/Utils.Mathematics.DigitListType.html"
-        }
-      },
-      "version": "",
-      "Uid": null,
-      "IsMRef": true,
-      "Title": "Utils.Mathematics.DigitListType",
-      "Summary": "<p sourcefile=\"api/Utils.Mathematics.DigitListType.yml\" sourcestartlinenumber=\"1\">Represents a collection of digit definitions for a particular group of numbers.</p>\n"
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/Utils.Mathematics.DigitType.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/Utils.Mathematics.DigitType.html"
-        }
-      },
-      "version": "",
-      "Uid": null,
-      "IsMRef": true,
-      "Title": "Utils.Mathematics.DigitType",
-      "Summary": "<p sourcefile=\"api/Utils.Mathematics.DigitType.yml\" sourcestartlinenumber=\"1\">Describes how a specific digit should be rendered and composed within a number name.</p>\n"
-    },
-    {
-      "type": "ManagedReference",
       "source_relative_path": "api/Utils.Mathematics.Expressions.ExpressionComparer.yml",
       "output": {
         ".html": {
@@ -5304,76 +5248,6 @@
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "api/Utils.Mathematics.FractionListType.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/Utils.Mathematics.FractionListType.html"
-        }
-      },
-      "version": "",
-      "Uid": null,
-      "IsMRef": true,
-      "Title": "Utils.Mathematics.FractionListType",
-      "Summary": "<p sourcefile=\"api/Utils.Mathematics.FractionListType.yml\" sourcestartlinenumber=\"1\">Represents a collection of fractional definitions.</p>\n"
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/Utils.Mathematics.FractionType.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/Utils.Mathematics.FractionType.html"
-        }
-      },
-      "version": "",
-      "Uid": null,
-      "IsMRef": true,
-      "Title": "Utils.Mathematics.FractionType",
-      "Summary": "<p sourcefile=\"api/Utils.Mathematics.FractionType.yml\" sourcestartlinenumber=\"1\">Configures how fractional values should be rendered.</p>\n"
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/Utils.Mathematics.GermanNumberToStringLanguageSpecifics.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/Utils.Mathematics.GermanNumberToStringLanguageSpecifics.html"
-        }
-      },
-      "version": "",
-      "Uid": null,
-      "IsMRef": true,
-      "Title": "Utils.Mathematics.GermanNumberToStringLanguageSpecifics",
-      "Summary": "<p sourcefile=\"api/Utils.Mathematics.GermanNumberToStringLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Applies German writing-specific finalization rules to converted numeric texts.</p>\n"
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/Utils.Mathematics.GroupType.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/Utils.Mathematics.GroupType.html"
-        }
-      },
-      "version": "",
-      "Uid": null,
-      "IsMRef": true,
-      "Title": "Utils.Mathematics.GroupType",
-      "Summary": "<p sourcefile=\"api/Utils.Mathematics.GroupType.yml\" sourcestartlinenumber=\"1\">Represents a numbered group of digits used when decomposing large numbers.</p>\n"
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/Utils.Mathematics.GroupsListType.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/Utils.Mathematics.GroupsListType.html"
-        }
-      },
-      "version": "",
-      "Uid": null,
-      "IsMRef": true,
-      "Title": "Utils.Mathematics.GroupsListType",
-      "Summary": "<p sourcefile=\"api/Utils.Mathematics.GroupsListType.yml\" sourcestartlinenumber=\"1\">Collection wrapper for <xref href=\"Utils.Mathematics.GroupType\" data-throw-if-not-resolved=\"false\"></xref> entries.</p>\n"
-    },
-    {
-      "type": "ManagedReference",
       "source_relative_path": "api/Utils.Mathematics.IAngleCalculator-1.yml",
       "output": {
         ".html": {
@@ -5385,48 +5259,6 @@
       "IsMRef": true,
       "Title": "Utils.Mathematics.IAngleCalculator<T>",
       "Summary": "<p sourcefile=\"api/Utils.Mathematics.IAngleCalculator-1.yml\" sourcestartlinenumber=\"1\">Provides an interface for angle-based calculations in various units (Radians, Degrees, Grades).\nIncludes standard and extended trigonometric, hyperbolic, and inverse functions.</p>\n"
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/Utils.Mathematics.INumberToStringConverter.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/Utils.Mathematics.INumberToStringConverter.html"
-        }
-      },
-      "version": "",
-      "Uid": null,
-      "IsMRef": true,
-      "Title": "Utils.Mathematics.INumberToStringConverter",
-      "Summary": "<p sourcefile=\"api/Utils.Mathematics.INumberToStringConverter.yml\" sourcestartlinenumber=\"1\">Converts numeric values into a formatted string representation while exposing\nthe largest supported number for validation purposes.</p>\n"
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/Utils.Mathematics.INumberToStringLanguageSpecifics.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/Utils.Mathematics.INumberToStringLanguageSpecifics.html"
-        }
-      },
-      "version": "",
-      "Uid": null,
-      "IsMRef": true,
-      "Title": "Utils.Mathematics.INumberToStringLanguageSpecifics",
-      "Summary": "<p sourcefile=\"api/Utils.Mathematics.INumberToStringLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Defines language-specific post-processing behavior applied after number-to-text conversion.</p>\n"
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/Utils.Mathematics.LanguageType.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/Utils.Mathematics.LanguageType.html"
-        }
-      },
-      "version": "",
-      "Uid": null,
-      "IsMRef": true,
-      "Title": "Utils.Mathematics.LanguageType",
-      "Summary": "<p sourcefile=\"api/Utils.Mathematics.LanguageType.yml\" sourcestartlinenumber=\"1\">Describes the conversion settings for a single language or culture.</p>\n"
     },
     {
       "type": "ManagedReference",
@@ -5556,146 +5388,6 @@
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "api/Utils.Mathematics.NumberListType.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/Utils.Mathematics.NumberListType.html"
-        }
-      },
-      "version": "",
-      "Uid": null,
-      "IsMRef": true,
-      "Title": "Utils.Mathematics.NumberListType",
-      "Summary": "<p sourcefile=\"api/Utils.Mathematics.NumberListType.yml\" sourcestartlinenumber=\"1\">Collection wrapper for <xref href=\"Utils.Mathematics.NumberType\" data-throw-if-not-resolved=\"false\"></xref> records to simplify XML serialization.</p>\n"
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/Utils.Mathematics.NumberScale.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/Utils.Mathematics.NumberScale.html"
-        }
-      },
-      "version": "",
-      "Uid": null,
-      "IsMRef": true,
-      "Title": "Utils.Mathematics.NumberScale",
-      "Summary": "<p sourcefile=\"api/Utils.Mathematics.NumberScale.yml\" sourcestartlinenumber=\"1\">Represents the scale used for large number names (e.g., thousand, million).</p>\n"
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/Utils.Mathematics.NumberScaleType.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/Utils.Mathematics.NumberScaleType.html"
-        }
-      },
-      "version": "",
-      "Uid": null,
-      "IsMRef": true,
-      "Title": "Utils.Mathematics.NumberScaleType",
-      "Summary": "<p sourcefile=\"api/Utils.Mathematics.NumberScaleType.yml\" sourcestartlinenumber=\"1\">Configures the prefixes and metadata needed to build number scale names.</p>\n"
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/Utils.Mathematics.NumberToStringConverter.ReplacementRule.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/Utils.Mathematics.NumberToStringConverter.ReplacementRule.html"
-        }
-      },
-      "version": "",
-      "Uid": null,
-      "IsMRef": true,
-      "Title": "Utils.Mathematics.NumberToStringConverter.ReplacementRule",
-      "Summary": "<p sourcefile=\"api/Utils.Mathematics.NumberToStringConverter.ReplacementRule.yml\" sourcestartlinenumber=\"1\">Represents a configured replacement rule.</p>\n"
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/Utils.Mathematics.NumberToStringConverter.VariantDimension.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/Utils.Mathematics.NumberToStringConverter.VariantDimension.html"
-        }
-      },
-      "version": "",
-      "Uid": null,
-      "IsMRef": true,
-      "Title": "Utils.Mathematics.NumberToStringConverter.VariantDimension",
-      "Summary": "<p sourcefile=\"api/Utils.Mathematics.NumberToStringConverter.VariantDimension.yml\" sourcestartlinenumber=\"1\">Declares one dimension of grammatical variation (e.g. &quot;gender&quot;) with its ordered\nset of values. The first value is the default applied when no explicit variant is requested.</p>\n"
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/Utils.Mathematics.NumberToStringConverter.VariantRule.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/Utils.Mathematics.NumberToStringConverter.VariantRule.html"
-        }
-      },
-      "version": "",
-      "Uid": null,
-      "IsMRef": true,
-      "Title": "Utils.Mathematics.NumberToStringConverter.VariantRule",
-      "Summary": "<p sourcefile=\"api/Utils.Mathematics.NumberToStringConverter.VariantRule.yml\" sourcestartlinenumber=\"1\">Associates a set of dimension constraints with replacement rules to apply\nwhen all constraints are satisfied.</p>\n"
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/Utils.Mathematics.NumberToStringConverter.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/Utils.Mathematics.NumberToStringConverter.html"
-        }
-      },
-      "version": "",
-      "Uid": null,
-      "IsMRef": true,
-      "Title": "Utils.Mathematics.NumberToStringConverter",
-      "Summary": "<p sourcefile=\"api/Utils.Mathematics.NumberToStringConverter.yml\" sourcestartlinenumber=\"1\">Provides functionality to convert numbers to their string representation according to a specific culture or custom configuration.</p>\n"
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/Utils.Mathematics.NumberToStringConverterOptions.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/Utils.Mathematics.NumberToStringConverterOptions.html"
-        }
-      },
-      "version": "",
-      "Uid": null,
-      "IsMRef": true,
-      "Title": "Utils.Mathematics.NumberToStringConverterOptions",
-      "Summary": "<p sourcefile=\"api/Utils.Mathematics.NumberToStringConverterOptions.yml\" sourcestartlinenumber=\"1\">Holds all configuration parameters for a <xref href=\"Utils.Mathematics.NumberToStringConverter\" data-throw-if-not-resolved=\"false\"></xref>.</p>\n"
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/Utils.Mathematics.NumberType.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/Utils.Mathematics.NumberType.html"
-        }
-      },
-      "version": "",
-      "Uid": null,
-      "IsMRef": true,
-      "Title": "Utils.Mathematics.NumberType",
-      "Summary": "<p sourcefile=\"api/Utils.Mathematics.NumberType.yml\" sourcestartlinenumber=\"1\">Describes a fixed mapping between a numeric value and its literal representation.</p>\n"
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/Utils.Mathematics.Numbers.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/Utils.Mathematics.Numbers.html"
-        }
-      },
-      "version": "",
-      "Uid": null,
-      "IsMRef": true,
-      "Title": "Utils.Mathematics.Numbers",
-      "Summary": "<p sourcefile=\"api/Utils.Mathematics.Numbers.yml\" sourcestartlinenumber=\"1\">Represents the root configuration element that aggregates number conversion definitions for multiple languages.</p>\n"
-    },
-    {
-      "type": "ManagedReference",
       "source_relative_path": "api/Utils.Mathematics.NumericalMethods.yml",
       "output": {
         ".html": {
@@ -5707,48 +5399,6 @@
       "IsMRef": true,
       "Title": "Utils.Mathematics.NumericalMethods",
       "Summary": "<p sourcefile=\"api/Utils.Mathematics.NumericalMethods.yml\" sourcestartlinenumber=\"1\">Numerical integration and interpolation utilities.</p>\n"
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/Utils.Mathematics.OrdinalExceptionType.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/Utils.Mathematics.OrdinalExceptionType.html"
-        }
-      },
-      "version": "",
-      "Uid": null,
-      "IsMRef": true,
-      "Title": "Utils.Mathematics.OrdinalExceptionType",
-      "Summary": "<p sourcefile=\"api/Utils.Mathematics.OrdinalExceptionType.yml\" sourcestartlinenumber=\"1\">Describes a single ordinal exception that maps an integer to its ordinal text.</p>\n"
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/Utils.Mathematics.OrdinalRuleType.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/Utils.Mathematics.OrdinalRuleType.html"
-        }
-      },
-      "version": "",
-      "Uid": null,
-      "IsMRef": true,
-      "Title": "Utils.Mathematics.OrdinalRuleType",
-      "Summary": "<p sourcefile=\"api/Utils.Mathematics.OrdinalRuleType.yml\" sourcestartlinenumber=\"1\">Describes a word-level transformation rule for ordinal conversion: when the last\nword of a cardinal equals <xref href=\"Utils.Mathematics.OrdinalRuleType.From\" data-throw-if-not-resolved=\"false\"></xref>, it is replaced with <xref href=\"Utils.Mathematics.OrdinalRuleType.To\" data-throw-if-not-resolved=\"false\"></xref>.</p>\n"
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/Utils.Mathematics.OrdinalsType.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/Utils.Mathematics.OrdinalsType.html"
-        }
-      },
-      "version": "",
-      "Uid": null,
-      "IsMRef": true,
-      "Title": "Utils.Mathematics.OrdinalsType",
-      "Summary": "<p sourcefile=\"api/Utils.Mathematics.OrdinalsType.yml\" sourcestartlinenumber=\"1\">Holds the complete ordinal configuration for a language: whole-number exceptions,\nword-level transformation rules, and a default suffix.</p>\n"
     },
     {
       "type": "ManagedReference",
@@ -5766,62 +5416,6 @@
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "api/Utils.Mathematics.ReplacementScope.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/Utils.Mathematics.ReplacementScope.html"
-        }
-      },
-      "version": "",
-      "Uid": null,
-      "IsMRef": true,
-      "Title": "Utils.Mathematics.ReplacementScope",
-      "Summary": "<p sourcefile=\"api/Utils.Mathematics.ReplacementScope.yml\" sourcestartlinenumber=\"1\">Defines how a replacement should be applied to the converted value.</p>\n"
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/Utils.Mathematics.ReplacementType.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/Utils.Mathematics.ReplacementType.html"
-        }
-      },
-      "version": "",
-      "Uid": null,
-      "IsMRef": true,
-      "Title": "Utils.Mathematics.ReplacementType",
-      "Summary": "<p sourcefile=\"api/Utils.Mathematics.ReplacementType.yml\" sourcestartlinenumber=\"1\">Defines a string replacement applied to the generated number name.</p>\n"
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/Utils.Mathematics.ReplacementsListType.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/Utils.Mathematics.ReplacementsListType.html"
-        }
-      },
-      "version": "",
-      "Uid": null,
-      "IsMRef": true,
-      "Title": "Utils.Mathematics.ReplacementsListType",
-      "Summary": "<p sourcefile=\"api/Utils.Mathematics.ReplacementsListType.yml\" sourcestartlinenumber=\"1\">Holds a list of string replacements applied after number conversion.</p>\n"
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/Utils.Mathematics.StaticNamesType.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/Utils.Mathematics.StaticNamesType.html"
-        }
-      },
-      "version": "",
-      "Uid": null,
-      "IsMRef": true,
-      "Title": "Utils.Mathematics.StaticNamesType",
-      "Summary": "<p sourcefile=\"api/Utils.Mathematics.StaticNamesType.yml\" sourcestartlinenumber=\"1\">Holds the static names mapped to particular scales.</p>\n"
-    },
-    {
-      "type": "ManagedReference",
       "source_relative_path": "api/Utils.Mathematics.Statistics.yml",
       "output": {
         ".html": {
@@ -5836,20 +5430,6 @@
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "api/Utils.Mathematics.SuffixesType.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/Utils.Mathematics.SuffixesType.html"
-        }
-      },
-      "version": "",
-      "Uid": null,
-      "IsMRef": true,
-      "Title": "Utils.Mathematics.SuffixesType",
-      "Summary": "<p sourcefile=\"api/Utils.Mathematics.SuffixesType.yml\" sourcestartlinenumber=\"1\">Describes the suffixes appended to scale names.</p>\n"
-    },
-    {
-      "type": "ManagedReference",
       "source_relative_path": "api/Utils.Mathematics.Trigonometry-1.yml",
       "output": {
         ".html": {
@@ -5861,48 +5441,6 @@
       "IsMRef": true,
       "Title": "Utils.Mathematics.Trigonometry<T>",
       "Summary": "<p sourcefile=\"api/Utils.Mathematics.Trigonometry-1.yml\" sourcestartlinenumber=\"1\">Provides a base implementation of <xref href=\"Utils.Mathematics.IAngleCalculator%601\" data-throw-if-not-resolved=\"false\"></xref> for custom angle measures\nsuch as Degrees or Grades, along with default trigonometric/hyperbolic implementations.</p>\n"
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/Utils.Mathematics.VariantDimensionType.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/Utils.Mathematics.VariantDimensionType.html"
-        }
-      },
-      "version": "",
-      "Uid": null,
-      "IsMRef": true,
-      "Title": "Utils.Mathematics.VariantDimensionType",
-      "Summary": "<p sourcefile=\"api/Utils.Mathematics.VariantDimensionType.yml\" sourcestartlinenumber=\"1\">Declares one dimension of grammatical variation for a language (e.g. &quot;gender&quot; or &quot;case&quot;)\ntogether with its ordered set of values. The first value is the default when no explicit\nvariant is requested.</p>\n"
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/Utils.Mathematics.VariantType.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/Utils.Mathematics.VariantType.html"
-        }
-      },
-      "version": "",
-      "Uid": null,
-      "IsMRef": true,
-      "Title": "Utils.Mathematics.VariantType",
-      "Summary": "<p sourcefile=\"api/Utils.Mathematics.VariantType.yml\" sourcestartlinenumber=\"1\">Describes a morphological variant: a set of dimension constraints (encoded as arbitrary\nXML attributes, e.g. <code>gender=&quot;feminin&quot;</code>) and the replacement rules to apply when\nthe constraints are satisfied.</p>\n"
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/Utils.Mathematics.VariantsType.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/Utils.Mathematics.VariantsType.html"
-        }
-      },
-      "version": "",
-      "Uid": null,
-      "IsMRef": true,
-      "Title": "Utils.Mathematics.VariantsType",
-      "Summary": "<p sourcefile=\"api/Utils.Mathematics.VariantsType.yml\" sourcestartlinenumber=\"1\">Holds the complete variant configuration for a language: the declared dimensions\nand the list of variant rules.</p>\n"
     },
     {
       "type": "ManagedReference",
@@ -8170,6 +7708,538 @@
       "Uid": null,
       "IsMRef": true,
       "Title": "Utils.Net",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.CurrencyDefinition.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.CurrencyDefinition.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.CurrencyDefinition",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.CurrencyDefinition.yml\" sourcestartlinenumber=\"1\">Defines the unit and subunit names used to convert a currency amount to words.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.DefaultNumberToStringLanguageSpecifics.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.DefaultNumberToStringLanguageSpecifics.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.DefaultNumberToStringLanguageSpecifics",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.DefaultNumberToStringLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Default no-op implementation used when no language-specific finalization is configured.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.DigitListType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.DigitListType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.DigitListType",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.DigitListType.yml\" sourcestartlinenumber=\"1\">Represents a collection of digit definitions for a particular group of numbers.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.DigitType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.DigitType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.DigitType",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.DigitType.yml\" sourcestartlinenumber=\"1\">Describes how a specific digit should be rendered and composed within a number name.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.FractionListType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.FractionListType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.FractionListType",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.FractionListType.yml\" sourcestartlinenumber=\"1\">Represents a collection of fractional definitions.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.FractionType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.FractionType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.FractionType",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.FractionType.yml\" sourcestartlinenumber=\"1\">Configures how fractional values should be rendered.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.GermanNumberToStringLanguageSpecifics.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.GermanNumberToStringLanguageSpecifics.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.GermanNumberToStringLanguageSpecifics",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.GermanNumberToStringLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Applies German writing-specific finalization rules to converted numeric texts.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.GroupType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.GroupType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.GroupType",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.GroupType.yml\" sourcestartlinenumber=\"1\">Represents a numbered group of digits used when decomposing large numbers.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.GroupsListType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.GroupsListType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.GroupsListType",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.GroupsListType.yml\" sourcestartlinenumber=\"1\">Collection wrapper for <xref href=\"Utils.NumberToString.GroupType\" data-throw-if-not-resolved=\"false\"></xref> entries.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.INumberToStringConverter.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.INumberToStringConverter.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.INumberToStringConverter",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.INumberToStringConverter.yml\" sourcestartlinenumber=\"1\">Converts numeric values into a formatted string representation while exposing\nthe largest supported number for validation purposes.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.INumberToStringLanguageSpecifics.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.INumberToStringLanguageSpecifics.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.INumberToStringLanguageSpecifics",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.INumberToStringLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Defines language-specific post-processing behavior applied after number-to-text conversion.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.IOrdinalLanguageSpecifics.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.IOrdinalLanguageSpecifics.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.IOrdinalLanguageSpecifics",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.IOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Provides language-specific ordinal conversion for cases where ordinal formation\ncannot be expressed through the XML configuration alone (e.g. languages with\ncomplex morphological agreement or root-pattern transformations).</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.LanguageType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.LanguageType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.LanguageType",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.LanguageType.yml\" sourcestartlinenumber=\"1\">Describes the conversion settings for a single language or culture.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.NumberListType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.NumberListType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.NumberListType",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.NumberListType.yml\" sourcestartlinenumber=\"1\">Collection wrapper for <xref href=\"Utils.NumberToString.NumberType\" data-throw-if-not-resolved=\"false\"></xref> records to simplify XML serialization.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.NumberScale.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.NumberScale.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.NumberScale",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.NumberScale.yml\" sourcestartlinenumber=\"1\">Represents the scale used for large number names (e.g., thousand, million).</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.NumberScaleType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.NumberScaleType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.NumberScaleType",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.NumberScaleType.yml\" sourcestartlinenumber=\"1\">Configures the prefixes and metadata needed to build number scale names.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.yml\" sourcestartlinenumber=\"1\">Associates dimension constraints with variant-specific ordinal configuration\n(exceptions, word rules, suffix, and removeTrailing override).\nAll fields fall through to the base ordinal config when absent.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.NumberToStringConverter.ReplacementRule.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.NumberToStringConverter.ReplacementRule.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.NumberToStringConverter.ReplacementRule",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.NumberToStringConverter.ReplacementRule.yml\" sourcestartlinenumber=\"1\">Represents a configured replacement rule.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.NumberToStringConverter.VariantDimension.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.NumberToStringConverter.VariantDimension.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.NumberToStringConverter.VariantDimension",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.NumberToStringConverter.VariantDimension.yml\" sourcestartlinenumber=\"1\">Declares one dimension of grammatical variation (e.g. &quot;gender&quot;) with its ordered\nset of values. The first value is the default applied when no explicit variant is requested.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.NumberToStringConverter.VariantRule.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.NumberToStringConverter.VariantRule.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.NumberToStringConverter.VariantRule",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.NumberToStringConverter.VariantRule.yml\" sourcestartlinenumber=\"1\">Associates a set of dimension constraints with replacement rules to apply\nwhen all constraints are satisfied.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.NumberToStringConverter.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.NumberToStringConverter.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.NumberToStringConverter",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.NumberToStringConverter.yml\" sourcestartlinenumber=\"1\">Provides functionality to convert numbers to their string representation according to a specific culture or custom configuration.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.NumberToStringConverterOptions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.NumberToStringConverterOptions.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.NumberToStringConverterOptions",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.NumberToStringConverterOptions.yml\" sourcestartlinenumber=\"1\">Holds all configuration parameters for a <xref href=\"Utils.NumberToString.NumberToStringConverter\" data-throw-if-not-resolved=\"false\"></xref>.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.NumberType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.NumberType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.NumberType",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.NumberType.yml\" sourcestartlinenumber=\"1\">Describes a fixed mapping between a numeric value and its literal representation.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.Numbers.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.Numbers.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.Numbers",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.Numbers.yml\" sourcestartlinenumber=\"1\">Represents the root configuration element that aggregates number conversion definitions for multiple languages.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.OrdinalExceptionType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.OrdinalExceptionType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.OrdinalExceptionType",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.OrdinalExceptionType.yml\" sourcestartlinenumber=\"1\">Describes a single ordinal exception that maps an integer to its ordinal text.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.OrdinalRuleType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.OrdinalRuleType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.OrdinalRuleType",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.OrdinalRuleType.yml\" sourcestartlinenumber=\"1\">Describes a word-level transformation rule for ordinal conversion: when the last\nword of a cardinal equals <xref href=\"Utils.NumberToString.OrdinalRuleType.From\" data-throw-if-not-resolved=\"false\"></xref>, it is replaced with <xref href=\"Utils.NumberToString.OrdinalRuleType.To\" data-throw-if-not-resolved=\"false\"></xref>.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.OrdinalVariantElementType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.OrdinalVariantElementType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.OrdinalVariantElementType",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.OrdinalVariantElementType.yml\" sourcestartlinenumber=\"1\">A single <code>&lt;Variant&gt;</code> inside <code>&lt;OrdinalVariants&gt;</code>: declares one constraint\nvia <xref href=\"Utils.NumberToString.OrdinalVariantElementType.DimensionType\" data-throw-if-not-resolved=\"false\"></xref> + <xref href=\"Utils.NumberToString.OrdinalVariantElementType.VariantValue\" data-throw-if-not-resolved=\"false\"></xref>, optional suffix/removeTrailing\noverrides, ordinal exceptions, word rules, and nested sub-variants for cascaded constraints.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.OrdinalVariants.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.OrdinalVariants.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.OrdinalVariants",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.OrdinalVariants.yml\" sourcestartlinenumber=\"1\">Container element <code>&lt;OrdinalVariants&gt;</code> that groups variant-specific ordinal override\nblocks. Each child <code>&lt;Variant&gt;</code> targets one dimension and can contain nested\n<code>&lt;Variant&gt;</code> elements to express cascaded multi-dimension constraints.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.OrdinalsType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.OrdinalsType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.OrdinalsType",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.OrdinalsType.yml\" sourcestartlinenumber=\"1\">Holds the complete ordinal configuration for a language: whole-number exceptions,\nword-level transformation rules, and a default suffix.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.ReplacementScope.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.ReplacementScope.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.ReplacementScope",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.ReplacementScope.yml\" sourcestartlinenumber=\"1\">Defines how a replacement should be applied to the converted value.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.ReplacementType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.ReplacementType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.ReplacementType",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.ReplacementType.yml\" sourcestartlinenumber=\"1\">Defines a string replacement applied to the generated number name.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.ReplacementsListType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.ReplacementsListType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.ReplacementsListType",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.ReplacementsListType.yml\" sourcestartlinenumber=\"1\">Holds a list of string replacements applied after number conversion.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.StaticNamesType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.StaticNamesType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.StaticNamesType",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.StaticNamesType.yml\" sourcestartlinenumber=\"1\">Holds the static names mapped to particular scales.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.SuffixesType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.SuffixesType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.SuffixesType",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.SuffixesType.yml\" sourcestartlinenumber=\"1\">Describes the suffixes appended to scale names.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.VariantDimensionType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.VariantDimensionType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.VariantDimensionType",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.VariantDimensionType.yml\" sourcestartlinenumber=\"1\">Declares one dimension of grammatical variation for a language (e.g. &quot;gender&quot; or &quot;case&quot;)\ntogether with its ordered set of values. The first value is the default when no explicit\nvariant is requested.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.VariantType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.VariantType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.VariantType",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.VariantType.yml\" sourcestartlinenumber=\"1\">Describes a morphological variant: one dimension constraint expressed as explicit\n<code>type</code> (dimension name) and <code>variant</code> (dimension value) attributes, plus\nreplacement rules and optional nested sub-variants for cascaded constraints.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.VariantsType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.VariantsType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.VariantsType",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.VariantsType.yml\" sourcestartlinenumber=\"1\">Holds the complete variant configuration for a language: the declared dimensions\nand the list of variant rules.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString",
       "Summary": null
     },
     {
