@@ -1057,14 +1057,14 @@ public class NumberToStringConverterImprovementsTests
     [TestMethod]
     public void SupportsOrdinals_TrueForLanguagesWithOrdinals()
     {
-        foreach (var culture in new[] { "EN", "FR", "ES", "IT", "NL", "EU", "ZH", "JA", "KO", "DE", "HE", "EE", "CA", "GL", "PT" })
+        foreach (var culture in new[] { "EN", "FR", "ES", "IT", "NL", "EU", "ZH", "JA", "KO", "DE", "HE", "EE", "CA", "GL", "PT", "RU" })
             Assert.IsTrue(NumberToStringConverter.GetConverter(culture).SupportsOrdinals, $"{culture}.SupportsOrdinals");
     }
 
     [TestMethod]
     public void SupportsOrdinals_FalseForLanguagesWithoutOrdinals()
     {
-        foreach (var culture in new[] { "FI", "RU", "PL", "AR" })
+        foreach (var culture in new[] { "FI", "PL", "AR" })
             Assert.IsFalse(NumberToStringConverter.GetConverter(culture).SupportsOrdinals, $"{culture}.SupportsOrdinals");
     }
 
