@@ -1337,6 +1337,67 @@ public class NumberToStringConverterImprovementsTests
         Assert.AreEqual("zeroth", conv.ConvertOrdinal(0));
     }
 
+    // ─── FR — Ordinal variants (gender=feminin) ───────────────────────────────
+
+    [TestMethod]
+    public void ConvertOrdinal_FR_Feminine_PremiereBecomesPremiere()
+    {
+        var converter = NumberToStringConverter.GetConverter("FR-fr");
+        Assert.AreEqual("première", converter.ConvertOrdinal(1, "gender=feminin"));
+        Assert.AreEqual("premier",  converter.ConvertOrdinal(1));
+    }
+
+    // ─── RU — Ordinals ───────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void ConvertOrdinal_RU_AppliesRulesAndSuffix()
+    {
+        var converter = NumberToStringConverter.GetConverter("RU");
+        (int n, string expected)[] cases =
+        [
+            (1,    "первый"),          // exception
+            (2,    "второй"),          // word rule: два → второй
+            (3,    "третий"),          // word rule: три → третий
+            (4,    "четвёртый"),       // word rule: четыре → четвёртый
+            (5,    "пятый"),           // suffix: пять - ь + ый
+            (6,    "шестой"),          // word rule: шесть → шестой
+            (7,    "седьмой"),         // word rule: семь → седьмой
+            (8,    "восьмой"),         // word rule: восемь → восьмой
+            (9,    "девятый"),         // suffix: девять - ь + ый
+            (10,   "десятый"),         // suffix: десять - ь + ый
+            (11,   "одиннадцатый"),    // suffix: одиннадцать - ь + ый
+            (20,   "двадцатый"),       // suffix: двадцать - ь + ый
+            (21,   "двадцать первый"), // compound: last word один → первый
+            (40,   "сороковой"),       // word rule: сорок → сороковой
+            (100,  "сотый"),           // word rule: сто → сотый
+            (1000, "тысячный"),        // word rule: тысяча → тысячный
+        ];
+        foreach (var (n, expected) in cases)
+            Assert.AreEqual(expected, converter.ConvertOrdinal(n), $"RU ordinal of {n}");
+    }
+
+    // ─── EN — ConvertYear ────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void ConvertYear_EN_SplitRanges()
+    {
+        var converter = NumberToStringConverter.GetConverter("EN");
+        (int year, string expected)[] cases =
+        [
+            (1984, "nineteen eighty-four"),  // range 1100-1999, remainder ≥ 10
+            (1900, "nineteen hundred"),       // range 1100-1999, remainder = 0
+            (1905, "nineteen oh five"),       // range 1100-1999, remainder 1-9
+            (1100, "eleven hundred"),         // début de la plage 1100-1999
+            (2024, "twenty twenty-four"),     // range 2010-2099
+            (2010, "twenty ten"),             // début de la plage 2010-2099
+            (2000, "two thousand"),             // hors plage → Convert(2000)
+            (2005, "two thousand, five"),      // entre les deux plages → Convert(2005)
+            (1066, "one thousand, sixty-six"), // sous la plage → Convert(1066)
+        ];
+        foreach (var (year, expected) in cases)
+            Assert.AreEqual(expected, converter.ConvertYear(year), $"EN year {year}");
+    }
+
     private sealed class OrdinalPluginSpecifics
         : INumberToStringLanguageSpecifics, IOrdinalLanguageSpecifics
     {

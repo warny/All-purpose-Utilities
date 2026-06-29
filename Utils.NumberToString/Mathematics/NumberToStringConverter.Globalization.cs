@@ -260,6 +260,10 @@ namespace Utils.NumberToString
                 OrdinalVariants = ParseOrdinalVariants(language.Ordinals),
                 VariantDimensions = parsedDimensions,
                 VariantRules = ParseVariantRules(language.Variants),
+                YearFormat = language.YearFormat == null ? null : new YearFormatOptions(
+                    language.YearFormat.HundredWord,
+                    language.YearFormat.ZeroConnector,
+                    language.YearFormat.SplitRanges.Select(r => (r.From, r.To)).ToList()),
             };
 
             return new NumberToStringConverter(options);

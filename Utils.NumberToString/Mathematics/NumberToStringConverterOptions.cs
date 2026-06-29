@@ -116,6 +116,9 @@ public sealed class NumberToStringConverterOptions
     /// </summary>
     public IReadOnlyList<NumberToStringConverter.VariantRule> VariantRules { get; set; } = [];
 
+    /// <summary>Year-format configuration used by <see cref="NumberToStringConverter.ConvertYear"/>.</summary>
+    public YearFormatOptions? YearFormat { get; set; }
+
     /// <summary>Creates an options object with sensible defaults. Required properties
     /// (<see cref="Zero"/>, <see cref="Minus"/>, <see cref="Groups"/>, <see cref="Scale"/>)
     /// must be set before passing to the constructor.</summary>
@@ -153,6 +156,7 @@ public sealed class NumberToStringConverterOptions
         OrdinalVariants = source.OrdinalVariants;
         VariantDimensions = source.VariantDimensions;
         VariantRules = source.VariantRules;
+        YearFormat = source.YearFormat;
     }
 
     /// <summary>
@@ -168,3 +172,14 @@ public sealed class NumberToStringConverterOptions
     public static NumberToStringConverterOptions FromCulture(string cultureName)
         => new(NumberToStringConverter.GetConverter(cultureName));
 }
+
+/// <summary>
+/// Immutable year-format options that drive <see cref="NumberToStringConverter.ConvertYear"/>.
+/// </summary>
+/// <param name="HundredWord">Word appended for round centuries (e.g. "hundred").</param>
+/// <param name="ZeroConnector">Connector before single-digit remainders (e.g. "oh").</param>
+/// <param name="SplitRanges">Year ranges where the split-at-hundreds algorithm applies.</param>
+public record YearFormatOptions(
+    string? HundredWord,
+    string? ZeroConnector,
+    IReadOnlyList<(int From, int To)> SplitRanges);

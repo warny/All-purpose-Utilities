@@ -538,6 +538,52 @@ public class LanguageType
     /// </summary>
     [XmlElement(ElementName = "Variants")]
     public VariantsType Variants { get; set; }
+
+    /// <summary>
+    /// Gets or sets the year-format configuration used by <see cref="NumberToStringConverter.ConvertYear"/>.
+    /// When absent, <c>ConvertYear</c> falls back to <c>Convert</c>.
+    /// </summary>
+    [XmlElement(ElementName = "YearFormat")]
+    public YearFormatType? YearFormat { get; set; }
+}
+
+/// <summary>
+/// Describes a range of years for which the split-at-hundreds algorithm applies in <see cref="YearFormatType"/>.
+/// </summary>
+public class YearFormatSplitRangeType
+{
+    /// <summary>Gets or sets the lower bound of the range (inclusive).</summary>
+    [XmlAttribute("from")]
+    public int From { get; set; }
+
+    /// <summary>Gets or sets the upper bound of the range (inclusive).</summary>
+    [XmlAttribute("to")]
+    public int To { get; set; }
+}
+
+/// <summary>
+/// Configures the year-format algorithm used by <see cref="NumberToStringConverter.ConvertYear"/>.
+/// When present, years within any declared <see cref="SplitRanges"/> are split at the hundreds boundary.
+/// </summary>
+public class YearFormatType
+{
+    /// <summary>
+    /// Gets or sets the word appended when the year is a round century (remainder == 0).
+    /// Example: "hundred" → 1900 reads as "nineteen hundred".
+    /// </summary>
+    [XmlAttribute("hundredWord")]
+    public string? HundredWord { get; set; }
+
+    /// <summary>
+    /// Gets or sets the connector inserted before single-digit remainders (1–9).
+    /// Example: "oh" → 2005 reads as "twenty oh five".
+    /// </summary>
+    [XmlAttribute("zeroConnector")]
+    public string? ZeroConnector { get; set; }
+
+    /// <summary>Gets or sets the year ranges for which the split algorithm applies.</summary>
+    [XmlElement("SplitRange")]
+    public List<YearFormatSplitRangeType> SplitRanges { get; set; } = new();
 }
 
 /// <summary>

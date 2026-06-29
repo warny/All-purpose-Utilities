@@ -92,5 +92,9 @@
 			<Ordinal from="eighty" to="eightieth" />
 			<Ordinal from="ninety" to="ninetieth" />
 		</Ordinals>
+		<YearFormat hundredWord="hundred" zeroConnector="oh">
+			<SplitRange from="1100" to="1999" />
+			<SplitRange from="2010" to="2099" />
+		</YearFormat>
 	</Language>
 </Numbers>
