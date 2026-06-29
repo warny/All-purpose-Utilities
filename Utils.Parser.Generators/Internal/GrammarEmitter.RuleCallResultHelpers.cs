@@ -11,6 +11,34 @@ internal static partial class GrammarEmitter
     /// <param name="sb">Source builder receiving generated C#.</param>
     private static void EmitRuleCallResultHelpers(StringBuilder sb)
     {
+        sb.AppendLine("    /// <summary>Gets the accepted text for a generated lexer action.</summary>");
+        sb.AppendLine("    private static string GetRequiredLexerText(LexerActionExecutionContext context)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        global::System.ArgumentNullException.ThrowIfNull(context);");
+        sb.AppendLine("        return context.Text;");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+        sb.AppendLine("    /// <summary>Gets the current token type for a generated lexer action.</summary>");
+        sb.AppendLine("    private static string GetRequiredLexerType(LexerActionExecutionContext context)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        global::System.ArgumentNullException.ThrowIfNull(context);");
+        sb.AppendLine("        return context.TokenType;");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+        sb.AppendLine("    /// <summary>Gets the current token channel for a generated lexer action.</summary>");
+        sb.AppendLine("    private static string GetRequiredLexerChannel(LexerActionExecutionContext context)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        global::System.ArgumentNullException.ThrowIfNull(context);");
+        sb.AppendLine("        return context.Channel;");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+        sb.AppendLine("    /// <summary>Gets the active lexer mode for a generated lexer action.</summary>");
+        sb.AppendLine("    private static string GetRequiredLexerMode(LexerActionExecutionContext context)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        global::System.ArgumentNullException.ThrowIfNull(context);");
+        sb.AppendLine("        return context.Mode;");
+        sb.AppendLine("    }");
+        sb.AppendLine();
         sb.AppendLine("    /// <summary>Attempts to get the retained result for an assignment-labeled successful child call.</summary>");
         sb.AppendLine("    private static bool TryGetLabeledRuleCallResult(ParserRuleLifecycleContext context, string labelName, out global::Utils.Parser.Runtime.ParserRuleCallResult result)");
         sb.AppendLine("    {");

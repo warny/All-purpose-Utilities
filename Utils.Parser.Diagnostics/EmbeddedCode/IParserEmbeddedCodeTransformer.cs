@@ -110,7 +110,10 @@ public enum ParserEmbeddedCodeLocation
     LexerFooter = 9,
 
     /// <summary>Inline lexer action.</summary>
-    LexerInlineAction = 10
+    LexerInlineAction = 10,
+
+    /// <summary>Lexer semantic predicate.</summary>
+    LexerSemanticPredicate = 11
 }
 
 /// <summary>
