@@ -682,18 +682,25 @@ namespace Utils.NumberToString
         }
 
         /// <inheritdoc cref="INumberToStringConverter.ConvertOrdinal(int)"/>
-        public string ConvertOrdinal(int number) => ConvertOrdinal(number, []);
+        public string ConvertOrdinal(int number) => ConvertOrdinal((long)number, []);
 
         /// <inheritdoc cref="INumberToStringConverter.ConvertOrdinal(int, string[])"/>
-        public string ConvertOrdinal(int number, params string[] variants)
+        public string ConvertOrdinal(int number, params string[] variants) => ConvertOrdinal((long)number, variants);
+
+        /// <inheritdoc cref="INumberToStringConverter.ConvertOrdinal(long)"/>
+        public string ConvertOrdinal(long number) => ConvertOrdinal(number, []);
+
+        /// <inheritdoc cref="INumberToStringConverter.ConvertOrdinal(long, string[])"/>
+        public string ConvertOrdinal(long number, params string[] variants)
         {
             bool isNegative = number < 0;
-            int absNumber = Math.Abs(number);
+            long absNumber = Math.Abs(number);
             var activeVariants = BuildVariantQuery(variants);
 
-            // Plugin check: IOrdinalLanguageSpecifics takes highest priority
+            // Plugin only accepts int; skip for values outside int range
             if (LanguageSpecifics is IOrdinalLanguageSpecifics ordinalPlugin
-                && ordinalPlugin.TryConvertOrdinal(absNumber, activeVariants, out var pluginResult))
+                && absNumber <= int.MaxValue
+                && ordinalPlugin.TryConvertOrdinal((int)absNumber, activeVariants, out var pluginResult))
                 return isNegative ? Minus.Replace("*", pluginResult!) : pluginResult!;
 
             // Find the most specific matching ordinal variant

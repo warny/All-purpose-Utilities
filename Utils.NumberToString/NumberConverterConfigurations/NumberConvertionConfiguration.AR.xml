@@ -72,6 +72,21 @@
             <OrdinalException value="8"  string="ثامن" />
             <OrdinalException value="9"  string="تاسع" />
             <OrdinalException value="10" string="عاشر" />
+            <OrdinalVariants>
+                <!-- Forme féminine (muʾannath) pour 1-10 ; au-delà de 10 aucune exception n'est définie -->
+                <Variant type="gender" variant="muʾannath">
+                    <OrdinalException value="1"  string="أولى"   />
+                    <OrdinalException value="2"  string="ثانية"  />
+                    <OrdinalException value="3"  string="ثالثة"  />
+                    <OrdinalException value="4"  string="رابعة"  />
+                    <OrdinalException value="5"  string="خامسة"  />
+                    <OrdinalException value="6"  string="سادسة"  />
+                    <OrdinalException value="7"  string="سابعة"  />
+                    <OrdinalException value="8"  string="ثامنة"  />
+                    <OrdinalException value="9"  string="تاسعة"  />
+                    <OrdinalException value="10" string="عاشرة"  />
+                </Variant>
+            </OrdinalVariants>
         </Ordinals>
     </Language>
 </Numbers>

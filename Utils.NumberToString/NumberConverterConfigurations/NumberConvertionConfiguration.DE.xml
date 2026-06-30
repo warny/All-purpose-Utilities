@@ -32,7 +32,7 @@
 				<Digit digit="5" string="fünfzig" buildString="*undfünfzig" />
 				<Digit digit="6" string="sechzig" buildString="*undsechzig" />
 				<Digit digit="7" string="siebzig" buildString="*undsiebzig" />
-                                <Digit digit="8" string="achtzig" buildString="undachtzig" />
+				<Digit digit="8" string="achtzig" buildString="*undachtzig" />
 				<Digit digit="9" string="neunzig" buildString="*undneunzig" />
 			</Group>
 			<Group level="3">
@@ -170,5 +170,8 @@
 				</Variant>
 			</Variant>
 		</Variants>
+		<YearFormat hundredWord="hundert">
+			<SplitRange from="1100" to="1999" />
+		</YearFormat>
 	</Language>
 </Numbers>

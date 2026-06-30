@@ -101,5 +101,8 @@
             <Ordinal from="achttien"  to="achttiende" />
             <Ordinal from="negentien" to="negentiende" />
         </Ordinals>
+        <YearFormat hundredWord="honderd">
+            <SplitRange from="1100" to="1999" />
+        </YearFormat>
     </Language>
 </Numbers>

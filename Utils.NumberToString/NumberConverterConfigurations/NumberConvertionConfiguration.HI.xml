@@ -80,6 +80,17 @@
             <!-- 6 : forme irrégulière (छह → छठा, le suffixe वाँ ne s'applique pas) -->
             <Ordinal from="छह" to="छठा" />
             <!-- 5, 7-9 et tous les nombres suivants reçoivent le suffixe वाँ directement -->
+            <OrdinalVariants>
+                <!-- Forme féminine (strī-liṅg) : suffix वीं à la place de वाँ, formes irrégulières identiques sauf finale -->
+                <Variant type="gender" variant="strī" suffix="वीं">
+                    <OrdinalException value="1" string="पहली" />
+                    <OrdinalException value="2" string="दूसरी" />
+                    <OrdinalException value="3" string="तीसरी" />
+                    <OrdinalException value="4" string="चौथी" />
+                    <!-- 6 féminin : छह → छठी (override the base word rule छह→छठा) -->
+                    <Ordinal from="छह" to="छठी" />
+                </Variant>
+            </OrdinalVariants>
         </Ordinals>
     </Language>
 </Numbers>
