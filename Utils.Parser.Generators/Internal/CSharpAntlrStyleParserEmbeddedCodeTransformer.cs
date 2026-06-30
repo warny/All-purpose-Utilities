@@ -11,6 +11,7 @@ internal sealed class CSharpAntlrStyleParserEmbeddedCodeTransformer : IParserEmb
 {
     private readonly G4Grammar _grammar;
     private readonly IReadOnlyDictionary<string, G4Rule> _rules;
+    private readonly IReadOnlyDictionary<string, G4Rule> _lexerRules;
 
     /// <summary>
     /// Initializes a new transformer for one parsed grammar.
@@ -21,16 +22,37 @@ internal sealed class CSharpAntlrStyleParserEmbeddedCodeTransformer : IParserEmb
         if (grammar is null) throw new System.ArgumentNullException(nameof(grammar));
         _grammar = grammar;
         _rules = grammar.ParserRules.ToDictionary(static rule => rule.Name, System.StringComparer.Ordinal);
+        _lexerRules = grammar.LexerRules.Concat(grammar.ExtraModes.SelectMany(static mode => mode.Rules)).ToDictionary(static rule => rule.Name, System.StringComparer.Ordinal);
     }
 
     /// <inheritdoc />
     public ParserEmbeddedCodeTransformationResult Transform(ParserEmbeddedCodeTransformationContext context)
     {
         if (context is null) throw new System.ArgumentNullException(nameof(context));
+        if (context.Location is ParserEmbeddedCodeLocation.LexerInlineAction or ParserEmbeddedCodeLocation.LexerSemanticPredicate)
+        {
+            if (context.RuleName is null || !_lexerRules.ContainsKey(context.RuleName))
+            {
+                return new ParserEmbeddedCodeTransformationResult { Code = context.Code };
+            }
+
+            EmbeddedParserAttributeRewriteResult lexerResult = EmbeddedLexerAttributeRewriter.Rewrite(context.Code, context.Location == ParserEmbeddedCodeLocation.LexerSemanticPredicate);
+            return new ParserEmbeddedCodeTransformationResult
+            {
+                Code = lexerResult.Code,
+                Diagnostics = lexerResult.Errors.Select(static error => new ParserEmbeddedCodeDiagnostic
+                {
+                    Message = error,
+                    Severity = ParserEmbeddedCodeDiagnosticSeverity.Error,
+                    Code = "APU0105"
+                }).ToArray()
+            };
+        }
+
         if (context.RuleName is null || !_rules.TryGetValue(context.RuleName, out G4Rule? rule))
         {
             // Parser and lexer header/member/footer blocks are not tied to a current parser rule.
-            // ANTLR-style current-rule attribute rewriting is intentionally skipped there.
+            // ANTLR-style current-rule and lexer attribute rewriting is intentionally skipped there.
             return new ParserEmbeddedCodeTransformationResult { Code = context.Code };
         }
 

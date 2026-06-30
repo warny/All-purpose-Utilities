@@ -1,0 +1,348 @@
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Globalization;
+using System.Numerics;
+using System.Reflection;
+using System.Xml;
+using System.Xml.Serialization;
+
+namespace Utils.NumberToString
+{
+    public partial class NumberToStringConverter
+    {
+        static NumberToStringConverter()
+        {
+            InitializeConfigurations(
+                NumberConverterResources.NumberConvertionConfiguration_FR_fr_ca,
+                NumberConverterResources.NumberConvertionConfiguration_FR_be_ch,
+                NumberConverterResources.NumberConvertionConfiguration_DE,
+                NumberConverterResources.NumberConvertionConfiguration_DE_ch,
+                NumberConverterResources.NumberConvertionConfiguration_EN,
+                NumberConverterResources.NumberConvertionConfiguration_ES,
+                NumberConverterResources.NumberConvertionConfiguration_CA,
+                NumberConverterResources.NumberConvertionConfiguration_EU,
+                NumberConverterResources.NumberConvertionConfiguration_GL,
+                NumberConverterResources.NumberConvertionConfiguration_IT,
+                NumberConverterResources.NumberConvertionConfiguration_FI,
+                NumberConverterResources.NumberConvertionConfiguration_AR,
+                NumberConverterResources.NumberConvertionConfiguration_HE,
+                NumberConverterResources.NumberConvertionConfiguration_ZH,
+                NumberConverterResources.NumberConvertionConfiguration_KO,
+                NumberConverterResources.NumberConvertionConfiguration_JA,
+                NumberConverterResources.NumberConvertionConfiguration_PT,
+                NumberConverterResources.NumberConvertionConfiguration_PL,
+                NumberConverterResources.NumberConvertionConfiguration_HI,
+                NumberConverterResources.NumberConvertionConfiguration_EL,
+                NumberConverterResources.NumberConvertionConfiguration_NL,
+                NumberConverterResources.NumberConvertionConfiguration_RU,
+                NumberConverterResources.NumberConvertionConfiguration_ZU,
+                NumberConverterResources.NumberConvertionConfiguration_EE,
+                NumberConverterResources.NumberConvertionConfiguration_WO
+            );
+        }
+
+        // Caches configurations for different cultures
+        private static readonly Dictionary<string, NumberToStringConverter> CachedConfigurations = new(StringComparer.InvariantCultureIgnoreCase);
+
+        // Explicitly registered language-specifics instances, consulted before reflection
+        private static readonly Dictionary<string, INumberToStringLanguageSpecifics> _registeredSpecifics = new(StringComparer.Ordinal);
+
+        /// <summary>
+        /// Registers an <see cref="INumberToStringLanguageSpecifics"/> instance under a given type name
+        /// so that XML configurations referencing that name find it without reflection.
+        /// </summary>
+        /// <param name="typeName">
+        /// The type name as it appears in <c>&lt;LanguageSpecifics&gt;</c> elements (full or short name).
+        /// </param>
+        /// <param name="instance">The instance to register.</param>
+        public static void RegisterLanguageSpecifics(string typeName, INumberToStringLanguageSpecifics instance)
+        {
+            ArgumentNullException.ThrowIfNull(instance);
+            _registeredSpecifics[typeName] = instance;
+        }
+
+        /// <summary>
+        /// Loads number-to-string configurations embedded as XML strings.
+        /// Duplicate culture keys are silently ignored (first registration wins).
+        /// </summary>
+        /// <param name="configs">The XML documents describing language configurations.</param>
+        public static void InitializeConfigurations(params string[] configs)
+            => RegisterConfigurations((IEnumerable<string>)configs);
+
+        /// <summary>
+        /// Registers the provided language configurations for later lookup.
+        /// Duplicate culture keys are silently ignored (first registration wins).
+        /// </summary>
+        /// <param name="configs">The XML configuration documents to load.</param>
+        public static void RegisterConfigurations(IEnumerable<string> configs)
+        {
+            foreach (var configuration in configs)
+            {
+                var languages = ReadConfiguration(configuration);
+                foreach (var language in languages)
+                {
+                    CachedConfigurations.TryAdd(language.Key, language.Value);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Parses a configuration document into converter instances keyed by culture name.
+        /// </summary>
+        /// <param name="configuration">The XML configuration document.</param>
+        /// <returns>A dictionary mapping culture names to converters.</returns>
+        public static Dictionary<string, NumberToStringConverter> ReadConfiguration(string configuration)
+        {
+            XmlSerializer serializer = new XmlSerializer(typeof(Numbers), "Utils/NumberConvertionConfiguration.xsd");
+
+            Numbers obj;
+            using (StringReader reader = new StringReader(configuration))
+            {
+                obj = (Numbers)serializer.Deserialize(reader);
+            }
+
+            var result = new Dictionary<string, NumberToStringConverter>();
+            foreach (var language in obj.Languages)
+            {
+                foreach (var culture in language.Cultures)
+                {
+                    if (!result.ContainsKey(culture))
+                    {
+                        result.Add(culture, ReadConverter(language, culture));
+                    }
+                }
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Builds a converter for a specific language definition and culture identifier.
+        /// </summary>
+        /// <param name="language">The language definition deserialized from XML.</param>
+        /// <param name="languageIdentifier">The culture or language identifier currently bound to the converter.</param>
+        /// <returns>A configured <see cref="NumberToStringConverter"/> instance.</returns>
+        private static NumberToStringConverter ReadConverter(LanguageType language, string languageIdentifier)
+        {
+            var confScale = language.NumberScale;
+
+            var scale = new NumberScale(
+                confScale.StaticNames.Scales.OrderBy(n => n.Value).Select(n => n.StringValue).ToArray(),
+                confScale.Suffixes?.Values?.ToArray() ?? Array.Empty<string>(),
+                confScale.StartIndex,
+                confScale.VoidGroup,
+                confScale.GroupSeparator,
+                confScale.Scale0Prefixes?.Digits.OrderBy(n => n.Digit).Select(n => n.StringValue).ToArray(),
+                confScale.UnitsPrefixes?.Digits.OrderBy(n => n.Digit).Select(n => n.StringValue).ToArray(),
+                confScale.TensPrefixes?.Digits.OrderBy(n => n.Digit).Select(n => n.StringValue).ToArray(),
+                confScale.HundredsPrefixes?.Digits.OrderBy(n => n.Digit).Select(n => n.StringValue).ToArray(),
+                confScale.FirstLetterUpperCase
+            );
+
+            static IEnumerable<NumberToStringConverter.ReplacementRule> ParseReplacements(ReplacementsListType list) =>
+                list?.Replacements?.Select(r => new NumberToStringConverter.ReplacementRule(r.OldValue, r.NewValue, r.Scope))
+                ?? [];
+
+            static IReadOnlyList<NumberToStringConverter.VariantDimension> ParseVariantDimensions(VariantsType variants) =>
+                variants?.Dimensions?
+                    .Select(d => new NumberToStringConverter.VariantDimension(
+                        d.Name,
+                        d.ValuesRaw?.Split(',').Select(v => v.Trim()).Where(v => v.Length > 0).ToList()
+                            ?? new List<string>(),
+                        string.IsNullOrWhiteSpace(d.LocalName) ? null : d.LocalName.Trim()))
+                    .ToList()
+                ?? new List<NumberToStringConverter.VariantDimension>();
+
+            // Build a normalizer that maps both canonical name and localName to the canonical name.
+            // Used when loading variant constraints from XML attributes so that <Variant genus="…">
+            // and <Variant gender="…"> are treated identically after German was renamed.
+            var parsedDimensions = ParseVariantDimensions(language.Variants);
+            var nameNormalizer = parsedDimensions
+                .SelectMany(d => string.IsNullOrEmpty(d.LocalName)
+                    ? (IEnumerable<(string, string)>)[(d.Name, d.Name)]
+                    : [(d.Name, d.Name), (d.LocalName, d.Name)])
+                .ToDictionary(t => t.Item1, t => t.Item2, StringComparer.OrdinalIgnoreCase);
+
+            string NormalizeDimName(string raw) =>
+                nameNormalizer.TryGetValue(raw, out var canonical) ? canonical : raw;
+
+            IReadOnlyList<NumberToStringConverter.VariantRule> ParseVariantRules(VariantsType variants)
+            {
+                if (variants?.Variants == null || variants.Variants.Count == 0)
+                    return new List<NumberToStringConverter.VariantRule>();
+
+                var result = new List<NumberToStringConverter.VariantRule>();
+                foreach (var variant in variants.Variants)
+                    CollectVariantRules(variant, new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase), result);
+                return result;
+            }
+
+            void CollectVariantRules(
+                VariantType variant,
+                Dictionary<string, string> inheritedConstraints,
+                List<NumberToStringConverter.VariantRule> result)
+            {
+                var constraints = new Dictionary<string, string>(inheritedConstraints, StringComparer.OrdinalIgnoreCase);
+                if (!string.IsNullOrEmpty(variant.DimensionType) && !string.IsNullOrEmpty(variant.VariantValue))
+                    constraints[NormalizeDimName(variant.DimensionType)] = variant.VariantValue;
+
+                result.Add(new NumberToStringConverter.VariantRule(
+                    constraints,
+                    (variant.Replacements ?? [])
+                        .Select(r => new NumberToStringConverter.ReplacementRule(r.OldValue, r.NewValue, r.Scope))
+                        .ToList()));
+
+                foreach (var child in variant.NestedVariants ?? [])
+                    CollectVariantRules(child, constraints, result);
+            }
+
+            IReadOnlyList<NumberToStringConverter.OrdinalVariantRule> ParseOrdinalVariants(OrdinalsType? ordinals)
+            {
+                var container = ordinals?.OrdinalVariantsContainer;
+                if (container?.Variants == null || container.Variants.Count == 0)
+                    return new List<NumberToStringConverter.OrdinalVariantRule>();
+
+                var result = new List<NumberToStringConverter.OrdinalVariantRule>();
+                foreach (var variant in container.Variants)
+                    CollectOrdinalVariants(variant, new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase), result);
+                return result;
+            }
+
+            void CollectOrdinalVariants(
+                OrdinalVariantElementType variant,
+                Dictionary<string, string> inheritedConstraints,
+                List<NumberToStringConverter.OrdinalVariantRule> result)
+            {
+                var constraints = new Dictionary<string, string>(inheritedConstraints, StringComparer.OrdinalIgnoreCase);
+                if (!string.IsNullOrEmpty(variant.DimensionType) && !string.IsNullOrEmpty(variant.VariantValue))
+                    constraints[NormalizeDimName(variant.DimensionType)] = variant.VariantValue;
+
+                result.Add(new NumberToStringConverter.OrdinalVariantRule(
+                    constraints,
+                    variant.Exceptions?.ToDictionary(e => e.Value, e => e.StringValue) ?? new Dictionary<long, string>(),
+                    variant.Rules?.ToDictionary(r => r.From, r => r.To) ?? new Dictionary<string, string>(),
+                    variant.Suffix,
+                    variant.RemoveTrailing));
+
+                foreach (var child in variant.NestedVariants ?? [])
+                    CollectOrdinalVariants(child, constraints, result);
+            }
+
+            var options = new NumberToStringConverterOptions
+            {
+                Group = language.GroupSize,
+                Separator = language.Separator,
+                GroupSeparator = language.GroupSeparator,
+                Zero = language.Zero,
+                Minus = language.Minus,
+                DecimalSeparator = language.DecimalSeparator,
+                Groups = language.Groups.Groups.ToDictionary(g => g.Level, g => (DigitListType)g),
+                Exceptions = language.Exceptions?.Numbers?.ToDictionary(e => (long)e.Value, e => e.StringValue)
+                    ?? new Dictionary<long, string>(),
+                Replacements = ParseReplacements(language.Replacements),
+                Scale = scale,
+                LanguageSpecifics = ResolveLanguageSpecifics(language.LanguageSpecificsTypeName),
+                LanguageIdentifier = languageIdentifier,
+                Fractions = language.Fractions?.Fractions?.ToDictionary(f => f.Digits, f => f.StringValue)
+                    ?? new Dictionary<int, string>(),
+                MaxNumber = string.IsNullOrWhiteSpace(language.MaxNumber)
+                    ? null
+                    : BigInteger.Parse(language.MaxNumber, CultureInfo.InvariantCulture),
+                FractionSeparator = language.FractionSeparator,
+                OrdinalSuffix = language.Ordinals?.Suffix,
+                OrdinalRemoveTrailing = language.Ordinals?.RemoveTrailing,
+                OrdinalExceptions = language.Ordinals?.Exceptions?.ToDictionary(e => e.Value, e => e.StringValue)
+                    ?? new Dictionary<long, string>(),
+                OrdinalWordRules = language.Ordinals?.Rules?.ToDictionary(r => r.From, r => r.To)
+                    ?? new Dictionary<string, string>(),
+                OrdinalPrefix = language.Ordinals?.Prefix,
+                OrdinalVariants = ParseOrdinalVariants(language.Ordinals),
+                VariantDimensions = parsedDimensions,
+                VariantRules = ParseVariantRules(language.Variants),
+                YearFormat = language.YearFormat == null ? null : new YearFormatOptions(
+                    language.YearFormat.HundredWord,
+                    language.YearFormat.ZeroConnector,
+                    language.YearFormat.SplitRanges.Select(r => (r.From, r.To)).ToList()),
+            };
+
+            return new NumberToStringConverter(options);
+        }
+
+        /// <summary>
+        /// Resolves a language-specific finalizer from a configured type name.
+        /// Explicitly registered instances (via <see cref="RegisterLanguageSpecifics"/>) take
+        /// priority over the reflection-based lookup.
+        /// </summary>
+        /// <param name="typeName">The configured type name.</param>
+        /// <returns>The resolved instance, or a no-op implementation when the type cannot be resolved.</returns>
+        private static INumberToStringLanguageSpecifics ResolveLanguageSpecifics(string typeName)
+        {
+            if (string.IsNullOrWhiteSpace(typeName))
+            {
+                return new DefaultNumberToStringLanguageSpecifics();
+            }
+
+            if (_registeredSpecifics.TryGetValue(typeName, out var registered))
+            {
+                return registered;
+            }
+
+            Type specificsType = Type.GetType(typeName, throwOnError: false);
+            if (specificsType == null)
+            {
+                specificsType = AppDomain.CurrentDomain.GetAssemblies()
+                    .SelectMany(a => SafeGetTypes(a))
+                    .FirstOrDefault(t => string.Equals(t.FullName, typeName, StringComparison.Ordinal)
+                                         || string.Equals(t.Name, typeName, StringComparison.Ordinal));
+            }
+
+            if (specificsType == null
+                || !typeof(INumberToStringLanguageSpecifics).IsAssignableFrom(specificsType)
+                || specificsType.IsAbstract
+                || specificsType.IsInterface)
+            {
+                return new DefaultNumberToStringLanguageSpecifics();
+            }
+
+            return Activator.CreateInstance(specificsType) as INumberToStringLanguageSpecifics
+                   ?? new DefaultNumberToStringLanguageSpecifics();
+        }
+
+        /// <summary>
+        /// Safely enumerates types from an assembly.
+        /// </summary>
+        /// <param name="assembly">The assembly to inspect.</param>
+        /// <returns>The loadable types from <paramref name="assembly"/>.</returns>
+        private static IEnumerable<Type> SafeGetTypes(Assembly assembly)
+        {
+            try
+            {
+                return assembly.GetTypes();
+            }
+            catch (ReflectionTypeLoadException ex)
+            {
+                return ex.Types.Where(t => t != null);
+            }
+        }
+
+        /// <summary>
+        /// Retrieves a configuration resource by suffix from the embedded resource manager.
+        /// </summary>
+        /// <param name="suffix">The culture suffix that identifies the resource.</param>
+        /// <returns>The XML configuration content for the requested culture.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the configuration resource cannot be found.</exception>
+        private static string GetConfigurationResource(string suffix)
+        {
+            string resourceName = $"NumberConvertionConfiguration.{suffix}";
+            string? configuration = NumberConverterResources.ResourceManager.GetString(resourceName, NumberConverterResources.Culture);
+
+            if (configuration == null)
+            {
+                throw new InvalidOperationException($"Number conversion configuration resource '{resourceName}' was not found.");
+            }
+
+            return configuration;
+        }
+    }
+}

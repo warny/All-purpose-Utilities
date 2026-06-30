@@ -21,8 +21,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Compile Include="..\Utils\Mathematics\NumberToStringConverterOptions.cs" Link="Mathematics\NumberToStringConverterOptions.cs" />
-        <Compile Update="Mathematics\NumberConverterResources.Designer.cs">
+        <Compile Update="NumberConverterResources.Designer.cs">
             <DesignTime>true</DesignTime>
             <AutoGen>true</AutoGen>
             <DependentUpon>NumberConverterResources.resx</DependentUpon>
@@ -30,7 +29,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <EmbeddedResource Update="Mathematics\NumberConverterResources.resx">
+        <EmbeddedResource Update="NumberConverterResources.resx">
             <Generator>ResXFileCodeGenerator</Generator>
             <LastGenOutput>NumberConverterResources.Designer.cs</LastGenOutput>
         </EmbeddedResource>

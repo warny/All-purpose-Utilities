@@ -19,34 +19,35 @@ dotnet add package omy.Utils.NumberToString
 | EN, EN-uk, EN-us | English | ✓ | — (numbers are invariable) |
 | FR, FR-fr, FR-ca | French | ✓ | gender (masculin/feminin) |
 | FR-be, FR-ch | Belgian/Swiss French | ✓ | gender (masculin/feminin) |
-| DE | German | — | genus (maskulin/feminin/neutrum) × kasus (nominativ/akkusativ/dativ/genitiv) |
-| ES | Spanish | — | gender (masculino/femenino) |
-| IT | Italian | — | gender (maschile/femminile) |
-| PT | Portuguese | — | gender (masculino/feminino) |
-| PL | Polish | — | — (not yet implemented) |
+| DE, de-DE, de-AT | German (standard) | ✓ | genus (maskulin/feminin/neutrum) × kasus (nominativ/akkusativ/dativ/genitiv) |
+| de-CH, de-LI | Swiss/Liechtenstein German | ✓ | (same as DE; "ein tausend" not contracted to "tausend") |
+| ES | Spanish | ✓ | gender (masculino/femenino) |
+| IT | Italian | ✓ | gender (maschile/femminile) |
+| PT | Portuguese | ✓ | gender (masculino/feminino) |
+| PL | Polish | ✓ | — (numbers are invariable in common usage) |
 | NL | Dutch | ✓ | — (numbers are invariable) |
-| RU | Russian | — | — (cases not yet implemented) |
-| AR | Arabic | — | — (not yet implemented) |
-| HE | Hebrew | — | gender (standalone/zachar/nekeva) |
-| ZH | Chinese | — | — (no inflection) |
-| JA | Japanese | — | — (no inflection) |
-| KO | Korean | — | — (numbers are invariable) |
-| HI | Hindi | — | — (not yet implemented) |
-| EL | Greek | — | — (not yet implemented) |
-| FI | Finnish | — | sijamuoto (nominatiivi/partitiivi/genetiivi) |
-| CA | Catalan | — | gender (masculí/femení) |
+| RU | Russian | ✓ | — |
+| AR | Arabic | ✓ (1–10 masculine) | — |
+| HE | Hebrew | ✓ | gender (standalone/zachar/nekeva) |
+| ZH | Chinese | ✓ (prefix 第) | — (no inflection) |
+| JA | Japanese | ✓ (prefix 第) | — (no inflection) |
+| KO | Korean | ✓ (prefix 제) | — (no inflection) |
+| HI | Hindi | ✓ | — |
+| EL | Greek | ✓ | gender (αρσενικό/θηλυκό/ουδέτερο) for 1–12 |
+| FI | Finnish | ✓ | sijamuoto (nominatiivi/partitiivi/genetiivi) |
+| CA | Catalan | ✓ | gender (masculí/femení) |
 | EU | Basque | ✓ | — (no grammatical gender) |
-| GL | Galician | — | gender (masculino/feminino) |
+| GL | Galician | ✓ | gender (masculino/feminino) |
 | ZU | Zulu | — | — (not yet implemented) |
-| EE | Ewe | — | — (not yet implemented) |
-| WO | Wolof | — | — (not yet implemented) |
+| EE | Ewe | ✓ (prefix etsõ) | — |
+| WO | Wolof | ✓ | — |
 
 ---
 
 ## Basic conversion
 
 ```csharp
-using Utils.Mathematics;
+using Utils.NumberToString;
 
 NumberToStringConverter en = NumberToStringConverter.GetConverter("EN");
 NumberToStringConverter fr = NumberToStringConverter.GetConverter("FR");
@@ -88,7 +89,7 @@ fr.ConvertOrdinal(2);    // "deuxième"
 fr.ConvertOrdinal(5);    // "cinquième"     ← word rule: cinq → cinquième
 fr.ConvertOrdinal(9);    // "neuvième"      ← word rule: neuf → neuvième
 fr.ConvertOrdinal(21);   // "vingt et unième"
-fr.ConvertOrdinal(1000); // "millième"      ← stripTrailingE + suffix ième
+fr.ConvertOrdinal(1000); // "millième"      ← removeTrailing="e" + suffix ième
 ```
 
 ```csharp
@@ -96,7 +97,7 @@ NumberToStringConverter frBe = NumberToStringConverter.GetConverter("FR-be");
 
 frBe.ConvertOrdinal(1);   // "premier"           ← exception
 frBe.ConvertOrdinal(71);  // "septante et unième" ← Belgian 70 + word rule for "un"
-frBe.ConvertOrdinal(80);  // "huitantième"        ← Belgian 80 + stripTrailingE
+frBe.ConvertOrdinal(80);  // "huitantième"        ← Belgian 80 + removeTrailing="e"
 frBe.ConvertOrdinal(90);  // "nonantième"
 ```
 
@@ -122,16 +123,110 @@ eu.ConvertOrdinal(11);   // "hamaikagarren"       ← exception 11=hamaika + suf
 eu.ConvertOrdinal(21);   // "hogeita batgarren"   ← "bat" in compound gets suffix
 ```
 
+```csharp
+NumberToStringConverter de = NumberToStringConverter.GetConverter("DE");
+
+de.ConvertOrdinal(1);    // "erste"             ← irregular
+de.ConvertOrdinal(3);    // "dritte"            ← irregular
+de.ConvertOrdinal(7);    // "siebte"            ← irregular
+de.ConvertOrdinal(2);    // "zweite"            ← word rule
+de.ConvertOrdinal(20);   // "zwanzigste"        ← suffix "ste"
+de.ConvertOrdinal(21);   // "einundzwanzigste"  ← fused compound + suffix
+de.ConvertOrdinal(1000); // "tausendste"
+de.ConvertOrdinal(1001); // "tausend erste"     ← word rule "ein" → "erste"
+```
+
+```csharp
+NumberToStringConverter es = NumberToStringConverter.GetConverter("ES");
+
+es.ConvertOrdinal(1);                      // "primero"
+es.ConvertOrdinal(10);                     // "décimo"
+es.ConvertOrdinal(20);                     // "vigésimo"
+es.ConvertOrdinal(1,  "gender=femenino");  // "primera"
+es.ConvertOrdinal(20, "gender=femenino");  // "vigésima"
+```
+
+```csharp
+NumberToStringConverter it = NumberToStringConverter.GetConverter("IT");
+
+it.ConvertOrdinal(1);                        // "primo"
+it.ConvertOrdinal(11);                       // "undicesimo"
+it.ConvertOrdinal(20);                       // "ventesimo"
+it.ConvertOrdinal(1000);                     // "millesimo"
+it.ConvertOrdinal(1,    "gender=femminile"); // "prima"
+it.ConvertOrdinal(1000, "gender=femminile"); // "millesima"
+```
+
+```csharp
+NumberToStringConverter pt = NumberToStringConverter.GetConverter("PT");
+
+pt.ConvertOrdinal(1);                          // "primeiro"
+pt.ConvertOrdinal(11);                         // "décimo primeiro"   ← compound exception
+pt.ConvertOrdinal(1000);                       // "milésimo"
+pt.ConvertOrdinal(1,  "gender=feminino");      // "primeira"
+pt.ConvertOrdinal(21, "gender=feminino");      // "vinte e primeira"  ← feminine compound
+pt.ConvertOrdinal(22, "gender=feminino");      // "vinte e segunda"
+```
+
+```csharp
+NumberToStringConverter ca = NumberToStringConverter.GetConverter("CA");
+
+ca.ConvertOrdinal(1);                      // "primer"          ← exception
+ca.ConvertOrdinal(5);                      // "cinquè"          ← word rule
+ca.ConvertOrdinal(20);                     // "vintè"           ← suffix "è" (trailing "a" stripped)
+ca.ConvertOrdinal(1,  "gender=femení");    // "primera"
+ca.ConvertOrdinal(21, "gender=femení");    // "vint-i-unena"    ← feminine + suffix "ena"
+ca.ConvertOrdinal(22, "gender=femení");    // "vint-i-dosena"   ← word rule "dues" → "dosena"
+```
+
+```csharp
+NumberToStringConverter gl = NumberToStringConverter.GetConverter("GL");
+
+gl.ConvertOrdinal(1);                      // "primeiro"
+gl.ConvertOrdinal(12);                     // "duodécimo"        ← unique to Galician
+gl.ConvertOrdinal(20);                     // "vixésimo"
+gl.ConvertOrdinal(1,  "gender=feminino");  // "primeira"
+gl.ConvertOrdinal(21, "gender=feminino");  // "vinte e primeira" ← "unha" → "primeira"
+```
+
+```csharp
+NumberToStringConverter he = NumberToStringConverter.GetConverter("HE");
+
+he.ConvertOrdinal(1);                    // "ראשון"   ← masculine default
+he.ConvertOrdinal(10);                   // "עשירי"
+he.ConvertOrdinal(1, "gender=nekeva");   // "ראשונה"  ← feminine
+he.ConvertOrdinal(3, "gender=nekeva");   // "שלישית"
+he.ConvertOrdinal(20);                   // "עשרים"   ← above 10: cardinal fallback
+```
+
+```csharp
+// Prefix ordinals (ZH, JA, KO, EE)
+NumberToStringConverter.GetConverter("ZH").ConvertOrdinal(1);   // "第一"
+NumberToStringConverter.GetConverter("JA").ConvertOrdinal(3);   // "第三"
+NumberToStringConverter.GetConverter("KO").ConvertOrdinal(2);   // "제이"
+NumberToStringConverter.GetConverter("EE").ConvertOrdinal(1);   // "gbãtõ" ← irregular
+NumberToStringConverter.GetConverter("EE").ConvertOrdinal(2);   // "etsõ eve"
+```
+
+### `SupportsOrdinals`
+
+```csharp
+INumberToStringConverter conv = NumberToStringConverter.GetConverter("DE");
+if (conv.SupportsOrdinals)
+    Console.WriteLine(conv.ConvertOrdinal(5));  // "fünfte"
+```
+
+`SupportsOrdinals` returns `false` for languages that have no ordinal configuration (ZU…) and for any `INumberToStringConverter` implementation that does not override the default.
+
 > **Ordinal pipeline**: word-level rules are matched against the raw cardinal text, before
 > `AdjustFunction` and `INumberToStringLanguageSpecifics.FinalizeWriting` are applied.
 > `AdjustFunction` (and `FinalizeWriting`) then run on the ordinal result. This means a
 > converter with an uppercase `AdjustFunction` correctly produces `"TWENTY-FIRST"`, not
 > `"TWENTY-ONEth"`.
 
-> **Languages without ordinals**: DE, IT, ES, PT, CA, GL, FI, HE, RU, PL, ZH, JA, KO, AR,
-> HI, EL, ZU, EE, WO. German and Italian are technically feasible but their ordinals require
-> complex agreement (gender × case) or — for German — fused compounds that cannot be handled
-> with a single suffix in the current XML model.
+> **Languages without ordinals**: ZU (Zulu).
+> Zulu ordinals require noun-class agreement and are not yet implemented.
+> For languages that have ordinals, `converter.SupportsOrdinals` returns `true`.
 
 ---
 
@@ -466,14 +561,10 @@ is invariable in common contexts, or because the morphological distinction is no
 | ZH | Chinese | No inflection |
 | JA | Japanese | No inflection |
 | EU | Basque | No grammatical gender (language isolate) |
-| PL | Polish | Cases not yet implemented |
-| RU | Russian | Cases not yet implemented |
-| AR | Arabic | Not yet implemented |
-| HI | Hindi | Not yet implemented (Hindi has gender but numbers are often invariable in common usage) |
-| EL | Greek | Not yet implemented |
+| PL | Polish | Numbers are invariable in common usage (nominatif masculin only) |
+| HI | Hindi | Numbers are invariable in common usage |
 | ZU | Zulu | Not yet implemented |
 | EE | Ewe | Not yet implemented |
-| WO | Wolof | Not yet implemented |
 
 For all these languages, `VariantDimensions` returns an empty list and any parameter
 passed to `Convert()` is silently ignored.
@@ -483,7 +574,7 @@ passed to `Convert()` is silently ignored.
 ## Currency
 
 ```csharp
-using Utils.Mathematics;
+using Utils.NumberToString;
 
 var euro = new CurrencyDefinition
 {
@@ -569,6 +660,27 @@ NumberToStringConverter.RegisterLanguageSpecifics(
 ```
 
 The content of the `<LanguageSpecifics>` node in the XML must match the full or short name passed here.
+
+### `IOrdinalLanguageSpecifics`
+
+When the XML pipeline is insufficient (e.g. Semitic root-pattern morphology), implement `IOrdinalLanguageSpecifics` alongside `INumberToStringLanguageSpecifics`. `TryConvertOrdinal` is called first; returning `false` falls back to the XML pipeline.
+
+```csharp
+public class MyOrdinalSpecifics : INumberToStringLanguageSpecifics, IOrdinalLanguageSpecifics
+{
+    public string FinalizeWriting(string lang, string text) => text;
+
+    public bool TryConvertOrdinal(
+        int number,
+        IReadOnlyDictionary<string, string> variants,
+        out string? result)
+    {
+        if (number == 0) { result = null; return false; }
+        result = $"ordinal_{number}";
+        return true;
+    }
+}
+```
 
 ### `GermanNumberToStringLanguageSpecifics`
 
@@ -801,10 +913,10 @@ Allow the decimal part of a number to be expressed with a named denominator.
 ### `<Ordinals>` — ordinal conversion
 
 Required to enable `ConvertOrdinal()`. Resolution priority:
-`OrdinalException` → `Ordinal` rule (last word) → suffix (± strip trailing `e`).
+`OrdinalException` → `Ordinal` rule (last word) → suffix (± strip trailing string).
 
 ```xml
-<Ordinals suffix="ième" stripTrailingE="true">
+<Ordinals suffix="ième" removeTrailing="e">
 
     <!-- Whole-number exceptions (highest priority) -->
     <OrdinalException value="1" string="premier" />
@@ -814,7 +926,7 @@ Required to enable `ConvertOrdinal()`. Resolution priority:
     <Ordinal from="cinq" to="cinquième" />
     <Ordinal from="neuf" to="neuvième" />
 
-    <!-- All others: last word + strip 'e' + "ième"  -->
+    <!-- All others: last word + strip "e" + "ième"  -->
     <!-- "quatre" → "quatr" + "ième" → "quatrième"  -->
     <!-- "mille"  → "mill"  + "ième" → "millième"   -->
 
@@ -823,8 +935,41 @@ Required to enable `ConvertOrdinal()`. Resolution priority:
 
 | Attribute | Description |
 |-----------|-------------|
-| `suffix` | Suffix added when no rule matches. |
-| `stripTrailingE` | If `true`, strips the trailing `e` from the last word before adding `suffix`. |
+| `suffix` | Suffix added to the last word when no rule matches. |
+| `removeTrailing` | String to strip from the end of the last word before adding `suffix` (only when the word ends with this value). |
+| `prefix` | String prepended to the entire ordinal result (e.g. `"第"` for Chinese, `"etsõ "` for Ewe). When `prefix` is set, suffix and word rules are ignored. |
+
+```xml
+<!-- Prefix-based ordinals (ZH, JA, KO, EE) -->
+<Ordinals prefix="第">
+    <!-- All numbers: "第" + cardinal -->
+    <!-- Exception: the prefix is added after AdjustFunction, before sign wrapping -->
+</Ordinals>
+
+<!-- Mixed prefix + exception (EE) -->
+<Ordinals prefix="etsõ ">
+    <OrdinalException value="1" string="gbãtõ" />
+    <!-- 1 → "gbãtõ" (exception wins); 2 → "etsõ eve" (prefix + cardinal) -->
+</Ordinals>
+```
+
+Variant-specific ordinal rules (`<OrdinalVariants>`) allow a single ordinal configuration to
+produce gender- or case-inflected ordinals. Resolution order: **variant exceptions → base
+exceptions → cardinal → variant word rules → base word rules → suffix/prefix**.
+
+```xml
+<Ordinals suffix="ième" removeTrailing="e">
+    <OrdinalException value="1" string="premier" />
+    <Ordinal from="cinq" to="cinquième" />
+
+    <OrdinalVariants>
+        <Variant type="gender" variant="féminin">
+            <OrdinalException value="1" string="première" />
+            <Ordinal from="cinq" to="cinquième" />  <!-- suffix -e for feminine -->
+        </Variant>
+    </OrdinalVariants>
+</Ordinals>
+```
 
 ---
 

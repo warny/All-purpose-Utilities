@@ -705,3 +705,10 @@ Future test families to plan before implementation:
 - A simple lexer predicate in a later explicitly enabled generated-C# path.
 - Interactions between lexer inline actions, lexer predicates, and `@lexer::members`.
 - No lexer-code execution through conservative `Parse(...)`.
+
+
+## Recent documentation note: generated-C# lexer attributes
+
+**Status: mostly complete. Ongoing maintenance required.**
+
+The generated-C# opt-in embedded-code path has a bounded lexer `$...` rewrite architecture through the optional C# transformer and `EmbeddedLexerAttributeRewriter`. Inline lexer actions support read-only `$text`, `$type`, `$channel`, and `$mode` helpers. `$text` reads `LexerActionExecutionContext.Text` via `GetRequiredLexerText(context)` and is now locked by tests as accepted token/chunk context text: fragments and lexer rule references receive context-level accepted text, `skip`/`type(...)`/`channel(...)` read before commands apply, and `more` reads the current accepted chunk before final accumulation. Lexer attribute writes and lexer predicate attributes remain unsupported with deterministic diagnostics. Future work must keep runtime-inline lexer execution and full ANTLR lexer attribute compatibility out of scope until a dedicated mutable action-result design exists.

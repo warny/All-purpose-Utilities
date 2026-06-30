@@ -1,0 +1,174 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+        <Language
+                groupSize="3"
+                separator=" "
+                groupSeparator=""
+                zero="null"
+                minus="minus *"
+                decimalSeparator="komma"
+                fractionSeparator="durch"
+        >
+		<Culture>DE</Culture>
+		<Groups>
+			<Group level="1">
+				<Digit digit="0" string="" />
+				<Digit digit="1" string="ein" />
+				<Digit digit="2" string="zwei" />
+				<Digit digit="3" string="drei" />
+				<Digit digit="4" string="vier" />
+				<Digit digit="5" string="fünf" />
+				<Digit digit="6" string="sechs" />
+				<Digit digit="7" string="sieben" />
+				<Digit digit="8" string="acht" />
+				<Digit digit="9" string="neun" />
+			</Group>
+			<Group level="2">
+				<Digit digit="0" string="" buildString="*" />
+				<Digit digit="1" string="zehn" buildString="*zehn" />
+				<Digit digit="2" string="zwanzig" buildString="*undzwanzig" />
+                                <Digit digit="3" string="dreißig" buildString="*unddreißig" />
+				<Digit digit="4" string="vierzig" buildString="*undvierzig" />
+				<Digit digit="5" string="fünfzig" buildString="*undfünfzig" />
+				<Digit digit="6" string="sechzig" buildString="*undsechzig" />
+				<Digit digit="7" string="siebzig" buildString="*undsiebzig" />
+                                <Digit digit="8" string="achtzig" buildString="undachtzig" />
+				<Digit digit="9" string="neunzig" buildString="*undneunzig" />
+			</Group>
+			<Group level="3">
+				<Digit digit="0" string="" buildString="*" />
+				<Digit digit="1" string="einhundert" buildString="einhundert*" />
+				<Digit digit="2" string="zweihundert" buildString="zweihundert*" />
+				<Digit digit="3" string="dreihundert" buildString="dreihundert*" />
+				<Digit digit="4" string="vierhundert" buildString="vierhundert*" />
+				<Digit digit="5" string="fünfhundert" buildString="fünfhundert*" />
+				<Digit digit="6" string="sechshundert" buildString="sechshundert*" />
+				<Digit digit="7" string="siebenhundert" buildString="siebenhundert*" />
+				<Digit digit="8" string="achthundert" buildString="achthundert*" />
+				<Digit digit="9" string="neunhundert" buildString="neunhundert*" />
+			</Group>
+		</Groups>
+		<NumberScale firstLetterUpperCase="true">
+			<StaticNames>
+				<Scale value="0" string=""/>
+				<Scale value="1" string="tausend"/>
+			</StaticNames>
+			<Suffixes>
+				<Suffix>on(en)</Suffix>
+				<Suffix>arde(n)</Suffix>
+			</Suffixes>
+			<TensPrefixes>
+				<Digit digit="0" string=""/>
+				<Digit digit="1" string="(n)dezi"/>
+				<Digit digit="2" string="(ms)vingti"/>
+				<Digit digit="3" string="(ns)triginta"/>
+				<Digit digit="4" string="(ns)quadraginta"/>
+				<Digit digit="5" string="(ns)quinquaginta"/>
+				<Digit digit="6" string="(n)sexaginta"/>
+				<Digit digit="7" string="(n)septuaginta"/>
+				<Digit digit="8" string="(mxs)octoginta"/>
+				<Digit digit="9" string="nonaginta"/>
+			</TensPrefixes>
+		</NumberScale>
+		<Replacements>
+			<Replacement oldValue="ein tausend" newValue="tausend" />
+		</Replacements>
+		<Exceptions>
+			<Number value="11" string="elf" />
+			<Number value="12" string="zwölf" />
+			<Number value="16" string="sechzehn" />
+			<Number value="17" string="siebzehn" />
+		</Exceptions>
+		<LanguageSpecifics>GermanNumberToStringLanguageSpecifics</LanguageSpecifics>
+		<!--
+		  German ordinals: 1, 3, 7, 8 are fully irregular; 2, 4-6, 9-19 follow a
+		  "-te" pattern with minor stem changes; 20+ take "-ste" (default suffix).
+		  Word rules cover units and teens when they appear as space-separated last
+		  words inside compounds (e.g. "tausend drei" → "tausend dritte").
+		  German ordinal declension (gender × case) is adjectival and cannot be
+		  expressed as simple replacements; only the uninflected stem form is provided.
+		-->
+		<Ordinals suffix="ste">
+			<!-- Irregular ordinals -->
+			<OrdinalException value="1"  string="erste" />
+			<OrdinalException value="3"  string="dritte" />
+			<OrdinalException value="7"  string="siebte" />
+			<OrdinalException value="8"  string="achte" />
+			<!-- Word rules for 1-19 units (apply when space-separated last word) -->
+			<Ordinal from="ein"      to="erste" />
+			<Ordinal from="zwei"     to="zweite" />
+			<Ordinal from="drei"     to="dritte" />
+			<Ordinal from="vier"     to="vierte" />
+			<Ordinal from="fünf"     to="fünfte" />
+			<Ordinal from="sechs"    to="sechste" />
+			<Ordinal from="sieben"   to="siebte" />
+			<Ordinal from="acht"     to="achte" />
+			<Ordinal from="neun"     to="neunte" />
+			<Ordinal from="zehn"     to="zehnte" />
+			<Ordinal from="elf"      to="elfte" />
+			<Ordinal from="zwölf"    to="zwölfte" />
+			<Ordinal from="dreizehn" to="dreizehnte" />
+			<Ordinal from="vierzehn" to="vierzehnte" />
+			<Ordinal from="fünfzehn" to="fünfzehnte" />
+			<Ordinal from="sechzehn" to="sechzehnte" />
+			<Ordinal from="siebzehn" to="siebzehnte" />
+			<Ordinal from="achtzehn" to="achtzehnte" />
+			<Ordinal from="neunzehn" to="neunzehnte" />
+		</Ordinals>
+		<Variants>
+			<!--
+			  Declension of "ein" (the only variable digit in German).
+			  Compound words (einundzwanzig…) are not declined.
+
+			  Rule order: genus=feminin must be declared FIRST because the
+			  single-constraint kasus=dativ/genitiv rules look for "ein".
+			  If genus=feminin transforms "ein"→"eine" first, the two-constraint
+			  overrides (kasus+genus=feminin) correctly target "eine".
+
+			  Full inflection table:
+			    Nominativ : maskulin=ein→eins*, feminin=eine, neutrum=ein→eins*
+			    Akkusativ : maskulin=einen,     feminin=eine, neutrum=ein→eins*
+			    Dativ     : maskulin=einem,     feminin=einer, neutrum=einem
+			    Genitiv   : maskulin=eines,     feminin=einer, neutrum=eines
+
+			  * GermanNumberToStringLanguageSpecifics converts standalone "ein" → "eins"
+			    (counting form). Adjectival "ein" forms (e.g. Akk Neutr) also become
+			    "eins" as they are indistinguishable without syntactic context.
+			-->
+			<Dimension name="gender" localName="genus" values="maskulin,feminin,neutrum" />
+			<Dimension name="case" localName="kasus" values="nominativ,akkusativ,dativ,genitiv" />
+
+			<!-- gender=feminin (Nom/Akk) → "eine";
+			     dativ/genitiv sub-variants handle the feminine case overrides -->
+			<Variant type="gender" variant="feminin">
+				<Replacement oldValue="ein" newValue="eine" scope="LastWord" />
+				<!-- Dativ feminin → "einer" (oldValue="eine": parent rule already applied) -->
+				<Variant type="case" variant="dativ">
+					<Replacement oldValue="eine" newValue="einer" scope="LastWord" />
+				</Variant>
+				<!-- Genitiv feminin → "einer" -->
+				<Variant type="case" variant="genitiv">
+					<Replacement oldValue="eine" newValue="einer" scope="LastWord" />
+				</Variant>
+			</Variant>
+
+			<!-- case=dativ (maskulin/neutrum): ein → "einem"
+			     (feminin+dativ is handled by the nested variant above) -->
+			<Variant type="case" variant="dativ">
+				<Replacement oldValue="ein" newValue="einem" scope="LastWord" />
+			</Variant>
+
+			<!-- case=genitiv (maskulin/neutrum): ein → "eines" -->
+			<Variant type="case" variant="genitiv">
+				<Replacement oldValue="ein" newValue="eines" scope="LastWord" />
+			</Variant>
+
+			<!-- gender=maskulin + case=akkusativ: ein → "einen" -->
+			<Variant type="gender" variant="maskulin">
+				<Variant type="case" variant="akkusativ">
+					<Replacement oldValue="ein" newValue="einen" scope="LastWord" />
+				</Variant>
+			</Variant>
+		</Variants>
+	</Language>
+</Numbers>

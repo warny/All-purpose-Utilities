@@ -61,7 +61,7 @@ internal static partial class GrammarEmitter
 
         foreach (var hook in hooks)
         {
-            hook.EmittedCode = TransformEmbeddedCode(transformer, hook.Code, hook.IsPredicate ? ParserEmbeddedCodeLocation.SemanticPredicate : ParserEmbeddedCodeLocation.LexerInlineAction, grammar, null);
+            hook.EmittedCode = TransformEmbeddedCode(transformer, hook.Code, hook.IsPredicate ? ParserEmbeddedCodeLocation.LexerSemanticPredicate : ParserEmbeddedCodeLocation.LexerInlineAction, grammar, new G4Rule { Name = hook.RuleName });
         }
 
         return hooks;

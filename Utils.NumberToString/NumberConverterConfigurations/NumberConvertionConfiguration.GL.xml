@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+        <Language
+                groupSize="3"
+                separator=" "
+                groupSeparator=""
+                zero="cero"
+                minus="menos *"
+                decimalSeparator="coma"
+                fractionSeparator="sobre"
+        >
+                <Culture>GL</Culture>
+                <Culture>gl-ES</Culture>
+                <Groups>
+                        <Group level="1">
+                                <Digit digit="0" string="" />
+                                <Digit digit="1" string="un" />
+                                <Digit digit="2" string="dous" />
+                                <Digit digit="3" string="tres" />
+                                <Digit digit="4" string="catro" />
+                                <Digit digit="5" string="cinco" />
+                                <Digit digit="6" string="seis" />
+                                <Digit digit="7" string="sete" />
+                                <Digit digit="8" string="oito" />
+                                <Digit digit="9" string="nove" />
+                        </Group>
+                        <Group level="2">
+                                <Digit digit="0" string="" buildString="*" />
+                                <Digit digit="1" string="dez" buildString="dez *" />
+                                <Digit digit="2" string="vinte" buildString="vinte e *" />
+                                <Digit digit="3" string="trinta" buildString="trinta e *" />
+                                <Digit digit="4" string="corenta" buildString="corenta e *" />
+                                <Digit digit="5" string="cincuenta" buildString="cincuenta e *" />
+                                <Digit digit="6" string="sesenta" buildString="sesenta e *" />
+                                <Digit digit="7" string="setenta" buildString="setenta e *" />
+                                <Digit digit="8" string="oitenta" buildString="oitenta e *" />
+                                <Digit digit="9" string="noventa" buildString="noventa e *" />
+                        </Group>
+                        <Group level="3">
+                                <Digit digit="0" string="" buildString="*" />
+                                <Digit digit="1" string="cen" buildString="cento *" />
+                                <Digit digit="2" string="douscentos" buildString="douscentos *" />
+                                <Digit digit="3" string="trescentos" buildString="trescentos *" />
+                                <Digit digit="4" string="catrocentos" buildString="catrocentos *" />
+                                <Digit digit="5" string="cincocentos" buildString="cincocentos *" />
+                                <Digit digit="6" string="seiscentos" buildString="seiscentos *" />
+                                <Digit digit="7" string="setecentos" buildString="setecentos *" />
+                                <Digit digit="8" string="oitocentos" buildString="oitocentos *" />
+                                <Digit digit="9" string="novecentos" buildString="novecentos *" />
+                        </Group>
+                </Groups>
+                <NumberScale firstLetterUpperCase="false">
+                        <StaticNames>
+                                <Scale value="0" string="" />
+                                <Scale value="1" string="mil" />
+                                <Scale value="2" string="mill(ón|óns)" />
+                                <Scale value="3" string="mil mill(ón|óns)" />
+                        </StaticNames>
+                        <Suffixes>
+                                <Suffix>(ón|óns)</Suffix>
+                        </Suffixes>
+                </NumberScale>
+                <Replacements>
+                        <Replacement oldValue="un mil" newValue="mil" />
+                </Replacements>
+		<Exceptions>
+			<Number value="11" string="once" />
+			<Number value="12" string="doce" />
+			<Number value="13" string="trece" />
+			<Number value="14" string="catorce" />
+			<Number value="15" string="quince" />
+			<Number value="16" string="dezaseis" />
+			<Number value="17" string="dezasete" />
+			<Number value="18" string="dezaoito" />
+			<Number value="19" string="dezanove" />
+		</Exceptions>
+		<!--
+		  Galician ordinals: 1-12 use Latin-derived forms; above 12 the system falls
+		  back to the cardinal. Round tens and scale words have explicit word rules.
+		  The feminine variant supplies the feminine ordinal forms for all covered
+		  words, including the feminized unit forms produced by the cardinal variant
+		  ("un→unha", "dous→dúas").
+		-->
+		<Ordinals>
+			<!-- Masculine ordinals 1-12 (irregular) -->
+			<OrdinalException value="1"  string="primeiro" />
+			<OrdinalException value="2"  string="segundo" />
+			<OrdinalException value="3"  string="terceiro" />
+			<OrdinalException value="4"  string="cuarto" />
+			<OrdinalException value="5"  string="quinto" />
+			<OrdinalException value="6"  string="sexto" />
+			<OrdinalException value="7"  string="sétimo" />
+			<OrdinalException value="8"  string="oitavo" />
+			<OrdinalException value="9"  string="noveno" />
+			<OrdinalException value="10" string="décimo" />
+			<OrdinalException value="11" string="undécimo" />
+			<OrdinalException value="12" string="duodécimo" />
+			<!-- Word rules for units in compounds -->
+			<Ordinal from="un"    to="primeiro" />
+			<Ordinal from="dous"  to="segundo" />
+			<Ordinal from="tres"  to="terceiro" />
+			<Ordinal from="catro" to="cuarto" />
+			<Ordinal from="cinco" to="quinto" />
+			<Ordinal from="seis"  to="sexto" />
+			<Ordinal from="sete"  to="sétimo" />
+			<Ordinal from="oito"  to="oitavo" />
+			<Ordinal from="nove"  to="noveno" />
+			<Ordinal from="dez"   to="décimo" />
+			<!-- Round tens -->
+			<Ordinal from="vinte"     to="vixésimo" />
+			<Ordinal from="trinta"    to="trixésimo" />
+			<Ordinal from="corenta"   to="cuadragésimo" />
+			<Ordinal from="cincuenta" to="quincuagésimo" />
+			<Ordinal from="sesenta"   to="sexagésimo" />
+			<Ordinal from="setenta"   to="septuagésimo" />
+			<Ordinal from="oitenta"   to="octogésimo" />
+			<Ordinal from="noventa"   to="nonaxésimo" />
+			<!-- Scale words -->
+			<Ordinal from="cen" to="centésimo" />
+			<Ordinal from="mil" to="milésimo" />
+
+			<!-- Feminine variant -->
+			<OrdinalVariants>
+				<Variant type="gender" variant="feminino">
+					<OrdinalException value="1"  string="primeira" />
+					<OrdinalException value="2"  string="segunda" />
+					<OrdinalException value="3"  string="terceira" />
+					<OrdinalException value="4"  string="cuarta" />
+					<OrdinalException value="5"  string="quinta" />
+					<OrdinalException value="6"  string="sexta" />
+					<OrdinalException value="7"  string="sétima" />
+					<OrdinalException value="8"  string="oitava" />
+					<OrdinalException value="9"  string="novena" />
+					<OrdinalException value="10" string="décima" />
+					<OrdinalException value="11" string="undécima" />
+					<OrdinalException value="12" string="duodécima" />
+					<!-- Original masculine cardinal forms (for cases not transformed by cardinal variant) -->
+					<Ordinal from="un"    to="primeira" />
+					<Ordinal from="dous"  to="segunda" />
+					<Ordinal from="tres"  to="terceira" />
+					<Ordinal from="catro" to="cuarta" />
+					<Ordinal from="cinco" to="quinta" />
+					<Ordinal from="seis"  to="sexta" />
+					<Ordinal from="sete"  to="sétima" />
+					<Ordinal from="oito"  to="oitava" />
+					<Ordinal from="nove"  to="novena" />
+					<Ordinal from="dez"   to="décima" />
+					<!-- Feminized unit forms (after cardinal "un→unha", "dous→dúas") -->
+					<Ordinal from="unha"  to="primeira" />
+					<Ordinal from="dúas"  to="segunda" />
+					<!-- Round tens (feminine) -->
+					<Ordinal from="vinte"     to="vixésima" />
+					<Ordinal from="trinta"    to="trixésima" />
+					<Ordinal from="corenta"   to="cuadragésima" />
+					<Ordinal from="cincuenta" to="quincuagésima" />
+					<Ordinal from="sesenta"   to="sexagésima" />
+					<Ordinal from="setenta"   to="septuagésima" />
+					<Ordinal from="oitenta"   to="octogésima" />
+					<Ordinal from="noventa"   to="nonaxésima" />
+					<!-- Scale words (feminine) -->
+					<Ordinal from="cen" to="centésima" />
+					<Ordinal from="mil" to="milésima" />
+				</Variant>
+			</OrdinalVariants>
+		</Ordinals>
+		<Variants>
+			<!--
+			  Galician uses spaces for compounds ("vinte e un", "trinta e dous"…):
+			  LastWord works for all forms.
+			  1 : un (m) / unha (f)
+			  2 : dous (m) / dúas (f)
+			  200 : douscentos (m) / douscentas (f) — only hundred that varies.
+			  All other hundreds (trescentos…) are invariable in Galician.
+			  Limitation: the multiplier before "mil" (e.g. "dous mil") is not
+			  changed because the last word is "mil".
+			-->
+			<Dimension name="gender" localName="xénero" values="masculino,feminino" />
+
+			<Variant type="gender" variant="feminino">
+				<!-- Gender-variable units -->
+				<Replacement oldValue="un"   newValue="unha" scope="LastWord" />
+				<Replacement oldValue="dous" newValue="dúas" scope="LastWord" />
+				<!-- 200: only variable hundred in Galician -->
+				<Replacement oldValue="douscentos" newValue="douscentas" scope="Anywhere" />
+			</Variant>
+		</Variants>
+	</Language>
+</Numbers>

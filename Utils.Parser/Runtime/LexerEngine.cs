@@ -86,7 +86,7 @@ public sealed class LexerEngine(ParserDefinition definition, ParserRuntimeFeatur
             input.Consume(match.Length);
             var token = new Token(match, rule!.Name, mode.Name, DefaultChannel, tokenText);
 
-            ExecuteLexerActions(actions);
+            ExecuteLexerActions(actions, token);
             bool skip = ExecuteLexerCommands(commands, ref token, diagnostics, filePath);
             if (rule.IsFragment || skip)
             {
@@ -534,11 +534,11 @@ public sealed class LexerEngine(ParserDefinition definition, ParserRuntimeFeatur
     }
 
     /// <summary>Executes accepted lexer inline actions through the explicit runtime policy.</summary>
-    private void ExecuteLexerActions(IReadOnlyList<LexerActionOccurrence> actions)
+    private void ExecuteLexerActions(IReadOnlyList<LexerActionOccurrence> actions, Token token)
     {
         foreach (var action in actions)
         {
-            _runtimeFeaturePolicy.LexerActionExecutor.Execute(new LexerActionExecutionContext(action.Rule, action.ActionCode, action.AlternativeIndex, action.ElementIndex));
+            _runtimeFeaturePolicy.LexerActionExecutor.Execute(new LexerActionExecutionContext(action.Rule, action.ActionCode, action.AlternativeIndex, action.ElementIndex, token.Text, token.RuleName, token.Channel, token.ModeName));
         }
     }
 

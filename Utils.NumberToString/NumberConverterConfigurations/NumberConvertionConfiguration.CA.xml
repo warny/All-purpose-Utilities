@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+        <Language
+                groupSize="3"
+                separator=" "
+                groupSeparator=""
+                zero="zero"
+                minus="menys *"
+                decimalSeparator="coma"
+                fractionSeparator="partit per"
+        >
+                <Culture>CA</Culture>
+                <Culture>ca-ES</Culture>
+                <Culture>ca-ES-valencia</Culture>
+                <Groups>
+                        <Group level="1">
+                                <Digit digit="0" string="" />
+                                <Digit digit="1" string="un" />
+                                <Digit digit="2" string="dos" />
+                                <Digit digit="3" string="tres" />
+                                <Digit digit="4" string="quatre" />
+                                <Digit digit="5" string="cinc" />
+                                <Digit digit="6" string="sis" />
+                                <Digit digit="7" string="set" />
+                                <Digit digit="8" string="vuit" />
+                                <Digit digit="9" string="nou" />
+                        </Group>
+                        <Group level="2">
+                                <Digit digit="0" string="" buildString="*" />
+                                <Digit digit="1" string="deu" buildString="deu i *" />
+                                <Digit digit="2" string="vint" buildString="vint-i-*" />
+                                <Digit digit="3" string="trenta" buildString="trenta-*" />
+                                <Digit digit="4" string="quaranta" buildString="quaranta-*" />
+                                <Digit digit="5" string="cinquanta" buildString="cinquanta-*" />
+                                <Digit digit="6" string="seixanta" buildString="seixanta-*" />
+                                <Digit digit="7" string="setanta" buildString="setanta-*" />
+                                <Digit digit="8" string="vuitanta" buildString="vuitanta-*" />
+                                <Digit digit="9" string="noranta" buildString="noranta-*" />
+                        </Group>
+                        <Group level="3">
+                                <Digit digit="0" string="" buildString="*" />
+                                <Digit digit="1" string="cent" buildString="cent *" />
+                                <Digit digit="2" string="dos-cents" buildString="dos-cents *" />
+                                <Digit digit="3" string="tres-cents" buildString="tres-cents *" />
+                                <Digit digit="4" string="quatre-cents" buildString="quatre-cents *" />
+                                <Digit digit="5" string="cinc-cents" buildString="cinc-cents *" />
+                                <Digit digit="6" string="sis-cents" buildString="sis-cents *" />
+                                <Digit digit="7" string="set-cents" buildString="set-cents *" />
+                                <Digit digit="8" string="vuit-cents" buildString="vuit-cents *" />
+                                <Digit digit="9" string="nou-cents" buildString="nou-cents *" />
+                        </Group>
+                </Groups>
+                <NumberScale firstLetterUpperCase="false">
+                        <StaticNames>
+                                <Scale value="0" string="" />
+                                <Scale value="1" string="mil" />
+                                <Scale value="2" string="milió(ns)" />
+                                <Scale value="3" string="mil milió(ns)" />
+                        </StaticNames>
+                        <Suffixes>
+                                <Suffix>(ó|ons)</Suffix>
+                        </Suffixes>
+                </NumberScale>
+                <Replacements>
+                        <Replacement oldValue="un mil" newValue="mil" />
+                </Replacements>
+		<Exceptions>
+			<Number value="11" string="onze" />
+			<Number value="12" string="dotze" />
+			<Number value="13" string="tretze" />
+			<Number value="14" string="catorze" />
+			<Number value="15" string="quinze" />
+			<Number value="16" string="setze" />
+			<Number value="17" string="disset" />
+			<Number value="18" string="divuit" />
+			<Number value="19" string="dinou" />
+		</Exceptions>
+		<!--
+		  Catalan ordinals: 1-4 are irregular; 5-19 have specific stem changes;
+		  20+ take suffix "-è" (masc) / "-ena" (fem) with trailing "a" removed.
+		  Compound numbers use hyphens as word boundaries, so the ordinal suffix
+		  applies to the last hyphenated component automatically.
+		  The feminine variant supplies the feminized unit forms (cinc→cinquena…)
+		  and handles "dues" (from cardinal "dos→dues") correctly.
+		-->
+		<Ordinals suffix="è" removeTrailing="a">
+			<!-- Irregular masculine 1-4 -->
+			<OrdinalException value="1"  string="primer" />
+			<OrdinalException value="2"  string="segon" />
+			<OrdinalException value="3"  string="tercer" />
+			<OrdinalException value="4"  string="quart" />
+			<!-- Word rules 5-19 (cardinal form → masculine ordinal) -->
+			<Ordinal from="cinc"    to="cinquè" />
+			<Ordinal from="sis"     to="sisè" />
+			<Ordinal from="set"     to="setè" />
+			<Ordinal from="vuit"    to="vuitè" />
+			<Ordinal from="nou"     to="novè" />
+			<Ordinal from="deu"     to="desè" />
+			<Ordinal from="onze"    to="onzè" />
+			<Ordinal from="dotze"   to="dotzè" />
+			<Ordinal from="tretze"  to="tretzè" />
+			<Ordinal from="catorze" to="catorzè" />
+			<Ordinal from="quinze"  to="quinzè" />
+			<Ordinal from="setze"   to="setzè" />
+			<Ordinal from="disset"  to="dissetè" />
+			<Ordinal from="divuit"  to="divuitè" />
+			<Ordinal from="dinou"   to="dinovè" />
+
+			<!-- Feminine variant -->
+			<OrdinalVariants>
+				<Variant type="gender" variant="femení" suffix="ena" removeTrailing="a">
+					<OrdinalException value="1"  string="primera" />
+					<OrdinalException value="2"  string="segona" />
+					<OrdinalException value="3"  string="tercera" />
+					<OrdinalException value="4"  string="quarta" />
+					<!-- Word rules for 5-19 (cardinal form → feminine ordinal) -->
+					<Ordinal from="cinc"    to="cinquena" />
+					<Ordinal from="sis"     to="sisena" />
+					<Ordinal from="set"     to="setena" />
+					<Ordinal from="vuit"    to="vuitena" />
+					<Ordinal from="nou"     to="novena" />
+					<Ordinal from="deu"     to="desena" />
+					<Ordinal from="onze"    to="onzena" />
+					<Ordinal from="dotze"   to="dotzena" />
+					<Ordinal from="tretze"  to="tretzena" />
+					<Ordinal from="catorze" to="catorzena" />
+					<Ordinal from="quinze"  to="quinzena" />
+					<Ordinal from="setze"   to="setzena" />
+					<Ordinal from="disset"  to="dissetena" />
+					<Ordinal from="divuit"  to="divuitena" />
+					<Ordinal from="dinou"   to="dinovena" />
+					<!-- "dos→dues" via cardinal femení: map the feminized form to the feminine ordinal -->
+					<Ordinal from="dues"    to="dosena" />
+				</Variant>
+			</OrdinalVariants>
+		</Ordinals>
+		<Variants>
+			<!--
+			  In Catalan, digits 1 (un/una) and 2 (dos/dues) vary in gender,
+			  as does two-hundred (dos-cents/dues-centes). All other hundreds
+			  are invariable. Tens compounds use hyphens (vint-i-un, trenta-un…):
+			  the hyphen is a word boundary for LastWord, so the rule applies
+			  correctly to compound numbers.
+			-->
+			<Dimension name="gender" localName="gènere" values="masculí,femení" />
+
+			<Variant type="gender" variant="femení">
+				<!-- Gender-variable units (works on compounds because hyphens are word boundaries) -->
+				<Replacement oldValue="un"  newValue="una"  scope="LastWord" />
+				<Replacement oldValue="dos" newValue="dues" scope="LastWord" />
+				<!-- Only the 200-hundred has a feminine form in Catalan -->
+				<Replacement oldValue="dos-cents" newValue="dues-centes" scope="Anywhere" />
+			</Variant>
+		</Variants>
+	</Language>
+</Numbers>
