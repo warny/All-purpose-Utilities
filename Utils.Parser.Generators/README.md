@@ -422,7 +422,7 @@ Generated/source-generator emission applies the embedded-code transformer before
 
 Generated C# can opt into a narrow lexer inline-action attribute rewrite set through `CSharpAntlrStyleParserEmbeddedCodeTransformer`. The supported read-only lexer action attributes are `$text`, `$type`, `$channel`, `$mode`, `$line`, and `$pos`; the default/no-op transformer preserves them unchanged. This rewrite applies only to lexer inline actions, not parser actions, lexer predicates, or runtime-inline execution. `$line` is rewritten to `GetRequiredLexerLine(context)` and reads `LexerActionExecutionContext.Line`. `$pos` is rewritten to `GetRequiredLexerPos(context)` and reads `LexerActionExecutionContext.Column`. Both values come from `SourceSpan` and identify the 1-based beginning of the accepted token/chunk; `$pos` is therefore this runtime's 1-based source column, not full ANTLR `charPositionInLine` compatibility.
 
-Lexer attribute writes such as `$line = ...` and `$pos = ...`, lexer `$...` reads in predicates, runtime-inline lexer execution, and a separate lexer runtime remain unsupported. The generated helpers expose passive context metadata only and do not add mutable token/action-result semantics.
+Only simple generated-C# opt-in lexer inline-action writes `$type = ...` and `$channel = ...` are supported; they use bounded action-result helpers and are applied before lexer commands. Other lexer attribute writes such as `$text = ...`, `$line = ...`, and `$pos = ...`, lexer `$...` reads or writes in predicates, runtime-inline lexer execution, and a separate lexer runtime remain unsupported.
 
 ### Optional ANTLR-style local writes
 

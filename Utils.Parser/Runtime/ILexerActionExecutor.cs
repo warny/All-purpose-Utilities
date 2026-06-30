@@ -11,8 +11,9 @@ public interface ILexerActionExecutor
     /// Executes a lexer inline action for an accepted token match.
     /// </summary>
     /// <param name="context">Context describing the accepted lexer action.</param>
+    /// <param name="result">Mutable result receiving supported lexer action token mutations.</param>
     /// <returns>The action execution outcome.</returns>
-    LexerActionExecutionOutcome Execute(LexerActionExecutionContext context);
+    LexerActionExecutionOutcome Execute(LexerActionExecutionContext context, LexerActionExecutionResult result);
 }
 
 /// <summary>
@@ -29,6 +30,18 @@ public interface ILexerActionExecutor
 /// <param name="Line">One-based source line at the start of the accepted token or chunk.</param>
 /// <param name="Column">One-based source column at the start of the accepted token or chunk.</param>
 public sealed record LexerActionExecutionContext(Rule Rule, string ActionCode, int AlternativeIndex, int ElementIndex, string Text, string TokenType, string Channel, string Mode, int Line, int Column);
+
+/// <summary>
+/// Carries the bounded token mutations produced by a generated lexer inline action.
+/// </summary>
+public sealed class LexerActionExecutionResult
+{
+    /// <summary>Gets or sets the replacement token type requested by the action.</summary>
+    public string? TokenType { get; set; }
+
+    /// <summary>Gets or sets the replacement token channel requested by the action.</summary>
+    public string? Channel { get; set; }
+}
 
 /// <summary>
 /// Result of attempting to execute a lexer inline action.
