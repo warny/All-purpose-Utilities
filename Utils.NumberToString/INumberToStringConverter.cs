@@ -17,13 +17,6 @@ namespace Utils.NumberToString
         BigInteger? MaxNumber { get; }
 
         /// <summary>
-        /// Gets a value indicating whether this converter has ordinal configuration.
-        /// Returns <see langword="false"/> by default; implementations backed by ordinal
-        /// exceptions, word rules, a suffix or a prefix return <see langword="true"/>.
-        /// </summary>
-        bool SupportsOrdinals => false;
-
-        /// <summary>
         /// Gets the declared variant dimensions for this language, each with its ordered
         /// list of valid values. The first value of each dimension is the default applied
         /// when no explicit variant parameter is supplied to a conversion method.
@@ -109,6 +102,14 @@ namespace Utils.NumberToString
         /// <param name="variants">Zero or more <c>"dimension=value"</c> strings.</param>
         /// <returns>The formatted number with the requested variants applied.</returns>
         string Convert(long number, params string[] variants) => Convert(number);
+
+        /// <summary>
+        /// Gets a value indicating whether this converter supports ordinal conversion.
+        /// When <see langword="false"/>, calling <see cref="ConvertOrdinal"/> will throw
+        /// <see cref="NotSupportedException"/>. The default is <see langword="false"/>;
+        /// implementations that support ordinals should override this.
+        /// </summary>
+        bool SupportsOrdinals => false;
 
         /// <summary>
         /// Converts a positive integer into its ordinal string representation

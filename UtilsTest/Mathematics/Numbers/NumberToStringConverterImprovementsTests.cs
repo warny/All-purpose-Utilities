@@ -951,6 +951,9 @@ public class NumberToStringConverterImprovementsTests
         // VariantDimensions → empty list
         Assert.AreEqual(0, converter.VariantDimensions.Count);
 
+        // SupportsOrdinals → false by default
+        Assert.IsFalse(converter.SupportsOrdinals);
+
         // Variant overloads → delegate to non-variant Convert, ignore parameters
         Assert.AreEqual("42", converter.Convert((BigInteger)42, "gender=feminin"));
         Assert.AreEqual("7",  converter.Convert(7,  "gender=feminin"));
@@ -1057,15 +1060,15 @@ public class NumberToStringConverterImprovementsTests
     [TestMethod]
     public void SupportsOrdinals_TrueForLanguagesWithOrdinals()
     {
-        foreach (var culture in new[] { "EN", "FR", "ES", "IT", "NL", "EU", "ZH", "JA", "KO", "DE", "HE", "EE", "CA", "GL", "PT", "RU" })
+        foreach (var culture in new[] { "EN", "FR", "ES", "IT", "NL", "EU", "ZH", "JA", "KO", "DE", "HE", "EE", "CA", "GL", "PT", "RU", "FI", "PL", "AR", "HI", "EL", "WO" })
             Assert.IsTrue(NumberToStringConverter.GetConverter(culture).SupportsOrdinals, $"{culture}.SupportsOrdinals");
     }
 
     [TestMethod]
     public void SupportsOrdinals_FalseForLanguagesWithoutOrdinals()
     {
-        foreach (var culture in new[] { "FI", "PL", "AR" })
-            Assert.IsFalse(NumberToStringConverter.GetConverter(culture).SupportsOrdinals, $"{culture}.SupportsOrdinals");
+        // ZU (Zulu) is the only language without ordinal configuration
+        Assert.IsFalse(NumberToStringConverter.GetConverter("ZU").SupportsOrdinals, "ZU.SupportsOrdinals");
     }
 
     [TestMethod]
