@@ -104,6 +104,14 @@ namespace Utils.Mathematics
         string Convert(long number, params string[] variants) => Convert(number);
 
         /// <summary>
+        /// Gets a value indicating whether this converter supports ordinal conversion.
+        /// When <see langword="false"/>, calling <see cref="ConvertOrdinal"/> will throw
+        /// <see cref="NotSupportedException"/>. The default is <see langword="false"/>;
+        /// implementations that support ordinals should override this.
+        /// </summary>
+        bool SupportsOrdinals => false;
+
+        /// <summary>
         /// Converts a positive integer into its ordinal string representation
         /// (e.g. 1 → "first", 2 → "second" in English).
         /// The default implementation throws <see cref="NotSupportedException"/>;

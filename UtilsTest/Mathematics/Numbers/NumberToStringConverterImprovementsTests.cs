@@ -933,6 +933,24 @@ public class NumberToStringConverterImprovementsTests
             Assert.AreEqual(expected, converter.ConvertOrdinal(number), $"EU ordinal of {number}");
     }
 
+    // ─── C7 — SupportsOrdinals ─────────────────────────────────────────────
+
+    [TestMethod]
+    public void SupportsOrdinals_FalseForLanguagesWithoutOrdinals()
+    {
+        foreach (var culture in new[] { "DE", "PL", "RU", "AR", "ZH", "JA" })
+            Assert.IsFalse(NumberToStringConverter.GetConverter(culture).SupportsOrdinals,
+                $"{culture} should not support ordinals");
+    }
+
+    [TestMethod]
+    public void SupportsOrdinals_TrueForLanguagesWithOrdinals()
+    {
+        foreach (var culture in new[] { "EN", "FR", "NL", "EU" })
+            Assert.IsTrue(NumberToStringConverter.GetConverter(culture).SupportsOrdinals,
+                $"{culture} should support ordinals");
+    }
+
     // ─── D2 — INumberToStringConverter default implementations ─────────────
 
     [TestMethod]
@@ -945,6 +963,9 @@ public class NumberToStringConverterImprovementsTests
 
         // VariantDimensions → empty list
         Assert.AreEqual(0, converter.VariantDimensions.Count);
+
+        // SupportsOrdinals → false by default
+        Assert.IsFalse(converter.SupportsOrdinals);
 
         // Variant overloads → delegate to non-variant Convert, ignore parameters
         Assert.AreEqual("42", converter.Convert((BigInteger)42, "gender=feminin"));

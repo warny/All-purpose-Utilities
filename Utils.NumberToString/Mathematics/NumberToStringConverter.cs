@@ -152,6 +152,14 @@ namespace Utils.Mathematics
         public NumberScale Scale { get; }
 
         /// <summary>
+        /// Gets a value indicating whether this converter has ordinal configuration.
+        /// Returns <see langword="true"/> when at least one of <see cref="OrdinalSuffix"/>,
+        /// <see cref="OrdinalExceptions"/>, or <see cref="OrdinalWordRules"/> is non-empty.
+        /// </summary>
+        public bool SupportsOrdinals =>
+            OrdinalSuffix != null || OrdinalExceptions.Count > 0 || OrdinalWordRules.Count > 0;
+
+        /// <summary>
         /// Ordinal suffix appended to the last word of the cardinal when no word-level rule matches.
         /// </summary>
         public string? OrdinalSuffix { get; }
