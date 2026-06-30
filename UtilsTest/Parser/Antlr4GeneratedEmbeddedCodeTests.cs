@@ -365,6 +365,399 @@ public class Antlr4GeneratedEmbeddedCodeTests
     }
 
     /// <summary>
+    /// Ensures lexer <c>$type</c> is rewritten to the generated helper and reads the current token type.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerTypeAttribute_RewritesAndReadsTokenType()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public string SeenType = "";
+            }
+
+            start : A ;
+            A : 'a' { SeenType = $type; } ;
+            """;
+
+        string source = EmitWithAntlrStyleTransformer(grammar);
+        StringAssert.Contains(source, "SeenType = GetRequiredLexerType(context);");
+        int hookStart = source.IndexOf("private void __LexerAction_A_0_1_0", StringComparison.Ordinal);
+        Assert.IsTrue(hookStart >= 0, source);
+        Assert.IsFalse(source.Substring(hookStart).Contains("$type", StringComparison.Ordinal), source);
+        var assembly = CompileGeneratedSource(source);
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "a", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual("A", ReadInstanceStringField(context, "SeenType"));
+    }
+
+    /// <summary>
+    /// Ensures lexer <c>$channel</c> reads the current token channel before commands are applied.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerChannelAttribute_ReadsDefaultChannel()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public string SeenChannel = "";
+            }
+
+            start : A ;
+            A : 'a' { SeenChannel = $channel; } ;
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "a", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual("DEFAULT_CHANNEL", ReadInstanceStringField(context, "SeenChannel"));
+    }
+
+    /// <summary>
+    /// Ensures lexer <c>$mode</c> reads the mode that accepted the current token.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerModeAttribute_ReadsDefaultMode()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public string SeenMode = "";
+            }
+
+            start : A ;
+            A : 'a' { SeenMode = $mode; } ;
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "a", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual("DEFAULT_MODE", ReadInstanceStringField(context, "SeenMode"));
+    }
+
+    /// <summary>
+    /// Ensures lexer <c>$type</c> reads the original accepted rule type before a <c>type(...)</c> command retags the token.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerTypeAttribute_WithTypeCommandReadsOriginalType()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public string SeenType = "";
+            }
+
+            start : B ;
+            A : 'a' { SeenType = $type; } -> type(B) ;
+            B : 'b' ;
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "a", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual("A", ReadInstanceStringField(context, "SeenType"));
+    }
+
+    /// <summary>
+    /// Ensures lexer <c>$channel</c> reads the original channel before a <c>channel(...)</c> command hides the token.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerChannelAttribute_WithChannelCommandReadsDefaultChannel()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public string SeenChannel = "";
+            }
+
+            start : ;
+            A : 'a' { SeenChannel = $channel; } -> channel(HIDDEN) ;
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "a", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual("DEFAULT_CHANNEL", ReadInstanceStringField(context, "SeenChannel"));
+    }
+
+    /// <summary>
+    /// Ensures lexer <c>$mode</c> reads the current mode before a <c>pushMode(...)</c> command changes mode.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerModeAttribute_WithPushModeReadsDefaultMode()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public string SeenMode = "";
+            }
+
+            start : A B ;
+            A : 'a' { SeenMode = $mode; } -> pushMode(SECOND) ;
+
+            mode SECOND;
+            B : 'b' -> popMode ;
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "ab", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual("DEFAULT_MODE", ReadInstanceStringField(context, "SeenMode"));
+    }
+
+    /// <summary>
+    /// Ensures lexer <c>$mode</c> reads mode-specific accepted-token metadata in a secondary mode.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerModeAttribute_InSecondaryModeReadsSecondaryMode()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public string FirstMode = "";
+                public string SecondMode = "";
+            }
+
+            start : A B ;
+            A : 'a' { FirstMode = $mode; } -> pushMode(SECOND) ;
+
+            mode SECOND;
+            B : 'b' { SecondMode = $mode; } -> popMode ;
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "ab", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual("DEFAULT_MODE", ReadInstanceStringField(context, "FirstMode"));
+        Assert.AreEqual("SECOND", ReadInstanceStringField(context, "SecondMode"));
+    }
+
+    /// <summary>
+    /// Ensures lexer <c>$mode</c> reads the secondary mode before a direct mode command switches back.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerModeAttribute_WithDirectModeCommandReadsPreviousMode()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public string SeenBeforeSwitchBack = "";
+            }
+
+            start : A B ;
+            A : 'a' -> mode(SECOND) ;
+
+            mode SECOND;
+            B : 'b' { SeenBeforeSwitchBack = $mode; } -> mode(DEFAULT_MODE) ;
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "ab", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual("SECOND", ReadInstanceStringField(context, "SeenBeforeSwitchBack"));
+    }
+
+    /// <summary>
+    /// Ensures lexer metadata attributes are not read on a path rejected by a lexer predicate.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerMetadataAttributes_WithPredicateReadOnlyAcceptedPath()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public bool Enabled = false;
+                public string SeenType = "";
+                public string SeenChannel = "";
+                public string SeenMode = "";
+            }
+
+            start : A ;
+            A : { Enabled }? 'a'
+                {
+                    SeenType = $type;
+                    SeenChannel = $channel;
+                    SeenMode = $mode;
+                }
+              ;
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object disabledContext = CreateExecutionContext(assembly);
+        object enabledContext = CreateExecutionContext(assembly);
+        WriteInstanceBoolField(enabledContext, "Enabled", true);
+
+        var disabledResult = InvokeParseWithContext(assembly, "a", disabledContext);
+        var enabledResult = InvokeParseWithContext(assembly, "a", enabledContext);
+
+        Assert.IsInstanceOfType(disabledResult, typeof(ErrorNode));
+        Assert.AreEqual("", ReadInstanceStringField(disabledContext, "SeenType"));
+        Assert.AreEqual("", ReadInstanceStringField(disabledContext, "SeenChannel"));
+        Assert.AreEqual("", ReadInstanceStringField(disabledContext, "SeenMode"));
+        Assert.IsNotInstanceOfType(enabledResult, typeof(ErrorNode));
+        Assert.AreEqual("A", ReadInstanceStringField(enabledContext, "SeenType"));
+        Assert.AreEqual("DEFAULT_CHANNEL", ReadInstanceStringField(enabledContext, "SeenChannel"));
+        Assert.AreEqual("DEFAULT_MODE", ReadInstanceStringField(enabledContext, "SeenMode"));
+    }
+
+    /// <summary>
+    /// Ensures lexer metadata attributes with <c>more</c> read each accepted chunk's passive context metadata.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerMetadataAttributes_WithMoreCommandReadChunkMetadata()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public string FirstType = "";
+                public string FirstChannel = "";
+                public string FirstMode = "";
+                public string SecondType = "";
+                public string SecondChannel = "";
+                public string SecondMode = "";
+            }
+
+            start : A ;
+            M : 'm'
+                {
+                    FirstType = $type;
+                    FirstChannel = $channel;
+                    FirstMode = $mode;
+                }
+                -> more
+              ;
+            A : 'a'
+                {
+                    SecondType = $type;
+                    SecondChannel = $channel;
+                    SecondMode = $mode;
+                }
+              ;
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "ma", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual("M", ReadInstanceStringField(context, "FirstType"));
+        Assert.AreEqual("DEFAULT_CHANNEL", ReadInstanceStringField(context, "FirstChannel"));
+        Assert.AreEqual("DEFAULT_MODE", ReadInstanceStringField(context, "FirstMode"));
+        Assert.AreEqual("A", ReadInstanceStringField(context, "SecondType"));
+        Assert.AreEqual("DEFAULT_CHANNEL", ReadInstanceStringField(context, "SecondChannel"));
+        Assert.AreEqual("DEFAULT_MODE", ReadInstanceStringField(context, "SecondMode"));
+    }
+
+    /// <summary>
+    /// Ensures lexer metadata attributes inside fragments read the owning accepted token context metadata.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerMetadataAttributes_InFragmentReadAcceptedTokenMetadata()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public string SeenType = "";
+                public string SeenChannel = "";
+                public string SeenMode = "";
+            }
+
+            start : A ;
+            A : F ;
+            fragment F : 'a'
+                {
+                    SeenType = $type;
+                    SeenChannel = $channel;
+                    SeenMode = $mode;
+                }
+              ;
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "a", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual("A", ReadInstanceStringField(context, "SeenType"));
+        Assert.AreEqual("DEFAULT_CHANNEL", ReadInstanceStringField(context, "SeenChannel"));
+        Assert.AreEqual("DEFAULT_MODE", ReadInstanceStringField(context, "SeenMode"));
+    }
+
+    /// <summary>
+    /// Ensures lexer metadata attributes inside lexer rule references read the outer accepted token context metadata.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerMetadataAttributes_InLexerRuleReferenceReadOuterTokenMetadata()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public string SeenType = "";
+                public string SeenChannel = "";
+                public string SeenMode = "";
+            }
+
+            start : A ;
+            A : B ;
+            B : 'b'
+                {
+                    SeenType = $type;
+                    SeenChannel = $channel;
+                    SeenMode = $mode;
+                }
+              ;
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "b", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual("A", ReadInstanceStringField(context, "SeenType"));
+        Assert.AreEqual("DEFAULT_CHANNEL", ReadInstanceStringField(context, "SeenChannel"));
+        Assert.AreEqual("DEFAULT_MODE", ReadInstanceStringField(context, "SeenMode"));
+    }
+
+    /// <summary>
     /// Ensures the no-op transformer preserves lexer attribute source unchanged.
     /// </summary>
     [TestMethod]
@@ -375,28 +768,37 @@ public class Antlr4GeneratedEmbeddedCodeTests
 
             @lexer::members {
                 public string Seen = "";
+                public string SeenType = "";
+                public string SeenChannel = "";
+                public string SeenMode = "";
             }
 
             start : A ;
-            A : 'a' { Seen = $text; } ;
+            A : 'a' { Seen = $text; SeenType = $type; SeenChannel = $channel; SeenMode = $mode; } ;
             """;
 
         string source = Emit(grammar);
 
         StringAssert.Contains(source, "Seen = $text;");
+        StringAssert.Contains(source, "SeenType = $type;");
+        StringAssert.Contains(source, "SeenChannel = $channel;");
+        StringAssert.Contains(source, "SeenMode = $mode;");
     }
 
     /// <summary>
     /// Ensures unsupported lexer attributes in predicates are rejected by the transformer before raw C# compilation.
     /// </summary>
-    [TestMethod]
-    public void EmitWithAntlrStyleTransformer_LexerPredicateAttribute_ReportsDiagnostic()
+    [DataTestMethod]
+    [DataRow("$type == \"A\"")]
+    [DataRow("$channel == \"DEFAULT_CHANNEL\"")]
+    [DataRow("$mode == \"DEFAULT_MODE\"")]
+    public void EmitWithAntlrStyleTransformer_LexerPredicateAttribute_ReportsDiagnostic(string predicateCode)
     {
-        const string grammar = """
+        string grammar = $$"""
             grammar P;
 
             start : A ;
-            A : { $text == "a" }? 'a' ;
+            A : { {{predicateCode}} }? 'a' ;
             """;
 
         InvalidOperationException exception = Assert.ThrowsException<InvalidOperationException>(() => EmitWithAntlrStyleTransformer(grammar));
@@ -410,6 +812,8 @@ public class Antlr4GeneratedEmbeddedCodeTests
     /// </summary>
     [DataTestMethod]
     [DataRow("$type = B;")]
+    [DataRow("$channel = HIDDEN;")]
+    [DataRow("$mode = SECOND;")]
     [DataRow("$text ??= \"fallback\";")]
     public void EmitWithAntlrStyleTransformer_LexerAttributeWrite_ReportsDiagnostic(string actionCode)
     {
@@ -464,17 +868,18 @@ public class Antlr4GeneratedEmbeddedCodeTests
             }
 
             start : A ;
-            A : 'a' { Seen = "$text"; /* $text */ } ;
+            A : 'a' { Seen = "$type $channel $mode"; /* $type $channel $mode */ } ;
             """;
 
         string source = EmitWithAntlrStyleTransformer(grammar);
+        StringAssert.Contains(source, "Seen = \"$type $channel $mode\"; /* $type $channel $mode */");
         var assembly = CompileGeneratedSource(source);
         object context = CreateExecutionContext(assembly);
 
         var result = InvokeParseWithContext(assembly, "a", context);
 
         Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
-        Assert.AreEqual("$text", ReadInstanceStringField(context, "Seen"));
+        Assert.AreEqual("$type $channel $mode", ReadInstanceStringField(context, "Seen"));
     }
 
     /// <summary>
