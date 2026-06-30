@@ -139,6 +139,14 @@ public class OrdinalVariantElementType
     [XmlAttribute("variant")]
     public string? VariantValue { get; set; }
 
+    /// <summary>
+    /// Comma-separated list of dimension values; alternative to <see cref="VariantValue"/>.
+    /// One rule is emitted per value, all sharing the same body.
+    /// Takes priority over <see cref="VariantValue"/> when both are present.
+    /// </summary>
+    [XmlAttribute("values")]
+    public string? VariantValues { get; set; }
+
     /// <summary>Suffix override for this variant; falls back to the base suffix when absent.</summary>
     [XmlAttribute("suffix")]
     public string? Suffix { get; set; }
@@ -366,6 +374,14 @@ public class VariantType
     /// <summary>The value that must be active for this variant to apply (e.g. "feminin").</summary>
     [XmlAttribute("variant")]
     public string? VariantValue { get; set; }
+
+    /// <summary>
+    /// Comma-separated list of dimension values; alternative to <see cref="VariantValue"/>.
+    /// One rule is emitted per value, all sharing the same body.
+    /// Takes priority over <see cref="VariantValue"/> when both are present.
+    /// </summary>
+    [XmlAttribute("values")]
+    public string? VariantValues { get; set; }
 
     /// <summary>Gets or sets the replacement rules applied when this variant is active.</summary>
     [XmlElement("Replacement")]

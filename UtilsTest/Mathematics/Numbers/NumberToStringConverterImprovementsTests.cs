@@ -1679,6 +1679,101 @@ public class NumberToStringConverterImprovementsTests
         Assert.AreEqual("عاشر", converter.ConvertOrdinal(10));
     }
 
+    // ── C15 — Multi-value variant syntax (values="a,b,c") ───────────────────
+
+    private const string MultiValueTestConfig = """
+        <?xml version="1.0" encoding="utf-8" ?>
+        <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+          <Language groupSize="3" separator=" " groupSeparator="" zero="nul" minus="minus *">
+            <Culture>TEST-MV</Culture>
+            <Groups>
+              <Group level="1">
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="één" />
+                <Digit digit="2" string="twee" />
+                <Digit digit="3" string="drie" />
+              </Group>
+              <Group level="2">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="tien" buildString="*tien" />
+                <Digit digit="2" string="twintig" buildString="*entwintig" />
+              </Group>
+              <Group level="3">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="honderd" buildString="honderd *" />
+              </Group>
+            </Groups>
+            <NumberScale firstLetterUpperCase="false">
+              <StaticNames>
+                <Scale value="0" string="" />
+                <Scale value="1" string="duizend" />
+              </StaticNames>
+            </NumberScale>
+            <Ordinals suffix="de">
+              <OrdinalException value="1" string="eerste" />
+              <OrdinalVariants>
+                <Variant type="case" values="genitief,datief,accusatief" suffix="den">
+                  <OrdinalException value="1" string="eersten" />
+                </Variant>
+              </OrdinalVariants>
+            </Ordinals>
+            <Variants>
+              <Dimension name="case" values="nominatief,genitief,datief,accusatief" />
+              <Variant type="case" values="genitief,datief">
+                <Replacement oldValue="één" newValue="ener" scope="LastWord" />
+              </Variant>
+              <Variant type="case" variant="accusatief">
+                <Replacement oldValue="één" newValue="enen" scope="LastWord" />
+              </Variant>
+            </Variants>
+          </Language>
+        </Numbers>
+        """;
+
+    [TestMethod]
+    public void OrdinalVariant_MultiValue_SameExceptionForAllListedCases()
+    {
+        var converters = NumberToStringConverter.ReadConfiguration(MultiValueTestConfig);
+        var c = converters["TEST-MV"];
+
+        // base (no case variant) → exception "eerste"
+        Assert.AreEqual("eerste", c.ConvertOrdinal(1));
+        // the three values listed in values="genitief,datief,accusatief" all apply "eersten"
+        Assert.AreEqual("eersten", c.ConvertOrdinal(1, "case=genitief"),   "genitief");
+        Assert.AreEqual("eersten", c.ConvertOrdinal(1, "case=datief"),     "datief");
+        Assert.AreEqual("eersten", c.ConvertOrdinal(1, "case=accusatief"), "accusatief");
+    }
+
+    [TestMethod]
+    public void OrdinalVariant_MultiValue_SuffixOverrideForAllListedCases()
+    {
+        var converters = NumberToStringConverter.ReadConfiguration(MultiValueTestConfig);
+        var c = converters["TEST-MV"];
+
+        // 2 → no exception → base suffix "de" → "tweede"
+        Assert.AreEqual("tweede", c.ConvertOrdinal(2));
+        // genitief/datief/accusatief → suffix "den" → "tweeden"
+        Assert.AreEqual("tweeden", c.ConvertOrdinal(2, "case=genitief"),   "genitief suffix");
+        Assert.AreEqual("tweeden", c.ConvertOrdinal(2, "case=datief"),     "datief suffix");
+        Assert.AreEqual("tweeden", c.ConvertOrdinal(2, "case=accusatief"), "accusatief suffix");
+    }
+
+    [TestMethod]
+    public void CardinalVariant_MultiValue_SameReplacementForAllListedCases()
+    {
+        var converters = NumberToStringConverter.ReadConfiguration(MultiValueTestConfig);
+        var c = converters["TEST-MV"];
+
+        // base / nominatief: één unchanged
+        Assert.AreEqual("één",  c.Convert(1));
+        Assert.AreEqual("één",  c.Convert(1, "case=nominatief"));
+        // genitief and datief share the same replacement rule via values="genitief,datief"
+        Assert.AreEqual("ener", c.Convert(1, "case=genitief"), "genitief");
+        Assert.AreEqual("ener", c.Convert(1, "case=datief"),   "datief");
+        // accusatief uses the separate single-value rule
+        Assert.AreEqual("enen", c.Convert(1, "case=accusatief"), "accusatief");
+    }
+
     private sealed class OrdinalPluginSpecifics
         : INumberToStringLanguageSpecifics, IOrdinalLanguageSpecifics
     {

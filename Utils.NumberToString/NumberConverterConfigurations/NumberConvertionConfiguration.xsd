@@ -317,11 +317,25 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="variant" type="xs:string" use="required">
+        <xs:attribute name="variant" type="xs:string" use="optional">
             <xs:annotation>
                 <xs:documentation>
-                    The dimension value that must be active for this block to apply
+                    The single dimension value that must be active for this block to apply
                     (e.g. "femenino", "femminile", "feminin").
+                    Mutually exclusive with "values": use one or the other.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="values" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Comma-separated list of dimension values — alternative to the single "variant"
+                    attribute. Declares one rule for each listed value, all sharing the same body
+                    (exceptions, word rules, suffix overrides, and nested sub-variants).
+                    By convention, values should be listed in the same order as in the Dimension
+                    declaration; the runtime accepts any order.
+                    "values" takes priority over "variant" when both are present.
+                    Example: values="akkusativ,dativ,genitiv"
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -524,11 +538,25 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="variant" type="xs:string" use="required">
+        <xs:attribute name="variant" type="xs:string" use="optional">
             <xs:annotation>
                 <xs:documentation>
-                    The dimension value that must be active for this variant to apply
+                    The single dimension value that must be active for this variant to apply
                     (e.g. "feminin", "dativ", "partitiivi").
+                    Mutually exclusive with "values": use one or the other.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="values" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Comma-separated list of dimension values — alternative to the single "variant"
+                    attribute. Declares one rule for each listed value, all sharing the same body
+                    (replacements and nested sub-variants).
+                    By convention, values should be listed in the same order as in the Dimension
+                    declaration; the runtime accepts any order.
+                    "values" takes priority over "variant" when both are present.
+                    Example: values="dativ,genitiv"
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
