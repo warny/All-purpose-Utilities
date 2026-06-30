@@ -690,10 +690,10 @@ Custom policies should therefore avoid invocation-count-dependent decisions unle
 <td>Lexer action <code>$text</code>, <code>$type</code>, <code>$channel</code>, <code>$mode</code> reads</td>
 <td>Preserved as raw target code</td>
 <td>Unsupported</td>
-<td>Rewritten to generated execution-context helpers. <code>$text</code> reads <code>LexerActionExecutionContext.Text</code> through <code>GetRequiredLexerText(context)</code> and exposes context-level accepted token/chunk text.</td>
+<td>Rewritten to generated execution-context helpers. <code>$text</code> reads <code>LexerActionExecutionContext.Text</code>; <code>$type</code> reads <code>TokenType</code>; <code>$channel</code> reads <code>Channel</code>; <code>$mode</code> reads <code>Mode</code>. Values are accepted-token/chunk context metadata before lexer commands apply.</td>
 </tr>
 <tr>
-<td>Lexer action <code>$text = ...</code>, <code>$text ??= ...</code>, <code>$type = ...</code>, <code>$channel = ...</code> writes</td>
+<td>Lexer action <code>$text = ...</code>, <code>$text ??= ...</code>, <code>$type = ...</code>, <code>$channel = ...</code>, <code>$mode = ...</code> writes</td>
 <td>Preserved as raw target code</td>
 <td>Unsupported</td>
 <td>Deterministic transformer error</td>
@@ -702,7 +702,7 @@ Custom policies should therefore avoid invocation-count-dependent decisions unle
 <td>Lexer predicate <code>$...</code> attributes</td>
 <td>Preserved as raw target code</td>
 <td>Unsupported</td>
-<td>Deterministic transformer error</td>
+<td>Deterministic transformer error; <code>$type</code>, <code>$channel</code>, and <code>$mode</code> remain action-only reads</td>
 </tr>
 </tbody>
 </table>
