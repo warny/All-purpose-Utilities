@@ -758,6 +758,179 @@ public class Antlr4GeneratedEmbeddedCodeTests
     }
 
     /// <summary>
+    /// Ensures lexer <c>$line</c> and <c>$pos</c> are rewritten and read one-based token start coordinates.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerLineAndPosAttributes_RewritesAndReadTokenStartCoordinates()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public int SeenLine = -1;
+                public int SeenPos = -1;
+            }
+
+            start : A ;
+            A : 'a' { SeenLine = $line; SeenPos = $pos; } ;
+            """;
+
+        string source = EmitWithAntlrStyleTransformer(grammar);
+        StringAssert.Contains(source, "SeenLine = GetRequiredLexerLine(context);");
+        StringAssert.Contains(source, "SeenPos = GetRequiredLexerPos(context);");
+        int hookStart = source.IndexOf("private void __LexerAction_A_0_1_0", StringComparison.Ordinal);
+        Assert.IsTrue(hookStart >= 0, source);
+        Assert.IsFalse(source.Substring(hookStart).Contains("$line", StringComparison.Ordinal), source);
+        Assert.IsFalse(source.Substring(hookStart).Contains("$pos", StringComparison.Ordinal), source);
+        var assembly = CompileGeneratedSource(source);
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "a", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(1, ReadInstanceIntField(context, "SeenLine"));
+        Assert.AreEqual(1, ReadInstanceIntField(context, "SeenPos"));
+    }
+
+    /// <summary>
+    /// Ensures lexer source-position attributes read the accepted token or chunk start coordinates.
+    /// </summary>
+    [DataTestMethod]
+    [DataRow("start : A ;\nNL : '\\n' -> skip ;\nA : 'a' { SeenLine = $line; SeenPos = $pos; } ;", "\na", 2, 1, DisplayName = "After newline")]
+    [DataRow("start : B A ;\nB : 'b' ;\nA : 'a' { SeenLine = $line; SeenPos = $pos; } ;", "ba", 1, 2, DisplayName = "Same-line prefix")]
+    [DataRow("start : A ;\nA : 'a'+ { SeenLine = $line; SeenPos = $pos; } ;", "aaa", 1, 1, DisplayName = "Long token start")]
+    [DataRow("start : A ;\nA : F ;\nfragment F : 'a' 'b' { SeenLine = $line; SeenPos = $pos; } ;", "ab", 1, 1, DisplayName = "Fragment")]
+    [DataRow("start : A ;\nA : B ;\nB : 'b' { SeenLine = $line; SeenPos = $pos; } ;", "b", 1, 1, DisplayName = "Lexer rule reference")]
+    [DataRow("start : ;\nA : 'a' { SeenLine = $line; SeenPos = $pos; } -> skip ;", "a", 1, 1, DisplayName = "Skip command")]
+    [DataRow("start : B ;\nA : 'a' { SeenLine = $line; SeenPos = $pos; } -> type(B) ;\nB : 'b' ;", "a", 1, 1, DisplayName = "Type command")]
+    public void ParseWithEmbeddedCode_LexerLineAndPosAttributes_ReadStartCoordinates(string rules, string input, int expectedLine, int expectedPos)
+    {
+        string grammar = $$"""
+            grammar P;
+
+            @lexer::members {
+                public int SeenLine = -1;
+                public int SeenPos = -1;
+            }
+
+            {{rules}}
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, input, context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(expectedLine, ReadInstanceIntField(context, "SeenLine"));
+        Assert.AreEqual(expectedPos, ReadInstanceIntField(context, "SeenPos"));
+    }
+
+    /// <summary>
+    /// Ensures source-position actions around fragments read the outer accepted token context.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerLineAndPosAttributes_AroundFragmentReadAcceptedTokenCoordinates()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public int BeforeLine = -1;
+                public int BeforePos = -1;
+                public int AfterLine = -1;
+                public int AfterPos = -1;
+            }
+
+            start : A ;
+            A : 'a' { BeforeLine = $line; BeforePos = $pos; } F { AfterLine = $line; AfterPos = $pos; } ;
+            fragment F : 'b' ;
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "ab", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(1, ReadInstanceIntField(context, "BeforeLine"));
+        Assert.AreEqual(1, ReadInstanceIntField(context, "BeforePos"));
+        Assert.AreEqual(1, ReadInstanceIntField(context, "AfterLine"));
+        Assert.AreEqual(1, ReadInstanceIntField(context, "AfterPos"));
+    }
+
+    /// <summary>
+    /// Ensures source-position attributes with <c>more</c> read each accepted chunk's start coordinates.
+    /// </summary>
+    [DataTestMethod]
+    [DataRow("ma", 1, 1, 1, 2)]
+    [DataRow("\nma", 2, 1, 2, 2)]
+    public void ParseWithEmbeddedCode_LexerLineAndPosAttributes_WithMoreReadChunkCoordinates(string input, int firstLine, int firstPos, int secondLine, int secondPos)
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public int FirstLine = -1;
+                public int FirstPos = -1;
+                public int SecondLine = -1;
+                public int SecondPos = -1;
+            }
+
+            start : A ;
+            NL : '\n' -> skip ;
+            M : 'm' { FirstLine = $line; FirstPos = $pos; } -> more ;
+            A : 'a' { SecondLine = $line; SecondPos = $pos; } ;
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, input, context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(firstLine, ReadInstanceIntField(context, "FirstLine"));
+        Assert.AreEqual(firstPos, ReadInstanceIntField(context, "FirstPos"));
+        Assert.AreEqual(secondLine, ReadInstanceIntField(context, "SecondLine"));
+        Assert.AreEqual(secondPos, ReadInstanceIntField(context, "SecondPos"));
+    }
+
+    /// <summary>
+    /// Ensures source-position attributes are not read on a path rejected by a lexer predicate.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerLineAndPosAttributes_WithPredicateReadOnlyAcceptedPath()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public bool Enabled = false;
+                public int SeenLine = -1;
+                public int SeenPos = -1;
+            }
+
+            start : A ;
+            A : { Enabled }? 'a' { SeenLine = $line; SeenPos = $pos; } ;
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object disabledContext = CreateExecutionContext(assembly);
+        object enabledContext = CreateExecutionContext(assembly);
+        WriteInstanceBoolField(enabledContext, "Enabled", true);
+
+        var disabledResult = InvokeParseWithContext(assembly, "a", disabledContext);
+        var enabledResult = InvokeParseWithContext(assembly, "a", enabledContext);
+
+        Assert.IsInstanceOfType(disabledResult, typeof(ErrorNode));
+        Assert.AreEqual(-1, ReadInstanceIntField(disabledContext, "SeenLine"));
+        Assert.AreEqual(-1, ReadInstanceIntField(disabledContext, "SeenPos"));
+        Assert.IsNotInstanceOfType(enabledResult, typeof(ErrorNode));
+        Assert.AreEqual(1, ReadInstanceIntField(enabledContext, "SeenLine"));
+        Assert.AreEqual(1, ReadInstanceIntField(enabledContext, "SeenPos"));
+    }
+
+    /// <summary>
     /// Ensures the no-op transformer preserves lexer attribute source unchanged.
     /// </summary>
     [TestMethod]
@@ -771,10 +944,12 @@ public class Antlr4GeneratedEmbeddedCodeTests
                 public string SeenType = "";
                 public string SeenChannel = "";
                 public string SeenMode = "";
+                public int SeenLine = -1;
+                public int SeenPos = -1;
             }
 
             start : A ;
-            A : 'a' { Seen = $text; SeenType = $type; SeenChannel = $channel; SeenMode = $mode; } ;
+            A : 'a' { Seen = $text; SeenType = $type; SeenChannel = $channel; SeenMode = $mode; SeenLine = $line; SeenPos = $pos; } ;
             """;
 
         string source = Emit(grammar);
@@ -783,6 +958,8 @@ public class Antlr4GeneratedEmbeddedCodeTests
         StringAssert.Contains(source, "SeenType = $type;");
         StringAssert.Contains(source, "SeenChannel = $channel;");
         StringAssert.Contains(source, "SeenMode = $mode;");
+        StringAssert.Contains(source, "SeenLine = $line;");
+        StringAssert.Contains(source, "SeenPos = $pos;");
     }
 
     /// <summary>
@@ -792,6 +969,8 @@ public class Antlr4GeneratedEmbeddedCodeTests
     [DataRow("$type == \"A\"")]
     [DataRow("$channel == \"DEFAULT_CHANNEL\"")]
     [DataRow("$mode == \"DEFAULT_MODE\"")]
+    [DataRow("$line == 1")]
+    [DataRow("$pos == 1")]
     public void EmitWithAntlrStyleTransformer_LexerPredicateAttribute_ReportsDiagnostic(string predicateCode)
     {
         string grammar = $$"""
@@ -815,6 +994,8 @@ public class Antlr4GeneratedEmbeddedCodeTests
     [DataRow("$channel = HIDDEN;")]
     [DataRow("$mode = SECOND;")]
     [DataRow("$text ??= \"fallback\";")]
+    [DataRow("$line = 2;")]
+    [DataRow("$pos = 3;")]
     public void EmitWithAntlrStyleTransformer_LexerAttributeWrite_ReportsDiagnostic(string actionCode)
     {
         string grammar = $$"""
@@ -868,18 +1049,18 @@ public class Antlr4GeneratedEmbeddedCodeTests
             }
 
             start : A ;
-            A : 'a' { Seen = "$type $channel $mode"; /* $type $channel $mode */ } ;
+            A : 'a' { Seen = "$type $channel $mode $line $pos"; /* $type $channel $mode $line $pos */ } ;
             """;
 
         string source = EmitWithAntlrStyleTransformer(grammar);
-        StringAssert.Contains(source, "Seen = \"$type $channel $mode\"; /* $type $channel $mode */");
+        StringAssert.Contains(source, "Seen = \"$type $channel $mode $line $pos\"; /* $type $channel $mode $line $pos */");
         var assembly = CompileGeneratedSource(source);
         object context = CreateExecutionContext(assembly);
 
         var result = InvokeParseWithContext(assembly, "a", context);
 
         Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
-        Assert.AreEqual("$type $channel $mode", ReadInstanceStringField(context, "Seen"));
+        Assert.AreEqual("$type $channel $mode $line $pos", ReadInstanceStringField(context, "Seen"));
     }
 
     /// <summary>

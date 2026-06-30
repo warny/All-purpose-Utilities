@@ -538,7 +538,7 @@ public sealed class LexerEngine(ParserDefinition definition, ParserRuntimeFeatur
     {
         foreach (var action in actions)
         {
-            _runtimeFeaturePolicy.LexerActionExecutor.Execute(new LexerActionExecutionContext(action.Rule, action.ActionCode, action.AlternativeIndex, action.ElementIndex, token.Text, token.RuleName, token.Channel, token.ModeName));
+            _runtimeFeaturePolicy.LexerActionExecutor.Execute(new LexerActionExecutionContext(action.Rule, action.ActionCode, action.AlternativeIndex, action.ElementIndex, token.Text, token.RuleName, token.Channel, token.ModeName, token.Span.Line, token.Span.Column));
         }
     }
 

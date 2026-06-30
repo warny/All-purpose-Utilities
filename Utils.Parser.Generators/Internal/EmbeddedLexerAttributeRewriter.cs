@@ -15,7 +15,9 @@ internal static class EmbeddedLexerAttributeRewriter
         "text",
         "type",
         "channel",
-        "mode"
+        "mode",
+        "line",
+        "pos"
     };
 
     /// <summary>
@@ -76,7 +78,7 @@ internal static class EmbeddedLexerAttributeRewriter
 
             if (!SupportedActionReads.Contains(attribute))
             {
-                errors.Add($"Lexer attribute '{attributeText}' is not supported. Supported lexer action attributes are $text, $type, $channel, and $mode.");
+                errors.Add($"Lexer attribute '{attributeText}' is not supported. Supported lexer action attributes are $text, $type, $channel, $mode, $line, and $pos.");
                 output.Append(code, attributeStart, attributeEnd - attributeStart);
                 continue;
             }
@@ -87,6 +89,8 @@ internal static class EmbeddedLexerAttributeRewriter
                 "type" => "GetRequiredLexerType(context)",
                 "channel" => "GetRequiredLexerChannel(context)",
                 "mode" => "GetRequiredLexerMode(context)",
+                "line" => "GetRequiredLexerLine(context)",
+                "pos" => "GetRequiredLexerPos(context)",
                 _ => attributeText
             });
         }

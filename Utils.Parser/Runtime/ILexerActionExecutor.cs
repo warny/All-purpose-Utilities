@@ -26,7 +26,9 @@ public interface ILexerActionExecutor
 /// <param name="TokenType">Token type available to the accepted lexer action context before lexer commands are applied.</param>
 /// <param name="Channel">Token channel available to the accepted lexer action context before lexer commands are applied.</param>
 /// <param name="Mode">Lexer mode available to the accepted lexer action context.</param>
-public sealed record LexerActionExecutionContext(Rule Rule, string ActionCode, int AlternativeIndex, int ElementIndex, string Text, string TokenType, string Channel, string Mode);
+/// <param name="Line">One-based source line at the start of the accepted token or chunk.</param>
+/// <param name="Column">One-based source column at the start of the accepted token or chunk.</param>
+public sealed record LexerActionExecutionContext(Rule Rule, string ActionCode, int AlternativeIndex, int ElementIndex, string Text, string TokenType, string Channel, string Mode, int Line, int Column);
 
 /// <summary>
 /// Result of attempting to execute a lexer inline action.

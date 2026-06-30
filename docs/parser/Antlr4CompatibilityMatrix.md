@@ -279,8 +279,8 @@ The generated-C# path supports grammar-level `@lexer::header`, `@lexer::members`
 
 | Feature | Default/no-op | Runtime-inline | Generated C# with optional C# transformer |
 |---|---|---|---|
-| Lexer action `$text`, `$type`, `$channel`, `$mode` reads | Preserved as raw target code | Unsupported | Rewritten to generated execution-context helpers. `$text` reads `LexerActionExecutionContext.Text`; `$type` reads `TokenType`; `$channel` reads `Channel`; `$mode` reads `Mode`. Values are accepted-token/chunk context metadata before lexer commands apply. |
-| Lexer action `$text = ...`, `$text ??= ...`, `$type = ...`, `$channel = ...`, `$mode = ...` writes | Preserved as raw target code | Unsupported | Deterministic transformer error |
-| Lexer predicate `$...` attributes | Preserved as raw target code | Unsupported | Deterministic transformer error; `$type`, `$channel`, and `$mode` remain action-only reads |
+| Lexer action `$text`, `$type`, `$channel`, `$mode`, `$line`, `$pos` reads | Preserved as raw target code | Unsupported | Rewritten to generated execution-context helpers. `$text` reads `LexerActionExecutionContext.Text`; `$type` reads `TokenType`; `$channel` reads `Channel`; `$mode` reads `Mode`; `$line` reads `Line`; `$pos` reads 1-based `Column` from `SourceSpan.Column`. Values are accepted-token/chunk context metadata before lexer commands apply; `$pos` is not full ANTLR `charPositionInLine` compatibility. |
+| Lexer action `$text = ...`, `$text ??= ...`, `$type = ...`, `$channel = ...`, `$mode = ...`, `$line = ...`, `$pos = ...` writes | Preserved as raw target code | Unsupported | Deterministic transformer error |
+| Lexer predicate `$...` attributes | Preserved as raw target code | Unsupported | Deterministic transformer error; `$type`, `$channel`, `$mode`, `$line`, and `$pos` remain action-only reads |
 
 The generated-C# helper values are passive lexer-action metadata and do not add a separate lexer runtime or target-language logic to the runtime engine.
