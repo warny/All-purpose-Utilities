@@ -134,6 +134,30 @@ namespace Utils.NumberToString
             => ConvertOrdinal(number);
 
         /// <summary>
+        /// Converts a 64-bit integer into its ordinal string representation.
+        /// The default implementation delegates to <see cref="ConvertOrdinal(int, string[])"/> via a checked
+        /// cast; values outside the <c>int</c> range throw <see cref="OverflowException"/>.
+        /// Implementations that natively support large ordinals should override this.
+        /// </summary>
+        /// <param name="number">The value to convert. Negative values use the minus template.</param>
+        /// <returns>The ordinal string for <paramref name="number"/>.</returns>
+        string ConvertOrdinal(long number)
+            => ConvertOrdinal(number, []);
+
+        /// <summary>
+        /// Converts a 64-bit integer into its ordinal string representation,
+        /// applying the specified variant parameters.
+        /// The default implementation delegates to <see cref="ConvertOrdinal(int, string[])"/> via a checked
+        /// cast; values outside the <c>int</c> range throw <see cref="OverflowException"/>.
+        /// Implementations that natively support large ordinals should override this.
+        /// </summary>
+        /// <param name="number">The value to convert. Negative values use the minus template.</param>
+        /// <param name="variants">Zero or more <c>"dimension=value"</c> strings.</param>
+        /// <returns>The ordinal string for <paramref name="number"/>.</returns>
+        string ConvertOrdinal(long number, params string[] variants)
+            => ConvertOrdinal(checked((int)number), variants);
+
+        /// <summary>
         /// Converts a year number into its spoken string representation.
         /// For languages with a <c>&lt;YearFormat&gt;</c> configuration, years within declared
         /// split ranges are read as two halves (e.g. 1984 → "nineteen eighty-four" in English).

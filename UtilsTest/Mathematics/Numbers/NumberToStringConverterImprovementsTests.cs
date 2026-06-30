@@ -962,8 +962,12 @@ public class NumberToStringConverterImprovementsTests
         // Convert(Number) → delegates to Convert(Numerator)
         Assert.AreEqual("3", converter.Convert(new Number(3, 2)));  // 3/2 → Numerator=3
 
-        // ConvertOrdinal → throws NotSupportedException
+        // ConvertOrdinal(int) → throws NotSupportedException
         Assert.ThrowsException<NotSupportedException>(() => converter.ConvertOrdinal(1));
+        // ConvertOrdinal(long) in int range → delegates → same NotSupportedException
+        Assert.ThrowsException<NotSupportedException>(() => converter.ConvertOrdinal(1L));
+        // ConvertOrdinal(long) outside int range → OverflowException from checked cast
+        Assert.ThrowsException<OverflowException>(() => converter.ConvertOrdinal((long)int.MaxValue + 1));
     }
 
     private sealed class MinimalConverter : INumberToStringConverter
@@ -1503,6 +1507,176 @@ public class NumberToStringConverterImprovementsTests
         Assert.AreEqual("bu njëkk", converter.ConvertOrdinal(1));
         Assert.AreEqual("ñaarël",   converter.ConvertOrdinal(2));
         Assert.AreEqual("fukkël",   converter.ConvertOrdinal(10));
+    }
+
+    // ── C10 — ConvertOrdinal(long) overload ─────────────────────────────────
+
+    [TestMethod]
+    public void ConvertOrdinal_Long_SmallNumber_SameAsInt()
+    {
+        var converter = NumberToStringConverter.GetConverter("EN");
+
+        Assert.AreEqual(converter.ConvertOrdinal(1),   converter.ConvertOrdinal(1L));
+        Assert.AreEqual(converter.ConvertOrdinal(21),  converter.ConvertOrdinal(21L));
+        Assert.AreEqual(converter.ConvertOrdinal(100), converter.ConvertOrdinal(100L));
+    }
+
+    [TestMethod]
+    public void ConvertOrdinal_Long_AboveIntMax_UsesXmlPipeline()
+    {
+        // Values above int.MaxValue bypass the plugin and go through the XML pipeline
+        var converter = NumberToStringConverter.GetConverter("EN");
+        long n = (long)int.MaxValue + 2;   // 2147483649 = "two billion, one hundred forty-seven million, four hundred eighty-three thousand, six hundred forty-nine"
+
+        string result = converter.ConvertOrdinal(n);
+
+        // The ordinal suffix "th" applies to last word; must not throw
+        Assert.IsNotNull(result);
+        Assert.IsTrue(result.Length > 0);
+    }
+
+    [TestMethod]
+    public void ConvertOrdinal_Long_Negative()
+    {
+        var converter = NumberToStringConverter.GetConverter("EN");
+
+        Assert.AreEqual("minus first", converter.ConvertOrdinal(-1L));
+        Assert.AreEqual(converter.ConvertOrdinal(-21), converter.ConvertOrdinal(-21L));
+    }
+
+    [TestMethod]
+    public void ConvertOrdinal_Long_WithVariants()
+    {
+        var converter = NumberToStringConverter.GetConverter("ES");
+
+        Assert.AreEqual("primera", converter.ConvertOrdinal(1L, "gender=femenino"));
+        Assert.AreEqual("primera", converter.ConvertOrdinal(1,  "gender=femenino"));
+    }
+
+    // ── C11 — YearFormat DE ─────────────────────────────────────────────────
+
+    [TestMethod]
+    public void ConvertYear_DE_SplitRange()
+    {
+        var converter = NumberToStringConverter.GetConverter("DE");
+
+        (int year, string expected)[] cases =
+        [
+            (1984, "neunzehn vierundachtzig"),   // remainder ≥ 10
+            (1900, "neunzehn hundert"),           // remainder = 0 → hundredWord
+            (1100, "elf hundert"),                // 11 = "elf" (exception)
+            (1999, "neunzehn neunundneunzig"),    // top of the range
+        ];
+
+        foreach (var (year, expected) in cases)
+            Assert.AreEqual(expected, converter.ConvertYear(year), $"DE year {year}");
+    }
+
+    [TestMethod]
+    public void ConvertYear_DE_OutsideRangeFallsBackToConvert()
+    {
+        var converter = NumberToStringConverter.GetConverter("DE");
+
+        // 1099 and 2000 are outside [1100, 1999] → regular Convert
+        Assert.AreEqual(converter.Convert(1099), converter.ConvertYear(1099));
+        Assert.AreEqual(converter.Convert(2000), converter.ConvertYear(2000));
+    }
+
+    // ── C12 — YearFormat NL ─────────────────────────────────────────────────
+
+    [TestMethod]
+    public void ConvertYear_NL_SplitRange()
+    {
+        var converter = NumberToStringConverter.GetConverter("NL");
+
+        (int year, string expected)[] cases =
+        [
+            (1984, "negentien vierentachtig"),    // remainder ≥ 10
+            (1900, "negentien honderd"),           // remainder = 0 → hundredWord
+            (1100, "elf honderd"),                 // 11 = "elf" (exception)
+        ];
+
+        foreach (var (year, expected) in cases)
+            Assert.AreEqual(expected, converter.ConvertYear(year), $"NL year {year}");
+    }
+
+    [TestMethod]
+    public void ConvertYear_NL_OutsideRangeFallsBackToConvert()
+    {
+        var converter = NumberToStringConverter.GetConverter("NL");
+
+        Assert.AreEqual(converter.Convert(1099), converter.ConvertYear(1099));
+        Assert.AreEqual(converter.Convert(2000), converter.ConvertYear(2000));
+    }
+
+    // ── C13 — Ordinal HI feminine variant ───────────────────────────────────
+
+    [TestMethod]
+    public void ConvertOrdinal_HI_StriiVariant_Exceptions()
+    {
+        var converter = NumberToStringConverter.GetConverter("HI");
+
+        Assert.AreEqual("पहली",   converter.ConvertOrdinal(1, "gender=strī"));
+        Assert.AreEqual("दूसरी",  converter.ConvertOrdinal(2, "gender=strī"));
+        Assert.AreEqual("तीसरी",  converter.ConvertOrdinal(3, "gender=strī"));
+        Assert.AreEqual("चौथी",   converter.ConvertOrdinal(4, "gender=strī"));
+    }
+
+    [TestMethod]
+    public void ConvertOrdinal_HI_StriiVariant_WordRuleAndSuffix()
+    {
+        var converter = NumberToStringConverter.GetConverter("HI");
+
+        // 6: word rule छह→छठी (overrides the base छह→छठा)
+        Assert.AreEqual("छठी",      converter.ConvertOrdinal(6, "gender=strī"));
+        // 5, 7+ : suffix वीं instead of वाँ
+        Assert.AreEqual("पांचवीं",  converter.ConvertOrdinal(5, "gender=strī"));
+        Assert.AreEqual("सातवीं",   converter.ConvertOrdinal(7, "gender=strī"));
+    }
+
+    [TestMethod]
+    public void ConvertOrdinal_HI_DefaultMasculineUnchanged()
+    {
+        var converter = NumberToStringConverter.GetConverter("HI");
+
+        Assert.AreEqual("पहला",    converter.ConvertOrdinal(1));
+        Assert.AreEqual("छठा",     converter.ConvertOrdinal(6));
+        Assert.AreEqual("सातवाँ",  converter.ConvertOrdinal(7));
+    }
+
+    // ── C14 — Ordinal AR feminine variant ───────────────────────────────────
+
+    [TestMethod]
+    public void ConvertOrdinal_AR_MuannathaVariant()
+    {
+        var converter = NumberToStringConverter.GetConverter("AR");
+
+        (int n, string expected)[] cases =
+        [
+            (1,  "أولى"),
+            (2,  "ثانية"),
+            (3,  "ثالثة"),
+            (4,  "رابعة"),
+            (5,  "خامسة"),
+            (6,  "سادسة"),
+            (7,  "سابعة"),
+            (8,  "ثامنة"),
+            (9,  "تاسعة"),
+            (10, "عاشرة"),
+        ];
+
+        foreach (var (n, expected) in cases)
+            Assert.AreEqual(expected, converter.ConvertOrdinal(n, "gender=muʾannath"), $"AR muʾannath ordinal of {n}");
+    }
+
+    [TestMethod]
+    public void ConvertOrdinal_AR_DefaultMasculineUnchanged()
+    {
+        var converter = NumberToStringConverter.GetConverter("AR");
+
+        Assert.AreEqual("أول",  converter.ConvertOrdinal(1));
+        Assert.AreEqual("ثانٍ", converter.ConvertOrdinal(2));
+        Assert.AreEqual("عاشر", converter.ConvertOrdinal(10));
     }
 
     private sealed class OrdinalPluginSpecifics
