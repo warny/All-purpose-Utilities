@@ -962,9 +962,10 @@ When set, the string is stripped from the end of the last word only if it ends w
   <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L211"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets a value indicating whether this converter has ordinal configuration.
-Returns <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> by default; implementations backed by ordinal
-exceptions, word rules, a suffix or a prefix return <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a>.</p>
+  <div class="markdown level1 summary"><p>Gets a value indicating whether this converter supports ordinal conversion.
+When <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>, calling <a class="xref" href="Utils.NumberToString.INumberToStringConverter.html#Utils_NumberToString_INumberToStringConverter_ConvertOrdinal_System_Int32_">ConvertOrdinal(int)</a> will throw
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a>. The default is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>;
+implementations that support ordinals should override this.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
