@@ -39,6 +39,50 @@ public class NumberType
 }
 
 /// <summary>
+/// A variant node inside a form-producing element (<c>&lt;Replacement&gt;</c>,
+/// <c>&lt;OrdinalException&gt;</c>, <c>&lt;Ordinal&gt;</c>).
+/// Plays two roles depending on whether <see cref="Forms"/> is present:
+/// <list type="bullet">
+///   <item><term>Intermediate node</term><description>
+///     <see cref="DimensionType"/> + <see cref="VariantValue"/> add one constraint;
+///     child <c>&lt;Variant&gt;</c> elements cascade further constraints.
+///   </description></item>
+///   <item><term>Leaf node</term><description>
+///     <see cref="DimensionType"/> + <see cref="Forms"/> provide one output form per
+///     dimension value in the order declared by the matching <c>&lt;Dimension&gt;</c>
+///     element. Empty entries are skipped.
+///   </description></item>
+/// </list>
+/// All (constraints, form) pairs are collected at load time and merged by constraint set
+/// into <c>OrdinalVariantRule</c> or <c>VariantRule</c> entries — no runtime changes required.
+/// </summary>
+public class FormVariantType
+{
+    /// <summary>Canonical dimension name this node targets (e.g. <c>"gender"</c>, <c>"case"</c>).</summary>
+    [XmlAttribute("type")]
+    public string? DimensionType { get; set; }
+
+    /// <summary>
+    /// Single dimension value for an intermediate node.
+    /// Used together with child <c>&lt;Variant&gt;</c> elements.
+    /// Omit on leaf nodes that use <see cref="Forms"/> instead.
+    /// </summary>
+    [XmlAttribute("variant")]
+    public string? VariantValue { get; set; }
+
+    /// <summary>
+    /// Comma-separated positional output forms for a leaf node, one per dimension value
+    /// in <c>&lt;Dimension&gt;</c> declaration order. Empty entries produce no rule.
+    /// </summary>
+    [XmlAttribute("forms")]
+    public string? Forms { get; set; }
+
+    /// <summary>Nested sub-variants that cascade additional constraints.</summary>
+    [XmlElement("Variant")]
+    public List<FormVariantType>? NestedVariants { get; set; }
+}
+
+/// <summary>
 /// Describes a single ordinal exception that maps an integer to its ordinal text.
 /// </summary>
 public class OrdinalExceptionType
@@ -47,9 +91,19 @@ public class OrdinalExceptionType
     [XmlAttribute("value")]
     public long Value { get; set; }
 
-    /// <summary>Gets or sets the ordinal text for <see cref="Value"/>.</summary>
+    /// <summary>
+    /// Gets or sets the base ordinal text for <see cref="Value"/> (default variant).
+    /// May be <see langword="null"/> when all forms are declared via <see cref="FormVariants"/>.
+    /// </summary>
     [XmlAttribute("string")]
-    public string StringValue { get; set; }
+    public string? StringValue { get; set; }
+
+    /// <summary>
+    /// Per-dimension-value form declarations expanded at load time into <c>OrdinalVariantRule</c>
+    /// entries (see <see cref="FormVariantType"/>).
+    /// </summary>
+    [XmlElement("Variant")]
+    public List<FormVariantType>? FormVariants { get; set; }
 }
 
 /// <summary>
@@ -62,9 +116,19 @@ public class OrdinalRuleType
     [XmlAttribute("from")]
     public string From { get; set; }
 
-    /// <summary>Gets or sets the ordinal replacement word.</summary>
+    /// <summary>
+    /// Gets or sets the base ordinal replacement word (default variant).
+    /// May be <see langword="null"/> when all forms are declared via <see cref="FormVariants"/>.
+    /// </summary>
     [XmlAttribute("to")]
-    public string To { get; set; }
+    public string? To { get; set; }
+
+    /// <summary>
+    /// Per-dimension-value form declarations expanded at load time into <c>OrdinalVariantRule</c>
+    /// word-rule entries (see <see cref="FormVariantType"/>).
+    /// </summary>
+    [XmlElement("Variant")]
+    public List<FormVariantType>? FormVariants { get; set; }
 }
 
 /// <summary>
@@ -281,10 +345,11 @@ public class ReplacementType
     public string OldValue { get; set; }
 
     /// <summary>
-    /// Gets or sets the replacement text.
+    /// Gets or sets the base replacement text (default variant).
+    /// May be <see langword="null"/> when all forms are declared via <see cref="FormVariants"/>.
     /// </summary>
     [XmlAttribute("newValue")]
-    public string NewValue { get; set; }
+    public string? NewValue { get; set; }
 
     /// <summary>
     /// Gets or sets the textual scope representation supplied by the configuration.
@@ -297,6 +362,13 @@ public class ReplacementType
     /// </summary>
     [XmlIgnore]
     public ReplacementScope Scope => ParseScope(ScopeValue);
+
+    /// <summary>
+    /// Per-dimension-value form declarations expanded at load time into <c>VariantRule</c>
+    /// replacement entries (see <see cref="FormVariantType"/>).
+    /// </summary>
+    [XmlElement("Variant")]
+    public List<FormVariantType>? FormVariants { get; set; }
 
     private static ReplacementScope ParseScope(string scope)
     {
