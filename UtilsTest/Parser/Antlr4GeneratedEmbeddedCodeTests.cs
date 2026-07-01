@@ -1136,10 +1136,11 @@ public class Antlr4GeneratedEmbeddedCodeTests
             """;
 
         var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
-        object context = CreateExecutionContext(assembly);
+        object parseContext = CreateExecutionContext(assembly);
+        object tokenizeContext = CreateExecutionContext(assembly);
 
-        var result = InvokeParseWithContext(assembly, "a", context);
-        Token token = TokenizeWithContext(assembly, "a", context).Single();
+        var result = InvokeParseWithContext(assembly, "a", parseContext);
+        Token token = TokenizeWithContext(assembly, "a", tokenizeContext).Single();
 
         Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
         Assert.AreEqual("C", token.RuleName);
@@ -1185,10 +1186,11 @@ public class Antlr4GeneratedEmbeddedCodeTests
             """;
 
         var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
-        object context = CreateExecutionContext(assembly);
+        object parseContext = CreateExecutionContext(assembly);
+        object tokenizeContext = CreateExecutionContext(assembly);
 
-        var result = InvokeParseWithContext(assembly, "ab", context);
-        Token token = TokenizeWithContext(assembly, "ab", context).Single();
+        var result = InvokeParseWithContext(assembly, "ab", parseContext);
+        Token token = TokenizeWithContext(assembly, "ab", tokenizeContext).Single();
 
         Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
         Assert.AreEqual("C", token.RuleName);
