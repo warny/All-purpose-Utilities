@@ -141,7 +141,9 @@ namespace Utils.NumberToString
             );
 
             static IEnumerable<NumberToStringConverter.ReplacementRule> ParseReplacements(ReplacementsListType list) =>
-                list?.Replacements?.Select(r => new NumberToStringConverter.ReplacementRule(r.OldValue, r.NewValue, r.Scope))
+                list?.Replacements?
+                    .Where(r => r.NewValue != null)
+                    .Select(r => new NumberToStringConverter.ReplacementRule(r.OldValue, r.NewValue!, r.Scope))
                 ?? [];
 
             static IReadOnlyList<NumberToStringConverter.VariantDimension> ParseVariantDimensions(VariantsType variants) =>
@@ -169,12 +171,42 @@ namespace Utils.NumberToString
 
             IReadOnlyList<NumberToStringConverter.VariantRule> ParseVariantRules(VariantsType variants)
             {
-                if (variants?.Variants == null || variants.Variants.Count == 0)
-                    return new List<NumberToStringConverter.VariantRule>();
-
                 var result = new List<NumberToStringConverter.VariantRule>();
-                foreach (var variant in variants.Variants)
-                    CollectVariantRules(variant, new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase), result);
+
+                if (variants?.Variants?.Count > 0)
+                {
+                    foreach (var variant in variants.Variants)
+                        CollectVariantRules(variant, new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase), result);
+                }
+
+                // Expand form-variant replacements into synthetic VariantRule entries.
+                // Multiple <Replacement> elements that share a constraint set are merged so that
+                // one VariantRule entry holds all replacement rules for that combination.
+                var syntheticByKey =
+                    new Dictionary<string, (Dictionary<string, string> Constraints,
+                                            List<NumberToStringConverter.ReplacementRule> Replacements)>(StringComparer.Ordinal);
+
+                foreach (var repl in language.Replacements?.Replacements ?? [])
+                {
+                    if (repl.FormVariants?.Count > 0)
+                    {
+                        foreach (var (c, form) in ExpandFormVariants(repl.FormVariants, parsedDimensions,
+                            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)))
+                        {
+                            var key = ConstraintKey(c);
+                            if (!syntheticByKey.TryGetValue(key, out var entry))
+                            {
+                                entry = (c, []);
+                                syntheticByKey[key] = entry;
+                            }
+                            entry.Replacements.Add(new NumberToStringConverter.ReplacementRule(repl.OldValue, form, repl.Scope));
+                        }
+                    }
+                }
+
+                foreach (var (constraints, replacements) in syntheticByKey.Values)
+                    result.Add(new NumberToStringConverter.VariantRule(constraints, replacements));
+
                 return result;
             }
 
@@ -183,29 +215,194 @@ namespace Utils.NumberToString
                 Dictionary<string, string> inheritedConstraints,
                 List<NumberToStringConverter.VariantRule> result)
             {
-                var constraints = new Dictionary<string, string>(inheritedConstraints, StringComparer.OrdinalIgnoreCase);
-                if (!string.IsNullOrEmpty(variant.DimensionType) && !string.IsNullOrEmpty(variant.VariantValue))
-                    constraints[NormalizeDimName(variant.DimensionType)] = variant.VariantValue;
+                string? dimType = string.IsNullOrEmpty(variant.DimensionType)
+                    ? null : NormalizeDimName(variant.DimensionType);
 
-                result.Add(new NumberToStringConverter.VariantRule(
-                    constraints,
-                    (variant.Replacements ?? [])
-                        .Select(r => new NumberToStringConverter.ReplacementRule(r.OldValue, r.NewValue, r.Scope))
-                        .ToList()));
+                if (dimType != null && string.IsNullOrEmpty(variant.VariantValue) && string.IsNullOrEmpty(variant.VariantValues))
+                    throw new InvalidOperationException(
+                        $"Variant with type=\"{variant.DimensionType}\" must declare either a \"variant\" or a \"values\" attribute.");
 
-                foreach (var child in variant.NestedVariants ?? [])
-                    CollectVariantRules(child, constraints, result);
+                // values="a,b,c" expands to one rule per value; variant="x" is the single-value form.
+                IEnumerable<string> dimValues =
+                    !string.IsNullOrEmpty(variant.VariantValues)
+                        ? variant.VariantValues.Split(',').Select(v => v.Trim()).Where(v => v.Length > 0)
+                        : !string.IsNullOrEmpty(variant.VariantValue)
+                            ? [variant.VariantValue]
+                            : [""];
+
+                var replacements = (variant.Replacements ?? [])
+                    .Where(r => r.NewValue != null)
+                    .Select(r => new NumberToStringConverter.ReplacementRule(r.OldValue, r.NewValue!, r.Scope))
+                    .ToList();
+
+                foreach (var dimValue in dimValues)
+                {
+                    var constraints = new Dictionary<string, string>(inheritedConstraints, StringComparer.OrdinalIgnoreCase);
+                    if (dimType != null && dimValue.Length > 0)
+                        constraints[dimType] = dimValue;
+
+                    result.Add(new NumberToStringConverter.VariantRule(constraints, replacements));
+
+                    foreach (var child in variant.NestedVariants ?? [])
+                        CollectVariantRules(child, constraints, result);
+                }
+            }
+
+            // Returns a stable string key for a constraint dictionary, used to merge form-variant
+            // rules that share the same (dimension-type, dimension-value) combination.
+            static string ConstraintKey(IReadOnlyDictionary<string, string> c) =>
+                string.Join("|", c.OrderBy(kvp => kvp.Key, StringComparer.OrdinalIgnoreCase)
+                                   .Select(kvp => $"{kvp.Key}={kvp.Value}"));
+
+            // Walks a FormVariantType tree and yields (constraints, form) pairs.
+            // Intermediate nodes (variant attribute present, children present) add one constraint
+            // and recurse; leaf nodes (forms attribute present) expand positional entries using the
+            // matching Dimension declaration order.
+            IEnumerable<(Dictionary<string, string> Constraints, string Form)> ExpandFormVariants(
+                IEnumerable<FormVariantType> nodes,
+                IReadOnlyList<NumberToStringConverter.VariantDimension> dims,
+                IReadOnlyDictionary<string, string> inherited)
+            {
+                foreach (var node in nodes)
+                {
+                    var constraints = new Dictionary<string, string>(inherited, StringComparer.OrdinalIgnoreCase);
+                    if (!string.IsNullOrEmpty(node.DimensionType) && !string.IsNullOrEmpty(node.VariantValue))
+                        constraints[NormalizeDimName(node.DimensionType)] = node.VariantValue;
+
+                    if (!string.IsNullOrEmpty(node.Value))
+                    {
+                        // Single-value shorthand: variant="X" value="form" — yields exactly one (constraints, form) pair.
+                        yield return (constraints, node.Value);
+                    }
+                    else if (!string.IsNullOrEmpty(node.Forms) && !string.IsNullOrEmpty(node.DimensionType))
+                    {
+                        var dimName = NormalizeDimName(node.DimensionType);
+                        var dimValues = dims
+                            .FirstOrDefault(d =>
+                                string.Equals(d.Name, dimName, StringComparison.OrdinalIgnoreCase) ||
+                                string.Equals(d.LocalName, dimName, StringComparison.OrdinalIgnoreCase))
+                            ?.Values ?? (IReadOnlyList<string>)[];
+
+                        var entries = node.Forms.Split(',');
+                        for (int i = 0; i < Math.Min(entries.Length, dimValues.Count); i++)
+                        {
+                            var form = entries[i].Trim();
+                            if (string.IsNullOrEmpty(form)) continue;
+                            var leafConstraints = new Dictionary<string, string>(constraints, StringComparer.OrdinalIgnoreCase)
+                                { [dimName] = dimValues[i] };
+                            yield return (leafConstraints, form);
+                        }
+                    }
+                    else
+                    {
+                        foreach (var pair in ExpandFormVariants(node.NestedVariants ?? [], dims, constraints))
+                            yield return pair;
+                    }
+                }
             }
 
             IReadOnlyList<NumberToStringConverter.OrdinalVariantRule> ParseOrdinalVariants(OrdinalsType? ordinals)
             {
-                var container = ordinals?.OrdinalVariantsContainer;
-                if (container?.Variants == null || container.Variants.Count == 0)
-                    return new List<NumberToStringConverter.OrdinalVariantRule>();
-
                 var result = new List<NumberToStringConverter.OrdinalVariantRule>();
-                foreach (var variant in container.Variants)
-                    CollectOrdinalVariants(variant, new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase), result);
+
+                // --- Structural OrdinalVariants container (suffix/removeTrailing/word-rule overrides) ---
+                var container = ordinals?.OrdinalVariantsContainer;
+                if (container?.Variants?.Count > 0)
+                {
+                    foreach (var variant in container.Variants)
+                        CollectOrdinalVariants(variant, new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase), result);
+                }
+
+                // --- Form-variant expansion from OrdinalException and Ordinal elements ---
+                // Multiple elements can contribute to the same constraint set (e.g. an exception for
+                // value 1 and a word rule for "один" both needing {gender=feminin, case=acc} = "первую").
+                // We merge them into a single OrdinalVariantRule per constraint key so that
+                // FindBestOrdinalVariant returns one rule containing both the exception dict and the
+                // word-rule dict for that combination — preventing priority collisions at runtime.
+                var syntheticByKey =
+                    new Dictionary<string, (Dictionary<string, string> Constraints,
+                                            Dictionary<long, string> Exceptions,
+                                            Dictionary<string, string> WordRules)>(StringComparer.Ordinal);
+
+                (Dictionary<string, string> c, Dictionary<long, string> e, Dictionary<string, string> w)
+                    GetOrAddSynthetic(string key, Dictionary<string, string> constraints)
+                {
+                    if (!syntheticByKey.TryGetValue(key, out var entry))
+                    {
+                        entry = (constraints, new Dictionary<long, string>(), new Dictionary<string, string>());
+                        syntheticByKey[key] = entry;
+                    }
+                    return entry;
+                }
+
+                // First forms from elements that omit string=/to= become defaults
+                // (empty-constraint fallback so no-variant calls still resolve correctly).
+                var fallbackExceptions = new Dictionary<long, string>();
+                var fallbackWordRules  = new Dictionary<string, string>();
+
+                foreach (var exc in ordinals?.Exceptions ?? [])
+                {
+                    if (exc.FormVariants?.Count > 0)
+                    {
+                        bool captureFirst = exc.StringValue == null;
+                        foreach (var (c, form) in ExpandFormVariants(exc.FormVariants, parsedDimensions,
+                            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)))
+                        {
+                            if (captureFirst) { fallbackExceptions.TryAdd(exc.Value, form); captureFirst = false; }
+                            var entry = GetOrAddSynthetic(ConstraintKey(c), c);
+                            entry.e[exc.Value] = form;
+                        }
+                    }
+                }
+
+                foreach (var rule in ordinals?.Rules ?? [])
+                {
+                    if (rule.FormVariants?.Count > 0)
+                    {
+                        bool captureFirst = rule.To == null;
+                        foreach (var (c, form) in ExpandFormVariants(rule.FormVariants, parsedDimensions,
+                            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)))
+                        {
+                            if (captureFirst) { fallbackWordRules.TryAdd(rule.From, form); captureFirst = false; }
+                            var entry = GetOrAddSynthetic(ConstraintKey(c), c);
+                            entry.w[rule.From] = form;
+                        }
+                    }
+                }
+
+                // Merge synthetic exceptions/wordRules into any container rule sharing the same
+                // constraint key. Without this, a container rule (suffix=sten, exceptions={}) and
+                // a synthetic rule (exceptions={1:"ersten",...}, suffix=null) both have specificity
+                // 3 and FindBestOrdinalVariant picks whichever appears first, losing the other's data.
+                var containerKeyToIndex = new Dictionary<string, int>(StringComparer.Ordinal);
+                for (int i = 0; i < result.Count; i++)
+                    containerKeyToIndex[ConstraintKey(result[i].Constraints)] = i;
+
+                foreach (var (constraints, exceptions, wordRules) in syntheticByKey.Values)
+                {
+                    var key = ConstraintKey(constraints);
+                    if (containerKeyToIndex.TryGetValue(key, out var idx))
+                    {
+                        var existing = result[idx];
+                        var mergedExc = new Dictionary<long, string>(existing.Exceptions);
+                        foreach (var kv in exceptions) mergedExc[kv.Key] = kv.Value;
+                        var mergedWr = new Dictionary<string, string>(existing.WordRules);
+                        foreach (var kv in wordRules) mergedWr[kv.Key] = kv.Value;
+                        result[idx] = new NumberToStringConverter.OrdinalVariantRule(
+                            existing.Constraints, mergedExc, mergedWr,
+                            existing.Suffix, existing.RemoveTrailing);
+                    }
+                    else
+                    {
+                        result.Add(new NumberToStringConverter.OrdinalVariantRule(constraints, exceptions, wordRules, null, null));
+                    }
+                }
+
+                if (fallbackExceptions.Count > 0 || fallbackWordRules.Count > 0)
+                    result.Add(new NumberToStringConverter.OrdinalVariantRule(
+                        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
+                        fallbackExceptions, fallbackWordRules, null, null));
+
                 return result;
             }
 
@@ -214,19 +411,104 @@ namespace Utils.NumberToString
                 Dictionary<string, string> inheritedConstraints,
                 List<NumberToStringConverter.OrdinalVariantRule> result)
             {
-                var constraints = new Dictionary<string, string>(inheritedConstraints, StringComparer.OrdinalIgnoreCase);
-                if (!string.IsNullOrEmpty(variant.DimensionType) && !string.IsNullOrEmpty(variant.VariantValue))
-                    constraints[NormalizeDimName(variant.DimensionType)] = variant.VariantValue;
+                string? dimType = string.IsNullOrEmpty(variant.DimensionType)
+                    ? null : NormalizeDimName(variant.DimensionType);
 
-                result.Add(new NumberToStringConverter.OrdinalVariantRule(
-                    constraints,
-                    variant.Exceptions?.ToDictionary(e => e.Value, e => e.StringValue) ?? new Dictionary<long, string>(),
-                    variant.Rules?.ToDictionary(r => r.From, r => r.To) ?? new Dictionary<string, string>(),
-                    variant.Suffix,
-                    variant.RemoveTrailing));
+                if (dimType != null && string.IsNullOrEmpty(variant.VariantValue) && string.IsNullOrEmpty(variant.VariantValues))
+                    throw new InvalidOperationException(
+                        $"OrdinalVariant with type=\"{variant.DimensionType}\" must declare either a \"variant\" or a \"values\" attribute.");
 
-                foreach (var child in variant.NestedVariants ?? [])
-                    CollectOrdinalVariants(child, constraints, result);
+                // values="a,b,c" expands to one rule per value; variant="x" is the single-value form.
+                IEnumerable<string> dimValues =
+                    !string.IsNullOrEmpty(variant.VariantValues)
+                        ? variant.VariantValues.Split(',').Select(v => v.Trim()).Where(v => v.Length > 0)
+                        : !string.IsNullOrEmpty(variant.VariantValue)
+                            ? [variant.VariantValue]
+                            : [""];
+
+                var exceptions = variant.Exceptions?.Where(e => e.StringValue != null)
+                    .ToDictionary(e => e.Value, e => e.StringValue!)
+                    ?? new Dictionary<long, string>();
+                var wordRules = variant.Rules?.Where(r => r.To != null)
+                    .ToDictionary(r => r.From, r => r.To!)
+                    ?? new Dictionary<string, string>();
+
+                foreach (var dimValue in dimValues)
+                {
+                    var constraints = new Dictionary<string, string>(inheritedConstraints, StringComparer.OrdinalIgnoreCase);
+                    if (dimType != null && dimValue.Length > 0)
+                        constraints[dimType] = dimValue;
+
+                    result.Add(new NumberToStringConverter.OrdinalVariantRule(
+                        constraints, exceptions, wordRules, variant.Suffix, variant.RemoveTrailing));
+
+                    foreach (var child in variant.NestedVariants ?? [])
+                        CollectOrdinalVariants(child, constraints, result);
+                }
+            }
+
+            // Parses "group(0,1,-1)" → (Group, [0,1,-1]), "end" → (End, null), etc.
+            static (NumberToStringConverter.TriggerAt At, int[]? Indices) ParseExecuteAt(string raw)
+            {
+                if (string.IsNullOrWhiteSpace(raw)) return (NumberToStringConverter.TriggerAt.End, null);
+                raw = raw.Trim();
+                int parenIdx = raw.IndexOf('(');
+                string core = parenIdx >= 0 ? raw[..parenIdx].Trim() : raw;
+                string? indexPart = parenIdx >= 0 ? raw[(parenIdx + 1)..].TrimEnd(')').Trim() : null;
+
+                var at = core.ToLowerInvariant() switch
+                {
+                    "group"          => NumberToStringConverter.TriggerAt.Group,
+                    "groupwithscale" => NumberToStringConverter.TriggerAt.GroupWithScale,
+                    _                => NumberToStringConverter.TriggerAt.End,
+                };
+
+                int[]? indices = null;
+                if (indexPart != null)
+                {
+                    indices = indexPart.Split(',')
+                        .Select(s => s.Trim()).Where(s => s.Length > 0)
+                        .Select(s => int.Parse(s, System.Globalization.CultureInfo.InvariantCulture))
+                        .ToArray();
+                    if (indices.Length == 0) indices = null;
+                }
+                return (at, indices);
+            }
+
+            IReadOnlyList<NumberToStringConverter.TriggerRule> ParseTriggers(List<TriggerType>? triggers)
+            {
+                if (triggers == null || triggers.Count == 0) return [];
+
+                var result = new List<NumberToStringConverter.TriggerRule>();
+                foreach (var trigger in triggers)
+                {
+                    var (at, indices) = ParseExecuteAt(trigger.ExecuteAt);
+                    var replaces = new List<NumberToStringConverter.TriggerReplace>();
+
+                    foreach (var replace in trigger.Replaces ?? [])
+                    {
+                        string? defaultTo = replace.To;
+                        var forms = new List<(IReadOnlyDictionary<string, string>, string)>();
+
+                        if (replace.FormVariants?.Count > 0)
+                        {
+                            bool captureFirst = defaultTo == null;
+                            foreach (var (constraints, form) in ExpandFormVariants(
+                                replace.FormVariants, parsedDimensions,
+                                new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)))
+                            {
+                                if (captureFirst) { defaultTo = form; captureFirst = false; }
+                                forms.Add((constraints, form));
+                            }
+                        }
+
+                        replaces.Add(new NumberToStringConverter.TriggerReplace(
+                            replace.From, replace.IsRegex, forms, defaultTo));
+                    }
+
+                    result.Add(new NumberToStringConverter.TriggerRule(at, indices, replaces));
+                }
+                return result;
             }
 
             var options = new NumberToStringConverterOptions
@@ -252,14 +534,19 @@ namespace Utils.NumberToString
                 FractionSeparator = language.FractionSeparator,
                 OrdinalSuffix = language.Ordinals?.Suffix,
                 OrdinalRemoveTrailing = language.Ordinals?.RemoveTrailing,
-                OrdinalExceptions = language.Ordinals?.Exceptions?.ToDictionary(e => e.Value, e => e.StringValue)
+                OrdinalExceptions = language.Ordinals?.Exceptions?
+                    .Where(e => e.StringValue != null)
+                    .ToDictionary(e => e.Value, e => e.StringValue!)
                     ?? new Dictionary<long, string>(),
-                OrdinalWordRules = language.Ordinals?.Rules?.ToDictionary(r => r.From, r => r.To)
+                OrdinalWordRules = language.Ordinals?.Rules?
+                    .Where(r => r.To != null)
+                    .ToDictionary(r => r.From, r => r.To!)
                     ?? new Dictionary<string, string>(),
                 OrdinalPrefix = language.Ordinals?.Prefix,
                 OrdinalVariants = ParseOrdinalVariants(language.Ordinals),
                 VariantDimensions = parsedDimensions,
                 VariantRules = ParseVariantRules(language.Variants),
+                Triggers = ParseTriggers(language.Triggers),
                 YearFormat = language.YearFormat == null ? null : new YearFormatOptions(
                     language.YearFormat.HundredWord,
                     language.YearFormat.ZeroConnector,

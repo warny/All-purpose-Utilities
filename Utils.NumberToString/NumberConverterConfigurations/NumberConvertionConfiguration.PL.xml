@@ -71,30 +71,209 @@
             <Number value="18" string="osiemnaście" />
             <Number value="19" string="dziewiętnaście" />
         </Exceptions>
+        <!--
+            Ordinal variant dimensions:
+              rodzaj   — maskulin (default), feminin, nijaki, plural_mos, plural
+              przypadek — mianownik (default), dopełniacz, celownik, biernik, narzędnik, miejscownik
+
+            rodzaj "maskulin" uses the inanimate accusative (= mianownik); animate/personal
+            accusative (= dopełniacz) must be requested with rodzaj="maskulin_os" if added later.
+            rodzaj "plural_mos" = plural masculine personal (virile); "plural" = non-virile plural.
+
+            Ordinals 1-10 carry explicit forms via the forms attribute (forms in positional
+            przypadek order). Ordinals 11+ retain the base masculine nominative to= and can be
+            extended with forms= in future revisions.
+        -->
+        <Variants>
+            <Dimension name="rodzaj"   values="maskulin,feminin,nijaki,plural_mos,plural" />
+            <Dimension name="przypadek" values="mianownik,dopełniacz,celownik,biernik,narzędnik,miejscownik" />
+        </Variants>
         <Ordinals>
-            <!-- Nominatif masculin singulier — tous les stems diffèrent des cardinaux -->
-            <!-- Unités -->
-            <Ordinal from="jeden"    to="pierwszy" />
-            <Ordinal from="dwa"      to="drugi" />
-            <Ordinal from="trzy"     to="trzeci" />
-            <Ordinal from="cztery"   to="czwarty" />
-            <Ordinal from="pięć"     to="piąty" />
-            <Ordinal from="sześć"    to="szósty" />
-            <Ordinal from="siedem"   to="siódmy" />
-            <Ordinal from="osiem"    to="ósmy" />
-            <Ordinal from="dziewięć" to="dziewiąty" />
-            <Ordinal from="dziesięć" to="dziesiąty" />
-            <!-- Exceptions 11-19 -->
-            <Ordinal from="jedenaście"    to="jedenasty" />
-            <Ordinal from="dwanaście"     to="dwunasty" />
-            <Ordinal from="trzynaście"    to="trzynasty" />
-            <Ordinal from="czternaście"   to="czternasty" />
-            <Ordinal from="piętnaście"    to="piętnasty" />
-            <Ordinal from="szesnaście"    to="szesnasty" />
-            <Ordinal from="siedemnaście"  to="siedemnasty" />
-            <Ordinal from="osiemnaście"   to="osiemnasty" />
+            <!-- ===== Jednostki (1-9) ===== -->
+            <Ordinal from="jeden">
+                <Variant type="rodzaj" variant="maskulin">
+                    <Variant type="przypadek" forms="pierwszy,pierwszego,pierwszemu,pierwszy,pierwszym,pierwszym" />
+                </Variant>
+                <Variant type="rodzaj" variant="feminin">
+                    <Variant type="przypadek" forms="pierwsza,pierwszej,pierwszej,pierwszą,pierwszą,pierwszej" />
+                </Variant>
+                <Variant type="rodzaj" variant="nijaki">
+                    <Variant type="przypadek" forms="pierwsze,pierwszego,pierwszemu,pierwsze,pierwszym,pierwszym" />
+                </Variant>
+                <Variant type="rodzaj" variant="plural_mos">
+                    <Variant type="przypadek" forms="pierwsi,pierwszych,pierwszym,pierwszych,pierwszymi,pierwszych" />
+                </Variant>
+                <Variant type="rodzaj" variant="plural">
+                    <Variant type="przypadek" forms="pierwsze,pierwszych,pierwszym,pierwsze,pierwszymi,pierwszych" />
+                </Variant>
+            </Ordinal>
+            <Ordinal from="dwa">
+                <Variant type="rodzaj" variant="maskulin">
+                    <Variant type="przypadek" forms="drugi,drugiego,drugiemu,drugi,drugim,drugim" />
+                </Variant>
+                <Variant type="rodzaj" variant="feminin">
+                    <Variant type="przypadek" forms="druga,drugiej,drugiej,drugą,drugą,drugiej" />
+                </Variant>
+                <Variant type="rodzaj" variant="nijaki">
+                    <Variant type="przypadek" forms="drugie,drugiego,drugiemu,drugie,drugim,drugim" />
+                </Variant>
+                <Variant type="rodzaj" variant="plural_mos">
+                    <Variant type="przypadek" forms="drudzy,drugich,drugim,drugich,drugimi,drugich" />
+                </Variant>
+                <Variant type="rodzaj" variant="plural">
+                    <Variant type="przypadek" forms="drugie,drugich,drugim,drugie,drugimi,drugich" />
+                </Variant>
+            </Ordinal>
+            <Ordinal from="trzy">
+                <!-- Soft adjective: nom maskulin = plural_mos nom (trzeci) -->
+                <Variant type="rodzaj" variant="maskulin">
+                    <Variant type="przypadek" forms="trzeci,trzeciego,trzeciemu,trzeci,trzecim,trzecim" />
+                </Variant>
+                <Variant type="rodzaj" variant="feminin">
+                    <Variant type="przypadek" forms="trzecia,trzeciej,trzeciej,trzecią,trzecią,trzeciej" />
+                </Variant>
+                <Variant type="rodzaj" variant="nijaki">
+                    <Variant type="przypadek" forms="trzecie,trzeciego,trzeciemu,trzecie,trzecim,trzecim" />
+                </Variant>
+                <Variant type="rodzaj" variant="plural_mos">
+                    <Variant type="przypadek" forms="trzeci,trzecich,trzecim,trzecich,trzecimi,trzecich" />
+                </Variant>
+                <Variant type="rodzaj" variant="plural">
+                    <Variant type="przypadek" forms="trzecie,trzecich,trzecim,trzecie,trzecimi,trzecich" />
+                </Variant>
+            </Ordinal>
+            <Ordinal from="cztery">
+                <Variant type="rodzaj" variant="maskulin">
+                    <Variant type="przypadek" forms="czwarty,czwartego,czwartemu,czwarty,czwartym,czwartym" />
+                </Variant>
+                <Variant type="rodzaj" variant="feminin">
+                    <Variant type="przypadek" forms="czwarta,czwartej,czwartej,czwartą,czwartą,czwartej" />
+                </Variant>
+                <Variant type="rodzaj" variant="nijaki">
+                    <Variant type="przypadek" forms="czwarte,czwartego,czwartemu,czwarte,czwartym,czwartym" />
+                </Variant>
+                <Variant type="rodzaj" variant="plural_mos">
+                    <Variant type="przypadek" forms="czwarci,czwartych,czwartym,czwartych,czwartymi,czwartych" />
+                </Variant>
+                <Variant type="rodzaj" variant="plural">
+                    <Variant type="przypadek" forms="czwarte,czwartych,czwartym,czwarte,czwartymi,czwartych" />
+                </Variant>
+            </Ordinal>
+            <Ordinal from="pięć">
+                <Variant type="rodzaj" variant="maskulin">
+                    <Variant type="przypadek" forms="piąty,piątego,piątemu,piąty,piątym,piątym" />
+                </Variant>
+                <Variant type="rodzaj" variant="feminin">
+                    <Variant type="przypadek" forms="piąta,piątej,piątej,piątą,piątą,piątej" />
+                </Variant>
+                <Variant type="rodzaj" variant="nijaki">
+                    <Variant type="przypadek" forms="piąte,piątego,piątemu,piąte,piątym,piątym" />
+                </Variant>
+                <Variant type="rodzaj" variant="plural_mos">
+                    <Variant type="przypadek" forms="piąci,piątych,piątym,piątych,piątymi,piątych" />
+                </Variant>
+                <Variant type="rodzaj" variant="plural">
+                    <Variant type="przypadek" forms="piąte,piątych,piątym,piąte,piątymi,piątych" />
+                </Variant>
+            </Ordinal>
+            <Ordinal from="sześć">
+                <Variant type="rodzaj" variant="maskulin">
+                    <Variant type="przypadek" forms="szósty,szóstego,szóstemu,szósty,szóstym,szóstym" />
+                </Variant>
+                <Variant type="rodzaj" variant="feminin">
+                    <Variant type="przypadek" forms="szósta,szóstej,szóstej,szóstą,szóstą,szóstej" />
+                </Variant>
+                <Variant type="rodzaj" variant="nijaki">
+                    <Variant type="przypadek" forms="szóste,szóstego,szóstemu,szóste,szóstym,szóstym" />
+                </Variant>
+                <Variant type="rodzaj" variant="plural_mos">
+                    <Variant type="przypadek" forms="szóści,szóstych,szóstym,szóstych,szóstymi,szóstych" />
+                </Variant>
+                <Variant type="rodzaj" variant="plural">
+                    <Variant type="przypadek" forms="szóste,szóstych,szóstym,szóste,szóstymi,szóstych" />
+                </Variant>
+            </Ordinal>
+            <Ordinal from="siedem">
+                <Variant type="rodzaj" variant="maskulin">
+                    <Variant type="przypadek" forms="siódmy,siódmego,siódmemu,siódmy,siódmym,siódmym" />
+                </Variant>
+                <Variant type="rodzaj" variant="feminin">
+                    <Variant type="przypadek" forms="siódma,siódmej,siódmej,siódmą,siódmą,siódmej" />
+                </Variant>
+                <Variant type="rodzaj" variant="nijaki">
+                    <Variant type="przypadek" forms="siódme,siódmego,siódmemu,siódme,siódmym,siódmym" />
+                </Variant>
+                <Variant type="rodzaj" variant="plural_mos">
+                    <Variant type="przypadek" forms="siódmi,siódmych,siódmym,siódmych,siódmymi,siódmych" />
+                </Variant>
+                <Variant type="rodzaj" variant="plural">
+                    <Variant type="przypadek" forms="siódme,siódmych,siódmym,siódme,siódmymi,siódmych" />
+                </Variant>
+            </Ordinal>
+            <Ordinal from="osiem">
+                <Variant type="rodzaj" variant="maskulin">
+                    <Variant type="przypadek" forms="ósmy,ósmego,ósmemu,ósmy,ósmym,ósmym" />
+                </Variant>
+                <Variant type="rodzaj" variant="feminin">
+                    <Variant type="przypadek" forms="ósma,ósmej,ósmej,ósmą,ósmą,ósmej" />
+                </Variant>
+                <Variant type="rodzaj" variant="nijaki">
+                    <Variant type="przypadek" forms="ósme,ósmego,ósmemu,ósme,ósmym,ósmym" />
+                </Variant>
+                <Variant type="rodzaj" variant="plural_mos">
+                    <Variant type="przypadek" forms="ósmi,ósmych,ósmym,ósmych,ósmymi,ósmych" />
+                </Variant>
+                <Variant type="rodzaj" variant="plural">
+                    <Variant type="przypadek" forms="ósme,ósmych,ósmym,ósme,ósmymi,ósmych" />
+                </Variant>
+            </Ordinal>
+            <Ordinal from="dziewięć">
+                <Variant type="rodzaj" variant="maskulin">
+                    <Variant type="przypadek" forms="dziewiąty,dziewiątego,dziewiątemu,dziewiąty,dziewiątym,dziewiątym" />
+                </Variant>
+                <Variant type="rodzaj" variant="feminin">
+                    <Variant type="przypadek" forms="dziewiąta,dziewiątej,dziewiątej,dziewiątą,dziewiątą,dziewiątej" />
+                </Variant>
+                <Variant type="rodzaj" variant="nijaki">
+                    <Variant type="przypadek" forms="dziewiąte,dziewiątego,dziewiątemu,dziewiąte,dziewiątym,dziewiątym" />
+                </Variant>
+                <Variant type="rodzaj" variant="plural_mos">
+                    <Variant type="przypadek" forms="dziewiąci,dziewiątych,dziewiątym,dziewiątych,dziewiątymi,dziewiątych" />
+                </Variant>
+                <Variant type="rodzaj" variant="plural">
+                    <Variant type="przypadek" forms="dziewiąte,dziewiątych,dziewiątym,dziewiąte,dziewiątymi,dziewiątych" />
+                </Variant>
+            </Ordinal>
+            <Ordinal from="dziesięć">
+                <Variant type="rodzaj" variant="maskulin">
+                    <Variant type="przypadek" forms="dziesiąty,dziesiątego,dziesiątemu,dziesiąty,dziesiątym,dziesiątym" />
+                </Variant>
+                <Variant type="rodzaj" variant="feminin">
+                    <Variant type="przypadek" forms="dziesiąta,dziesiątej,dziesiątej,dziesiątą,dziesiątą,dziesiątej" />
+                </Variant>
+                <Variant type="rodzaj" variant="nijaki">
+                    <Variant type="przypadek" forms="dziesiąte,dziesiątego,dziesiątemu,dziesiąte,dziesiątym,dziesiątym" />
+                </Variant>
+                <Variant type="rodzaj" variant="plural_mos">
+                    <Variant type="przypadek" forms="dziesiąci,dziesiątych,dziesiątym,dziesiątych,dziesiątymi,dziesiątych" />
+                </Variant>
+                <Variant type="rodzaj" variant="plural">
+                    <Variant type="przypadek" forms="dziesiąte,dziesiątych,dziesiątym,dziesiąte,dziesiątymi,dziesiątych" />
+                </Variant>
+            </Ordinal>
+
+            <!-- ===== 11-19 (base masculine nominative; same hard-adj. pattern) ===== -->
+            <Ordinal from="jedenaście"     to="jedenasty" />
+            <Ordinal from="dwanaście"      to="dwunasty" />
+            <Ordinal from="trzynaście"     to="trzynasty" />
+            <Ordinal from="czternaście"    to="czternasty" />
+            <Ordinal from="piętnaście"     to="piętnasty" />
+            <Ordinal from="szesnaście"     to="szesnasty" />
+            <Ordinal from="siedemnaście"   to="siedemnasty" />
+            <Ordinal from="osiemnaście"    to="osiemnasty" />
             <Ordinal from="dziewiętnaście" to="dziewiętnasty" />
-            <!-- Dizaines -->
+
+            <!-- ===== Dizaines ===== -->
             <Ordinal from="dwadzieścia"    to="dwudziesty" />
             <Ordinal from="trzydzieści"    to="trzydziesty" />
             <Ordinal from="czterdzieści"   to="czterdziesty" />
@@ -103,7 +282,8 @@
             <Ordinal from="siedemdziesiąt" to="siedemdziesiąty" />
             <Ordinal from="osiemdziesiąt"  to="osiemdziesiąty" />
             <Ordinal from="dziewięćdziesiąt" to="dziewięćdziesiąty" />
-            <!-- Centaines -->
+
+            <!-- ===== Centaines ===== -->
             <Ordinal from="sto"         to="setny" />
             <Ordinal from="dwieście"    to="dwusetny" />
             <Ordinal from="trzysta"     to="trzechsetny" />
@@ -113,7 +293,8 @@
             <Ordinal from="siedemset"   to="siedemsetny" />
             <Ordinal from="osiemset"    to="osiemsetny" />
             <Ordinal from="dziewięćset" to="dziewięćsetny" />
-            <!-- Millier -->
+
+            <!-- ===== Millier ===== -->
             <Ordinal from="tysiąc" to="tysięczny" />
         </Ordinals>
     </Language>

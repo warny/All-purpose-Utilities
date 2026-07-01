@@ -4,6 +4,8 @@
     targetNamespace="Utils/NumberConvertionConfiguration.xsd"
     xmlns="Utils/NumberConvertionConfiguration.xsd"
     elementFormDefault="qualified"
+    vc:minVersion="1.1"
+    xmlns:vc="http://www.w3.org/2007/XMLSchema-versioning"
 >
 
     <xs:annotation>
@@ -201,16 +203,33 @@
             <xs:documentation>
                 A single text substitution rule. The scope attribute controls where the
                 replacement is applied; see ReplacementScopeType for semantics.
+
+                Child Variant elements declare per-dimension-value replacements using the
+                forms attribute (see FormVariantType). They are expanded at load time into
+                VariantRule entries merged by constraint set.
+
+                Example — German "ein" with four case forms for masculine:
+                    &lt;Replacement oldValue="ein" scope="lastWord"&gt;
+                        &lt;Variant type="gender" variant="maskulin"&gt;
+                            &lt;Variant type="case" forms="eins,einen,einem,eines" /&gt;
+                        &lt;/Variant&gt;
+                    &lt;/Replacement&gt;
             </xs:documentation>
         </xs:annotation>
+        <xs:sequence>
+            <xs:element name="Variant" type="FormVariantType" minOccurs="0" maxOccurs="unbounded" />
+        </xs:sequence>
         <xs:attribute name="oldValue" type="xs:string" use="required">
             <xs:annotation>
                 <xs:documentation>The text pattern to search for.</xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="newValue" type="xs:string" use="required">
+        <xs:attribute name="newValue" type="xs:string" use="optional">
             <xs:annotation>
-                <xs:documentation>The replacement text.</xs:documentation>
+                <xs:documentation>
+                    The base replacement text (default variant).
+                    May be omitted when all forms are covered by child Variant elements.
+                </xs:documentation>
             </xs:annotation>
         </xs:attribute>
         <xs:attribute name="scope" type="ReplacementScopeType" use="optional">
@@ -231,6 +250,88 @@
         </xs:sequence>
     </xs:complexType>
 
+    <xs:complexType name="FormVariantType">
+        <xs:annotation>
+            <xs:documentation>
+                A variant node used inside form-producing elements (Replacement, OrdinalException, Ordinal).
+
+                Two roles:
+                  Intermediate node  — type + variant add one constraint; child Variant elements
+                                       cascade further constraints.
+                  Leaf node          — type + forms give one output form per dimension value, in the
+                                       order declared in the matching Dimension element.
+
+                forms (leaf)
+                    Comma-separated list of output strings, one per dimension value in declaration order.
+                    Empty entries are skipped (no rule generated for that position).
+                    Example with Dimension name="case" values="nom,gen,dat,acc,inst,prep":
+                        forms="первый,первого,первому,первый,первым,первом"
+                    creates six ordinal variant rules, one per case value.
+
+                Compact gender example — when the parent element omits string= or to=, the first
+                form in declaration order also serves as the default (no-variant) result:
+                    Dimension name="gender" values="masculino,femenino"
+                    &lt;OrdinalException value="1"&gt;
+                        &lt;Variant type="gender" forms="primero,primera" /&gt;
+                    &lt;/OrdinalException&gt;
+                creates three rules: {gender:masculino}→"primero", {gender:femenino}→"primera",
+                and a default (no variant) rule that also returns "primero".
+
+                Nesting example — full Russian ordinal for "первый":
+                    &lt;OrdinalException value="1" string="первый"&gt;
+                        &lt;Variant type="gender" variant="maskulin"&gt;
+                            &lt;Variant type="case" forms="первый,первого,первому,первый,первым,первом" /&gt;
+                        &lt;/Variant&gt;
+                        &lt;Variant type="gender" variant="feminin"&gt;
+                            &lt;Variant type="case" forms="первая,первой,первой,первую,первой,первой" /&gt;
+                        &lt;/Variant&gt;
+                    &lt;/OrdinalException&gt;
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="Variant" type="FormVariantType" minOccurs="0" maxOccurs="unbounded" />
+        </xs:sequence>
+        <xs:attribute name="type" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    Canonical dimension name (e.g. "gender", "case") or its localName alias.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="variant" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Single dimension value for an intermediate node. Used alongside child Variant elements.
+                    Omit on leaf nodes that use the forms attribute instead.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="forms" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Comma-separated positional output forms for a leaf node, one per dimension value
+                    in Dimension declaration order. Empty entries produce no rule for that position.
+                    Mutually exclusive with child Variant elements and with "value".
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="value" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Single output form for this specific variant value (the value selected by the
+                    "variant" attribute on the same node). Shorthand for the case where only one
+                    dimension value needs an override without listing all positional forms.
+                    Requires "variant" to be set. Mutually exclusive with "forms" and child Variant elements.
+
+                    Example — override feminine only:
+                        &lt;Variant type="genus" variant="feminin" value="eine" /&gt;
+                    creates a single rule: {genus=feminin} → "eine".
+                    Other values (maskulin, neutrum) are unaffected.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
     <xs:complexType name="OrdinalExceptionType">
         <xs:annotation>
             <xs:documentation>
@@ -238,18 +339,43 @@
                 Checked with highest priority in ConvertOrdinal, before word-level rules
                 and before the suffix.
 
-                Example (French): value="1" string="premier"
-                Example (Spanish): value="1" string="primero"
+                The string attribute gives the base (default-variant) form.
+                Child Variant elements declare per-dimension-value forms using the forms
+                attribute (see FormVariantType). Forms are expanded at load time into
+                OrdinalVariantRule entries merged by constraint set.
+
+                When string is omitted and all forms are expressed via Variant children,
+                the first form in dimension declaration order becomes the default (used
+                when ConvertOrdinal is called without a matching variant).
+
+                Example (French compact): value="1", Dimension gender values="masculin,feminin"
+                    &lt;OrdinalException value="1"&gt;
+                        &lt;Variant type="gender" forms="premier,première" /&gt;
+                    &lt;/OrdinalException&gt;
+                Example (French classic): value="1" string="premier"
+                Example (Russian with nested variants):
+                    &lt;OrdinalException value="1" string="первый"&gt;
+                        &lt;Variant type="gender" variant="feminin"&gt;
+                            &lt;Variant type="case" forms="первая,первой,первой,первую,первой,первой" /&gt;
+                        &lt;/Variant&gt;
+                    &lt;/OrdinalException&gt;
             </xs:documentation>
         </xs:annotation>
+        <xs:sequence>
+            <xs:element name="Variant" type="FormVariantType" minOccurs="0" maxOccurs="unbounded" />
+        </xs:sequence>
         <xs:attribute name="value" type="xs:long" use="required">
             <xs:annotation>
                 <xs:documentation>The integer value this exception applies to.</xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="string" type="xs:string" use="required">
+        <xs:attribute name="string" type="xs:string" use="optional">
             <xs:annotation>
-                <xs:documentation>The ordinal text for this specific value.</xs:documentation>
+                <xs:documentation>
+                    The base ordinal text for this value (default variant).
+                    May be omitted when all forms are covered by child Variant elements
+                    and dimension defaults guarantee a match.
+                </xs:documentation>
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
@@ -263,22 +389,42 @@
                 Rules are checked after whole-number OrdinalException entries and before
                 the default suffix.
 
-                Example (English): from="one" to="first", from="two" to="second"
-                Example (French):  from="cinq" to="cinquième", from="neuf" to="neuvième"
+                The to attribute gives the base (default-variant) replacement.
+                Child Variant elements declare per-dimension-value replacements using the
+                forms attribute (see FormVariantType). Forms expand at load time into
+                OrdinalVariantRule word-rule entries merged by constraint set.
 
-                The match is applied to the terminal word only (after the last space and
-                the last hyphen), so compound numbers are handled correctly:
-                "twenty-one" → last word = "one" → "twenty-first".
+                When to is omitted and all forms are expressed via Variant children,
+                the first form in dimension declaration order becomes the default (used
+                when ConvertOrdinal is called without a matching variant).
+
+                Example (English): from="one" to="first", from="two" to="second"
+                Example (Spanish compact): Dimension gender values="masculino,femenino"
+                    &lt;Ordinal from="uno"&gt;
+                        &lt;Variant type="gender" forms="primero,primera" /&gt;
+                    &lt;/Ordinal&gt;
+                Example (Russian with nested variants):
+                    &lt;Ordinal from="один"&gt;
+                        &lt;Variant type="gender" variant="maskulin"&gt;
+                            &lt;Variant type="case" forms="первый,первого,первому,первый,первым,первом" /&gt;
+                        &lt;/Variant&gt;
+                    &lt;/Ordinal&gt;
             </xs:documentation>
         </xs:annotation>
+        <xs:sequence>
+            <xs:element name="Variant" type="FormVariantType" minOccurs="0" maxOccurs="unbounded" />
+        </xs:sequence>
         <xs:attribute name="from" type="xs:string" use="required">
             <xs:annotation>
                 <xs:documentation>The cardinal word to match (last word of the cardinal text).</xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="to" type="xs:string" use="required">
+        <xs:attribute name="to" type="xs:string" use="optional">
             <xs:annotation>
-                <xs:documentation>The ordinal word that replaces it (the full last word including suffix).</xs:documentation>
+                <xs:documentation>
+                    The base ordinal replacement (default variant).
+                    May be omitted when all forms are covered by child Variant elements.
+                </xs:documentation>
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
@@ -317,14 +463,38 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="variant" type="xs:string" use="required">
+        <xs:attribute name="variant" type="xs:string" use="optional">
             <xs:annotation>
                 <xs:documentation>
-                    The dimension value that must be active for this block to apply
+                    The single dimension value that must be active for this block to apply
                     (e.g. "femenino", "femminile", "feminin").
+                    Mutually exclusive with "values": use one or the other.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="values" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Comma-separated list of dimension values — alternative to the single "variant"
+                    attribute. Declares one rule for each listed value, all sharing the same body
+                    (exceptions, word rules, suffix overrides, and nested sub-variants).
+                    By convention, values should be listed in the same order as in the Dimension
+                    declaration; the runtime accepts any order.
+                    "values" takes priority over "variant" when both are present.
+                    Example: values="akkusativ,dativ,genitiv"
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:assert test="@variant or @values"
+            xpathDefaultNamespace="##targetNamespace">
+            <xs:annotation>
+                <xs:documentation>
+                    An OrdinalVariant element must declare exactly one selector: either the "variant"
+                    attribute (single value) or the "values" attribute (comma-separated list).
+                    Omitting both would create an unconstrained catch-all rule.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:assert>
         <xs:attribute name="suffix" type="xs:string">
             <xs:annotation>
                 <xs:documentation>
@@ -524,14 +694,38 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="variant" type="xs:string" use="required">
+        <xs:attribute name="variant" type="xs:string" use="optional">
             <xs:annotation>
                 <xs:documentation>
-                    The dimension value that must be active for this variant to apply
+                    The single dimension value that must be active for this variant to apply
                     (e.g. "feminin", "dativ", "partitiivi").
+                    Mutually exclusive with "values": use one or the other.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="values" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Comma-separated list of dimension values — alternative to the single "variant"
+                    attribute. Declares one rule for each listed value, all sharing the same body
+                    (replacements and nested sub-variants).
+                    By convention, values should be listed in the same order as in the Dimension
+                    declaration; the runtime accepts any order.
+                    "values" takes priority over "variant" when both are present.
+                    Example: values="dativ,genitiv"
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:assert test="@variant or @values"
+            xpathDefaultNamespace="##targetNamespace">
+            <xs:annotation>
+                <xs:documentation>
+                    A Variant element must declare exactly one selector: either the "variant"
+                    attribute (single value) or the "values" attribute (comma-separated list).
+                    Omitting both would create an unconstrained catch-all rule.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:assert>
     </xs:complexType>
 
     <xs:complexType name="VariantsType">
@@ -567,6 +761,114 @@
                 </xs:annotation>
             </xs:element>
         </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="TriggerReplaceType">
+        <xs:annotation>
+            <xs:documentation>
+                A text-replacement rule inside a Trigger. When the trigger fires, a single
+                replacement is applied — the most specific variant form that matches the active
+                query, or "to" as the unconditional default when no variant matches.
+
+                Variant children use the same FormVariantType syntax as in Replacement, Ordinal,
+                and OrdinalException:
+                  Leaf node  — type + forms: one replacement string per dimension value in
+                               Dimension declaration order.
+                  Intermediate node — type + variant (or values): adds a constraint and
+                               delegates to nested Variant children.
+
+                When "to" is omitted and Variant children are present, the first form in
+                declaration order serves as the unconditional default.
+
+                Example — German "ein" count form, feminine override:
+                    &lt;Replace from="ein$" regex="true"&gt;
+                        &lt;Variant type="genus" forms="eins,eine,eins" /&gt;
+                    &lt;/Replace&gt;
+                creates: maskulin → "eins", feminin → "eine", neutrum → "eins",
+                         default (no variant) → "eins" (first form).
+
+                Selection rule: the most specific matching variant (most constraints) wins.
+                When "to" is provided it is always used as the unconditional default.
+                Only one replacement string is ultimately applied per Replace element.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="Variant" type="FormVariantType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute name="from" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The pattern to match. Treated as a .NET regular expression when regex="true",
+                    or as a literal string otherwise.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="to" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    The unconditional default replacement. May be omitted when all cases are
+                    covered by Variant children (the first form then becomes the default).
+                    May contain backreferences ($1, ${name}) when regex="true".
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="regex" type="xs:boolean" use="optional" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    When true, "from" is a .NET regular expression and "to" / variant forms
+                    may contain backreferences. When false (default), literal string replacement.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="TriggerType">
+        <xs:annotation>
+            <xs:documentation>
+                A trigger that fires at a specific point in the conversion pipeline and applies
+                text replacements, each optionally selecting a form based on active variant values.
+
+                executeAt syntax:
+                  "group"               — fires on the digit-only text of each group, before the
+                                          scale name is appended.
+                  "group(N)"            — fires for group N only (0=units, 1=thousands, 2=millions…).
+                  "group(N,M)"          — fires for group N or M.
+                  "groupWithScale"      — fires on the digit+scale text of each group, after the
+                                          existing Replacements are applied for that group.
+                  "groupWithScale(N)"   — fires for group N with its scale name.
+                  "end"                 — fires on the fully assembled number text, after Replacements
+                                          and Variants are applied and before FinalizeWriting.
+
+                Pipeline (cardinal):
+                  ConvertGroup → [group(N) triggers] → append scale → Replacements
+                    → [groupWithScale(N) triggers] → push
+                  Assemble → Replacements → Variants → [end triggers] → FinalizeWriting
+
+                Pipeline (ordinal):
+                  Group triggers fire inside ConvertRaw, same as for cardinals.
+                  End triggers fire after ApplyOrdinalTransform and before FinalizeWriting.
+
+                WARNING: group and groupWithScale triggers fire during ordinal conversion.
+                A trigger that modifies cardinal text (e.g. "ein" → "eins") will prevent
+                ordinal word rules from matching that word. Use end triggers or FinalizeWriting
+                for transformations that must not interfere with ordinal word-rule matching.
+
+                Each Replace element is applied independently: for each one, the most specific
+                matching variant form is selected and applied exactly once.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="Replace" type="TriggerReplaceType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute name="executeAt" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    When the trigger fires. Values: "group", "group(N)", "group(N,M,…)",
+                    "groupWithScale", "groupWithScale(N)", "end".
+                    Group indices: 0=units, 1=thousands, 2=millions, … (negative reserved for decimals).
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="YearFormatSplitRangeType">
@@ -918,6 +1220,18 @@
                                     <xs:attribute name="hundredWord" type="xs:string" use="optional" />
                                     <xs:attribute name="zeroConnector" type="xs:string" use="optional" />
                                 </xs:complexType>
+                            </xs:element>
+
+                            <xs:element name="Trigger" type="TriggerType"
+                                        minOccurs="0" maxOccurs="unbounded">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Text-transformation rule applied at a specific point in the
+                                        conversion pipeline. Multiple Trigger elements are processed
+                                        in declaration order. See TriggerType for the full pipeline
+                                        description and executeAt syntax.
+                                    </xs:documentation>
+                                </xs:annotation>
                             </xs:element>
 
                         </xs:sequence>

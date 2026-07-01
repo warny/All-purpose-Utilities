@@ -51,6 +51,35 @@ public static class MathEx
     #region Round
 
     /// <summary>
+    /// Rounds <paramref name="value"/> to <paramref name="significantDigits"/> most significant digits
+    /// using standard rounding (≥ 5 rounds up, &lt; 5 rounds down).
+    /// Returns <paramref name="value"/> unchanged when it has fewer or equal digits than requested.
+    /// </summary>
+    /// <param name="value">The value to round (negative values are handled correctly).</param>
+    /// <param name="significantDigits">Number of significant digits to keep. Must be ≥ 1.</param>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when <paramref name="significantDigits"/> is less than 1.
+    /// </exception>
+    public static BigInteger RoundToSignificantDigits(BigInteger value, int significantDigits)
+    {
+        if (significantDigits < 1)
+            throw new ArgumentOutOfRangeException(nameof(significantDigits), "Must be at least 1.");
+        if (value == 0) return 0;
+
+        bool negative = value < 0;
+        BigInteger abs = negative ? BigInteger.Abs(value) : value;
+
+        int numDigits = abs.ToString().Length;
+        if (significantDigits >= numDigits) return value;
+
+        int scaleExp = numDigits - significantDigits;
+        BigInteger scale = BigInteger.Pow(10, scaleExp);
+        BigInteger rounded = (abs + scale / 2) / scale * scale;
+
+        return negative ? -rounded : rounded;
+    }
+
+    /// <summary>
     /// Rounds <paramref name="value"/> to the nearest multiple of <paramref name="step"/>.
     /// If <paramref name="value"/> is exactly between two multiples, it is rounded up.
     /// </summary>

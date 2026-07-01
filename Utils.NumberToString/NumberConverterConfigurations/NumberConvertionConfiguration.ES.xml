@@ -106,115 +106,63 @@
 		    - Compound units (31-99, last word "uno"/"dos"…): word rule on the unit word.
 		    - 100, 1000: word rule on the scale word.
 		    - Other compounds (e.g. 31-99 non-round) fall back to the cardinal (no suffix).
-		  The feminine variant mirrors all of the above with feminine ordinal forms.
+		  Forms are listed in Dimension order: masculino, femenino.
+		  The first form also serves as the default when no variant is specified.
 		-->
 		<Ordinals>
-			<!-- Masculine irregulars 1-12 -->
-			<OrdinalException value="1"  string="primero" />
-			<OrdinalException value="2"  string="segundo" />
-			<OrdinalException value="3"  string="tercero" />
-			<OrdinalException value="4"  string="cuarto" />
-			<OrdinalException value="5"  string="quinto" />
-			<OrdinalException value="6"  string="sexto" />
-			<OrdinalException value="7"  string="séptimo" />
-			<OrdinalException value="8"  string="octavo" />
-			<OrdinalException value="9"  string="noveno" />
-			<OrdinalException value="10" string="décimo" />
-			<OrdinalException value="11" string="undécimo" />
-			<OrdinalException value="12" string="duodécimo" />
+			<!-- Irregulars 1-12 — forms: masculino, femenino -->
+			<OrdinalException value="1">   <Variant type="gender" forms="primero,primera"     /></OrdinalException>
+			<OrdinalException value="2">   <Variant type="gender" forms="segundo,segunda"     /></OrdinalException>
+			<OrdinalException value="3">   <Variant type="gender" forms="tercero,tercera"     /></OrdinalException>
+			<OrdinalException value="4">   <Variant type="gender" forms="cuarto,cuarta"       /></OrdinalException>
+			<OrdinalException value="5">   <Variant type="gender" forms="quinto,quinta"       /></OrdinalException>
+			<OrdinalException value="6">   <Variant type="gender" forms="sexto,sexta"         /></OrdinalException>
+			<OrdinalException value="7">   <Variant type="gender" forms="séptimo,séptima"     /></OrdinalException>
+			<OrdinalException value="8">   <Variant type="gender" forms="octavo,octava"       /></OrdinalException>
+			<OrdinalException value="9">   <Variant type="gender" forms="noveno,novena"       /></OrdinalException>
+			<OrdinalException value="10">  <Variant type="gender" forms="décimo,décima"       /></OrdinalException>
+			<OrdinalException value="11">  <Variant type="gender" forms="undécimo,undécima"   /></OrdinalException>
+			<OrdinalException value="12">  <Variant type="gender" forms="duodécimo,duodécima" /></OrdinalException>
 			<!-- Teens 13-19 (last word = cardinal exception word) -->
-			<Ordinal from="trece"      to="decimotercero" />
-			<Ordinal from="catorce"    to="decimocuarto" />
-			<Ordinal from="quince"     to="decimoquinto" />
-			<Ordinal from="dieciséis"  to="decimosexto" />
-			<Ordinal from="diecisiete" to="decimoséptimo" />
-			<Ordinal from="dieciocho"  to="decimoctavo" />
-			<Ordinal from="diecinueve" to="decimonoveno" />
+			<Ordinal from="trece">      <Variant type="gender" forms="decimotercero,decimotercera"   /></Ordinal>
+			<Ordinal from="catorce">    <Variant type="gender" forms="decimocuarto,decimocuarta"     /></Ordinal>
+			<Ordinal from="quince">     <Variant type="gender" forms="decimoquinto,decimoquinta"     /></Ordinal>
+			<Ordinal from="dieciséis">  <Variant type="gender" forms="decimosexto,decimosexta"       /></Ordinal>
+			<Ordinal from="diecisiete"> <Variant type="gender" forms="decimoséptimo,decimoséptima"   /></Ordinal>
+			<Ordinal from="dieciocho">  <Variant type="gender" forms="decimoctavo,decimoctava"       /></Ordinal>
+			<Ordinal from="diecinueve"> <Variant type="gender" forms="decimonoveno,decimonovena"     /></Ordinal>
 			<!-- Round tens 20-90 -->
-			<Ordinal from="veinte"    to="vigésimo" />
-			<Ordinal from="treinta"   to="trigésimo" />
-			<Ordinal from="cuarenta"  to="cuadragésimo" />
-			<Ordinal from="cincuenta" to="quincuagésimo" />
-			<Ordinal from="sesenta"   to="sexagésimo" />
-			<Ordinal from="setenta"   to="septuagésimo" />
-			<Ordinal from="ochenta"   to="octogésimo" />
-			<Ordinal from="noventa"   to="nonagésimo" />
+			<Ordinal from="veinte">    <Variant type="gender" forms="vigésimo,vigésima"          /></Ordinal>
+			<Ordinal from="treinta">   <Variant type="gender" forms="trigésimo,trigésima"         /></Ordinal>
+			<Ordinal from="cuarenta">  <Variant type="gender" forms="cuadragésimo,cuadragésima"   /></Ordinal>
+			<Ordinal from="cincuenta"> <Variant type="gender" forms="quincuagésimo,quincuagésima" /></Ordinal>
+			<Ordinal from="sesenta">   <Variant type="gender" forms="sexagésimo,sexagésima"       /></Ordinal>
+			<Ordinal from="setenta">   <Variant type="gender" forms="septuagésimo,septuagésima"   /></Ordinal>
+			<Ordinal from="ochenta">   <Variant type="gender" forms="octogésimo,octogésima"       /></Ordinal>
+			<Ordinal from="noventa">   <Variant type="gender" forms="nonagésimo,nonagésima"       /></Ordinal>
 			<!-- Fused 21-29 (config produces "veintiuno", "veintidós"…) -->
-			<Ordinal from="veintiuno"    to="vigesimoprimero" />
-			<Ordinal from="veintidós"    to="vigesimosegundo" />
-			<Ordinal from="veintitrés"   to="vigesimotercero" />
-			<Ordinal from="veinticuatro" to="vigesimocuarto" />
-			<Ordinal from="veinticinco"  to="vigesimoquinto" />
-			<Ordinal from="veintiséis"   to="vigesimosexto" />
-			<Ordinal from="veintisiete"  to="vigesimoseptimo" />
-			<Ordinal from="veintiocho"   to="vigesimooctavo" />
-			<Ordinal from="veintinueve"  to="vigesimonoveno" />
+			<Ordinal from="veintiuno">    <Variant type="gender" forms="vigesimoprimero,vigesimoprimera" /></Ordinal>
+			<Ordinal from="veintidós">    <Variant type="gender" forms="vigesimosegundo,vigesimosegunda" /></Ordinal>
+			<Ordinal from="veintitrés">   <Variant type="gender" forms="vigesimotercero,vigesimatercera" /></Ordinal>
+			<Ordinal from="veinticuatro"> <Variant type="gender" forms="vigesimocuarto,vigesimacuarta"   /></Ordinal>
+			<Ordinal from="veinticinco">  <Variant type="gender" forms="vigesimoquinto,vigesimaquinta"   /></Ordinal>
+			<Ordinal from="veintiséis">   <Variant type="gender" forms="vigesimosexto,vigesemasexta"     /></Ordinal>
+			<Ordinal from="veintisiete">  <Variant type="gender" forms="vigesimoseptimo,vigesimoseptima" /></Ordinal>
+			<Ordinal from="veintiocho">   <Variant type="gender" forms="vigesimooctavo,vigesimaoctava"   /></Ordinal>
+			<Ordinal from="veintinueve">  <Variant type="gender" forms="vigesimonoveno,vigesimanovena"   /></Ordinal>
 			<!-- Compound last-word units (covers 31-99 when last word is separated by space in the config) -->
-			<Ordinal from="uno"    to="primero" />
-			<Ordinal from="dos"    to="segundo" />
-			<Ordinal from="tres"   to="tercero" />
-			<Ordinal from="cuatro" to="cuarto" />
-			<Ordinal from="cinco"  to="quinto" />
-			<Ordinal from="seis"   to="sexto" />
-			<Ordinal from="siete"  to="séptimo" />
-			<Ordinal from="ocho"   to="octavo" />
-			<Ordinal from="nueve"  to="noveno" />
+			<Ordinal from="uno">    <Variant type="gender" forms="primero,primera" /></Ordinal>
+			<Ordinal from="dos">    <Variant type="gender" forms="segundo,segunda" /></Ordinal>
+			<Ordinal from="tres">   <Variant type="gender" forms="tercero,tercera" /></Ordinal>
+			<Ordinal from="cuatro"> <Variant type="gender" forms="cuarto,cuarta"   /></Ordinal>
+			<Ordinal from="cinco">  <Variant type="gender" forms="quinto,quinta"   /></Ordinal>
+			<Ordinal from="seis">   <Variant type="gender" forms="sexto,sexta"     /></Ordinal>
+			<Ordinal from="siete">  <Variant type="gender" forms="séptimo,séptima" /></Ordinal>
+			<Ordinal from="ocho">   <Variant type="gender" forms="octavo,octava"   /></Ordinal>
+			<Ordinal from="nueve">  <Variant type="gender" forms="noveno,novena"   /></Ordinal>
 			<!-- Round scale words -->
-			<Ordinal from="cien" to="centésimo" />
-			<Ordinal from="mil"  to="milésimo" />
-
-			<!-- Feminine variant -->
-			<OrdinalVariants>
-				<Variant type="gender" variant="femenino">
-					<OrdinalException value="1"  string="primera" />
-					<OrdinalException value="2"  string="segunda" />
-					<OrdinalException value="3"  string="tercera" />
-					<OrdinalException value="4"  string="cuarta" />
-					<OrdinalException value="5"  string="quinta" />
-					<OrdinalException value="6"  string="sexta" />
-					<OrdinalException value="7"  string="séptima" />
-					<OrdinalException value="8"  string="octava" />
-					<OrdinalException value="9"  string="novena" />
-					<OrdinalException value="10" string="décima" />
-					<OrdinalException value="11" string="undécima" />
-					<OrdinalException value="12" string="duodécima" />
-					<Ordinal from="trece"      to="decimotercera" />
-					<Ordinal from="catorce"    to="decimocuarta" />
-					<Ordinal from="quince"     to="decimoquinta" />
-					<Ordinal from="dieciséis"  to="decimosexta" />
-					<Ordinal from="diecisiete" to="decimoséptima" />
-					<Ordinal from="dieciocho"  to="decimoctava" />
-					<Ordinal from="diecinueve" to="decimonovena" />
-					<Ordinal from="veinte"    to="vigésima" />
-					<Ordinal from="treinta"   to="trigésima" />
-					<Ordinal from="cuarenta"  to="cuadragésima" />
-					<Ordinal from="cincuenta" to="quincuagésima" />
-					<Ordinal from="sesenta"   to="sexagésima" />
-					<Ordinal from="setenta"   to="septuagésima" />
-					<Ordinal from="ochenta"   to="octogésima" />
-					<Ordinal from="noventa"   to="nonagésima" />
-					<Ordinal from="veintiuno"    to="vigesimoprimera" />
-					<Ordinal from="veintidós"    to="vigesimosegunda" />
-					<Ordinal from="veintitrés"   to="vigesimatercera" />
-					<Ordinal from="veinticuatro" to="vigesimacuarta" />
-					<Ordinal from="veinticinco"  to="vigesimaquinta" />
-					<Ordinal from="veintiséis"   to="vigesemasexta" />
-					<Ordinal from="veintisiete"  to="vigesimoseptima" />
-					<Ordinal from="veintiocho"   to="vigesimaoctava" />
-					<Ordinal from="veintinueve"  to="vigesimanovena" />
-					<Ordinal from="uno"    to="primera" />
-					<Ordinal from="dos"    to="segunda" />
-					<Ordinal from="tres"   to="tercera" />
-					<Ordinal from="cuatro" to="cuarta" />
-					<Ordinal from="cinco"  to="quinta" />
-					<Ordinal from="seis"   to="sexta" />
-					<Ordinal from="siete"  to="séptima" />
-					<Ordinal from="ocho"   to="octava" />
-					<Ordinal from="nueve"  to="novena" />
-					<Ordinal from="cien" to="centésima" />
-					<Ordinal from="mil"  to="milésima" />
-				</Variant>
-			</OrdinalVariants>
+			<Ordinal from="cien"> <Variant type="gender" forms="centésimo,centésima" /></Ordinal>
+			<Ordinal from="mil">  <Variant type="gender" forms="milésimo,milésima"   /></Ordinal>
 		</Ordinals>
 	</Language>
 </Numbers>
