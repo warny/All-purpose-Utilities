@@ -4,6 +4,8 @@
     targetNamespace="Utils/NumberConvertionConfiguration.xsd"
     xmlns="Utils/NumberConvertionConfiguration.xsd"
     elementFormDefault="qualified"
+    vc:minVersion="1.1"
+    xmlns:vc="http://www.w3.org/2007/XMLSchema-versioning"
 >
 
     <xs:annotation>
@@ -266,6 +268,15 @@
                         forms="первый,первого,первому,первый,первым,первом"
                     creates six ordinal variant rules, one per case value.
 
+                Compact gender example — when the parent element omits string= or to=, the first
+                form in declaration order also serves as the default (no-variant) result:
+                    Dimension name="gender" values="masculino,femenino"
+                    &lt;OrdinalException value="1"&gt;
+                        &lt;Variant type="gender" forms="primero,primera" /&gt;
+                    &lt;/OrdinalException&gt;
+                creates three rules: {gender:masculino}→"primero", {gender:femenino}→"primera",
+                and a default (no variant) rule that also returns "primero".
+
                 Nesting example — full Russian ordinal for "первый":
                     &lt;OrdinalException value="1" string="первый"&gt;
                         &lt;Variant type="gender" variant="maskulin"&gt;
@@ -318,8 +329,16 @@
                 attribute (see FormVariantType). Forms are expanded at load time into
                 OrdinalVariantRule entries merged by constraint set.
 
-                Example (French): value="1" string="premier"
-                Example (Russian with variants):
+                When string is omitted and all forms are expressed via Variant children,
+                the first form in dimension declaration order becomes the default (used
+                when ConvertOrdinal is called without a matching variant).
+
+                Example (French compact): value="1", Dimension gender values="masculin,feminin"
+                    &lt;OrdinalException value="1"&gt;
+                        &lt;Variant type="gender" forms="premier,première" /&gt;
+                    &lt;/OrdinalException&gt;
+                Example (French classic): value="1" string="premier"
+                Example (Russian with nested variants):
                     &lt;OrdinalException value="1" string="первый"&gt;
                         &lt;Variant type="gender" variant="feminin"&gt;
                             &lt;Variant type="case" forms="первая,первой,первой,первую,первой,первой" /&gt;
@@ -360,8 +379,16 @@
                 forms attribute (see FormVariantType). Forms expand at load time into
                 OrdinalVariantRule word-rule entries merged by constraint set.
 
+                When to is omitted and all forms are expressed via Variant children,
+                the first form in dimension declaration order becomes the default (used
+                when ConvertOrdinal is called without a matching variant).
+
                 Example (English): from="one" to="first", from="two" to="second"
-                Example (Russian with variants):
+                Example (Spanish compact): Dimension gender values="masculino,femenino"
+                    &lt;Ordinal from="uno"&gt;
+                        &lt;Variant type="gender" forms="primero,primera" /&gt;
+                    &lt;/Ordinal&gt;
+                Example (Russian with nested variants):
                     &lt;Ordinal from="один"&gt;
                         &lt;Variant type="gender" variant="maskulin"&gt;
                             &lt;Variant type="case" forms="первый,первого,первому,первый,первым,первом" /&gt;
@@ -443,6 +470,16 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:assert test="@variant or @values"
+            xpathDefaultNamespace="##targetNamespace">
+            <xs:annotation>
+                <xs:documentation>
+                    An OrdinalVariant element must declare exactly one selector: either the "variant"
+                    attribute (single value) or the "values" attribute (comma-separated list).
+                    Omitting both would create an unconstrained catch-all rule.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:assert>
         <xs:attribute name="suffix" type="xs:string">
             <xs:annotation>
                 <xs:documentation>
@@ -664,6 +701,16 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:assert test="@variant or @values"
+            xpathDefaultNamespace="##targetNamespace">
+            <xs:annotation>
+                <xs:documentation>
+                    A Variant element must declare exactly one selector: either the "variant"
+                    attribute (single value) or the "values" attribute (comma-separated list).
+                    Omitting both would create an unconstrained catch-all rule.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:assert>
     </xs:complexType>
 
     <xs:complexType name="VariantsType">

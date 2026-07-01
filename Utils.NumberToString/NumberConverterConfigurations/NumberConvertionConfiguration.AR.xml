@@ -59,34 +59,25 @@
             </Suffixes>
         </NumberScale>
         <Exceptions />
+        <!--
+          Arabic ordinals for 1-10 — forms listed in Dimension order: muzakkar, muʾannath.
+          The first form (muzakkar) also serves as the default when no variant is specified.
+        -->
         <Ordinals>
-            <!-- Masculin indéfini, forme courte (sans article) — les ordinaux arabes
-                 sont indépendants des cardinaux et varient en genre avec le nom -->
-            <OrdinalException value="1"  string="أول" />
-            <OrdinalException value="2"  string="ثانٍ" />
-            <OrdinalException value="3"  string="ثالث" />
-            <OrdinalException value="4"  string="رابع" />
-            <OrdinalException value="5"  string="خامس" />
-            <OrdinalException value="6"  string="سادس" />
-            <OrdinalException value="7"  string="سابع" />
-            <OrdinalException value="8"  string="ثامن" />
-            <OrdinalException value="9"  string="تاسع" />
-            <OrdinalException value="10" string="عاشر" />
-            <OrdinalVariants>
-                <!-- Forme féminine (muʾannath) pour 1-10 ; au-delà de 10 aucune exception n'est définie -->
-                <Variant type="gender" variant="muʾannath">
-                    <OrdinalException value="1"  string="أولى"   />
-                    <OrdinalException value="2"  string="ثانية"  />
-                    <OrdinalException value="3"  string="ثالثة"  />
-                    <OrdinalException value="4"  string="رابعة"  />
-                    <OrdinalException value="5"  string="خامسة"  />
-                    <OrdinalException value="6"  string="سادسة"  />
-                    <OrdinalException value="7"  string="سابعة"  />
-                    <OrdinalException value="8"  string="ثامنة"  />
-                    <OrdinalException value="9"  string="تاسعة"  />
-                    <OrdinalException value="10" string="عاشرة"  />
-                </Variant>
-            </OrdinalVariants>
+            <OrdinalException value="1">  <Variant type="gender" forms="أول,أولى"   /></OrdinalException>
+            <OrdinalException value="2">  <Variant type="gender" forms="ثانٍ,ثانية"  /></OrdinalException>
+            <OrdinalException value="3">  <Variant type="gender" forms="ثالث,ثالثة"  /></OrdinalException>
+            <OrdinalException value="4">  <Variant type="gender" forms="رابع,رابعة"  /></OrdinalException>
+            <OrdinalException value="5">  <Variant type="gender" forms="خامس,خامسة"  /></OrdinalException>
+            <OrdinalException value="6">  <Variant type="gender" forms="سادس,سادسة"  /></OrdinalException>
+            <OrdinalException value="7">  <Variant type="gender" forms="سابع,سابعة"  /></OrdinalException>
+            <OrdinalException value="8">  <Variant type="gender" forms="ثامن,ثامنة"  /></OrdinalException>
+            <OrdinalException value="9">  <Variant type="gender" forms="تاسع,تاسعة"  /></OrdinalException>
+            <OrdinalException value="10"> <Variant type="gender" forms="عاشر,عاشرة"  /></OrdinalException>
         </Ordinals>
+        <Variants>
+            <!-- Dimension declared for ordinal forms= expansion; Arabic cardinals are invariable in this config -->
+            <Dimension name="gender" localName="الجنس" values="muzakkar,muʾannath" />
+        </Variants>
     </Language>
 </Numbers>

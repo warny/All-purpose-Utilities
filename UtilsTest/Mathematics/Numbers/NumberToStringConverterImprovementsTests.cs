@@ -491,7 +491,7 @@ public class NumberToStringConverterImprovementsTests
     {
         var converter = NumberToStringConverter.GetConverter("DE");
 
-        // Without variant: counting form (GermanSpecifics: "ein" → "eins")
+        // Without variant: counting form via XML Variant {maskulin,nominativ} → "eins"
         Assert.AreEqual("eins", converter.Convert(1));
         Assert.AreEqual("eins", converter.Convert(1, "genus=maskulin"));
         Assert.AreEqual("eins", converter.Convert(1, "kasus=nominativ"));
@@ -1136,6 +1136,100 @@ public class NumberToStringConverterImprovementsTests
         Assert.AreEqual("tausend dritte", de.ConvertOrdinal(1003));
     }
 
+    [TestMethod]
+    public void ConvertOrdinal_DE_WithVariants_IrregularForm()
+    {
+        var de = NumberToStringConverter.GetConverter("DE");
+
+        // schwach (weak) — used after a definite article; case order: nom/akk/dat/gen
+
+        // maskulin schwach: only non-nominativ → "sten"-type endings
+        Assert.AreEqual("erste",  de.ConvertOrdinal(1, "deklination=schwach", "genus=maskulin", "kasus=nominativ"));
+        Assert.AreEqual("ersten", de.ConvertOrdinal(1, "deklination=schwach", "genus=maskulin", "kasus=akkusativ"));
+        Assert.AreEqual("ersten", de.ConvertOrdinal(1, "deklination=schwach", "genus=maskulin", "kasus=dativ"));
+        Assert.AreEqual("ersten", de.ConvertOrdinal(1, "deklination=schwach", "genus=maskulin", "kasus=genitiv"));
+
+        // feminin schwach: nom=akk="erste", dat=gen="ersten"
+        Assert.AreEqual("erste",  de.ConvertOrdinal(1, "deklination=schwach", "genus=feminin", "kasus=nominativ"));
+        Assert.AreEqual("erste",  de.ConvertOrdinal(1, "deklination=schwach", "genus=feminin", "kasus=akkusativ"));
+        Assert.AreEqual("ersten", de.ConvertOrdinal(1, "deklination=schwach", "genus=feminin", "kasus=dativ"));
+        Assert.AreEqual("ersten", de.ConvertOrdinal(1, "deklination=schwach", "genus=feminin", "kasus=genitiv"));
+
+        // neutrum schwach: nom=akk="erste" (same as feminin schwach)
+        Assert.AreEqual("erste",  de.ConvertOrdinal(1, "deklination=schwach", "genus=neutrum", "kasus=nominativ"));
+        Assert.AreEqual("erste",  de.ConvertOrdinal(1, "deklination=schwach", "genus=neutrum", "kasus=akkusativ"));
+
+        // stark (strong) — used without an article
+
+        // maskulin stark: nom="erster", akk=gen="ersten", dat="erstem"
+        Assert.AreEqual("erster", de.ConvertOrdinal(1, "deklination=stark", "genus=maskulin", "kasus=nominativ"));
+        Assert.AreEqual("ersten", de.ConvertOrdinal(1, "deklination=stark", "genus=maskulin", "kasus=akkusativ"));
+        Assert.AreEqual("erstem", de.ConvertOrdinal(1, "deklination=stark", "genus=maskulin", "kasus=dativ"));
+        Assert.AreEqual("ersten", de.ConvertOrdinal(1, "deklination=stark", "genus=maskulin", "kasus=genitiv"));
+
+        // feminin stark: nom=akk="erste", dat=gen="erster"
+        Assert.AreEqual("erste",  de.ConvertOrdinal(1, "deklination=stark", "genus=feminin", "kasus=nominativ"));
+        Assert.AreEqual("erste",  de.ConvertOrdinal(1, "deklination=stark", "genus=feminin", "kasus=akkusativ"));
+        Assert.AreEqual("erster", de.ConvertOrdinal(1, "deklination=stark", "genus=feminin", "kasus=dativ"));
+        Assert.AreEqual("erster", de.ConvertOrdinal(1, "deklination=stark", "genus=feminin", "kasus=genitiv"));
+
+        // neutrum stark: nom=akk="erstes", dat="erstem", gen="ersten"
+        Assert.AreEqual("erstes", de.ConvertOrdinal(1, "deklination=stark", "genus=neutrum", "kasus=nominativ"));
+        Assert.AreEqual("erstes", de.ConvertOrdinal(1, "deklination=stark", "genus=neutrum", "kasus=akkusativ"));
+        Assert.AreEqual("erstem", de.ConvertOrdinal(1, "deklination=stark", "genus=neutrum", "kasus=dativ"));
+        Assert.AreEqual("ersten", de.ConvertOrdinal(1, "deklination=stark", "genus=neutrum", "kasus=genitiv"));
+    }
+
+    [TestMethod]
+    public void ConvertOrdinal_DE_WithVariants_RegularSuffix()
+    {
+        var de = NumberToStringConverter.GetConverter("DE");
+
+        // 20 has no OrdinalException and no word rule → suffix="ste" from <Ordinals>
+        // OrdinalVariants overrides the suffix per genus × deklination × kasus
+
+        // schwach maskulin: only akk+dat+gen → "sten"; nom stays "ste"
+        Assert.AreEqual("zwanzigste",  de.ConvertOrdinal(20, "deklination=schwach", "genus=maskulin", "kasus=nominativ"));
+        Assert.AreEqual("zwanzigsten", de.ConvertOrdinal(20, "deklination=schwach", "genus=maskulin", "kasus=akkusativ"));
+        Assert.AreEqual("zwanzigsten", de.ConvertOrdinal(20, "deklination=schwach", "genus=maskulin", "kasus=dativ"));
+        Assert.AreEqual("zwanzigsten", de.ConvertOrdinal(20, "deklination=schwach", "genus=maskulin", "kasus=genitiv"));
+
+        // schwach feminin: only dat+gen → "sten"; nom+akk stay "ste"
+        Assert.AreEqual("zwanzigste",  de.ConvertOrdinal(20, "deklination=schwach", "genus=feminin", "kasus=nominativ"));
+        Assert.AreEqual("zwanzigste",  de.ConvertOrdinal(20, "deklination=schwach", "genus=feminin", "kasus=akkusativ"));
+        Assert.AreEqual("zwanzigsten", de.ConvertOrdinal(20, "deklination=schwach", "genus=feminin", "kasus=dativ"));
+        Assert.AreEqual("zwanzigsten", de.ConvertOrdinal(20, "deklination=schwach", "genus=feminin", "kasus=genitiv"));
+
+        // schwach neutrum: same as feminin
+        Assert.AreEqual("zwanzigste",  de.ConvertOrdinal(20, "deklination=schwach", "genus=neutrum", "kasus=nominativ"));
+        Assert.AreEqual("zwanzigste",  de.ConvertOrdinal(20, "deklination=schwach", "genus=neutrum", "kasus=akkusativ"));
+        Assert.AreEqual("zwanzigsten", de.ConvertOrdinal(20, "deklination=schwach", "genus=neutrum", "kasus=dativ"));
+        Assert.AreEqual("zwanzigsten", de.ConvertOrdinal(20, "deklination=schwach", "genus=neutrum", "kasus=genitiv"));
+
+        // stark maskulin: nom → "ster"; akk+gen → "sten"; dat → "stem"
+        Assert.AreEqual("zwanzigster", de.ConvertOrdinal(20, "deklination=stark", "genus=maskulin", "kasus=nominativ"));
+        Assert.AreEqual("zwanzigsten", de.ConvertOrdinal(20, "deklination=stark", "genus=maskulin", "kasus=akkusativ"));
+        Assert.AreEqual("zwanzigstem", de.ConvertOrdinal(20, "deklination=stark", "genus=maskulin", "kasus=dativ"));
+        Assert.AreEqual("zwanzigsten", de.ConvertOrdinal(20, "deklination=stark", "genus=maskulin", "kasus=genitiv"));
+
+        // stark feminin: nom+akk → "ste"; dat+gen → "ster"
+        Assert.AreEqual("zwanzigste",  de.ConvertOrdinal(20, "deklination=stark", "genus=feminin", "kasus=nominativ"));
+        Assert.AreEqual("zwanzigste",  de.ConvertOrdinal(20, "deklination=stark", "genus=feminin", "kasus=akkusativ"));
+        Assert.AreEqual("zwanzigster", de.ConvertOrdinal(20, "deklination=stark", "genus=feminin", "kasus=dativ"));
+        Assert.AreEqual("zwanzigster", de.ConvertOrdinal(20, "deklination=stark", "genus=feminin", "kasus=genitiv"));
+
+        // stark neutrum: nom+akk → "stes"; dat → "stem"; gen → "sten"
+        Assert.AreEqual("zwanzigstes", de.ConvertOrdinal(20, "deklination=stark", "genus=neutrum", "kasus=nominativ"));
+        Assert.AreEqual("zwanzigstes", de.ConvertOrdinal(20, "deklination=stark", "genus=neutrum", "kasus=akkusativ"));
+        Assert.AreEqual("zwanzigstem", de.ConvertOrdinal(20, "deklination=stark", "genus=neutrum", "kasus=dativ"));
+        Assert.AreEqual("zwanzigsten", de.ConvertOrdinal(20, "deklination=stark", "genus=neutrum", "kasus=genitiv"));
+
+        // Compound (21+): suffix variant also applies to word-appended forms
+        Assert.AreEqual("einundzwanzigste",  de.ConvertOrdinal(21));
+        Assert.AreEqual("einundzwanzigster", de.ConvertOrdinal(21, "deklination=stark", "genus=maskulin", "kasus=nominativ"));
+        Assert.AreEqual("einundzwanzigsten", de.ConvertOrdinal(21, "deklination=stark", "genus=maskulin", "kasus=akkusativ"));
+    }
+
     // ── C8d — Ordinals HE ────────────────────────────────────────────────
 
     [TestMethod]
@@ -1677,6 +1771,61 @@ public class NumberToStringConverterImprovementsTests
         Assert.AreEqual("أول",  converter.ConvertOrdinal(1));
         Assert.AreEqual("ثانٍ", converter.ConvertOrdinal(2));
         Assert.AreEqual("عاشر", converter.ConvertOrdinal(10));
+    }
+
+    // ── C15a — Variant without selector throws ───────────────────────────────
+
+    [TestMethod]
+    public void ReadConfiguration_VariantWithoutSelector_Throws()
+    {
+        const string xml = """
+            <?xml version="1.0" encoding="utf-8" ?>
+            <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+              <Language groupSize="3" separator=" " groupSeparator="" zero="zero" minus="minus *">
+                <Culture>TEST-BAD-VARIANT</Culture>
+                <Groups><Group level="1"><Digit digit="1" string="one" /></Group></Groups>
+                <NumberScale firstLetterUpperCase="false">
+                  <StaticNames><Scale value="0" string="" /></StaticNames>
+                </NumberScale>
+                <Variants>
+                  <Dimension name="case" values="nom,acc" />
+                  <Variant type="case">
+                    <Replacement oldValue="one" newValue="ONE" scope="LastWord" />
+                  </Variant>
+                </Variants>
+              </Language>
+            </Numbers>
+            """;
+
+        Assert.ThrowsException<InvalidOperationException>(() =>
+            NumberToStringConverter.ReadConfiguration(xml));
+    }
+
+    [TestMethod]
+    public void ReadConfiguration_OrdinalVariantWithoutSelector_Throws()
+    {
+        const string xml = """
+            <?xml version="1.0" encoding="utf-8" ?>
+            <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+              <Language groupSize="3" separator=" " groupSeparator="" zero="zero" minus="minus *">
+                <Culture>TEST-BAD-ORDVARIANT</Culture>
+                <Groups><Group level="1"><Digit digit="1" string="one" /></Group></Groups>
+                <NumberScale firstLetterUpperCase="false">
+                  <StaticNames><Scale value="0" string="" /></StaticNames>
+                </NumberScale>
+                <Ordinals suffix="th">
+                  <OrdinalVariants>
+                    <Variant type="case">
+                      <OrdinalException value="1" string="first" />
+                    </Variant>
+                  </OrdinalVariants>
+                </Ordinals>
+              </Language>
+            </Numbers>
+            """;
+
+        Assert.ThrowsException<InvalidOperationException>(() =>
+            NumberToStringConverter.ReadConfiguration(xml));
     }
 
     // ── C15 — Multi-value variant syntax (values="a,b,c") ───────────────────

@@ -218,6 +218,10 @@ namespace Utils.NumberToString
                 string? dimType = string.IsNullOrEmpty(variant.DimensionType)
                     ? null : NormalizeDimName(variant.DimensionType);
 
+                if (dimType != null && string.IsNullOrEmpty(variant.VariantValue) && string.IsNullOrEmpty(variant.VariantValues))
+                    throw new InvalidOperationException(
+                        $"Variant with type=\"{variant.DimensionType}\" must declare either a \"variant\" or a \"values\" attribute.");
+
                 // values="a,b,c" expands to one rule per value; variant="x" is the single-value form.
                 IEnumerable<string> dimValues =
                     !string.IsNullOrEmpty(variant.VariantValues)
@@ -326,13 +330,20 @@ namespace Utils.NumberToString
                     return entry;
                 }
 
+                // First forms from elements that omit string=/to= become defaults
+                // (empty-constraint fallback so no-variant calls still resolve correctly).
+                var fallbackExceptions = new Dictionary<long, string>();
+                var fallbackWordRules  = new Dictionary<string, string>();
+
                 foreach (var exc in ordinals?.Exceptions ?? [])
                 {
                     if (exc.FormVariants?.Count > 0)
                     {
+                        bool captureFirst = exc.StringValue == null;
                         foreach (var (c, form) in ExpandFormVariants(exc.FormVariants, parsedDimensions,
                             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)))
                         {
+                            if (captureFirst) { fallbackExceptions.TryAdd(exc.Value, form); captureFirst = false; }
                             var entry = GetOrAddSynthetic(ConstraintKey(c), c);
                             entry.e[exc.Value] = form;
                         }
@@ -343,17 +354,49 @@ namespace Utils.NumberToString
                 {
                     if (rule.FormVariants?.Count > 0)
                     {
+                        bool captureFirst = rule.To == null;
                         foreach (var (c, form) in ExpandFormVariants(rule.FormVariants, parsedDimensions,
                             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)))
                         {
+                            if (captureFirst) { fallbackWordRules.TryAdd(rule.From, form); captureFirst = false; }
                             var entry = GetOrAddSynthetic(ConstraintKey(c), c);
                             entry.w[rule.From] = form;
                         }
                     }
                 }
 
+                // Merge synthetic exceptions/wordRules into any container rule sharing the same
+                // constraint key. Without this, a container rule (suffix=sten, exceptions={}) and
+                // a synthetic rule (exceptions={1:"ersten",...}, suffix=null) both have specificity
+                // 3 and FindBestOrdinalVariant picks whichever appears first, losing the other's data.
+                var containerKeyToIndex = new Dictionary<string, int>(StringComparer.Ordinal);
+                for (int i = 0; i < result.Count; i++)
+                    containerKeyToIndex[ConstraintKey(result[i].Constraints)] = i;
+
                 foreach (var (constraints, exceptions, wordRules) in syntheticByKey.Values)
-                    result.Add(new NumberToStringConverter.OrdinalVariantRule(constraints, exceptions, wordRules, null, null));
+                {
+                    var key = ConstraintKey(constraints);
+                    if (containerKeyToIndex.TryGetValue(key, out var idx))
+                    {
+                        var existing = result[idx];
+                        var mergedExc = new Dictionary<long, string>(existing.Exceptions);
+                        foreach (var kv in exceptions) mergedExc[kv.Key] = kv.Value;
+                        var mergedWr = new Dictionary<string, string>(existing.WordRules);
+                        foreach (var kv in wordRules) mergedWr[kv.Key] = kv.Value;
+                        result[idx] = new NumberToStringConverter.OrdinalVariantRule(
+                            existing.Constraints, mergedExc, mergedWr,
+                            existing.Suffix, existing.RemoveTrailing);
+                    }
+                    else
+                    {
+                        result.Add(new NumberToStringConverter.OrdinalVariantRule(constraints, exceptions, wordRules, null, null));
+                    }
+                }
+
+                if (fallbackExceptions.Count > 0 || fallbackWordRules.Count > 0)
+                    result.Add(new NumberToStringConverter.OrdinalVariantRule(
+                        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
+                        fallbackExceptions, fallbackWordRules, null, null));
 
                 return result;
             }
@@ -365,6 +408,10 @@ namespace Utils.NumberToString
             {
                 string? dimType = string.IsNullOrEmpty(variant.DimensionType)
                     ? null : NormalizeDimName(variant.DimensionType);
+
+                if (dimType != null && string.IsNullOrEmpty(variant.VariantValue) && string.IsNullOrEmpty(variant.VariantValues))
+                    throw new InvalidOperationException(
+                        $"OrdinalVariant with type=\"{variant.DimensionType}\" must declare either a \"variant\" or a \"values\" attribute.");
 
                 // values="a,b,c" expands to one rule per value; variant="x" is the single-value form.
                 IEnumerable<string> dimValues =

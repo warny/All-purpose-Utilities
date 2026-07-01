@@ -96,15 +96,12 @@
 			<Fraction digits="3" string="millième(s)" />
 		</Fractions>
 		<Ordinals suffix="ième" removeTrailing="e">
-			<OrdinalException value="1" string="premier" />
+			<OrdinalException value="1">
+				<Variant type="gender" forms="premier,première" />
+			</OrdinalException>
 			<Ordinal from="un" to="unième" />
 			<Ordinal from="cinq" to="cinquième" />
 			<Ordinal from="neuf" to="neuvième" />
-			<OrdinalVariants>
-				<Variant type="gender" variant="feminin">
-					<OrdinalException value="1" string="première" />
-				</Variant>
-			</OrdinalVariants>
 		</Ordinals>
 		<Variants>
 			<Dimension name="gender" localName="genre" values="masculin,feminin" />
