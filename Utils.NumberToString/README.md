@@ -697,13 +697,44 @@ de.Convert(2_000_000);  // "zwei Millionen"
 
 ---
 
+## Significant-digits precision
+
+Round a number to N most significant digits before converting, using standard rounding (≥ 5 rounds up):
+
+```csharp
+NumberToStringConverter fr = NumberToStringConverter.GetConverter("FR");
+
+fr.Convert(123456789);        // "cent vingt trois millions quatre cent cinquante six mille sept cent quatre-vingt-neuf"
+fr.Convert(123456789, 3);     // "cent vingt trois millions"         (→ 123 000 000)
+fr.Convert(123456789, 2);     // "cent vingt millions"               (→ 120 000 000)
+fr.Convert(123456789, 1);     // "cent millions"                     (→ 100 000 000)
+```
+
+The rounding is done by `MathEx.RoundToSignificantDigits` (from `omy.Utils.Mathematics`) and then
+delegates to the normal `Convert` pipeline, so variants work as expected:
+
+```csharp
+fr.Convert(123456789, 3, "gender=feminin"); // "cent vingt trois millions" (no gender change at this scale)
+```
+
+---
+
 ## Conversion pipeline
 
 ```
 number
-  → ConvertRaw          (digit groups + exceptions + language replacements)
+  → ConvertRaw:
+      for each group (millions, thousands, units, …):
+          ConvertGroup       (digit text for this group)
+          Trigger group      (optional: text-replacements on digit text)
+          append scale name
+          Replacements       (per-language substitutions)
+          Trigger groupWithScale  (optional: replacements on digit+scale text)
+          push to stack
+      assemble all groups
   → AdjustFunction      (optional user-supplied transformation)
   → ApplyVariantRules   (morphological replacements, least to most specific)
+  → Trigger end         (optional: replacements on fully assembled text)
   → FinalizeWriting     (INumberToStringLanguageSpecifics)
   → sign wrapping       (Minus template if negative)
 ```
@@ -713,10 +744,11 @@ number
 ```
 number
   → OrdinalExceptions   (integer-level early exit, e.g. 1 → "premier")
-  → ConvertRaw          (raw cardinal text, no adjustment)
+  → ConvertRaw + Triggers group/groupWithScale
   → ApplyVariantRules   (default variant values)
   → ApplyOrdinalTransform  (word rules + suffix on last word)
   → AdjustFunction      (user transform + FinalizeWriting)
+  → Trigger end
   → sign wrapping
 ```
 
@@ -754,6 +786,7 @@ Language configurations are XML files whose structure is described by
         <Fractions>…</Fractions>               <!-- optional -->
         <Ordinals suffix="…">…</Ordinals>      <!-- optional -->
         <Variants>…</Variants>                 <!-- optional -->
+        <Trigger executeAt="…">…</Trigger>     <!-- optional, one per position -->
 
     </Language>
 </Numbers>
@@ -1140,6 +1173,104 @@ to `Convert(year)`.
 
 ---
 
+### `<Trigger>` — pipeline hooks
+
+`<Trigger>` elements apply text replacements at a specific moment in the conversion pipeline,
+optionally conditioned on active morphological variant values.
+
+#### Execute positions — `executeAt`
+
+| Value | When it fires | Sees |
+|-------|--------------|------|
+| `"group"` | After `ConvertGroup` for each digit group | Digit text only (no scale name yet) |
+| `"group(N)"` | Same, but only for group N (0 = units, 1 = thousands, 2 = millions, …) | Digit text |
+| `"group(N,M,…)"` | Same, restricted to the listed group indices | Digit text |
+| `"groupWithScale"` | After per-group `Replacements`, before pushing | Digit+scale text |
+| `"groupWithScale(N)"` | Same, restricted to group N | Digit+scale text |
+| `"end"` | After full assembly, `AdjustFunction`, and `ApplyVariantRules` | Final assembled text |
+
+> **Warning**: `group` and `groupWithScale` triggers also fire during `ConvertOrdinal`. If the trigger
+> modifies a word that an ordinal word-rule targets (e.g. it replaces `"ein"` with something else),
+> the ordinal transform may not match. Use `"end"` for post-ordinal corrections.
+
+#### `<Replace>` — replacement rule
+
+Each trigger contains one or more `<Replace>` elements. They are applied in declaration order,
+independently of each other — each selects exactly one form and applies it once.
+
+```xml
+<!-- Simple unconditional replacement -->
+<Trigger executeAt="end">
+    <Replace from="et " to="&amp; " />
+</Trigger>
+
+<!-- Regex replacement -->
+<Trigger executeAt="group(0)">
+    <Replace from="^one$" to="uno" regex="true" />
+</Trigger>
+```
+
+#### Variant-conditioned replacements
+
+When a `<Replace>` has `<Variant>` children, the most specific matching form is selected
+(same best-match algorithm as ordinal variants). The `to=` attribute becomes the unconditional
+default used when no form matches the active variant query.
+
+**Positional forms** — one form per dimension value in declaration order:
+
+```xml
+<Trigger executeAt="end">
+    <!-- genus dimension: maskulin=eins, feminin=eine, neutrum=eins -->
+    <Replace from="ein$" regex="true" to="eins">
+        <Variant type="genus" forms="eins,eine,eins" />
+    </Replace>
+</Trigger>
+```
+
+**Single-value shorthand** with `value=` — overrides exactly one dimension value:
+
+```xml
+<Trigger executeAt="end">
+    <!-- default "eins", but feminin → "eine" -->
+    <Replace from="ein$" regex="true" to="eins">
+        <Variant type="genus" variant="feminin" value="eine" />
+    </Replace>
+</Trigger>
+```
+
+**No default** — when `to=` is absent and no variant matches, the replacement is skipped entirely
+(the regex is never evaluated):
+
+```xml
+<Trigger executeAt="group(0)">
+    <!-- fires only for feminin; other variants are untouched -->
+    <Replace from="uno" regex="false">
+        <Variant type="gender" variant="feminin" value="una" />
+    </Replace>
+</Trigger>
+```
+
+#### `<Replace>` attributes
+
+| Attribute | Required | Description |
+|-----------|----------|-------------|
+| `from` | ✓ | Text or regex pattern to match. |
+| `to` | | Unconditional default replacement. May contain backreferences (`$1`, `${name}`) when `regex="true"`. When absent, the first expanded `<Variant>` form is used as default. |
+| `regex` | | `"true"` to treat `from` as a .NET regular expression. Default: `"false"` (literal match). |
+
+The `<Variant>` children use the same `FormVariantType` syntax as `<Replacement>`, `<Ordinal>`,
+and `<OrdinalException>`:
+
+| Attribute | Description |
+|-----------|-------------|
+| `type` | Dimension name (canonical or `localName`). |
+| `variant` | Single value — marks this node as a constraint leaf. Used with `value=` or nested children. |
+| `forms` | Positional comma-separated forms, one per dimension value in declaration order. Leaf node syntax. |
+| `value` | Single output form for the specific `variant` named by `variant=`. Shorthand for single-value overrides. |
+
+---
+
 ## Related packages
 
 - `omy.Utils` — contains `NumberToStringConverter`, `NumberToStringConverterOptions`, and all built-in culture XML configurations.
+- `omy.Utils.Mathematics` — provides `MathEx.RoundToSignificantDigits` used by the significant-digits precision overload.
