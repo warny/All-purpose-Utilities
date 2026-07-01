@@ -185,7 +185,7 @@ internal static partial class GrammarEmitter
         sb.AppendLine("        }");
         sb.AppendLine();
         sb.AppendLine("        /// <summary>Executes a generated lexer action hook when the runtime context matches.</summary>");
-        sb.AppendLine("        public LexerActionExecutionOutcome Execute(LexerActionExecutionContext context)");
+        sb.AppendLine("        public LexerActionExecutionOutcome Execute(LexerActionExecutionContext context, LexerActionExecutionResult result)");
         sb.AppendLine("        {");
         foreach (var action in lexerActions)
         {
@@ -194,13 +194,13 @@ internal static partial class GrammarEmitter
             sb.AppendLine($"                && context.AlternativeIndex == {action.AlternativeIndex}");
             sb.AppendLine($"                && context.ElementIndex == {action.ElementIndex})");
             sb.AppendLine("            {");
-            sb.AppendLine($"                _executionContext.{action.MethodName}(context);");
+            sb.AppendLine($"                _executionContext.{action.MethodName}(context, result);");
             sb.AppendLine("                return LexerActionExecutionOutcome.Executed;");
             sb.AppendLine("            }");
             sb.AppendLine();
         }
 
-        sb.AppendLine("            return _fallback.Execute(context);");
+        sb.AppendLine("            return _fallback.Execute(context, result);");
         sb.AppendLine("        }");
         sb.AppendLine("    }");
         sb.AppendLine();
@@ -296,7 +296,7 @@ internal static partial class GrammarEmitter
         var body = GeneratedEmbeddedCodeBody.ForAction(hook.EmittedCode);
 
         sb.AppendLine($"    /// <summary>Executes inline lexer action hook for rule <c>{EscapeXml(hook.RuleName)}</c>.</summary>");
-        sb.AppendLine($"    private void {hook.MethodName}(LexerActionExecutionContext context)");
+        sb.AppendLine($"    private void {hook.MethodName}(LexerActionExecutionContext context, LexerActionExecutionResult result)");
         sb.AppendLine("    {");
         EmitGeneratedEmbeddedCodeBody(sb, body, "        ");
         sb.AppendLine("    }");

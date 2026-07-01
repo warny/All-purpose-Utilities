@@ -949,7 +949,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
             }
 
             start : A ;
-            A : 'a' { Seen = $text; SeenType = $type; SeenChannel = $channel; SeenMode = $mode; SeenLine = $line; SeenPos = $pos; } ;
+            A : 'a' { Seen = $text; SeenType = $type; SeenChannel = $channel; SeenMode = $mode; SeenLine = $line; SeenPos = $pos; $type = B; $channel = HIDDEN; } ;
             """;
 
         string source = Emit(grammar);
@@ -960,6 +960,163 @@ public class Antlr4GeneratedEmbeddedCodeTests
         StringAssert.Contains(source, "SeenMode = $mode;");
         StringAssert.Contains(source, "SeenLine = $line;");
         StringAssert.Contains(source, "SeenPos = $pos;");
+        StringAssert.Contains(source, "$type = B;");
+        StringAssert.Contains(source, "$channel = HIDDEN;");
+    }
+
+
+    /// <summary>
+    /// Ensures lexer <c>$type</c> writes rewrite to controlled action-result mutations.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerTypeWrite_RewritesAndChangesTokenType()
+    {
+        const string grammar = """
+            grammar P;
+
+            start : B ;
+            A : 'a' { $type = B; } ;
+            B : 'b' ;
+            """;
+
+        string source = EmitWithAntlrStyleTransformer(grammar);
+        StringAssert.Contains(source, "SetLexerType(result, \"B\");");
+        int hookStart = source.IndexOf("private void __LexerAction_A_0_1_0", StringComparison.Ordinal);
+        Assert.IsTrue(hookStart >= 0, source);
+        Assert.IsFalse(source.Substring(hookStart).Contains("$type =", StringComparison.Ordinal), source);
+        var assembly = CompileGeneratedSource(source);
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "a", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+    }
+
+    /// <summary>
+    /// Ensures lexer <c>$channel</c> writes rewrite to controlled action-result mutations.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerChannelWrite_RewritesAndChangesTokenChannel()
+    {
+        const string grammar = """
+            grammar P;
+
+            start : ;
+            A : 'a' { $channel = HIDDEN; } ;
+            """;
+
+        string source = EmitWithAntlrStyleTransformer(grammar);
+        StringAssert.Contains(source, "SetLexerChannel(result, \"HIDDEN\");");
+        int hookStart = source.IndexOf("private void __LexerAction_A_0_1_0", StringComparison.Ordinal);
+        Assert.IsTrue(hookStart >= 0, source);
+        Assert.IsFalse(source.Substring(hookStart).Contains("$channel =", StringComparison.Ordinal), source);
+        var assembly = CompileGeneratedSource(source);
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "a", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+    }
+
+    /// <summary>
+    /// Ensures lexer commands remain authoritative after generated lexer attribute writes.
+    /// </summary>
+    [DataTestMethod]
+    [DataRow("start : C ;\nA : 'a' { $type = B; } -> type(C) ;\nB : 'b' ;\nC : 'c' ;", "a", DisplayName = "Type command overrides write")]
+    [DataRow("start : A ;\nA : 'a' { $channel = HIDDEN; } -> channel(DEFAULT_CHANNEL) ;", "a", DisplayName = "Channel command overrides write")]
+    [DataRow("start : ;\nA : 'a' { $type = B; } -> skip ;\nB : 'b' ;", "a", DisplayName = "Skip after type write")]
+    [DataRow("start : ;\nA : 'a' { $channel = HIDDEN; } -> skip ;", "a", DisplayName = "Skip after channel write")]
+    public void ParseWithEmbeddedCode_LexerAttributeWrites_BeforeCommandsRespectCommands(string rules, string input)
+    {
+        string grammar = $$"""
+            grammar P;
+
+            {{rules}}
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, input, context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+    }
+
+    /// <summary>
+    /// Ensures lexer <c>more</c> keeps chunking semantics after an earlier type write.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerTypeWrite_WithMoreUsesFinalChunkType()
+    {
+        const string grammar = """
+            grammar P;
+
+            start : B ;
+            M : 'm' { $type = B; } -> more ;
+            B : 'a' ;
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "ma", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+    }
+
+    /// <summary>
+    /// Ensures lexer type writes execute only for accepted predicate paths.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerTypeWrite_WithPredicateWritesOnlyAcceptedPath()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public bool Enabled = false;
+            }
+
+            start : B ;
+            A : { Enabled }? 'a' { $type = B; } ;
+            B : 'b' ;
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object disabledContext = CreateExecutionContext(assembly);
+        object enabledContext = CreateExecutionContext(assembly);
+        WriteInstanceBoolField(enabledContext, "Enabled", true);
+
+        var disabledResult = InvokeParseWithContext(assembly, "a", disabledContext);
+        var enabledResult = InvokeParseWithContext(assembly, "a", enabledContext);
+
+        Assert.IsInstanceOfType(disabledResult, typeof(ErrorNode));
+        Assert.IsNotInstanceOfType(enabledResult, typeof(ErrorNode));
+    }
+
+    /// <summary>
+    /// Ensures lexer type writes from rejected alternatives do not leak into the selected path.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerTypeWrite_RejectedAlternativeDoesNotLeak()
+    {
+        const string grammar = """
+            grammar P;
+
+            start : B ;
+            A : 'a' 'x' { $type = C; }
+              | 'a' { $type = B; }
+              ;
+            B : 'b' ;
+            C : 'c' ;
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "a", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
     }
 
     /// <summary>
@@ -967,6 +1124,8 @@ public class Antlr4GeneratedEmbeddedCodeTests
     /// </summary>
     [DataTestMethod]
     [DataRow("$type == \"A\"")]
+    [DataRow("$type = B")]
+    [DataRow("$channel = HIDDEN")]
     [DataRow("$channel == \"DEFAULT_CHANNEL\"")]
     [DataRow("$mode == \"DEFAULT_MODE\"")]
     [DataRow("$line == 1")]
@@ -990,12 +1149,13 @@ public class Antlr4GeneratedEmbeddedCodeTests
     /// Ensures unsupported lexer attribute writes report deterministic transformer diagnostics.
     /// </summary>
     [DataTestMethod]
-    [DataRow("$type = B;")]
-    [DataRow("$channel = HIDDEN;")]
-    [DataRow("$mode = SECOND;")]
-    [DataRow("$text ??= \"fallback\";")]
+    [DataRow("$text = \"x\";")]
     [DataRow("$line = 2;")]
     [DataRow("$pos = 3;")]
+    [DataRow("$mode = SECOND;")]
+    [DataRow("$type += B;")]
+    [DataRow("$channel ??= HIDDEN;")]
+    [DataRow("$type++;")]
     public void EmitWithAntlrStyleTransformer_LexerAttributeWrite_ReportsDiagnostic(string actionCode)
     {
         string grammar = $$"""
@@ -1009,7 +1169,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
         InvalidOperationException exception = Assert.ThrowsException<InvalidOperationException>(() => EmitWithAntlrStyleTransformer(grammar));
 
         StringAssert.Contains(exception.Message, "APU0105");
-        StringAssert.Contains(exception.Message, "Lexer attribute writes are not supported");
+        StringAssert.Contains(exception.Message.ToLowerInvariant(), "lexer attribute write");
     }
 
     /// <summary>
@@ -1049,18 +1209,18 @@ public class Antlr4GeneratedEmbeddedCodeTests
             }
 
             start : A ;
-            A : 'a' { Seen = "$type $channel $mode $line $pos"; /* $type $channel $mode $line $pos */ } ;
+            A : 'a' { Seen = "$type = B; $channel = HIDDEN;"; /* $type = B; $channel = HIDDEN; */ } ;
             """;
 
         string source = EmitWithAntlrStyleTransformer(grammar);
-        StringAssert.Contains(source, "Seen = \"$type $channel $mode $line $pos\"; /* $type $channel $mode $line $pos */");
+        StringAssert.Contains(source, "Seen = \"$type = B; $channel = HIDDEN;\"; /* $type = B; $channel = HIDDEN; */");
         var assembly = CompileGeneratedSource(source);
         object context = CreateExecutionContext(assembly);
 
         var result = InvokeParseWithContext(assembly, "a", context);
 
         Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
-        Assert.AreEqual("$type $channel $mode $line $pos", ReadInstanceStringField(context, "Seen"));
+        Assert.AreEqual("$type = B; $channel = HIDDEN;", ReadInstanceStringField(context, "Seen"));
     }
 
     /// <summary>
