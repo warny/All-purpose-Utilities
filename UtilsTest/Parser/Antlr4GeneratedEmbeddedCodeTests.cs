@@ -1119,6 +1119,216 @@ public class Antlr4GeneratedEmbeddedCodeTests
         Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
     }
 
+
+    /// <summary>
+    /// Ensures multiple lexer attribute writes in one accepted action use the last value for each attribute.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerAttributeWrites_MultipleWritesInSameActionLastWriteWins()
+    {
+        const string grammar = """
+            grammar P;
+
+            start : C ;
+            A : 'a' { $type = B; $type = C; $channel = HIDDEN; $channel = DEFAULT_CHANNEL; } ;
+            B : 'b' ;
+            C : 'c' ;
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "a", context);
+        Token token = TokenizeWithContext(assembly, "a", context).Single();
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual("C", token.RuleName);
+        Assert.AreEqual("DEFAULT_CHANNEL", token.Channel);
+    }
+
+    /// <summary>
+    /// Ensures lexer type and channel writes from the same action are both carried by the action result.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerAttributeWrites_MixedTypeAndChannelWritesApplyTogether()
+    {
+        const string grammar = """
+            grammar P;
+
+            start : B ;
+            A : 'a' { $type = B; $channel = HIDDEN; } ;
+            B : 'b' ;
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object context = CreateExecutionContext(assembly);
+
+        Token token = TokenizeWithContext(assembly, "a", context).Single();
+
+        Assert.AreEqual("B", token.RuleName);
+        Assert.AreEqual("HIDDEN", token.Channel);
+    }
+
+    /// <summary>
+    /// Ensures lexer attribute writes from multiple accepted actions in one token share one mutable action result.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerAttributeWrites_MultipleActionsInSameTokenAccumulate()
+    {
+        const string grammar = """
+            grammar P;
+
+            start : C ;
+            A : 'a' { $type = B; $channel = HIDDEN; } 'b' { $type = C; $channel = DEFAULT_CHANNEL; } ;
+            B : 'x' ;
+            C : 'y' ;
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "ab", context);
+        Token token = TokenizeWithContext(assembly, "ab", context).Single();
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual("C", token.RuleName);
+        Assert.AreEqual("DEFAULT_CHANNEL", token.Channel);
+    }
+
+    /// <summary>
+    /// Ensures lexer attribute writes do not mutate the passive lexer action execution context read by later statements.
+    /// </summary>
+    [DataTestMethod]
+    [DataRow("$type = B; SeenType = $type; $channel = HIDDEN; SeenChannel = $channel;", DisplayName = "Write then read")]
+    [DataRow("SeenType = $type; SeenChannel = $channel; $type = B; $channel = HIDDEN;", DisplayName = "Read then write")]
+    public void ParseWithEmbeddedCode_LexerAttributeWrites_ReadsUseInitialPassiveContext(string actionCode)
+    {
+        string grammar = $$"""
+            grammar P;
+
+            @lexer::members {
+                public string SeenType = "";
+                public string SeenChannel = "";
+            }
+
+            start : B ;
+            A : 'a' { {{actionCode}} } ;
+            B : 'b' ;
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object context = CreateExecutionContext(assembly);
+
+        Token token = TokenizeWithContext(assembly, "a", context).Single();
+
+        Assert.AreEqual("A", ReadInstanceStringField(context, "SeenType"));
+        Assert.AreEqual("DEFAULT_CHANNEL", ReadInstanceStringField(context, "SeenChannel"));
+        Assert.AreEqual("B", token.RuleName);
+        Assert.AreEqual("HIDDEN", token.Channel);
+    }
+
+    /// <summary>
+    /// Ensures lexer type writes in nested lexer structures belong to the accepted outer token.
+    /// </summary>
+    [DataTestMethod]
+    [DataRow("start : B ;\nA : F ;\nfragment F : 'a' { $type = B; } ;\nB : 'b' ;", "a", DisplayName = "Fragment write")]
+    [DataRow("start : C ;\nA : 'a' { $type = B; } F { $type = C; } ;\nfragment F : 'b' ;\nB : 'x' ;\nC : 'y' ;", "ab", DisplayName = "Around fragment")]
+    [DataRow("start : B ;\nA : R ;\nR : 'a' { $type = B; } ;\nB : 'b' ;", "a", DisplayName = "Lexer rule reference")]
+    [DataRow("start : B ;\nA : 'a'+ { $type = B; } ;\nB : 'b' ;", "aaa", DisplayName = "After quantifier")]
+    [DataRow("start : B ;\nA : ('a' { $type = B; })+ ;\nB : 'b' ;", "aaa", DisplayName = "Inside quantifier")]
+    [DataRow("start : C ;\nA : 'a' { $type = B; } ('a' { $type = C; })* ;\nB : 'b' ;\nC : 'c' ;", "aa", DisplayName = "Contradictory quantifier last iteration")]
+    [DataRow("start : B ;\nA : 'a' { $type = B; } ('a' { $type = C; })* ;\nB : 'b' ;\nC : 'c' ;", "a", DisplayName = "Contradictory quantifier first write")]
+    public void ParseWithEmbeddedCode_LexerTypeWrites_NestedAcceptedPathsApplyToOuterToken(string rules, string input)
+    {
+        string grammar = $$"""
+            grammar P;
+
+            {{rules}}
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, input, context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+    }
+
+    /// <summary>
+    /// Ensures channel writes from rejected alternatives and intermediate more chunks do not leak to the emitted token.
+    /// </summary>
+    [DataTestMethod]
+    [DataRow("start : A ;\nA : 'a' ;\nX : 'a' 'x' { $channel = HIDDEN; } | 'a' ;", "a", "DEFAULT_CHANNEL", DisplayName = "Rejected alternative")]
+    [DataRow("start : A ;\nM : 'm' { $channel = HIDDEN; } -> more ;\nA : 'a' ;", "ma", "DEFAULT_CHANNEL", DisplayName = "More intermediate chunk")]
+    [DataRow("start : ;\nA : 'a' { $channel = HIDDEN; $channel = HIDDEN; } -> channel(DEFAULT_CHANNEL) ;", "a", "DEFAULT_CHANNEL", DisplayName = "Command override")]
+    public void ParseWithEmbeddedCode_LexerChannelWrites_DoNotLeakAndCommandsOverride(string rules, string input, string expectedChannel)
+    {
+        string grammar = $$"""
+            grammar P;
+
+            {{rules}}
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object context = CreateExecutionContext(assembly);
+
+        Token token = TokenizeWithContext(assembly, input, context).Single();
+
+        Assert.AreEqual(expectedChannel, token.Channel);
+    }
+
+    /// <summary>
+    /// Ensures final more chunks and lexer commands remain deterministic after multiple lexer attribute writes.
+    /// </summary>
+    [DataTestMethod]
+    [DataRow("start : C ;\nM : 'm' { $type = B; } -> more ;\nA : 'a' { $type = C; } ;\nB : 'b' ;\nC : 'c' ;", "ma", DisplayName = "More final write wins")]
+    [DataRow("start : A ;\nM : 'm' { $type = B; } -> more ;\nA : 'a' ;\nB : 'b' ;", "ma", DisplayName = "More without final write uses final chunk")]
+    [DataRow("start : D ;\nA : 'a' { $type = B; $type = C; } -> type(D) ;\nB : 'b' ;\nC : 'c' ;\nD : 'd' ;", "a", DisplayName = "Command overrides multiple writes")]
+    public void ParseWithEmbeddedCode_LexerTypeWrites_MoreAndCommandsAreDeterministic(string rules, string input)
+    {
+        string grammar = $$"""
+            grammar P;
+
+            {{rules}}
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, input, context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+    }
+
+    /// <summary>
+    /// Ensures simple lexer attribute write values and whitespace variations are accepted by the transformer.
+    /// </summary>
+    [DataTestMethod]
+    [DataRow("$type=\"B\";")]
+    [DataRow("$type   =   B   ;")]
+    [DataRow("$channel=\"HIDDEN\";")]
+    [DataRow("$channel   =   HIDDEN   ;")]
+    [DataRow("$type\n    =\nB\n    ;")]
+    [DataRow("$type = \"B\\\"X\";")]
+    public void EmitWithAntlrStyleTransformer_LexerAttributeWrites_SimpleValuesAndWhitespaceRewrite(string actionCode)
+    {
+        string grammar = $$"""
+            grammar P;
+
+            start : ;
+            A : 'a' { {{actionCode}} } ;
+            B : 'b' ;
+            """;
+
+        string source = EmitWithAntlrStyleTransformer(grammar);
+
+        Assert.IsTrue(
+            source.Contains("SetLexerType(result, \"B\");", StringComparison.Ordinal)
+                || source.Contains("SetLexerChannel(result, \"HIDDEN\");", StringComparison.Ordinal)
+                || source.Contains("SetLexerType(result, \"B\\\"X\");", StringComparison.Ordinal),
+            source);
+    }
+
     /// <summary>
     /// Ensures unsupported lexer attributes in predicates are rejected by the transformer before raw C# compilation.
     /// </summary>
@@ -1156,6 +1366,22 @@ public class Antlr4GeneratedEmbeddedCodeTests
     [DataRow("$type += B;")]
     [DataRow("$channel ??= HIDDEN;")]
     [DataRow("$type++;")]
+    [DataRow("$type = GetTypeName();")]
+    [DataRow("$channel = GetChannel();")]
+    [DataRow("$type = B + C;")]
+    [DataRow("$channel = HIDDEN ?? DEFAULT_CHANNEL;")]
+    [DataRow("$type = Some.Type;")]
+    [DataRow("Foo($type = B);")]
+    [DataRow("var x = ($channel = HIDDEN);")]
+    [DataRow("if (($type = B) != null) { }")]
+    [DataRow("$type = B")]
+    [DataRow("$channel = HIDDEN")]
+    [DataRow("$type.Name = B;")]
+    [DataRow("$channel.Value = HIDDEN;")]
+    [DataRow("Foo(ref $type);")]
+    [DataRow("Foo(out $channel);")]
+    [DataRow("$type = Namespace.B;")]
+    [DataRow("$channel = Channels.Hidden;")]
     public void EmitWithAntlrStyleTransformer_LexerAttributeWrite_ReportsDiagnostic(string actionCode)
     {
         string grammar = $$"""
@@ -1169,7 +1395,6 @@ public class Antlr4GeneratedEmbeddedCodeTests
         InvalidOperationException exception = Assert.ThrowsException<InvalidOperationException>(() => EmitWithAntlrStyleTransformer(grammar));
 
         StringAssert.Contains(exception.Message, "APU0105");
-        StringAssert.Contains(exception.Message.ToLowerInvariant(), "lexer attribute write");
     }
 
     /// <summary>
@@ -5430,7 +5655,6 @@ public class Antlr4GeneratedEmbeddedCodeTests
         return Activator.CreateInstance(type)!;
     }
 
-
     /// <summary>
     /// Invokes the generated facade helper that creates a runtime policy for an explicit execution context.
     /// </summary>
@@ -5447,6 +5671,23 @@ public class Antlr4GeneratedEmbeddedCodeTests
                 && executionContextType == contextType
                 && basePolicyType == typeof(ParserRuntimeFeaturePolicy));
         return (ParserRuntimeFeaturePolicy)method.Invoke(null, [executionContext, null])!;
+    }
+
+    /// <summary>
+    /// Tokenizes input with a generated runtime policy bound to the supplied execution context.
+    /// </summary>
+    /// <param name="assembly">Assembly containing the generated grammar class.</param>
+    /// <param name="input">Input text to tokenize.</param>
+    /// <param name="executionContext">Execution context instance that owns generated lexer hooks.</param>
+    /// <returns>Tokens emitted by the generated grammar with embedded code enabled.</returns>
+    private static IReadOnlyList<Token> TokenizeWithContext(Assembly assembly, string input, object executionContext)
+    {
+        var type = assembly.GetType("Generated.Tests.P", throwOnError: true)!;
+        var buildMethod = type.GetMethod("Build", BindingFlags.Public | BindingFlags.Static)!;
+        var definition = (ParserDefinition)buildMethod.Invoke(null, null)!;
+        var policy = InvokeCreateRuntimePolicy(assembly, executionContext);
+        var grammar = new CompiledGrammar(definition, policy);
+        return grammar.Tokenize(input);
     }
 
     /// <summary>
