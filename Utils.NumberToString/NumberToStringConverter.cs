@@ -85,6 +85,7 @@ namespace Utils.NumberToString
 
             VariantDimensions = (options.VariantDimensions ?? []).ToImmutableArray();
             VariantRules = (options.VariantRules ?? []).ToImmutableArray();
+            Triggers = (options.Triggers ?? []).ToImmutableArray();
             _yearFormat = options.YearFormat;
             // Index both canonical name and localName so both are accepted in API calls and XML constraints.
             _dimensionIndex = VariantDimensions
@@ -202,6 +203,12 @@ namespace Utils.NumberToString
         /// </summary>
         public IReadOnlyList<VariantRule> VariantRules { get; }
 
+        /// <summary>
+        /// Trigger rules applied at specific points in the conversion pipeline.
+        /// Processed in declaration order.
+        /// </summary>
+        public IReadOnlyList<TriggerRule> Triggers { get; }
+
         private readonly YearFormatOptions? _yearFormat;
 
         /// <summary>Year-format options, or <see langword="null"/> when not configured.</summary>
@@ -224,6 +231,72 @@ namespace Utils.NumberToString
         /// Used by <see cref="NumberToStringConverterOptions"/> for round-trip cloning.
         /// </summary>
         internal Func<string, string>? RawAdjustFunction => _rawAdjustFunction;
+
+        /// <summary>
+        /// Specifies when a <see cref="TriggerRule"/> fires in the conversion pipeline.
+        /// </summary>
+        public enum TriggerAt
+        {
+            /// <summary>Fires on the digit-only text of a group, before the scale name is appended.</summary>
+            Group,
+            /// <summary>Fires on the digit+scale text of a group, after per-group Replacements are applied.</summary>
+            GroupWithScale,
+            /// <summary>Fires on the fully assembled text, after global Replacements and Variants, before FinalizeWriting.</summary>
+            End,
+        }
+
+        /// <summary>
+        /// A compiled text-replacement rule inside a <see cref="TriggerRule"/>.
+        /// When the trigger fires, the most specific matching variant form is selected and
+        /// applied exactly once; <see cref="DefaultTo"/> is used when nothing matches.
+        /// </summary>
+        public sealed class TriggerReplace
+        {
+            /// <summary>Initializes a new <see cref="TriggerReplace"/>.</summary>
+            public TriggerReplace(
+                string from,
+                bool isRegex,
+                IReadOnlyList<(IReadOnlyDictionary<string, string> Constraints, string To)> forms,
+                string? defaultTo)
+            {
+                From = from;
+                IsRegex = isRegex;
+                Forms = forms;
+                DefaultTo = defaultTo;
+            }
+            /// <summary>Gets the text or regex pattern to match.</summary>
+            public string From { get; }
+            /// <summary>Gets whether <see cref="From"/> is a .NET regular expression.</summary>
+            public bool IsRegex { get; }
+            /// <summary>
+            /// Gets the variant-specific forms ordered by declaration order.
+            /// At runtime the most specific match (most constraints) wins.
+            /// </summary>
+            public IReadOnlyList<(IReadOnlyDictionary<string, string> Constraints, string To)> Forms { get; }
+            /// <summary>Gets the unconditional default replacement used when no variant form matches.</summary>
+            public string? DefaultTo { get; }
+        }
+
+        /// <summary>
+        /// A trigger that fires at a specific position in the conversion pipeline and applies
+        /// one or more text replacements, each optionally variant-conditioned.
+        /// </summary>
+        public sealed class TriggerRule
+        {
+            /// <summary>Initializes a new <see cref="TriggerRule"/>.</summary>
+            public TriggerRule(TriggerAt executeAt, int[]? groupIndices, IReadOnlyList<TriggerReplace> replaces)
+            {
+                ExecuteAt = executeAt;
+                GroupIndices = groupIndices;
+                Replaces = replaces;
+            }
+            /// <summary>Gets when this trigger fires.</summary>
+            public TriggerAt ExecuteAt { get; }
+            /// <summary>Gets the group indices this trigger is restricted to, or <see langword="null"/> for all groups.</summary>
+            public int[]? GroupIndices { get; }
+            /// <summary>Gets the replacement rules applied when this trigger fires.</summary>
+            public IReadOnlyList<TriggerReplace> Replaces { get; }
+        }
 
         /// <summary>
         /// Converts an integer to its string representation.
@@ -345,9 +418,11 @@ namespace Utils.NumberToString
             bool isNegative = number.Sign == -1;
             BigInteger abs = isNegative ? BigInteger.Abs(number) : number;
 
-            string raw = ConvertRaw(abs);
+            var query = BuildVariantQuery(variants);
+            string raw = ConvertRaw(abs, query);
             if (_rawAdjustFunction != null) raw = _rawAdjustFunction(raw);
-            raw = ApplyVariantRules(raw, BuildVariantQuery(variants));
+            raw = ApplyVariantRules(raw, query);
+            raw = ApplyTriggers(raw, TriggerAt.End, null, query);
             string final = LanguageSpecifics.FinalizeWriting(LanguageIdentifier, raw);
 
             return isNegative ? Minus.Replace("*", final) : final;
@@ -356,7 +431,7 @@ namespace Utils.NumberToString
         /// <summary>
         /// Produces the raw text for a positive number without any adjustment or finalization.
         /// </summary>
-        private string ConvertRaw(BigInteger abs)
+        private string ConvertRaw(BigInteger abs, IReadOnlyDictionary<string, string>? variantQuery = null)
         {
             if (abs.Between(long.MinValue, long.MaxValue) && Exceptions.TryGetValue((long)abs, out var exValue))
                 return exValue;
@@ -372,8 +447,13 @@ namespace Utils.NumberToString
                 var group = (long)(remaining % groupValue);
                 if (group != 0)
                 {
-                    string resValue = ConvertGroup(maxGroup, group) + Separator + Scale.GetScaleName(groupNumber).ToPlural(group);
+                    string digits = ConvertGroup(maxGroup, group);
+                    digits = ApplyTriggers(digits, TriggerAt.Group, groupNumber, variantQuery);
+
+                    string resValue = digits + Separator + Scale.GetScaleName(groupNumber).ToPlural(group);
                     resValue = ApplyReplacements(resValue);
+                    resValue = ApplyTriggers(resValue, TriggerAt.GroupWithScale, groupNumber, variantQuery);
+
                     groupsValues.Push(resValue.Trim());
                 }
                 remaining /= groupValue;
@@ -452,6 +532,64 @@ namespace Utils.NumberToString
                 ReplacementScope.LastWord   => ApplyLastWordReplacement(text, replacement.OldValue, replacement.NewValue),
                 _                           => text,
             };
+
+        /// <summary>
+        /// Applies all matching triggers for the given pipeline position to <paramref name="text"/>.
+        /// A trigger matches when its <see cref="TriggerRule.ExecuteAt"/> equals <paramref name="at"/>
+        /// and, if group indices are specified, <paramref name="groupIndex"/> is among them.
+        /// Each Replace within a matching trigger selects the most specific form that satisfies
+        /// <paramref name="query"/>, falling back to <see cref="TriggerReplace.DefaultTo"/>.
+        /// </summary>
+        private string ApplyTriggers(string text, TriggerAt at, int? groupIndex, IReadOnlyDictionary<string, string>? query)
+        {
+            if (Triggers.Count == 0) return text;
+
+            foreach (var trigger in Triggers)
+            {
+                if (trigger.ExecuteAt != at) continue;
+                if (trigger.GroupIndices != null
+                    && (groupIndex == null || !Array.Exists(trigger.GroupIndices, i => i == groupIndex.Value)))
+                    continue;
+
+                foreach (var replace in trigger.Replaces)
+                    text = ApplyTriggerReplace(text, replace, query);
+            }
+            return text;
+        }
+
+        /// <summary>
+        /// Applies a single trigger replace to <paramref name="text"/>, selecting the most specific
+        /// variant form that matches <paramref name="query"/>. Falls back to <see cref="TriggerReplace.DefaultTo"/>.
+        /// Skips the replacement entirely when neither a matching form nor a default exists.
+        /// </summary>
+        private static string ApplyTriggerReplace(string text, TriggerReplace replace, IReadOnlyDictionary<string, string>? query)
+        {
+            string? bestTo = null;
+            int bestScore = -1;
+
+            if (query != null)
+            {
+                foreach (var (constraints, to) in replace.Forms)
+                {
+                    bool matches = constraints.All(c =>
+                        query.TryGetValue(c.Key, out var v) &&
+                        string.Equals(v, c.Value, StringComparison.OrdinalIgnoreCase));
+
+                    if (matches && constraints.Count > bestScore)
+                    {
+                        bestTo = to;
+                        bestScore = constraints.Count;
+                    }
+                }
+            }
+
+            string? effectiveTo = bestTo ?? replace.DefaultTo;
+            if (effectiveTo == null) return text;
+
+            return replace.IsRegex
+                ? Regex.Replace(text, replace.From, effectiveTo)
+                : text.Replace(replace.From, effectiveTo, StringComparison.Ordinal);
+        }
 
         /// <summary>
         /// Replaces <paramref name="oldValue"/> at the end of <paramref name="text"/> when it
@@ -712,10 +850,12 @@ namespace Utils.NumberToString
             if (OrdinalExceptions.TryGetValue(absNumber, out var exception))
                 return isNegative ? Minus.Replace("*", exception) : exception;
 
-            string raw = absNumber == 0 ? Zero : ConvertRaw((BigInteger)absNumber);
+            string raw = absNumber == 0 ? Zero : ConvertRaw((BigInteger)absNumber, activeVariants);
             raw = ApplyVariantRules(raw, activeVariants);
             string ordinal = ApplyOrdinalTransform(raw, activeVariant);
-            string final = AdjustFunction(ordinal);
+            if (_rawAdjustFunction != null) ordinal = _rawAdjustFunction(ordinal);
+            ordinal = ApplyTriggers(ordinal, TriggerAt.End, null, activeVariants);
+            string final = LanguageSpecifics.FinalizeWriting(LanguageIdentifier, ordinal);
             if (!string.IsNullOrEmpty(OrdinalPrefix))
                 final = OrdinalPrefix + final;
             return isNegative ? Minus.Replace("*", final) : final;

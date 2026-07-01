@@ -77,6 +77,14 @@ public class FormVariantType
     [XmlAttribute("forms")]
     public string? Forms { get; set; }
 
+    /// <summary>
+    /// Single output form for the specific dimension value named by <see cref="VariantValue"/>.
+    /// Shorthand for single-value overrides without listing all positional forms.
+    /// Requires <see cref="VariantValue"/> to be set.
+    /// </summary>
+    [XmlAttribute("value")]
+    public string? Value { get; set; }
+
     /// <summary>Nested sub-variants that cascade additional constraints.</summary>
     [XmlElement("Variant")]
     public List<FormVariantType>? NestedVariants { get; set; }
@@ -633,6 +641,73 @@ public class LanguageType
     /// </summary>
     [XmlElement(ElementName = "YearFormat")]
     public YearFormatType? YearFormat { get; set; }
+
+    /// <summary>
+    /// Gets or sets the trigger rules applied at specific points in the conversion pipeline.
+    /// Multiple Trigger elements are processed in declaration order.
+    /// </summary>
+    [XmlElement(ElementName = "Trigger")]
+    public List<TriggerType>? Triggers { get; set; }
+}
+
+/// <summary>
+/// A text-replacement rule inside a <see cref="TriggerType"/>.
+/// Selects the most specific matching variant form, or <see cref="To"/> as the unconditional default.
+/// Uses the same <see cref="FormVariantType"/> nesting as <c>Replacement</c>, <c>Ordinal</c>, and
+/// <c>OrdinalException</c>: leaf nodes provide positional <c>forms</c> or a single <c>value</c>;
+/// intermediate nodes add dimension constraints via <c>type</c>+<c>variant</c>.
+/// </summary>
+public class TriggerReplaceType
+{
+    /// <summary>Gets or sets the text or regex pattern to match.</summary>
+    [XmlAttribute("from")]
+    public string From { get; set; }
+
+    /// <summary>
+    /// Gets or sets the unconditional default replacement.
+    /// May be omitted when all cases are covered by <see cref="FormVariants"/>;
+    /// the first expanded form then serves as default.
+    /// May contain backreferences ($1, ${name}) when <see cref="IsRegex"/> is true.
+    /// </summary>
+    [XmlAttribute("to")]
+    public string? To { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether <see cref="From"/> is treated as a .NET regular expression.
+    /// Defaults to <see langword="false"/> (literal string match).
+    /// </summary>
+    [XmlAttribute("regex")]
+    public bool IsRegex { get; set; }
+
+    /// <summary>
+    /// Per-dimension-value form declarations expanded at load time.
+    /// The most specific matching form is selected at runtime.
+    /// </summary>
+    [XmlElement("Variant")]
+    public List<FormVariantType>? FormVariants { get; set; }
+}
+
+/// <summary>
+/// A trigger that fires at a specific point in the conversion pipeline and applies
+/// text replacements, each optionally selecting a form based on active variant values.
+/// </summary>
+public class TriggerType
+{
+    /// <summary>
+    /// Gets or sets when the trigger fires.
+    /// Syntax: "group", "group(N)", "group(N,M)", "groupWithScale", "groupWithScale(N)", "end".
+    /// Group indices: 0=units, 1=thousands, 2=millions, … (negative values reserved for decimals).
+    /// </summary>
+    [XmlAttribute("executeAt")]
+    public string ExecuteAt { get; set; }
+
+    /// <summary>
+    /// Gets or sets the replacement rules applied when this trigger fires.
+    /// Each Replace is applied independently; for each one the most specific matching
+    /// variant form is selected and applied exactly once.
+    /// </summary>
+    [XmlElement("Replace")]
+    public List<TriggerReplaceType>? Replaces { get; set; }
 }
 
 /// <summary>

@@ -269,7 +269,12 @@ namespace Utils.NumberToString
                     if (!string.IsNullOrEmpty(node.DimensionType) && !string.IsNullOrEmpty(node.VariantValue))
                         constraints[NormalizeDimName(node.DimensionType)] = node.VariantValue;
 
-                    if (!string.IsNullOrEmpty(node.Forms) && !string.IsNullOrEmpty(node.DimensionType))
+                    if (!string.IsNullOrEmpty(node.Value))
+                    {
+                        // Single-value shorthand: variant="X" value="form" — yields exactly one (constraints, form) pair.
+                        yield return (constraints, node.Value);
+                    }
+                    else if (!string.IsNullOrEmpty(node.Forms) && !string.IsNullOrEmpty(node.DimensionType))
                     {
                         var dimName = NormalizeDimName(node.DimensionType);
                         var dimValues = dims
@@ -442,6 +447,70 @@ namespace Utils.NumberToString
                 }
             }
 
+            // Parses "group(0,1,-1)" → (Group, [0,1,-1]), "end" → (End, null), etc.
+            static (NumberToStringConverter.TriggerAt At, int[]? Indices) ParseExecuteAt(string raw)
+            {
+                if (string.IsNullOrWhiteSpace(raw)) return (NumberToStringConverter.TriggerAt.End, null);
+                raw = raw.Trim();
+                int parenIdx = raw.IndexOf('(');
+                string core = parenIdx >= 0 ? raw[..parenIdx].Trim() : raw;
+                string? indexPart = parenIdx >= 0 ? raw[(parenIdx + 1)..].TrimEnd(')').Trim() : null;
+
+                var at = core.ToLowerInvariant() switch
+                {
+                    "group"          => NumberToStringConverter.TriggerAt.Group,
+                    "groupwithscale" => NumberToStringConverter.TriggerAt.GroupWithScale,
+                    _                => NumberToStringConverter.TriggerAt.End,
+                };
+
+                int[]? indices = null;
+                if (indexPart != null)
+                {
+                    indices = indexPart.Split(',')
+                        .Select(s => s.Trim()).Where(s => s.Length > 0)
+                        .Select(s => int.Parse(s, System.Globalization.CultureInfo.InvariantCulture))
+                        .ToArray();
+                    if (indices.Length == 0) indices = null;
+                }
+                return (at, indices);
+            }
+
+            IReadOnlyList<NumberToStringConverter.TriggerRule> ParseTriggers(List<TriggerType>? triggers)
+            {
+                if (triggers == null || triggers.Count == 0) return [];
+
+                var result = new List<NumberToStringConverter.TriggerRule>();
+                foreach (var trigger in triggers)
+                {
+                    var (at, indices) = ParseExecuteAt(trigger.ExecuteAt);
+                    var replaces = new List<NumberToStringConverter.TriggerReplace>();
+
+                    foreach (var replace in trigger.Replaces ?? [])
+                    {
+                        string? defaultTo = replace.To;
+                        var forms = new List<(IReadOnlyDictionary<string, string>, string)>();
+
+                        if (replace.FormVariants?.Count > 0)
+                        {
+                            bool captureFirst = defaultTo == null;
+                            foreach (var (constraints, form) in ExpandFormVariants(
+                                replace.FormVariants, parsedDimensions,
+                                new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)))
+                            {
+                                if (captureFirst) { defaultTo = form; captureFirst = false; }
+                                forms.Add((constraints, form));
+                            }
+                        }
+
+                        replaces.Add(new NumberToStringConverter.TriggerReplace(
+                            replace.From, replace.IsRegex, forms, defaultTo));
+                    }
+
+                    result.Add(new NumberToStringConverter.TriggerRule(at, indices, replaces));
+                }
+                return result;
+            }
+
             var options = new NumberToStringConverterOptions
             {
                 Group = language.GroupSize,
@@ -477,6 +546,7 @@ namespace Utils.NumberToString
                 OrdinalVariants = ParseOrdinalVariants(language.Ordinals),
                 VariantDimensions = parsedDimensions,
                 VariantRules = ParseVariantRules(language.Variants),
+                Triggers = ParseTriggers(language.Triggers),
                 YearFormat = language.YearFormat == null ? null : new YearFormatOptions(
                     language.YearFormat.HundredWord,
                     language.YearFormat.ZeroConnector,

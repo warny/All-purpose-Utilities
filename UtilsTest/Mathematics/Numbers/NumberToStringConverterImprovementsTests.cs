@@ -1935,4 +1935,151 @@ public class NumberToStringConverterImprovementsTests
             return true;
         }
     }
+
+    // ─── Triggers ─────────────────────────────────────────────────────────────
+
+    private static NumberToStringConverter MakeTriggerConverter(
+        IEnumerable<NumberToStringConverter.TriggerRule> triggers)
+    {
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        {
+            Triggers = triggers.ToList()
+        };
+        return new NumberToStringConverter(options);
+    }
+
+    private static NumberToStringConverter.TriggerReplace SimpleReplace(string from, string to, bool regex = false) =>
+        new(from, regex, [], to);
+
+    private static NumberToStringConverter.TriggerRule EndTrigger(string from, string to, bool regex = false) =>
+        new(NumberToStringConverter.TriggerAt.End, null, [SimpleReplace(from, to, regex)]);
+
+    private static NumberToStringConverter.TriggerRule GroupTrigger(int? groupIndex, string from, string to, bool regex = false) =>
+        new(NumberToStringConverter.TriggerAt.Group,
+            groupIndex.HasValue ? [groupIndex.Value] : null,
+            [SimpleReplace(from, to, regex)]);
+
+    private static NumberToStringConverter.TriggerRule GroupWithScaleTrigger(string from, string to) =>
+        new(NumberToStringConverter.TriggerAt.GroupWithScale, null, [SimpleReplace(from, to)]);
+
+    [TestMethod]
+    public void Trigger_End_Unconditional_LiteralReplace()
+    {
+        var c = MakeTriggerConverter([EndTrigger("one", "ONE")]);
+        Assert.AreEqual("ONE", c.Convert(1));
+        Assert.AreEqual("twenty-ONE", c.Convert(21));
+        Assert.AreEqual("two", c.Convert(2));
+    }
+
+    [TestMethod]
+    public void Trigger_End_Regex()
+    {
+        var c = MakeTriggerConverter([EndTrigger(@"\bone\b", "1", regex: true)]);
+        Assert.AreEqual("1", c.Convert(1));
+        Assert.AreEqual("twenty-1", c.Convert(21));
+        Assert.AreEqual("1 thousand", c.Convert(1_000));
+        Assert.AreEqual("two", c.Convert(2));
+    }
+
+    [TestMethod]
+    public void Trigger_End_VariantConditioned()
+    {
+        var en = NumberToStringConverter.GetConverter("EN");
+        var options = new NumberToStringConverterOptions(en);
+        options.VariantDimensions = [new NumberToStringConverter.VariantDimension("gender", ["masc", "fem"])];
+        // Replace with variant forms: masc="one" (default, first form), fem="una"
+        var forms = new List<(IReadOnlyDictionary<string, string>, string)>
+        {
+            (new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["gender"] = "masc" }, "one"),
+            (new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["gender"] = "fem"  }, "una"),
+        };
+        var replace = new NumberToStringConverter.TriggerReplace("one", false, forms, defaultTo: "one");
+        options.Triggers = [new NumberToStringConverter.TriggerRule(NumberToStringConverter.TriggerAt.End, null, [replace])];
+        var c = new NumberToStringConverter(options);
+
+        Assert.AreEqual("una", c.Convert(1, "gender=fem"));
+        Assert.AreEqual("one", c.Convert(1, "gender=masc"));
+        Assert.AreEqual("one", c.Convert(1));  // default
+    }
+
+    [TestMethod]
+    public void Trigger_End_NoDefaultTo_SkipsWhenNoVariantMatches()
+    {
+        // When no DefaultTo and no variant matches, the replacement is skipped entirely
+        // (the regex is never even evaluated — ApplyTriggerReplace short-circuits)
+        var en = NumberToStringConverter.GetConverter("EN");
+        var options = new NumberToStringConverterOptions(en);
+        options.VariantDimensions = [new NumberToStringConverter.VariantDimension("gender", ["masc", "fem"])];
+        var forms = new List<(IReadOnlyDictionary<string, string>, string)>
+        {
+            (new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["gender"] = "fem" }, "una"),
+        };
+        // No DefaultTo → only fires for fem; masc and no-variant calls are unchanged
+        var replace = new NumberToStringConverter.TriggerReplace("one", false, forms, defaultTo: null);
+        options.Triggers = [new NumberToStringConverter.TriggerRule(NumberToStringConverter.TriggerAt.End, null, [replace])];
+        var c = new NumberToStringConverter(options);
+
+        Assert.AreEqual("una", c.Convert(1, "gender=fem"));
+        Assert.AreEqual("one", c.Convert(1, "gender=masc"));  // no default → skipped
+        Assert.AreEqual("one", c.Convert(1));                  // no default → skipped
+    }
+
+    [TestMethod]
+    public void Trigger_Group0_FiresOnlyForUnitsChunk()
+    {
+        // group(0) transforms digits of the units chunk only — thousands chunk (group 1) is untouched
+        var c = MakeTriggerConverter([GroupTrigger(0, "one", "UNO")]);
+        Assert.AreEqual("UNO", c.Convert(1));
+        Assert.AreEqual("one thousand", c.Convert(1_000));       // group 1 not affected
+        Assert.AreEqual("one thousand, UNO", c.Convert(1_001));  // only units group changes
+    }
+
+    [TestMethod]
+    public void Trigger_Group_AllGroups_FiresForEveryGroup()
+    {
+        // group (no index) fires for all groups, digits-only, before scale
+        var c = MakeTriggerConverter([GroupTrigger(null, "one", "UNO")]);
+        Assert.AreEqual("UNO", c.Convert(1));
+        Assert.AreEqual("UNO thousand", c.Convert(1_000));       // thousands group: "one" → "UNO", then scale appended
+        Assert.AreEqual("UNO thousand, UNO", c.Convert(1_001));
+    }
+
+    [TestMethod]
+    public void Trigger_GroupWithScale_FiresAfterScale()
+    {
+        // groupWithScale fires on "digits + scale" text after ApplyReplacements
+        var c = MakeTriggerConverter([GroupWithScaleTrigger("one thousand", "mille")]);
+        Assert.AreEqual("mille", c.Convert(1_000));
+        Assert.AreEqual("two thousand", c.Convert(2_000));         // not matching
+        Assert.AreEqual("mille, one", c.Convert(1_001));           // units group stays separate
+    }
+
+    [TestMethod]
+    public void Trigger_End_FiresForOrdinals()
+    {
+        // end triggers fire in ConvertOrdinal pipeline (after ApplyOrdinalTransform, before FinalizeWriting)
+        var c = MakeTriggerConverter([EndTrigger("second", "SECOND")]);
+        Assert.AreEqual("SECOND", c.ConvertOrdinal(2));
+        Assert.AreEqual("third", c.ConvertOrdinal(3));  // unrelated ordinal unaffected
+    }
+
+    [TestMethod]
+    public void Trigger_Group0_BreaksOrdinalWordRule_ByDesign()
+    {
+        // group(0) fires inside ConvertRaw, which ordinals call too.
+        // "two" → "TWO" before ordinal rules run → word rule "two"→"second" can't match → suffix "th" used
+        var c = MakeTriggerConverter([GroupTrigger(0, "two", "TWO")]);
+        Assert.AreEqual("TWO", c.Convert(2));
+        Assert.AreEqual("TWOth", c.ConvertOrdinal(2));  // intended: documented side-effect
+    }
+
+    [TestMethod]
+    public void Trigger_MultipleTriggersAppliedInOrder()
+    {
+        var c = MakeTriggerConverter([
+            EndTrigger("one", "eins"),
+            EndTrigger("eins", "EIN"),
+        ]);
+        Assert.AreEqual("EIN", c.Convert(1));
+    }
 }

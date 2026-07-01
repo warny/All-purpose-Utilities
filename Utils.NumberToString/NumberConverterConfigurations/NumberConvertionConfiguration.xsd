@@ -311,7 +311,22 @@
                 <xs:documentation>
                     Comma-separated positional output forms for a leaf node, one per dimension value
                     in Dimension declaration order. Empty entries produce no rule for that position.
-                    Mutually exclusive with child Variant elements.
+                    Mutually exclusive with child Variant elements and with "value".
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="value" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Single output form for this specific variant value (the value selected by the
+                    "variant" attribute on the same node). Shorthand for the case where only one
+                    dimension value needs an override without listing all positional forms.
+                    Requires "variant" to be set. Mutually exclusive with "forms" and child Variant elements.
+
+                    Example — override feminine only:
+                        &lt;Variant type="genus" variant="feminin" value="eine" /&gt;
+                    creates a single rule: {genus=feminin} → "eine".
+                    Other values (maskulin, neutrum) are unaffected.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -748,6 +763,114 @@
         </xs:sequence>
     </xs:complexType>
 
+    <xs:complexType name="TriggerReplaceType">
+        <xs:annotation>
+            <xs:documentation>
+                A text-replacement rule inside a Trigger. When the trigger fires, a single
+                replacement is applied — the most specific variant form that matches the active
+                query, or "to" as the unconditional default when no variant matches.
+
+                Variant children use the same FormVariantType syntax as in Replacement, Ordinal,
+                and OrdinalException:
+                  Leaf node  — type + forms: one replacement string per dimension value in
+                               Dimension declaration order.
+                  Intermediate node — type + variant (or values): adds a constraint and
+                               delegates to nested Variant children.
+
+                When "to" is omitted and Variant children are present, the first form in
+                declaration order serves as the unconditional default.
+
+                Example — German "ein" count form, feminine override:
+                    &lt;Replace from="ein$" regex="true"&gt;
+                        &lt;Variant type="genus" forms="eins,eine,eins" /&gt;
+                    &lt;/Replace&gt;
+                creates: maskulin → "eins", feminin → "eine", neutrum → "eins",
+                         default (no variant) → "eins" (first form).
+
+                Selection rule: the most specific matching variant (most constraints) wins.
+                When "to" is provided it is always used as the unconditional default.
+                Only one replacement string is ultimately applied per Replace element.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="Variant" type="FormVariantType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute name="from" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The pattern to match. Treated as a .NET regular expression when regex="true",
+                    or as a literal string otherwise.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="to" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    The unconditional default replacement. May be omitted when all cases are
+                    covered by Variant children (the first form then becomes the default).
+                    May contain backreferences ($1, ${name}) when regex="true".
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="regex" type="xs:boolean" use="optional" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    When true, "from" is a .NET regular expression and "to" / variant forms
+                    may contain backreferences. When false (default), literal string replacement.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="TriggerType">
+        <xs:annotation>
+            <xs:documentation>
+                A trigger that fires at a specific point in the conversion pipeline and applies
+                text replacements, each optionally selecting a form based on active variant values.
+
+                executeAt syntax:
+                  "group"               — fires on the digit-only text of each group, before the
+                                          scale name is appended.
+                  "group(N)"            — fires for group N only (0=units, 1=thousands, 2=millions…).
+                  "group(N,M)"          — fires for group N or M.
+                  "groupWithScale"      — fires on the digit+scale text of each group, after the
+                                          existing Replacements are applied for that group.
+                  "groupWithScale(N)"   — fires for group N with its scale name.
+                  "end"                 — fires on the fully assembled number text, after Replacements
+                                          and Variants are applied and before FinalizeWriting.
+
+                Pipeline (cardinal):
+                  ConvertGroup → [group(N) triggers] → append scale → Replacements
+                    → [groupWithScale(N) triggers] → push
+                  Assemble → Replacements → Variants → [end triggers] → FinalizeWriting
+
+                Pipeline (ordinal):
+                  Group triggers fire inside ConvertRaw, same as for cardinals.
+                  End triggers fire after ApplyOrdinalTransform and before FinalizeWriting.
+
+                WARNING: group and groupWithScale triggers fire during ordinal conversion.
+                A trigger that modifies cardinal text (e.g. "ein" → "eins") will prevent
+                ordinal word rules from matching that word. Use end triggers or FinalizeWriting
+                for transformations that must not interfere with ordinal word-rule matching.
+
+                Each Replace element is applied independently: for each one, the most specific
+                matching variant form is selected and applied exactly once.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="Replace" type="TriggerReplaceType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute name="executeAt" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    When the trigger fires. Values: "group", "group(N)", "group(N,M,…)",
+                    "groupWithScale", "groupWithScale(N)", "end".
+                    Group indices: 0=units, 1=thousands, 2=millions, … (negative reserved for decimals).
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
     <xs:complexType name="YearFormatSplitRangeType">
         <xs:annotation>
             <xs:documentation>
@@ -1097,6 +1220,18 @@
                                     <xs:attribute name="hundredWord" type="xs:string" use="optional" />
                                     <xs:attribute name="zeroConnector" type="xs:string" use="optional" />
                                 </xs:complexType>
+                            </xs:element>
+
+                            <xs:element name="Trigger" type="TriggerType"
+                                        minOccurs="0" maxOccurs="unbounded">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Text-transformation rule applied at a specific point in the
+                                        conversion pipeline. Multiple Trigger elements are processed
+                                        in declaration order. See TriggerType for the full pipeline
+                                        description and executeAt syntax.
+                                    </xs:documentation>
+                                </xs:annotation>
                             </xs:element>
 
                         </xs:sequence>
