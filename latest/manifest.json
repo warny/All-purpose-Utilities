@@ -11170,6 +11170,20 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Parser.Runtime.LexerActionExecutionResult.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Parser.Runtime.LexerActionExecutionResult.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Parser.Runtime.LexerActionExecutionResult",
+      "Summary": "<p sourcefile=\"api/Utils.Parser.Runtime.LexerActionExecutionResult.yml\" sourcestartlinenumber=\"1\">Carries the bounded token mutations produced by a generated lexer inline action.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.Parser.Runtime.LexerEngine.yml",
       "output": {
         ".html": {

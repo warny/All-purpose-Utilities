@@ -208,9 +208,9 @@ Interface ILexerActionExecutor  <a class="header-action link-secondary" title="V
 
   <a id="Utils_Parser_Runtime_ILexerActionExecutor_Execute_" data-uid="Utils.Parser.Runtime.ILexerActionExecutor.Execute*"></a>
 
-  <h3 id="Utils_Parser_Runtime_ILexerActionExecutor_Execute_Utils_Parser_Runtime_LexerActionExecutionContext_" data-uid="Utils.Parser.Runtime.ILexerActionExecutor.Execute(Utils.Parser.Runtime.LexerActionExecutionContext)">
-  Execute(LexerActionExecutionContext)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ILexerActionExecutor.cs/#L15"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_Parser_Runtime_ILexerActionExecutor_Execute_Utils_Parser_Runtime_LexerActionExecutionContext_Utils_Parser_Runtime_LexerActionExecutionResult_" data-uid="Utils.Parser.Runtime.ILexerActionExecutor.Execute(Utils.Parser.Runtime.LexerActionExecutionContext,Utils.Parser.Runtime.LexerActionExecutionResult)">
+  Execute(LexerActionExecutionContext, LexerActionExecutionResult)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ILexerActionExecutor.cs/#L16"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Executes a lexer inline action for an accepted token match.</p>
@@ -218,13 +218,16 @@ Interface ILexerActionExecutor  <a class="header-action link-secondary" title="V
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">LexerActionExecutionOutcome Execute(LexerActionExecutionContext context)</code></pre>
+    <pre><code class="lang-csharp hljs">LexerActionExecutionOutcome Execute(LexerActionExecutionContext context, LexerActionExecutionResult result)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>context</code> <a class="xref" href="Utils.Parser.Runtime.LexerActionExecutionContext.html">LexerActionExecutionContext</a></dt>
     <dd><p>Context describing the accepted lexer action.</p>
+</dd>
+    <dt><code>result</code> <a class="xref" href="Utils.Parser.Runtime.LexerActionExecutionResult.html">LexerActionExecutionResult</a></dt>
+    <dd><p>Mutable result receiving supported lexer action token mutations.</p>
 </dd>
   </dl>
 

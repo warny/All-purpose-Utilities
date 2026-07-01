@@ -279,9 +279,9 @@ Class DefaultLexerActionExecutor  <a class="header-action link-secondary" title=
 
   <a id="Utils_Parser_Runtime_DefaultLexerActionExecutor_Execute_" data-uid="Utils.Parser.Runtime.DefaultLexerActionExecutor.Execute*"></a>
 
-  <h3 id="Utils_Parser_Runtime_DefaultLexerActionExecutor_Execute_Utils_Parser_Runtime_LexerActionExecutionContext_" data-uid="Utils.Parser.Runtime.DefaultLexerActionExecutor.Execute(Utils.Parser.Runtime.LexerActionExecutionContext)">
-  Execute(LexerActionExecutionContext)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/DefaultLexerActionExecutor.cs/#L19"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_Parser_Runtime_DefaultLexerActionExecutor_Execute_Utils_Parser_Runtime_LexerActionExecutionContext_Utils_Parser_Runtime_LexerActionExecutionResult_" data-uid="Utils.Parser.Runtime.DefaultLexerActionExecutor.Execute(Utils.Parser.Runtime.LexerActionExecutionContext,Utils.Parser.Runtime.LexerActionExecutionResult)">
+  Execute(LexerActionExecutionContext, LexerActionExecutionResult)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/DefaultLexerActionExecutor.cs/#L20"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns <a class="xref" href="Utils.Parser.Runtime.LexerActionExecutionOutcome.html#Utils_Parser_Runtime_LexerActionExecutionOutcome_NotExecuted">NotExecuted</a> for every lexer action.</p>
@@ -289,13 +289,16 @@ Class DefaultLexerActionExecutor  <a class="header-action link-secondary" title=
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public LexerActionExecutionOutcome Execute(LexerActionExecutionContext context)</code></pre>
+    <pre><code class="lang-csharp hljs">public LexerActionExecutionOutcome Execute(LexerActionExecutionContext context, LexerActionExecutionResult result)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>context</code> <a class="xref" href="Utils.Parser.Runtime.LexerActionExecutionContext.html">LexerActionExecutionContext</a></dt>
     <dd><p>Ignored lexer action context.</p>
+</dd>
+    <dt><code>result</code> <a class="xref" href="Utils.Parser.Runtime.LexerActionExecutionResult.html">LexerActionExecutionResult</a></dt>
+    <dd><p>Ignored lexer action mutation result.</p>
 </dd>
   </dl>
 
