@@ -386,4 +386,42 @@ public class MathExTests
             Assert.IsTrue(comparer.Equals(test.values, result), $"{{ {string.Join(", ", result)} }} is different from {{ {string.Join(", ", test.values)} }} expected");
         }
     }
+
+    [TestMethod]
+    public void RoundToSignificantDigits_BasicCases()
+    {
+        Assert.AreEqual(123000000, (long)MathEx.RoundToSignificantDigits(123456789, 3));
+        Assert.AreEqual(120000000, (long)MathEx.RoundToSignificantDigits(123456789, 2));
+        Assert.AreEqual(100000000, (long)MathEx.RoundToSignificantDigits(123456789, 1));
+        Assert.AreEqual(123456789, (long)MathEx.RoundToSignificantDigits(123456789, 9));
+        Assert.AreEqual(123456789, (long)MathEx.RoundToSignificantDigits(123456789, 20));
+    }
+
+    [TestMethod]
+    public void RoundToSignificantDigits_StandardRounding()
+    {
+        Assert.AreEqual(130, (long)MathEx.RoundToSignificantDigits(125, 2));   // 5 → round up
+        Assert.AreEqual(120, (long)MathEx.RoundToSignificantDigits(124, 2));   // 4 → round down
+        Assert.AreEqual(160000, (long)MathEx.RoundToSignificantDigits(155000, 2));
+    }
+
+    [TestMethod]
+    public void RoundToSignificantDigits_NegativeValues()
+    {
+        Assert.AreEqual(-123000000, (long)MathEx.RoundToSignificantDigits(-123456789, 3));
+        Assert.AreEqual(-130, (long)MathEx.RoundToSignificantDigits(-125, 2));
+    }
+
+    [TestMethod]
+    public void RoundToSignificantDigits_Zero()
+    {
+        Assert.AreEqual(System.Numerics.BigInteger.Zero, MathEx.RoundToSignificantDigits(0, 3));
+    }
+
+    [TestMethod]
+    [ExpectedException(typeof(ArgumentOutOfRangeException))]
+    public void RoundToSignificantDigits_ZeroDigits_Throws()
+    {
+        MathEx.RoundToSignificantDigits(123, 0);
+    }
 }

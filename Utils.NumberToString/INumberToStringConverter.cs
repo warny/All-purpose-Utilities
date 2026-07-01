@@ -92,7 +92,7 @@ namespace Utils.NumberToString
         /// <param name="variants">Zero or more <c>"dimension=value"</c> strings.</param>
         /// <returns>The formatted rounded number with the requested variants applied.</returns>
         string Convert(BigInteger number, int significantDigits, params string[] variants)
-            => Convert(NumberToStringConverter.RoundToSignificantDigits(number, significantDigits), variants);
+            => Convert(Utils.Mathematics.MathEx.RoundToSignificantDigits(number, significantDigits), variants);
 
         /// <summary>
         /// Converts a 32-bit signed integer into its string representation,
