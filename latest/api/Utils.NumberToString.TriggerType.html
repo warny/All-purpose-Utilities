@@ -2,11 +2,11 @@
 <html>
   <head>
     <meta charset="utf-8">
-      <title>Class NumberToStringConverter.VariantRule | omy.Utils Documentation </title>
+      <title>Class TriggerType | omy.Utils Documentation </title>
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <meta name="title" content="Class NumberToStringConverter.VariantRule | omy.Utils Documentation ">
+      <meta name="title" content="Class TriggerType | omy.Utils Documentation ">
       
-      <meta name="description" content="Associates a set of dimension constraints with replacement rules to apply when all constraints are satisfied.">
+      <meta name="description" content="A trigger that fires at a specific point in the conversion pipeline and applies text replacements, each optionally selecting a form based on active variant values.">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -16,7 +16,7 @@
       <meta name="docfx:rel" content="../">
       
       
-      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_NumberToString_NumberToStringConverter_VariantRule.md&amp;value=---%0Auid%3A%20Utils.NumberToString.NumberToStringConverter.VariantRule%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_NumberToString_TriggerType.md&amp;value=---%0Auid%3A%20Utils.NumberToString.TriggerType%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
       <meta name="loc:inThisArticle" content="In this article">
       <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
       <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
@@ -84,12 +84,12 @@
           <nav id="breadcrumb"></nav>
         </div>
 
-        <article data-uid="Utils.NumberToString.NumberToStringConverter.VariantRule">
+        <article data-uid="Utils.NumberToString.TriggerType">
 
 
 
-  <h1 id="Utils_NumberToString_NumberToStringConverter_VariantRule" data-uid="Utils.NumberToString.NumberToStringConverter.VariantRule" class="text-break">
-Class NumberToStringConverter.VariantRule  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L730"><i class="bi bi-code-slash"></i></a>
+  <h1 id="Utils_NumberToString_TriggerType" data-uid="Utils.NumberToString.TriggerType" class="text-break">
+Class TriggerType  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L694"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -97,13 +97,13 @@ Class NumberToStringConverter.VariantRule  <a class="header-action link-secondar
   <dl><dt>Assembly</dt><dd>Utils.NumberToString.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Associates a set of dimension constraints with replacement rules to apply
-when all constraints are satisfied.</p>
+  <div class="markdown summary"><p>A trigger that fires at a specific point in the conversion pipeline and applies
+text replacements, each optionally selecting a form based on active variant values.</p>
 </div>
   <div class="markdown conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public sealed class NumberToStringConverter.VariantRule</code></pre>
+    <pre><code class="lang-csharp hljs">public class TriggerType</code></pre>
   </div>
 
 
@@ -113,7 +113,7 @@ when all constraints are satisfied.</p>
     <dt>Inheritance</dt>
     <dd>
       <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
-      <div><span class="xref">NumberToStringConverter.VariantRule</span></div>
+      <div><span class="xref">TriggerType</span></div>
     </dd>
   </dl>
 
@@ -133,6 +133,9 @@ when all constraints are satisfied.</p>
     </div>
     <div>
       <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone">object.MemberwiseClone()</a>
     </div>
     <div>
       <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
@@ -232,63 +235,25 @@ when all constraints are satisfied.</p>
 
 
 
-  <h2 class="section" id="constructors">Constructors
-</h2>
-
-
-  <a id="Utils_NumberToString_NumberToStringConverter_VariantRule__ctor_" data-uid="Utils.NumberToString.NumberToStringConverter.VariantRule.#ctor*"></a>
-
-  <h3 id="Utils_NumberToString_NumberToStringConverter_VariantRule__ctor_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_Collections_Generic_IReadOnlyList_Utils_NumberToString_NumberToStringConverter_ReplacementRule__" data-uid="Utils.NumberToString.NumberToStringConverter.VariantRule.#ctor(System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.Collections.Generic.IReadOnlyList{Utils.NumberToString.NumberToStringConverter.ReplacementRule})">
-  VariantRule(IReadOnlyDictionary&lt;string, string&gt;, IReadOnlyList&lt;ReplacementRule&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L737"><i class="bi bi-code-slash"></i></a>
-  </h3>
-
-  <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.NumberToString.NumberToStringConverter.VariantRule.html">NumberToStringConverter.VariantRule</a> class.</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public VariantRule(IReadOnlyDictionary&lt;string, string&gt; constraints, IReadOnlyList&lt;NumberToStringConverter.ReplacementRule&gt; replacements)</code></pre>
-  </div>
-
-  <h4 class="section">Parameters</h4>
-  <dl class="parameters">
-    <dt><code>constraints</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlydictionary-2">IReadOnlyDictionary</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;</dt>
-    <dd><p>Dimension name → required value pairs.</p>
-</dd>
-    <dt><code>replacements</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1">IReadOnlyList</a>&lt;<a class="xref" href="Utils.NumberToString.NumberToStringConverter.html">NumberToStringConverter</a>.<a class="xref" href="Utils.NumberToString.NumberToStringConverter.ReplacementRule.html">ReplacementRule</a>&gt;</dt>
-    <dd><p>Replacement rules applied when this variant is active.</p>
-</dd>
-  </dl>
-
-
-
-
-
-
-
-
-
-
-
-
   <h2 class="section" id="properties">Properties
 </h2>
 
 
-  <a id="Utils_NumberToString_NumberToStringConverter_VariantRule_Constraints_" data-uid="Utils.NumberToString.NumberToStringConverter.VariantRule.Constraints*"></a>
+  <a id="Utils_NumberToString_TriggerType_ExecuteAt_" data-uid="Utils.NumberToString.TriggerType.ExecuteAt*"></a>
 
-  <h3 id="Utils_NumberToString_NumberToStringConverter_VariantRule_Constraints" data-uid="Utils.NumberToString.NumberToStringConverter.VariantRule.Constraints">
-  Constraints
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L744"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_NumberToString_TriggerType_ExecuteAt" data-uid="Utils.NumberToString.TriggerType.ExecuteAt">
+  ExecuteAt
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L701"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets the dimension constraints (name → required value).</p>
+  <div class="markdown level1 summary"><p>Gets or sets when the trigger fires.
+Syntax: &quot;group&quot;, &quot;group(N)&quot;, &quot;group(N,M)&quot;, &quot;groupWithScale&quot;, &quot;groupWithScale(N)&quot;, &quot;end&quot;.
+Group indices: 0=units, 1=thousands, 2=millions, … (negative values reserved for decimals).</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public IReadOnlyDictionary&lt;string, string&gt; Constraints { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">public string ExecuteAt { get; set; }</code></pre>
   </div>
 
 
@@ -297,7 +262,7 @@ when all constraints are satisfied.</p>
 
   <h4 class="section">Property Value</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlydictionary-2">IReadOnlyDictionary</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;</dt>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
     <dd></dd>
   </dl>
 
@@ -308,19 +273,21 @@ when all constraints are satisfied.</p>
 
 
 
-  <a id="Utils_NumberToString_NumberToStringConverter_VariantRule_Replacements_" data-uid="Utils.NumberToString.NumberToStringConverter.VariantRule.Replacements*"></a>
+  <a id="Utils_NumberToString_TriggerType_Replaces_" data-uid="Utils.NumberToString.TriggerType.Replaces*"></a>
 
-  <h3 id="Utils_NumberToString_NumberToStringConverter_VariantRule_Replacements" data-uid="Utils.NumberToString.NumberToStringConverter.VariantRule.Replacements">
-  Replacements
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L747"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_NumberToString_TriggerType_Replaces" data-uid="Utils.NumberToString.TriggerType.Replaces">
+  Replaces
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L709"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets the replacement rules applied when all constraints are satisfied.</p>
+  <div class="markdown level1 summary"><p>Gets or sets the replacement rules applied when this trigger fires.
+Each Replace is applied independently; for each one the most specific matching
+variant form is selected and applied exactly once.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public IReadOnlyList&lt;NumberToStringConverter.ReplacementRule&gt; Replacements { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">public List&lt;TriggerReplaceType&gt;? Replaces { get; set; }</code></pre>
   </div>
 
 
@@ -329,39 +296,7 @@ when all constraints are satisfied.</p>
 
   <h4 class="section">Property Value</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1">IReadOnlyList</a>&lt;<a class="xref" href="Utils.NumberToString.NumberToStringConverter.html">NumberToStringConverter</a>.<a class="xref" href="Utils.NumberToString.NumberToStringConverter.ReplacementRule.html">ReplacementRule</a>&gt;</dt>
-    <dd></dd>
-  </dl>
-
-
-
-
-
-
-
-
-  <a id="Utils_NumberToString_NumberToStringConverter_VariantRule_Specificity_" data-uid="Utils.NumberToString.NumberToStringConverter.VariantRule.Specificity*"></a>
-
-  <h3 id="Utils_NumberToString_NumberToStringConverter_VariantRule_Specificity" data-uid="Utils.NumberToString.NumberToStringConverter.VariantRule.Specificity">
-  Specificity
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L752"><i class="bi bi-code-slash"></i></a>
-  </h3>
-
-  <div class="markdown level1 summary"><p>Gets the number of dimension constraints. Used to order rules from least to most specific.</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public int Specificity { get; }</code></pre>
-  </div>
-
-
-
-
-
-  <h4 class="section">Property Value</h4>
-  <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1">List</a>&lt;<a class="xref" href="Utils.NumberToString.TriggerReplaceType.html">TriggerReplaceType</a>&gt;</dt>
     <dd></dd>
   </dl>
 
@@ -376,7 +311,7 @@ when all constraints are satisfied.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L730" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L694" class="edit-link">Edit this page</a>
         </div>
 
 

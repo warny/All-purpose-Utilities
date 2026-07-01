@@ -2,11 +2,11 @@
 <html>
   <head>
     <meta charset="utf-8">
-      <title>Class NumberToStringConverter.OrdinalVariantRule | omy.Utils Documentation </title>
+      <title>Class FormVariantType | omy.Utils Documentation </title>
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <meta name="title" content="Class NumberToStringConverter.OrdinalVariantRule | omy.Utils Documentation ">
+      <meta name="title" content="Class FormVariantType | omy.Utils Documentation ">
       
-      <meta name="description" content="Associates dimension constraints with variant-specific ordinal configuration (exceptions, word rules, suffix, and removeTrailing override). All fields fall through to the base ordinal config when absent.">
+      <meta name="description" content="A variant node inside a form-producing element (&amp;lt;Replacement&amp;gt;, &amp;lt;OrdinalException&amp;gt;, &amp;lt;Ordinal&amp;gt;). Plays two roles depending on whether  is present: Intermediate node      +  add one constraint;     child &amp;lt;Variant&amp;gt; elements cascade further constraints.   Leaf node      +  provide one output form per     dimension value in the order declared by the matching &amp;lt;Dimension&amp;gt;     element. Empty entries are skipped.    All (constraints, form) pairs are collected at load time and merged by constraint set into OrdinalVariantRule or VariantRule entries — no runtime changes required.">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -16,7 +16,7 @@
       <meta name="docfx:rel" content="../">
       
       
-      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_NumberToString_NumberToStringConverter_OrdinalVariantRule.md&amp;value=---%0Auid%3A%20Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_NumberToString_FormVariantType.md&amp;value=---%0Auid%3A%20Utils.NumberToString.FormVariantType%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
       <meta name="loc:inThisArticle" content="In this article">
       <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
       <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
@@ -84,12 +84,12 @@
           <nav id="breadcrumb"></nav>
         </div>
 
-        <article data-uid="Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule">
+        <article data-uid="Utils.NumberToString.FormVariantType">
 
 
 
-  <h1 id="Utils_NumberToString_NumberToStringConverter_OrdinalVariantRule" data-uid="Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule" class="text-break">
-Class NumberToStringConverter.OrdinalVariantRule  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L760"><i class="bi bi-code-slash"></i></a>
+  <h1 id="Utils_NumberToString_FormVariantType" data-uid="Utils.NumberToString.FormVariantType" class="text-break">
+Class FormVariantType  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L59"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -97,14 +97,24 @@ Class NumberToStringConverter.OrdinalVariantRule  <a class="header-action link-s
   <dl><dt>Assembly</dt><dd>Utils.NumberToString.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Associates dimension constraints with variant-specific ordinal configuration
-(exceptions, word rules, suffix, and removeTrailing override).
-All fields fall through to the base ordinal config when absent.</p>
+  <div class="markdown summary"><p>A variant node inside a form-producing element (<code>&lt;Replacement&gt;</code>,
+<code>&lt;OrdinalException&gt;</code>, <code>&lt;Ordinal&gt;</code>).
+Plays two roles depending on whether <a class="xref" href="Utils.NumberToString.FormVariantType.html#Utils_NumberToString_FormVariantType_Forms">Forms</a> is present:</p>
+<ul><li><span class="term">Intermediate node</span>
+    <a class="xref" href="Utils.NumberToString.FormVariantType.html#Utils_NumberToString_FormVariantType_DimensionType">DimensionType</a> + <a class="xref" href="Utils.NumberToString.FormVariantType.html#Utils_NumberToString_FormVariantType_VariantValue">VariantValue</a> add one constraint;
+    child <code>&lt;Variant&gt;</code> elements cascade further constraints.
+  </li><li><span class="term">Leaf node</span>
+    <a class="xref" href="Utils.NumberToString.FormVariantType.html#Utils_NumberToString_FormVariantType_DimensionType">DimensionType</a> + <a class="xref" href="Utils.NumberToString.FormVariantType.html#Utils_NumberToString_FormVariantType_Forms">Forms</a> provide one output form per
+    dimension value in the order declared by the matching <code>&lt;Dimension&gt;</code>
+    element. Empty entries are skipped.
+  </li></ul>
+<p>All (constraints, form) pairs are collected at load time and merged by constraint set
+into <code>OrdinalVariantRule</code> or <code>VariantRule</code> entries — no runtime changes required.</p>
 </div>
   <div class="markdown conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public sealed class NumberToStringConverter.OrdinalVariantRule</code></pre>
+    <pre><code class="lang-csharp hljs">public class FormVariantType</code></pre>
   </div>
 
 
@@ -114,7 +124,7 @@ All fields fall through to the base ordinal config when absent.</p>
     <dt>Inheritance</dt>
     <dd>
       <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
-      <div><span class="xref">NumberToStringConverter.OrdinalVariantRule</span></div>
+      <div><span class="xref">FormVariantType</span></div>
     </dd>
   </dl>
 
@@ -134,6 +144,9 @@ All fields fall through to the base ordinal config when absent.</p>
     </div>
     <div>
       <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone">object.MemberwiseClone()</a>
     </div>
     <div>
       <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
@@ -233,131 +246,23 @@ All fields fall through to the base ordinal config when absent.</p>
 
 
 
-  <h2 class="section" id="constructors">Constructors
-</h2>
-
-
-  <a id="Utils_NumberToString_NumberToStringConverter_OrdinalVariantRule__ctor_" data-uid="Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.#ctor*"></a>
-
-  <h3 id="Utils_NumberToString_NumberToStringConverter_OrdinalVariantRule__ctor_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_Collections_Generic_IReadOnlyDictionary_System_Int64_System_String__System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String_System_String_" data-uid="Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.#ctor(System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.Collections.Generic.IReadOnlyDictionary{System.Int64,System.String},System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String,System.String)">
-  OrdinalVariantRule(IReadOnlyDictionary&lt;string, string&gt;, IReadOnlyDictionary&lt;long, string&gt;, IReadOnlyDictionary&lt;string, string&gt;, string?, string?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L765"><i class="bi bi-code-slash"></i></a>
-  </h3>
-
-  <div class="markdown level1 summary"><p>Initializes a new instance of <a class="xref" href="Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.html">NumberToStringConverter.OrdinalVariantRule</a>.</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public OrdinalVariantRule(IReadOnlyDictionary&lt;string, string&gt; constraints, IReadOnlyDictionary&lt;long, string&gt; exceptions, IReadOnlyDictionary&lt;string, string&gt; wordRules, string? suffix, string? removeTrailing)</code></pre>
-  </div>
-
-  <h4 class="section">Parameters</h4>
-  <dl class="parameters">
-    <dt><code>constraints</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlydictionary-2">IReadOnlyDictionary</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;</dt>
-    <dd></dd>
-    <dt><code>exceptions</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlydictionary-2">IReadOnlyDictionary</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int64">long</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;</dt>
-    <dd></dd>
-    <dt><code>wordRules</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlydictionary-2">IReadOnlyDictionary</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;</dt>
-    <dd></dd>
-    <dt><code>suffix</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd></dd>
-    <dt><code>removeTrailing</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd></dd>
-  </dl>
-
-
-
-
-
-
-
-
-
-
-
-
   <h2 class="section" id="properties">Properties
 </h2>
 
 
-  <a id="Utils_NumberToString_NumberToStringConverter_OrdinalVariantRule_Constraints_" data-uid="Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.Constraints*"></a>
+  <a id="Utils_NumberToString_FormVariantType_DimensionType_" data-uid="Utils.NumberToString.FormVariantType.DimensionType*"></a>
 
-  <h3 id="Utils_NumberToString_NumberToStringConverter_OrdinalVariantRule_Constraints" data-uid="Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.Constraints">
-  Constraints
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L780"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_NumberToString_FormVariantType_DimensionType" data-uid="Utils.NumberToString.FormVariantType.DimensionType">
+  DimensionType
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L62"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets the dimension constraints that must all be satisfied for this variant to apply.</p>
+  <div class="markdown level1 summary"><p>Canonical dimension name this node targets (e.g. <code>&quot;gender&quot;</code>, <code>&quot;case&quot;</code>).</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public IReadOnlyDictionary&lt;string, string&gt; Constraints { get; }</code></pre>
-  </div>
-
-
-
-
-
-  <h4 class="section">Property Value</h4>
-  <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlydictionary-2">IReadOnlyDictionary</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;</dt>
-    <dd></dd>
-  </dl>
-
-
-
-
-
-
-
-
-  <a id="Utils_NumberToString_NumberToStringConverter_OrdinalVariantRule_Exceptions_" data-uid="Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.Exceptions*"></a>
-
-  <h3 id="Utils_NumberToString_NumberToStringConverter_OrdinalVariantRule_Exceptions" data-uid="Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.Exceptions">
-  Exceptions
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L782"><i class="bi bi-code-slash"></i></a>
-  </h3>
-
-  <div class="markdown level1 summary"><p>Gets variant-specific whole-number ordinal exceptions.</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public IReadOnlyDictionary&lt;long, string&gt; Exceptions { get; }</code></pre>
-  </div>
-
-
-
-
-
-  <h4 class="section">Property Value</h4>
-  <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlydictionary-2">IReadOnlyDictionary</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int64">long</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;</dt>
-    <dd></dd>
-  </dl>
-
-
-
-
-
-
-
-
-  <a id="Utils_NumberToString_NumberToStringConverter_OrdinalVariantRule_RemoveTrailing_" data-uid="Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.RemoveTrailing*"></a>
-
-  <h3 id="Utils_NumberToString_NumberToStringConverter_OrdinalVariantRule_RemoveTrailing" data-uid="Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.RemoveTrailing">
-  RemoveTrailing
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L788"><i class="bi bi-code-slash"></i></a>
-  </h3>
-
-  <div class="markdown level1 summary"><p>Gets the variant removeTrailing override, or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> to inherit the base value.</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public string? RemoveTrailing { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">public string? DimensionType { get; set; }</code></pre>
   </div>
 
 
@@ -377,51 +282,20 @@ All fields fall through to the base ordinal config when absent.</p>
 
 
 
-  <a id="Utils_NumberToString_NumberToStringConverter_OrdinalVariantRule_Specificity_" data-uid="Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.Specificity*"></a>
+  <a id="Utils_NumberToString_FormVariantType_Forms_" data-uid="Utils.NumberToString.FormVariantType.Forms*"></a>
 
-  <h3 id="Utils_NumberToString_NumberToStringConverter_OrdinalVariantRule_Specificity" data-uid="Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.Specificity">
-  Specificity
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L790"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_NumberToString_FormVariantType_Forms" data-uid="Utils.NumberToString.FormVariantType.Forms">
+  Forms
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L77"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets the number of dimension constraints (used for specificity ordering).</p>
+  <div class="markdown level1 summary"><p>Comma-separated positional output forms for a leaf node, one per dimension value
+in <code>&lt;Dimension&gt;</code> declaration order. Empty entries produce no rule.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public int Specificity { get; }</code></pre>
-  </div>
-
-
-
-
-
-  <h4 class="section">Property Value</h4>
-  <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
-    <dd></dd>
-  </dl>
-
-
-
-
-
-
-
-
-  <a id="Utils_NumberToString_NumberToStringConverter_OrdinalVariantRule_Suffix_" data-uid="Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.Suffix*"></a>
-
-  <h3 id="Utils_NumberToString_NumberToStringConverter_OrdinalVariantRule_Suffix" data-uid="Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.Suffix">
-  Suffix
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L786"><i class="bi bi-code-slash"></i></a>
-  </h3>
-
-  <div class="markdown level1 summary"><p>Gets the variant suffix override, or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> to inherit the base suffix.</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public string? Suffix { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">public string? Forms { get; set; }</code></pre>
   </div>
 
 
@@ -441,19 +315,19 @@ All fields fall through to the base ordinal config when absent.</p>
 
 
 
-  <a id="Utils_NumberToString_NumberToStringConverter_OrdinalVariantRule_WordRules_" data-uid="Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.WordRules*"></a>
+  <a id="Utils_NumberToString_FormVariantType_NestedVariants_" data-uid="Utils.NumberToString.FormVariantType.NestedVariants*"></a>
 
-  <h3 id="Utils_NumberToString_NumberToStringConverter_OrdinalVariantRule_WordRules" data-uid="Utils.NumberToString.NumberToStringConverter.OrdinalVariantRule.WordRules">
-  WordRules
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L784"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_NumberToString_FormVariantType_NestedVariants" data-uid="Utils.NumberToString.FormVariantType.NestedVariants">
+  NestedVariants
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L89"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets variant-specific last-word ordinal rules.</p>
+  <div class="markdown level1 summary"><p>Nested sub-variants that cascade additional constraints.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public IReadOnlyDictionary&lt;string, string&gt; WordRules { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">public List&lt;FormVariantType&gt;? NestedVariants { get; set; }</code></pre>
   </div>
 
 
@@ -462,7 +336,75 @@ All fields fall through to the base ordinal config when absent.</p>
 
   <h4 class="section">Property Value</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlydictionary-2">IReadOnlyDictionary</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;</dt>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1">List</a>&lt;<a class="xref" href="Utils.NumberToString.FormVariantType.html">FormVariantType</a>&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_NumberToString_FormVariantType_Value_" data-uid="Utils.NumberToString.FormVariantType.Value*"></a>
+
+  <h3 id="Utils_NumberToString_FormVariantType_Value" data-uid="Utils.NumberToString.FormVariantType.Value">
+  Value
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L85"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Single output form for the specific dimension value named by <a class="xref" href="Utils.NumberToString.FormVariantType.html#Utils_NumberToString_FormVariantType_VariantValue">VariantValue</a>.
+Shorthand for single-value overrides without listing all positional forms.
+Requires <a class="xref" href="Utils.NumberToString.FormVariantType.html#Utils_NumberToString_FormVariantType_VariantValue">VariantValue</a> to be set.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string? Value { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_NumberToString_FormVariantType_VariantValue_" data-uid="Utils.NumberToString.FormVariantType.VariantValue*"></a>
+
+  <h3 id="Utils_NumberToString_FormVariantType_VariantValue" data-uid="Utils.NumberToString.FormVariantType.VariantValue">
+  VariantValue
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L70"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Single dimension value for an intermediate node.
+Used together with child <code>&lt;Variant&gt;</code> elements.
+Omit on leaf nodes that use <a class="xref" href="Utils.NumberToString.FormVariantType.html#Utils_NumberToString_FormVariantType_Forms">Forms</a> instead.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string? VariantValue { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
     <dd></dd>
   </dl>
 
@@ -477,7 +419,7 @@ All fields fall through to the base ordinal config when absent.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L760" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L59" class="edit-link">Edit this page</a>
         </div>
 
 

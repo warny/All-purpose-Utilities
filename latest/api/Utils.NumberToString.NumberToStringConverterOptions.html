@@ -244,7 +244,7 @@ or <a class="xref" href="Utils.NumberToString.NumberToStringConverterOptions.htm
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions__ctor" data-uid="Utils.NumberToString.NumberToStringConverterOptions.#ctor">
   NumberToStringConverterOptions()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L125"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L131"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Creates an options object with sensible defaults. Required properties
@@ -273,7 +273,7 @@ must be set before passing to the constructor.</p>
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions__ctor_Utils_NumberToString_NumberToStringConverter_" data-uid="Utils.NumberToString.NumberToStringConverterOptions.#ctor(Utils.NumberToString.NumberToStringConverter)">
   NumberToStringConverterOptions(NumberToStringConverter)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L129"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L135"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Clones all settings from an existing converter instance.</p>
@@ -986,6 +986,39 @@ Each rule overrides exceptions, word rules, suffix, and/or removeTrailing for th
 
 
 
+  <a id="Utils_NumberToString_NumberToStringConverterOptions_Triggers_" data-uid="Utils.NumberToString.NumberToStringConverterOptions.Triggers*"></a>
+
+  <h3 id="Utils_NumberToString_NumberToStringConverterOptions_Triggers" data-uid="Utils.NumberToString.NumberToStringConverterOptions.Triggers">
+  Triggers
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L126"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Trigger rules applied at specific points in the conversion pipeline.
+Processed in declaration order.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public IReadOnlyList&lt;NumberToStringConverter.TriggerRule&gt; Triggers { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1">IReadOnlyList</a>&lt;<a class="xref" href="Utils.NumberToString.NumberToStringConverter.html">NumberToStringConverter</a>.<a class="xref" href="Utils.NumberToString.NumberToStringConverter.TriggerRule.html">TriggerRule</a>&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <a id="Utils_NumberToString_NumberToStringConverterOptions_VariantDimensions_" data-uid="Utils.NumberToString.NumberToStringConverterOptions.VariantDimensions*"></a>
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions_VariantDimensions" data-uid="Utils.NumberToString.NumberToStringConverterOptions.VariantDimensions">
@@ -1124,7 +1157,7 @@ Applied between the raw adjustment function and <a class="xref" href="Utils.Numb
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions_FromCulture_System_Globalization_CultureInfo_" data-uid="Utils.NumberToString.NumberToStringConverterOptions.FromCulture(System.Globalization.CultureInfo)">
   FromCulture(CultureInfo)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L165"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L172"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Clones the settings of the converter registered for <code class="paramref">culture</code>.</p>
@@ -1161,7 +1194,7 @@ Applied between the raw adjustment function and <a class="xref" href="Utils.Numb
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions_FromCulture_System_String_" data-uid="Utils.NumberToString.NumberToStringConverterOptions.FromCulture(System.String)">
   FromCulture(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L172"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L179"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Clones the settings of the converter registered for <code class="paramref">cultureName</code>

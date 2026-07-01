@@ -7768,6 +7768,20 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.FormVariantType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.FormVariantType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.FormVariantType",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.FormVariantType.yml\" sourcestartlinenumber=\"1\">A variant node inside a form-producing element (<code>&lt;Replacement&gt;</code>,\n<code>&lt;OrdinalException&gt;</code>, <code>&lt;Ordinal&gt;</code>).\nPlays two roles depending on whether <xref href=\"Utils.NumberToString.FormVariantType.Forms\" data-throw-if-not-resolved=\"false\"></xref> is present:</p>\n<ul><li><span class=\"term\">Intermediate node</span>\n    <xref href=\"Utils.NumberToString.FormVariantType.DimensionType\" data-throw-if-not-resolved=\"false\"></xref> + <xref href=\"Utils.NumberToString.FormVariantType.VariantValue\" data-throw-if-not-resolved=\"false\"></xref> add one constraint;\n    child <code>&lt;Variant&gt;</code> elements cascade further constraints.\n  </li><li><span class=\"term\">Leaf node</span>\n    <xref href=\"Utils.NumberToString.FormVariantType.DimensionType\" data-throw-if-not-resolved=\"false\"></xref> + <xref href=\"Utils.NumberToString.FormVariantType.Forms\" data-throw-if-not-resolved=\"false\"></xref> provide one output form per\n    dimension value in the order declared by the matching <code>&lt;Dimension&gt;</code>\n    element. Empty entries are skipped.\n  </li></ul>\n<p sourcefile=\"api/Utils.NumberToString.FormVariantType.yml\" sourcestartlinenumber=\"14\">All (constraints, form) pairs are collected at load time and merged by constraint set\ninto <code>OrdinalVariantRule</code> or <code>VariantRule</code> entries — no runtime changes required.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.NumberToString.FractionListType.yml",
       "output": {
         ".html": {
@@ -7961,6 +7975,48 @@
       "IsMRef": true,
       "Title": "Utils.NumberToString.NumberToStringConverter.ReplacementRule",
       "Summary": "<p sourcefile=\"api/Utils.NumberToString.NumberToStringConverter.ReplacementRule.yml\" sourcestartlinenumber=\"1\">Represents a configured replacement rule.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.NumberToStringConverter.TriggerAt.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.NumberToStringConverter.TriggerAt.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.NumberToStringConverter.TriggerAt",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.NumberToStringConverter.TriggerAt.yml\" sourcestartlinenumber=\"1\">Specifies when a <xref href=\"Utils.NumberToString.NumberToStringConverter.TriggerRule\" data-throw-if-not-resolved=\"false\"></xref> fires in the conversion pipeline.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.NumberToStringConverter.TriggerReplace.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.NumberToStringConverter.TriggerReplace.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.NumberToStringConverter.TriggerReplace",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.NumberToStringConverter.TriggerReplace.yml\" sourcestartlinenumber=\"1\">A compiled text-replacement rule inside a <xref href=\"Utils.NumberToString.NumberToStringConverter.TriggerRule\" data-throw-if-not-resolved=\"false\"></xref>.\nWhen the trigger fires, the most specific matching variant form is selected and\napplied exactly once; <xref href=\"Utils.NumberToString.NumberToStringConverter.TriggerReplace.DefaultTo\" data-throw-if-not-resolved=\"false\"></xref> is used when nothing matches.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.NumberToStringConverter.TriggerRule.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.NumberToStringConverter.TriggerRule.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.NumberToStringConverter.TriggerRule",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.NumberToStringConverter.TriggerRule.yml\" sourcestartlinenumber=\"1\">A trigger that fires at a specific position in the conversion pipeline and applies\none or more text replacements, each optionally variant-conditioned.</p>\n"
     },
     {
       "type": "ManagedReference",
@@ -8185,6 +8241,34 @@
       "IsMRef": true,
       "Title": "Utils.NumberToString.SuffixesType",
       "Summary": "<p sourcefile=\"api/Utils.NumberToString.SuffixesType.yml\" sourcestartlinenumber=\"1\">Describes the suffixes appended to scale names.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.TriggerReplaceType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.TriggerReplaceType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.TriggerReplaceType",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.TriggerReplaceType.yml\" sourcestartlinenumber=\"1\">A text-replacement rule inside a <xref href=\"Utils.NumberToString.TriggerType\" data-throw-if-not-resolved=\"false\"></xref>.\nSelects the most specific matching variant form, or <xref href=\"Utils.NumberToString.TriggerReplaceType.To\" data-throw-if-not-resolved=\"false\"></xref> as the unconditional default.\nUses the same <xref href=\"Utils.NumberToString.FormVariantType\" data-throw-if-not-resolved=\"false\"></xref> nesting as <code>Replacement</code>, <code>Ordinal</code>, and\n<code>OrdinalException</code>: leaf nodes provide positional <code>forms</code> or a single <code>value</code>;\nintermediate nodes add dimension constraints via <code>type</code>+<code>variant</code>.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.TriggerType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.TriggerType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.TriggerType",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.TriggerType.yml\" sourcestartlinenumber=\"1\">A trigger that fires at a specific point in the conversion pipeline and applies\ntext replacements, each optionally selecting a form based on active variant values.</p>\n"
     },
     {
       "type": "ManagedReference",

@@ -115,6 +115,23 @@ Classes
 </dd>
     </dl>
     <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.FormVariantType.html">FormVariantType</a></dt>
+      <dd><p>A variant node inside a form-producing element (<code>&lt;Replacement&gt;</code>,
+<code>&lt;OrdinalException&gt;</code>, <code>&lt;Ordinal&gt;</code>).
+Plays two roles depending on whether <a class="xref" href="Utils.NumberToString.FormVariantType.html#Utils_NumberToString_FormVariantType_Forms">Forms</a> is present:</p>
+<ul><li><span class="term">Intermediate node</span>
+    <a class="xref" href="Utils.NumberToString.FormVariantType.html#Utils_NumberToString_FormVariantType_DimensionType">DimensionType</a> + <a class="xref" href="Utils.NumberToString.FormVariantType.html#Utils_NumberToString_FormVariantType_VariantValue">VariantValue</a> add one constraint;
+    child <code>&lt;Variant&gt;</code> elements cascade further constraints.
+  </li><li><span class="term">Leaf node</span>
+    <a class="xref" href="Utils.NumberToString.FormVariantType.html#Utils_NumberToString_FormVariantType_DimensionType">DimensionType</a> + <a class="xref" href="Utils.NumberToString.FormVariantType.html#Utils_NumberToString_FormVariantType_Forms">Forms</a> provide one output form per
+    dimension value in the order declared by the matching <code>&lt;Dimension&gt;</code>
+    element. Empty entries are skipped.
+  </li></ul>
+<p>All (constraints, form) pairs are collected at load time and merged by constraint set
+into <code>OrdinalVariantRule</code> or <code>VariantRule</code> entries — no runtime changes required.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.FractionListType.html">FractionListType</a></dt>
       <dd><p>Represents a collection of fractional definitions.</p>
 </dd>
@@ -174,6 +191,19 @@ All fields fall through to the base ordinal config when absent.</p>
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.NumberToStringConverter.ReplacementRule.html">NumberToStringConverter.ReplacementRule</a></dt>
       <dd><p>Represents a configured replacement rule.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.NumberToStringConverter.TriggerReplace.html">NumberToStringConverter.TriggerReplace</a></dt>
+      <dd><p>A compiled text-replacement rule inside a <a class="xref" href="Utils.NumberToString.NumberToStringConverter.TriggerRule.html">NumberToStringConverter.TriggerRule</a>.
+When the trigger fires, the most specific matching variant form is selected and
+applied exactly once; <a class="xref" href="Utils.NumberToString.NumberToStringConverter.TriggerReplace.html#Utils_NumberToString_NumberToStringConverter_TriggerReplace_DefaultTo">DefaultTo</a> is used when nothing matches.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.NumberToStringConverter.TriggerRule.html">NumberToStringConverter.TriggerRule</a></dt>
+      <dd><p>A trigger that fires at a specific position in the conversion pipeline and applies
+one or more text replacements, each optionally variant-conditioned.</p>
 </dd>
     </dl>
     <dl class="jumplist">
@@ -255,6 +285,21 @@ word-level transformation rules, and a default suffix.</p>
 </dd>
     </dl>
     <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.TriggerReplaceType.html">TriggerReplaceType</a></dt>
+      <dd><p>A text-replacement rule inside a <a class="xref" href="Utils.NumberToString.TriggerType.html">TriggerType</a>.
+Selects the most specific matching variant form, or <a class="xref" href="Utils.NumberToString.TriggerReplaceType.html#Utils_NumberToString_TriggerReplaceType_To">To</a> as the unconditional default.
+Uses the same <a class="xref" href="Utils.NumberToString.FormVariantType.html">FormVariantType</a> nesting as <code>Replacement</code>, <code>Ordinal</code>, and
+<code>OrdinalException</code>: leaf nodes provide positional <code>forms</code> or a single <code>value</code>;
+intermediate nodes add dimension constraints via <code>type</code>+<code>variant</code>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.TriggerType.html">TriggerType</a></dt>
+      <dd><p>A trigger that fires at a specific point in the conversion pipeline and applies
+text replacements, each optionally selecting a form based on active variant values.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.VariantDimensionType.html">VariantDimensionType</a></dt>
       <dd><p>Declares one dimension of grammatical variation for a language (e.g. &quot;gender&quot; or &quot;case&quot;)
 together with its ordered set of values. The first value is the default when no explicit
@@ -314,6 +359,11 @@ complex morphological agreement or root-pattern transformations).</p>
     <h3 id="enums">
 Enums
 </h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.NumberToStringConverter.TriggerAt.html">NumberToStringConverter.TriggerAt</a></dt>
+      <dd><p>Specifies when a <a class="xref" href="Utils.NumberToString.NumberToStringConverter.TriggerRule.html">NumberToStringConverter.TriggerRule</a> fires in the conversion pipeline.</p>
+</dd>
+    </dl>
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.ReplacementScope.html">ReplacementScope</a></dt>
       <dd><p>Defines how a replacement should be applied to the converted value.</p>
