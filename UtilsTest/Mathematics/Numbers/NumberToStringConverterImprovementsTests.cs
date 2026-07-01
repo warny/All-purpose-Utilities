@@ -2082,4 +2082,83 @@ public class NumberToStringConverterImprovementsTests
         ]);
         Assert.AreEqual("EIN", c.Convert(1));
     }
+
+    // ─── Significant-digits precision ─────────────────────────────────────────
+
+    [TestMethod]
+    public void RoundToSignificantDigits_BasicCases()
+    {
+        Assert.AreEqual(123000000, (long)NumberToStringConverter.RoundToSignificantDigits(123456789, 3));
+        Assert.AreEqual(120000000, (long)NumberToStringConverter.RoundToSignificantDigits(123456789, 2));
+        Assert.AreEqual(100000000, (long)NumberToStringConverter.RoundToSignificantDigits(123456789, 1));
+        Assert.AreEqual(123456789, (long)NumberToStringConverter.RoundToSignificantDigits(123456789, 9));
+        Assert.AreEqual(123456789, (long)NumberToStringConverter.RoundToSignificantDigits(123456789, 12));
+    }
+
+    [TestMethod]
+    public void RoundToSignificantDigits_RoundsUp_When5()
+    {
+        // 125 → precision 2: 125 → scale=10, (125+5)/10*10 = 130
+        Assert.AreEqual(130, (long)NumberToStringConverter.RoundToSignificantDigits(125, 2));
+        // 155000 → precision 2: scale=10000, (155000+5000)/10000*10000 = 160000
+        Assert.AreEqual(160000, (long)NumberToStringConverter.RoundToSignificantDigits(155000, 2));
+    }
+
+    [TestMethod]
+    public void RoundToSignificantDigits_RoundsDown_WhenBelow5()
+    {
+        // 124 → precision 2: scale=10, (124+5)/10*10 = 120
+        Assert.AreEqual(120, (long)NumberToStringConverter.RoundToSignificantDigits(124, 2));
+    }
+
+    [TestMethod]
+    public void RoundToSignificantDigits_Zero_ReturnsZero()
+    {
+        Assert.AreEqual(BigInteger.Zero, NumberToStringConverter.RoundToSignificantDigits(0, 3));
+    }
+
+    [TestMethod]
+    public void RoundToSignificantDigits_Negative_PreservesSign()
+    {
+        Assert.AreEqual(-123000000, (long)NumberToStringConverter.RoundToSignificantDigits(-123456789, 3));
+        Assert.AreEqual(-130, (long)NumberToStringConverter.RoundToSignificantDigits(-125, 2));
+    }
+
+    [TestMethod]
+    [ExpectedException(typeof(ArgumentOutOfRangeException))]
+    public void RoundToSignificantDigits_ZeroDigits_Throws()
+    {
+        NumberToStringConverter.RoundToSignificantDigits(123, 0);
+    }
+
+    [TestMethod]
+    public void Convert_WithPrecision_FR()
+    {
+        var fr = NumberToStringConverter.GetConverter("FR");
+        // 123456789 → precision 3 → 123000000
+        Assert.AreEqual("cent vingt trois millions", fr.Convert((BigInteger)123456789, 3));
+        // 123456789 → precision 2 → 120000000
+        Assert.AreEqual("cent vingt millions", fr.Convert((BigInteger)123456789, 2));
+        // 123456789 → precision 1 → 100000000
+        Assert.AreEqual("cent millions", fr.Convert((BigInteger)123456789, 1));
+    }
+
+    [TestMethod]
+    public void Convert_WithPrecision_EN()
+    {
+        var en = NumberToStringConverter.GetConverter("EN");
+        // 123456789 → precision 3 → 123000000
+        Assert.AreEqual("one hundred and twenty-three million", en.Convert((BigInteger)123456789, 3));
+        // 123456789 → precision 2 → 120000000
+        Assert.AreEqual("one hundred and twenty million", en.Convert((BigInteger)123456789, 2));
+    }
+
+    [TestMethod]
+    public void Convert_WithPrecision_NoPrecisionLoss_WhenPrecisionLargeEnough()
+    {
+        var en = NumberToStringConverter.GetConverter("EN");
+        string full = en.Convert(123456789);
+        string withPrecision = en.Convert((BigInteger)123456789, 20);
+        Assert.AreEqual(full, withPrecision);
+    }
 }
