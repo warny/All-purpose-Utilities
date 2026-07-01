@@ -71,23 +71,28 @@
 			<Number value="18" string="δεκαοκτώ" />
 			<Number value="19" string="δεκαεννέα" />
 		</Exceptions>
+		<!--
+		  Forms are listed in Dimension order: αρσενικό, θηλυκό, ουδέτερο.
+		  The first form (αρσενικό) also serves as the default when no variant is specified.
+		  13-19 have masculine forms only (no explicit gender variants in common use).
+		-->
 		<Ordinals>
-			<!-- Unités — stems complètement différents des cardinaux -->
-			<Ordinal from="ένα"        to="πρώτος" />
-			<Ordinal from="δύο"        to="δεύτερος" />
-			<Ordinal from="τρία"       to="τρίτος" />
-			<Ordinal from="τέσσερα"    to="τέταρτος" />
-			<Ordinal from="πέντε"      to="πέμπτος" />
-			<Ordinal from="έξι"        to="έκτος" />
-			<Ordinal from="επτά"       to="έβδομος" />
-			<Ordinal from="οκτώ"       to="όγδοος" />
-			<Ordinal from="εννέα"      to="ένατος" />
-			<!-- Dizaine -->
-			<Ordinal from="δέκα"       to="δέκατος" />
+			<!-- Unités 1-9 — stems complètement différents des cardinaux -->
+			<Ordinal from="ένα">     <Variant type="gender" forms="πρώτος,πρώτη,πρώτο"           /></Ordinal>
+			<Ordinal from="δύο">     <Variant type="gender" forms="δεύτερος,δεύτερη,δεύτερο"     /></Ordinal>
+			<Ordinal from="τρία">    <Variant type="gender" forms="τρίτος,τρίτη,τρίτο"           /></Ordinal>
+			<Ordinal from="τέσσερα"> <Variant type="gender" forms="τέταρτος,τέταρτη,τέταρτο"     /></Ordinal>
+			<Ordinal from="πέντε">   <Variant type="gender" forms="πέμπτος,πέμπτη,πέμπτο"       /></Ordinal>
+			<Ordinal from="έξι">     <Variant type="gender" forms="έκτος,έκτη,έκτο"             /></Ordinal>
+			<Ordinal from="επτά">    <Variant type="gender" forms="έβδομος,έβδομη,έβδομο"       /></Ordinal>
+			<Ordinal from="οκτώ">    <Variant type="gender" forms="όγδοος,όγδοη,όγδοο"         /></Ordinal>
+			<Ordinal from="εννέα">   <Variant type="gender" forms="ένατος,ένατη,ένατο"           /></Ordinal>
+			<!-- Dizaine 10 -->
+			<Ordinal from="δέκα">    <Variant type="gender" forms="δέκατος,δέκατη,δέκατο"       /></Ordinal>
 			<!-- Exceptions 11-12 (stems irréguliers, non déductibles depuis les cardinaux) -->
-			<OrdinalException value="11" string="ενδέκατος" />
-			<OrdinalException value="12" string="δωδέκατος" />
-			<!-- Exceptions 13-19 : ordinaux composés depuis les exceptions cardinales -->
+			<OrdinalException value="11"> <Variant type="gender" forms="ενδέκατος,ενδέκατη,ενδέκατο"   /></OrdinalException>
+			<OrdinalException value="12"> <Variant type="gender" forms="δωδέκατος,δωδέκατη,δωδέκατο"   /></OrdinalException>
+			<!-- Exceptions 13-19 : ordinaux composés (formes αρσενικό uniquement) -->
 			<OrdinalException value="13" string="δέκατος τρίτος" />
 			<OrdinalException value="14" string="δέκατος τέταρτος" />
 			<OrdinalException value="15" string="δέκατος πέμπτος" />
@@ -95,62 +100,31 @@
 			<OrdinalException value="17" string="δέκατος έβδομος" />
 			<OrdinalException value="18" string="δέκατος όγδοος" />
 			<OrdinalException value="19" string="δέκατος ένατος" />
-			<!-- Dizaines -->
-			<Ordinal from="είκοσι"     to="εικοστός" />
-			<Ordinal from="τριάντα"    to="τριακοστός" />
-			<Ordinal from="σαράντα"    to="τεσσαρακοστός" />
-			<Ordinal from="πενήντα"    to="πεντηκοστός" />
-			<Ordinal from="εξήντα"     to="εξηκοστός" />
-			<Ordinal from="εβδομήντα"  to="εβδομηκοστός" />
-			<Ordinal from="ογδόντα"    to="ογδοηκοστός" />
-			<Ordinal from="ενενήντα"   to="ενενηκοστός" />
+			<!-- Dizaines 20-90 -->
+			<Ordinal from="είκοσι">    <Variant type="gender" forms="εικοστός,εικοστή,εικοστό"               /></Ordinal>
+			<Ordinal from="τριάντα">   <Variant type="gender" forms="τριακοστός,τριακοστή,τριακοστό"         /></Ordinal>
+			<Ordinal from="σαράντα">   <Variant type="gender" forms="τεσσαρακοστός,τεσσαρακοστή,τεσσαρακοστό"/></Ordinal>
+			<Ordinal from="πενήντα">   <Variant type="gender" forms="πεντηκοστός,πεντηκοστή,πεντηκοστό"     /></Ordinal>
+			<Ordinal from="εξήντα">    <Variant type="gender" forms="εξηκοστός,εξηκοστή,εξηκοστό"           /></Ordinal>
+			<Ordinal from="εβδομήντα"> <Variant type="gender" forms="εβδομηκοστός,εβδομηκοστή,εβδομηκοστό" /></Ordinal>
+			<Ordinal from="ογδόντα">   <Variant type="gender" forms="ογδοηκοστός,ογδοηκοστή,ογδοηκοστό"     /></Ordinal>
+			<Ordinal from="ενενήντα">  <Variant type="gender" forms="ενενηκοστός,ενενηκοστή,ενενηκοστό"     /></Ordinal>
 			<!-- Centaines -->
-			<Ordinal from="εκατό"      to="εκατοστός" />
-			<Ordinal from="διακόσια"   to="διακοσιοστός" />
-			<Ordinal from="τριακόσια"  to="τριακοσιοστός" />
-			<Ordinal from="τετρακόσια" to="τετρακοσιοστός" />
-			<Ordinal from="πεντακόσια" to="πεντακοσιοστός" />
-			<Ordinal from="εξακόσια"   to="εξακοσιοστός" />
-			<Ordinal from="επτακόσια"  to="επτακοσιοστός" />
-			<Ordinal from="οκτακόσια"  to="οκτακοσιοστός" />
-			<Ordinal from="εννιακόσια" to="εννιακοσιοστός" />
+			<Ordinal from="εκατό">      <Variant type="gender" forms="εκατοστός,εκατοστή,εκατοστό"             /></Ordinal>
+			<Ordinal from="διακόσια">   <Variant type="gender" forms="διακοσιοστός,διακοσιοστή,διακοσιοστό"   /></Ordinal>
+			<Ordinal from="τριακόσια">  <Variant type="gender" forms="τριακοσιοστός,τριακοσιοστή,τριακοσιοστό"/></Ordinal>
+			<Ordinal from="τετρακόσια"> <Variant type="gender" forms="τετρακοσιοστός,τετρακοσιοστή,τετρακοσιοστό"/></Ordinal>
+			<Ordinal from="πεντακόσια"> <Variant type="gender" forms="πεντακοσιοστός,πεντακοσιοστή,πεντακοσιοστό"/></Ordinal>
+			<Ordinal from="εξακόσια">   <Variant type="gender" forms="εξακοσιοστός,εξακοσιοστή,εξακοσιοστό"   /></Ordinal>
+			<Ordinal from="επτακόσια">  <Variant type="gender" forms="επτακοσιοστός,επτακοσιοστή,επτακοσιοστό"/></Ordinal>
+			<Ordinal from="οκτακόσια">  <Variant type="gender" forms="οκτακοσιοστός,οκτακοσιοστή,οκτακοσιοστό"/></Ordinal>
+			<Ordinal from="εννιακόσια"> <Variant type="gender" forms="εννιακοσιοστός,εννιακοσιοστή,εννιακοσιοστό"/></Ordinal>
 			<!-- Millier -->
-			<Ordinal from="χίλια"      to="χιλιοστός" />
-			<!-- Variantes de genre nominatif singulier pour 1-12 + dizaines + centaines -->
-			<OrdinalVariants>
-				<Variant type="gender" variant="θηλυκό">
-					<OrdinalException value="1"   string="πρώτη" />
-					<OrdinalException value="2"   string="δεύτερη" />
-					<OrdinalException value="3"   string="τρίτη" />
-					<OrdinalException value="4"   string="τέταρτη" />
-					<OrdinalException value="5"   string="πέμπτη" />
-					<OrdinalException value="6"   string="έκτη" />
-					<OrdinalException value="7"   string="έβδομη" />
-					<OrdinalException value="8"   string="όγδοη" />
-					<OrdinalException value="9"   string="ένατη" />
-					<OrdinalException value="10"  string="δέκατη" />
-					<OrdinalException value="11"  string="ενδέκατη" />
-					<OrdinalException value="12"  string="δωδέκατη" />
-					<OrdinalException value="20"  string="εικοστή" />
-					<OrdinalException value="100" string="εκατοστή" />
-				</Variant>
-				<Variant type="gender" variant="ουδέτερο">
-					<OrdinalException value="1"   string="πρώτο" />
-					<OrdinalException value="2"   string="δεύτερο" />
-					<OrdinalException value="3"   string="τρίτο" />
-					<OrdinalException value="4"   string="τέταρτο" />
-					<OrdinalException value="5"   string="πέμπτο" />
-					<OrdinalException value="6"   string="έκτο" />
-					<OrdinalException value="7"   string="έβδομο" />
-					<OrdinalException value="8"   string="όγδοο" />
-					<OrdinalException value="9"   string="ένατο" />
-					<OrdinalException value="10"  string="δέκατο" />
-					<OrdinalException value="11"  string="ενδέκατο" />
-					<OrdinalException value="12"  string="δωδέκατο" />
-					<OrdinalException value="20"  string="εικοστό" />
-					<OrdinalException value="100" string="εκατοστό" />
-				</Variant>
-			</OrdinalVariants>
+			<Ordinal from="χίλια"> <Variant type="gender" forms="χιλιοστός,χιλιοστή,χιλιοστό" /></Ordinal>
 		</Ordinals>
+		<Variants>
+			<!-- Dimension declared for ordinal forms= expansion; Greek cardinals are invariable in this config -->
+			<Dimension name="gender" localName="γένος" values="αρσενικό,θηλυκό,ουδέτερο" />
+		</Variants>
 	</Language>
 </Numbers>

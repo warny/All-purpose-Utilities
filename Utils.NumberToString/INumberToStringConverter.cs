@@ -82,6 +82,19 @@ namespace Utils.NumberToString
         string Convert(BigInteger number, params string[] variants) => Convert(number);
 
         /// <summary>
+        /// Converts <paramref name="number"/> rounded to <paramref name="significantDigits"/> most significant
+        /// digits into its string representation, applying optional variant parameters.
+        /// Uses standard rounding (≥ 5 rounds up, &lt; 5 rounds down). For example, 123456789
+        /// with 3 significant digits rounds to 123000000 before conversion.
+        /// </summary>
+        /// <param name="number">The value to convert.</param>
+        /// <param name="significantDigits">Number of significant digits to keep. Must be ≥ 1.</param>
+        /// <param name="variants">Zero or more <c>"dimension=value"</c> strings.</param>
+        /// <returns>The formatted rounded number with the requested variants applied.</returns>
+        string Convert(BigInteger number, int significantDigits, params string[] variants)
+            => Convert(Utils.Mathematics.MathEx.RoundToSignificantDigits(number, significantDigits), variants);
+
+        /// <summary>
         /// Converts a 32-bit signed integer into its string representation,
         /// applying the specified variant parameters.
         /// The default implementation ignores variant parameters and delegates to

@@ -119,6 +119,12 @@ public sealed class NumberToStringConverterOptions
     /// <summary>Year-format configuration used by <see cref="NumberToStringConverter.ConvertYear"/>.</summary>
     public YearFormatOptions? YearFormat { get; set; }
 
+    /// <summary>
+    /// Trigger rules applied at specific points in the conversion pipeline.
+    /// Processed in declaration order.
+    /// </summary>
+    public IReadOnlyList<NumberToStringConverter.TriggerRule> Triggers { get; set; } = [];
+
     /// <summary>Creates an options object with sensible defaults. Required properties
     /// (<see cref="Zero"/>, <see cref="Minus"/>, <see cref="Groups"/>, <see cref="Scale"/>)
     /// must be set before passing to the constructor.</summary>
@@ -156,6 +162,7 @@ public sealed class NumberToStringConverterOptions
         OrdinalVariants = source.OrdinalVariants;
         VariantDimensions = source.VariantDimensions;
         VariantRules = source.VariantRules;
+        Triggers = source.Triggers;
         YearFormat = source.YearFormat;
     }
 

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using Utils.Mathematics;
 using Utils.NumberToString;
 using Utils.Numerics;
 
@@ -491,7 +492,7 @@ public class NumberToStringConverterImprovementsTests
     {
         var converter = NumberToStringConverter.GetConverter("DE");
 
-        // Without variant: counting form (GermanSpecifics: "ein" → "eins")
+        // Without variant: counting form (GermanSpecifics EndsWith "ein" → "eins")
         Assert.AreEqual("eins", converter.Convert(1));
         Assert.AreEqual("eins", converter.Convert(1, "genus=maskulin"));
         Assert.AreEqual("eins", converter.Convert(1, "kasus=nominativ"));
@@ -1136,6 +1137,100 @@ public class NumberToStringConverterImprovementsTests
         Assert.AreEqual("tausend dritte", de.ConvertOrdinal(1003));
     }
 
+    [TestMethod]
+    public void ConvertOrdinal_DE_WithVariants_IrregularForm()
+    {
+        var de = NumberToStringConverter.GetConverter("DE");
+
+        // schwach (weak) — used after a definite article; case order: nom/akk/dat/gen
+
+        // maskulin schwach: only non-nominativ → "sten"-type endings
+        Assert.AreEqual("erste",  de.ConvertOrdinal(1, "deklination=schwach", "genus=maskulin", "kasus=nominativ"));
+        Assert.AreEqual("ersten", de.ConvertOrdinal(1, "deklination=schwach", "genus=maskulin", "kasus=akkusativ"));
+        Assert.AreEqual("ersten", de.ConvertOrdinal(1, "deklination=schwach", "genus=maskulin", "kasus=dativ"));
+        Assert.AreEqual("ersten", de.ConvertOrdinal(1, "deklination=schwach", "genus=maskulin", "kasus=genitiv"));
+
+        // feminin schwach: nom=akk="erste", dat=gen="ersten"
+        Assert.AreEqual("erste",  de.ConvertOrdinal(1, "deklination=schwach", "genus=feminin", "kasus=nominativ"));
+        Assert.AreEqual("erste",  de.ConvertOrdinal(1, "deklination=schwach", "genus=feminin", "kasus=akkusativ"));
+        Assert.AreEqual("ersten", de.ConvertOrdinal(1, "deklination=schwach", "genus=feminin", "kasus=dativ"));
+        Assert.AreEqual("ersten", de.ConvertOrdinal(1, "deklination=schwach", "genus=feminin", "kasus=genitiv"));
+
+        // neutrum schwach: nom=akk="erste" (same as feminin schwach)
+        Assert.AreEqual("erste",  de.ConvertOrdinal(1, "deklination=schwach", "genus=neutrum", "kasus=nominativ"));
+        Assert.AreEqual("erste",  de.ConvertOrdinal(1, "deklination=schwach", "genus=neutrum", "kasus=akkusativ"));
+
+        // stark (strong) — used without an article
+
+        // maskulin stark: nom="erster", akk=gen="ersten", dat="erstem"
+        Assert.AreEqual("erster", de.ConvertOrdinal(1, "deklination=stark", "genus=maskulin", "kasus=nominativ"));
+        Assert.AreEqual("ersten", de.ConvertOrdinal(1, "deklination=stark", "genus=maskulin", "kasus=akkusativ"));
+        Assert.AreEqual("erstem", de.ConvertOrdinal(1, "deklination=stark", "genus=maskulin", "kasus=dativ"));
+        Assert.AreEqual("ersten", de.ConvertOrdinal(1, "deklination=stark", "genus=maskulin", "kasus=genitiv"));
+
+        // feminin stark: nom=akk="erste", dat=gen="erster"
+        Assert.AreEqual("erste",  de.ConvertOrdinal(1, "deklination=stark", "genus=feminin", "kasus=nominativ"));
+        Assert.AreEqual("erste",  de.ConvertOrdinal(1, "deklination=stark", "genus=feminin", "kasus=akkusativ"));
+        Assert.AreEqual("erster", de.ConvertOrdinal(1, "deklination=stark", "genus=feminin", "kasus=dativ"));
+        Assert.AreEqual("erster", de.ConvertOrdinal(1, "deklination=stark", "genus=feminin", "kasus=genitiv"));
+
+        // neutrum stark: nom=akk="erstes", dat="erstem", gen="ersten"
+        Assert.AreEqual("erstes", de.ConvertOrdinal(1, "deklination=stark", "genus=neutrum", "kasus=nominativ"));
+        Assert.AreEqual("erstes", de.ConvertOrdinal(1, "deklination=stark", "genus=neutrum", "kasus=akkusativ"));
+        Assert.AreEqual("erstem", de.ConvertOrdinal(1, "deklination=stark", "genus=neutrum", "kasus=dativ"));
+        Assert.AreEqual("ersten", de.ConvertOrdinal(1, "deklination=stark", "genus=neutrum", "kasus=genitiv"));
+    }
+
+    [TestMethod]
+    public void ConvertOrdinal_DE_WithVariants_RegularSuffix()
+    {
+        var de = NumberToStringConverter.GetConverter("DE");
+
+        // 20 has no OrdinalException and no word rule → suffix="ste" from <Ordinals>
+        // OrdinalVariants overrides the suffix per genus × deklination × kasus
+
+        // schwach maskulin: only akk+dat+gen → "sten"; nom stays "ste"
+        Assert.AreEqual("zwanzigste",  de.ConvertOrdinal(20, "deklination=schwach", "genus=maskulin", "kasus=nominativ"));
+        Assert.AreEqual("zwanzigsten", de.ConvertOrdinal(20, "deklination=schwach", "genus=maskulin", "kasus=akkusativ"));
+        Assert.AreEqual("zwanzigsten", de.ConvertOrdinal(20, "deklination=schwach", "genus=maskulin", "kasus=dativ"));
+        Assert.AreEqual("zwanzigsten", de.ConvertOrdinal(20, "deklination=schwach", "genus=maskulin", "kasus=genitiv"));
+
+        // schwach feminin: only dat+gen → "sten"; nom+akk stay "ste"
+        Assert.AreEqual("zwanzigste",  de.ConvertOrdinal(20, "deklination=schwach", "genus=feminin", "kasus=nominativ"));
+        Assert.AreEqual("zwanzigste",  de.ConvertOrdinal(20, "deklination=schwach", "genus=feminin", "kasus=akkusativ"));
+        Assert.AreEqual("zwanzigsten", de.ConvertOrdinal(20, "deklination=schwach", "genus=feminin", "kasus=dativ"));
+        Assert.AreEqual("zwanzigsten", de.ConvertOrdinal(20, "deklination=schwach", "genus=feminin", "kasus=genitiv"));
+
+        // schwach neutrum: same as feminin
+        Assert.AreEqual("zwanzigste",  de.ConvertOrdinal(20, "deklination=schwach", "genus=neutrum", "kasus=nominativ"));
+        Assert.AreEqual("zwanzigste",  de.ConvertOrdinal(20, "deklination=schwach", "genus=neutrum", "kasus=akkusativ"));
+        Assert.AreEqual("zwanzigsten", de.ConvertOrdinal(20, "deklination=schwach", "genus=neutrum", "kasus=dativ"));
+        Assert.AreEqual("zwanzigsten", de.ConvertOrdinal(20, "deklination=schwach", "genus=neutrum", "kasus=genitiv"));
+
+        // stark maskulin: nom → "ster"; akk+gen → "sten"; dat → "stem"
+        Assert.AreEqual("zwanzigster", de.ConvertOrdinal(20, "deklination=stark", "genus=maskulin", "kasus=nominativ"));
+        Assert.AreEqual("zwanzigsten", de.ConvertOrdinal(20, "deklination=stark", "genus=maskulin", "kasus=akkusativ"));
+        Assert.AreEqual("zwanzigstem", de.ConvertOrdinal(20, "deklination=stark", "genus=maskulin", "kasus=dativ"));
+        Assert.AreEqual("zwanzigsten", de.ConvertOrdinal(20, "deklination=stark", "genus=maskulin", "kasus=genitiv"));
+
+        // stark feminin: nom+akk → "ste"; dat+gen → "ster"
+        Assert.AreEqual("zwanzigste",  de.ConvertOrdinal(20, "deklination=stark", "genus=feminin", "kasus=nominativ"));
+        Assert.AreEqual("zwanzigste",  de.ConvertOrdinal(20, "deklination=stark", "genus=feminin", "kasus=akkusativ"));
+        Assert.AreEqual("zwanzigster", de.ConvertOrdinal(20, "deklination=stark", "genus=feminin", "kasus=dativ"));
+        Assert.AreEqual("zwanzigster", de.ConvertOrdinal(20, "deklination=stark", "genus=feminin", "kasus=genitiv"));
+
+        // stark neutrum: nom+akk → "stes"; dat → "stem"; gen → "sten"
+        Assert.AreEqual("zwanzigstes", de.ConvertOrdinal(20, "deklination=stark", "genus=neutrum", "kasus=nominativ"));
+        Assert.AreEqual("zwanzigstes", de.ConvertOrdinal(20, "deklination=stark", "genus=neutrum", "kasus=akkusativ"));
+        Assert.AreEqual("zwanzigstem", de.ConvertOrdinal(20, "deklination=stark", "genus=neutrum", "kasus=dativ"));
+        Assert.AreEqual("zwanzigsten", de.ConvertOrdinal(20, "deklination=stark", "genus=neutrum", "kasus=genitiv"));
+
+        // Compound (21+): suffix variant also applies to word-appended forms
+        Assert.AreEqual("einundzwanzigste",  de.ConvertOrdinal(21));
+        Assert.AreEqual("einundzwanzigster", de.ConvertOrdinal(21, "deklination=stark", "genus=maskulin", "kasus=nominativ"));
+        Assert.AreEqual("einundzwanzigsten", de.ConvertOrdinal(21, "deklination=stark", "genus=maskulin", "kasus=akkusativ"));
+    }
+
     // ── C8d — Ordinals HE ────────────────────────────────────────────────
 
     [TestMethod]
@@ -1679,6 +1774,156 @@ public class NumberToStringConverterImprovementsTests
         Assert.AreEqual("عاشر", converter.ConvertOrdinal(10));
     }
 
+    // ── C15a — Variant without selector throws ───────────────────────────────
+
+    [TestMethod]
+    public void ReadConfiguration_VariantWithoutSelector_Throws()
+    {
+        const string xml = """
+            <?xml version="1.0" encoding="utf-8" ?>
+            <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+              <Language groupSize="3" separator=" " groupSeparator="" zero="zero" minus="minus *">
+                <Culture>TEST-BAD-VARIANT</Culture>
+                <Groups><Group level="1"><Digit digit="1" string="one" /></Group></Groups>
+                <NumberScale firstLetterUpperCase="false">
+                  <StaticNames><Scale value="0" string="" /></StaticNames>
+                </NumberScale>
+                <Variants>
+                  <Dimension name="case" values="nom,acc" />
+                  <Variant type="case">
+                    <Replacement oldValue="one" newValue="ONE" scope="LastWord" />
+                  </Variant>
+                </Variants>
+              </Language>
+            </Numbers>
+            """;
+
+        Assert.ThrowsException<InvalidOperationException>(() =>
+            NumberToStringConverter.ReadConfiguration(xml));
+    }
+
+    [TestMethod]
+    public void ReadConfiguration_OrdinalVariantWithoutSelector_Throws()
+    {
+        const string xml = """
+            <?xml version="1.0" encoding="utf-8" ?>
+            <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+              <Language groupSize="3" separator=" " groupSeparator="" zero="zero" minus="minus *">
+                <Culture>TEST-BAD-ORDVARIANT</Culture>
+                <Groups><Group level="1"><Digit digit="1" string="one" /></Group></Groups>
+                <NumberScale firstLetterUpperCase="false">
+                  <StaticNames><Scale value="0" string="" /></StaticNames>
+                </NumberScale>
+                <Ordinals suffix="th">
+                  <OrdinalVariants>
+                    <Variant type="case">
+                      <OrdinalException value="1" string="first" />
+                    </Variant>
+                  </OrdinalVariants>
+                </Ordinals>
+              </Language>
+            </Numbers>
+            """;
+
+        Assert.ThrowsException<InvalidOperationException>(() =>
+            NumberToStringConverter.ReadConfiguration(xml));
+    }
+
+    // ── C15 — Multi-value variant syntax (values="a,b,c") ───────────────────
+
+    private const string MultiValueTestConfig = """
+        <?xml version="1.0" encoding="utf-8" ?>
+        <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+          <Language groupSize="3" separator=" " groupSeparator="" zero="nul" minus="minus *">
+            <Culture>TEST-MV</Culture>
+            <Groups>
+              <Group level="1">
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="één" />
+                <Digit digit="2" string="twee" />
+                <Digit digit="3" string="drie" />
+              </Group>
+              <Group level="2">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="tien" buildString="*tien" />
+                <Digit digit="2" string="twintig" buildString="*entwintig" />
+              </Group>
+              <Group level="3">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="honderd" buildString="honderd *" />
+              </Group>
+            </Groups>
+            <NumberScale firstLetterUpperCase="false">
+              <StaticNames>
+                <Scale value="0" string="" />
+                <Scale value="1" string="duizend" />
+              </StaticNames>
+            </NumberScale>
+            <Ordinals suffix="de">
+              <OrdinalException value="1" string="eerste" />
+              <OrdinalVariants>
+                <Variant type="case" values="genitief,datief,accusatief" suffix="den">
+                  <OrdinalException value="1" string="eersten" />
+                </Variant>
+              </OrdinalVariants>
+            </Ordinals>
+            <Variants>
+              <Dimension name="case" values="nominatief,genitief,datief,accusatief" />
+              <Variant type="case" values="genitief,datief">
+                <Replacement oldValue="één" newValue="ener" scope="LastWord" />
+              </Variant>
+              <Variant type="case" variant="accusatief">
+                <Replacement oldValue="één" newValue="enen" scope="LastWord" />
+              </Variant>
+            </Variants>
+          </Language>
+        </Numbers>
+        """;
+
+    [TestMethod]
+    public void OrdinalVariant_MultiValue_SameExceptionForAllListedCases()
+    {
+        var converters = NumberToStringConverter.ReadConfiguration(MultiValueTestConfig);
+        var c = converters["TEST-MV"];
+
+        // base (no case variant) → exception "eerste"
+        Assert.AreEqual("eerste", c.ConvertOrdinal(1));
+        // the three values listed in values="genitief,datief,accusatief" all apply "eersten"
+        Assert.AreEqual("eersten", c.ConvertOrdinal(1, "case=genitief"),   "genitief");
+        Assert.AreEqual("eersten", c.ConvertOrdinal(1, "case=datief"),     "datief");
+        Assert.AreEqual("eersten", c.ConvertOrdinal(1, "case=accusatief"), "accusatief");
+    }
+
+    [TestMethod]
+    public void OrdinalVariant_MultiValue_SuffixOverrideForAllListedCases()
+    {
+        var converters = NumberToStringConverter.ReadConfiguration(MultiValueTestConfig);
+        var c = converters["TEST-MV"];
+
+        // 2 → no exception → base suffix "de" → "tweede"
+        Assert.AreEqual("tweede", c.ConvertOrdinal(2));
+        // genitief/datief/accusatief → suffix "den" → "tweeden"
+        Assert.AreEqual("tweeden", c.ConvertOrdinal(2, "case=genitief"),   "genitief suffix");
+        Assert.AreEqual("tweeden", c.ConvertOrdinal(2, "case=datief"),     "datief suffix");
+        Assert.AreEqual("tweeden", c.ConvertOrdinal(2, "case=accusatief"), "accusatief suffix");
+    }
+
+    [TestMethod]
+    public void CardinalVariant_MultiValue_SameReplacementForAllListedCases()
+    {
+        var converters = NumberToStringConverter.ReadConfiguration(MultiValueTestConfig);
+        var c = converters["TEST-MV"];
+
+        // base / nominatief: één unchanged
+        Assert.AreEqual("één",  c.Convert(1));
+        Assert.AreEqual("één",  c.Convert(1, "case=nominatief"));
+        // genitief and datief share the same replacement rule via values="genitief,datief"
+        Assert.AreEqual("ener", c.Convert(1, "case=genitief"), "genitief");
+        Assert.AreEqual("ener", c.Convert(1, "case=datief"),   "datief");
+        // accusatief uses the separate single-value rule
+        Assert.AreEqual("enen", c.Convert(1, "case=accusatief"), "accusatief");
+    }
+
     private sealed class OrdinalPluginSpecifics
         : INumberToStringLanguageSpecifics, IOrdinalLanguageSpecifics
     {
@@ -1690,5 +1935,231 @@ public class NumberToStringConverterImprovementsTests
             result = $"ORDINAL_{number}";
             return true;
         }
+    }
+
+    // ─── Triggers ─────────────────────────────────────────────────────────────
+
+    private static NumberToStringConverter MakeTriggerConverter(
+        IEnumerable<NumberToStringConverter.TriggerRule> triggers)
+    {
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        {
+            Triggers = triggers.ToList()
+        };
+        return new NumberToStringConverter(options);
+    }
+
+    private static NumberToStringConverter.TriggerReplace SimpleReplace(string from, string to, bool regex = false) =>
+        new(from, regex, [], to);
+
+    private static NumberToStringConverter.TriggerRule EndTrigger(string from, string to, bool regex = false) =>
+        new(NumberToStringConverter.TriggerAt.End, null, [SimpleReplace(from, to, regex)]);
+
+    private static NumberToStringConverter.TriggerRule GroupTrigger(int? groupIndex, string from, string to, bool regex = false) =>
+        new(NumberToStringConverter.TriggerAt.Group,
+            groupIndex.HasValue ? [groupIndex.Value] : null,
+            [SimpleReplace(from, to, regex)]);
+
+    private static NumberToStringConverter.TriggerRule GroupWithScaleTrigger(string from, string to) =>
+        new(NumberToStringConverter.TriggerAt.GroupWithScale, null, [SimpleReplace(from, to)]);
+
+    [TestMethod]
+    public void Trigger_End_Unconditional_LiteralReplace()
+    {
+        var c = MakeTriggerConverter([EndTrigger("one", "ONE")]);
+        Assert.AreEqual("ONE", c.Convert(1));
+        Assert.AreEqual("twenty-ONE", c.Convert(21));
+        Assert.AreEqual("two", c.Convert(2));
+    }
+
+    [TestMethod]
+    public void Trigger_End_Regex()
+    {
+        var c = MakeTriggerConverter([EndTrigger(@"\bone\b", "1", regex: true)]);
+        Assert.AreEqual("1", c.Convert(1));
+        Assert.AreEqual("twenty-1", c.Convert(21));
+        Assert.AreEqual("1 thousand", c.Convert(1_000));
+        Assert.AreEqual("two", c.Convert(2));
+    }
+
+    [TestMethod]
+    public void Trigger_End_VariantConditioned()
+    {
+        var en = NumberToStringConverter.GetConverter("EN");
+        var options = new NumberToStringConverterOptions(en);
+        options.VariantDimensions = [new NumberToStringConverter.VariantDimension("gender", ["masc", "fem"])];
+        // Replace with variant forms: masc="one" (default, first form), fem="una"
+        var forms = new List<(IReadOnlyDictionary<string, string>, string)>
+        {
+            (new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["gender"] = "masc" }, "one"),
+            (new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["gender"] = "fem"  }, "una"),
+        };
+        var replace = new NumberToStringConverter.TriggerReplace("one", false, forms, defaultTo: "one");
+        options.Triggers = [new NumberToStringConverter.TriggerRule(NumberToStringConverter.TriggerAt.End, null, [replace])];
+        var c = new NumberToStringConverter(options);
+
+        Assert.AreEqual("una", c.Convert(1, "gender=fem"));
+        Assert.AreEqual("one", c.Convert(1, "gender=masc"));
+        Assert.AreEqual("one", c.Convert(1));  // default
+    }
+
+    [TestMethod]
+    public void Trigger_End_NoDefaultTo_SkipsWhenNoVariantMatches()
+    {
+        // When no DefaultTo and no variant matches, the replacement is skipped entirely
+        // (the regex is never even evaluated — ApplyTriggerReplace short-circuits)
+        var en = NumberToStringConverter.GetConverter("EN");
+        var options = new NumberToStringConverterOptions(en);
+        options.VariantDimensions = [new NumberToStringConverter.VariantDimension("gender", ["masc", "fem"])];
+        var forms = new List<(IReadOnlyDictionary<string, string>, string)>
+        {
+            (new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["gender"] = "fem" }, "una"),
+        };
+        // No DefaultTo → only fires for fem; masc and no-variant calls are unchanged
+        var replace = new NumberToStringConverter.TriggerReplace("one", false, forms, defaultTo: null);
+        options.Triggers = [new NumberToStringConverter.TriggerRule(NumberToStringConverter.TriggerAt.End, null, [replace])];
+        var c = new NumberToStringConverter(options);
+
+        Assert.AreEqual("una", c.Convert(1, "gender=fem"));
+        Assert.AreEqual("one", c.Convert(1, "gender=masc"));  // no default → skipped
+        Assert.AreEqual("one", c.Convert(1));                  // no default → skipped
+    }
+
+    [TestMethod]
+    public void Trigger_Group0_FiresOnlyForUnitsChunk()
+    {
+        // group(0) transforms digits of the units chunk only — thousands chunk (group 1) is untouched
+        var c = MakeTriggerConverter([GroupTrigger(0, "one", "UNO")]);
+        Assert.AreEqual("UNO", c.Convert(1));
+        Assert.AreEqual("one thousand", c.Convert(1_000));       // group 1 not affected
+        Assert.AreEqual("one thousand, UNO", c.Convert(1_001));  // only units group changes
+    }
+
+    [TestMethod]
+    public void Trigger_Group_AllGroups_FiresForEveryGroup()
+    {
+        // group (no index) fires for all groups, digits-only, before scale
+        var c = MakeTriggerConverter([GroupTrigger(null, "one", "UNO")]);
+        Assert.AreEqual("UNO", c.Convert(1));
+        Assert.AreEqual("UNO thousand", c.Convert(1_000));       // thousands group: "one" → "UNO", then scale appended
+        Assert.AreEqual("UNO thousand, UNO", c.Convert(1_001));
+    }
+
+    [TestMethod]
+    public void Trigger_GroupWithScale_FiresAfterScale()
+    {
+        // groupWithScale fires on "digits + scale" text after ApplyReplacements
+        var c = MakeTriggerConverter([GroupWithScaleTrigger("one thousand", "mille")]);
+        Assert.AreEqual("mille", c.Convert(1_000));
+        Assert.AreEqual("two thousand", c.Convert(2_000));         // not matching
+        Assert.AreEqual("mille, one", c.Convert(1_001));           // units group stays separate
+    }
+
+    [TestMethod]
+    public void Trigger_End_FiresForOrdinals()
+    {
+        // end triggers fire in ConvertOrdinal pipeline (after ApplyOrdinalTransform, before FinalizeWriting)
+        var c = MakeTriggerConverter([EndTrigger("second", "SECOND")]);
+        Assert.AreEqual("SECOND", c.ConvertOrdinal(2));
+        Assert.AreEqual("third", c.ConvertOrdinal(3));  // unrelated ordinal unaffected
+    }
+
+    [TestMethod]
+    public void Trigger_Group0_BreaksOrdinalWordRule_ByDesign()
+    {
+        // group(0) fires inside ConvertRaw, which ordinals call too.
+        // "two" → "TWO" before ordinal rules run → word rule "two"→"second" can't match → suffix "th" used
+        var c = MakeTriggerConverter([GroupTrigger(0, "two", "TWO")]);
+        Assert.AreEqual("TWO", c.Convert(2));
+        Assert.AreEqual("TWOth", c.ConvertOrdinal(2));  // intended: documented side-effect
+    }
+
+    [TestMethod]
+    public void Trigger_MultipleTriggersAppliedInOrder()
+    {
+        var c = MakeTriggerConverter([
+            EndTrigger("one", "eins"),
+            EndTrigger("eins", "EIN"),
+        ]);
+        Assert.AreEqual("EIN", c.Convert(1));
+    }
+
+    // ─── Significant-digits precision ─────────────────────────────────────────
+
+    [TestMethod]
+    public void RoundToSignificantDigits_BasicCases()
+    {
+        Assert.AreEqual(123000000, (long)MathEx.RoundToSignificantDigits(123456789, 3));
+        Assert.AreEqual(120000000, (long)MathEx.RoundToSignificantDigits(123456789, 2));
+        Assert.AreEqual(100000000, (long)MathEx.RoundToSignificantDigits(123456789, 1));
+        Assert.AreEqual(123456789, (long)MathEx.RoundToSignificantDigits(123456789, 9));
+        Assert.AreEqual(123456789, (long)MathEx.RoundToSignificantDigits(123456789, 12));
+    }
+
+    [TestMethod]
+    public void RoundToSignificantDigits_RoundsUp_When5()
+    {
+        // 125 → precision 2: 125 → scale=10, (125+5)/10*10 = 130
+        Assert.AreEqual(130, (long)MathEx.RoundToSignificantDigits(125, 2));
+        // 155000 → precision 2: scale=10000, (155000+5000)/10000*10000 = 160000
+        Assert.AreEqual(160000, (long)MathEx.RoundToSignificantDigits(155000, 2));
+    }
+
+    [TestMethod]
+    public void RoundToSignificantDigits_RoundsDown_WhenBelow5()
+    {
+        // 124 → precision 2: scale=10, (124+5)/10*10 = 120
+        Assert.AreEqual(120, (long)MathEx.RoundToSignificantDigits(124, 2));
+    }
+
+    [TestMethod]
+    public void RoundToSignificantDigits_Zero_ReturnsZero()
+    {
+        Assert.AreEqual(BigInteger.Zero, MathEx.RoundToSignificantDigits(0, 3));
+    }
+
+    [TestMethod]
+    public void RoundToSignificantDigits_Negative_PreservesSign()
+    {
+        Assert.AreEqual(-123000000, (long)MathEx.RoundToSignificantDigits(-123456789, 3));
+        Assert.AreEqual(-130, (long)MathEx.RoundToSignificantDigits(-125, 2));
+    }
+
+    [TestMethod]
+    [ExpectedException(typeof(ArgumentOutOfRangeException))]
+    public void RoundToSignificantDigits_ZeroDigits_Throws()
+    {
+        MathEx.RoundToSignificantDigits(123, 0);
+    }
+
+    [TestMethod]
+    public void Convert_WithPrecision_FR()
+    {
+        var fr = NumberToStringConverter.GetConverter("FR");
+        // 123456789 → precision 3 → 123000000
+        Assert.AreEqual("cent vingt trois millions", fr.Convert((BigInteger)123456789, 3));
+        // 123456789 → precision 2 → 120000000
+        Assert.AreEqual("cent vingt millions", fr.Convert((BigInteger)123456789, 2));
+        // 123456789 → precision 1 → 100000000
+        Assert.AreEqual("cent millions", fr.Convert((BigInteger)123456789, 1));
+    }
+
+    [TestMethod]
+    public void Convert_WithPrecision_EN()
+    {
+        var en = NumberToStringConverter.GetConverter("EN");
+        // 123456789 → precision 3 → 123000000
+        Assert.AreEqual("one hundred and twenty-three million", en.Convert((BigInteger)123456789, 3));
+        // 123456789 → precision 2 → 120000000
+        Assert.AreEqual("one hundred and twenty million", en.Convert((BigInteger)123456789, 2));
+    }
+
+    [TestMethod]
+    public void Convert_WithPrecision_NoPrecisionLoss_WhenPrecisionLargeEnough()
+    {
+        var en = NumberToStringConverter.GetConverter("EN");
+        string full = en.Convert(123456789);
+        string withPrecision = en.Convert((BigInteger)123456789, 20);
+        Assert.AreEqual(full, withPrecision);
     }
 }

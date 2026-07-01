@@ -24,6 +24,59 @@ var fft = new Utils.Mathematics.Fourrier.FastFourrierTransform();
 fft.Transform(signal);
 ```
 
+## MathEx — extended math utilities
+
+`MathEx` provides generic numerical utilities, rounding helpers, and combinatorial tools.
+
+### `RoundToSignificantDigits`
+
+Rounds a `BigInteger` to a given number of significant digits using standard rounding (≥ 5 rounds up).
+
+```csharp
+using System.Numerics;
+using Utils.Mathematics;
+
+MathEx.RoundToSignificantDigits(123456789, 3);  // 123000000
+MathEx.RoundToSignificantDigits(123456789, 2);  // 120000000
+MathEx.RoundToSignificantDigits(123456789, 1);  // 100000000
+MathEx.RoundToSignificantDigits(125, 2);        // 130   (5 → rounds up)
+MathEx.RoundToSignificantDigits(124, 2);        // 120   (4 → rounds down)
+MathEx.RoundToSignificantDigits(-123456789, 3); // -123000000  (sign preserved)
+MathEx.RoundToSignificantDigits(0, 3);          // 0
+```
+
+Throws `ArgumentOutOfRangeException` when `significantDigits < 1`. Returns `value` unchanged when it already has fewer or equal digits than requested.
+
+### Other rounding helpers
+
+```csharp
+MathEx.Round(1234, 100);   // 1200 — nearest multiple of 100
+MathEx.Round(1250, 100);   // 1300 — tie rounds up
+MathEx.Floor(1234,  100);  // 1200 — greatest multiple ≤ value
+MathEx.Ceiling(1201, 100); // 1300 — smallest multiple ≥ value
+```
+
+### `Mod` — always-positive modulo
+
+```csharp
+MathEx.Mod(-1, 3);  // 2  (unlike C# % which gives -1)
+```
+
+### `Gcd` / `Lcm`
+
+```csharp
+MathEx.Gcd(12, 8);   // 4
+MathEx.Lcm(4, 6);    // 12
+```
+
+### `Min` / `Max` / `Clamp` — fixed-set overloads
+
+```csharp
+MathEx.Min(3, 1, 4, 1, 5);   // 1
+MathEx.Max(3, 1, 4, 1, 5);   // 5
+5.Clamp(1, 4);                 // 4
+```
+
 ## FFT examples
 
 `FastFourrierTransform` performs an in-place Cooley-Tukey FFT. The input length must be a power of two.

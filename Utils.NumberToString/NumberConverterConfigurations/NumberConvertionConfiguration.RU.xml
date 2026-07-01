@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
     <Language
         groupSize="3"
@@ -71,35 +71,400 @@
             <Number value="18" string="восемнадцать" />
             <Number value="19" string="девятнадцать" />
         </Exceptions>
+        <!--
+            Ordinal variant dimensions:
+              gender  — maskulin (default), feminin, neutrum, plural
+              case    — именительный (default), родительный, дательный, винительный, творительный, предложный
+
+            Suffix "ый" + removeTrailing "ь" handles regular ordinals (e.g. пятый, девятый, двадцатый).
+            OrdinalVariants overrides the suffix per gender × case for those same regular ordinals.
+            Word-rule ordinals (один → первый, two → второй, etc.) carry explicit forms via the
+            forms attribute, which generates synthetic OrdinalVariantRule entries at load time.
+        -->
+        <Variants>
+            <Dimension name="gender" values="maskulin,feminin,neutrum,plural" />
+            <Dimension name="case"   values="именительный,родительный,дательный,винительный,творительный,предложный" />
+        </Variants>
         <Ordinals suffix="ый" removeTrailing="ь">
-            <OrdinalException value="1" string="первый" />
-            <!-- Unités irrégulières -->
-            <Ordinal from="один"          to="первый" />
-            <Ordinal from="два"           to="второй" />
-            <Ordinal from="три"           to="третий" />
-            <Ordinal from="четыре"        to="четвёртый" />
-            <Ordinal from="шесть"         to="шестой" />
-            <Ordinal from="семь"          to="седьмой" />
-            <Ordinal from="восемь"        to="восьмой" />
+            <!-- Ordinal 1 — exception by value (also handled as word rule below) -->
+            <OrdinalException value="1" string="первый">
+                <Variant type="gender" variant="maskulin">
+                    <Variant type="case" forms="первый,первого,первому,первый,первым,первом" />
+                </Variant>
+                <Variant type="gender" variant="feminin">
+                    <Variant type="case" forms="первая,первой,первой,первую,первой,первой" />
+                </Variant>
+                <Variant type="gender" variant="neutrum">
+                    <Variant type="case" forms="первое,первого,первому,первое,первым,первом" />
+                </Variant>
+                <Variant type="gender" variant="plural">
+                    <Variant type="case" forms="первые,первых,первым,первые,первыми,первых" />
+                </Variant>
+            </OrdinalException>
+
+            <!-- Единицы (irregular) -->
+            <Ordinal from="один">
+                <Variant type="gender" variant="maskulin">
+                    <Variant type="case" forms="первый,первого,первому,первый,первым,первом" />
+                </Variant>
+                <Variant type="gender" variant="feminin">
+                    <Variant type="case" forms="первая,первой,первой,первую,первой,первой" />
+                </Variant>
+                <Variant type="gender" variant="neutrum">
+                    <Variant type="case" forms="первое,первого,первому,первое,первым,первом" />
+                </Variant>
+                <Variant type="gender" variant="plural">
+                    <Variant type="case" forms="первые,первых,первым,первые,первыми,первых" />
+                </Variant>
+            </Ordinal>
+            <Ordinal from="два">
+                <Variant type="gender" variant="maskulin">
+                    <Variant type="case" forms="второй,второго,второму,второй,вторым,втором" />
+                </Variant>
+                <Variant type="gender" variant="feminin">
+                    <Variant type="case" forms="вторая,второй,второй,вторую,второй,второй" />
+                </Variant>
+                <Variant type="gender" variant="neutrum">
+                    <Variant type="case" forms="второе,второго,второму,второе,вторым,втором" />
+                </Variant>
+                <Variant type="gender" variant="plural">
+                    <Variant type="case" forms="вторые,вторых,вторым,вторые,вторыми,вторых" />
+                </Variant>
+            </Ordinal>
+            <Ordinal from="три">
+                <!-- Possessive-adjective pattern: gen/dat/inst/prep -его/-ему/-им/-ем -->
+                <Variant type="gender" variant="maskulin">
+                    <Variant type="case" forms="третий,третьего,третьему,третий,третьим,третьем" />
+                </Variant>
+                <Variant type="gender" variant="feminin">
+                    <Variant type="case" forms="третья,третьей,третьей,третью,третьей,третьей" />
+                </Variant>
+                <Variant type="gender" variant="neutrum">
+                    <Variant type="case" forms="третье,третьего,третьему,третье,третьим,третьем" />
+                </Variant>
+                <Variant type="gender" variant="plural">
+                    <Variant type="case" forms="третьи,третьих,третьим,третьи,третьими,третьих" />
+                </Variant>
+            </Ordinal>
+            <Ordinal from="четыре">
+                <Variant type="gender" variant="maskulin">
+                    <Variant type="case" forms="четвёртый,четвёртого,четвёртому,четвёртый,четвёртым,четвёртом" />
+                </Variant>
+                <Variant type="gender" variant="feminin">
+                    <Variant type="case" forms="четвёртая,четвёртой,четвёртой,четвёртую,четвёртой,четвёртой" />
+                </Variant>
+                <Variant type="gender" variant="neutrum">
+                    <Variant type="case" forms="четвёртое,четвёртого,четвёртому,четвёртое,четвёртым,четвёртом" />
+                </Variant>
+                <Variant type="gender" variant="plural">
+                    <Variant type="case" forms="четвёртые,четвёртых,четвёртым,четвёртые,четвёртыми,четвёртых" />
+                </Variant>
+            </Ordinal>
+            <Ordinal from="шесть">
+                <Variant type="gender" variant="maskulin">
+                    <Variant type="case" forms="шестой,шестого,шестому,шестой,шестым,шестом" />
+                </Variant>
+                <Variant type="gender" variant="feminin">
+                    <Variant type="case" forms="шестая,шестой,шестой,шестую,шестой,шестой" />
+                </Variant>
+                <Variant type="gender" variant="neutrum">
+                    <Variant type="case" forms="шестое,шестого,шестому,шестое,шестым,шестом" />
+                </Variant>
+                <Variant type="gender" variant="plural">
+                    <Variant type="case" forms="шестые,шестых,шестым,шестые,шестыми,шестых" />
+                </Variant>
+            </Ordinal>
+            <Ordinal from="семь">
+                <Variant type="gender" variant="maskulin">
+                    <Variant type="case" forms="седьмой,седьмого,седьмому,седьмой,седьмым,седьмом" />
+                </Variant>
+                <Variant type="gender" variant="feminin">
+                    <Variant type="case" forms="седьмая,седьмой,седьмой,седьмую,седьмой,седьмой" />
+                </Variant>
+                <Variant type="gender" variant="neutrum">
+                    <Variant type="case" forms="седьмое,седьмого,седьмому,седьмое,седьмым,седьмом" />
+                </Variant>
+                <Variant type="gender" variant="plural">
+                    <Variant type="case" forms="седьмые,седьмых,седьмым,седьмые,седьмыми,седьмых" />
+                </Variant>
+            </Ordinal>
+            <Ordinal from="восемь">
+                <Variant type="gender" variant="maskulin">
+                    <Variant type="case" forms="восьмой,восьмого,восьмому,восьмой,восьмым,восьмом" />
+                </Variant>
+                <Variant type="gender" variant="feminin">
+                    <Variant type="case" forms="восьмая,восьмой,восьмой,восьмую,восьмой,восьмой" />
+                </Variant>
+                <Variant type="gender" variant="neutrum">
+                    <Variant type="case" forms="восьмое,восьмого,восьмому,восьмое,восьмым,восьмом" />
+                </Variant>
+                <Variant type="gender" variant="plural">
+                    <Variant type="case" forms="восьмые,восьмых,восьмым,восьмые,восьмыми,восьмых" />
+                </Variant>
+            </Ordinal>
+
             <!-- Dizaines irrégulières -->
-            <Ordinal from="сорок"         to="сороковой" />
-            <Ordinal from="пятьдесят"     to="пятидесятый" />
-            <Ordinal from="шестьдесят"    to="шестидесятый" />
-            <Ordinal from="семьдесят"     to="семидесятый" />
-            <Ordinal from="восемьдесят"   to="восьмидесятый" />
-            <Ordinal from="девяносто"     to="девяностый" />
+            <Ordinal from="сорок">
+                <Variant type="gender" variant="maskulin">
+                    <Variant type="case" forms="сороковой,сорокового,сороковому,сороковой,сороковым,сороковом" />
+                </Variant>
+                <Variant type="gender" variant="feminin">
+                    <Variant type="case" forms="сороковая,сороковой,сороковой,сороковую,сороковой,сороковой" />
+                </Variant>
+                <Variant type="gender" variant="neutrum">
+                    <Variant type="case" forms="сороковое,сорокового,сороковому,сороковое,сороковым,сороковом" />
+                </Variant>
+                <Variant type="gender" variant="plural">
+                    <Variant type="case" forms="сороковые,сороковых,сороковым,сороковые,сороковыми,сороковых" />
+                </Variant>
+            </Ordinal>
+            <Ordinal from="пятьдесят">
+                <Variant type="gender" variant="maskulin">
+                    <Variant type="case" forms="пятидесятый,пятидесятого,пятидесятому,пятидесятый,пятидесятым,пятидесятом" />
+                </Variant>
+                <Variant type="gender" variant="feminin">
+                    <Variant type="case" forms="пятидесятая,пятидесятой,пятидесятой,пятидесятую,пятидесятой,пятидесятой" />
+                </Variant>
+                <Variant type="gender" variant="neutrum">
+                    <Variant type="case" forms="пятидесятое,пятидесятого,пятидесятому,пятидесятое,пятидесятым,пятидесятом" />
+                </Variant>
+                <Variant type="gender" variant="plural">
+                    <Variant type="case" forms="пятидесятые,пятидесятых,пятидесятым,пятидесятые,пятидесятыми,пятидесятых" />
+                </Variant>
+            </Ordinal>
+            <Ordinal from="шестьдесят">
+                <Variant type="gender" variant="maskulin">
+                    <Variant type="case" forms="шестидесятый,шестидесятого,шестидесятому,шестидесятый,шестидесятым,шестидесятом" />
+                </Variant>
+                <Variant type="gender" variant="feminin">
+                    <Variant type="case" forms="шестидесятая,шестидесятой,шестидесятой,шестидесятую,шестидесятой,шестидесятой" />
+                </Variant>
+                <Variant type="gender" variant="neutrum">
+                    <Variant type="case" forms="шестидесятое,шестидесятого,шестидесятому,шестидесятое,шестидесятым,шестидесятом" />
+                </Variant>
+                <Variant type="gender" variant="plural">
+                    <Variant type="case" forms="шестидесятые,шестидесятых,шестидесятым,шестидесятые,шестидесятыми,шестидесятых" />
+                </Variant>
+            </Ordinal>
+            <Ordinal from="семьдесят">
+                <Variant type="gender" variant="maskulin">
+                    <Variant type="case" forms="семидесятый,семидесятого,семидесятому,семидесятый,семидесятым,семидесятом" />
+                </Variant>
+                <Variant type="gender" variant="feminin">
+                    <Variant type="case" forms="семидесятая,семидесятой,семидесятой,семидесятую,семидесятой,семидесятой" />
+                </Variant>
+                <Variant type="gender" variant="neutrum">
+                    <Variant type="case" forms="семидесятое,семидесятого,семидесятому,семидесятое,семидесятым,семидесятом" />
+                </Variant>
+                <Variant type="gender" variant="plural">
+                    <Variant type="case" forms="семидесятые,семидесятых,семидесятым,семидесятые,семидесятыми,семидесятых" />
+                </Variant>
+            </Ordinal>
+            <Ordinal from="восемьдесят">
+                <Variant type="gender" variant="maskulin">
+                    <Variant type="case" forms="восьмидесятый,восьмидесятого,восьмидесятому,восьмидесятый,восьмидесятым,восьмидесятом" />
+                </Variant>
+                <Variant type="gender" variant="feminin">
+                    <Variant type="case" forms="восьмидесятая,восьмидесятой,восьмидесятой,восьмидесятую,восьмидесятой,восьмидесятой" />
+                </Variant>
+                <Variant type="gender" variant="neutrum">
+                    <Variant type="case" forms="восьмидесятое,восьмидесятого,восьмидесятому,восьмидесятое,восьмидесятым,восьмидесятом" />
+                </Variant>
+                <Variant type="gender" variant="plural">
+                    <Variant type="case" forms="восьмидесятые,восьмидесятых,восьмидесятым,восьмидесятые,восьмидесятыми,восьмидесятых" />
+                </Variant>
+            </Ordinal>
+            <Ordinal from="девяносто">
+                <Variant type="gender" variant="maskulin">
+                    <Variant type="case" forms="девяностый,девяностого,девяностому,девяностый,девяностым,девяностом" />
+                </Variant>
+                <Variant type="gender" variant="feminin">
+                    <Variant type="case" forms="девяностая,девяностой,девяностой,девяностую,девяностой,девяностой" />
+                </Variant>
+                <Variant type="gender" variant="neutrum">
+                    <Variant type="case" forms="девяностое,девяностого,девяностому,девяностое,девяностым,девяностом" />
+                </Variant>
+                <Variant type="gender" variant="plural">
+                    <Variant type="case" forms="девяностые,девяностых,девяностым,девяностые,девяностыми,девяностых" />
+                </Variant>
+            </Ordinal>
+
             <!-- Centaines irrégulières -->
-            <Ordinal from="сто"           to="сотый" />
-            <Ordinal from="двести"        to="двухсотый" />
-            <Ordinal from="триста"        to="трёхсотый" />
-            <Ordinal from="четыреста"     to="четырёхсотый" />
-            <Ordinal from="пятьсот"       to="пятисотый" />
-            <Ordinal from="шестьсот"      to="шестисотый" />
-            <Ordinal from="семьсот"       to="семисотый" />
-            <Ordinal from="восемьсот"     to="восьмисотый" />
-            <Ordinal from="девятьсот"     to="девятисотый" />
+            <Ordinal from="сто">
+                <Variant type="gender" variant="maskulin">
+                    <Variant type="case" forms="сотый,сотого,сотому,сотый,сотым,сотом" />
+                </Variant>
+                <Variant type="gender" variant="feminin">
+                    <Variant type="case" forms="сотая,сотой,сотой,сотую,сотой,сотой" />
+                </Variant>
+                <Variant type="gender" variant="neutrum">
+                    <Variant type="case" forms="сотое,сотого,сотому,сотое,сотым,сотом" />
+                </Variant>
+                <Variant type="gender" variant="plural">
+                    <Variant type="case" forms="сотые,сотых,сотым,сотые,сотыми,сотых" />
+                </Variant>
+            </Ordinal>
+            <Ordinal from="двести">
+                <Variant type="gender" variant="maskulin">
+                    <Variant type="case" forms="двухсотый,двухсотого,двухсотому,двухсотый,двухсотым,двухсотом" />
+                </Variant>
+                <Variant type="gender" variant="feminin">
+                    <Variant type="case" forms="двухсотая,двухсотой,двухсотой,двухсотую,двухсотой,двухсотой" />
+                </Variant>
+                <Variant type="gender" variant="neutrum">
+                    <Variant type="case" forms="двухсотое,двухсотого,двухсотому,двухсотое,двухсотым,двухсотом" />
+                </Variant>
+                <Variant type="gender" variant="plural">
+                    <Variant type="case" forms="двухсотые,двухсотых,двухсотым,двухсотые,двухсотыми,двухсотых" />
+                </Variant>
+            </Ordinal>
+            <Ordinal from="триста">
+                <Variant type="gender" variant="maskulin">
+                    <Variant type="case" forms="трёхсотый,трёхсотого,трёхсотому,трёхсотый,трёхсотым,трёхсотом" />
+                </Variant>
+                <Variant type="gender" variant="feminin">
+                    <Variant type="case" forms="трёхсотая,трёхсотой,трёхсотой,трёхсотую,трёхсотой,трёхсотой" />
+                </Variant>
+                <Variant type="gender" variant="neutrum">
+                    <Variant type="case" forms="трёхсотое,трёхсотого,трёхсотому,трёхсотое,трёхсотым,трёхсотом" />
+                </Variant>
+                <Variant type="gender" variant="plural">
+                    <Variant type="case" forms="трёхсотые,трёхсотых,трёхсотым,трёхсотые,трёхсотыми,трёхсотых" />
+                </Variant>
+            </Ordinal>
+            <Ordinal from="четыреста">
+                <Variant type="gender" variant="maskulin">
+                    <Variant type="case" forms="четырёхсотый,четырёхсотого,четырёхсотому,четырёхсотый,четырёхсотым,четырёхсотом" />
+                </Variant>
+                <Variant type="gender" variant="feminin">
+                    <Variant type="case" forms="четырёхсотая,четырёхсотой,четырёхсотой,четырёхсотую,четырёхсотой,четырёхсотой" />
+                </Variant>
+                <Variant type="gender" variant="neutrum">
+                    <Variant type="case" forms="четырёхсотое,четырёхсотого,четырёхсотому,четырёхсотое,четырёхсотым,четырёхсотом" />
+                </Variant>
+                <Variant type="gender" variant="plural">
+                    <Variant type="case" forms="четырёхсотые,четырёхсотых,четырёхсотым,четырёхсотые,четырёхсотыми,четырёхсотых" />
+                </Variant>
+            </Ordinal>
+            <Ordinal from="пятьсот">
+                <Variant type="gender" variant="maskulin">
+                    <Variant type="case" forms="пятисотый,пятисотого,пятисотому,пятисотый,пятисотым,пятисотом" />
+                </Variant>
+                <Variant type="gender" variant="feminin">
+                    <Variant type="case" forms="пятисотая,пятисотой,пятисотой,пятисотую,пятисотой,пятисотой" />
+                </Variant>
+                <Variant type="gender" variant="neutrum">
+                    <Variant type="case" forms="пятисотое,пятисотого,пятисотому,пятисотое,пятисотым,пятисотом" />
+                </Variant>
+                <Variant type="gender" variant="plural">
+                    <Variant type="case" forms="пятисотые,пятисотых,пятисотым,пятисотые,пятисотыми,пятисотых" />
+                </Variant>
+            </Ordinal>
+            <Ordinal from="шестьсот">
+                <Variant type="gender" variant="maskulin">
+                    <Variant type="case" forms="шестисотый,шестисотого,шестисотому,шестисотый,шестисотым,шестисотом" />
+                </Variant>
+                <Variant type="gender" variant="feminin">
+                    <Variant type="case" forms="шестисотая,шестисотой,шестисотой,шестисотую,шестисотой,шестисотой" />
+                </Variant>
+                <Variant type="gender" variant="neutrum">
+                    <Variant type="case" forms="шестисотое,шестисотого,шестисотому,шестисотое,шестисотым,шестисотом" />
+                </Variant>
+                <Variant type="gender" variant="plural">
+                    <Variant type="case" forms="шестисотые,шестисотых,шестисотым,шестисотые,шестисотыми,шестисотых" />
+                </Variant>
+            </Ordinal>
+            <Ordinal from="семьсот">
+                <Variant type="gender" variant="maskulin">
+                    <Variant type="case" forms="семисотый,семисотого,семисотому,семисотый,семисотым,семисотом" />
+                </Variant>
+                <Variant type="gender" variant="feminin">
+                    <Variant type="case" forms="семисотая,семисотой,семисотой,семисотую,семисотой,семисотой" />
+                </Variant>
+                <Variant type="gender" variant="neutrum">
+                    <Variant type="case" forms="семисотое,семисотого,семисотому,семисотое,семисотым,семисотом" />
+                </Variant>
+                <Variant type="gender" variant="plural">
+                    <Variant type="case" forms="семисотые,семисотых,семисотым,семисотые,семисотыми,семисотых" />
+                </Variant>
+            </Ordinal>
+            <Ordinal from="восемьсот">
+                <Variant type="gender" variant="maskulin">
+                    <Variant type="case" forms="восьмисотый,восьмисотого,восьмисотому,восьмисотый,восьмисотым,восьмисотом" />
+                </Variant>
+                <Variant type="gender" variant="feminin">
+                    <Variant type="case" forms="восьмисотая,восьмисотой,восьмисотой,восьмисотую,восьмисотой,восьмисотой" />
+                </Variant>
+                <Variant type="gender" variant="neutrum">
+                    <Variant type="case" forms="восьмисотое,восьмисотого,восьмисотому,восьмисотое,восьмисотым,восьмисотом" />
+                </Variant>
+                <Variant type="gender" variant="plural">
+                    <Variant type="case" forms="восьмисотые,восьмисотых,восьмисотым,восьмисотые,восьмисотыми,восьмисотых" />
+                </Variant>
+            </Ordinal>
+            <Ordinal from="девятьсот">
+                <Variant type="gender" variant="maskulin">
+                    <Variant type="case" forms="девятисотый,девятисотого,девятисотому,девятисотый,девятисотым,девятисотом" />
+                </Variant>
+                <Variant type="gender" variant="feminin">
+                    <Variant type="case" forms="девятисотая,девятисотой,девятисотой,девятисотую,девятисотой,девятисотой" />
+                </Variant>
+                <Variant type="gender" variant="neutrum">
+                    <Variant type="case" forms="девятисотое,девятисотого,девятисотому,девятисотое,девятисотым,девятисотом" />
+                </Variant>
+                <Variant type="gender" variant="plural">
+                    <Variant type="case" forms="девятисотые,девятисотых,девятисотым,девятисотые,девятисотыми,девятисотых" />
+                </Variant>
+            </Ordinal>
+
             <!-- Mot d'échelle тысяча -->
-            <Ordinal from="тысяча"        to="тысячный" />
+            <Ordinal from="тысяча">
+                <Variant type="gender" variant="maskulin">
+                    <Variant type="case" forms="тысячный,тысячного,тысячному,тысячный,тысячным,тысячном" />
+                </Variant>
+                <Variant type="gender" variant="feminin">
+                    <Variant type="case" forms="тысячная,тысячной,тысячной,тысячную,тысячной,тысячной" />
+                </Variant>
+                <Variant type="gender" variant="neutrum">
+                    <Variant type="case" forms="тысячное,тысячного,тысячному,тысячное,тысячным,тысячном" />
+                </Variant>
+                <Variant type="gender" variant="plural">
+                    <Variant type="case" forms="тысячные,тысячных,тысячным,тысячные,тысячными,тысячных" />
+                </Variant>
+            </Ordinal>
+
+            <!--
+                OrdinalVariants — suffix overrides for regular ordinals (cardinal ends in "ь":
+                пять, девять, десять, одиннадцать … девятнадцать, двадцать, тридцать).
+                Pattern: strip "ь" from cardinal, append case-specific suffix.
+                Example: десять → десят + ого = десятого (roditelnyj maskulin).
+            -->
+            <OrdinalVariants>
+                <Variant type="gender" variant="maskulin">
+                    <Variant type="case" variant="родительный"   suffix="ого" removeTrailing="ь" />
+                    <Variant type="case" variant="дательный"     suffix="ому" removeTrailing="ь" />
+                    <Variant type="case" variant="творительный"  suffix="ым"  removeTrailing="ь" />
+                    <Variant type="case" variant="предложный"    suffix="ом"  removeTrailing="ь" />
+                </Variant>
+                <Variant type="gender" variant="feminin">
+                    <Variant type="case" variant="именительный"  suffix="ая"  removeTrailing="ь" />
+                    <Variant type="case" values="родительный,дательный,творительный,предложный" suffix="ой" removeTrailing="ь" />
+                    <Variant type="case" variant="винительный"   suffix="ую"  removeTrailing="ь" />
+                </Variant>
+                <Variant type="gender" variant="neutrum">
+                    <Variant type="case" values="именительный,винительный" suffix="ое" removeTrailing="ь" />
+                    <Variant type="case" variant="родительный"   suffix="ого" removeTrailing="ь" />
+                    <Variant type="case" variant="дательный"     suffix="ому" removeTrailing="ь" />
+                    <Variant type="case" variant="творительный"  suffix="ым"  removeTrailing="ь" />
+                    <Variant type="case" variant="предложный"    suffix="ом"  removeTrailing="ь" />
+                </Variant>
+                <Variant type="gender" variant="plural">
+                    <Variant type="case" values="именительный,винительный" suffix="ые" removeTrailing="ь" />
+                    <Variant type="case" values="родительный,предложный"   suffix="ых" removeTrailing="ь" />
+                    <Variant type="case" variant="дательный"     suffix="ым"  removeTrailing="ь" />
+                    <Variant type="case" variant="творительный"  suffix="ыми" removeTrailing="ь" />
+                </Variant>
+            </OrdinalVariants>
         </Ordinals>
     </Language>
 </Numbers>

@@ -64,33 +64,23 @@
           as cardinals in practice. The default (zachar / standalone) forms are
           masculine; the nekeva variant provides feminine forms.
         -->
+        <!--
+          Ordinals 1-10 — forms listed in Dimension order: standalone, zachar, nekeva.
+          standalone and zachar share the same forms (both use the masculine ordinal);
+          nekeva carries the feminine form. The first entry also serves as the default
+          when ConvertOrdinal is called without an explicit gender variant.
+        -->
         <Ordinals>
-            <!-- Masculine / standalone ordinals 1-10 -->
-            <OrdinalException value="1"  string="ראשון" />
-            <OrdinalException value="2"  string="שני" />
-            <OrdinalException value="3"  string="שלישי" />
-            <OrdinalException value="4"  string="רביעי" />
-            <OrdinalException value="5"  string="חמישי" />
-            <OrdinalException value="6"  string="שישי" />
-            <OrdinalException value="7"  string="שביעי" />
-            <OrdinalException value="8"  string="שמיני" />
-            <OrdinalException value="9"  string="תשיעי" />
-            <OrdinalException value="10" string="עשירי" />
-            <!-- Feminine (nekeva) ordinals 1-10 -->
-            <OrdinalVariants>
-                <Variant type="gender" variant="nekeva">
-                    <OrdinalException value="1"  string="ראשונה" />
-                    <OrdinalException value="2"  string="שנייה" />
-                    <OrdinalException value="3"  string="שלישית" />
-                    <OrdinalException value="4"  string="רביעית" />
-                    <OrdinalException value="5"  string="חמישית" />
-                    <OrdinalException value="6"  string="שישית" />
-                    <OrdinalException value="7"  string="שביעית" />
-                    <OrdinalException value="8"  string="שמינית" />
-                    <OrdinalException value="9"  string="תשיעית" />
-                    <OrdinalException value="10" string="עשירית" />
-                </Variant>
-            </OrdinalVariants>
+            <OrdinalException value="1">  <Variant type="gender" forms="ראשון,ראשון,ראשונה"   /></OrdinalException>
+            <OrdinalException value="2">  <Variant type="gender" forms="שני,שני,שנייה"         /></OrdinalException>
+            <OrdinalException value="3">  <Variant type="gender" forms="שלישי,שלישי,שלישית"   /></OrdinalException>
+            <OrdinalException value="4">  <Variant type="gender" forms="רביעי,רביעי,רביעית"   /></OrdinalException>
+            <OrdinalException value="5">  <Variant type="gender" forms="חמישי,חמישי,חמישית"   /></OrdinalException>
+            <OrdinalException value="6">  <Variant type="gender" forms="שישי,שישי,שישית"       /></OrdinalException>
+            <OrdinalException value="7">  <Variant type="gender" forms="שביעי,שביעי,שביעית"   /></OrdinalException>
+            <OrdinalException value="8">  <Variant type="gender" forms="שמיני,שמיני,שמינית"   /></OrdinalException>
+            <OrdinalException value="9">  <Variant type="gender" forms="תשיעי,תשיעי,תשיעית"   /></OrdinalException>
+            <OrdinalException value="10"> <Variant type="gender" forms="עשירי,עשירי,עשירית"   /></OrdinalException>
         </Ordinals>
         <Variants>
             <!--
