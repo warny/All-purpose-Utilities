@@ -798,17 +798,6 @@
 				</Variant>
 			</Variant>
 
-			<!-- counting form "eins": maskulin/neutrum nominativ and neutrum akkusativ -->
-			<Variant type="gender" variant="maskulin">
-				<Variant type="case" variant="nominativ">
-					<Replacement oldValue="ein" newValue="eins" scope="LastWord" />
-				</Variant>
-			</Variant>
-			<Variant type="gender" variant="neutrum">
-				<Variant type="case" values="nominativ,akkusativ">
-					<Replacement oldValue="ein" newValue="eins" scope="LastWord" />
-				</Variant>
-			</Variant>
 		</Variants>
 	</Language>
 </Numbers>

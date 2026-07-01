@@ -737,9 +737,9 @@
 			    Dativ     : maskulin=einem,     feminin=einer, neutrum=einem
 			    Genitiv   : maskulin=eines,     feminin=einer, neutrum=eines
 
-			  Maskulin/neutrum nominativ and neutrum akkusativ → "eins" (counting form) via
-			  the Variant rules below. Adjectival neutrum akkusativ also becomes "eins"
-			  as the two are indistinguishable without syntactic context.
+			  * GermanNumberToStringLanguageSpecifics converts standalone or trailing "ein" → "eins"
+			    (counting form). It also handles compounds like "zweihundertein" → "zweihunderteins"
+			    because LastWord-scoped Variant rules cannot match non-final embedded words.
 			-->
 			<Dimension name="gender" localName="genus" values="maskulin,feminin,neutrum" />
 			<Dimension name="case" localName="kasus" values="nominativ,akkusativ,dativ,genitiv" />
@@ -772,19 +772,6 @@
 				</Variant>
 			</Variant>
 
-			<!-- counting form "eins": maskulin/neutrum nominativ and neutrum akkusativ.
-			     These are the only positions where "ein" is not transformed by the rules
-			     above, so this pair completes the full inflection table. -->
-			<Variant type="gender" variant="maskulin">
-				<Variant type="case" variant="nominativ">
-					<Replacement oldValue="ein" newValue="eins" scope="LastWord" />
-				</Variant>
-			</Variant>
-			<Variant type="gender" variant="neutrum">
-				<Variant type="case" values="nominativ,akkusativ">
-					<Replacement oldValue="ein" newValue="eins" scope="LastWord" />
-				</Variant>
-			</Variant>
 		</Variants>
 		<YearFormat hundredWord="hundert">
 			<SplitRange from="1100" to="1999" />

@@ -23,8 +23,11 @@ public sealed class GermanNumberToStringLanguageSpecifics : INumberToStringLangu
 
         // "ein Million" → "eine Million": scale names start with an uppercase letter
         // (firstLetterUpperCase="true"); this regex handles all generated levels (Billion,
-        // Trillion …) without an explicit enumeration. Covered by XML Variants: Standalone
-        // "ein" → "eins" and all case/gender inflections; this hook is only for scale words.
-        return Regex.Replace(text, @"\bein (?<l>[A-Z])", "eine ${l}");
+        // Trillion …) without an explicit enumeration. Only this hook can cover compound
+        // endings like "zweihundertein" → "zweihunderteins" (LastWord scope cannot).
+        string finalized = Regex.Replace(text, @"\bein (?<l>[A-Z])", "eine ${l}");
+        if (finalized.EndsWith("ein", StringComparison.Ordinal))
+            finalized += "s";
+        return finalized;
     }
 }

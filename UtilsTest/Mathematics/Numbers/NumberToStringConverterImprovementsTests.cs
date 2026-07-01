@@ -491,7 +491,7 @@ public class NumberToStringConverterImprovementsTests
     {
         var converter = NumberToStringConverter.GetConverter("DE");
 
-        // Without variant: counting form via XML Variant {maskulin,nominativ} → "eins"
+        // Without variant: counting form (GermanSpecifics EndsWith "ein" → "eins")
         Assert.AreEqual("eins", converter.Convert(1));
         Assert.AreEqual("eins", converter.Convert(1, "genus=maskulin"));
         Assert.AreEqual("eins", converter.Convert(1, "kasus=nominativ"));
