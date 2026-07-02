@@ -2162,4 +2162,328 @@ public class NumberToStringConverterImprovementsTests
         string withPrecision = en.Convert((BigInteger)123456789, 20);
         Assert.AreEqual(full, withPrecision);
     }
+
+    // ─── F1 — Convert(decimal, int mandatoryDecimalDigits) ───────────────────
+
+    [TestMethod]
+    public void ConvertDecimal_MandatoryDigits_Negative_PreservesNaturalBehavior()
+    {
+        var fr = NumberToStringConverter.GetConverter("FR");
+        // -1 is the internal sentinel for "show as-is"; both paths must produce the same result.
+        Assert.AreEqual(fr.Convert(21.5m), fr.Convert(21.5m, -1, null, []));
+        Assert.AreEqual(fr.Convert(21.5m), fr.Convert(21.5m, []));
+    }
+
+    [TestMethod]
+    public void ConvertDecimal_MandatoryDigits_Zero_SuppressesDecimalPartAfterRounding()
+    {
+        var fr = NumberToStringConverter.GetConverter("FR");
+        // 21.4m → rounds to 21 (AwayFromZero) → decimal part suppressed
+        Assert.AreEqual("vingt et un", fr.Convert(21.4m, 0));
+        // 21.5m → rounds to 22 (AwayFromZero, midpoint rounds up) → decimal part suppressed
+        Assert.AreEqual(fr.Convert(22), fr.Convert(21.5m, 0));
+    }
+
+    [TestMethod]
+    public void ConvertDecimal_MandatoryDigits_PadsDecimalToRequiredLength_FR()
+    {
+        var fr = NumberToStringConverter.GetConverter("FR");
+        // "5" padded to "50" → Fractions[2]="centième(s)" → Convert(50)="cinquante" → "centièmes"
+        Assert.AreEqual("vingt et un virgule cinquante centièmes", fr.Convert(21.5m, 2));
+    }
+
+    [TestMethod]
+    public void ConvertDecimal_MandatoryDigits_ShowsZeroWhenDecimalPartIsZero()
+    {
+        var fr = NumberToStringConverter.GetConverter("FR");
+        // No decimal part → padded to "00" → Convert(0)="zéro" → singular "centième" (0 ∈ [-1,1])
+        Assert.AreEqual("vingt et un virgule zéro centième", fr.Convert(21m, 2));
+    }
+
+    [TestMethod]
+    public void ConvertDecimal_MandatoryDigits_RoundsExtraDecimalDigits()
+    {
+        var fr = NumberToStringConverter.GetConverter("FR");
+        // 21.567m → decimal.Round(..., 2, AwayFromZero) = 21.57
+        // The decimal sub-value goes through .Replace("-", " "), so hyphens become spaces.
+        Assert.AreEqual("vingt et un virgule cinquante sept centièmes", fr.Convert(21.567m, 2));
+        // 21.564m → 21.56
+        Assert.AreEqual("vingt et un virgule cinquante six centièmes", fr.Convert(21.564m, 2));
+    }
+
+    // ─── F2 — Convert(decimal, params string[] variants) ─────────────────────
+
+    [TestMethod]
+    public void ConvertDecimal_WithVariants_AppliedToIntegerPart_FR()
+    {
+        var fr = NumberToStringConverter.GetConverter("FR");
+        // gender=feminin: "un" → "une" on the integer part; decimal part unchanged
+        Assert.AreEqual("une virgule cinq dixièmes", fr.Convert(1.5m, "gender=feminin"));
+        // masculine (default) — identical to Convert(1.5m)
+        Assert.AreEqual(fr.Convert(1.5m), fr.Convert(1.5m, "gender=masculin"));
+    }
+
+    [TestMethod]
+    public void ConvertDecimal_WithVariantsAndPrecision_FR()
+    {
+        var fr = NumberToStringConverter.GetConverter("FR");
+        // Variants and mandatory precision compose: integer "une" + decimal "cinquante centièmes"
+        Assert.AreEqual("une virgule cinquante centièmes", fr.Convert(1.5m, 2, "gender=feminin"));
+    }
+
+    // ─── F3 — DecimalFormatOptions.DecimalSeparator ──────────────────────────
+
+    [TestMethod]
+    public void DecimalFormatOptions_DecimalSeparator_PluralizedAgainstIntegerPart()
+    {
+        var fr = NumberToStringConverter.GetConverter("FR");
+        var opts = new DecimalFormatOptions { DecimalSeparator = "euro(s)" };
+        // integer = 1 → between(-1,1) → singular "euro"
+        Assert.AreEqual("un euro cinquante centièmes",          fr.Convert(1.50m,  2, opts));
+        // integer = 2 → plural "euros"
+        Assert.AreEqual("deux euros cinquante centièmes",       fr.Convert(2.50m,  2, opts));
+        // integer = 21 → plural "euros"
+        Assert.AreEqual("vingt et un euros cinquante centièmes", fr.Convert(21.50m, 2, opts));
+    }
+
+    [TestMethod]
+    public void DecimalFormatOptions_DecimalSeparator_NoMarker_PassedThrough()
+    {
+        var fr = NumberToStringConverter.GetConverter("FR");
+        // No "(s)" marker → word is used unchanged regardless of the integer value
+        var opts = new DecimalFormatOptions { DecimalSeparator = "virgule" };
+        Assert.AreEqual("un virgule cinquante centièmes",        fr.Convert(1.50m,  2, opts));
+        Assert.AreEqual("vingt et un virgule cinquante centièmes", fr.Convert(21.50m, 2, opts));
+    }
+
+    // ─── F4 — DecimalFormatOptions.DecimalSuffix ─────────────────────────────
+
+    [TestMethod]
+    public void DecimalFormatOptions_DecimalSuffix_OverridesFractionConfig()
+    {
+        var fr = NumberToStringConverter.GetConverter("FR");
+        var opts = new DecimalFormatOptions { DecimalSuffix = "centime(s)" };
+        // "centime(s)" replaces the configured "centième(s)" from FR's <Fractions>
+        Assert.AreEqual("vingt et un virgule cinquante centimes", fr.Convert(21.50m, 2, opts));
+    }
+
+    [TestMethod]
+    public void DecimalFormatOptions_DecimalSuffix_PluralizedAgainstDecimalValue()
+    {
+        var fr = NumberToStringConverter.GetConverter("FR");
+        var opts = new DecimalFormatOptions { DecimalSuffix = "centime(s)" };
+        // decimal value 50 → plural "centimes"
+        Assert.AreEqual("vingt et un virgule cinquante centimes", fr.Convert(21.50m, 2, opts));
+        // decimal value 1 → singular "centime"
+        Assert.AreEqual("un virgule un centime",                  fr.Convert(1.01m,  2, opts));
+        // decimal value 0 → singular "centime" (0 ∈ [-1,1])
+        Assert.AreEqual("vingt et un virgule zéro centime",       fr.Convert(21m,    2, opts));
+    }
+
+    [TestMethod]
+    public void DecimalFormatOptions_DecimalSuffix_ForcesWholeNumberConversionWithoutFractionConfig()
+    {
+        var fr = NumberToStringConverter.GetConverter("FR");
+        // FR has no <Fraction> entry for 4 digits → without override: digit-by-digit.
+        // With DecimalSuffix: whole-number conversion is forced regardless.
+        var opts = new DecimalFormatOptions { DecimalSuffix = "dix-millième(s)" };
+        // 21.5m with 4 digits → pad "5" to "5000" → Convert(5000)="cinq mille" → plural suffix
+        Assert.AreEqual("vingt et un virgule cinq mille dix-millièmes", fr.Convert(21.5m, 4, opts));
+    }
+
+    // ─── F5 — DecimalFormatOptions.OmitZeroDecimals ──────────────────────────
+
+    [TestMethod]
+    public void DecimalFormatOptions_OmitZeroDecimals_SuppressesZeroDecimalPart()
+    {
+        var fr = NumberToStringConverter.GetConverter("FR");
+        var opts = new DecimalFormatOptions { OmitZeroDecimals = true };
+        // 21m → mandatory 2 digits → "00" → zero → decimal part (and separator) suppressed
+        Assert.AreEqual("vingt et un", fr.Convert(21m, 2, opts));
+    }
+
+    [TestMethod]
+    public void DecimalFormatOptions_OmitZeroDecimals_DoesNotSuppressNonZeroDecimal()
+    {
+        var fr = NumberToStringConverter.GetConverter("FR");
+        var opts = new DecimalFormatOptions { OmitZeroDecimals = true };
+        // 21.5m → "50" after padding → not zero → decimal part shown normally
+        Assert.AreEqual("vingt et un virgule cinquante centièmes", fr.Convert(21.5m, 2, opts));
+    }
+
+    [TestMethod]
+    public void DecimalFormatOptions_OmitZeroDecimals_WorksAfterRounding()
+    {
+        var fr = NumberToStringConverter.GetConverter("FR");
+        var optsOmit = new DecimalFormatOptions { OmitZeroDecimals = true, DecimalSuffix = "centime(s)" };
+        // 21.004m → rounds to 21.00 (4 < 5, rounds down) → zero → suppressed
+        Assert.AreEqual("vingt et un", fr.Convert(21.004m, 2, new DecimalFormatOptions { OmitZeroDecimals = true }));
+        // 21.005m → rounds to 21.01 (5 rounds up, AwayFromZero) → not zero → shown
+        Assert.AreEqual("vingt et un virgule un centime", fr.Convert(21.005m, 2, optsOmit));
+    }
+
+    [TestMethod]
+    public void DecimalFormatOptions_OmitZeroDecimals_FalseShowsZeroDecimalPart()
+    {
+        var fr = NumberToStringConverter.GetConverter("FR");
+        // Explicitly false → zero decimal part is shown (same as null options)
+        Assert.AreEqual("vingt et un virgule zéro centième", fr.Convert(21m, 2, new DecimalFormatOptions { OmitZeroDecimals = false }));
+        Assert.AreEqual("vingt et un virgule zéro centième", fr.Convert(21m, 2, (DecimalFormatOptions?)null));
+    }
+
+    // ─── F6 — Combined DecimalFormatOptions ──────────────────────────────────
+
+    [TestMethod]
+    public void DecimalFormatOptions_Combined_CurrencyStyle()
+    {
+        var fr = NumberToStringConverter.GetConverter("FR");
+        var opts = new DecimalFormatOptions
+        {
+            DecimalSeparator = "euro(s)",
+            DecimalSuffix    = "centime(s)",
+            OmitZeroDecimals = true,
+        };
+        Assert.AreEqual("un euro cinquante centimes",           fr.Convert(1.50m,  2, opts));
+        Assert.AreEqual("vingt et un euros cinquante centimes", fr.Convert(21.50m, 2, opts));
+        Assert.AreEqual("un euro un centime",                   fr.Convert(1.01m,  2, opts));
+        // OmitZeroDecimals: separator (unit name) is also omitted when decimal part is zero
+        Assert.AreEqual("vingt et un",                         fr.Convert(21m,    2, opts));
+    }
+
+    [TestMethod]
+    public void DecimalFormatOptions_Combined_NegativeNumber()
+    {
+        var fr = NumberToStringConverter.GetConverter("FR");
+        var opts = new DecimalFormatOptions { DecimalSeparator = "euro(s)", DecimalSuffix = "centime(s)" };
+        Assert.AreEqual("moins cinq euros cinquante centimes", fr.Convert(-5.50m, 2, opts));
+    }
+
+    [TestMethod]
+    public void DecimalFormatOptions_Combined_WithVariants()
+    {
+        var fr = NumberToStringConverter.GetConverter("FR");
+        var opts = new DecimalFormatOptions { DecimalSeparator = "euro(s)", DecimalSuffix = "centime(s)" };
+        // gender=feminin: integer "1" → "une", decimal "1" → "une"; separator and suffix unchanged
+        Assert.AreEqual("une euro une centime", fr.Convert(1.01m, 2, opts, "gender=feminin"));
+    }
+
+    // ─── F7 — Interface default implementations for new decimal overloads ─────
+
+    [TestMethod]
+    public void Interface_ConvertDecimal_NewOverloads_DefaultsToConvertDecimal()
+    {
+        // A minimal implementation that only implements the original Convert(decimal)
+        // must compile and produce results from all new overloads via default implementations.
+        INumberToStringConverter converter = new MinimalConverter();
+        // Use Convert(decimal) as the reference value to stay locale-independent.
+        string expected = converter.Convert(21.5m);
+
+        Assert.AreEqual(expected, converter.Convert(21.5m, "gender=feminin"));
+        Assert.AreEqual(expected, converter.Convert(21.5m, 2, []));
+        Assert.AreEqual(expected, converter.Convert(21.5m, 2, (DecimalFormatOptions?)null));
+        Assert.AreEqual(expected, converter.Convert(21.5m, 2, (DecimalFormatOptions?)null, []));
+        Assert.AreEqual(expected, converter.Convert(21.5m, 2, new DecimalFormatOptions { OmitZeroDecimals = true }));
+    }
+
+    // ─── G1 — Convert(int/long, int significantDigits) ────────────────────────
+
+    [TestMethod]
+    public void Convert_Int_SignificantDigits_MatchesBigInteger()
+    {
+        var en = NumberToStringConverter.GetConverter("EN");
+
+        Assert.AreEqual(en.Convert((System.Numerics.BigInteger)12345, 3), en.Convert(12345,  3));
+        Assert.AreEqual(en.Convert((System.Numerics.BigInteger)12345, 3), en.Convert(12345L, 3));
+        Assert.AreEqual(en.Convert((System.Numerics.BigInteger)1,     3), en.Convert(1,      3));
+        Assert.AreEqual(en.Convert((System.Numerics.BigInteger)999,   2), en.Convert(999,    2));
+        Assert.AreEqual(en.Convert((System.Numerics.BigInteger)999,   2), en.Convert(999L,   2));
+    }
+
+    [TestMethod]
+    public void Convert_Long_SignificantDigits_WithVariants_MatchesBigInteger()
+    {
+        var fr = NumberToStringConverter.GetConverter("FR");
+
+        // 210 rounded to 1 significant digit → 200 ; 21 rounded to 2 → 21
+        Assert.AreEqual(fr.Convert((System.Numerics.BigInteger)210, 1, "gender=feminin"),
+                        fr.Convert(210L, 1, "gender=feminin"));
+        Assert.AreEqual(fr.Convert((System.Numerics.BigInteger)21, 2, "gender=feminin"),
+                        fr.Convert(21, 2, "gender=feminin"));
+    }
+
+    [TestMethod]
+    public void Convert_Interface_IntLong_SignificantDigits_DelegatesToBigInteger()
+    {
+        INumberToStringConverter iface = NumberToStringConverter.GetConverter("EN");
+
+        Assert.AreEqual(iface.Convert((System.Numerics.BigInteger)12345, 3),
+                        iface.Convert(12345, 3));
+        Assert.AreEqual(iface.Convert((System.Numerics.BigInteger)12345, 3),
+                        iface.Convert(12345L, 3));
+    }
+
+    // ─── G2 — ConvertCurrency avec variants morphologiques ────────────────────
+
+    private static CurrencyDefinition LiveCurrency() => new CurrencyDefinition
+    {
+        UnitSingular    = "livre",
+        UnitPlural      = "livres",
+        SubunitSingular = "sou",
+        SubunitPlural   = "sous",
+        SubunitDigits   = 2,
+        Connector       = "et",
+    };
+
+    [TestMethod]
+    public void ConvertCurrency_FR_DefaultVariant_IsMasculine()
+    {
+        var fr = NumberToStringConverter.GetConverter("FR");
+        var livre = LiveCurrency();
+
+        // Without variant: masculine numeral (default FR dimension value)
+        Assert.AreEqual("vingt et un livres", fr.ConvertCurrency(21m, livre));
+        Assert.AreEqual("un livre",           fr.ConvertCurrency(1m,  livre));
+    }
+
+    [TestMethod]
+    public void ConvertCurrency_FR_FeminineVariant_InflectsNumeral()
+    {
+        var fr = NumberToStringConverter.GetConverter("FR");
+        var livre = LiveCurrency();
+
+        // Feminine variant: "un" → "une", "vingt et un" → "vingt et une"
+        Assert.AreEqual("une livre",           fr.ConvertCurrency(1m,  livre, "gender=feminin"));
+        Assert.AreEqual("vingt et une livres", fr.ConvertCurrency(21m, livre, "gender=feminin"));
+        Assert.AreEqual("trente et une livres", fr.ConvertCurrency(31m, livre, "gender=feminin"));
+    }
+
+    [TestMethod]
+    public void ConvertCurrency_FR_FeminineVariant_AppliesToSubunitsAsWell()
+    {
+        var fr = NumberToStringConverter.GetConverter("FR");
+        var livre = LiveCurrency();
+
+        // 21.01 → "vingt et une livres et un sou" (masculine, sou doesn't inflect un)
+        // With gender=feminin: "vingt et une livres et une sous"… but "une sous" is grammatically
+        // wrong in real French; we test the mechanical inflection, not linguistic correctness.
+        // Compare against the BigInteger sub-conversions to stay independent of locale rendering.
+        string unitsPart    = fr.Convert(21L, "gender=feminin");   // "vingt et une"
+        string subunitsPart = fr.Convert(1L,  "gender=feminin");   // "une"
+        string expected     = $"{unitsPart} livres et {subunitsPart} sou";
+
+        Assert.AreEqual(expected, fr.ConvertCurrency(21.01m, livre, "gender=feminin"));
+    }
+
+    [TestMethod]
+    public void ConvertCurrency_Interface_Variants_DelegatesToConcrete()
+    {
+        INumberToStringConverter iface = NumberToStringConverter.GetConverter("FR");
+        var livre = LiveCurrency();
+
+        // Calling via the interface must reach the concrete implementation (not the default throw).
+        Assert.AreEqual(iface.ConvertCurrency(21m, livre),
+                        iface.ConvertCurrency(21m, livre, []));
+        Assert.AreEqual(iface.ConvertCurrency(21m, livre, "gender=feminin"),
+                        ((NumberToStringConverter)iface).ConvertCurrency(21m, livre, "gender=feminin"));
+    }
 }
