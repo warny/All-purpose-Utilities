@@ -50,12 +50,22 @@
                     (it is tested with EndsWith + boundary check).
                     Use for morphological variants that inflect the terminal unit only,
                     e.g. "un" → "une" in French feminine without touching "un million".
+
+                StartsWith
+                    Replaces only when the text begins with oldValue.
+                    Use for prefix transformations, e.g. "one " → "a ".
+
+                EndsWith
+                    Replaces only when the text ends with oldValue (without word-boundary check).
+                    Use for suffix transformations, e.g. "one" → "1" at end of text.
             </xs:documentation>
         </xs:annotation>
         <xs:restriction base="xs:string">
             <xs:enumeration value="Standalone"/>
             <xs:enumeration value="Anywhere"/>
             <xs:enumeration value="LastWord"/>
+            <xs:enumeration value="StartsWith"/>
+            <xs:enumeration value="EndsWith"/>
         </xs:restriction>
     </xs:simpleType>
 
@@ -1239,6 +1249,27 @@
                                 </xs:annotation>
                             </xs:element>
 
+                            <xs:element name="Multiplicatives" minOccurs="0">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Named multiplicative forms (e.g. 1 → "once", 2 → "twice").
+                                        When present, ConvertMultiplicative(int) is supported.
+                                        Named entries take priority; the suffix is used for unnamed values.
+                                    </xs:documentation>
+                                </xs:annotation>
+                                <xs:complexType>
+                                    <xs:sequence>
+                                        <xs:element name="Multiplicative" minOccurs="0" maxOccurs="unbounded">
+                                            <xs:complexType>
+                                                <xs:attribute name="value" type="xs:int" use="required" />
+                                                <xs:attribute name="string" type="xs:string" use="required" />
+                                            </xs:complexType>
+                                        </xs:element>
+                                    </xs:sequence>
+                                    <xs:attribute name="suffix" type="xs:string" />
+                                </xs:complexType>
+                            </xs:element>
+
                         </xs:sequence>
 
                         <xs:attribute name="baseOn" type="xs:string">
@@ -1310,6 +1341,23 @@
                                     Maximum integer value the converter accepts (absolute value).
                                     Attempts to convert a larger value throw ArgumentOutOfRangeException.
                                     Omit for unlimited.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="groupConnector" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Word inserted between scale groups when the lower group value is below
+                                    groupConnectorThreshold (e.g. "and" for English "one thousand and one").
+                                    Omit when no connector is needed.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="groupConnectorThreshold" type="xs:nonNegativeInteger" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Threshold below which groupConnector is used instead of groupSeparator.
+                                    Defaults to 100 when omitted.
                                 </xs:documentation>
                             </xs:annotation>
                         </xs:attribute>

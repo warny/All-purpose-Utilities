@@ -72,7 +72,9 @@ namespace Utils.NumberToString
                 .Select(r => r ?? throw new ArgumentNullException(nameof(options), "Replacement entries must not be null."))
                 .ToImmutableArray();
             _replacementLookup = Replacements.ToImmutableDictionary(r => r.OldValue, r => r.NewValue, StringComparer.Ordinal);
-            _substringReplacements = Replacements.Where(r => r.Scope == ReplacementScope.Anywhere).ToImmutableArray();
+            _substringReplacements = Replacements.Where(r =>
+                r.Scope is ReplacementScope.Anywhere or ReplacementScope.StartsWith or ReplacementScope.EndsWith)
+                .ToImmutableArray();
             Scale = options.Scale;
             LanguageSpecifics = options.LanguageSpecifics ?? new DefaultNumberToStringLanguageSpecifics();
             LanguageIdentifier = options.LanguageIdentifier ?? string.Empty;
@@ -93,6 +95,10 @@ namespace Utils.NumberToString
             VariantRules = (options.VariantRules ?? []).ToImmutableArray();
             Triggers = (options.Triggers ?? []).ToImmutableArray();
             _yearFormat = options.YearFormat;
+            Multiplicatives = options.Multiplicatives?.ToImmutableDictionary() ?? ImmutableDictionary<int, string>.Empty;
+            MultiplicativeSuffix = options.MultiplicativeSuffix;
+            _groupConnector = options.GroupConnector;
+            _groupConnectorThreshold = options.GroupConnectorThreshold;
             // Index both canonical name and localName so both are accepted in API calls and XML constraints.
             _dimensionIndex = VariantDimensions
                 .SelectMany(d => string.IsNullOrEmpty(d.LocalName)
@@ -220,6 +226,21 @@ namespace Utils.NumberToString
         /// <summary>Year-format options, or <see langword="null"/> when not configured.</summary>
         internal YearFormatOptions? YearFormat => _yearFormat;
 
+        /// <summary>Named multiplicative forms keyed by multiplier value.</summary>
+        public IReadOnlyDictionary<int, string> Multiplicatives { get; }
+
+        /// <summary>Suffix used for unnamed multiplicatives (e.g. " times").</summary>
+        public string? MultiplicativeSuffix { get; }
+
+        /// <summary>When <see langword="true"/>, calling <see cref="ConvertMultiplicative"/> will produce a result.</summary>
+        public bool SupportsMultiplicative => Multiplicatives.Count > 0 || MultiplicativeSuffix != null;
+
+        /// <summary>Gets the group connector used between scale groups when the lower group is small.</summary>
+        public string? GroupConnector => _groupConnector;
+
+        /// <summary>Gets the threshold below which the group connector is used.</summary>
+        public int GroupConnectorThreshold => (int)_groupConnectorThreshold;
+
         /// <inheritdoc/>
         public bool SupportsOrdinals =>
             OrdinalSuffix != null || OrdinalPrefix != null
@@ -231,6 +252,8 @@ namespace Utils.NumberToString
         private readonly ImmutableArray<ReplacementRule> _substringReplacements;
         private readonly ImmutableDictionary<string, VariantDimension> _dimensionIndex;
         private readonly Func<string, string>? _rawAdjustFunction;
+        private readonly string? _groupConnector;
+        private readonly long _groupConnectorThreshold;
 
         /// <summary>
         /// The raw adjust function before composition with <see cref="LanguageSpecifics"/>.
@@ -456,6 +479,22 @@ namespace Utils.NumberToString
             return isNegative ? Minus.Replace("*", final) : AdjustFunction(final);
         }
 
+        /// <inheritdoc cref="INumberToStringConverter.Convert(double, string[])"/>
+        public string Convert(double number, params string[] variants)
+        {
+            if (decimal.TryParse(
+                    number.ToString("R", System.Globalization.CultureInfo.InvariantCulture),
+                    System.Globalization.NumberStyles.Any,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    out decimal d))
+                return Convert(d, variants);
+            return Convert(new System.Numerics.BigInteger(Math.Truncate(number)), variants);
+        }
+
+        /// <inheritdoc cref="INumberToStringConverter.Convert(float, string[])"/>
+        public string Convert(float number, params string[] variants)
+            => Convert((double)number, variants);
+
         /// <summary>
         /// Converts a BigInteger to its string representation using the default variant
         /// (the first declared value of each dimension).
@@ -522,7 +561,7 @@ namespace Utils.NumberToString
             var maxGroup = Groups.Keys.Max();
             var groupValue = BigInteger.Pow(10, maxGroup);
             int groupNumber = 0;
-            var groupsValues = new Stack<string>();
+            var groupsValues = new Stack<(string text, long numericValue)>();
 
             BigInteger remaining = abs;
             while (remaining != 0)
@@ -537,7 +576,7 @@ namespace Utils.NumberToString
                     resValue = ApplyReplacements(resValue);
                     resValue = ApplyTriggers(resValue, TriggerAt.GroupWithScale, groupNumber, variantQuery);
 
-                    groupsValues.Push(resValue.Trim());
+                    groupsValues.Push((resValue.Trim(), group));
                 }
                 remaining /= groupValue;
                 groupNumber++;
@@ -545,7 +584,18 @@ namespace Utils.NumberToString
 
             var result = new StringBuilder();
             while (groupsValues.Count > 0)
-                result.Append(groupsValues.Pop().Trim()).Append(GroupSeparator).Append(Separator);
+            {
+                var (text, _) = groupsValues.Pop();
+                result.Append(text);
+                if (groupsValues.Count > 0)
+                {
+                    long nextValue = groupsValues.Peek().numericValue;
+                    if (_groupConnector != null && nextValue < _groupConnectorThreshold)
+                        result.Append(Separator).Append(_groupConnector).Append(Separator);
+                    else
+                        result.Append(GroupSeparator).Append(Separator);
+                }
+            }
 
             var finalResult = result.ToString().TrimEnd(GroupSeparator.ToCharArray().Union(Separator.ToCharArray()).ToArray());
             return ApplyReplacements(finalResult);
@@ -610,10 +660,16 @@ namespace Utils.NumberToString
         private static string ApplyVariantReplacement(string text, ReplacementRule replacement) =>
             replacement.Scope switch
             {
-                ReplacementScope.Standalone => text == replacement.OldValue ? replacement.NewValue : text,
-                ReplacementScope.Anywhere   => text.Replace(replacement.OldValue, replacement.NewValue),
-                ReplacementScope.LastWord   => ApplyLastWordReplacement(text, replacement.OldValue, replacement.NewValue),
-                _                           => text,
+                ReplacementScope.Standalone  => text == replacement.OldValue ? replacement.NewValue : text,
+                ReplacementScope.Anywhere    => text.Replace(replacement.OldValue, replacement.NewValue),
+                ReplacementScope.LastWord    => ApplyLastWordReplacement(text, replacement.OldValue, replacement.NewValue),
+                ReplacementScope.StartsWith  => text.StartsWith(replacement.OldValue, StringComparison.Ordinal)
+                    ? replacement.NewValue + text[replacement.OldValue.Length..]
+                    : text,
+                ReplacementScope.EndsWith    => text.EndsWith(replacement.OldValue, StringComparison.Ordinal)
+                    ? text[..^replacement.OldValue.Length] + replacement.NewValue
+                    : text,
+                _                            => text,
             };
 
         /// <summary>
@@ -709,7 +765,15 @@ namespace Utils.NumberToString
 
             foreach (var replacement in _substringReplacements)
             {
-                value = value.Replace(replacement.OldValue, replacement.NewValue);
+                value = replacement.Scope switch
+                {
+                    ReplacementScope.Anywhere => value.Replace(replacement.OldValue, replacement.NewValue),
+                    ReplacementScope.StartsWith when value.StartsWith(replacement.OldValue, StringComparison.Ordinal)
+                        => replacement.NewValue + value[replacement.OldValue.Length..],
+                    ReplacementScope.EndsWith when value.EndsWith(replacement.OldValue, StringComparison.Ordinal)
+                        => value[..^replacement.OldValue.Length] + replacement.NewValue,
+                    _ => value,
+                };
             }
 
             return value;
@@ -883,7 +947,7 @@ namespace Utils.NumberToString
         /// <param name="denominator">The denominator of the fraction.</param>
         /// <param name="allowFractionNames">When <see langword="true"/>, uses named fraction suffixes when available.</param>
         /// <returns>The textual representation of the fraction.</returns>
-        private string BuildFractionText(BigInteger numerator, BigInteger denominator, bool allowFractionNames = true)
+        private string BuildFractionText(BigInteger numerator, BigInteger denominator, bool allowFractionNames = true, string[]? variants = null)
         {
             if (allowFractionNames &&
                 TryGetBase10FractionDigits(denominator, out int digits) &&
@@ -891,12 +955,12 @@ namespace Utils.NumberToString
                 numerator >= 0 &&
                 numerator <= long.MaxValue)
             {
-                string valueText = Convert(numerator).Replace("-", " ");
+                string valueText = (variants is { Length: > 0 } ? Convert(numerator, variants) : Convert(numerator)).Replace("-", " ");
                 return string.Concat(valueText, Separator, suffix.ToPlural((long)numerator)).Trim();
             }
 
-            string numeratorText = Convert(numerator).Replace("-", " ");
-            string denominatorText = Convert(denominator).Replace("-", " ");
+            string numeratorText = (variants is { Length: > 0 } ? Convert(numerator, variants) : Convert(numerator)).Replace("-", " ");
+            string denominatorText = (variants is { Length: > 0 } ? Convert(denominator, variants) : Convert(denominator)).Replace("-", " ");
 
             string connector = FractionSeparator;
             return string.Concat(numeratorText, Separator, connector, Separator, denominatorText).Trim();
@@ -1032,6 +1096,27 @@ namespace Utils.NumberToString
             if (isNegative && _yearFormat?.BeforeChristSuffix != null)
                 return body + Separator + _yearFormat.BeforeChristSuffix;
             return isNegative ? Minus.Replace("*", body) : body;
+        }
+
+        /// <inheritdoc cref="INumberToStringConverter.ConvertFraction(BigInteger, BigInteger, string[])"/>
+        public string ConvertFraction(BigInteger numerator, BigInteger denominator, params string[] variants)
+            => BuildFractionText(numerator, denominator, allowFractionNames: true, variants);
+
+        /// <summary>
+        /// Converts a multiplier to its spoken form (e.g. 2 → "twice", 3 → "trois fois").
+        /// Named forms are looked up from the configuration; unnamed forms append <see cref="MultiplicativeSuffix"/>
+        /// to the cardinal. Throws <see cref="NotSupportedException"/> when the language has no multiplicative configuration.
+        /// </summary>
+        public string ConvertMultiplicative(int multiplier, params string[] variants)
+        {
+            if (!SupportsMultiplicative)
+                throw new NotSupportedException($"Language '{LanguageIdentifier}' has no multiplicative configuration.");
+            if (Multiplicatives.TryGetValue(multiplier, out var named))
+                return named;
+            if (MultiplicativeSuffix != null)
+                return Convert(multiplier, variants) + MultiplicativeSuffix;
+            // No suffix and no named form — fall back to cardinal
+            return Convert(multiplier, variants);
         }
 
         /// <summary>

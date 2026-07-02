@@ -567,9 +567,45 @@ namespace Utils.NumberToString
                     language.YearFormat.SplitRanges.Count == 0 ? null
                         : new IntRange<int>(string.Join(",", language.YearFormat.SplitRanges.Select(r => $"{r.From}-{r.To}"))),
                     language.YearFormat.BeforeChristSuffix),
+                Multiplicatives = language.Multiplicatives?.Entries
+                    ?.ToDictionary(e => e.Value, e => e.String),
+                MultiplicativeSuffix = language.Multiplicatives?.Suffix,
+                GroupConnector = language.GroupConnector,
+                GroupConnectorThreshold = language.GroupConnectorThreshold,
             };
 
-            return new NumberToStringConverter(options);
+            var converter = new NumberToStringConverter(options);
+            ValidateVariantReferences(converter, languageIdentifier);
+            return converter;
+        }
+
+        /// <summary>
+        /// Validates that all variant dimension references in TriggerReplace.Forms constraints
+        /// are declared dimensions for the converter. Throws <see cref="InvalidOperationException"/>
+        /// when an unknown dimension key is found.
+        /// </summary>
+        private static void ValidateVariantReferences(NumberToStringConverter converter, string configSource)
+        {
+            var knownDimensions = converter.VariantDimensions
+                .SelectMany(d => new[] { d.Name }.Concat(d.LocalName != null ? [d.LocalName] : []))
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var trigger in converter.Triggers)
+            {
+                foreach (var replace in trigger.Replaces)
+                {
+                    foreach (var (constraints, _) in replace.Forms)
+                    {
+                        foreach (var key in constraints.Keys)
+                        {
+                            if (!knownDimensions.Contains(key))
+                                throw new InvalidOperationException(
+                                    $"[{configSource}] TriggerReplace references unknown variant dimension '{key}'. " +
+                                    $"Declared dimensions: [{string.Join(", ", converter.VariantDimensions.Select(d => d.Name))}].");
+                        }
+                    }
+                }
+            }
         }
 
         /// <summary>

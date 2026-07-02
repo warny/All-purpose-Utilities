@@ -96,5 +96,10 @@
 			<SplitRange from="1100" to="1999" />
 			<SplitRange from="2010" to="2099" />
 		</YearFormat>
+		<Multiplicatives suffix=" times">
+			<Multiplicative value="1" string="once" />
+			<Multiplicative value="2" string="twice" />
+			<Multiplicative value="3" string="thrice" />
+		</Multiplicatives>
 	</Language>
 </Numbers>

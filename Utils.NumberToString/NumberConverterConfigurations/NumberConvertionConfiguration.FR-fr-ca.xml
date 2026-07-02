@@ -109,5 +109,10 @@
 				<Replacement oldValue="un" newValue="une" scope="LastWord" />
 			</Variant>
 		</Variants>
+		<Multiplicatives suffix=" fois">
+			<Multiplicative value="1" string="une fois" />
+			<Multiplicative value="2" string="deux fois" />
+			<Multiplicative value="3" string="trois fois" />
+		</Multiplicatives>
 	</Language>
 </Numbers>
