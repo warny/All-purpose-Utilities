@@ -533,6 +533,66 @@ public class FractionListType
 }
 
 /// <summary>
+/// Describes a single time unit (hour, minute, second) with its singular and plural forms.
+/// </summary>
+public class TimeUnitEntry
+{
+    /// <summary>Canonical unit name (e.g. "hour", "minute", "second").</summary>
+    [XmlAttribute("name")]
+    public string Name { get; set; } = "";
+
+    /// <summary>Singular form of the unit (e.g. "heure").</summary>
+    [XmlAttribute("singular")]
+    public string Singular { get; set; } = "";
+
+    /// <summary>Plural form of the unit (e.g. "heures").</summary>
+    [XmlAttribute("plural")]
+    public string Plural { get; set; } = "";
+
+    /// <summary>
+    /// Optional numeral form to use when count == 1, overriding the standard Convert(1) result.
+    /// Useful when the unit has a grammatical gender that requires a different form of "one"
+    /// (e.g. <c>count1form="eine"</c> for German feminine nouns like "Stunde").
+    /// </summary>
+    [XmlAttribute("count1form")]
+    public string? Count1Form { get; set; }
+}
+
+/// <summary>
+/// Holds time-unit configuration for a language (hours, minutes, seconds).
+/// </summary>
+public class TimeUnitsType
+{
+    /// <summary>Gets or sets the list of time unit definitions.</summary>
+    [XmlElement("Unit")]
+    public List<TimeUnitEntry>? Units { get; set; }
+}
+
+/// <summary>
+/// Holds date-format configuration for a language.
+/// </summary>
+public class DateFormatType
+{
+    /// <summary>
+    /// Pattern for rendering a date. Supported tokens: {month}, {ordinal-day}, {cardinal-day}, {year}.
+    /// Example: "{month} {ordinal-day}, {year}" → "July second, twenty twenty-six".
+    /// </summary>
+    [XmlAttribute("pattern")]
+    public string Pattern { get; set; } = "";
+
+    /// <summary>
+    /// Special string used for the first day of the month (e.g. "premier" in French).
+    /// When set, overrides the ordinal form of day 1 in {ordinal-day}.
+    /// </summary>
+    [XmlAttribute("firstDay")]
+    public string? FirstDay { get; set; }
+
+    /// <summary>Connector between the date and the time when converting a DateTime.</summary>
+    [XmlAttribute("dateTimeConnector")]
+    public string? DateTimeConnector { get; set; }
+}
+
+/// <summary>
 /// Holds multiplicative configuration for a language (e.g. 1 → "once", 2 → "twice").
 /// </summary>
 public class MultiplicativesType
@@ -707,6 +767,31 @@ public class LanguageType
     [XmlIgnore]
     public int GroupConnectorThreshold =>
         int.TryParse(GroupConnectorThresholdString, out var n) ? n : 100;
+
+    /// <summary>
+    /// Gets or sets the word inserted inside a group between hundreds and the lower part
+    /// when the lower part is below <see cref="IntraGroupConnectorThreshold"/>.
+    /// Example: "linh" for Vietnamese (101 → "một trăm linh một").
+    /// </summary>
+    [XmlAttribute("intraGroupConnector")]
+    public string? IntraGroupConnector { get; set; }
+
+    /// <summary>Gets or sets the threshold (as string) below which the intra-group connector is inserted.</summary>
+    [XmlAttribute("intraGroupConnectorThreshold")]
+    public string? IntraGroupConnectorThresholdString { get; set; }
+
+    /// <summary>Gets the threshold below which <see cref="IntraGroupConnector"/> is inserted.</summary>
+    [XmlIgnore]
+    public int IntraGroupConnectorThreshold =>
+        int.TryParse(IntraGroupConnectorThresholdString, out var n) ? n : 10;
+
+    /// <summary>Gets or sets the time-unit configuration (hours, minutes, seconds).</summary>
+    [XmlElement(ElementName = "TimeUnits")]
+    public TimeUnitsType? TimeUnits { get; set; }
+
+    /// <summary>Gets or sets the date-format configuration.</summary>
+    [XmlElement(ElementName = "DateFormat")]
+    public DateFormatType? DateFormat { get; set; }
 }
 
 /// <summary>

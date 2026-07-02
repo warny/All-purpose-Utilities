@@ -776,5 +776,13 @@
 		<YearFormat hundredWord="hundert">
 			<SplitRange from="1100" to="1999" />
 		</YearFormat>
+		<TimeUnits>
+			<!-- Stunde/Minute/Sekunde are all feminine; count1form="eine" avoids standalone "eins" for count=1 -->
+			<Unit name="hour"   singular="Stunde"  plural="Stunden"  count1form="eine" />
+			<Unit name="minute" singular="Minute"  plural="Minuten"  count1form="eine" />
+			<Unit name="second" singular="Sekunde" plural="Sekunden" count1form="eine" />
+		</TimeUnits>
+		<!-- firstDay="ersten" applies to both {cardinal-day} and {ordinal-day} when day == 1 -->
+		<DateFormat pattern="{cardinal-day}. {month} {year}" firstDay="ersten" />
 	</Language>
 </Numbers>

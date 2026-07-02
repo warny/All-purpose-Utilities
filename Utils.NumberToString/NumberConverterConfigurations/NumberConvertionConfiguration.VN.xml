@@ -9,6 +9,8 @@
         decimalSeparator="phẩy"
         fractionSeparator="trên"
         maxNumber="999999999999"
+        intraGroupConnector="linh"
+        intraGroupConnectorThreshold="10"
     >
         <Culture>VN</Culture>
         <Culture>VI</Culture>
@@ -72,12 +74,8 @@
             <!-- "lăm" replaces "năm" after "mười" for 15 -->
             <Replacement oldValue="mười năm" newValue="mười lăm" scope="Anywhere" />
         </Replacements>
-        <!--
-            Simplified implementation. The "linh" connector used between hundreds and
-            units for numbers like 101–109 (e.g. "một trăm linh một") is not implemented
-            here, as it requires engine support for contextual insertion that is not
-            available through static group/replacement rules.
-        -->
+        <!-- The "linh" connector (intraGroupConnector) is now handled by the engine:
+             101–109 → "một trăm linh một" (connector fires when remainder < 10). -->
         <Ordinals prefix="thứ ">
             <!-- 1st is "thứ nhất", not "thứ một" -->
             <OrdinalException value="1" string="thứ nhất" />

@@ -104,100 +104,59 @@ RU, FR, IT n'utilisent pas ce format.
 
 ## Prochaines améliorations identifiées
 
-### 16. Scope `StartsWith` pour les remplacements — **indispensable**
-Actuellement les scopes sont `Standalone`, `Anywhere`, `LastWord`. Il manque `StartsWith` (et
-symétrique `EndsWith`) pour affecter le début d'un segment sans contaminer les autres occurrences.
-Cas d'usage typiques :
-- **ID** : "satu belas" → "sebelas" (le préfixe "satu" se contracte en "se" devant "belas")
-- **PL/CS/SK** : contractions de préfixes en début de composé
-- Implémentation : ajouter `StartsWith` / `EndsWith` à `ReplacementScope` (enum) et gérer dans
-  `ApplySubstringReplacements` avec `string.StartsWith` / `string.EndsWith`.
+### 16. ~~Scope `StartsWith` / `EndsWith` pour les remplacements~~ — **implémenté**
+Deux nouveaux scopes ajoutés à `ReplacementScope` : `StartsWith` et `EndsWith`.
+`ApplySubstringReplacements` utilise `string.StartsWith` / `string.EndsWith` selon le scope.
+Utilisés notamment par **ID** ("satu belas" → "sebelas") et **HE** (formes de début de composé).
 
-### 17. Validation des variants au chargement XML — **indispensable**
-Si un `<TriggerReplace>` ou un `<Replacement>` référence un variant non déclaré dans
-`<VariantDimensions>`, l'erreur est silencieuse et le variant est simplement ignoré.
-Il faut lever une `InvalidOperationException` descriptive au moment de `InitializeConfigurations`
-(dans `NumberToStringConverter.Globalization.cs`) pour détecter les fautes de frappe dans les XML.
+### 17. ~~Validation des variants au chargement XML~~ — **implémenté**
+`ValidateVariantReferences` levée dans `ReadConverter` : si un `<TriggerReplace>` référence
+une dimension de variant non déclarée dans `<VariantDimensions>`, une
+`InvalidOperationException` descriptive est levée au chargement. Test de régression ajouté.
 
-### 18. `Convert(double)` / `Convert(float)` — manque d'API évident
-Les surcharges `decimal` existent mais `double`/`float` sont absentes alors que la majorité des
-APIs .NET utilisent `double`. Proposition :
-```csharp
-string Convert(double number, int significantDigits = 15, params string[] variants);
-string Convert(float number, int significantDigits = 7, params string[] variants);
-```
-La précision significative par défaut doit être paramétrable pour éviter les artefacts flottants.
+### 18. ~~`Convert(double)` / `Convert(float)`~~ — **implémenté**
+Méthodes par défaut sur `INumberToStringConverter` : le `double`/`float` est converti via
+`ToString("R")` + `decimal.TryParse` puis délégué à `Convert(decimal, variants)`.
+Précision significative respectée grâce au format round-trip.
 
-### 19. `ConvertFraction(BigInteger, BigInteger)` dans l'interface publique
-`BuildFractionText` est déjà implémenté en interne mais n'est pas exposé via
-`INumberToStringConverter`. Exposer publiquement pour permettre "un tiers", "trois quarts", etc.
+### 19. ~~`ConvertFraction(BigInteger, BigInteger)`~~ — **implémenté**
+Méthode publique `ConvertFraction(numerator, denominator, params string[] variants)` exposée
+sur `INumberToStringConverter` (implémentation par défaut) et `NumberToStringConverter`.
+S'appuie sur `BuildFractionText` interne. Produit "un tiers", "trois quarts", etc.
 
-### 20. `ConvertMultiplicative(int)` — nombres multiplicatifs
-Distinct des ordinaux : `ConvertMultiplicative(2)` → "double"/"deux fois" (FR),
-"twice" (EN), "zweimal" (DE). Supportable via une section `<Multiplicatives>` en XML
-ou `IMultiplicativeLanguageSpecifics`.
+### 20. ~~`ConvertMultiplicative(int)`~~ — **implémenté**
+Section `<Multiplicatives>` en XML avec entrées `<Entry value="…" string="…" />`.
+`ConvertMultiplicative(n)` expose la table ; méthode par défaut sur l'interface lève
+`NotSupportedException` si non configurée.
 
-### 21. Conversion de types temporels — **excellente priorité**
-Exposer des surcharges pour les types temporels standards .NET, en s'appuyant sur le
-`INumberToStringConverter` existant :
+### 21. ~~Conversion de types temporels~~ — **implémenté**
+Quatre nouvelles surcharges ajoutées à `INumberToStringConverter` et `NumberToStringConverter` :
+- `Convert(TimeSpan duration, params string[] variants)` — totalise les heures et concatène
+  heure/minute/seconde non nuls avec leurs formes singulier/pluriel issues de `<TimeUnits>`.
+- `Convert(TimeOnly time, params string[] variants)` — toujours l'heure ; minute/seconde si > 0.
+- `Convert(DateOnly date, params string[] variants)` — patron configurable via `<DateFormat pattern="…">` ;
+  tokens `{month}` (nom via `CultureInfo`), `{ordinal-day}`, `{cardinal-day}`, `{year}` ;
+  attribut `firstDay` pour la forme du 1er du mois (ex. "premier", "ersten").
+- `Convert(DateTime dateTime, params string[] variants)` — combine DateOnly + TimeOnly avec
+  connecteur optionnel `dateTimeConnector`.
 
-#### 21a. `Convert(TimeSpan)` / `ConvertDuration`
-```csharp
-string Convert(TimeSpan duration, params string[] variants);
-```
-Produit "deux heures trente minutes cinq secondes". Nécessite des sections `<TimeUnits>`
-dans le XML (heure/minute/seconde avec pluriel, éventuellement `(s)` via `ToPlural`).
-Les unités non nulles sont concaténées avec le séparateur de la langue.
+Propriétés `SupportsTimeConversion` / `SupportsDateConversion` exposées sur l'interface
+(par défaut `false`). EN, FR et DE configurés avec `<TimeUnits>` et `<DateFormat>`.
 
-#### 21b. `Convert(TimeOnly)`
-```csharp
-string Convert(TimeOnly time, params string[] variants);
-```
-Produit "quatorze heures trente" ou "deux heures et demie" selon le format de la langue.
-Option : format 12h vs 24h via variant ou option dédiée.
+### 22. ~~Connecteur inter-groupes conditionnel~~ — **implémenté**
+Attributs `intraGroupConnector` et `intraGroupConnectorThreshold` sur `<Language>`.
+Injecté dans `ConvertGroup` au niveau 3 quand `groupValue > 0` (centaines présentes)
+et `0 < remainder < threshold`. VN configuré avec `intraGroupConnector="linh" threshold="10"` :
+- 101 → "một trăm linh một" ✓  
+- 110 → "một trăm mười" (pas de connecteur, remainder ≥ threshold) ✓
 
-#### 21c. `Convert(DateOnly)`
-```csharp
-string Convert(DateOnly date, params string[] variants);
-```
-Produit "le deux juillet deux mille vingt-six" (FR), "July second, twenty twenty-six" (EN).
-S'appuie sur `ConvertYear`, `ConvertOrdinal` et des noms de mois en XML (`<Months>`).
-
-#### 21d. `Convert(DateTime)`
-```csharp
-string Convert(DateTime dateTime, params string[] variants);
-```
-Combinaison de `Convert(DateOnly)` + `Convert(TimeOnly)` avec connecteur configurable.
-
-**Note architecturale :** les noms de mois et de jours sont disponibles sans XML supplémentaire via
-`System.Globalization.CultureInfo.GetCultureInfo(lang).DateTimeFormat.MonthNames[month-1]` et
-`.DayNames[dayOfWeek]`. Inutile de les dupliquer dans les fichiers XML — le moteur les lira
-directement depuis le BCL, ce qui garantit leur fiabilité pour toutes les langues supportées
-par .NET. Seules les unités de temps (heure/minute/seconde avec leur pluriel) et le patron de
-composition de la date (ordre jour/mois/an, connecteurs) restent à configurer dans le XML.
-```xml
-<TimeUnits>
-    <Unit name="hour"   singular="heure"  plural="heures"  />
-    <Unit name="minute" singular="minute" plural="minutes" />
-    <Unit name="second" singular="seconde" plural="secondes" />
-</TimeUnits>
-<DateFormat pattern="{ordinal-day} {month} {year}" />
-```
-
-### 22. Connecteur inter-groupes conditionnel (moteur XML)
-Certaines langues insèrent un mot de liaison entre groupes selon le contexte :
-- VN : "linh" entre centaines et unités isolées (101 → "một trăm linh một")
-- EN : "and" entre centaines et dizaines/unités (101 → "one hundred and one")
-- FA : "و" entre chaque groupe
-
-Proposition : attribut `connector="linh"` + `connectorThreshold="10"` sur `<Group level="3">`
-(inséré si le groupe de rang inférieur est < seuil). Résoudrait la limitation documentée dans VN.
-
-### 23. Nouvelles langues — **candidats prioritaires**
-- **HR/SR** (croate/serbe) : Slavique du sud, proches de BG ; serbe en deux alphabets
-- **HU** (hongrois) : agglutinant, suffixes nominaux collant directement au chiffre
-- **RO** (roumain) : genre masculin/féminin, "de" obligatoire devant les grands nombres
-  (ex : "un milion **de** oameni") — complexe mais jouable avec `Variants`
+### 23. ~~Nouvelles langues HR et HU~~ — **implémenté** ; RO **reporté**
+- **HR** (croate) : long scale avec `groupSeparator="li"` → milijun/milijarda/bilijun ;
+  exceptions 11–19 ; remplacement "jedan tisuća" → "tisuća" ; ordinals (prvi/drugi/treći…).
+- **HU** (hongrois) : séparateur vide (agglutination) ; forme liante `két` vs forme isolée
+  `kettő` via `Exception[2]` + Replacements ("kettőezer" → "kétezer") ; `startIndex="2"` pour
+  générer billió/billiárd ; "egyezer" → "ezer" ; ordinals lexicaux (első/második…).
+- **RO** (roumain) : genre m/f + "de" devant grands nombres — reporté, trop complexe.
 
 ### ~~C1. Numéros romains~~ — **hors périmètre**
 `ConvertRoman` doit faire l'objet d'un système de conversion distinct qui pourrait implémenter

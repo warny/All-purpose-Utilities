@@ -355,5 +355,49 @@ namespace Utils.NumberToString
         /// </summary>
         string ConvertMultiplicative(int multiplier, params string[] variants)
             => throw new NotSupportedException("This converter does not support multiplicative forms.");
+
+        /// <summary>
+        /// When <see langword="true"/>, <see cref="Convert(TimeSpan, string[])"/> and
+        /// <see cref="Convert(TimeOnly, string[])"/> produce a result.
+        /// </summary>
+        bool SupportsTimeConversion => false;
+
+        /// <summary>
+        /// When <see langword="true"/>, <see cref="Convert(DateOnly, string[])"/> and
+        /// <see cref="Convert(DateTime, string[])"/> produce a result.
+        /// </summary>
+        bool SupportsDateConversion => false;
+
+        /// <summary>
+        /// Converts a <see cref="TimeSpan"/> duration to its spoken form
+        /// (e.g. "two hours thirty minutes five seconds").
+        /// Requires <c>&lt;TimeUnits&gt;</c> in the XML configuration.
+        /// </summary>
+        string Convert(TimeSpan duration, params string[] variants)
+            => throw new NotSupportedException("Time conversion requires <TimeUnits> in the XML configuration.");
+
+        /// <summary>
+        /// Converts a <see cref="TimeOnly"/> time-of-day to its spoken form
+        /// (e.g. "quatorze heures trente").
+        /// Requires <c>&lt;TimeUnits&gt;</c> in the XML configuration.
+        /// </summary>
+        string Convert(TimeOnly time, params string[] variants)
+            => throw new NotSupportedException("Time conversion requires <TimeUnits> in the XML configuration.");
+
+        /// <summary>
+        /// Converts a <see cref="DateOnly"/> date to its spoken form
+        /// (e.g. "le deux juillet deux mille vingt-six").
+        /// Requires <c>&lt;DateFormat&gt;</c> in the XML configuration.
+        /// Month names are read from <see cref="System.Globalization.CultureInfo"/>.
+        /// </summary>
+        string Convert(DateOnly date, params string[] variants)
+            => throw new NotSupportedException("Date conversion requires <DateFormat> in the XML configuration.");
+
+        /// <summary>
+        /// Converts a <see cref="DateTime"/> to its spoken form by combining
+        /// <see cref="Convert(DateOnly, string[])"/> and <see cref="Convert(TimeOnly, string[])"/>.
+        /// </summary>
+        string Convert(DateTime dateTime, params string[] variants)
+            => throw new NotSupportedException("Date/time conversion requires <DateFormat> and <TimeUnits> in the XML configuration.");
     }
 }
