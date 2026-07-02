@@ -2,11 +2,11 @@
 <html>
   <head>
     <meta charset="utf-8">
-      <title>Class NumberToStringConverter.VariantDimension | omy.Utils Documentation </title>
+      <title>Class MultiplicativesType | omy.Utils Documentation </title>
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <meta name="title" content="Class NumberToStringConverter.VariantDimension | omy.Utils Documentation ">
+      <meta name="title" content="Class MultiplicativesType | omy.Utils Documentation ">
       
-      <meta name="description" content="Declares one dimension of grammatical variation (e.g. &amp;quot;gender&amp;quot;) with its ordered set of values. The first value is the default applied when no explicit variant is requested.">
+      <meta name="description" content="Holds multiplicative configuration for a language (e.g. 1 → &amp;quot;once&amp;quot;, 2 → &amp;quot;twice&amp;quot;).">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -16,7 +16,7 @@
       <meta name="docfx:rel" content="../">
       
       
-      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_NumberToString_NumberToStringConverter_VariantDimension.md&amp;value=---%0Auid%3A%20Utils.NumberToString.NumberToStringConverter.VariantDimension%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_NumberToString_MultiplicativesType.md&amp;value=---%0Auid%3A%20Utils.NumberToString.MultiplicativesType%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
       <meta name="loc:inThisArticle" content="In this article">
       <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
       <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
@@ -84,12 +84,12 @@
           <nav id="breadcrumb"></nav>
         </div>
 
-        <article data-uid="Utils.NumberToString.NumberToStringConverter.VariantDimension">
+        <article data-uid="Utils.NumberToString.MultiplicativesType">
 
 
 
-  <h1 id="Utils_NumberToString_NumberToStringConverter_VariantDimension" data-uid="Utils.NumberToString.NumberToStringConverter.VariantDimension" class="text-break">
-Class NumberToStringConverter.VariantDimension  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L831"><i class="bi bi-code-slash"></i></a>
+  <h1 id="Utils_NumberToString_MultiplicativesType" data-uid="Utils.NumberToString.MultiplicativesType" class="text-break">
+Class MultiplicativesType  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L538"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -97,13 +97,12 @@ Class NumberToStringConverter.VariantDimension  <a class="header-action link-sec
   <dl><dt>Assembly</dt><dd>Utils.NumberToString.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Declares one dimension of grammatical variation (e.g. &quot;gender&quot;) with its ordered
-set of values. The first value is the default applied when no explicit variant is requested.</p>
+  <div class="markdown summary"><p>Holds multiplicative configuration for a language (e.g. 1 → &quot;once&quot;, 2 → &quot;twice&quot;).</p>
 </div>
   <div class="markdown conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public sealed class NumberToStringConverter.VariantDimension</code></pre>
+    <pre><code class="lang-csharp hljs">public class MultiplicativesType</code></pre>
   </div>
 
 
@@ -113,7 +112,7 @@ set of values. The first value is the default applied when no explicit variant i
     <dt>Inheritance</dt>
     <dd>
       <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
-      <div><span class="xref">NumberToStringConverter.VariantDimension</span></div>
+      <div><span class="xref">MultiplicativesType</span></div>
     </dd>
   </dl>
 
@@ -133,6 +132,9 @@ set of values. The first value is the default applied when no explicit variant i
     </div>
     <div>
       <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone">object.MemberwiseClone()</a>
     </div>
     <div>
       <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
@@ -232,66 +234,23 @@ set of values. The first value is the default applied when no explicit variant i
 
 
 
-  <h2 class="section" id="constructors">Constructors
-</h2>
-
-
-  <a id="Utils_NumberToString_NumberToStringConverter_VariantDimension__ctor_" data-uid="Utils.NumberToString.NumberToStringConverter.VariantDimension.#ctor*"></a>
-
-  <h3 id="Utils_NumberToString_NumberToStringConverter_VariantDimension__ctor_System_String_System_Collections_Generic_IReadOnlyList_System_String__System_String_" data-uid="Utils.NumberToString.NumberToStringConverter.VariantDimension.#ctor(System.String,System.Collections.Generic.IReadOnlyList{System.String},System.String)">
-  VariantDimension(string, IReadOnlyList&lt;string&gt;, string?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L839"><i class="bi bi-code-slash"></i></a>
-  </h3>
-
-  <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.NumberToString.NumberToStringConverter.VariantDimension.html">NumberToStringConverter.VariantDimension</a> class.</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public VariantDimension(string name, IReadOnlyList&lt;string&gt; values, string? localName = null)</code></pre>
-  </div>
-
-  <h4 class="section">Parameters</h4>
-  <dl class="parameters">
-    <dt><code>name</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>The canonical English dimension name (e.g. &quot;gender&quot;, &quot;case&quot;).</p>
-</dd>
-    <dt><code>values</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1">IReadOnlyList</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;</dt>
-    <dd><p>The ordered list of valid values; the first is the default.</p>
-</dd>
-    <dt><code>localName</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>Optional language-specific alias (e.g. &quot;genus&quot; for German, &quot;sijamuoto&quot; for Finnish).</p>
-</dd>
-  </dl>
-
-
-
-
-
-
-
-
-
-
-
-
   <h2 class="section" id="properties">Properties
 </h2>
 
 
-  <a id="Utils_NumberToString_NumberToStringConverter_VariantDimension_DefaultValue_" data-uid="Utils.NumberToString.NumberToStringConverter.VariantDimension.DefaultValue*"></a>
+  <a id="Utils_NumberToString_MultiplicativesType_Entries_" data-uid="Utils.NumberToString.MultiplicativesType.Entries*"></a>
 
-  <h3 id="Utils_NumberToString_NumberToStringConverter_VariantDimension_DefaultValue" data-uid="Utils.NumberToString.NumberToStringConverter.VariantDimension.DefaultValue">
-  DefaultValue
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L856"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_NumberToString_MultiplicativesType_Entries" data-uid="Utils.NumberToString.MultiplicativesType.Entries">
+  Entries
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L545"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets the default value (first declared), or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> when the list is empty.</p>
+  <div class="markdown level1 summary"><p>Named multiplicative entries.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public string? DefaultValue { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">public List&lt;MultiplicativeEntryType&gt;? Entries { get; set; }</code></pre>
   </div>
 
 
@@ -300,7 +259,7 @@ set of values. The first value is the default applied when no explicit variant i
 
   <h4 class="section">Property Value</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1">List</a>&lt;<a class="xref" href="Utils.NumberToString.MultiplicativeEntryType.html">MultiplicativeEntryType</a>&gt;</dt>
     <dd></dd>
   </dl>
 
@@ -311,19 +270,19 @@ set of values. The first value is the default applied when no explicit variant i
 
 
 
-  <a id="Utils_NumberToString_NumberToStringConverter_VariantDimension_LocalName_" data-uid="Utils.NumberToString.NumberToStringConverter.VariantDimension.LocalName*"></a>
+  <a id="Utils_NumberToString_MultiplicativesType_Suffix_" data-uid="Utils.NumberToString.MultiplicativesType.Suffix*"></a>
 
-  <h3 id="Utils_NumberToString_NumberToStringConverter_VariantDimension_LocalName" data-uid="Utils.NumberToString.NumberToStringConverter.VariantDimension.LocalName">
-  LocalName
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L850"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_NumberToString_MultiplicativesType_Suffix" data-uid="Utils.NumberToString.MultiplicativesType.Suffix">
+  Suffix
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L541"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets the optional language-specific alias for this dimension (e.g. &quot;genus&quot;, &quot;sijamuoto&quot;).</p>
+  <div class="markdown level1 summary"><p>Suffix appended to the cardinal for unnamed multiplicatives (e.g. &quot; times&quot;).</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public string? LocalName { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">public string? Suffix { get; set; }</code></pre>
   </div>
 
 
@@ -333,70 +292,6 @@ set of values. The first value is the default applied when no explicit variant i
   <h4 class="section">Property Value</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd></dd>
-  </dl>
-
-
-
-
-
-
-
-
-  <a id="Utils_NumberToString_NumberToStringConverter_VariantDimension_Name_" data-uid="Utils.NumberToString.NumberToStringConverter.VariantDimension.Name*"></a>
-
-  <h3 id="Utils_NumberToString_NumberToStringConverter_VariantDimension_Name" data-uid="Utils.NumberToString.NumberToStringConverter.VariantDimension.Name">
-  Name
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L847"><i class="bi bi-code-slash"></i></a>
-  </h3>
-
-  <div class="markdown level1 summary"><p>Gets the canonical English dimension name (e.g. &quot;gender&quot;, &quot;case&quot;).</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public string Name { get; }</code></pre>
-  </div>
-
-
-
-
-
-  <h4 class="section">Property Value</h4>
-  <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd></dd>
-  </dl>
-
-
-
-
-
-
-
-
-  <a id="Utils_NumberToString_NumberToStringConverter_VariantDimension_Values_" data-uid="Utils.NumberToString.NumberToStringConverter.VariantDimension.Values*"></a>
-
-  <h3 id="Utils_NumberToString_NumberToStringConverter_VariantDimension_Values" data-uid="Utils.NumberToString.NumberToStringConverter.VariantDimension.Values">
-  Values
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L853"><i class="bi bi-code-slash"></i></a>
-  </h3>
-
-  <div class="markdown level1 summary"><p>Gets the ordered list of valid values. The first value is the default.</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public IReadOnlyList&lt;string&gt; Values { get; }</code></pre>
-  </div>
-
-
-
-
-
-  <h4 class="section">Property Value</h4>
-  <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1">IReadOnlyList</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;</dt>
     <dd></dd>
   </dl>
 
@@ -411,7 +306,7 @@ set of values. The first value is the default applied when no explicit variant i
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L831" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L538" class="edit-link">Edit this page</a>
         </div>
 
 

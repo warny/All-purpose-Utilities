@@ -7922,6 +7922,34 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.MultiplicativeEntryType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.MultiplicativeEntryType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.MultiplicativeEntryType",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.MultiplicativeEntryType.yml\" sourcestartlinenumber=\"1\">Maps a specific multiplier value to its named multiplicative form.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.MultiplicativesType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.MultiplicativesType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.MultiplicativesType",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.MultiplicativesType.yml\" sourcestartlinenumber=\"1\">Holds multiplicative configuration for a language (e.g. 1 → &quot;once&quot;, 2 → &quot;twice&quot;).</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.NumberToString.NumberListType.yml",
       "output": {
         ".html": {

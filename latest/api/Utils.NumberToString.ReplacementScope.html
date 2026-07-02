@@ -224,6 +224,11 @@ Enum ReplacementScope  <a class="header-action link-secondary" title="View sourc
   
   <dd><p>Indicates that the replacement may occur within a larger phrase when the words match.</p>
 </dd>
+    <dt id="Utils_NumberToString_ReplacementScope_EndsWith"><code>EndsWith = 4</code></dt>
+  
+  <dd><p>Indicates that the replacement applies only when <code>oldValue</code> matches the end of
+the text (similar to <a class="xref" href="Utils.NumberToString.ReplacementScope.html#Utils_NumberToString_ReplacementScope_LastWord">LastWord</a> but without the word-boundary check).</p>
+</dd>
     <dt id="Utils_NumberToString_ReplacementScope_LastWord"><code>LastWord = 2</code></dt>
   
   <dd><p>Indicates that the replacement applies only when <code>oldValue</code> matches the last word of
@@ -233,6 +238,11 @@ suffix rather than a substring.</p>
     <dt id="Utils_NumberToString_ReplacementScope_Standalone"><code>Standalone = 0</code></dt>
   
   <dd><p>Indicates that the replacement only applies when the entire value matches the configured phrase.</p>
+</dd>
+    <dt id="Utils_NumberToString_ReplacementScope_StartsWith"><code>StartsWith = 3</code></dt>
+  
+  <dd><p>Indicates that the replacement applies only when <code>oldValue</code> matches the beginning of
+the text, treating the old value as a word-boundary prefix.</p>
 </dd>
   </dl>
 
