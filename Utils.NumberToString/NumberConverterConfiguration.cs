@@ -412,6 +412,18 @@ public enum ReplacementScope
     /// suffix rather than a substring.
     /// </summary>
     LastWord,
+
+    /// <summary>
+    /// Indicates that the replacement applies only when <c>oldValue</c> matches the beginning of
+    /// the text, treating the old value as a word-boundary prefix.
+    /// </summary>
+    StartsWith,
+
+    /// <summary>
+    /// Indicates that the replacement applies only when <c>oldValue</c> matches the end of
+    /// the text (similar to <see cref="LastWord"/> but without the word-boundary check).
+    /// </summary>
+    EndsWith,
 }
 
 /// <summary>
@@ -518,6 +530,34 @@ public class FractionListType
     /// </summary>
     [XmlElement("Fraction")]
     public List<FractionType> Fractions { get; set; }
+}
+
+/// <summary>
+/// Holds multiplicative configuration for a language (e.g. 1 → "once", 2 → "twice").
+/// </summary>
+public class MultiplicativesType
+{
+    /// <summary>Suffix appended to the cardinal for unnamed multiplicatives (e.g. " times").</summary>
+    [XmlAttribute("suffix")]
+    public string? Suffix { get; set; }
+
+    /// <summary>Named multiplicative entries.</summary>
+    [XmlElement("Multiplicative")]
+    public List<MultiplicativeEntryType>? Entries { get; set; }
+}
+
+/// <summary>
+/// Maps a specific multiplier value to its named multiplicative form.
+/// </summary>
+public class MultiplicativeEntryType
+{
+    /// <summary>The multiplier value.</summary>
+    [XmlAttribute("value")]
+    public int Value { get; set; }
+
+    /// <summary>The multiplicative string for this value.</summary>
+    [XmlAttribute("string")]
+    public string String { get; set; } = "";
 }
 
 /// <summary>
@@ -648,6 +688,25 @@ public class LanguageType
     /// </summary>
     [XmlElement(ElementName = "Trigger")]
     public List<TriggerType>? Triggers { get; set; }
+
+    /// <summary>
+    /// Gets or sets the multiplicative configuration (e.g. 1 → "once", 2 → "twice").
+    /// </summary>
+    [XmlElement(ElementName = "Multiplicatives")]
+    public MultiplicativesType? Multiplicatives { get; set; }
+
+    /// <summary>Gets or sets the word inserted between scale groups when the lower group is small.</summary>
+    [XmlAttribute("groupConnector")]
+    public string? GroupConnector { get; set; }
+
+    /// <summary>Gets or sets the threshold (as string) below which the group connector is used.</summary>
+    [XmlAttribute("groupConnectorThreshold")]
+    public string? GroupConnectorThresholdString { get; set; }
+
+    /// <summary>Gets the threshold below which <see cref="GroupConnector"/> is used instead of the regular group separator.</summary>
+    [XmlIgnore]
+    public int GroupConnectorThreshold =>
+        int.TryParse(GroupConnectorThresholdString, out var n) ? n : 100;
 }
 
 /// <summary>

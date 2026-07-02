@@ -111,6 +111,28 @@ namespace Utils.NumberToString
         string Convert(decimal number, int mandatoryDecimalDigits, DecimalFormatOptions? options, params string[] variants) => Convert(number);
 
         /// <summary>
+        /// Converts a double-precision floating-point value into its string representation.
+        /// Uses the round-trip format ("R") to convert to decimal, avoiding floating-point artifacts.
+        /// </summary>
+        string Convert(double number, params string[] variants)
+        {
+            if (decimal.TryParse(
+                    number.ToString("R", System.Globalization.CultureInfo.InvariantCulture),
+                    System.Globalization.NumberStyles.Any,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    out decimal d))
+                return Convert(d, variants);
+            // Overflow (very large doubles): fall back to integer part only
+            return Convert(new BigInteger(Math.Truncate(number)), variants);
+        }
+
+        /// <summary>
+        /// Converts a single-precision floating-point value into its string representation.
+        /// </summary>
+        string Convert(float number, params string[] variants)
+            => Convert((double)number, variants);
+
+        /// <summary>
         /// Converts a rational <see cref="Number"/> into its string representation.
         /// The default implementation converts only the integer part; implementations
         /// that support rational conversion should override this.
@@ -312,5 +334,26 @@ namespace Utils.NumberToString
         /// <param name="variants">Zero or more <c>"dimension=value"</c> strings.</param>
         /// <returns>The spoken form of the year with the requested variants applied.</returns>
         string ConvertYear(int year, params string[] variants) => ConvertYear(year);
+
+        /// <summary>
+        /// Converts the fraction <paramref name="numerator"/>/<paramref name="denominator"/> to its
+        /// string representation. The default implementation concatenates the two cardinal conversions
+        /// with <c>/</c>; language-specific implementations may use named fraction forms (e.g. "un tiers").
+        /// </summary>
+        string ConvertFraction(BigInteger numerator, BigInteger denominator, params string[] variants)
+            => $"{Convert(numerator, variants)} / {Convert(denominator, variants)}";
+
+        /// <summary>
+        /// When <see langword="true"/>, <see cref="ConvertMultiplicative"/> produces a result;
+        /// when <see langword="false"/>, it throws <see cref="NotSupportedException"/>.
+        /// </summary>
+        bool SupportsMultiplicative => false;
+
+        /// <summary>
+        /// Converts a multiplier to its spoken multiplicative form (e.g. 2 → "twice", 3 → "trois fois").
+        /// Throws <see cref="NotSupportedException"/> when the language has no multiplicative configuration.
+        /// </summary>
+        string ConvertMultiplicative(int multiplier, params string[] variants)
+            => throw new NotSupportedException("This converter does not support multiplicative forms.");
     }
 }

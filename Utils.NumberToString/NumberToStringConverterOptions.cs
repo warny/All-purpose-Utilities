@@ -126,6 +126,18 @@ public sealed class NumberToStringConverterOptions
     /// </summary>
     public IReadOnlyList<NumberToStringConverter.TriggerRule> Triggers { get; set; } = [];
 
+    /// <summary>Named multiplicative forms (e.g. 2 → "twice"). Key is the multiplier.</summary>
+    public IReadOnlyDictionary<int, string>? Multiplicatives { get; set; }
+
+    /// <summary>Suffix appended to the cardinal for multiplicatives not in <see cref="Multiplicatives"/> (e.g. " times").</summary>
+    public string? MultiplicativeSuffix { get; set; }
+
+    /// <summary>Word inserted between scale groups when the lower group value is below <see cref="GroupConnectorThreshold"/>.</summary>
+    public string? GroupConnector { get; set; }
+
+    /// <summary>Threshold below which <see cref="GroupConnector"/> is used instead of the regular group separator.</summary>
+    public int GroupConnectorThreshold { get; set; } = 100;
+
     /// <summary>Creates an options object with sensible defaults. Required properties
     /// (<see cref="Zero"/>, <see cref="Minus"/>, <see cref="Groups"/>, <see cref="Scale"/>)
     /// must be set before passing to the constructor.</summary>
@@ -165,6 +177,10 @@ public sealed class NumberToStringConverterOptions
         VariantRules = source.VariantRules;
         Triggers = source.Triggers;
         YearFormat = source.YearFormat;
+        Multiplicatives = source.Multiplicatives;
+        MultiplicativeSuffix = source.MultiplicativeSuffix;
+        GroupConnector = source.GroupConnector;
+        GroupConnectorThreshold = source.GroupConnectorThreshold;
     }
 
     /// <summary>
