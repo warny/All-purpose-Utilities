@@ -160,6 +160,17 @@ namespace Utils.NumberToString
         string Convert(int number, params string[] variants) => Convert(number);
 
         /// <summary>
+        /// Converts a 32-bit signed integer rounded to <paramref name="significantDigits"/> most
+        /// significant digits into its string representation, applying optional variant parameters.
+        /// The default implementation delegates to <see cref="Convert(BigInteger, int, string[])"/>.
+        /// </summary>
+        /// <param name="number">The value to convert.</param>
+        /// <param name="significantDigits">Number of significant digits to keep. Must be ≥ 1.</param>
+        /// <param name="variants">Zero or more <c>"dimension=value"</c> strings.</param>
+        string Convert(int number, int significantDigits, params string[] variants)
+            => Convert((BigInteger)number, significantDigits, variants);
+
+        /// <summary>
         /// Converts a 64-bit signed integer into its string representation,
         /// applying the specified variant parameters.
         /// The default implementation ignores variant parameters and delegates to
@@ -169,6 +180,17 @@ namespace Utils.NumberToString
         /// <param name="variants">Zero or more <c>"dimension=value"</c> strings.</param>
         /// <returns>The formatted number with the requested variants applied.</returns>
         string Convert(long number, params string[] variants) => Convert(number);
+
+        /// <summary>
+        /// Converts a 64-bit signed integer rounded to <paramref name="significantDigits"/> most
+        /// significant digits into its string representation, applying optional variant parameters.
+        /// The default implementation delegates to <see cref="Convert(BigInteger, int, string[])"/>.
+        /// </summary>
+        /// <param name="number">The value to convert.</param>
+        /// <param name="significantDigits">Number of significant digits to keep. Must be ≥ 1.</param>
+        /// <param name="variants">Zero or more <c>"dimension=value"</c> strings.</param>
+        string Convert(long number, int significantDigits, params string[] variants)
+            => Convert((BigInteger)number, significantDigits, variants);
 
         /// <summary>
         /// Gets a value indicating whether this converter supports ordinal conversion.
@@ -223,6 +245,31 @@ namespace Utils.NumberToString
         /// <returns>The ordinal string for <paramref name="number"/>.</returns>
         string ConvertOrdinal(long number, params string[] variants)
             => ConvertOrdinal(checked((int)number), variants);
+
+        /// <summary>
+        /// Converts a decimal currency amount to words using the supplied currency definition.
+        /// The default implementation throws <see cref="NotSupportedException"/>;
+        /// implementations that support currency conversion should override this.
+        /// </summary>
+        /// <param name="amount">The amount to convert.</param>
+        /// <param name="currency">The currency names and configuration.</param>
+        /// <returns>The amount expressed as words.</returns>
+        string ConvertCurrency(decimal amount, CurrencyDefinition currency)
+            => throw new NotSupportedException("Currency conversion is not supported by this converter.");
+
+        /// <summary>
+        /// Converts a decimal currency amount to words using the supplied currency definition,
+        /// applying morphological variant parameters to the number words
+        /// (e.g. <c>"gender=feminin"</c> for languages that inflect numerals by gender).
+        /// The default implementation ignores variant parameters and delegates to
+        /// <see cref="ConvertCurrency(decimal, CurrencyDefinition)"/>.
+        /// </summary>
+        /// <param name="amount">The amount to convert.</param>
+        /// <param name="currency">The currency names and configuration.</param>
+        /// <param name="variants">Zero or more <c>"dimension=value"</c> strings.</param>
+        /// <returns>The amount expressed as words with the requested variants applied.</returns>
+        string ConvertCurrency(decimal amount, CurrencyDefinition currency, params string[] variants)
+            => ConvertCurrency(amount, currency);
 
         /// <summary>
         /// Converts a year number into its spoken string representation.

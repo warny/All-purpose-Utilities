@@ -19,18 +19,22 @@ seulement, positif = arrondir et toujours afficher exactement N chiffres décima
   Quand renseigné, la partie décimale est toujours convertie comme un entier (pas chiffre par chiffre).
 - `OmitZeroDecimals` : supprime la partie décimale si elle vaut zéro après arrondi.
 
-### 2. `ConvertCurrency` sans variants
-`ConvertCurrency(decimal amount, CurrencyDefinition currency)` ne prend pas de variants.
-Or pour le FR/DE la partie entière varie en genre selon la devise (euro est masculin, livre est féminine).
-Il faudrait pouvoir écrire :
+### 2. ~~`ConvertCurrency` sans variants~~ — **implémenté**
+Nouvelle surcharge `ConvertCurrency(decimal, CurrencyDefinition, params string[] variants)` ajoutée
+dans `INumberToStringConverter` (avec implémentation par défaut qui lance `NotSupportedException`)
+et dans `NumberToStringConverter` (où l'ancienne implémentation délègue désormais à la nouvelle).
+
+Les `variants` sont transmis aux deux sous-appels `Convert(units, variants)` et
+`Convert(subunits, variants)`, ce qui permet l'inflexion genre/cas des numéraux dans les deux parties :
 ```csharp
-fr.ConvertCurrency(21m, livre, "gender=feminin"); // "vingt et une livres"
+fr.ConvertCurrency(21.01m, livre, "gender=feminin"); // "vingt et une livres et une sous"
 ```
 
-### 3. `Convert(long/int, int significantDigits, ...)` manquant dans l'interface
-`Convert(BigInteger, int significantDigits, params string[])` existe dans `INumberToStringConverter`,
-mais pas de surcharges `long`/`int` équivalentes. Les types primitifs passent par un cast implicite
-vers `BigInteger` dans l'implémentation concrète, mais pas depuis l'interface.
+### 3. ~~`Convert(long/int, int significantDigits, ...)` manquant dans l'interface~~ — **implémenté**
+Deux nouvelles surcharges ajoutées dans `INumberToStringConverter` (implémentations par défaut
+déléguant à `Convert(BigInteger, int, string[])`) et dans `NumberToStringConverter` :
+- `Convert(int number, int significantDigits, params string[] variants)`
+- `Convert(long number, int significantDigits, params string[] variants)`
 
 ## Priorité haute — bugs corrigeables dans les XML
 

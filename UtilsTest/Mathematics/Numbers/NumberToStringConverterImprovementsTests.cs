@@ -2384,4 +2384,106 @@ public class NumberToStringConverterImprovementsTests
         Assert.AreEqual(expected, converter.Convert(21.5m, 2, (DecimalFormatOptions?)null, []));
         Assert.AreEqual(expected, converter.Convert(21.5m, 2, new DecimalFormatOptions { OmitZeroDecimals = true }));
     }
+
+    // ─── G1 — Convert(int/long, int significantDigits) ────────────────────────
+
+    [TestMethod]
+    public void Convert_Int_SignificantDigits_MatchesBigInteger()
+    {
+        var en = NumberToStringConverter.GetConverter("EN");
+
+        Assert.AreEqual(en.Convert((System.Numerics.BigInteger)12345, 3), en.Convert(12345,  3));
+        Assert.AreEqual(en.Convert((System.Numerics.BigInteger)12345, 3), en.Convert(12345L, 3));
+        Assert.AreEqual(en.Convert((System.Numerics.BigInteger)1,     3), en.Convert(1,      3));
+        Assert.AreEqual(en.Convert((System.Numerics.BigInteger)999,   2), en.Convert(999,    2));
+        Assert.AreEqual(en.Convert((System.Numerics.BigInteger)999,   2), en.Convert(999L,   2));
+    }
+
+    [TestMethod]
+    public void Convert_Long_SignificantDigits_WithVariants_MatchesBigInteger()
+    {
+        var fr = NumberToStringConverter.GetConverter("FR");
+
+        // 210 rounded to 1 significant digit → 200 ; 21 rounded to 2 → 21
+        Assert.AreEqual(fr.Convert((System.Numerics.BigInteger)210, 1, "gender=feminin"),
+                        fr.Convert(210L, 1, "gender=feminin"));
+        Assert.AreEqual(fr.Convert((System.Numerics.BigInteger)21, 2, "gender=feminin"),
+                        fr.Convert(21, 2, "gender=feminin"));
+    }
+
+    [TestMethod]
+    public void Convert_Interface_IntLong_SignificantDigits_DelegatesToBigInteger()
+    {
+        INumberToStringConverter iface = NumberToStringConverter.GetConverter("EN");
+
+        Assert.AreEqual(iface.Convert((System.Numerics.BigInteger)12345, 3),
+                        iface.Convert(12345, 3));
+        Assert.AreEqual(iface.Convert((System.Numerics.BigInteger)12345, 3),
+                        iface.Convert(12345L, 3));
+    }
+
+    // ─── G2 — ConvertCurrency avec variants morphologiques ────────────────────
+
+    private static CurrencyDefinition LiveCurrency() => new CurrencyDefinition
+    {
+        UnitSingular    = "livre",
+        UnitPlural      = "livres",
+        SubunitSingular = "sou",
+        SubunitPlural   = "sous",
+        SubunitDigits   = 2,
+        Connector       = "et",
+    };
+
+    [TestMethod]
+    public void ConvertCurrency_FR_DefaultVariant_IsMasculine()
+    {
+        var fr = NumberToStringConverter.GetConverter("FR");
+        var livre = LiveCurrency();
+
+        // Without variant: masculine numeral (default FR dimension value)
+        Assert.AreEqual("vingt et un livres", fr.ConvertCurrency(21m, livre));
+        Assert.AreEqual("un livre",           fr.ConvertCurrency(1m,  livre));
+    }
+
+    [TestMethod]
+    public void ConvertCurrency_FR_FeminineVariant_InflectsNumeral()
+    {
+        var fr = NumberToStringConverter.GetConverter("FR");
+        var livre = LiveCurrency();
+
+        // Feminine variant: "un" → "une", "vingt et un" → "vingt et une"
+        Assert.AreEqual("une livre",           fr.ConvertCurrency(1m,  livre, "gender=feminin"));
+        Assert.AreEqual("vingt et une livres", fr.ConvertCurrency(21m, livre, "gender=feminin"));
+        Assert.AreEqual("trente et une livres", fr.ConvertCurrency(31m, livre, "gender=feminin"));
+    }
+
+    [TestMethod]
+    public void ConvertCurrency_FR_FeminineVariant_AppliesToSubunitsAsWell()
+    {
+        var fr = NumberToStringConverter.GetConverter("FR");
+        var livre = LiveCurrency();
+
+        // 21.01 → "vingt et une livres et un sou" (masculine, sou doesn't inflect un)
+        // With gender=feminin: "vingt et une livres et une sous"… but "une sous" is grammatically
+        // wrong in real French; we test the mechanical inflection, not linguistic correctness.
+        // Compare against the BigInteger sub-conversions to stay independent of locale rendering.
+        string unitsPart    = fr.Convert(21L, "gender=feminin");   // "vingt et une"
+        string subunitsPart = fr.Convert(1L,  "gender=feminin");   // "une"
+        string expected     = $"{unitsPart} livres et {subunitsPart} sou";
+
+        Assert.AreEqual(expected, fr.ConvertCurrency(21.01m, livre, "gender=feminin"));
+    }
+
+    [TestMethod]
+    public void ConvertCurrency_Interface_Variants_DelegatesToConcrete()
+    {
+        INumberToStringConverter iface = NumberToStringConverter.GetConverter("FR");
+        var livre = LiveCurrency();
+
+        // Calling via the interface must reach the concrete implementation (not the default throw).
+        Assert.AreEqual(iface.ConvertCurrency(21m, livre),
+                        iface.ConvertCurrency(21m, livre, []));
+        Assert.AreEqual(iface.ConvertCurrency(21m, livre, "gender=feminin"),
+                        ((NumberToStringConverter)iface).ConvertCurrency(21m, livre, "gender=feminin"));
+    }
 }

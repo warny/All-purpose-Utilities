@@ -325,6 +325,14 @@ namespace Utils.NumberToString
         /// <returns>The formatted number with the requested variants applied.</returns>
         public string Convert(long number, params string[] variants) => Convert((BigInteger)number, variants);
 
+        /// <inheritdoc cref="INumberToStringConverter.Convert(int, int, string[])"/>
+        public string Convert(int number, int significantDigits, params string[] variants)
+            => Convert((BigInteger)number, significantDigits, variants);
+
+        /// <inheritdoc cref="INumberToStringConverter.Convert(long, int, string[])"/>
+        public string Convert(long number, int significantDigits, params string[] variants)
+            => Convert((BigInteger)number, significantDigits, variants);
+
         /// <summary>
         /// Converts a decimal number to its string representation.
         /// </summary>
@@ -945,13 +953,12 @@ namespace Utils.NumberToString
             return best;
         }
 
-        /// <summary>
-        /// Converts a decimal currency amount to words using the supplied currency definition.
-        /// </summary>
-        /// <param name="amount">The amount to convert.</param>
-        /// <param name="currency">The currency names and configuration.</param>
-        /// <returns>The amount expressed as words (e.g. "twenty euros and fifty centimes").</returns>
+        /// <inheritdoc cref="INumberToStringConverter.ConvertCurrency(decimal, CurrencyDefinition)"/>
         public string ConvertCurrency(decimal amount, CurrencyDefinition currency)
+            => ConvertCurrency(amount, currency, []);
+
+        /// <inheritdoc cref="INumberToStringConverter.ConvertCurrency(decimal, CurrencyDefinition, string[])"/>
+        public string ConvertCurrency(decimal amount, CurrencyDefinition currency, params string[] variants)
         {
             ArgumentNullException.ThrowIfNull(currency);
 
@@ -968,12 +975,12 @@ namespace Utils.NumberToString
             subunits %= subunitFactor;
 
             string unitName = units == 1 ? currency.UnitSingular : currency.UnitPlural;
-            string result = Convert(units) + Separator + unitName;
+            string result = Convert(units, variants) + Separator + unitName;
 
             if (subunits > 0)
             {
                 string subunitName = subunits == 1 ? currency.SubunitSingular : currency.SubunitPlural;
-                string subunitsText = Convert(subunits) + Separator + subunitName;
+                string subunitsText = Convert(subunits, variants) + Separator + subunitName;
                 result = result + Separator + currency.Connector + Separator + subunitsText;
             }
 
