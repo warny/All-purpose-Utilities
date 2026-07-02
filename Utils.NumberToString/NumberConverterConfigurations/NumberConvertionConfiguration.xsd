@@ -1206,10 +1206,14 @@
                                         split-at-hundreds algorithm for year values within the declared
                                         SplitRange elements. Years outside all ranges fall back to Convert(year).
 
-                                        hundredWord   — word appended when the year is a round century
-                                                        (e.g. "hundred" for 1900 → "nineteen hundred").
-                                        zeroConnector — connector inserted before single-digit remainders
-                                                        (e.g. "oh" for 2005 → "twenty oh five").
+                                        hundredWord        — word appended when the year is a round century
+                                                             (e.g. "hundred" for 1900 → "nineteen hundred").
+                                        zeroConnector      — connector inserted before single-digit remainders
+                                                             (e.g. "oh" for 2005 → "twenty oh five").
+                                        beforeChristSuffix — when set, ConvertYear appends this token (preceded
+                                                             by the language separator) instead of using the
+                                                             minus template for negative years
+                                                             (e.g. "BC" for year -44 → "forty-four BC").
                                     </xs:documentation>
                                 </xs:annotation>
                                 <xs:complexType>
@@ -1219,6 +1223,7 @@
                                     </xs:sequence>
                                     <xs:attribute name="hundredWord" type="xs:string" use="optional" />
                                     <xs:attribute name="zeroConnector" type="xs:string" use="optional" />
+                                    <xs:attribute name="beforeChristSuffix" type="xs:string" use="optional" />
                                 </xs:complexType>
                             </xs:element>
 
