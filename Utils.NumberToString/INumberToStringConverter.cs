@@ -57,6 +57,60 @@ namespace Utils.NumberToString
         string Convert(decimal number);
 
         /// <summary>
+        /// Converts a decimal value into its string representation, applying the specified
+        /// variant parameters (e.g. <c>"gender=feminin"</c>).
+        /// The default implementation ignores variant parameters and delegates to
+        /// <see cref="Convert(decimal)"/>; implementations that support variants should override.
+        /// </summary>
+        /// <param name="number">The value to convert.</param>
+        /// <param name="variants">Zero or more <c>"dimension=value"</c> strings.</param>
+        /// <returns>The formatted number with the requested variants applied.</returns>
+        string Convert(decimal number, params string[] variants) => Convert(number);
+
+        /// <summary>
+        /// Converts a decimal value into its string representation with a mandatory number of
+        /// decimal digits, applying optional variant parameters.
+        /// <para>
+        /// When <paramref name="mandatoryDecimalDigits"/> is negative, the decimal part is shown
+        /// as-is (same as <see cref="Convert(decimal, string[])"/>).
+        /// When zero, the decimal part is suppressed (only the integer part is shown).
+        /// When positive, the value is rounded to that many decimal places and the decimal part
+        /// is always shown with exactly that many digits, padding with zeros if needed.
+        /// </para>
+        /// The default implementation ignores precision and variant parameters and delegates to
+        /// <see cref="Convert(decimal)"/>; implementations should override.
+        /// </summary>
+        /// <param name="number">The value to convert.</param>
+        /// <param name="mandatoryDecimalDigits">
+        /// Number of decimal digits to always show. Negative = natural (as-is), 0 = integer only,
+        /// positive = always show exactly N decimal digits (rounded and zero-padded).
+        /// </param>
+        /// <param name="variants">Zero or more <c>"dimension=value"</c> strings.</param>
+        /// <returns>The formatted number with the requested precision and variants applied.</returns>
+        string Convert(decimal number, int mandatoryDecimalDigits, params string[] variants) => Convert(number);
+
+        /// <summary>
+        /// Converts a decimal value into its string representation with a mandatory number of
+        /// decimal digits, custom decimal formatting options, and optional variant parameters.
+        /// The default implementation ignores all parameters and delegates to
+        /// <see cref="Convert(decimal)"/>; implementations should override.
+        /// </summary>
+        /// <param name="number">The value to convert.</param>
+        /// <param name="mandatoryDecimalDigits">
+        /// Negative: show the decimal part as-is. Zero: suppress the decimal part entirely.
+        /// Positive: round to N decimal places and always show exactly N digits (zero-padded).
+        /// </param>
+        /// <param name="options">
+        /// Optional overrides for the decimal separator word (<see cref="DecimalFormatOptions.DecimalSeparator"/>),
+        /// the denomination suffix (<see cref="DecimalFormatOptions.DecimalSuffix"/>), and zero-decimal
+        /// suppression (<see cref="DecimalFormatOptions.OmitZeroDecimals"/>).
+        /// Both <c>"(s)"</c> markers are pluralized: the separator against the integer part,
+        /// the suffix against the decimal value.
+        /// </param>
+        /// <param name="variants">Zero or more <c>"dimension=value"</c> strings.</param>
+        string Convert(decimal number, int mandatoryDecimalDigits, DecimalFormatOptions? options, params string[] variants) => Convert(number);
+
+        /// <summary>
         /// Converts a rational <see cref="Number"/> into its string representation.
         /// The default implementation converts only the integer part; implementations
         /// that support rational conversion should override this.

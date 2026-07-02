@@ -328,25 +328,78 @@ namespace Utils.NumberToString
         /// <summary>
         /// Converts a decimal number to its string representation.
         /// </summary>
-        public string Convert(decimal number)
+        public string Convert(decimal number) => Convert(number, -1, null, []);
+
+        /// <summary>
+        /// Converts a decimal number to its string representation, applying the specified
+        /// morphological variant parameters.
+        /// </summary>
+        public string Convert(decimal number, params string[] variants)
+            => Convert(number, -1, null, variants);
+
+        /// <summary>
+        /// Converts a decimal number to its string representation with a mandatory number of
+        /// decimal digits, applying optional variant parameters.
+        /// </summary>
+        /// <param name="number">The value to convert.</param>
+        /// <param name="mandatoryDecimalDigits">
+        /// Negative: show the decimal part as-is. Zero: suppress the decimal part entirely.
+        /// Positive: round to N decimal places and always show exactly N digits (zero-padded).
+        /// </param>
+        /// <param name="variants">Zero or more <c>"dimension=value"</c> strings.</param>
+        public string Convert(decimal number, int mandatoryDecimalDigits, params string[] variants)
+            => Convert(number, mandatoryDecimalDigits, null, variants);
+
+        /// <summary>
+        /// Converts a decimal number to its string representation with a mandatory number of
+        /// decimal digits, custom decimal formatting options, and optional variant parameters.
+        /// </summary>
+        /// <param name="number">The value to convert.</param>
+        /// <param name="mandatoryDecimalDigits">
+        /// Negative: show the decimal part as-is. Zero: suppress the decimal part entirely.
+        /// Positive: round to N decimal places and always show exactly N digits (zero-padded).
+        /// </param>
+        /// <param name="options">
+        /// Optional overrides for the decimal separator word, the denomination suffix, and
+        /// zero-decimal suppression. When <see langword="null"/>, the language defaults apply.
+        /// </param>
+        /// <param name="variants">Zero or more <c>"dimension=value"</c> strings.</param>
+        public string Convert(decimal number, int mandatoryDecimalDigits, DecimalFormatOptions? options, params string[] variants)
         {
             bool isNegative = number < 0;
             if (isNegative) number = -number;
 
+            if (mandatoryDecimalDigits >= 0)
+                number = decimal.Round(number, mandatoryDecimalDigits, MidpointRounding.AwayFromZero);
+
             decimal integerPart = decimal.Truncate(number);
             decimal fraction = number - integerPart;
 
-            var result = new StringBuilder(Convert((BigInteger)integerPart));
+            var result = new StringBuilder(Convert((BigInteger)integerPart, variants));
 
-            if (fraction != 0)
+            string digits = fraction != 0
+                ? fraction.ToString(System.Globalization.CultureInfo.InvariantCulture).Split('.')[1]
+                : string.Empty;
+
+            if (mandatoryDecimalDigits > 0 && digits.Length < mandatoryDecimalDigits)
+                digits = digits.PadRight(mandatoryDecimalDigits, '0');
+
+            bool isZeroDecimal = digits.Length == 0 || BigInteger.Parse(digits) == 0;
+            if (isZeroDecimal && (options?.OmitZeroDecimals ?? false))
+                digits = string.Empty;
+
+            if (digits.Length > 0)
             {
-                string digits = fraction.ToString(System.Globalization.CultureInfo.InvariantCulture).Split('.')[1];
-                result.Append(Separator).Append(DecimalSeparator).Append(Separator);
+                string separatorWord = options?.DecimalSeparator ?? DecimalSeparator;
+                result.Append(Separator).Append(separatorWord.ToPlural((long)integerPart)).Append(Separator);
 
-                if (Fractions.TryGetValue(digits.Length, out var suffix))
+                Fractions.TryGetValue(digits.Length, out var configuredSuffix);
+                string? activeSuffix = options?.DecimalSuffix ?? configuredSuffix;
+
+                if (activeSuffix != null)
                 {
-                    var valueText = Convert(BigInteger.Parse(digits)).Replace("-", " ");
-                    result.Append(valueText).Append(Separator).Append(suffix.ToPlural(long.Parse(digits)));
+                    var valueText = Convert(BigInteger.Parse(digits), variants).Replace("-", " ");
+                    result.Append(valueText).Append(Separator).Append(activeSuffix.ToPlural(long.Parse(digits)));
                 }
                 else
                 {
