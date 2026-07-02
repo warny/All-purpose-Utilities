@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+    <Language
+        groupSize="3"
+        separator=" "
+        groupSeparator=""
+        zero="không"
+        minus="âm *"
+        decimalSeparator="phẩy"
+        fractionSeparator="trên"
+    >
+        <Culture>VN</Culture>
+        <Culture>VI</Culture>
+        <Culture>VI-VN</Culture>
+        <Groups>
+            <Group level="1">
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="một" />
+                <Digit digit="2" string="hai" />
+                <Digit digit="3" string="ba" />
+                <Digit digit="4" string="bốn" />
+                <Digit digit="5" string="năm" />
+                <Digit digit="6" string="sáu" />
+                <Digit digit="7" string="bảy" />
+                <Digit digit="8" string="tám" />
+                <Digit digit="9" string="chín" />
+            </Group>
+            <Group level="2">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="mười" buildString="mười *" />
+                <Digit digit="2" string="hai mươi" buildString="hai mươi *" />
+                <Digit digit="3" string="ba mươi" buildString="ba mươi *" />
+                <Digit digit="4" string="bốn mươi" buildString="bốn mươi *" />
+                <Digit digit="5" string="năm mươi" buildString="năm mươi *" />
+                <Digit digit="6" string="sáu mươi" buildString="sáu mươi *" />
+                <Digit digit="7" string="bảy mươi" buildString="bảy mươi *" />
+                <Digit digit="8" string="tám mươi" buildString="tám mươi *" />
+                <Digit digit="9" string="chín mươi" buildString="chín mươi *" />
+            </Group>
+            <Group level="3">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="một trăm" buildString="một trăm *" />
+                <Digit digit="2" string="hai trăm" buildString="hai trăm *" />
+                <Digit digit="3" string="ba trăm" buildString="ba trăm *" />
+                <Digit digit="4" string="bốn trăm" buildString="bốn trăm *" />
+                <Digit digit="5" string="năm trăm" buildString="năm trăm *" />
+                <Digit digit="6" string="sáu trăm" buildString="sáu trăm *" />
+                <Digit digit="7" string="bảy trăm" buildString="bảy trăm *" />
+                <Digit digit="8" string="tám trăm" buildString="tám trăm *" />
+                <Digit digit="9" string="chín trăm" buildString="chín trăm *" />
+            </Group>
+        </Groups>
+        <NumberScale firstLetterUpperCase="false">
+            <StaticNames>
+                <Scale value="0" string="" />
+                <Scale value="1" string="nghìn" />
+            </StaticNames>
+            <Suffixes>
+                <Suffix>triệu</Suffix>
+                <Suffix>tỷ</Suffix>
+            </Suffixes>
+        </NumberScale>
+        <Replacements>
+            <!-- Drop "một" before "nghìn": 1000 = "nghìn" not "một nghìn" (Standalone: matched at group level) -->
+            <Replacement oldValue="một nghìn" newValue="nghìn" />
+            <!-- "mốt" replaces "một" after tens particle mươi (21, 31, …) — Anywhere: appears inside longer strings -->
+            <Replacement oldValue="mươi một" newValue="mươi mốt" scope="Anywhere" />
+            <!-- "lăm" replaces "năm" after tens particle mươi (25, 35, …) -->
+            <Replacement oldValue="mươi năm" newValue="mươi lăm" scope="Anywhere" />
+            <!-- "lăm" replaces "năm" after "mười" for 15 -->
+            <Replacement oldValue="mười năm" newValue="mười lăm" scope="Anywhere" />
+        </Replacements>
+        <!--
+            Simplified implementation. The "linh" connector used between hundreds and
+            units for numbers like 101–109 (e.g. "một trăm linh một") is not implemented
+            here, as it requires engine support for contextual insertion that is not
+            available through static group/replacement rules.
+        -->
+        <Ordinals prefix="thứ ">
+            <!-- 1st is "thứ nhất", not "thứ một" -->
+            <OrdinalException value="1" string="thứ nhất" />
+        </Ordinals>
+    </Language>
+</Numbers>

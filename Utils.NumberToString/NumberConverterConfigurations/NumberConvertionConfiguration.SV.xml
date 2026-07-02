@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+    <Language
+        groupSize="3"
+        separator=" "
+        groupSeparator=""
+        zero="noll"
+        minus="minus *"
+        decimalSeparator="komma"
+        fractionSeparator="över"
+    >
+        <Culture>SV</Culture>
+        <Culture>SV-SE</Culture>
+        <Groups>
+            <Group level="1">
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="ett" />
+                <Digit digit="2" string="två" />
+                <Digit digit="3" string="tre" />
+                <Digit digit="4" string="fyra" />
+                <Digit digit="5" string="fem" />
+                <Digit digit="6" string="sex" />
+                <Digit digit="7" string="sju" />
+                <Digit digit="8" string="åtta" />
+                <Digit digit="9" string="nio" />
+            </Group>
+            <Group level="2">
+                <Digit digit="0" string="" buildString="*" />
+                <!-- 11–19 are handled as Exceptions; tio* is the fallback -->
+                <Digit digit="1" string="tio" buildString="tio*" />
+                <!-- 20s fuse without space: tjugoett, tjugotvå, etc. -->
+                <Digit digit="2" string="tjugo" buildString="tjugo*" />
+                <Digit digit="3" string="trettio" buildString="trettio *" />
+                <Digit digit="4" string="fyrtio" buildString="fyrtio *" />
+                <Digit digit="5" string="femtio" buildString="femtio *" />
+                <Digit digit="6" string="sextio" buildString="sextio *" />
+                <Digit digit="7" string="sjuttio" buildString="sjuttio *" />
+                <Digit digit="8" string="åttio" buildString="åttio *" />
+                <Digit digit="9" string="nittio" buildString="nittio *" />
+            </Group>
+            <Group level="3">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="ett hundra" buildString="ett hundra *" />
+                <Digit digit="2" string="två hundra" buildString="två hundra *" />
+                <Digit digit="3" string="tre hundra" buildString="tre hundra *" />
+                <Digit digit="4" string="fyra hundra" buildString="fyra hundra *" />
+                <Digit digit="5" string="fem hundra" buildString="fem hundra *" />
+                <Digit digit="6" string="sex hundra" buildString="sex hundra *" />
+                <Digit digit="7" string="sju hundra" buildString="sju hundra *" />
+                <Digit digit="8" string="åtta hundra" buildString="åtta hundra *" />
+                <Digit digit="9" string="nio hundra" buildString="nio hundra *" />
+            </Group>
+        </Groups>
+        <NumberScale firstLetterUpperCase="false">
+            <StaticNames>
+                <Scale value="0" string="" />
+                <!-- Swedish: "tusen" alone for 1000; "ett tusen" is non-standard -->
+                <Scale value="1" string="tusen" />
+            </StaticNames>
+            <Suffixes>
+                <Suffix>miljon(er)</Suffix>
+                <Suffix>miljard(er)</Suffix>
+            </Suffixes>
+        </NumberScale>
+        <Replacements>
+            <!-- Drop "ett" before "tusen": 1000 = "tusen" not "ett tusen" -->
+            <Replacement oldValue="ett tusen" newValue="tusen" />
+        </Replacements>
+        <Exceptions>
+            <Number value="11" string="elva" />
+            <Number value="12" string="tolv" />
+            <Number value="13" string="tretton" />
+            <Number value="14" string="fjorton" />
+            <Number value="15" string="femton" />
+            <Number value="16" string="sexton" />
+            <Number value="17" string="sjutton" />
+            <Number value="18" string="arton" />
+            <Number value="19" string="nitton" />
+        </Exceptions>
+    </Language>
+</Numbers>

@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+    <Language
+        groupSize="3"
+        separator=" "
+        groupSeparator=""
+        zero="null"
+        minus="minus *"
+        decimalSeparator="komma"
+        fractionSeparator="over"
+    >
+        <Culture>NO</Culture>
+        <Culture>NB</Culture>
+        <Culture>NB-NO</Culture>
+        <Groups>
+            <Group level="1">
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="en" />
+                <Digit digit="2" string="to" />
+                <Digit digit="3" string="tre" />
+                <Digit digit="4" string="fire" />
+                <Digit digit="5" string="fem" />
+                <Digit digit="6" string="seks" />
+                <Digit digit="7" string="sju" />
+                <Digit digit="8" string="åtte" />
+                <Digit digit="9" string="ni" />
+            </Group>
+            <Group level="2">
+                <Digit digit="0" string="" buildString="*" />
+                <!-- 11–19 are handled as Exceptions; ti* is the fallback -->
+                <Digit digit="1" string="ti" buildString="ti*" />
+                <Digit digit="2" string="tjue" buildString="tjue *" />
+                <Digit digit="3" string="tretti" buildString="tretti *" />
+                <Digit digit="4" string="førti" buildString="førti *" />
+                <Digit digit="5" string="femti" buildString="femti *" />
+                <Digit digit="6" string="seksti" buildString="seksti *" />
+                <Digit digit="7" string="sytti" buildString="sytti *" />
+                <Digit digit="8" string="åtti" buildString="åtti *" />
+                <Digit digit="9" string="nitti" buildString="nitti *" />
+            </Group>
+            <Group level="3">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="ett hundre" buildString="ett hundre *" />
+                <Digit digit="2" string="to hundre" buildString="to hundre *" />
+                <Digit digit="3" string="tre hundre" buildString="tre hundre *" />
+                <Digit digit="4" string="fire hundre" buildString="fire hundre *" />
+                <Digit digit="5" string="fem hundre" buildString="fem hundre *" />
+                <Digit digit="6" string="seks hundre" buildString="seks hundre *" />
+                <Digit digit="7" string="sju hundre" buildString="sju hundre *" />
+                <Digit digit="8" string="åtte hundre" buildString="åtte hundre *" />
+                <Digit digit="9" string="ni hundre" buildString="ni hundre *" />
+            </Group>
+        </Groups>
+        <NumberScale firstLetterUpperCase="false">
+            <StaticNames>
+                <Scale value="0" string="" />
+                <!-- Norwegian Bokmål: "tusen" alone for 1000 -->
+                <Scale value="1" string="tusen" />
+            </StaticNames>
+            <Suffixes>
+                <Suffix>million(er)</Suffix>
+                <Suffix>milliard(er)</Suffix>
+            </Suffixes>
+        </NumberScale>
+        <Replacements>
+            <!-- Drop "en" before "tusen": 1000 = "tusen" not "en tusen" -->
+            <Replacement oldValue="en tusen" newValue="tusen" />
+        </Replacements>
+        <Exceptions>
+            <Number value="11" string="elleve" />
+            <Number value="12" string="tolv" />
+            <Number value="13" string="tretten" />
+            <Number value="14" string="fjorten" />
+            <Number value="15" string="femten" />
+            <Number value="16" string="seksten" />
+            <Number value="17" string="sytten" />
+            <Number value="18" string="atten" />
+            <Number value="19" string="nitten" />
+        </Exceptions>
+    </Language>
+</Numbers>

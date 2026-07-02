@@ -636,7 +636,7 @@ public class LanguageType
     public VariantsType Variants { get; set; }
 
     /// <summary>
-    /// Gets or sets the year-format configuration used by <see cref="NumberToStringConverter.ConvertYear"/>.
+    /// Gets or sets the year-format configuration used by <see cref="NumberToStringConverter.ConvertYear(int)"/>.
     /// When absent, <c>ConvertYear</c> falls back to <c>Convert</c>.
     /// </summary>
     [XmlElement(ElementName = "YearFormat")]
@@ -725,7 +725,7 @@ public class YearFormatSplitRangeType
 }
 
 /// <summary>
-/// Configures the year-format algorithm used by <see cref="NumberToStringConverter.ConvertYear"/>.
+/// Configures the year-format algorithm used by <see cref="NumberToStringConverter.ConvertYear(int)"/>.
 /// When present, years within any declared <see cref="SplitRanges"/> are split at the hundreds boundary.
 /// </summary>
 public class YearFormatType
@@ -743,6 +743,15 @@ public class YearFormatType
     /// </summary>
     [XmlAttribute("zeroConnector")]
     public string? ZeroConnector { get; set; }
+
+    /// <summary>
+    /// Gets or sets the suffix appended after the year body for negative (BC) years,
+    /// replacing the default <c>minus</c> prefix.
+    /// Example: <c>"av. J.-C."</c> → -44 reads as "quarante-quatre av. J.-C.".
+    /// When absent, negative years use the language's <c>minus</c> template.
+    /// </summary>
+    [XmlAttribute("beforeChristSuffix")]
+    public string? BeforeChristSuffix { get; set; }
 
     /// <summary>Gets or sets the year ranges for which the split algorithm applies.</summary>
     [XmlElement("SplitRange")]

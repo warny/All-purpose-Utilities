@@ -551,7 +551,14 @@ namespace Utils {
                 return ResourceManager.GetString("NumberConvertionConfiguration.NL", resourceCulture);
             }
         }
-        
+
+        /// <summary>Norwegian Bokmål number-to-string configuration.</summary>
+        internal static string NumberConvertionConfiguration_NO {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.NO", resourceCulture);
+            }
+        }
+
         /// <summary>
         ///   Recherche une chaîne localisée semblable à &lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
         ///&lt;Numbers xmlns=&quot;Utils/NumberConvertionConfiguration.xsd&quot;&gt;
@@ -627,7 +634,35 @@ namespace Utils {
                 return ResourceManager.GetString("NumberConvertionConfiguration.RU", resourceCulture);
             }
         }
-        
+
+        /// <summary>Swedish number-to-string configuration.</summary>
+        internal static string NumberConvertionConfiguration_SV {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.SV", resourceCulture);
+            }
+        }
+
+        /// <summary>Turkish number-to-string configuration.</summary>
+        internal static string NumberConvertionConfiguration_TR {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.TR", resourceCulture);
+            }
+        }
+
+        /// <summary>Ukrainian number-to-string configuration.</summary>
+        internal static string NumberConvertionConfiguration_UK {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.UK", resourceCulture);
+            }
+        }
+
+        /// <summary>Vietnamese number-to-string configuration.</summary>
+        internal static string NumberConvertionConfiguration_VN {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.VN", resourceCulture);
+            }
+        }
+
         /// <summary>
         ///   Recherche une chaîne localisée semblable à &lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
         ///&lt;Numbers xmlns=&quot;Utils/NumberConvertionConfiguration.xsd&quot;&gt;
