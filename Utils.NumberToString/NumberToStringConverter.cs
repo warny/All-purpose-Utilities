@@ -33,11 +33,16 @@ namespace Utils.NumberToString
         /// <returns>The corresponding NumberToStringConverter instance.</returns>
         public static NumberToStringConverter GetConverter(string culture)
         {
-            culture.Length.ArgMustBeIn([2, 5]);  // Ensure culture code length is valid.
+            ArgumentException.ThrowIfNullOrEmpty(culture);
+            if (culture.Length < 2)
+                throw new ArgumentException("Culture code must be at least 2 characters.", nameof(culture));
 
             if (CachedConfigurations.TryGetValue(culture, out var result)) return result;
-            if (culture.Length == 5) return GetConverter(culture[..2]);  // Fallback to the language-only code if region-specific code is not found.
-            return CachedConfigurations["EN"];  // Default to English converter.
+            // Recursively strip the last BCP-47 subtag (e.g. "zh-Hans-CN" → "zh-Hans" → "zh")
+            // until a match is found or only the 2-letter language code remains.
+            int lastSep = culture.LastIndexOf('-');
+            if (lastSep >= 2) return GetConverter(culture[..lastSep]);
+            return CachedConfigurations["EN"];
         }
 
         /// <summary>
@@ -262,6 +267,7 @@ namespace Utils.NumberToString
             {
                 From = from;
                 IsRegex = isRegex;
+                CompiledRegex = isRegex ? new Regex(from, RegexOptions.Compiled) : null;
                 Forms = forms;
                 DefaultTo = defaultTo;
             }
@@ -269,6 +275,8 @@ namespace Utils.NumberToString
             public string From { get; }
             /// <summary>Gets whether <see cref="From"/> is a .NET regular expression.</summary>
             public bool IsRegex { get; }
+            /// <summary>Gets the pre-compiled regex when <see cref="IsRegex"/> is <see langword="true"/>; otherwise <see langword="null"/>.</summary>
+            public Regex? CompiledRegex { get; }
             /// <summary>
             /// Gets the variant-specific forms ordered by declaration order.
             /// At runtime the most specific match (most constraints) wins.
@@ -661,8 +669,8 @@ namespace Utils.NumberToString
             string? effectiveTo = bestTo ?? replace.DefaultTo;
             if (effectiveTo == null) return text;
 
-            return replace.IsRegex
-                ? Regex.Replace(text, replace.From, effectiveTo)
+            return replace.CompiledRegex != null
+                ? replace.CompiledRegex.Replace(text, effectiveTo)
                 : text.Replace(replace.From, effectiveTo, StringComparison.Ordinal);
         }
 
@@ -953,6 +961,13 @@ namespace Utils.NumberToString
             return best;
         }
 
+        /// <inheritdoc cref="INumberToStringConverter.ConvertOrdinal(BigInteger)"/>
+        public string ConvertOrdinal(BigInteger number) => ConvertOrdinal(checked((long)number), []);
+
+        /// <inheritdoc cref="INumberToStringConverter.ConvertOrdinal(BigInteger, string[])"/>
+        public string ConvertOrdinal(BigInteger number, params string[] variants)
+            => ConvertOrdinal(checked((long)number), variants);
+
         /// <inheritdoc cref="INumberToStringConverter.ConvertCurrency(decimal, CurrencyDefinition)"/>
         public string ConvertCurrency(decimal amount, CurrencyDefinition currency)
             => ConvertCurrency(amount, currency, []);
@@ -988,29 +1003,34 @@ namespace Utils.NumberToString
         }
 
         /// <inheritdoc cref="INumberToStringConverter.ConvertYear(int)"/>
-        public string ConvertYear(int year)
+        public string ConvertYear(int year) => ConvertYear(year, []);
+
+        /// <inheritdoc cref="INumberToStringConverter.ConvertYear(int, string[])"/>
+        public string ConvertYear(int year, params string[] variants)
         {
             bool isNegative = year < 0;
             int abs = Math.Abs(year);
 
             string body;
-            if (_yearFormat != null && _yearFormat.SplitRanges.Any(r => abs >= r.From && abs <= r.To))
+            if (_yearFormat?.SplitRanges?.Contains(abs) == true)
             {
                 int centuries = abs / 100;
                 int remainder = abs % 100;
 
                 if (remainder == 0 && _yearFormat.HundredWord != null)
-                    body = Convert(centuries) + Separator + _yearFormat.HundredWord;
+                    body = Convert(centuries, variants) + Separator + _yearFormat.HundredWord;
                 else if (remainder is > 0 and < 10 && _yearFormat.ZeroConnector != null)
-                    body = Convert(centuries) + Separator + _yearFormat.ZeroConnector + Separator + Convert(remainder);
+                    body = Convert(centuries, variants) + Separator + _yearFormat.ZeroConnector + Separator + Convert(remainder, variants);
                 else
-                    body = Convert(centuries) + Separator + Convert(remainder);
+                    body = Convert(centuries, variants) + Separator + Convert(remainder, variants);
             }
             else
             {
-                body = Convert(abs);
+                body = Convert(abs, variants);
             }
 
+            if (isNegative && _yearFormat?.BeforeChristSuffix != null)
+                return body + Separator + _yearFormat.BeforeChristSuffix;
             return isNegative ? Minus.Replace("*", body) : body;
         }
 
@@ -1117,7 +1137,8 @@ namespace Utils.NumberToString
             FirstLetterUppercase = firstLetterUppercase;
 
             VoidGroup = voidGroup.ToDefaultIfNullOrEmpty("ni");
-            GroupSeparator = groupSeparator.ToDefaultIfNullOrEmpty("lli");
+            // null (not set in XML) → default "lli"; explicit "" → no separator between prefix and suffix
+            GroupSeparator = groupSeparator ?? "lli";
 
             Scale0Prefixes = scale0Prefixes?.ToImmutableArray() ?? Scale0Prefixes;
             UnitsPrefixes = unitsPrefixes?.ToImmutableArray() ?? UnitsPrefixes;

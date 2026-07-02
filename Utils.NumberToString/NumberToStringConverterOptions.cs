@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Numerics;
+using Utils.Range;
 
 namespace Utils.NumberToString;
 
@@ -116,7 +117,7 @@ public sealed class NumberToStringConverterOptions
     /// </summary>
     public IReadOnlyList<NumberToStringConverter.VariantRule> VariantRules { get; set; } = [];
 
-    /// <summary>Year-format configuration used by <see cref="NumberToStringConverter.ConvertYear"/>.</summary>
+    /// <summary>Year-format configuration used by <see cref="NumberToStringConverter.ConvertYear(int)"/>.</summary>
     public YearFormatOptions? YearFormat { get; set; }
 
     /// <summary>
@@ -181,12 +182,21 @@ public sealed class NumberToStringConverterOptions
 }
 
 /// <summary>
-/// Immutable year-format options that drive <see cref="NumberToStringConverter.ConvertYear"/>.
+/// Immutable year-format options that drive <see cref="NumberToStringConverter.ConvertYear(int)"/>.
 /// </summary>
 /// <param name="HundredWord">Word appended for round centuries (e.g. "hundred").</param>
 /// <param name="ZeroConnector">Connector before single-digit remainders (e.g. "oh").</param>
-/// <param name="SplitRanges">Year ranges where the split-at-hundreds algorithm applies.</param>
+/// <param name="SplitRanges">
+/// Integer ranges for which the split-at-hundreds algorithm applies.
+/// Years outside all declared ranges fall back to <c>Convert(year)</c>.
+/// </param>
+/// <param name="BeforeChristSuffix">
+/// Optional suffix appended after the year body for negative (BC) years instead of the
+/// <c>minus</c> prefix (e.g. <c>"av. J.-C."</c> → "quarante-quatre av. J.-C.").
+/// When <see langword="null"/>, negative years use the standard <c>minus</c> template.
+/// </param>
 public record YearFormatOptions(
     string? HundredWord,
     string? ZeroConnector,
-    IReadOnlyList<(int From, int To)> SplitRanges);
+    IntRange<int>? SplitRanges,
+    string? BeforeChristSuffix = null);

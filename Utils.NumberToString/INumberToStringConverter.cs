@@ -194,7 +194,7 @@ namespace Utils.NumberToString
 
         /// <summary>
         /// Gets a value indicating whether this converter supports ordinal conversion.
-        /// When <see langword="false"/>, calling <see cref="ConvertOrdinal"/> will throw
+        /// When <see langword="false"/>, calling <see cref="ConvertOrdinal(int)"/> will throw
         /// <see cref="NotSupportedException"/>. The default is <see langword="false"/>;
         /// implementations that support ordinals should override this.
         /// </summary>
@@ -247,6 +247,28 @@ namespace Utils.NumberToString
             => ConvertOrdinal(checked((int)number), variants);
 
         /// <summary>
+        /// Converts an arbitrarily large integer into its ordinal string representation.
+        /// The default implementation delegates to <see cref="ConvertOrdinal(long, string[])"/> via a checked
+        /// cast; values outside the <c>long</c> range throw <see cref="OverflowException"/>.
+        /// </summary>
+        /// <param name="number">The value to convert. Negative values use the minus template.</param>
+        /// <returns>The ordinal string for <paramref name="number"/>.</returns>
+        string ConvertOrdinal(BigInteger number)
+            => ConvertOrdinal(checked((long)number), []);
+
+        /// <summary>
+        /// Converts an arbitrarily large integer into its ordinal string representation,
+        /// applying the specified variant parameters.
+        /// The default implementation delegates to <see cref="ConvertOrdinal(long, string[])"/> via a checked
+        /// cast; values outside the <c>long</c> range throw <see cref="OverflowException"/>.
+        /// </summary>
+        /// <param name="number">The value to convert. Negative values use the minus template.</param>
+        /// <param name="variants">Zero or more <c>"dimension=value"</c> strings.</param>
+        /// <returns>The ordinal string for <paramref name="number"/>.</returns>
+        string ConvertOrdinal(BigInteger number, params string[] variants)
+            => ConvertOrdinal(checked((long)number), variants);
+
+        /// <summary>
         /// Converts a decimal currency amount to words using the supplied currency definition.
         /// The default implementation throws <see cref="NotSupportedException"/>;
         /// implementations that support currency conversion should override this.
@@ -280,5 +302,15 @@ namespace Utils.NumberToString
         /// <param name="year">The year to convert (negative values use the minus template).</param>
         /// <returns>The spoken form of the year.</returns>
         string ConvertYear(int year) => Convert(year);
+
+        /// <summary>
+        /// Converts a year number into its spoken string representation,
+        /// applying the specified variant parameters to the number words.
+        /// The default implementation ignores variants and delegates to <see cref="ConvertYear(int)"/>.
+        /// </summary>
+        /// <param name="year">The year to convert (negative values use the minus template).</param>
+        /// <param name="variants">Zero or more <c>"dimension=value"</c> strings.</param>
+        /// <returns>The spoken form of the year with the requested variants applied.</returns>
+        string ConvertYear(int year, params string[] variants) => ConvertYear(year);
     }
 }

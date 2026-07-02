@@ -26,7 +26,7 @@
 			<Group level="2">
 				<Digit digit="0" string="" buildString="*" />
 				<Digit digit="1" string="dieci" buildString="dici*" />
-				<Digit digit="2" string="venti" buildString="venti*" />
+				<Digit digit="2" string="venti" buildString="venti *" />
 				<Digit digit="3" string="trenta" buildString="trenta*" />
 				<Digit digit="4" string="quaranta" buildString="quaranta*" />
 				<Digit digit="5" string="cinquanta" buildString="cinquanta*" />
