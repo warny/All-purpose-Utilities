@@ -479,6 +479,22 @@ namespace Utils.NumberToString
             return isNegative ? Minus.Replace("*", final) : AdjustFunction(final);
         }
 
+        /// <inheritdoc cref="INumberToStringConverter.Convert(double, string[])"/>
+        public string Convert(double number, params string[] variants)
+        {
+            if (decimal.TryParse(
+                    number.ToString("R", System.Globalization.CultureInfo.InvariantCulture),
+                    System.Globalization.NumberStyles.Any,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    out decimal d))
+                return Convert(d, variants);
+            return Convert(new System.Numerics.BigInteger(Math.Truncate(number)), variants);
+        }
+
+        /// <inheritdoc cref="INumberToStringConverter.Convert(float, string[])"/>
+        public string Convert(float number, params string[] variants)
+            => Convert((double)number, variants);
+
         /// <summary>
         /// Converts a BigInteger to its string representation using the default variant
         /// (the first declared value of each dimension).
@@ -931,7 +947,7 @@ namespace Utils.NumberToString
         /// <param name="denominator">The denominator of the fraction.</param>
         /// <param name="allowFractionNames">When <see langword="true"/>, uses named fraction suffixes when available.</param>
         /// <returns>The textual representation of the fraction.</returns>
-        private string BuildFractionText(BigInteger numerator, BigInteger denominator, bool allowFractionNames = true)
+        private string BuildFractionText(BigInteger numerator, BigInteger denominator, bool allowFractionNames = true, string[]? variants = null)
         {
             if (allowFractionNames &&
                 TryGetBase10FractionDigits(denominator, out int digits) &&
@@ -939,12 +955,12 @@ namespace Utils.NumberToString
                 numerator >= 0 &&
                 numerator <= long.MaxValue)
             {
-                string valueText = Convert(numerator).Replace("-", " ");
+                string valueText = (variants is { Length: > 0 } ? Convert(numerator, variants) : Convert(numerator)).Replace("-", " ");
                 return string.Concat(valueText, Separator, suffix.ToPlural((long)numerator)).Trim();
             }
 
-            string numeratorText = Convert(numerator).Replace("-", " ");
-            string denominatorText = Convert(denominator).Replace("-", " ");
+            string numeratorText = (variants is { Length: > 0 } ? Convert(numerator, variants) : Convert(numerator)).Replace("-", " ");
+            string denominatorText = (variants is { Length: > 0 } ? Convert(denominator, variants) : Convert(denominator)).Replace("-", " ");
 
             string connector = FractionSeparator;
             return string.Concat(numeratorText, Separator, connector, Separator, denominatorText).Trim();
@@ -1084,7 +1100,7 @@ namespace Utils.NumberToString
 
         /// <inheritdoc cref="INumberToStringConverter.ConvertFraction(BigInteger, BigInteger, string[])"/>
         public string ConvertFraction(BigInteger numerator, BigInteger denominator, params string[] variants)
-            => BuildFractionText(numerator, denominator);
+            => BuildFractionText(numerator, denominator, allowFractionNames: true, variants);
 
         /// <summary>
         /// Converts a multiplier to its spoken form (e.g. 2 → "twice", 3 → "trois fois").
