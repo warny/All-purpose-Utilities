@@ -130,9 +130,10 @@ public class Antlr4GeneratedEmbeddedCodeTests
         var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
         object context = CreateExecutionContext(assembly);
 
-        var result = InvokeParseWithContext(assembly, input, context);
+        IReadOnlyList<Token> tokens = TokenizeWithContext(assembly, input, context);
 
-        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(1, tokens.Count);
+        Assert.AreEqual("A", tokens[0].RuleName);
         Assert.AreEqual(input, ReadInstanceStringField(context, "Seen"));
     }
 
@@ -997,6 +998,177 @@ public class Antlr4GeneratedEmbeddedCodeTests
             source);
     }
 
+
+
+    /// <summary>
+    /// Ensures simple lexer mode write values are accepted by the transformer.
+    /// </summary>
+    [DataTestMethod]
+    [DataRow("$mode = SECOND;")]
+    [DataRow("$mode = \"SECOND\";")]
+    public void EmitWithAntlrStyleTransformer_LexerModeWrites_RewriteToActionResult(string actionCode)
+    {
+        string grammar = $$"""
+            grammar P;
+
+            start : A ;
+            A : 'a' { {{actionCode}} } ;
+            mode SECOND;
+            B : 'b' ;
+            """;
+
+        string source = EmitWithAntlrStyleTransformer(grammar);
+
+        StringAssert.Contains(source, "SetLexerMode(result, \"SECOND\");");
+    }
+
+    /// <summary>
+    /// Ensures lexer mode writes switch the mode used by the next token and can switch back.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerModeWrites_ChangeModeForNextToken()
+    {
+        const string grammar = """
+            grammar P;
+
+            start : A B ;
+            A : 'a' { $mode = SECOND; } ;
+            mode SECOND;
+            B : 'b' { $mode = DEFAULT_MODE; } ;
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "ab", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+    }
+
+    /// <summary>
+    /// Ensures lexer mode commands remain authoritative over lexer action mode writes.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerModeWrites_CommandOverridesActionWrite()
+    {
+        const string grammar = """
+            grammar P;
+
+            start : A B ;
+            A : 'a' { $mode = SECOND; } -> mode(DEFAULT_MODE) ;
+            B : 'b' ;
+            mode SECOND;
+            C : 'b' ;
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "ab", context);
+        IReadOnlyList<Token> tokens = TokenizeWithContext(assembly, "ab", CreateExecutionContext(assembly));
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual("B", tokens[1].RuleName);
+    }
+
+    /// <summary>
+    /// Ensures lexer mode writes do not mutate the passive lexer action context read by lexer attributes.
+    /// </summary>
+    [DataTestMethod]
+    [DataRow("$mode = SECOND; SeenMode = $mode;", DisplayName = "Write then read")]
+    [DataRow("SeenMode = $mode; $mode = SECOND;", DisplayName = "Read then write")]
+    public void ParseWithEmbeddedCode_LexerModeWrites_ReadsUseInitialPassiveContext(string actionCode)
+    {
+        string grammar = $$"""
+            grammar P;
+
+            @lexer::members {
+                public string SeenMode = "";
+            }
+
+            start : A B ;
+            A : 'a' { {{actionCode}} } ;
+            mode SECOND;
+            B : 'b' ;
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, "ab", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual("DEFAULT_MODE", ReadInstanceStringField(context, "SeenMode"));
+    }
+
+    /// <summary>
+    /// Ensures multiple accepted lexer mode writes use the last accepted action-result value.
+    /// </summary>
+    [DataTestMethod]
+    [DataRow("start : A C ;\nA : 'a' { $mode = FIRST; $mode = SECOND; } ;\nmode FIRST;\nB : 'b' ;\nmode SECOND;\nC : 'b' ;", "ab", DisplayName = "Multiple writes")]
+    [DataRow("start : A C ;\nA : 'a' { $mode = FIRST; } 'b' { $mode = SECOND; } ;\nmode FIRST;\nB : 'c' ;\nmode SECOND;\nC : 'c' ;", "abc", DisplayName = "Multiple actions")]
+    [DataRow("start : A B ;\nA : F ;\nfragment F : 'a' { $mode = SECOND; } ;\nmode SECOND;\nB : 'b' ;", "ab", DisplayName = "Fragment")]
+    [DataRow("start : A B ;\nA : ('a' { $mode = SECOND; })+ ;\nmode SECOND;\nB : 'b' ;", "aaab", DisplayName = "Quantifier")]
+    public void ParseWithEmbeddedCode_LexerModeWrites_AcceptedNestedPathsApplyToOuterToken(string rules, string input)
+    {
+        string grammar = $$"""
+            grammar P;
+
+            {{rules}}
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, input, context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+    }
+
+    /// <summary>
+    /// Ensures rejected lexer paths and rejected predicates do not leak lexer mode writes.
+    /// </summary>
+    [DataTestMethod]
+    [DataRow("start : A B ;\nA : 'a' ;\nB : 'b' ;\nX : 'a' 'x' { $mode = SECOND; } | 'a' ;\nmode SECOND;\nC : 'b' ;", "ab", DisplayName = "Rejected alternative")]
+    [DataRow("start : A B ;\nA : 'a' ;\nB : 'b' ;\nX : 'a' { false }? { $mode = SECOND; } | 'a' ;\nmode SECOND;\nC : 'b' ;", "ab", DisplayName = "Rejected predicate")]
+    public void ParseWithEmbeddedCode_LexerModeWrites_RejectedPathsDoNotLeak(string rules, string input)
+    {
+        string grammar = $$"""
+            grammar P;
+
+            {{rules}}
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object context = CreateExecutionContext(assembly);
+
+        var result = InvokeParseWithContext(assembly, input, context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+    }
+
+    /// <summary>
+    /// Ensures lexer mode writes from more chunks are applied before the next chunk.
+    /// </summary>
+    [DataTestMethod]
+    [DataRow("start : A ;\nM : 'm' { $mode = SECOND; } -> more ;\nmode SECOND;\nA : 'a' ;", "ma", DisplayName = "More switches mode")]
+    public void ParseWithEmbeddedCode_LexerModeWrites_MoreHonorsModeOrdering(string rules, string input)
+    {
+        string grammar = $$"""
+            grammar P;
+
+            {{rules}}
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object context = CreateExecutionContext(assembly);
+
+        IReadOnlyList<Token> tokens = TokenizeWithContext(assembly, input, context);
+
+        Assert.AreEqual(1, tokens.Count);
+        Assert.AreEqual("A", tokens[0].RuleName);
+    }
+
     /// <summary>
     /// Ensures unsupported lexer attributes in predicates are rejected by the transformer before raw C# compilation.
     /// </summary>
@@ -1004,6 +1176,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
     [DataRow("$type == \"A\"")]
     [DataRow("$channel == \"DEFAULT_CHANNEL\"")]
     [DataRow("$mode == \"DEFAULT_MODE\"")]
+    [DataRow("$mode = SECOND")]
     public void EmitWithAntlrStyleTransformer_LexerPredicateAttribute_ReportsDiagnostic(string predicateCode)
     {
         string grammar = $$"""
@@ -1023,7 +1196,17 @@ public class Antlr4GeneratedEmbeddedCodeTests
     /// Ensures unsupported lexer attribute writes report deterministic transformer diagnostics.
     /// </summary>
     [DataTestMethod]
-    [DataRow("$mode = SECOND;")]
+    [DataRow("$mode += SECOND;")]
+    [DataRow("$mode ??= SECOND;")]
+    [DataRow("$mode++;")]
+    [DataRow("$mode = GetMode();")]
+    [DataRow("$mode = A + B;")]
+    [DataRow("$mode = Namespace.SECOND;")]
+    [DataRow("$mode.Name = SECOND;")]
+    [DataRow("Foo($mode = SECOND);")]
+    [DataRow("Foo(ref $mode);")]
+    [DataRow("Foo(out $mode);")]
+    [DataRow("$mode = SECOND")]
     [DataRow("$type += B;")]
     [DataRow("$channel ??= HIDDEN;")]
     [DataRow("$type++;")]

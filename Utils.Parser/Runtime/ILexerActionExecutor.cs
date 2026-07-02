@@ -41,6 +41,9 @@ public sealed class LexerActionExecutionResult
 
     /// <summary>Gets or sets the replacement token channel requested by the action.</summary>
     public string? Channel { get; set; }
+
+    /// <summary>Gets or sets the replacement lexer mode requested by the action.</summary>
+    public string? Mode { get; set; }
 }
 
 /// <summary>
