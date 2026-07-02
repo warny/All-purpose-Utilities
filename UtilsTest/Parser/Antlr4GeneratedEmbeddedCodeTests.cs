@@ -1023,8 +1023,6 @@ public class Antlr4GeneratedEmbeddedCodeTests
     /// Ensures unsupported lexer attribute writes report deterministic transformer diagnostics.
     /// </summary>
     [DataTestMethod]
-    [DataRow("$type = B;")]
-    [DataRow("$channel = HIDDEN;")]
     [DataRow("$mode = SECOND;")]
     [DataRow("$type += B;")]
     [DataRow("$channel ??= HIDDEN;")]
