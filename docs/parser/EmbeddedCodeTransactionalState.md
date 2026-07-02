@@ -107,7 +107,7 @@ This state-aware memoization now works together with parser attempt rollback: af
 
 ## Limited lexer action-result mutation boundary
 
-The generated-C# opt-in `$type` / `$channel` write support introduces only bounded action-result mutation for the accepted token. It does not introduce general lexer embedded-code transactional state. Generated hooks do not mutate `Token` directly; they set `LexerActionExecutionResult.TokenType` or `LexerActionExecutionResult.Channel`, and `LexerEngine` applies those requested mutations once to the accepted token after accepted lexer actions run and before lexer commands.
+The generated-C# opt-in `$type` / `$channel` / `$mode` write support introduces only bounded action-result mutation for the accepted token. It does not introduce general lexer embedded-code transactional state. Generated hooks do not mutate `Token` directly; they set `LexerActionExecutionResult.TokenType`, `LexerActionExecutionResult.Channel`, or `LexerActionExecutionResult.Mode`, and `LexerEngine` applies those requested mutations once to the accepted token after accepted lexer actions run and before lexer commands.
 
 This boundary does not add action replay, action buffering, external side-effect rollback, runtime-inline lexer execution, a separate lexer runtime, general lexer state rollback, or full ANTLR lexer compatibility. Rejected lexer paths still do not execute collected actions, so writes from rejected alternatives or predicate-rejected paths do not leak. Accepted writes remain subordinate to language-neutral lexer commands: `type(...)`, `channel(...)`, `skip`, and `more` keep their existing behavior.
 
@@ -284,7 +284,7 @@ The safe current state is:
 - completed-result memoization is isolated by execution-state keys and memoization hits restore stored post-rule execution-state snapshots without replaying actions;
 - rule lifecycle hooks (`@init`/`@after`) are supported in the source-generator C# path, activated only through `ParseWithEmbeddedCode(...)` or an explicit `CreateRuntimePolicy(executionContext, basePolicy)` result; grammars without lifecycle hooks use the no-op executor;
 - complete ANTLR embedded-code transactional semantics are not active because action buffering, general lexer embedded-code state, replay, and external side-effect rollback remain unsupported;
-- general lexer embedded-code transactional state remains unsupported beyond bounded generated-C# `$type`/`$channel` action-result mutation for the accepted token.
+- general lexer embedded-code transactional state remains unsupported beyond bounded generated-C# `$type`/`$channel`/`$mode` action-result mutation for the accepted token.
 
 ## Rule-call policy transaction boundary
 
@@ -338,7 +338,7 @@ The generated-C# opt-in lexer action path can expose passive lexer action contex
 
 These reads do not add parser-managed transactional state or rollback authority. They are passive metadata passed to the accepted lexer action before lexer commands such as `skip`, `type(...)`, `channel(...)`, `mode(...)`, `pushMode(...)`, or `popMode` apply to later token emission or tokenization. With `more`, each accepted action reads the current accepted chunk coordinates, not a final accumulated token coordinate. Because the coordinates are read-only values copied from the accepted token/chunk span, no additional managed snapshot or restore behavior is introduced beyond the existing generated lexer action context.
 
-The `$type` / `$channel` write support introduces only bounded action-result mutation for the accepted token. Simple `$type = identifierOrString;` and `$channel = identifierOrString;` statements in generated-C# opt-in lexer inline actions set `LexerActionExecutionResult.TokenType` or `LexerActionExecutionResult.Channel`; generated hooks do not mutate `Token` directly. `LexerEngine` applies those accepted writes once before lexer commands, so commands remain authoritative. This is not general lexer transactional state: no action replay, buffering, external side-effect rollback, runtime-inline lexer execution, separate lexer runtime, or general lexer state rollback is added. Rejected lexer paths still do not execute collected actions, and lexer predicate `$...` usage remains unsupported.
+The `$type` / `$channel` / `$mode` write support introduces only bounded action-result mutation for the accepted token and following lexer mode. Simple `$type = identifierOrString;`, `$channel = identifierOrString;`, and `$mode = identifierOrString;` statements in generated-C# opt-in lexer inline actions set `LexerActionExecutionResult.TokenType`, `LexerActionExecutionResult.Channel`, or `LexerActionExecutionResult.Mode`; generated hooks do not mutate `Token` directly. `LexerEngine` applies those accepted writes once before lexer commands, so commands remain authoritative. This is not general lexer transactional state: no action replay, buffering, external side-effect rollback, runtime-inline lexer execution, separate lexer runtime, or general lexer state rollback is added. Rejected lexer paths still do not execute collected actions, and lexer predicate `$...` usage remains unsupported.
 
 ## Lexer grammar-level named actions
 
