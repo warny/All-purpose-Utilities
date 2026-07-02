@@ -392,4 +392,229 @@ public class NumberToStringConverterBatchTests
         Assert.AreEqual("один биллиард",  ru.Convert(1_000_000_000_000_000L));
         Assert.AreEqual("один триллион",  ru.Convert(1_000_000_000_000_000_000L));
     }
+
+    // ─── G12 — Nouvelles langues DA, CS, SK, BG, ID, FA, SW ────────────────
+
+    [TestMethod]
+    public void Convert_DA_Cardinals()
+    {
+        var da = NumberToStringConverter.GetConverter("DA");
+
+        (int n, string expected)[] cases =
+        [
+            (0,    "nul"),
+            (1,    "en"),
+            (11,   "elleve"),
+            (21,   "en og tyve"),
+            (50,   "halvtreds"),
+            (99,   "ni og halvfems"),
+            (100,  "hundrede"),
+            (101,  "hundrede og en"),
+            (1000, "tusind"),
+        ];
+        foreach (var (n, expected) in cases)
+            Assert.AreEqual(expected, da.Convert(n), $"DA Convert({n})");
+    }
+
+    [TestMethod]
+    public void Convert_DA_LargeNumbers_Conway()
+    {
+        var da = NumberToStringConverter.GetConverter("DA");
+
+        Assert.AreEqual("en million",      da.Convert(1_000_000));
+        Assert.AreEqual("to millioner",    da.Convert(2_000_000));
+        Assert.AreEqual("en milliard",     da.Convert(1_000_000_000));
+        Assert.AreEqual("to milliarder",   da.Convert(2_000_000_000L));
+        Assert.AreEqual("en billion",      da.Convert(1_000_000_000_000L));
+        Assert.AreEqual("en billiard",     da.Convert(1_000_000_000_000_000L));
+    }
+
+    [TestMethod]
+    public void Convert_CS_Cardinals()
+    {
+        var cs = NumberToStringConverter.GetConverter("CS");
+
+        (int n, string expected)[] cases =
+        [
+            (0,    "nula"),
+            (1,    "jedna"),
+            (11,   "jedenáct"),
+            (21,   "dvacet jedna"),
+            (100,  "sto"),
+            (200,  "dvě stě"),
+            (300,  "tři sta"),
+            (500,  "pět set"),
+            (1000, "tisíc"),
+        ];
+        foreach (var (n, expected) in cases)
+            Assert.AreEqual(expected, cs.Convert(n), $"CS Convert({n})");
+    }
+
+    [TestMethod]
+    public void Convert_CS_LargeNumbers_Conway()
+    {
+        var cs = NumberToStringConverter.GetConverter("CS");
+
+        Assert.AreEqual("jedna milion",    cs.Convert(1_000_000));
+        Assert.AreEqual("dva milion",      cs.Convert(2_000_000));
+        Assert.AreEqual("jedna miliard",   cs.Convert(1_000_000_000));
+        Assert.AreEqual("jedna bilion",    cs.Convert(1_000_000_000_000L));
+        Assert.AreEqual("jedna biliard",   cs.Convert(1_000_000_000_000_000L));
+        Assert.AreEqual("jedna trilion",   cs.Convert(1_000_000_000_000_000_000L));
+    }
+
+    [TestMethod]
+    public void Convert_SK_Cardinals()
+    {
+        var sk = NumberToStringConverter.GetConverter("SK");
+
+        (int n, string expected)[] cases =
+        [
+            (0,    "nula"),
+            (1,    "jeden"),
+            (11,   "jedenásť"),
+            (100,  "sto"),
+            (200,  "dvesto"),
+            (1000, "tisíc"),
+        ];
+        foreach (var (n, expected) in cases)
+            Assert.AreEqual(expected, sk.Convert(n), $"SK Convert({n})");
+    }
+
+    [TestMethod]
+    public void Convert_BG_Cardinals()
+    {
+        var bg = NumberToStringConverter.GetConverter("BG");
+
+        (int n, string expected)[] cases =
+        [
+            (0,    "нула"),
+            (1,    "едно"),
+            (11,   "единадесет"),
+            (21,   "двадесет едно"),
+            (100,  "сто"),
+            (200,  "двеста"),
+            (300,  "триста"),
+            (400,  "четиристотин"),
+            (1000, "хиляда"),
+        ];
+        foreach (var (n, expected) in cases)
+            Assert.AreEqual(expected, bg.Convert(n), $"BG Convert({n})");
+    }
+
+    [TestMethod]
+    public void Convert_BG_LargeNumbers_Conway()
+    {
+        var bg = NumberToStringConverter.GetConverter("BG");
+
+        Assert.AreEqual("едно милион",    bg.Convert(1_000_000));
+        Assert.AreEqual("едно милиард",   bg.Convert(1_000_000_000));
+        Assert.AreEqual("едно билион",    bg.Convert(1_000_000_000_000L));
+        Assert.AreEqual("едно билиард",   bg.Convert(1_000_000_000_000_000L));
+    }
+
+    [TestMethod]
+    public void Convert_ID_Cardinals()
+    {
+        var id = NumberToStringConverter.GetConverter("ID");
+
+        (long n, string expected)[] cases =
+        [
+            (0,    "nol"),
+            (1,    "satu"),
+            (11,   "sebelas"),
+            (21,   "dua puluh satu"),
+            (100,  "seratus"),
+            (200,  "dua ratus"),
+            (1000, "seribu"),
+            (2000, "dua ribu"),
+        ];
+        foreach (var (n, expected) in cases)
+            Assert.AreEqual(expected, id.Convert(n), $"ID Convert({n})");
+    }
+
+    [TestMethod]
+    public void Convert_ID_LargeNumbers()
+    {
+        var id = NumberToStringConverter.GetConverter("ID");
+
+        Assert.AreEqual("satu juta",       id.Convert(1_000_000));
+        Assert.AreEqual("satu miliar",     id.Convert(1_000_000_000));
+        Assert.AreEqual("satu triliun",    id.Convert(1_000_000_000_000L));
+        Assert.AreEqual("satu kuadriliun", id.Convert(1_000_000_000_000_000L));
+    }
+
+    [TestMethod]
+    public void Convert_MS_SameAsID()
+    {
+        var id = NumberToStringConverter.GetConverter("ID");
+        var ms = NumberToStringConverter.GetConverter("MS");
+
+        Assert.AreEqual(id.Convert(21), ms.Convert(21));
+        Assert.AreEqual(id.Convert(1_000_000), ms.Convert(1_000_000));
+    }
+
+    [TestMethod]
+    public void Convert_FA_Cardinals()
+    {
+        var fa = NumberToStringConverter.GetConverter("FA");
+
+        (long n, string expected)[] cases =
+        [
+            (0,    "صفر"),
+            (1,    "یک"),
+            (11,   "یازده"),
+            (100,  "صد"),
+            (1000, "هزار"),
+        ];
+        foreach (var (n, expected) in cases)
+            Assert.AreEqual(expected, fa.Convert(n), $"FA Convert({n})");
+    }
+
+    [TestMethod]
+    public void Convert_FA_LargeNumbers_Static()
+    {
+        var fa = NumberToStringConverter.GetConverter("FA");
+
+        Assert.AreEqual("یک میلیون",   fa.Convert(1_000_000));
+        Assert.AreEqual("یک میلیارد",  fa.Convert(1_000_000_000));
+        Assert.AreEqual("یک تریلیون",  fa.Convert(1_000_000_000_000L));
+    }
+
+    [TestMethod]
+    public void Convert_FA_AboveMax_Throws()
+    {
+        var fa = NumberToStringConverter.GetConverter("FA");
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => fa.Convert(new BigInteger(1_000_000_000_000_000L)));
+    }
+
+    [TestMethod]
+    public void Convert_SW_Cardinals()
+    {
+        var sw = NumberToStringConverter.GetConverter("SW");
+
+        (long n, string expected)[] cases =
+        [
+            (0,    "sifuri"),
+            (1,    "moja"),
+            (11,   "kumi na moja"),
+            (21,   "ishirini na moja"),
+            (100,  "mia moja"),
+            (200,  "mia mbili"),
+            (1000, "elfu"),
+        ];
+        foreach (var (n, expected) in cases)
+            Assert.AreEqual(expected, sw.Convert(n), $"SW Convert({n})");
+    }
+
+    [TestMethod]
+    public void Convert_SW_LargeNumbers()
+    {
+        var sw = NumberToStringConverter.GetConverter("SW");
+
+        Assert.AreEqual("moja milioni",  sw.Convert(1_000_000));
+        Assert.AreEqual("moja bilioni",  sw.Convert(1_000_000_000));
+        Assert.AreEqual("moja trilioni", sw.Convert(1_000_000_000_000L));
+    }
 }

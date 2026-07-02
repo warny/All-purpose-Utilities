@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+    <Language
+        groupSize="3"
+        separator=" "
+        groupSeparator=""
+        zero="nul"
+        minus="minus *"
+        decimalSeparator="komma"
+        fractionSeparator="over"
+    >
+        <Culture>DA</Culture>
+        <Culture>DA-DK</Culture>
+        <Groups>
+            <Group level="1">
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="en" />
+                <Digit digit="2" string="to" />
+                <Digit digit="3" string="tre" />
+                <Digit digit="4" string="fire" />
+                <Digit digit="5" string="fem" />
+                <Digit digit="6" string="seks" />
+                <Digit digit="7" string="syv" />
+                <Digit digit="8" string="otte" />
+                <Digit digit="9" string="ni" />
+            </Group>
+            <Group level="2">
+                <Digit digit="0" string="" buildString="*" />
+                <!-- 11–19 are handled as Exceptions; ti is the fallback for plain 10 -->
+                <Digit digit="1" string="ti" buildString="ti*" />
+                <!-- Danish tens use "og" connector: "en og tyve" = 21 -->
+                <Digit digit="2" string="tyve" buildString="* og tyve" />
+                <Digit digit="3" string="tredive" buildString="* og tredive" />
+                <Digit digit="4" string="fyrre" buildString="* og fyrre" />
+                <Digit digit="5" string="halvtreds" buildString="* og halvtreds" />
+                <Digit digit="6" string="tres" buildString="* og tres" />
+                <Digit digit="7" string="halvfjerds" buildString="* og halvfjerds" />
+                <Digit digit="8" string="firs" buildString="* og firs" />
+                <Digit digit="9" string="halvfems" buildString="* og halvfems" />
+            </Group>
+            <Group level="3">
+                <Digit digit="0" string="" buildString="*" />
+                <!-- 100 = "hundrede" alone; 101 = "hundrede og en" etc. -->
+                <Digit digit="1" string="hundrede" buildString="hundrede og *" />
+                <Digit digit="2" string="to hundrede" buildString="to hundrede og *" />
+                <Digit digit="3" string="tre hundrede" buildString="tre hundrede og *" />
+                <Digit digit="4" string="fire hundrede" buildString="fire hundrede og *" />
+                <Digit digit="5" string="fem hundrede" buildString="fem hundrede og *" />
+                <Digit digit="6" string="seks hundrede" buildString="seks hundrede og *" />
+                <Digit digit="7" string="syv hundrede" buildString="syv hundrede og *" />
+                <Digit digit="8" string="otte hundrede" buildString="otte hundrede og *" />
+                <Digit digit="9" string="ni hundrede" buildString="ni hundrede og *" />
+            </Group>
+        </Groups>
+        <!-- Long scale (same pattern as NO): mi+lli+on(er)=million(er), mi+lli+ard(er)=milliard(er),
+             bi+lli+on(er)=billion(er), bi+lli+ard(er)=billiard(er), tri+lli+on(er)=trillion(er)… -->
+        <NumberScale firstLetterUpperCase="false">
+            <StaticNames>
+                <Scale value="0" string="" />
+                <!-- Danish: "tusind" alone for 1000; "en tusind" → "tusind" via Replacement -->
+                <Scale value="1" string="tusind" />
+            </StaticNames>
+            <Suffixes>
+                <Suffix>on(er)</Suffix>
+                <Suffix>ard(er)</Suffix>
+            </Suffixes>
+        </NumberScale>
+        <Replacements>
+            <!-- Drop "en" before "tusind": 1000 = "tusind" not "en tusind" -->
+            <Replacement oldValue="en tusind" newValue="tusind" />
+        </Replacements>
+        <Exceptions>
+            <Number value="11" string="elleve" />
+            <Number value="12" string="tolv" />
+            <Number value="13" string="tretten" />
+            <Number value="14" string="fjorten" />
+            <Number value="15" string="femten" />
+            <Number value="16" string="seksten" />
+            <Number value="17" string="sytten" />
+            <Number value="18" string="atten" />
+            <Number value="19" string="nitten" />
+        </Exceptions>
+    </Language>
+</Numbers>

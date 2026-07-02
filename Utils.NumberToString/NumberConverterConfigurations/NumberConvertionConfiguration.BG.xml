@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+    <Language
+        groupSize="3"
+        separator=" "
+        groupSeparator=""
+        zero="нула"
+        minus="минус *"
+        decimalSeparator="цяло"
+        fractionSeparator="на"
+    >
+        <Culture>BG</Culture>
+        <Culture>BG-BG</Culture>
+        <Groups>
+            <Group level="1">
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="едно" />
+                <Digit digit="2" string="две" />
+                <Digit digit="3" string="три" />
+                <Digit digit="4" string="четири" />
+                <Digit digit="5" string="пет" />
+                <Digit digit="6" string="шест" />
+                <Digit digit="7" string="седем" />
+                <Digit digit="8" string="осем" />
+                <Digit digit="9" string="девет" />
+            </Group>
+            <Group level="2">
+                <Digit digit="0" string="" buildString="*" />
+                <!-- 11–19 are handled as Exceptions -->
+                <Digit digit="1" string="десет" buildString="десет *" />
+                <Digit digit="2" string="двадесет" buildString="двадесет *" />
+                <Digit digit="3" string="тридесет" buildString="тридесет *" />
+                <Digit digit="4" string="четиридесет" buildString="четиридесет *" />
+                <Digit digit="5" string="петдесет" buildString="петдесет *" />
+                <Digit digit="6" string="шестдесет" buildString="шестдесет *" />
+                <Digit digit="7" string="седемдесет" buildString="седемдесет *" />
+                <Digit digit="8" string="осемдесет" buildString="осемдесет *" />
+                <Digit digit="9" string="деветдесет" buildString="деветдесет *" />
+            </Group>
+            <Group level="3">
+                <Digit digit="0" string="" buildString="*" />
+                <!-- Bulgarian hundreds: сто, двеста, триста, четиристотин … деветстотин -->
+                <Digit digit="1" string="сто" buildString="сто *" />
+                <Digit digit="2" string="двеста" buildString="двеста *" />
+                <Digit digit="3" string="триста" buildString="триста *" />
+                <Digit digit="4" string="четиристотин" buildString="четиристотин *" />
+                <Digit digit="5" string="петстотин" buildString="петстотин *" />
+                <Digit digit="6" string="шестстотин" buildString="шестстотин *" />
+                <Digit digit="7" string="седемстотин" buildString="седемстотин *" />
+                <Digit digit="8" string="осемстотин" buildString="осемстотин *" />
+                <Digit digit="9" string="деветстотин" buildString="деветстотин *" />
+            </Group>
+        </Groups>
+        <!-- Long scale with Cyrillic prefixes and groupSeparator="л":
+             ми+л+ион=милион, ми+л+иард=милиард,
+             би+л+ион=билион, би+л+иард=билиард,
+             три+л+ион=трилион… -->
+        <NumberScale firstLetterUpperCase="false" groupSeparator="л">
+            <StaticNames>
+                <Scale value="0" string="" />
+                <!-- Bulgarian: "хиляда" alone for 1000; "едно хиляда" → "хиляда" via Replacement -->
+                <Scale value="1" string="хиляда" />
+            </StaticNames>
+            <Suffixes>
+                <Suffix>ион</Suffix>
+                <Suffix>иард</Suffix>
+            </Suffixes>
+            <Scale0Prefixes>
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="ми" />
+                <Digit digit="2" string="би" />
+                <Digit digit="3" string="три" />
+                <Digit digit="4" string="квадри" />
+                <Digit digit="5" string="квинти" />
+                <Digit digit="6" string="сексти" />
+                <Digit digit="7" string="септи" />
+                <Digit digit="8" string="окти" />
+                <Digit digit="9" string="нони" />
+            </Scale0Prefixes>
+        </NumberScale>
+        <Replacements>
+            <!-- Drop "едно" before "хиляда": 1000 = "хиляда" not "едно хиляда" -->
+            <Replacement oldValue="едно хиляда" newValue="хиляда" />
+        </Replacements>
+        <Exceptions>
+            <Number value="11" string="единадесет" />
+            <Number value="12" string="дванадесет" />
+            <Number value="13" string="тринадесет" />
+            <Number value="14" string="четиринадесет" />
+            <Number value="15" string="петнадесет" />
+            <Number value="16" string="шестнадесет" />
+            <Number value="17" string="седемнадесет" />
+            <Number value="18" string="осемнадесет" />
+            <Number value="19" string="деветнадесет" />
+        </Exceptions>
+    </Language>
+</Numbers>

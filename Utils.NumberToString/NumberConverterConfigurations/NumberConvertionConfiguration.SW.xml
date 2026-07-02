@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+    <Language
+        groupSize="3"
+        separator=" "
+        groupSeparator=""
+        zero="sifuri"
+        minus="hasi *"
+        decimalSeparator="nukta"
+        fractionSeparator="kwa"
+    >
+        <Culture>SW</Culture>
+        <Culture>SW-KE</Culture>
+        <Culture>SW-TZ</Culture>
+        <Groups>
+            <Group level="1">
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="moja" />
+                <Digit digit="2" string="mbili" />
+                <Digit digit="3" string="tatu" />
+                <Digit digit="4" string="nne" />
+                <Digit digit="5" string="tano" />
+                <Digit digit="6" string="sita" />
+                <Digit digit="7" string="saba" />
+                <Digit digit="8" string="nane" />
+                <Digit digit="9" string="tisa" />
+            </Group>
+            <Group level="2">
+                <Digit digit="0" string="" buildString="*" />
+                <!-- "kumi na *" naturally handles 11–19: kumi na moja, kumi na mbili, etc. -->
+                <Digit digit="1" string="kumi" buildString="kumi na *" />
+                <Digit digit="2" string="ishirini" buildString="ishirini na *" />
+                <Digit digit="3" string="thelathini" buildString="thelathini na *" />
+                <Digit digit="4" string="arobaini" buildString="arobaini na *" />
+                <Digit digit="5" string="hamsini" buildString="hamsini na *" />
+                <Digit digit="6" string="sitini" buildString="sitini na *" />
+                <Digit digit="7" string="sabini" buildString="sabini na *" />
+                <Digit digit="8" string="themanini" buildString="themanini na *" />
+                <Digit digit="9" string="tisini" buildString="tisini na *" />
+            </Group>
+            <Group level="3">
+                <Digit digit="0" string="" buildString="*" />
+                <!-- Swahili hundreds: "mia" + numeral; connector "na" between hundreds and lower groups -->
+                <Digit digit="1" string="mia moja" buildString="mia moja na *" />
+                <Digit digit="2" string="mia mbili" buildString="mia mbili na *" />
+                <Digit digit="3" string="mia tatu" buildString="mia tatu na *" />
+                <Digit digit="4" string="mia nne" buildString="mia nne na *" />
+                <Digit digit="5" string="mia tano" buildString="mia tano na *" />
+                <Digit digit="6" string="mia sita" buildString="mia sita na *" />
+                <Digit digit="7" string="mia saba" buildString="mia saba na *" />
+                <Digit digit="8" string="mia nane" buildString="mia nane na *" />
+                <Digit digit="9" string="mia tisa" buildString="mia tisa na *" />
+            </Group>
+        </Groups>
+        <!-- Short scale with suffix "lioni" and groupSeparator="" (no connector):
+             mi+""+lioni=milioni (10^6), bi+""+lioni=bilioni (10^9),
+             tri+""+lioni=trilioni (10^12)…
+             Default Latin prefixes (mi, bi, tri, quadri, quinti…) are used. -->
+        <NumberScale firstLetterUpperCase="false" groupSeparator="">
+            <StaticNames>
+                <Scale value="0" string="" />
+                <!-- Swahili: "elfu" alone for 1000; "moja elfu" → "elfu" via Replacement -->
+                <Scale value="1" string="elfu" />
+            </StaticNames>
+            <Suffixes>
+                <Suffix>lioni</Suffix>
+            </Suffixes>
+        </NumberScale>
+        <Replacements>
+            <!-- Drop "moja" before "elfu": 1000 = "elfu" not "moja elfu" -->
+            <Replacement oldValue="moja elfu" newValue="elfu" />
+        </Replacements>
+    </Language>
+</Numbers>
