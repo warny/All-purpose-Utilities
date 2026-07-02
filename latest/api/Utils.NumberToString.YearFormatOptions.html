@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_NumberToString_YearFormatOptions" data-uid="Utils.NumberToString.YearFormatOptions" class="text-break">
-Class YearFormatOptions  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L189"><i class="bi bi-code-slash"></i></a>
+Class YearFormatOptions  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L198"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -246,9 +246,9 @@ Class YearFormatOptions  <a class="header-action link-secondary" title="View sou
 
   <a id="Utils_NumberToString_YearFormatOptions__ctor_" data-uid="Utils.NumberToString.YearFormatOptions.#ctor*"></a>
 
-  <h3 id="Utils_NumberToString_YearFormatOptions__ctor_System_String_System_String_System_Collections_Generic_IReadOnlyList_System_ValueTuple_System_Int32_System_Int32___" data-uid="Utils.NumberToString.YearFormatOptions.#ctor(System.String,System.String,System.Collections.Generic.IReadOnlyList{System.ValueTuple{System.Int32,System.Int32}})">
-  YearFormatOptions(string?, string?, IReadOnlyList&lt;(int From, int To)&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L189"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_NumberToString_YearFormatOptions__ctor_System_String_System_String_Utils_Range_IntRange_System_Int32__System_String_" data-uid="Utils.NumberToString.YearFormatOptions.#ctor(System.String,System.String,Utils.Range.IntRange{System.Int32},System.String)">
+  YearFormatOptions(string?, string?, IntRange&lt;int&gt;?, string?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L198"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Immutable year-format options that drive <a class="xref" href="Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_ConvertYear_System_Int32_">ConvertYear(int)</a>.</p>
@@ -256,7 +256,7 @@ Class YearFormatOptions  <a class="header-action link-secondary" title="View sou
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public YearFormatOptions(string? HundredWord, string? ZeroConnector, IReadOnlyList&lt;(int From, int To)&gt; SplitRanges)</code></pre>
+    <pre><code class="lang-csharp hljs">public YearFormatOptions(string? HundredWord, string? ZeroConnector, IntRange&lt;int&gt;? SplitRanges, string? BeforeChristSuffix = null)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
@@ -267,8 +267,14 @@ Class YearFormatOptions  <a class="header-action link-secondary" title="View sou
     <dt><code>ZeroConnector</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
     <dd><p>Connector before single-digit remainders (e.g. &quot;oh&quot;).</p>
 </dd>
-    <dt><code>SplitRanges</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1">IReadOnlyList</a>&lt;(<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple-system.int32,system.int32-.from">From</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple-system.int32,system.int32-.to">To</a>)&gt;</dt>
-    <dd><p>Year ranges where the split-at-hundreds algorithm applies.</p>
+    <dt><code>SplitRanges</code> <a class="xref" href="Utils.Range.IntRange-1.html">IntRange</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a>&gt;</dt>
+    <dd><p>Integer ranges for which the split-at-hundreds algorithm applies.
+Years outside all declared ranges fall back to <code>Convert(year)</code>.</p>
+</dd>
+    <dt><code>BeforeChristSuffix</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Optional suffix appended after the year body for negative (BC) years instead of the
+<code>minus</code> prefix (e.g. <code>&quot;av. J.-C.&quot;</code> → &quot;quarante-quatre av. J.-C.&quot;).
+When <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>, negative years use the standard <code>minus</code> template.</p>
 </dd>
   </dl>
 
@@ -287,11 +293,45 @@ Class YearFormatOptions  <a class="header-action link-secondary" title="View sou
 </h2>
 
 
+  <a id="Utils_NumberToString_YearFormatOptions_BeforeChristSuffix_" data-uid="Utils.NumberToString.YearFormatOptions.BeforeChristSuffix*"></a>
+
+  <h3 id="Utils_NumberToString_YearFormatOptions_BeforeChristSuffix" data-uid="Utils.NumberToString.YearFormatOptions.BeforeChristSuffix">
+  BeforeChristSuffix
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L202"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Optional suffix appended after the year body for negative (BC) years instead of the
+<code>minus</code> prefix (e.g. <code>&quot;av. J.-C.&quot;</code> → &quot;quarante-quatre av. J.-C.&quot;).
+When <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>, negative years use the standard <code>minus</code> template.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string? BeforeChristSuffix { get; init; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <a id="Utils_NumberToString_YearFormatOptions_HundredWord_" data-uid="Utils.NumberToString.YearFormatOptions.HundredWord*"></a>
 
   <h3 id="Utils_NumberToString_YearFormatOptions_HundredWord" data-uid="Utils.NumberToString.YearFormatOptions.HundredWord">
   HundredWord
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L190"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L199"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Word appended for round centuries (e.g. &quot;hundred&quot;).</p>
@@ -323,15 +363,16 @@ Class YearFormatOptions  <a class="header-action link-secondary" title="View sou
 
   <h3 id="Utils_NumberToString_YearFormatOptions_SplitRanges" data-uid="Utils.NumberToString.YearFormatOptions.SplitRanges">
   SplitRanges
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L192"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L201"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Year ranges where the split-at-hundreds algorithm applies.</p>
+  <div class="markdown level1 summary"><p>Integer ranges for which the split-at-hundreds algorithm applies.
+Years outside all declared ranges fall back to <code>Convert(year)</code>.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public IReadOnlyList&lt;(int From, int To)&gt; SplitRanges { get; init; }</code></pre>
+    <pre><code class="lang-csharp hljs">public IntRange&lt;int&gt;? SplitRanges { get; init; }</code></pre>
   </div>
 
 
@@ -340,7 +381,7 @@ Class YearFormatOptions  <a class="header-action link-secondary" title="View sou
 
   <h4 class="section">Property Value</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1">IReadOnlyList</a>&lt;(<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple-system.int32,system.int32-.from">From</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple-system.int32,system.int32-.to">To</a>)&gt;</dt>
+    <dt><a class="xref" href="Utils.Range.IntRange-1.html">IntRange</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a>&gt;</dt>
     <dd></dd>
   </dl>
 
@@ -355,7 +396,7 @@ Class YearFormatOptions  <a class="header-action link-secondary" title="View sou
 
   <h3 id="Utils_NumberToString_YearFormatOptions_ZeroConnector" data-uid="Utils.NumberToString.YearFormatOptions.ZeroConnector">
   ZeroConnector
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L191"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L200"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Connector before single-digit remainders (e.g. &quot;oh&quot;).</p>
@@ -387,7 +428,7 @@ Class YearFormatOptions  <a class="header-action link-secondary" title="View sou
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L189" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L198" class="edit-link">Edit this page</a>
         </div>
 
 
