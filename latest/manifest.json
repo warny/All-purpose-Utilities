@@ -7726,6 +7726,20 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.DateFormatType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.DateFormatType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.DateFormatType",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.DateFormatType.yml\" sourcestartlinenumber=\"1\">Holds date-format configuration for a language.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.NumberToString.DecimalFormatOptions.yml",
       "output": {
         ".html": {
@@ -8283,6 +8297,34 @@
       "IsMRef": true,
       "Title": "Utils.NumberToString.SuffixesType",
       "Summary": "<p sourcefile=\"api/Utils.NumberToString.SuffixesType.yml\" sourcestartlinenumber=\"1\">Describes the suffixes appended to scale names.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.TimeUnitEntry.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.TimeUnitEntry.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.TimeUnitEntry",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.TimeUnitEntry.yml\" sourcestartlinenumber=\"1\">Describes a single time unit (hour, minute, second) with its singular and plural forms.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.TimeUnitsType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.TimeUnitsType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.TimeUnitsType",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.TimeUnitsType.yml\" sourcestartlinenumber=\"1\">Holds time-unit configuration for a language (hours, minutes, seconds).</p>\n"
     },
     {
       "type": "ManagedReference",

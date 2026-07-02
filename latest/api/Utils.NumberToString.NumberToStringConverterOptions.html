@@ -244,7 +244,7 @@ or <a class="xref" href="Utils.NumberToString.NumberToStringConverterOptions.htm
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions__ctor" data-uid="Utils.NumberToString.NumberToStringConverterOptions.#ctor">
   NumberToStringConverterOptions()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L144"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L175"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Creates an options object with sensible defaults. Required properties
@@ -273,7 +273,7 @@ must be set before passing to the constructor.</p>
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions__ctor_Utils_NumberToString_NumberToStringConverter_" data-uid="Utils.NumberToString.NumberToStringConverterOptions.#ctor(Utils.NumberToString.NumberToStringConverter)">
   NumberToStringConverterOptions(NumberToStringConverter)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L148"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L179"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Clones all settings from an existing converter instance.</p>
@@ -328,6 +328,104 @@ must be set before passing to the constructor.</p>
   <h4 class="section">Property Value</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.func-2">Func</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_NumberToString_NumberToStringConverterOptions_DateFirstDay_" data-uid="Utils.NumberToString.NumberToStringConverterOptions.DateFirstDay*"></a>
+
+  <h3 id="Utils_NumberToString_NumberToStringConverterOptions_DateFirstDay" data-uid="Utils.NumberToString.NumberToStringConverterOptions.DateFirstDay">
+  DateFirstDay
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L167"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Special string used for the first day of the month (e.g. &quot;premier&quot; in French).
+When set, overrides the ordinal form of day 1 in {ordinal-day}.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string? DateFirstDay { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_NumberToString_NumberToStringConverterOptions_DatePattern_" data-uid="Utils.NumberToString.NumberToStringConverterOptions.DatePattern*"></a>
+
+  <h3 id="Utils_NumberToString_NumberToStringConverterOptions_DatePattern" data-uid="Utils.NumberToString.NumberToStringConverterOptions.DatePattern">
+  DatePattern
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L161"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Pattern for rendering a date. Supported tokens: {month}, {ordinal-day}, {cardinal-day}, {year}.
+Required for Convert(DateOnly/DateTime).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string? DatePattern { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_NumberToString_NumberToStringConverterOptions_DateTimeConnector_" data-uid="Utils.NumberToString.NumberToStringConverterOptions.DateTimeConnector*"></a>
+
+  <h3 id="Utils_NumberToString_NumberToStringConverterOptions_DateTimeConnector" data-uid="Utils.NumberToString.NumberToStringConverterOptions.DateTimeConnector">
+  DateTimeConnector
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L170"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Connector inserted between date and time when converting a DateTime (defaults to Separator).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string? DateTimeConnector { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
     <dd></dd>
   </dl>
 
@@ -616,6 +714,71 @@ must be set before passing to the constructor.</p>
   <h4 class="section">Property Value</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlydictionary-2">IReadOnlyDictionary</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a>, <a class="xref" href="Utils.NumberToString.DigitListType.html">DigitListType</a>&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_NumberToString_NumberToStringConverterOptions_IntraGroupConnector_" data-uid="Utils.NumberToString.NumberToStringConverterOptions.IntraGroupConnector*"></a>
+
+  <h3 id="Utils_NumberToString_NumberToStringConverterOptions_IntraGroupConnector" data-uid="Utils.NumberToString.NumberToStringConverterOptions.IntraGroupConnector">
+  IntraGroupConnector
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L145"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Word inserted inside a group between the hundreds and the lower part when the lower part is
+below <a class="xref" href="Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_IntraGroupConnectorThreshold">IntraGroupConnectorThreshold</a> (e.g. &quot;linh&quot; for Vietnamese).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string? IntraGroupConnector { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_NumberToString_NumberToStringConverterOptions_IntraGroupConnectorThreshold_" data-uid="Utils.NumberToString.NumberToStringConverterOptions.IntraGroupConnectorThreshold*"></a>
+
+  <h3 id="Utils_NumberToString_NumberToStringConverterOptions_IntraGroupConnectorThreshold" data-uid="Utils.NumberToString.NumberToStringConverterOptions.IntraGroupConnectorThreshold">
+  IntraGroupConnectorThreshold
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L148"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Threshold below which <a class="xref" href="Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_IntraGroupConnector">IntraGroupConnector</a> is inserted within a group.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int IntraGroupConnectorThreshold { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
     <dd></dd>
   </dl>
 
@@ -1114,6 +1277,40 @@ Each rule overrides exceptions, word rules, suffix, and/or removeTrailing for th
 
 
 
+  <a id="Utils_NumberToString_NumberToStringConverterOptions_TimeUnits_" data-uid="Utils.NumberToString.NumberToStringConverterOptions.TimeUnits*"></a>
+
+  <h3 id="Utils_NumberToString_NumberToStringConverterOptions_TimeUnits" data-uid="Utils.NumberToString.NumberToStringConverterOptions.TimeUnits">
+  TimeUnits
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L155"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Time units keyed by canonical name (&quot;hour&quot;, &quot;minute&quot;, &quot;second&quot;),
+each with singular, plural, and an optional count-1 override for grammatical gender.
+Required for Convert(TimeSpan/TimeOnly).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public IReadOnlyDictionary&lt;string, (string Singular, string Plural, string? Count1Form)&gt;? TimeUnits { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlydictionary-2">IReadOnlyDictionary</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>, (<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple-system.string,system.string,system.string-.singular">Singular</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple-system.string,system.string,system.string-.plural">Plural</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple-system.string,system.string,system.string-.count1form">Count1Form</a>)&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <a id="Utils_NumberToString_NumberToStringConverterOptions_Triggers_" data-uid="Utils.NumberToString.NumberToStringConverterOptions.Triggers*"></a>
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions_Triggers" data-uid="Utils.NumberToString.NumberToStringConverterOptions.Triggers">
@@ -1285,7 +1482,7 @@ Applied between the raw adjustment function and <a class="xref" href="Utils.Numb
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions_FromCulture_System_Globalization_CultureInfo_" data-uid="Utils.NumberToString.NumberToStringConverterOptions.FromCulture(System.Globalization.CultureInfo)">
   FromCulture(CultureInfo)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L189"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L226"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Clones the settings of the converter registered for <code class="paramref">culture</code>.</p>
@@ -1322,7 +1519,7 @@ Applied between the raw adjustment function and <a class="xref" href="Utils.Numb
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions_FromCulture_System_String_" data-uid="Utils.NumberToString.NumberToStringConverterOptions.FromCulture(System.String)">
   FromCulture(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L196"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L233"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Clones the settings of the converter registered for <code class="paramref">cultureName</code>

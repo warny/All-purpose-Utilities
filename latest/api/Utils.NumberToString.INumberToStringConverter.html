@@ -240,6 +240,39 @@ the largest supported number for validation purposes.</p>
 
 
 
+  <a id="Utils_NumberToString_INumberToStringConverter_SupportsDateConversion_" data-uid="Utils.NumberToString.INumberToStringConverter.SupportsDateConversion*"></a>
+
+  <h3 id="Utils_NumberToString_INumberToStringConverter_SupportsDateConversion" data-uid="Utils.NumberToString.INumberToStringConverter.SupportsDateConversion">
+  SupportsDateConversion
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L369"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>When <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a>, <a class="xref" href="Utils.NumberToString.INumberToStringConverter.html#Utils_NumberToString_INumberToStringConverter_Convert_System_DateOnly_System_String___">Convert(DateOnly, params string[])</a> and
+<a class="xref" href="Utils.NumberToString.INumberToStringConverter.html#Utils_NumberToString_INumberToStringConverter_Convert_System_DateTime_System_String___">Convert(DateTime, params string[])</a> produce a result.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">bool SupportsDateConversion { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <a id="Utils_NumberToString_INumberToStringConverter_SupportsMultiplicative_" data-uid="Utils.NumberToString.INumberToStringConverter.SupportsMultiplicative*"></a>
 
   <h3 id="Utils_NumberToString_INumberToStringConverter_SupportsMultiplicative" data-uid="Utils.NumberToString.INumberToStringConverter.SupportsMultiplicative">
@@ -308,6 +341,39 @@ implementations that support ordinals should override this.</p>
 
 
 
+  <a id="Utils_NumberToString_INumberToStringConverter_SupportsTimeConversion_" data-uid="Utils.NumberToString.INumberToStringConverter.SupportsTimeConversion*"></a>
+
+  <h3 id="Utils_NumberToString_INumberToStringConverter_SupportsTimeConversion" data-uid="Utils.NumberToString.INumberToStringConverter.SupportsTimeConversion">
+  SupportsTimeConversion
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L363"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>When <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a>, <a class="xref" href="Utils.NumberToString.INumberToStringConverter.html#Utils_NumberToString_INumberToStringConverter_Convert_System_TimeSpan_System_String___">Convert(TimeSpan, params string[])</a> and
+<a class="xref" href="Utils.NumberToString.INumberToStringConverter.html#Utils_NumberToString_INumberToStringConverter_Convert_System_TimeOnly_System_String___">Convert(TimeOnly, params string[])</a> produce a result.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">bool SupportsTimeConversion { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <a id="Utils_NumberToString_INumberToStringConverter_VariantDimensions_" data-uid="Utils.NumberToString.INumberToStringConverter.VariantDimensions*"></a>
 
   <h3 id="Utils_NumberToString_INumberToStringConverter_VariantDimensions" data-uid="Utils.NumberToString.INumberToStringConverter.VariantDimensions">
@@ -346,6 +412,88 @@ Implementations that pre-date variant support may leave this at its default (emp
 
   <h2 class="section" id="methods">Methods
 </h2>
+
+
+  <a id="Utils_NumberToString_INumberToStringConverter_Convert_" data-uid="Utils.NumberToString.INumberToStringConverter.Convert*"></a>
+
+  <h3 id="Utils_NumberToString_INumberToStringConverter_Convert_System_DateOnly_System_String___" data-uid="Utils.NumberToString.INumberToStringConverter.Convert(System.DateOnly,System.String[])">
+  Convert(DateOnly, params string[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L393"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Converts a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.dateonly">DateOnly</a> date to its spoken form
+(e.g. &quot;le deux juillet deux mille vingt-six&quot;).
+Requires <code>&lt;DateFormat&gt;</code> in the XML configuration.
+Month names are read from <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.globalization.cultureinfo">CultureInfo</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">string Convert(DateOnly date, params string[] variants)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>date</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.dateonly">DateOnly</a></dt>
+    <dd></dd>
+    <dt><code>variants</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>[]</dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_NumberToString_INumberToStringConverter_Convert_" data-uid="Utils.NumberToString.INumberToStringConverter.Convert*"></a>
+
+  <h3 id="Utils_NumberToString_INumberToStringConverter_Convert_System_DateTime_System_String___" data-uid="Utils.NumberToString.INumberToStringConverter.Convert(System.DateTime,System.String[])">
+  Convert(DateTime, params string[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L400"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Converts a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a> to its spoken form by combining
+<a class="xref" href="Utils.NumberToString.INumberToStringConverter.html#Utils_NumberToString_INumberToStringConverter_Convert_System_DateOnly_System_String___">Convert(DateOnly, params string[])</a> and <a class="xref" href="Utils.NumberToString.INumberToStringConverter.html#Utils_NumberToString_INumberToStringConverter_Convert_System_TimeOnly_System_String___">Convert(TimeOnly, params string[])</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">string Convert(DateTime dateTime, params string[] variants)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>dateTime</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a></dt>
+    <dd></dd>
+    <dt><code>variants</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>[]</dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
 
 
   <a id="Utils_NumberToString_INumberToStringConverter_Convert_" data-uid="Utils.NumberToString.INumberToStringConverter.Convert*"></a>
@@ -996,6 +1144,88 @@ Unrecognised dimensions or values fall back to the default silently.</p>
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>number</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd></dd>
+    <dt><code>variants</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>[]</dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_NumberToString_INumberToStringConverter_Convert_" data-uid="Utils.NumberToString.INumberToStringConverter.Convert*"></a>
+
+  <h3 id="Utils_NumberToString_INumberToStringConverter_Convert_System_TimeOnly_System_String___" data-uid="Utils.NumberToString.INumberToStringConverter.Convert(System.TimeOnly,System.String[])">
+  Convert(TimeOnly, params string[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L384"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Converts a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.timeonly">TimeOnly</a> time-of-day to its spoken form
+(e.g. &quot;quatorze heures trente&quot;).
+Requires <code>&lt;TimeUnits&gt;</code> in the XML configuration.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">string Convert(TimeOnly time, params string[] variants)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>time</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.timeonly">TimeOnly</a></dt>
+    <dd></dd>
+    <dt><code>variants</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>[]</dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_NumberToString_INumberToStringConverter_Convert_" data-uid="Utils.NumberToString.INumberToStringConverter.Convert*"></a>
+
+  <h3 id="Utils_NumberToString_INumberToStringConverter_Convert_System_TimeSpan_System_String___" data-uid="Utils.NumberToString.INumberToStringConverter.Convert(System.TimeSpan,System.String[])">
+  Convert(TimeSpan, params string[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L376"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Converts a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.timespan">TimeSpan</a> duration to its spoken form
+(e.g. &quot;two hours thirty minutes five seconds&quot;).
+Requires <code>&lt;TimeUnits&gt;</code> in the XML configuration.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">string Convert(TimeSpan duration, params string[] variants)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>duration</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.timespan">TimeSpan</a></dt>
     <dd></dd>
     <dt><code>variants</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>[]</dt>
     <dd></dd>
