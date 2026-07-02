@@ -7726,6 +7726,20 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.DecimalFormatOptions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.DecimalFormatOptions.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.DecimalFormatOptions",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.DecimalFormatOptions.yml\" sourcestartlinenumber=\"1\">Formatting options for the decimal part produced by\n<xref href=\"Utils.NumberToString.INumberToStringConverter.Convert(System.Decimal%2cSystem.Int32%2cUtils.NumberToString.DecimalFormatOptions%2cSystem.String%5b%5d)\" data-throw-if-not-resolved=\"false\"></xref>.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.NumberToString.DefaultNumberToStringLanguageSpecifics.yml",
       "output": {
         ".html": {

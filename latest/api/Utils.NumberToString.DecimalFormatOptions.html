@@ -2,11 +2,11 @@
 <html>
   <head>
     <meta charset="utf-8">
-      <title>Class NumberToStringConverter.VariantRule | omy.Utils Documentation </title>
+      <title>Class DecimalFormatOptions | omy.Utils Documentation </title>
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <meta name="title" content="Class NumberToStringConverter.VariantRule | omy.Utils Documentation ">
+      <meta name="title" content="Class DecimalFormatOptions | omy.Utils Documentation ">
       
-      <meta name="description" content="Associates a set of dimension constraints with replacement rules to apply when all constraints are satisfied.">
+      <meta name="description" content="Formatting options for the decimal part produced by .">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -16,7 +16,7 @@
       <meta name="docfx:rel" content="../">
       
       
-      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_NumberToString_NumberToStringConverter_VariantRule.md&amp;value=---%0Auid%3A%20Utils.NumberToString.NumberToStringConverter.VariantRule%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_NumberToString_DecimalFormatOptions.md&amp;value=---%0Auid%3A%20Utils.NumberToString.DecimalFormatOptions%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
       <meta name="loc:inThisArticle" content="In this article">
       <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
       <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
@@ -84,12 +84,12 @@
           <nav id="breadcrumb"></nav>
         </div>
 
-        <article data-uid="Utils.NumberToString.NumberToStringConverter.VariantRule">
+        <article data-uid="Utils.NumberToString.DecimalFormatOptions">
 
 
 
-  <h1 id="Utils_NumberToString_NumberToStringConverter_VariantRule" data-uid="Utils.NumberToString.NumberToStringConverter.VariantRule" class="text-break">
-Class NumberToStringConverter.VariantRule  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L791"><i class="bi bi-code-slash"></i></a>
+  <h1 id="Utils_NumberToString_DecimalFormatOptions" data-uid="Utils.NumberToString.DecimalFormatOptions" class="text-break">
+Class DecimalFormatOptions  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/DecimalFormatOptions.cs/#L7"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -97,13 +97,13 @@ Class NumberToStringConverter.VariantRule  <a class="header-action link-secondar
   <dl><dt>Assembly</dt><dd>Utils.NumberToString.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Associates a set of dimension constraints with replacement rules to apply
-when all constraints are satisfied.</p>
+  <div class="markdown summary"><p>Formatting options for the decimal part produced by
+<a class="xref" href="Utils.NumberToString.INumberToStringConverter.html#Utils_NumberToString_INumberToStringConverter_Convert_System_Decimal_System_Int32_Utils_NumberToString_DecimalFormatOptions_System_String___">Convert(decimal, int, DecimalFormatOptions?, params string[])</a>.</p>
 </div>
   <div class="markdown conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public sealed class NumberToStringConverter.VariantRule</code></pre>
+    <pre><code class="lang-csharp hljs">public sealed class DecimalFormatOptions</code></pre>
   </div>
 
 
@@ -113,7 +113,7 @@ when all constraints are satisfied.</p>
     <dt>Inheritance</dt>
     <dd>
       <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
-      <div><span class="xref">NumberToStringConverter.VariantRule</span></div>
+      <div><span class="xref">DecimalFormatOptions</span></div>
     </dd>
   </dl>
 
@@ -232,63 +232,26 @@ when all constraints are satisfied.</p>
 
 
 
-  <h2 class="section" id="constructors">Constructors
-</h2>
-
-
-  <a id="Utils_NumberToString_NumberToStringConverter_VariantRule__ctor_" data-uid="Utils.NumberToString.NumberToStringConverter.VariantRule.#ctor*"></a>
-
-  <h3 id="Utils_NumberToString_NumberToStringConverter_VariantRule__ctor_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_Collections_Generic_IReadOnlyList_Utils_NumberToString_NumberToStringConverter_ReplacementRule__" data-uid="Utils.NumberToString.NumberToStringConverter.VariantRule.#ctor(System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.Collections.Generic.IReadOnlyList{Utils.NumberToString.NumberToStringConverter.ReplacementRule})">
-  VariantRule(IReadOnlyDictionary&lt;string, string&gt;, IReadOnlyList&lt;ReplacementRule&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L798"><i class="bi bi-code-slash"></i></a>
-  </h3>
-
-  <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.NumberToString.NumberToStringConverter.VariantRule.html">NumberToStringConverter.VariantRule</a> class.</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public VariantRule(IReadOnlyDictionary&lt;string, string&gt; constraints, IReadOnlyList&lt;NumberToStringConverter.ReplacementRule&gt; replacements)</code></pre>
-  </div>
-
-  <h4 class="section">Parameters</h4>
-  <dl class="parameters">
-    <dt><code>constraints</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlydictionary-2">IReadOnlyDictionary</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;</dt>
-    <dd><p>Dimension name → required value pairs.</p>
-</dd>
-    <dt><code>replacements</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1">IReadOnlyList</a>&lt;<a class="xref" href="Utils.NumberToString.NumberToStringConverter.html">NumberToStringConverter</a>.<a class="xref" href="Utils.NumberToString.NumberToStringConverter.ReplacementRule.html">ReplacementRule</a>&gt;</dt>
-    <dd><p>Replacement rules applied when this variant is active.</p>
-</dd>
-  </dl>
-
-
-
-
-
-
-
-
-
-
-
-
   <h2 class="section" id="properties">Properties
 </h2>
 
 
-  <a id="Utils_NumberToString_NumberToStringConverter_VariantRule_Constraints_" data-uid="Utils.NumberToString.NumberToStringConverter.VariantRule.Constraints*"></a>
+  <a id="Utils_NumberToString_DecimalFormatOptions_DecimalSeparator_" data-uid="Utils.NumberToString.DecimalFormatOptions.DecimalSeparator*"></a>
 
-  <h3 id="Utils_NumberToString_NumberToStringConverter_VariantRule_Constraints" data-uid="Utils.NumberToString.NumberToStringConverter.VariantRule.Constraints">
-  Constraints
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L805"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_NumberToString_DecimalFormatOptions_DecimalSeparator" data-uid="Utils.NumberToString.DecimalFormatOptions.DecimalSeparator">
+  DecimalSeparator
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/DecimalFormatOptions.cs/#L15"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets the dimension constraints (name → required value).</p>
+  <div class="markdown level1 summary"><p>Overrides the word used as decimal separator between the integer and decimal parts
+(e.g. <code>&quot;euro(s)&quot;</code> instead of the configured <code>&quot;virgule&quot;</code>).
+The <code>&quot;(s)&quot;</code> marker is pluralized against the integer part value.
+When <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>, the converter's configured decimal separator is used.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public IReadOnlyDictionary&lt;string, string&gt; Constraints { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">public string? DecimalSeparator { get; init; }</code></pre>
   </div>
 
 
@@ -297,7 +260,7 @@ when all constraints are satisfied.</p>
 
   <h4 class="section">Property Value</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlydictionary-2">IReadOnlyDictionary</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;</dt>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
     <dd></dd>
   </dl>
 
@@ -308,19 +271,25 @@ when all constraints are satisfied.</p>
 
 
 
-  <a id="Utils_NumberToString_NumberToStringConverter_VariantRule_Replacements_" data-uid="Utils.NumberToString.NumberToStringConverter.VariantRule.Replacements*"></a>
+  <a id="Utils_NumberToString_DecimalFormatOptions_DecimalSuffix_" data-uid="Utils.NumberToString.DecimalFormatOptions.DecimalSuffix*"></a>
 
-  <h3 id="Utils_NumberToString_NumberToStringConverter_VariantRule_Replacements" data-uid="Utils.NumberToString.NumberToStringConverter.VariantRule.Replacements">
-  Replacements
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L808"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_NumberToString_DecimalFormatOptions_DecimalSuffix" data-uid="Utils.NumberToString.DecimalFormatOptions.DecimalSuffix">
+  DecimalSuffix
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/DecimalFormatOptions.cs/#L26"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets the replacement rules applied when all constraints are satisfied.</p>
+  <div class="markdown level1 summary"><p>Overrides the denomination suffix appended after the decimal value
+(e.g. <code>&quot;centime(s)&quot;</code> instead of <code>&quot;centième(s)&quot;</code> from the language configuration).
+When set, the decimal value is always converted as a whole number regardless of whether
+a <code>&lt;Fraction&gt;</code> entry is configured for that digit count.
+The <code>&quot;(s)&quot;</code> marker is pluralized against the decimal value.
+When <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>, the configured <code>&lt;Fraction&gt;</code> entry is used when available;
+otherwise the decimal part is read digit by digit.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public IReadOnlyList&lt;NumberToStringConverter.ReplacementRule&gt; Replacements { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">public string? DecimalSuffix { get; init; }</code></pre>
   </div>
 
 
@@ -329,7 +298,7 @@ when all constraints are satisfied.</p>
 
   <h4 class="section">Property Value</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1">IReadOnlyList</a>&lt;<a class="xref" href="Utils.NumberToString.NumberToStringConverter.html">NumberToStringConverter</a>.<a class="xref" href="Utils.NumberToString.NumberToStringConverter.ReplacementRule.html">ReplacementRule</a>&gt;</dt>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
     <dd></dd>
   </dl>
 
@@ -340,19 +309,21 @@ when all constraints are satisfied.</p>
 
 
 
-  <a id="Utils_NumberToString_NumberToStringConverter_VariantRule_Specificity_" data-uid="Utils.NumberToString.NumberToStringConverter.VariantRule.Specificity*"></a>
+  <a id="Utils_NumberToString_DecimalFormatOptions_OmitZeroDecimals_" data-uid="Utils.NumberToString.DecimalFormatOptions.OmitZeroDecimals*"></a>
 
-  <h3 id="Utils_NumberToString_NumberToStringConverter_VariantRule_Specificity" data-uid="Utils.NumberToString.NumberToStringConverter.VariantRule.Specificity">
-  Specificity
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L813"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_NumberToString_DecimalFormatOptions_OmitZeroDecimals" data-uid="Utils.NumberToString.DecimalFormatOptions.OmitZeroDecimals">
+  OmitZeroDecimals
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/DecimalFormatOptions.cs/#L33"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets the number of dimension constraints. Used to order rules from least to most specific.</p>
+  <div class="markdown level1 summary"><p>When <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a>, the decimal part is suppressed when it rounds to zero.
+Useful with a positive <code>mandatoryDecimalDigits</code> to avoid producing
+<code>&quot;vingt et un euros zéro centime&quot;</code> for a whole-number amount.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public int Specificity { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">public bool OmitZeroDecimals { get; init; }</code></pre>
   </div>
 
 
@@ -361,7 +332,7 @@ when all constraints are satisfied.</p>
 
   <h4 class="section">Property Value</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
     <dd></dd>
   </dl>
 
@@ -376,7 +347,7 @@ when all constraints are satisfied.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L791" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/DecimalFormatOptions.cs/#L7" class="edit-link">Edit this page</a>
         </div>
 
 
