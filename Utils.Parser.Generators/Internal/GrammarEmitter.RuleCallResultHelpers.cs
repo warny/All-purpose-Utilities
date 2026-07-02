@@ -48,6 +48,14 @@ internal static partial class GrammarEmitter
         sb.AppendLine("        result.Channel = channel;");
         sb.AppendLine("    }");
         sb.AppendLine();
+        sb.AppendLine("    /// <summary>Sets the current lexer mode for a generated lexer action.</summary>");
+        sb.AppendLine("    private static void SetLexerMode(LexerActionExecutionResult result, string mode)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        global::System.ArgumentNullException.ThrowIfNull(result);");
+        sb.AppendLine("        global::System.ArgumentNullException.ThrowIfNull(mode);");
+        sb.AppendLine("        result.Mode = mode;");
+        sb.AppendLine("    }");
+        sb.AppendLine();
         sb.AppendLine("    /// <summary>Gets the active lexer mode for a generated lexer action.</summary>");
         sb.AppendLine("    private static string GetRequiredLexerMode(LexerActionExecutionContext context)");
         sb.AppendLine("    {");

@@ -86,7 +86,8 @@ public sealed class LexerEngine(ParserDefinition definition, ParserRuntimeFeatur
             input.Consume(match.Length);
             var token = new Token(match, rule!.Name, mode.Name, DefaultChannel, tokenText);
 
-            ExecuteLexerActions(actions, ref token);
+            LexerActionExecutionResult actionResult = ExecuteLexerActions(actions, ref token);
+            ApplyLexerActionMode(actionResult, token, diagnostics);
             bool skip = ExecuteLexerCommands(commands, ref token, diagnostics, filePath);
             if (rule.IsFragment || skip)
             {
@@ -534,7 +535,7 @@ public sealed class LexerEngine(ParserDefinition definition, ParserRuntimeFeatur
     }
 
     /// <summary>Executes accepted lexer inline actions through the explicit runtime policy.</summary>
-    private void ExecuteLexerActions(IReadOnlyList<LexerActionOccurrence> actions, ref Token token)
+    private LexerActionExecutionResult ExecuteLexerActions(IReadOnlyList<LexerActionOccurrence> actions, ref Token token)
     {
         var result = new LexerActionExecutionResult();
         foreach (var action in actions)
@@ -551,6 +552,33 @@ public sealed class LexerEngine(ParserDefinition definition, ParserRuntimeFeatur
         {
             token = token with { Channel = result.Channel };
         }
+
+        return result;
+    }
+
+    /// <summary>Applies the bounded lexer mode mutation requested by accepted lexer actions.</summary>
+    private void ApplyLexerActionMode(LexerActionExecutionResult result, Token token, DiagnosticBag? diagnostics)
+    {
+        if (result.Mode is null)
+        {
+            return;
+        }
+
+        SetCurrentMode(result.Mode, token, diagnostics, "mode");
+    }
+
+    /// <summary>Replaces the current lexer mode after validating that the requested mode exists.</summary>
+    private void SetCurrentMode(string modeName, Token token, DiagnosticBag? diagnostics, string commandName)
+    {
+        var mode = definition.Modes.FirstOrDefault(m => m.Name == modeName);
+        if (mode is null)
+        {
+            diagnostics?.AddWithContext(ParserDiagnostics.UnknownLexerMode, token.Span.Position, token.Span.Length, null, null, modeName, commandName);
+            return;
+        }
+
+        _modeStack.Pop();
+        _modeStack.Push(mode);
     }
 
     /// <summary>Describes deterministic hook indexes while matching lexer rule content.</summary>
@@ -602,16 +630,7 @@ public sealed class LexerEngine(ParserDefinition definition, ParserRuntimeFeatur
                 case LexerCommandType.Mode:
                     if (cmd.Argument is not null)
                     {
-                        var mode = definition.Modes.FirstOrDefault(m => m.Name == cmd.Argument);
-                        if (mode is null)
-                        {
-                            diagnostics?.AddWithContext(ParserDiagnostics.UnknownLexerMode, token.Span.Position, token.Span.Length, null, null, cmd.Argument, "mode");
-                        }
-                        else
-                        {
-                            _modeStack.Pop();
-                            _modeStack.Push(mode);
-                        }
+                        SetCurrentMode(cmd.Argument, token, diagnostics, "mode");
                     }
 
                     break;

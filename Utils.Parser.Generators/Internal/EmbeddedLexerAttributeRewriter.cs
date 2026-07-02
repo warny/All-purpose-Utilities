@@ -68,7 +68,7 @@ internal static class EmbeddedLexerAttributeRewriter
             {
                 string reason = IsRefOrOutContext(code, attributeStart)
                     ? "ref/out lexer attributes are not supported by the ANTLR-style transformer."
-                    : "Lexer attribute writes are not supported by the ANTLR-style transformer. Supported lexer attribute writes are $type = ... and $channel = ... in lexer inline actions.";
+                    : "Lexer attribute writes are not supported by the ANTLR-style transformer. Supported lexer attribute writes are $type = ..., $channel = ..., and $mode = ... in lexer inline actions.";
                 errors.Add($"{reason} Unsupported attribute: '{attributeText}'.");
                 output.Append(code, attributeStart, attributeEnd - attributeStart);
                 continue;
@@ -120,9 +120,9 @@ internal static class EmbeddedLexerAttributeRewriter
             return true;
         }
 
-        if (!string.Equals(attribute, "type", StringComparison.Ordinal) && !string.Equals(attribute, "channel", StringComparison.Ordinal))
+        if (!string.Equals(attribute, "type", StringComparison.Ordinal) && !string.Equals(attribute, "channel", StringComparison.Ordinal) && !string.Equals(attribute, "mode", StringComparison.Ordinal))
         {
-            errors.Add($"Lexer attribute write '{attributeText}' is not supported. Supported lexer attribute writes are $type = ... and $channel = ... in lexer inline actions.");
+            errors.Add($"Lexer attribute write '{attributeText}' is not supported. Supported lexer attribute writes are $type = ..., $channel = ..., and $mode = ... in lexer inline actions.");
             output.Append(code, attributeStart, attributeEnd - attributeStart);
             return true;
         }
@@ -151,7 +151,13 @@ internal static class EmbeddedLexerAttributeRewriter
             return true;
         }
 
-        output.Append(string.Equals(attribute, "type", StringComparison.Ordinal) ? "SetLexerType(result, " : "SetLexerChannel(result, ");
+        output.Append(attribute switch
+        {
+            "type" => "SetLexerType(result, ",
+            "channel" => "SetLexerChannel(result, ",
+            "mode" => "SetLexerMode(result, ",
+            _ => throw new InvalidOperationException($"Unsupported lexer attribute write: {attribute}.")
+        });
         output.Append('"');
         output.Append(value.Replace("\\", "\\\\").Replace("\"", "\\\""));
         output.Append("\");");
