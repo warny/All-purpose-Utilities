@@ -577,7 +577,7 @@ namespace Utils.NumberToString
                 IntraGroupConnector = language.IntraGroupConnector,
                 IntraGroupConnectorThreshold = language.IntraGroupConnectorThreshold,
                 TimeUnits = language.TimeUnits?.Units?
-                    .ToDictionary(u => u.Name, u => (u.Singular, u.Plural)),
+                    .ToDictionary(u => u.Name, u => (u.Singular, u.Plural, u.Count1Form)),
                 DatePattern = language.DateFormat?.Pattern,
                 DateFirstDay = language.DateFormat?.FirstDay,
                 DateTimeConnector = language.DateFormat?.DateTimeConnector,

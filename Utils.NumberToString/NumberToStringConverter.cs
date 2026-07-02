@@ -102,7 +102,7 @@ namespace Utils.NumberToString
             _intraGroupConnector = options.IntraGroupConnector;
             _intraGroupConnectorThreshold = options.IntraGroupConnectorThreshold;
             _timeUnits = options.TimeUnits?.ToImmutableDictionary()
-                         ?? ImmutableDictionary<string, (string Singular, string Plural)>.Empty;
+                         ?? ImmutableDictionary<string, (string Singular, string Plural, string? Count1Form)>.Empty;
             _datePattern = options.DatePattern;
             _dateFirstDay = options.DateFirstDay;
             _dateTimeConnector = options.DateTimeConnector;
@@ -261,7 +261,7 @@ namespace Utils.NumberToString
         public bool SupportsDateConversion => _datePattern != null;
 
         /// <summary>Gets the time units for time conversion (hours, minutes, seconds).</summary>
-        public IReadOnlyDictionary<string, (string Singular, string Plural)> TimeUnits => _timeUnits;
+        public IReadOnlyDictionary<string, (string Singular, string Plural, string? Count1Form)> TimeUnits => _timeUnits;
 
         /// <summary>Gets the date pattern string (tokens: {month}, {ordinal-day}, {cardinal-day}, {year}).</summary>
         public string? DatePattern => _datePattern;
@@ -287,7 +287,7 @@ namespace Utils.NumberToString
         private readonly long _groupConnectorThreshold;
         private readonly string? _intraGroupConnector;
         private readonly long _intraGroupConnectorThreshold;
-        private readonly ImmutableDictionary<string, (string Singular, string Plural)> _timeUnits;
+        private readonly ImmutableDictionary<string, (string Singular, string Plural, string? Count1Form)> _timeUnits;
         private readonly string? _datePattern;
         private readonly string? _dateFirstDay;
         private readonly string? _dateTimeConnector;
@@ -1162,10 +1162,11 @@ namespace Utils.NumberToString
             return Convert(multiplier, variants);
         }
 
-        private string FormatTimeUnit(int count, (string Singular, string Plural) unit, string[] variants)
+        private string FormatTimeUnit(int count, (string Singular, string Plural, string? Count1Form) unit, string[] variants)
         {
             string word = count == 1 ? unit.Singular : unit.Plural;
-            return Convert(count, variants) + Separator + word;
+            string numeral = (count == 1 && unit.Count1Form != null) ? unit.Count1Form : Convert(count, variants);
+            return numeral + Separator + word;
         }
 
         /// <inheritdoc cref="INumberToStringConverter.Convert(TimeSpan, string[])"/>
@@ -1225,7 +1226,10 @@ namespace Utils.NumberToString
                 throw new NotSupportedException($"Language '{LanguageIdentifier}' has no <DateFormat> configuration.");
 
             string month = GetMonthName(date.Month);
-            string cardinalDay = Convert(date.Day, variants);
+            // firstDay overrides both {ordinal-day} and {cardinal-day} when day == 1
+            string cardinalDay = (date.Day == 1 && _dateFirstDay != null)
+                ? _dateFirstDay
+                : Convert(date.Day, variants);
             string ordinalDay = (date.Day == 1 && _dateFirstDay != null)
                 ? _dateFirstDay
                 : (SupportsOrdinals ? ConvertOrdinal(date.Day, variants) : cardinalDay);

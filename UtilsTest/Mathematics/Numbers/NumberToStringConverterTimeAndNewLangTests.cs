@@ -102,6 +102,14 @@ public class NumberToStringConverterTimeAndNewLangTests
             de.Convert(new TimeSpan(2, 30, 5)));
     }
 
+    [TestMethod]
+    public void Convert_TimeSpan_DE_OneHour_Count1Form()
+    {
+        var de = NumberToStringConverter.GetConverter("DE");
+        // count1form="eine" prevents "eins Stunde" — should produce "eine Stunde"
+        Assert.AreEqual("eine Stunde", de.Convert(new TimeSpan(1, 0, 0)));
+    }
+
     // ─── Item 21b — Convert(TimeOnly) ──────────────────────────────────────
 
     [TestMethod]
@@ -157,10 +165,9 @@ public class NumberToStringConverterTimeAndNewLangTests
     public void Convert_DateOnly_FR_FirstOfMonth()
     {
         var fr = NumberToStringConverter.GetConverter("FR");
-        // 1er → pattern {cardinal-day} → "un" but firstDay="premier" for {ordinal-day}
-        // FR uses {cardinal-day}, so firstDay doesn't apply here
+        // firstDay="premier" applies to {cardinal-day} too when day == 1
         string result = fr.Convert(new DateOnly(2026, 7, 1));
-        Assert.IsTrue(result.StartsWith("un juillet"), $"Actual: {result}");
+        Assert.IsTrue(result.StartsWith("premier juillet"), $"Actual: {result}");
     }
 
     [TestMethod]
@@ -169,9 +176,18 @@ public class NumberToStringConverterTimeAndNewLangTests
         var de = NumberToStringConverter.GetConverter("DE");
         Assert.IsTrue(de.SupportsDateConversion);
         // pattern="{cardinal-day}. {month} {year}", firstDay="ersten"
-        // 2. Juli zweitausendsechsundzwanzig
+        // day 2: cardinal "zwei" → "zwei. Juli ..."
         string result = de.Convert(new DateOnly(2026, 7, 2));
         Assert.IsTrue(result.StartsWith("zwei. Juli"), $"Actual: {result}");
+    }
+
+    [TestMethod]
+    public void Convert_DateOnly_DE_FirstDay_CardinalDay()
+    {
+        var de = NumberToStringConverter.GetConverter("DE");
+        // firstDay="ersten" must also apply to {cardinal-day} when day == 1
+        string result = de.Convert(new DateOnly(2026, 7, 1));
+        Assert.IsTrue(result.StartsWith("ersten. Juli"), $"Actual: {result}");
     }
 
     // ─── Item 21d — Convert(DateTime) ──────────────────────────────────────

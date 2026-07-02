@@ -149,9 +149,10 @@ public sealed class NumberToStringConverterOptions
 
     /// <summary>
     /// Time units keyed by canonical name ("hour", "minute", "second"),
-    /// each with singular and plural forms. Required for Convert(TimeSpan/TimeOnly).
+    /// each with singular, plural, and an optional count-1 override for grammatical gender.
+    /// Required for Convert(TimeSpan/TimeOnly).
     /// </summary>
-    public IReadOnlyDictionary<string, (string Singular, string Plural)>? TimeUnits { get; set; }
+    public IReadOnlyDictionary<string, (string Singular, string Plural, string? Count1Form)>? TimeUnits { get; set; }
 
     /// <summary>
     /// Pattern for rendering a date. Supported tokens: {month}, {ordinal-day}, {cardinal-day}, {year}.

@@ -548,6 +548,14 @@ public class TimeUnitEntry
     /// <summary>Plural form of the unit (e.g. "heures").</summary>
     [XmlAttribute("plural")]
     public string Plural { get; set; } = "";
+
+    /// <summary>
+    /// Optional numeral form to use when count == 1, overriding the standard Convert(1) result.
+    /// Useful when the unit has a grammatical gender that requires a different form of "one"
+    /// (e.g. <c>count1form="eine"</c> for German feminine nouns like "Stunde").
+    /// </summary>
+    [XmlAttribute("count1form")]
+    public string? Count1Form { get; set; }
 }
 
 /// <summary>
