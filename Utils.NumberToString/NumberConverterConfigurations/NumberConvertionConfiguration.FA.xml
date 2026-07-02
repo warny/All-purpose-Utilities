@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+    <Language
+        groupSize="3"
+        separator=" "
+        groupSeparator=""
+        zero="صفر"
+        minus="منفی *"
+        decimalSeparator="ممیز"
+        fractionSeparator="بر"
+        maxNumber="999999999999999"
+    >
+        <Culture>FA</Culture>
+        <Culture>FA-IR</Culture>
+        <Groups>
+            <Group level="1">
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="یک" />
+                <Digit digit="2" string="دو" />
+                <Digit digit="3" string="سه" />
+                <Digit digit="4" string="چهار" />
+                <Digit digit="5" string="پنج" />
+                <Digit digit="6" string="شش" />
+                <Digit digit="7" string="هفت" />
+                <Digit digit="8" string="هشت" />
+                <Digit digit="9" string="نه" />
+            </Group>
+            <Group level="2">
+                <Digit digit="0" string="" buildString="*" />
+                <!-- 11–19 are handled as Exceptions -->
+                <Digit digit="1" string="ده" buildString="ده و *" />
+                <Digit digit="2" string="بیست" buildString="بیست و *" />
+                <Digit digit="3" string="سی" buildString="سی و *" />
+                <Digit digit="4" string="چهل" buildString="چهل و *" />
+                <Digit digit="5" string="پنجاه" buildString="پنجاه و *" />
+                <Digit digit="6" string="شصت" buildString="شصت و *" />
+                <Digit digit="7" string="هفتاد" buildString="هفتاد و *" />
+                <Digit digit="8" string="هشتاد" buildString="هشتاد و *" />
+                <Digit digit="9" string="نود" buildString="نود و *" />
+            </Group>
+            <Group level="3">
+                <Digit digit="0" string="" buildString="*" />
+                <!-- Persian hundreds: صد, دویست, سیصد, چهارصد, پانصد, ششصد, هفتصد, هشتصد, نهصد -->
+                <Digit digit="1" string="صد" buildString="صد و *" />
+                <Digit digit="2" string="دویست" buildString="دویست و *" />
+                <Digit digit="3" string="سیصد" buildString="سیصد و *" />
+                <Digit digit="4" string="چهارصد" buildString="چهارصد و *" />
+                <Digit digit="5" string="پانصد" buildString="پانصد و *" />
+                <Digit digit="6" string="ششصد" buildString="ششصد و *" />
+                <Digit digit="7" string="هفتصد" buildString="هفتصد و *" />
+                <Digit digit="8" string="هشتصد" buildString="هشتصد و *" />
+                <Digit digit="9" string="نهصد" buildString="نهصد و *" />
+            </Group>
+        </Groups>
+        <!-- Persian large-number scale using static names for the common powers.
+             هزار (10^3), میلیون (10^6), میلیارد (10^9), تریلیون (10^12).
+             Numbers above 10^15 are extremely rare in Persian; maxNumber restricts the range. -->
+        <NumberScale firstLetterUpperCase="false">
+            <StaticNames>
+                <Scale value="0" string="" />
+                <Scale value="1" string="هزار" />
+                <Scale value="2" string="میلیون" />
+                <Scale value="3" string="میلیارد" />
+                <Scale value="4" string="تریلیون" />
+            </StaticNames>
+        </NumberScale>
+        <Replacements>
+            <!-- Drop "یک" before "هزار": 1000 = "هزار" not "یک هزار" -->
+            <Replacement oldValue="یک هزار" newValue="هزار" />
+        </Replacements>
+        <Exceptions>
+            <Number value="11" string="یازده" />
+            <Number value="12" string="دوازده" />
+            <Number value="13" string="سیزده" />
+            <Number value="14" string="چهارده" />
+            <Number value="15" string="پانزده" />
+            <Number value="16" string="شانزده" />
+            <Number value="17" string="هفده" />
+            <Number value="18" string="هجده" />
+            <Number value="19" string="نوزده" />
+        </Exceptions>
+    </Language>
+</Numbers>

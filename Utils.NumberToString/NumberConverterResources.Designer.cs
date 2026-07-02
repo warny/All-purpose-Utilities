@@ -106,7 +106,21 @@ namespace Utils {
                 return ResourceManager.GetString("NumberConvertionConfiguration.AR", resourceCulture);
             }
         }
-        
+
+        /// <summary>Czech number-to-string configuration.</summary>
+        internal static string NumberConvertionConfiguration_CS {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.CS", resourceCulture);
+            }
+        }
+
+        /// <summary>Slovak number-to-string configuration.</summary>
+        internal static string NumberConvertionConfiguration_SK {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.SK", resourceCulture);
+            }
+        }
+
         /// <summary>
         ///   Recherche une chaîne localisée semblable à &lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
         ///&lt;Numbers xmlns=&quot;Utils/NumberConvertionConfiguration.xsd&quot;&gt;
@@ -124,6 +138,13 @@ namespace Utils {
         ///                &lt;Culture&gt;ca-ES-valencia&lt;/Culture&gt;
         ///   [le reste de la chaîne a été tronqué]&quot;;.
         /// </summary>
+        /// <summary>Bulgarian number-to-string configuration.</summary>
+        internal static string NumberConvertionConfiguration_BG {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.BG", resourceCulture);
+            }
+        }
+
         internal static string NumberConvertionConfiguration_CA {
             get {
                 return ResourceManager.GetString("NumberConvertionConfiguration.CA", resourceCulture);
@@ -182,7 +203,14 @@ namespace Utils {
                 return ResourceManager.GetString("NumberConvertionConfiguration.DE-ch", resourceCulture);
             }
         }
-        
+
+        /// <summary>Danish number-to-string configuration.</summary>
+        internal static string NumberConvertionConfiguration_DA {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.DA", resourceCulture);
+            }
+        }
+
         /// <summary>
         ///   Recherche une chaîne localisée semblable à &lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
         ///&lt;Numbers xmlns=&quot;Utils/NumberConvertionConfiguration.xsd&quot;&gt;
@@ -304,7 +332,14 @@ namespace Utils {
                 return ResourceManager.GetString("NumberConvertionConfiguration.EU", resourceCulture);
             }
         }
-        
+
+        /// <summary>Persian (Farsi) number-to-string configuration.</summary>
+        internal static string NumberConvertionConfiguration_FA {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.FA", resourceCulture);
+            }
+        }
+
         /// <summary>
         ///   Recherche une chaîne localisée semblable à &lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
         ///&lt;Numbers xmlns=&quot;Utils/NumberConvertionConfiguration.xsd&quot;&gt;
@@ -448,7 +483,14 @@ namespace Utils {
                 return ResourceManager.GetString("NumberConvertionConfiguration.HI", resourceCulture);
             }
         }
-        
+
+        /// <summary>Indonesian/Malay number-to-string configuration.</summary>
+        internal static string NumberConvertionConfiguration_ID {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.ID", resourceCulture);
+            }
+        }
+
         /// <summary>
         ///   Recherche une chaîne localisée semblable à &lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
         ///&lt;Numbers xmlns=&quot;Utils/NumberConvertionConfiguration.xsd&quot;&gt;
@@ -639,6 +681,13 @@ namespace Utils {
         internal static string NumberConvertionConfiguration_SV {
             get {
                 return ResourceManager.GetString("NumberConvertionConfiguration.SV", resourceCulture);
+            }
+        }
+
+        /// <summary>Swahili number-to-string configuration.</summary>
+        internal static string NumberConvertionConfiguration_SW {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.SW", resourceCulture);
             }
         }
 
