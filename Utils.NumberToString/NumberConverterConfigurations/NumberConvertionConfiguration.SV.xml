@@ -51,16 +51,31 @@
                 <Digit digit="9" string="nio hundra" buildString="nio hundra *" />
             </Group>
         </Groups>
-        <NumberScale firstLetterUpperCase="false">
+        <!-- Long scale with groupSeparator="l": mi+l+jon(er)=miljon(er), mi+l+jard(er)=miljard(er),
+             bi+l+jon(er)=biljon(er), bi+l+jard(er)=biljard(er), tri+l+jon(er)=triljon(er)…
+             Swedish uses kv spellings for quadri/quinti: kvadriljon, kvintiljon. -->
+        <NumberScale firstLetterUpperCase="false" groupSeparator="l">
             <StaticNames>
                 <Scale value="0" string="" />
                 <!-- Swedish: "tusen" alone for 1000; "ett tusen" is non-standard -->
                 <Scale value="1" string="tusen" />
             </StaticNames>
             <Suffixes>
-                <Suffix>miljon(er)</Suffix>
-                <Suffix>miljard(er)</Suffix>
+                <Suffix>jon(er)</Suffix>
+                <Suffix>jard(er)</Suffix>
             </Suffixes>
+            <Scale0Prefixes>
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="mi" />
+                <Digit digit="2" string="bi" />
+                <Digit digit="3" string="tri" />
+                <Digit digit="4" string="kvadri" />
+                <Digit digit="5" string="kvinti" />
+                <Digit digit="6" string="sexti" />
+                <Digit digit="7" string="septi" />
+                <Digit digit="8" string="okti" />
+                <Digit digit="9" string="noni" />
+            </Scale0Prefixes>
         </NumberScale>
         <Replacements>
             <!-- Drop "ett" before "tusen": 1000 = "tusen" not "ett tusen" -->

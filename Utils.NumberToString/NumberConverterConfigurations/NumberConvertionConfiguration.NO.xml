@@ -51,6 +51,8 @@
                 <Digit digit="9" string="ni hundre" buildString="ni hundre *" />
             </Group>
         </Groups>
+        <!-- Long scale (same pattern as DE/FR): mi+lli+on(er)=million(er), mi+lli+ard(er)=milliard(er),
+             bi+lli+on(er)=billion(er), bi+lli+ard(er)=billiard(er), tri+lli+on(er)=trillion(er)… -->
         <NumberScale firstLetterUpperCase="false">
             <StaticNames>
                 <Scale value="0" string="" />
@@ -58,8 +60,8 @@
                 <Scale value="1" string="tusen" />
             </StaticNames>
             <Suffixes>
-                <Suffix>million(er)</Suffix>
-                <Suffix>milliard(er)</Suffix>
+                <Suffix>on(er)</Suffix>
+                <Suffix>ard(er)</Suffix>
             </Suffixes>
         </NumberScale>
         <Replacements>

@@ -1137,7 +1137,8 @@ namespace Utils.NumberToString
             FirstLetterUppercase = firstLetterUppercase;
 
             VoidGroup = voidGroup.ToDefaultIfNullOrEmpty("ni");
-            GroupSeparator = groupSeparator.ToDefaultIfNullOrEmpty("lli");
+            // null (not set in XML) → default "lli"; explicit "" → no separator between prefix and suffix
+            GroupSeparator = groupSeparator ?? "lli";
 
             Scale0Prefixes = scale0Prefixes?.ToImmutableArray() ?? Scale0Prefixes;
             UnitsPrefixes = unitsPrefixes?.ToImmutableArray() ?? UnitsPrefixes;

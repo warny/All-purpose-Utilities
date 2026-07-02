@@ -48,14 +48,30 @@
                 <Digit digit="9" string="девятьсот" buildString="девятьсот *" />
             </Group>
         </Groups>
-        <NumberScale firstLetterUpperCase="false">
+        <!-- Long scale with groupSeparator="лли": ми+лли+он=миллион, ми+лли+ард=миллиард,
+             би+лли+он=биллион, три+лли+он=триллион…
+             Russian plural (миллиона/миллионов for 2-4/5+) is not handled — accepted limitation. -->
+        <NumberScale firstLetterUpperCase="false" groupSeparator="лли">
             <StaticNames>
                 <Scale value="0" string="" />
                 <Scale value="1" string="тысяча" />
             </StaticNames>
             <Suffixes>
-                <Suffix>миллион</Suffix>
+                <Suffix>он</Suffix>
+                <Suffix>ард</Suffix>
             </Suffixes>
+            <Scale0Prefixes>
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="ми" />
+                <Digit digit="2" string="би" />
+                <Digit digit="3" string="три" />
+                <Digit digit="4" string="квадри" />
+                <Digit digit="5" string="квинти" />
+                <Digit digit="6" string="сексти" />
+                <Digit digit="7" string="септи" />
+                <Digit digit="8" string="окти" />
+                <Digit digit="9" string="нони" />
+            </Scale0Prefixes>
         </NumberScale>
         <Replacements>
             <Replacement oldValue="один тысяча" newValue="тысяча" />

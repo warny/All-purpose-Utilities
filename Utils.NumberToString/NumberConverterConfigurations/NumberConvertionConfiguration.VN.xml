@@ -8,6 +8,7 @@
         minus="âm *"
         decimalSeparator="phẩy"
         fractionSeparator="trên"
+        maxNumber="999999999999"
     >
         <Culture>VN</Culture>
         <Culture>VI</Culture>
@@ -50,15 +51,16 @@
                 <Digit digit="9" string="chín trăm" buildString="chín trăm *" />
             </Group>
         </Groups>
+        <!-- Vietnamese number names are standardized only up to tỷ (10^9).
+             Beyond tỷ there is no established native system; maxNumber caps conversion at 10^12-1.
+             Note: "một triệu" / "một tỷ" are correct Vietnamese (no drop of "một" for these scales). -->
         <NumberScale firstLetterUpperCase="false">
             <StaticNames>
                 <Scale value="0" string="" />
                 <Scale value="1" string="nghìn" />
+                <Scale value="2" string="triệu" />
+                <Scale value="3" string="tỷ" />
             </StaticNames>
-            <Suffixes>
-                <Suffix>triệu</Suffix>
-                <Suffix>tỷ</Suffix>
-            </Suffixes>
         </NumberScale>
         <Replacements>
             <!-- Drop "một" before "nghìn": 1000 = "nghìn" not "một nghìn" (Standalone: matched at group level) -->

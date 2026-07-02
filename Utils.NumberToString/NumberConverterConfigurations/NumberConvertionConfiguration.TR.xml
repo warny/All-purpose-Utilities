@@ -50,17 +50,33 @@
                 <Digit digit="9" string="dokuz yüz" buildString="dokuz yüz *" />
             </Group>
         </Groups>
-        <NumberScale firstLetterUpperCase="false">
+        <!-- Turkish hybrid scale: milyon (10^6) and milyar (10^9) are borrowed from French
+             and treated as static names. From 10^12, Turkish uses suffix "lyon" with Turkish
+             prefix names: tri+lyon=trilyon, katri+lyon=katrilyon, kenti+lyon=kentilyon…
+             startIndex=2 shifts the first generated prefix to index 3 ("tri") for scale 4 (10^12). -->
+        <NumberScale firstLetterUpperCase="false" groupSeparator="" startIndex="2">
             <StaticNames>
                 <Scale value="0" string="" />
                 <!-- Turkish: "bin" alone for 1000; "bir bin" is ungrammatical -->
                 <Scale value="1" string="bin" />
+                <Scale value="2" string="milyon" />
+                <Scale value="3" string="milyar" />
             </StaticNames>
             <Suffixes>
-                <Suffix>milyon</Suffix>
-                <Suffix>milyar</Suffix>
-                <Suffix>trilyon</Suffix>
+                <Suffix>lyon</Suffix>
             </Suffixes>
+            <Scale0Prefixes>
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="mi" />
+                <Digit digit="2" string="bi" />
+                <Digit digit="3" string="tri" />
+                <Digit digit="4" string="katri" />
+                <Digit digit="5" string="kenti" />
+                <Digit digit="6" string="seksi" />
+                <Digit digit="7" string="septi" />
+                <Digit digit="8" string="okti" />
+                <Digit digit="9" string="noni" />
+            </Scale0Prefixes>
         </NumberScale>
         <Replacements>
             <!-- Safety net: drop "bir" before "bin" if the engine generates "bir bin" -->

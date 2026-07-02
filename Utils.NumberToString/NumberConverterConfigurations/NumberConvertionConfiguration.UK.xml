@@ -49,7 +49,12 @@
                 <Digit digit="9" string="дев'ятсот" buildString="дев'ятсот *" />
             </Group>
         </Groups>
-        <NumberScale firstLetterUpperCase="false">
+        <!-- Long scale with groupSeparator="ль":
+             мі+ль+йон(ів)=мільйон(ів), мі+ль+ярд(ів)=мільярд(ів),
+             бі+ль+йон(ів)=більйон(ів), три+ль+йон(ів)=трильйон(ів)…
+             Note: й (U+0439) starts suffix йон, я (U+044F) starts suffix ярд.
+             Plural (ів) fires for n≥2; 2–4 form (мільйони) is not handled — accepted limitation. -->
+        <NumberScale firstLetterUpperCase="false" groupSeparator="ль">
             <StaticNames>
                 <Scale value="0" string="" />
                 <!--
@@ -59,9 +64,21 @@
                 <Scale value="1" string="тисяч" />
             </StaticNames>
             <Suffixes>
-                <Suffix>мільйон(ів)</Suffix>
-                <Suffix>мільярд(ів)</Suffix>
+                <Suffix>йон(ів)</Suffix>
+                <Suffix>ярд(ів)</Suffix>
             </Suffixes>
+            <Scale0Prefixes>
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="мі" />
+                <Digit digit="2" string="бі" />
+                <Digit digit="3" string="три" />
+                <Digit digit="4" string="квадри" />
+                <Digit digit="5" string="квінти" />
+                <Digit digit="6" string="сексти" />
+                <Digit digit="7" string="септи" />
+                <Digit digit="8" string="окти" />
+                <Digit digit="9" string="нони" />
+            </Scale0Prefixes>
         </NumberScale>
         <Replacements>
             <!-- Drop "один" before "тисяч": 1000 = "тисяч" not "один тисяч" -->

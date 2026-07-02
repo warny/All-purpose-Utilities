@@ -305,4 +305,91 @@ public class NumberToStringConverterBatchTests
         Assert.IsFalse(opts.SplitRanges!.Contains(2000));
         Assert.IsFalse(opts.SplitRanges!.Contains(1099));
     }
+
+    // ─── G11 — Grands nombres (système de Conway) ───────────────────────────
+
+    [TestMethod]
+    public void Convert_NO_LargeNumbers_Conway()
+    {
+        var no = NumberToStringConverter.GetConverter("NO");
+
+        Assert.AreEqual("en million",      no.Convert(1_000_000));
+        Assert.AreEqual("to millioner",    no.Convert(2_000_000));
+        Assert.AreEqual("en milliard",     no.Convert(1_000_000_000));
+        Assert.AreEqual("tre milliarder",  no.Convert(3_000_000_000L));
+        Assert.AreEqual("en billion",      no.Convert(1_000_000_000_000L));
+        Assert.AreEqual("en billiard",     no.Convert(1_000_000_000_000_000L));
+    }
+
+    [TestMethod]
+    public void Convert_SV_LargeNumbers_Conway()
+    {
+        var sv = NumberToStringConverter.GetConverter("SV");
+
+        // Note: digit 1 = "ett" in this config (neuter); miljon is common gender (en-word)
+        // but gender agreement requires Variants — accepted limitation.
+        Assert.AreEqual("ett miljon",      sv.Convert(1_000_000));
+        Assert.AreEqual("två miljoner",    sv.Convert(2_000_000));
+        Assert.AreEqual("ett miljard",      sv.Convert(1_000_000_000));
+        Assert.AreEqual("tre miljarder",   sv.Convert(3_000_000_000L));
+        Assert.AreEqual("ett biljon",      sv.Convert(1_000_000_000_000L));
+        Assert.AreEqual("ett biljard",     sv.Convert(1_000_000_000_000_000L));
+        Assert.AreEqual("ett kvadriljon",  sv.Convert(new System.Numerics.BigInteger(1_000_000_000_000_000_000L) * 1_000_000));
+    }
+
+    [TestMethod]
+    public void Convert_UK_LargeNumbers_Conway()
+    {
+        var uk = NumberToStringConverter.GetConverter("UK");
+
+        Assert.AreEqual("один мільйон",   uk.Convert(1_000_000));
+        Assert.AreEqual("два мільйонів",  uk.Convert(2_000_000));
+        Assert.AreEqual("один мільярд",   uk.Convert(1_000_000_000));
+        Assert.AreEqual("один більйон",   uk.Convert(1_000_000_000_000L));
+        Assert.AreEqual("один трильйон",  uk.Convert(1_000_000_000_000_000_000L));
+    }
+
+    [TestMethod]
+    public void Convert_TR_LargeNumbers_Conway()
+    {
+        var tr = NumberToStringConverter.GetConverter("TR");
+
+        Assert.AreEqual("bir milyon",      tr.Convert(1_000_000));
+        Assert.AreEqual("bir milyar",      tr.Convert(1_000_000_000));
+        Assert.AreEqual("bir trilyon",     tr.Convert(1_000_000_000_000L));
+        Assert.AreEqual("bir katrilyon",   tr.Convert(1_000_000_000_000_000L));
+        Assert.AreEqual("bir kentilyon",   tr.Convert(1_000_000_000_000_000_000L));
+    }
+
+    [TestMethod]
+    public void Convert_VN_LargeNumbers_StaticOnly()
+    {
+        var vn = NumberToStringConverter.GetConverter("VN");
+
+        Assert.AreEqual("một triệu",      vn.Convert(1_000_000));
+        Assert.AreEqual("hai triệu",      vn.Convert(2_000_000));
+        Assert.AreEqual("một tỷ",         vn.Convert(1_000_000_000));
+        Assert.AreEqual("chín trăm chín mươi chín tỷ chín trăm chín mươi chín triệu chín trăm chín mươi chín nghìn chín trăm chín mươi chín",
+                        vn.Convert(999_999_999_999L));
+    }
+
+    [TestMethod]
+    public void Convert_VN_AboveMax_Throws()
+    {
+        var vn = NumberToStringConverter.GetConverter("VN");
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => vn.Convert(1_000_000_000_000L));
+    }
+
+    [TestMethod]
+    public void Convert_RU_LargeNumbers_Conway()
+    {
+        var ru = NumberToStringConverter.GetConverter("RU");
+
+        Assert.AreEqual("один миллион",   ru.Convert(1_000_000));
+        Assert.AreEqual("два миллион",    ru.Convert(2_000_000));
+        Assert.AreEqual("один миллиард",  ru.Convert(1_000_000_000));
+        Assert.AreEqual("один биллион",   ru.Convert(1_000_000_000_000L));
+        Assert.AreEqual("один биллиард",  ru.Convert(1_000_000_000_000_000L));
+        Assert.AreEqual("один триллион",  ru.Convert(1_000_000_000_000_000_000L));
+    }
 }
