@@ -101,5 +101,11 @@
 			<Multiplicative value="2" string="twice" />
 			<Multiplicative value="3" string="thrice" />
 		</Multiplicatives>
+		<TimeUnits>
+			<Unit name="hour"   singular="hour"   plural="hours"   />
+			<Unit name="minute" singular="minute" plural="minutes" />
+			<Unit name="second" singular="second" plural="seconds" />
+		</TimeUnits>
+		<DateFormat pattern="{month} {ordinal-day}, {year}" />
 	</Language>
 </Numbers>

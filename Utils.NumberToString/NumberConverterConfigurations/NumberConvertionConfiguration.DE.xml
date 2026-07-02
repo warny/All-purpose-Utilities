@@ -776,5 +776,11 @@
 		<YearFormat hundredWord="hundert">
 			<SplitRange from="1100" to="1999" />
 		</YearFormat>
+		<TimeUnits>
+			<Unit name="hour"   singular="Stunde"  plural="Stunden"  />
+			<Unit name="minute" singular="Minute"  plural="Minuten"  />
+			<Unit name="second" singular="Sekunde" plural="Sekunden" />
+		</TimeUnits>
+		<DateFormat pattern="{cardinal-day}. {month} {year}" firstDay="ersten" />
 	</Language>
 </Numbers>

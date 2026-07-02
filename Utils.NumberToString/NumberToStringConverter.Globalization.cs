@@ -35,6 +35,8 @@ namespace Utils.NumberToString
                 NumberConverterResources.NumberConvertionConfiguration_FI,
                 NumberConverterResources.NumberConvertionConfiguration_AR,
                 NumberConverterResources.NumberConvertionConfiguration_HE,
+                NumberConverterResources.NumberConvertionConfiguration_HR,
+                NumberConverterResources.NumberConvertionConfiguration_HU,
                 NumberConverterResources.NumberConvertionConfiguration_ZH,
                 NumberConverterResources.NumberConvertionConfiguration_KO,
                 NumberConverterResources.NumberConvertionConfiguration_JA,
@@ -572,6 +574,13 @@ namespace Utils.NumberToString
                 MultiplicativeSuffix = language.Multiplicatives?.Suffix,
                 GroupConnector = language.GroupConnector,
                 GroupConnectorThreshold = language.GroupConnectorThreshold,
+                IntraGroupConnector = language.IntraGroupConnector,
+                IntraGroupConnectorThreshold = language.IntraGroupConnectorThreshold,
+                TimeUnits = language.TimeUnits?.Units?
+                    .ToDictionary(u => u.Name, u => (u.Singular, u.Plural)),
+                DatePattern = language.DateFormat?.Pattern,
+                DateFirstDay = language.DateFormat?.FirstDay,
+                DateTimeConnector = language.DateFormat?.DateTimeConnector,
             };
 
             var converter = new NumberToStringConverter(options);

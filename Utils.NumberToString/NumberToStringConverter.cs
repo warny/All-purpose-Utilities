@@ -99,6 +99,13 @@ namespace Utils.NumberToString
             MultiplicativeSuffix = options.MultiplicativeSuffix;
             _groupConnector = options.GroupConnector;
             _groupConnectorThreshold = options.GroupConnectorThreshold;
+            _intraGroupConnector = options.IntraGroupConnector;
+            _intraGroupConnectorThreshold = options.IntraGroupConnectorThreshold;
+            _timeUnits = options.TimeUnits?.ToImmutableDictionary()
+                         ?? ImmutableDictionary<string, (string Singular, string Plural)>.Empty;
+            _datePattern = options.DatePattern;
+            _dateFirstDay = options.DateFirstDay;
+            _dateTimeConnector = options.DateTimeConnector;
             // Index both canonical name and localName so both are accepted in API calls and XML constraints.
             _dimensionIndex = VariantDimensions
                 .SelectMany(d => string.IsNullOrEmpty(d.LocalName)
@@ -241,6 +248,30 @@ namespace Utils.NumberToString
         /// <summary>Gets the threshold below which the group connector is used.</summary>
         public int GroupConnectorThreshold => (int)_groupConnectorThreshold;
 
+        /// <summary>Gets the intra-group connector inserted between hundreds and lower parts (e.g. "linh" for VN).</summary>
+        public string? IntraGroupConnector => _intraGroupConnector;
+
+        /// <summary>Gets the threshold below which the intra-group connector is inserted.</summary>
+        public int IntraGroupConnectorThreshold => (int)_intraGroupConnectorThreshold;
+
+        /// <inheritdoc/>
+        public bool SupportsTimeConversion => _timeUnits.Count > 0;
+
+        /// <inheritdoc/>
+        public bool SupportsDateConversion => _datePattern != null;
+
+        /// <summary>Gets the time units for time conversion (hours, minutes, seconds).</summary>
+        public IReadOnlyDictionary<string, (string Singular, string Plural)> TimeUnits => _timeUnits;
+
+        /// <summary>Gets the date pattern string (tokens: {month}, {ordinal-day}, {cardinal-day}, {year}).</summary>
+        public string? DatePattern => _datePattern;
+
+        /// <summary>Gets the special string for day 1 in date ordinal rendering (e.g. "premier" in French).</summary>
+        public string? DateFirstDay => _dateFirstDay;
+
+        /// <summary>Gets the connector inserted between date and time in DateTime conversion.</summary>
+        public string? DateTimeConnector => _dateTimeConnector;
+
         /// <inheritdoc/>
         public bool SupportsOrdinals =>
             OrdinalSuffix != null || OrdinalPrefix != null
@@ -254,6 +285,12 @@ namespace Utils.NumberToString
         private readonly Func<string, string>? _rawAdjustFunction;
         private readonly string? _groupConnector;
         private readonly long _groupConnectorThreshold;
+        private readonly string? _intraGroupConnector;
+        private readonly long _intraGroupConnectorThreshold;
+        private readonly ImmutableDictionary<string, (string Singular, string Plural)> _timeUnits;
+        private readonly string? _datePattern;
+        private readonly string? _dateFirstDay;
+        private readonly string? _dateTimeConnector;
 
         /// <summary>
         /// The raw adjust function before composition with <see cref="LanguageSpecifics"/>.
@@ -937,7 +974,13 @@ namespace Utils.NumberToString
             var leftText = ConvertGroup(groupNumber - 1, remainder);
             var valueText = Groups[groupNumber][groupValue];
 
-            return string.IsNullOrEmpty(leftText) ? valueText.StringValue : valueText.BuildString.Replace("*", leftText);
+            if (string.IsNullOrEmpty(leftText)) return valueText.StringValue;
+
+            // Inject intra-group connector at the hundreds level when there are hundreds AND remainder < threshold
+            if (groupNumber == 3 && _intraGroupConnector != null && groupValue > 0 && remainder > 0 && remainder < _intraGroupConnectorThreshold)
+                return valueText.BuildString.Replace("*", _intraGroupConnector + Separator + leftText);
+
+            return valueText.BuildString.Replace("*", leftText);
         }
 
         /// <summary>
@@ -1117,6 +1160,97 @@ namespace Utils.NumberToString
                 return Convert(multiplier, variants) + MultiplicativeSuffix;
             // No suffix and no named form — fall back to cardinal
             return Convert(multiplier, variants);
+        }
+
+        private string FormatTimeUnit(int count, (string Singular, string Plural) unit, string[] variants)
+        {
+            string word = count == 1 ? unit.Singular : unit.Plural;
+            return Convert(count, variants) + Separator + word;
+        }
+
+        /// <inheritdoc cref="INumberToStringConverter.Convert(TimeSpan, string[])"/>
+        public string Convert(TimeSpan duration, params string[] variants)
+        {
+            if (!SupportsTimeConversion)
+                throw new NotSupportedException($"Language '{LanguageIdentifier}' has no <TimeUnits> configuration.");
+
+            var abs = duration < TimeSpan.Zero ? -duration : duration;
+            var parts = new List<string>();
+            int totalHours = (int)(abs.Days * 24 + abs.Hours);
+
+            if (totalHours > 0 && _timeUnits.TryGetValue("hour", out var h))
+                parts.Add(FormatTimeUnit(totalHours, h, variants));
+            if (abs.Minutes > 0 && _timeUnits.TryGetValue("minute", out var m))
+                parts.Add(FormatTimeUnit(abs.Minutes, m, variants));
+            if (abs.Seconds > 0 && _timeUnits.TryGetValue("second", out var s))
+                parts.Add(FormatTimeUnit(abs.Seconds, s, variants));
+
+            string body = parts.Count > 0 ? string.Join(Separator, parts) : Zero;
+            return duration < TimeSpan.Zero ? Minus.Replace("*", body) : body;
+        }
+
+        /// <inheritdoc cref="INumberToStringConverter.Convert(TimeOnly, string[])"/>
+        public string Convert(TimeOnly time, params string[] variants)
+        {
+            if (!SupportsTimeConversion)
+                throw new NotSupportedException($"Language '{LanguageIdentifier}' has no <TimeUnits> configuration.");
+
+            var parts = new List<string>();
+            if (_timeUnits.TryGetValue("hour", out var h))
+                parts.Add(FormatTimeUnit(time.Hour, h, variants));
+            if (time.Minute > 0 && _timeUnits.TryGetValue("minute", out var m))
+                parts.Add(FormatTimeUnit(time.Minute, m, variants));
+            if (time.Second > 0 && _timeUnits.TryGetValue("second", out var s))
+                parts.Add(FormatTimeUnit(time.Second, s, variants));
+
+            return parts.Count > 0 ? string.Join(Separator, parts) : Zero;
+        }
+
+        private string GetMonthName(int month)
+        {
+            try
+            {
+                return CultureInfo.GetCultureInfo(LanguageIdentifier).DateTimeFormat.MonthNames[month - 1];
+            }
+            catch
+            {
+                return month.ToString(CultureInfo.InvariantCulture);
+            }
+        }
+
+        /// <inheritdoc cref="INumberToStringConverter.Convert(DateOnly, string[])"/>
+        public string Convert(DateOnly date, params string[] variants)
+        {
+            if (!SupportsDateConversion)
+                throw new NotSupportedException($"Language '{LanguageIdentifier}' has no <DateFormat> configuration.");
+
+            string month = GetMonthName(date.Month);
+            string cardinalDay = Convert(date.Day, variants);
+            string ordinalDay = (date.Day == 1 && _dateFirstDay != null)
+                ? _dateFirstDay
+                : (SupportsOrdinals ? ConvertOrdinal(date.Day, variants) : cardinalDay);
+            string year = ConvertYear(date.Year, variants);
+
+            return _datePattern!
+                .Replace("{month}", month)
+                .Replace("{ordinal-day}", ordinalDay)
+                .Replace("{cardinal-day}", cardinalDay)
+                .Replace("{year}", year);
+        }
+
+        /// <inheritdoc cref="INumberToStringConverter.Convert(DateTime, string[])"/>
+        public string Convert(DateTime dateTime, params string[] variants)
+        {
+            if (!SupportsDateConversion && !SupportsTimeConversion)
+                throw new NotSupportedException($"Language '{LanguageIdentifier}' has no <DateFormat> or <TimeUnits> configuration.");
+
+            string connector = _dateTimeConnector ?? Separator;
+
+            if (SupportsDateConversion && SupportsTimeConversion)
+                return Convert(DateOnly.FromDateTime(dateTime), variants) + connector + Convert(TimeOnly.FromDateTime(dateTime), variants);
+            if (SupportsDateConversion)
+                return Convert(DateOnly.FromDateTime(dateTime), variants);
+            return Convert(TimeOnly.FromDateTime(dateTime), variants);
         }
 
         /// <summary>

@@ -138,6 +138,36 @@ public sealed class NumberToStringConverterOptions
     /// <summary>Threshold below which <see cref="GroupConnector"/> is used instead of the regular group separator.</summary>
     public int GroupConnectorThreshold { get; set; } = 100;
 
+    /// <summary>
+    /// Word inserted inside a group between the hundreds and the lower part when the lower part is
+    /// below <see cref="IntraGroupConnectorThreshold"/> (e.g. "linh" for Vietnamese).
+    /// </summary>
+    public string? IntraGroupConnector { get; set; }
+
+    /// <summary>Threshold below which <see cref="IntraGroupConnector"/> is inserted within a group.</summary>
+    public int IntraGroupConnectorThreshold { get; set; } = 10;
+
+    /// <summary>
+    /// Time units keyed by canonical name ("hour", "minute", "second"),
+    /// each with singular and plural forms. Required for Convert(TimeSpan/TimeOnly).
+    /// </summary>
+    public IReadOnlyDictionary<string, (string Singular, string Plural)>? TimeUnits { get; set; }
+
+    /// <summary>
+    /// Pattern for rendering a date. Supported tokens: {month}, {ordinal-day}, {cardinal-day}, {year}.
+    /// Required for Convert(DateOnly/DateTime).
+    /// </summary>
+    public string? DatePattern { get; set; }
+
+    /// <summary>
+    /// Special string used for the first day of the month (e.g. "premier" in French).
+    /// When set, overrides the ordinal form of day 1 in {ordinal-day}.
+    /// </summary>
+    public string? DateFirstDay { get; set; }
+
+    /// <summary>Connector inserted between date and time when converting a DateTime (defaults to Separator).</summary>
+    public string? DateTimeConnector { get; set; }
+
     /// <summary>Creates an options object with sensible defaults. Required properties
     /// (<see cref="Zero"/>, <see cref="Minus"/>, <see cref="Groups"/>, <see cref="Scale"/>)
     /// must be set before passing to the constructor.</summary>
@@ -181,6 +211,12 @@ public sealed class NumberToStringConverterOptions
         MultiplicativeSuffix = source.MultiplicativeSuffix;
         GroupConnector = source.GroupConnector;
         GroupConnectorThreshold = source.GroupConnectorThreshold;
+        IntraGroupConnector = source.IntraGroupConnector;
+        IntraGroupConnectorThreshold = source.IntraGroupConnectorThreshold;
+        TimeUnits = source.TimeUnits;
+        DatePattern = source.DatePattern;
+        DateFirstDay = source.DateFirstDay;
+        DateTimeConnector = source.DateTimeConnector;
     }
 
     /// <summary>

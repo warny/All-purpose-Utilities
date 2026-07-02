@@ -1249,6 +1249,73 @@
                                 </xs:annotation>
                             </xs:element>
 
+                            <xs:element name="TimeUnits" minOccurs="0">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Time-unit definitions for Convert(TimeSpan) and Convert(TimeOnly).
+                                        Each Unit element maps a canonical name ("hour", "minute", "second")
+                                        to its singular and plural spoken forms.
+                                    </xs:documentation>
+                                </xs:annotation>
+                                <xs:complexType>
+                                    <xs:sequence>
+                                        <xs:element name="Unit" minOccurs="0" maxOccurs="unbounded">
+                                            <xs:complexType>
+                                                <xs:attribute name="name" type="xs:string" use="required">
+                                                    <xs:annotation><xs:documentation>Canonical name: "hour", "minute", or "second".</xs:documentation></xs:annotation>
+                                                </xs:attribute>
+                                                <xs:attribute name="singular" type="xs:string" use="required">
+                                                    <xs:annotation><xs:documentation>Singular form (e.g. "hour", "heure").</xs:documentation></xs:annotation>
+                                                </xs:attribute>
+                                                <xs:attribute name="plural" type="xs:string" use="required">
+                                                    <xs:annotation><xs:documentation>Plural form (e.g. "hours", "heures").</xs:documentation></xs:annotation>
+                                                </xs:attribute>
+                                            </xs:complexType>
+                                        </xs:element>
+                                    </xs:sequence>
+                                </xs:complexType>
+                            </xs:element>
+
+                            <xs:element name="DateFormat" minOccurs="0">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Date-format configuration for Convert(DateOnly) and Convert(DateTime).
+                                        The pattern supports tokens: {month}, {ordinal-day}, {cardinal-day}, {year}.
+                                        Month names are read from System.Globalization.CultureInfo — no XML needed.
+                                    </xs:documentation>
+                                </xs:annotation>
+                                <xs:complexType>
+                                    <xs:attribute name="pattern" type="xs:string" use="required">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                Composition pattern. Tokens: {month} (month name from CultureInfo),
+                                                {ordinal-day} (day as ordinal, e.g. "second"), {cardinal-day} (day as
+                                                cardinal, e.g. "two"), {year} (via ConvertYear).
+                                                Example EN: "{month} {ordinal-day}, {year}"
+                                                Example FR: "{cardinal-day} {month} {year}"
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+                                    <xs:attribute name="firstDay" type="xs:string" use="optional">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                Special string for the first day of the month used in {ordinal-day}
+                                                (e.g. "premier" in French, "ersten" in German).
+                                                When absent, the ordinal form of 1 is used.
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+                                    <xs:attribute name="dateTimeConnector" type="xs:string" use="optional">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                Connector inserted between date and time in Convert(DateTime).
+                                                Defaults to the language separator when omitted.
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+                                </xs:complexType>
+                            </xs:element>
+
                             <xs:element name="Multiplicatives" minOccurs="0">
                                 <xs:annotation>
                                     <xs:documentation>
@@ -1358,6 +1425,24 @@
                                 <xs:documentation>
                                     Threshold below which groupConnector is used instead of groupSeparator.
                                     Defaults to 100 when omitted.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="intraGroupConnector" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Word inserted inside a digit group between the hundreds and the lower part
+                                    (tens + units) when that lower part is below intraGroupConnectorThreshold.
+                                    Example: "linh" for Vietnamese — 101 → "một trăm linh một".
+                                    Omit when no connector is needed within a group.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="intraGroupConnectorThreshold" type="xs:nonNegativeInteger" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Threshold below which intraGroupConnector is inserted.
+                                    Defaults to 10 when omitted (connector fires for remainder 1–9).
                                 </xs:documentation>
                             </xs:annotation>
                         </xs:attribute>

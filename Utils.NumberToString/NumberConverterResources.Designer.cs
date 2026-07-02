@@ -458,7 +458,21 @@ namespace Utils {
                 return ResourceManager.GetString("NumberConvertionConfiguration.HE", resourceCulture);
             }
         }
-        
+
+        /// <summary>Croatian number-to-string configuration.</summary>
+        internal static string NumberConvertionConfiguration_HR {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.HR", resourceCulture);
+            }
+        }
+
+        /// <summary>Hungarian number-to-string configuration.</summary>
+        internal static string NumberConvertionConfiguration_HU {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.HU", resourceCulture);
+            }
+        }
+
         /// <summary>
         ///   Recherche une chaîne localisée semblable à &lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
         ///&lt;Numbers xmlns=&quot;Utils/NumberConvertionConfiguration.xsd&quot;&gt;

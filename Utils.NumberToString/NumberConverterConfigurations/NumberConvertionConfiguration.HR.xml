@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+    <Language
+        groupSize="3"
+        separator=" "
+        groupSeparator=""
+        zero="nula"
+        minus="minus *"
+        decimalSeparator="zarez"
+        fractionSeparator="nad"
+    >
+        <Culture>HR</Culture>
+        <Culture>HR-HR</Culture>
+        <Groups>
+            <Group level="1">
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="jedan" />
+                <Digit digit="2" string="dva" />
+                <Digit digit="3" string="tri" />
+                <Digit digit="4" string="četiri" />
+                <Digit digit="5" string="pet" />
+                <Digit digit="6" string="šest" />
+                <Digit digit="7" string="sedam" />
+                <Digit digit="8" string="osam" />
+                <Digit digit="9" string="devet" />
+            </Group>
+            <Group level="2">
+                <Digit digit="0" string=""            buildString="*" />
+                <Digit digit="1" string="deset"       buildString="deset *" />
+                <Digit digit="2" string="dvadeset"    buildString="dvadeset *" />
+                <Digit digit="3" string="trideset"    buildString="trideset *" />
+                <Digit digit="4" string="četrdeset"   buildString="četrdeset *" />
+                <Digit digit="5" string="pedeset"     buildString="pedeset *" />
+                <Digit digit="6" string="šezdeset"    buildString="šezdeset *" />
+                <Digit digit="7" string="sedamdeset"  buildString="sedamdeset *" />
+                <Digit digit="8" string="osamdeset"   buildString="osamdeset *" />
+                <Digit digit="9" string="devedeset"   buildString="devedeset *" />
+            </Group>
+            <Group level="3">
+                <Digit digit="0" string=""            buildString="*" />
+                <Digit digit="1" string="sto"         buildString="sto *" />
+                <Digit digit="2" string="dvjesto"     buildString="dvjesto *" />
+                <Digit digit="3" string="tristo"      buildString="tristo *" />
+                <Digit digit="4" string="četiristo"   buildString="četiristo *" />
+                <Digit digit="5" string="petsto"      buildString="petsto *" />
+                <Digit digit="6" string="šeststo"     buildString="šeststo *" />
+                <Digit digit="7" string="sedamsto"    buildString="sedamsto *" />
+                <Digit digit="8" string="osamsto"     buildString="osamsto *" />
+                <Digit digit="9" string="devetsto"    buildString="devetsto *" />
+            </Group>
+        </Groups>
+        <!-- Croatian long scale: milijun / milijarda / bilijun / bilijarda …
+             groupSeparator="li": mi+li+jun=milijun, mi+li+jarda=milijarda -->
+        <NumberScale firstLetterUpperCase="false" groupSeparator="li">
+            <StaticNames>
+                <Scale value="0" string="" />
+                <Scale value="1" string="tisuća" />
+            </StaticNames>
+            <Suffixes>
+                <Suffix>jun</Suffix>
+                <Suffix>jarda</Suffix>
+            </Suffixes>
+        </NumberScale>
+        <Replacements>
+            <!-- 1000 = "tisuća", not "jedan tisuća" -->
+            <Replacement oldValue="jedan tisuća" newValue="tisuća" />
+        </Replacements>
+        <Exceptions>
+            <Number value="11" string="jedanaest" />
+            <Number value="12" string="dvanaest" />
+            <Number value="13" string="trinaest" />
+            <Number value="14" string="četrnaest" />
+            <Number value="15" string="petnaest" />
+            <Number value="16" string="šesnaest" />
+            <Number value="17" string="sedamnaest" />
+            <Number value="18" string="osamnaest" />
+            <Number value="19" string="devetnaest" />
+        </Exceptions>
+        <Ordinals suffix="i">
+            <OrdinalException value="1" string="prvi" />
+            <OrdinalException value="2" string="drugi" />
+            <OrdinalException value="3" string="treći" />
+        </Ordinals>
+    </Language>
+</Numbers>

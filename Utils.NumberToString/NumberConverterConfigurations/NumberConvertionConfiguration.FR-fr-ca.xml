@@ -114,5 +114,11 @@
 			<Multiplicative value="2" string="deux fois" />
 			<Multiplicative value="3" string="trois fois" />
 		</Multiplicatives>
+		<TimeUnits>
+			<Unit name="hour"   singular="heure"   plural="heures"   />
+			<Unit name="minute" singular="minute"  plural="minutes"  />
+			<Unit name="second" singular="seconde" plural="secondes" />
+		</TimeUnits>
+		<DateFormat pattern="{cardinal-day} {month} {year}" firstDay="premier" />
 	</Language>
 </Numbers>
