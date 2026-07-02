@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -7,6 +8,7 @@ using System.Numerics;
 using System.Reflection;
 using System.Xml;
 using System.Xml.Serialization;
+using Utils.Range;
 
 namespace Utils.NumberToString
 {
@@ -36,18 +38,23 @@ namespace Utils.NumberToString
                 NumberConverterResources.NumberConvertionConfiguration_HI,
                 NumberConverterResources.NumberConvertionConfiguration_EL,
                 NumberConverterResources.NumberConvertionConfiguration_NL,
+                NumberConverterResources.NumberConvertionConfiguration_NO,
                 NumberConverterResources.NumberConvertionConfiguration_RU,
+                NumberConverterResources.NumberConvertionConfiguration_SV,
+                NumberConverterResources.NumberConvertionConfiguration_TR,
+                NumberConverterResources.NumberConvertionConfiguration_UK,
+                NumberConverterResources.NumberConvertionConfiguration_VN,
                 NumberConverterResources.NumberConvertionConfiguration_ZU,
                 NumberConverterResources.NumberConvertionConfiguration_EE,
                 NumberConverterResources.NumberConvertionConfiguration_WO
             );
         }
 
-        // Caches configurations for different cultures
-        private static readonly Dictionary<string, NumberToStringConverter> CachedConfigurations = new(StringComparer.InvariantCultureIgnoreCase);
+        // Caches configurations for different cultures — ConcurrentDictionary for thread-safety
+        private static readonly ConcurrentDictionary<string, NumberToStringConverter> CachedConfigurations = new(StringComparer.InvariantCultureIgnoreCase);
 
         // Explicitly registered language-specifics instances, consulted before reflection
-        private static readonly Dictionary<string, INumberToStringLanguageSpecifics> _registeredSpecifics = new(StringComparer.Ordinal);
+        private static readonly ConcurrentDictionary<string, INumberToStringLanguageSpecifics> _registeredSpecifics = new(StringComparer.Ordinal);
 
         /// <summary>
         /// Registers an <see cref="INumberToStringLanguageSpecifics"/> instance under a given type name
@@ -550,7 +557,9 @@ namespace Utils.NumberToString
                 YearFormat = language.YearFormat == null ? null : new YearFormatOptions(
                     language.YearFormat.HundredWord,
                     language.YearFormat.ZeroConnector,
-                    language.YearFormat.SplitRanges.Select(r => (r.From, r.To)).ToList()),
+                    language.YearFormat.SplitRanges.Count == 0 ? null
+                        : new IntRange<int>(string.Join(",", language.YearFormat.SplitRanges.Select(r => $"{r.From}-{r.To}"))),
+                    language.YearFormat.BeforeChristSuffix),
             };
 
             return new NumberToStringConverter(options);

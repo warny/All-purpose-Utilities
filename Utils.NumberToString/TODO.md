@@ -38,71 +38,64 @@ déléguant à `Convert(BigInteger, int, string[])`) et dans `NumberToStringConv
 
 ## Priorité haute — bugs corrigeables dans les XML
 
-### 4. Formes fusionnées ES et IT (`veintiuno`, `ventiuno`, etc.)
-La règle `LastWord` ne peut pas atteindre `uno`/`una` dans les formes sans espace.
-Solution purement XML : changer les `buildString` de `"treinta*"` → `"treinta y *"` (ES)
-et `"venti*"` → `"venti *"` (IT).
+### 4. ~~Formes fusionnées ES et IT~~ — **implémenté**
+`buildString` corrigés : `"treinta*"` → `"treinta y *"` (ES 31-99),
+`"venti*"` → `"venti *"` (IT 21-29).
+Cela permet à la règle `LastWord` d'atteindre `uno`/`una` dans ces composés
+(ordinals ES masculins 31-99 et variant femminile IT 21-29 fonctionnent désormais).
 
 ## Priorité moyenne — nouvelles fonctionnalités
 
-### 5. `ConvertOrdinal(BigInteger)` dans l'interface
-`Convert` supporte `BigInteger` illimité, mais `ConvertOrdinal` s'arrête à `long` (et en pratique
-à `int` via cast). Ajouter `ConvertOrdinal(BigInteger)` avec une implémentation par défaut
-`checked((int)number)` garderait la cohérence de surface.
+### 5. ~~`ConvertOrdinal(BigInteger)` dans l'interface~~ — **implémenté**
+Surcharges `ConvertOrdinal(BigInteger)` et `ConvertOrdinal(BigInteger, params string[])` ajoutées
+dans `INumberToStringConverter` (implémentation par défaut `checked((long)number)`)
+et dans `NumberToStringConverter`.
 
-### 6. `ConvertYear` avec variants
-`ConvertYear(int year)` n'accepte pas de variants. Pour les langues où `Convert` varie selon
-le genre (DE: `ConvertYear(2001)` → `"zweitausend eins"` / `"zweitausend eine"`), l'absence
-de variants dans `ConvertYear` crée une inconsistance.
-Signature proposée : `ConvertYear(int year, params string[] variants)`.
+### 6. ~~`ConvertYear` avec variants~~ — **implémenté**
+`ConvertYear(int year, params string[] variants)` ajouté dans `INumberToStringConverter`
+(implémentation par défaut délégue à `ConvertYear(year)`) et dans `NumberToStringConverter`
+(les variants sont transmis à tous les sous-appels `Convert()`).
 
-### 7. Regex compilées à la construction du converter
-Les `TriggerReplace` et les règles de remplacement avec `regex=true` sont compilées à chaque appel.
-Stocker un `Regex` compilé dans le type `TriggerReplace` au moment de la construction du converter
-éviterait la recompilation à chaque conversion.
+### 7. ~~Regex compilées à la construction du converter~~ — **implémenté**
+`TriggerReplace` stocke maintenant `CompiledRegex` (un `Regex` pré-compilé) initialisé dans le
+constructeur quand `isRegex=true`. `ApplyTriggerReplace` utilise `CompiledRegex.Replace()`
+au lieu de `Regex.Replace()` à chaque appel.
 
-### 8. Langues populaires manquantes
-Par ordre d'utilité et de complexité :
-- **TR (Turc)** : agglutinant, harmonie vocalique dans les suffixes numéraux (~90M de locuteurs).
-- **SV/NO/DA (Suédois/Norvégien/Danois)** : langues nordiques, genre commun/neutre, ordinals réguliers.
-- **UK (Ukrainien)** : proche du RU déjà implémenté.
-- **RO (Roumain)** : langue romane comme IT/PT, genre féminin/masculin pour les chiffres.
+### 8. ~~Langues populaires manquantes~~ — **implémenté (VN, TR, SV, NO, UK)**
+Cinq nouveaux fichiers XML ajoutés :
+- **VN/VI/VI-VN (Vietnamien)** : cardinals avec allomorphes mốt/lăm via remplacement `Anywhere`,
+  ordinals `thứ N` avec exception `thứ nhất`. Connecteur *linh* non implémenté (nécessite moteur).
+- **TR/TR-TR (Turc)** : cardinals sans `bir yüz` / `bir bin` (règles nationales respectées).
+- **SV/SV-SE (Suédois)** : cardinals avec fusion 20s (`tjugo*`) et espaces 30s-90s.
+- **NO/NB/NB-NO (Norvégien Bokmål)** : cardinals.
+- **UK/UK-UA (Ukrainien)** : cardinals simplifiés (inflexion тисяч invariante).
+- **RO (Roumain)** : non implémenté (système genre+cas trop complexe → reporté).
 
-### 9. Ordinaux ZU (Zoulou) via `IOrdinalLanguageSpecifics`
-Les ordinaux zoulou dépendent de la classe nominale du substantif (morphologie agglutinante),
-ce qui rend l'approche XML insuffisante. Nécessite :
-- Recherche linguistique (classes 1–17, préfixes de classe)
-- Implémentation d'une classe `ZuluOrdinalLanguageSpecifics : IOrdinalLanguageSpecifics`
+### 9. Ordinaux ZU (Zoulou) via `IOrdinalLanguageSpecifics` — **reporté**
+Nécessite une recherche linguistique approfondie (classes nominales 1–17) et une implémentation
+`ZuluOrdinalLanguageSpecifics`. Hors scope d'un correctif XML.
 
-### 10. Ordinaux PL complets — accord genre × cas via `IOrdinalLanguageSpecifics`
+### 10. Ordinaux PL complets — **reporté**
 L'implémentation actuelle couvre le nominatif masculin singulier.
-Pour les formes complètes (féminin/neutre + 7 cas), une classe `PolishOrdinalLanguageSpecifics`
-serait plus appropriée que de multiplier les `<OrdinalVariants>`.
+Les formes complètes (féminin/neutre + 7 cas) nécessitent `PolishOrdinalLanguageSpecifics`.
 
-### 11. `ConvertOrdinal` avec accord complet pour AR via `IOrdinalLanguageSpecifics`
-L'arabe inverse le genre de l'ordinal par rapport au cardinal pour 3-10 (règle de polarité),
-et possède une forme duelle. Nécessite une classe `ArabicOrdinalLanguageSpecifics`.
+### 11. `ConvertOrdinal` avec accord complet pour AR — **reporté**
+La règle de polarité de genre arabe (3-10) et la forme duelle nécessitent
+`ArabicOrdinalLanguageSpecifics`.
 
 ## Priorité basse — robustesse
 
-### 12. `GetConverter` avec codes de culture > 5 caractères
-`culture.Length.ArgMustBeIn([2, 5])` rejette des codes légaux comme `"zh-Hans"` (7)
-ou `"zh-Hans-CN"` (10). `CultureInfo.GetCultureInfo("zh-Hans").Name` retourne `"zh-Hans"`,
-donc passer une `CultureInfo` via l'overload `GetConverter(CultureInfo)` peut lever une exception.
+### 12. ~~`GetConverter` avec codes de culture > 5 caractères~~ — **implémenté**
+Remplacé `culture.Length.ArgMustBeIn([2, 5])` par un stripping récursif du dernier sous-tag BCP-47
+(`culture[..culture.LastIndexOf('-')]`). `"zh-Hans-CN"` → `"zh-Hans"` → `"zh"` → ZH config.
 
-### 13. Thread-safety de `RegisterConfigurations` / `RegisterLanguageSpecifics`
-Ces méthodes statiques modifient `CachedConfigurations` (un `Dictionary` statique).
-En contexte ASP.NET Core où l'appel peut venir de plusieurs threads au démarrage,
-passer à `ConcurrentDictionary` éviterait des races silencieuses.
+### 13. ~~Thread-safety de `RegisterConfigurations` / `RegisterLanguageSpecifics`~~ — **implémenté**
+`CachedConfigurations` et `_registeredSpecifics` convertis de `Dictionary` en `ConcurrentDictionary`.
 
-### 14. `ConvertYear` négatif — années av. J.-C.
-`ConvertYear(-44)` passe par le template `minus` → `"minus forty-four"`.
-Un attribut optionnel `beforeChristSuffix` dans `<YearFormat>` permettrait de produire
-`"forty-four BC"` sans bricoler avec `AdjustFunction`.
+### 14. ~~`ConvertYear` négatif — années av. J.-C.~~ — **implémenté**
+Attribut `beforeChristSuffix` ajouté dans `<YearFormat>` (XML + `YearFormatType` + `YearFormatOptions`).
+Quand présent, `ConvertYear(-44, ...)` retourne `"forty-four BC"` au lieu de `"minus forty-four"`.
 
-### 15. `ConvertYear` — extension à d'autres langues
-Langues candidates pour un format split an :
-- **RU** : « тысяча девятьсот восемьдесят четыре » (pas de split — fallback OK)
-- **FR** : « mille neuf cent quatre-vingt-quatre » (pas de split — fallback OK)
-- **IT** : 1984 → « millenovecentottantaquattro » (un seul mot en IT — pas de split)
-- Conclusion : le split en deux moitiés est surtout pertinent pour EN, DE et NL.
+### 15. `ConvertYear` — extension à d'autres langues — **non applicable**
+Seuls EN, DE et NL bénéficient du format split-en-deux-moitiés, et tous trois sont déjà implémentés.
+RU, FR, IT n'utilisent pas ce format.

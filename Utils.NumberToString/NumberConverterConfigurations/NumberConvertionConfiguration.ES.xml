@@ -27,13 +27,13 @@
 				<Digit digit="0" string="" buildString="*" />
 				<Digit digit="1" string="diez" buildString="dieci*" />
 				<Digit digit="2" string="veinte" buildString="veinti*" />
-				<Digit digit="3" string="treinta" buildString="treinta*" />
-				<Digit digit="4" string="cuarenta" buildString="cuarenta*" />
-				<Digit digit="5" string="cincuenta" buildString="cincuenta*" />
-				<Digit digit="6" string="sesenta" buildString="sesenta*" />
-				<Digit digit="7" string="setenta" buildString="setenta*" />
-				<Digit digit="8" string="ochenta" buildString="ochenta*" />
-				<Digit digit="9" string="noventa" buildString="noventa*" />
+				<Digit digit="3" string="treinta" buildString="treinta y *" />
+				<Digit digit="4" string="cuarenta" buildString="cuarenta y *" />
+				<Digit digit="5" string="cincuenta" buildString="cincuenta y *" />
+				<Digit digit="6" string="sesenta" buildString="sesenta y *" />
+				<Digit digit="7" string="setenta" buildString="setenta y *" />
+				<Digit digit="8" string="ochenta" buildString="ochenta y *" />
+				<Digit digit="9" string="noventa" buildString="noventa y *" />
 			</Group>
 			<Group level="3">
 				<Digit digit="0" string="" buildString="*" />
