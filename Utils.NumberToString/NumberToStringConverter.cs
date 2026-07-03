@@ -1080,10 +1080,8 @@ namespace Utils.NumberToString
             long absNumber = Math.Abs(number);
             var activeVariants = BuildVariantQuery(variants);
 
-            // Plugin only accepts int; skip for values outside int range
             if (LanguageSpecifics is IOrdinalLanguageSpecifics ordinalPlugin
-                && absNumber <= int.MaxValue
-                && ordinalPlugin.TryConvertOrdinal((int)absNumber, activeVariants, out var pluginResult))
+                && ordinalPlugin.TryConvertOrdinal(absNumber, activeVariants, out var pluginResult))
                 return isNegative ? Minus.Replace("*", pluginResult!) : pluginResult!;
 
             // Find the most specific matching ordinal variant
