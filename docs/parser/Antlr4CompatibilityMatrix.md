@@ -1,5 +1,7 @@
 # ANTLR4 Compatibility Matrix
 
+> Rule arguments/returns plan: [`RuleArgumentsAndReturnsPlan.md`](./RuleArgumentsAndReturnsPlan.md) is the design reference for rule parameters, call arguments, returns, labels, rollback, and future generated-C# opt-in binding. The matrix rows below describe current behavior only: parameters and returns are metadata plus explicit helper state, raw call arguments are preserved/split syntactically, literal binding policies are explicit opt-in, labels store managed `ParserRuleCallResult` snapshots, and generated-C# automatic `callee[expr]` binding is not implemented.
+
 ## Introduction
 
 `Utils.Parser` supports ANTLR4 grammar ingestion progressively, with a conservative runtime execution model.

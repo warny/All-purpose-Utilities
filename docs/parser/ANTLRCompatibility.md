@@ -9,6 +9,8 @@ This document must be consulted before modifying any grammar-related component, 
 > Note: this reference is complementary to `Antlr4CompatibilityMatrix.md` (high-level matrix).
 > Use this file for implementation-oriented usage guidance when behavior differs from standard ANTLR4.
 
+> Rule arguments and returns integration plan: see [`RuleArgumentsAndReturnsPlan.md`](./RuleArgumentsAndReturnsPlan.md) for the design split between conservative runtime behavior, explicit runtime policies, generated-C# opt-in helpers, metadata-only facts, rollback boundaries, and future generated-C# argument binding phases. In short, rule parameters are parsed as metadata, rule-call raw arguments are preserved, manual/explicit runtime policy support exists for limited literals, generated-C# automatic ANTLR-style argument binding is not implemented, return metadata and managed return snapshots exist, and ANTLR-style return access remains partial and opt-in.
+
 ---
 
 ## Compatibility level estimate
