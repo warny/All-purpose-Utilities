@@ -364,6 +364,21 @@ public class ReplacementType
     public ReplacementScope Scope => ParseScope(ScopeValue);
 
     /// <summary>
+    /// Gets or sets the raw string value of the scale level restriction, or
+    /// <see langword="null"/> when no restriction is configured.
+    /// </summary>
+    [XmlAttribute("onScale")]
+    public string? OnScaleValue { get; set; }
+
+    /// <summary>
+    /// Gets the scale level this replacement is restricted to, or <see langword="null"/>
+    /// to apply at all levels. 0 = units group, 1 = thousands, 2 = millions, etc.
+    /// Negative values are reserved for future use (decimal fraction groups).
+    /// </summary>
+    [XmlIgnore]
+    public int? OnScale => int.TryParse(OnScaleValue, out int v) ? v : null;
+
+    /// <summary>
     /// Per-dimension-value form declarations expanded at load time into <c>VariantRule</c>
     /// replacement entries (see <see cref="FormVariantType"/>).
     /// </summary>

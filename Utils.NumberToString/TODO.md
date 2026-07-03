@@ -17,7 +17,14 @@ serait plus appropriée que de multiplier les `<OrdinalVariants>`.
 L'arabe inverse le genre de l'ordinal par rapport au cardinal pour 3-10 (règle de polarité),
 et possède une forme duelle. Nécessite une classe `ArabicOrdinalLanguageSpecifics`.
 
-### 4. `ConvertYear` — extension à d'autres langues
+### 4. `onScale` — valeurs négatives (groupes décimaux)
+L'attribut `onScale` sur `<Replacement>` ne couvre actuellement que les groupes entiers
+(0 = unités, 1 = milliers, 2 = millions, …). Les groupes décimaux (dixièmes, centièmes, …)
+passent par un chemin séparé (`Fractions` + digit-by-digit dans `Convert(decimal)`) et ne
+traversent pas `ConvertRaw`. Les valeurs négatives (`onScale="-1"` etc.) sont donc réservées
+pour un usage futur si ce chemin est un jour unifié avec `ConvertRaw`.
+
+### 5. `ConvertYear` — extension à d'autres langues
 Langues candidates pour un format split an :
 - **RU** : « тысяча девятьсот восемьдесят четыре » (pas de split — fallback OK)
 - **FR** : « mille neuf cent quatre-vingt-quatre » (pas de split — fallback OK)

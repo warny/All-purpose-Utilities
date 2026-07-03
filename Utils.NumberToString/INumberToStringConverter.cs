@@ -104,6 +104,34 @@ namespace Utils.NumberToString
         string Convert(long number, params string[] variants) => Convert(number);
 
         /// <summary>
+        /// Converts a decimal value into its string representation,
+        /// applying the specified variant parameters (e.g. <c>"gender=feminin"</c>).
+        /// The default implementation ignores variant parameters and delegates to
+        /// <see cref="Convert(decimal)"/>; implementations that support variants should override.
+        /// </summary>
+        /// <param name="number">The value to convert.</param>
+        /// <param name="variants">
+        /// Zero or more <c>"dimension=value"</c> strings that select morphological variants.
+        /// Unrecognised dimensions or values fall back to the default silently.
+        /// </param>
+        /// <returns>The formatted number with the requested variants applied.</returns>
+        string Convert(decimal number, params string[] variants) => Convert(number);
+
+        /// <summary>
+        /// Converts a rational <see cref="Number"/> into its string representation,
+        /// applying the specified variant parameters.
+        /// The default implementation applies variants to the integer part only, delegating to
+        /// <see cref="Convert(BigInteger, string[])"/>; implementations with full rational
+        /// variant support should override this.
+        /// </summary>
+        /// <param name="number">The rational value to convert.</param>
+        /// <param name="variants">
+        /// Zero or more <c>"dimension=value"</c> strings. Unrecognised dimensions fall back silently.
+        /// </param>
+        /// <returns>The formatted number with the requested variants applied.</returns>
+        string Convert(Number number, params string[] variants) => Convert(number.Numerator, variants);
+
+        /// <summary>
         /// Gets a value indicating whether this converter supports ordinal conversion.
         /// When <see langword="false"/>, calling <see cref="ConvertOrdinal"/> will throw
         /// <see cref="NotSupportedException"/>. The default is <see langword="false"/>;
@@ -166,5 +194,16 @@ namespace Utils.NumberToString
         /// <param name="year">The year to convert (negative values use the minus template).</param>
         /// <returns>The spoken form of the year.</returns>
         string ConvertYear(int year) => Convert(year);
+
+        /// <summary>
+        /// Converts a decimal currency amount to words using the supplied currency definition.
+        /// The default implementation throws <see cref="NotSupportedException"/>; concrete
+        /// implementations should override this.
+        /// </summary>
+        /// <param name="amount">The amount to convert.</param>
+        /// <param name="currency">The currency names and configuration.</param>
+        /// <returns>The amount expressed as words (e.g. "twenty euros and fifty centimes").</returns>
+        string ConvertCurrency(decimal amount, CurrencyDefinition currency)
+            => throw new NotSupportedException("Currency conversion is not supported by this converter.");
     }
 }
