@@ -151,20 +151,35 @@ namespace Utils.NumberToString
 
         /// <summary>
         /// Looks up the base language and merges it with the child, producing a fully resolved
-        /// <see cref="LanguageType"/>. The base is searched first in <paramref name="docLanguages"/>
-        /// (same document) and then in <see cref="_cachedLanguageTypes"/> (previously loaded documents).
-        /// Throws when the referenced base cannot be found.
+        /// <see cref="LanguageType"/>. The resolved cache is checked first so that a chain such as
+        /// <c>BASE → MID → CHILD</c> always merges against the fully resolved ancestor even when
+        /// all three are declared in the same XML document. If the base is found only in
+        /// <paramref name="docLanguages"/> (not yet cached) and also carries a <c>baseOn</c>
+        /// attribute, it is resolved recursively before the merge.
+        /// Throws <see cref="InvalidOperationException"/> when the referenced base cannot be found.
         /// </summary>
         private static LanguageType ResolveBaseOn(
             LanguageType child,
             IReadOnlyDictionary<string, LanguageType> docLanguages)
         {
             string baseKey = child.BaseOn;
-            if (!docLanguages.TryGetValue(baseKey, out var baseType)
-                && !_cachedLanguageTypes.TryGetValue(baseKey, out baseType))
-                throw new InvalidOperationException(
-                    $"Language configuration error: baseOn=\"{baseKey}\" cannot be resolved. " +
-                    $"Ensure the base language is registered before the derived language.");
+
+            // Prefer the already-resolved version from the cache (handles multi-document chains
+            // and in-order same-document chains where the base was already processed).
+            if (!_cachedLanguageTypes.TryGetValue(baseKey, out var baseType))
+            {
+                if (!docLanguages.TryGetValue(baseKey, out baseType))
+                    throw new InvalidOperationException(
+                        $"Language configuration error: baseOn=\"{baseKey}\" cannot be resolved. " +
+                        $"Ensure the base language is registered before the derived language.");
+
+                // The base was found in the raw same-document dict but not yet cached.
+                // If it itself carries a baseOn, resolve it recursively so the merge always
+                // operates on a fully inherited configuration.
+                if (!string.IsNullOrEmpty(baseType.BaseOn))
+                    baseType = ResolveBaseOn(baseType, docLanguages);
+            }
+
             return MergeLanguageType(baseType!, child);
         }
 

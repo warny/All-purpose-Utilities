@@ -2733,6 +2733,63 @@ public class NumberToStringConverterImprovementsTests
     }
 
     [TestMethod]
+    public void BaseOn_ChainedInheritance_GrandparentConfigurationPropagates()
+    {
+        // BASE → MID (overrides nothing) → CHILD (adds an ordinal exception).
+        // All in the same document. The P2 fix ensures CHILD merges against the
+        // fully resolved MID (which carries all grandparent fields), not raw MID.
+        const string chain = """
+            <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+              <Language groupSize="3" separator=" " groupSeparator="" zero="nul" minus="min *" decimalSeparator="komma">
+                <Culture>TEST-CHAIN-BASE</Culture>
+                <Groups>
+                  <Group level="1">
+                    <Digit digit="0" string="" />
+                    <Digit digit="1" string="een" />
+                    <Digit digit="2" string="twee" />
+                  </Group>
+                  <Group level="2">
+                    <Digit digit="0" string="" buildString="*" />
+                    <Digit digit="1" string="tien" buildString="*tien" />
+                  </Group>
+                  <Group level="3">
+                    <Digit digit="0" string="" buildString="*" />
+                    <Digit digit="1" string="honderd" buildString="honderd*" />
+                  </Group>
+                </Groups>
+                <NumberScale firstLetterUpperCase="false">
+                  <StaticNames>
+                    <Scale value="0" string=""/>
+                    <Scale value="1" string="duizend"/>
+                  </StaticNames>
+                </NumberScale>
+                <Ordinals suffix="de" />
+              </Language>
+              <Language baseOn="TEST-CHAIN-BASE">
+                <Culture>TEST-CHAIN-MID</Culture>
+              </Language>
+              <Language baseOn="TEST-CHAIN-MID">
+                <Culture>TEST-CHAIN-CHILD</Culture>
+                <Ordinals>
+                  <OrdinalException value="1" string="eerste" />
+                </Ordinals>
+              </Language>
+            </Numbers>
+            """;
+
+        var cs = NumberToStringConverter.ReadConfiguration(chain);
+        var child = cs["TEST-CHAIN-CHILD"];
+
+        // grandparent groups and scale propagated through two levels
+        Assert.AreEqual("twee",    child.Convert(2),   "digit inherited from grandparent");
+        Assert.AreEqual("honderd", child.Convert(100), "hundreds inherited from grandparent");
+        // child's ordinal exception
+        Assert.AreEqual("eerste",  child.ConvertOrdinal(1),  "child exception");
+        // grandparent suffix "de" inherited through mid and child merge
+        Assert.AreEqual("tiende",  child.ConvertOrdinal(10), "suffix from grandparent");
+    }
+
+    [TestMethod]
     public void BaseOn_UnresolvedBase_ThrowsDescriptiveException()
     {
         const string bad = """
