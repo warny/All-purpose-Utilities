@@ -8230,6 +8230,20 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.PolishOrdinalLanguageSpecifics.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.PolishOrdinalLanguageSpecifics.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.PolishOrdinalLanguageSpecifics",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.PolishOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Handles Polish ordinal conversion for numbers 20 and above, where compound forms\nrequire both the tens and units components to carry ordinal endings — a transformation\nthe XML word-rule engine cannot perform because it only rewrites the last word.\nNumbers 1–19 fall through to the XML pipeline (which carries full case/gender tables).</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.NumberToString.ReplacementScope.yml",
       "output": {
         ".html": {

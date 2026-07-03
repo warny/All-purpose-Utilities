@@ -286,6 +286,14 @@ word-level transformation rules, and a default suffix.</p>
 </dd>
     </dl>
     <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.PolishOrdinalLanguageSpecifics.html">PolishOrdinalLanguageSpecifics</a></dt>
+      <dd><p>Handles Polish ordinal conversion for numbers 20 and above, where compound forms
+require both the tens and units components to carry ordinal endings — a transformation
+the XML word-rule engine cannot perform because it only rewrites the last word.
+Numbers 1–19 fall through to the XML pipeline (which carries full case/gender tables).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.ReplacementType.html">ReplacementType</a></dt>
       <dd><p>Defines a string replacement applied to the generated number name.</p>
 </dd>
