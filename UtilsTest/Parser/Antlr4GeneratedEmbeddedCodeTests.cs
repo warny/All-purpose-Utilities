@@ -3,6 +3,8 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Reflection;
 using System.Runtime.Loader;
+using DiagnosticBag = Utils.Parser.Diagnostics.DiagnosticBag;
+using ParserDiagnostics = Utils.Parser.Diagnostics.ParserDiagnostics;
 using Utils.Parser.EmbeddedCode;
 using Utils.Parser.Generators.Internal;
 using Utils.Parser.Model;
@@ -1170,6 +1172,199 @@ public class Antlr4GeneratedEmbeddedCodeTests
     }
 
     /// <summary>
+    /// Ensures a string-valued lexer mode write switches the next token exactly like an identifier value.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerModeWrites_StringValueChangesModeForNextToken()
+    {
+        const string grammar = """
+            grammar P;
+
+            start : A C ;
+            A : 'a' { $mode = "SECOND"; } ;
+            mode SECOND;
+            C : 'b' ;
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        IReadOnlyList<Token> tokens = TokenizeWithContext(assembly, "ab", CreateExecutionContext(assembly));
+
+        Assert.AreEqual(2, tokens.Count);
+        Assert.AreEqual("A", tokens[0].RuleName);
+        Assert.AreEqual("C", tokens[1].RuleName);
+    }
+
+    /// <summary>
+    /// Ensures lexer mode, type, and channel writes coexist in one action result.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerModeWrites_CoexistWithTypeAndChannelWrites()
+    {
+        const string grammar = """
+            grammar P;
+
+            start : C ;
+            A : 'a' { $type = B; $channel = HIDDEN; $mode = SECOND; } ;
+            B : 'unused-default' ;
+            mode SECOND;
+            C : 'b' ;
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        IReadOnlyList<Token> tokens = TokenizeWithContext(assembly, "ab", CreateExecutionContext(assembly));
+        var result = InvokeParseWithContext(assembly, "ab", CreateExecutionContext(assembly));
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(2, tokens.Count);
+        Assert.AreEqual("B", tokens[0].RuleName);
+        Assert.AreEqual("HIDDEN", tokens[0].Channel);
+        Assert.AreEqual("C", tokens[1].RuleName);
+    }
+
+    /// <summary>
+    /// Ensures accepted lexer mode writes from referenced non-fragment lexer rules apply to the emitted outer token.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerModeWrites_InLexerRuleReferenceAppliesToOuterToken()
+    {
+        const string grammar = """
+            grammar P;
+
+            start : A B ;
+            A : R ;
+            R : 'a' { $mode = SECOND; } ;
+            mode SECOND;
+            B : 'b' ;
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        IReadOnlyList<Token> tokens = TokenizeWithContext(assembly, "ab", CreateExecutionContext(assembly));
+
+        Assert.AreEqual(2, tokens.Count);
+        Assert.AreEqual("A", tokens[0].RuleName);
+        Assert.AreEqual("B", tokens[1].RuleName);
+    }
+
+    /// <summary>
+    /// Ensures the final accepted quantifier iteration controls the mode used by the next token.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerModeWrites_InQuantifierLastIterationWins()
+    {
+        const string grammar = """
+            grammar P;
+
+            start : A C ;
+            A : ('a' { $mode = FIRST; } | 'b' { $mode = SECOND; })+ ;
+            mode FIRST;
+            B : 'c' ;
+            mode SECOND;
+            C : 'c' ;
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        IReadOnlyList<Token> tokens = TokenizeWithContext(assembly, "abc", CreateExecutionContext(assembly));
+
+        Assert.AreEqual(2, tokens.Count);
+        Assert.AreEqual("A", tokens[0].RuleName);
+        Assert.AreEqual("C", tokens[1].RuleName);
+    }
+
+    /// <summary>
+    /// Ensures lexer command mode changes are applied after action mode writes and therefore control push/pop stack behavior.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerModeWrites_PushModeCommandPushesAfterActionModeWrite()
+    {
+        const string grammar = """
+            grammar P;
+
+            start : A C B ;
+            A : 'a' { $mode = SECOND; } -> pushMode(THIRD) ;
+            mode SECOND;
+            B : 'c' ;
+            mode THIRD;
+            C : 'b' -> popMode ;
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        IReadOnlyList<Token> tokens = TokenizeWithContext(assembly, "abc", CreateExecutionContext(assembly));
+
+        Assert.AreEqual(3, tokens.Count);
+        Assert.AreEqual("A", tokens[0].RuleName);
+        Assert.AreEqual("C", tokens[1].RuleName);
+        Assert.AreEqual("B", tokens[2].RuleName);
+    }
+
+    /// <summary>
+    /// Ensures popMode remains authoritative after a preceding action mode write replaces the pushed current mode.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerModeWrites_PopModeCommandPopsStackAfterActionModeWrite()
+    {
+        const string grammar = """
+            grammar P;
+
+            start : A C ;
+            A : 'a' -> pushMode(THIRD) ;
+            C : 'c' ;
+            mode SECOND;
+            B : 'c' ;
+            mode THIRD;
+            D : 'b' { $mode = SECOND; } -> popMode ;
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        IReadOnlyList<Token> tokens = TokenizeWithContext(assembly, "abc", CreateExecutionContext(assembly));
+
+        Assert.AreEqual(3, tokens.Count);
+        Assert.AreEqual("A", tokens[0].RuleName);
+        Assert.AreEqual("D", tokens[1].RuleName);
+        Assert.AreEqual("C", tokens[2].RuleName);
+    }
+
+    /// <summary>
+    /// Ensures unknown lexer mode writes report the existing unknown-mode diagnostic without crashing.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LexerModeWrites_UnknownModeReportsDiagnostic()
+    {
+        const string grammar = """
+            grammar P;
+
+            start : A ;
+            A : 'a' { $mode = UNKNOWN_MODE; } ;
+            """;
+
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        var diagnostics = new DiagnosticBag();
+        IReadOnlyList<Token> tokens = TokenizeWithContext(assembly, "a", CreateExecutionContext(assembly), diagnostics);
+
+        Assert.AreEqual(1, tokens.Count);
+        Assert.IsTrue(diagnostics.Any(static diagnostic => diagnostic.Descriptor == ParserDiagnostics.UnknownLexerMode));
+    }
+
+    /// <summary>
+    /// Ensures no-op emission preserves raw lexer mode writes for conservative generated code.
+    /// </summary>
+    [TestMethod]
+    public void Emit_LexerModeWrites_NoOpPreservesRawDollarModeText()
+    {
+        const string grammar = """
+            grammar P;
+
+            start : A ;
+            A : 'a' { $mode = SECOND; } ;
+            mode SECOND;
+            B : 'b' ;
+            """;
+
+        string source = Emit(grammar);
+
+        StringAssert.Contains(source, "$mode = SECOND;");
+    }
+
+    /// <summary>
     /// Ensures unsupported lexer attributes in predicates are rejected by the transformer before raw C# compilation.
     /// </summary>
     [DataTestMethod]
@@ -1199,11 +1394,14 @@ public class Antlr4GeneratedEmbeddedCodeTests
     [DataRow("$mode += SECOND;")]
     [DataRow("$mode ??= SECOND;")]
     [DataRow("$mode++;")]
+    [DataRow("++$mode;")]
     [DataRow("$mode = GetMode();")]
     [DataRow("$mode = A + B;")]
     [DataRow("$mode = Namespace.SECOND;")]
     [DataRow("$mode.Name = SECOND;")]
     [DataRow("Foo($mode = SECOND);")]
+    [DataRow("var x = ($mode = SECOND);")]
+    [DataRow("if (($mode = SECOND) != null) { }")]
     [DataRow("Foo(ref $mode);")]
     [DataRow("Foo(out $mode);")]
     [DataRow("$mode = SECOND")]
@@ -5526,12 +5724,25 @@ public class Antlr4GeneratedEmbeddedCodeTests
     /// <returns>Tokens emitted by the generated grammar with embedded code enabled.</returns>
     private static IReadOnlyList<Token> TokenizeWithContext(Assembly assembly, string input, object executionContext)
     {
+        return TokenizeWithContext(assembly, input, executionContext, null);
+    }
+
+    /// <summary>
+    /// Tokenizes input with a generated runtime policy and optional diagnostics sink.
+    /// </summary>
+    /// <param name="assembly">Assembly containing the generated grammar class.</param>
+    /// <param name="input">Input text to tokenize.</param>
+    /// <param name="executionContext">Execution context instance that owns generated lexer hooks.</param>
+    /// <param name="diagnostics">Optional diagnostics sink populated by lexer validation.</param>
+    /// <returns>Tokens emitted by the generated grammar with embedded code enabled.</returns>
+    private static IReadOnlyList<Token> TokenizeWithContext(Assembly assembly, string input, object executionContext, DiagnosticBag? diagnostics)
+    {
         var type = assembly.GetType("Generated.Tests.P", throwOnError: true)!;
         var buildMethod = type.GetMethod("Build", BindingFlags.Public | BindingFlags.Static)!;
         var definition = (ParserDefinition)buildMethod.Invoke(null, null)!;
         var policy = InvokeCreateRuntimePolicy(assembly, executionContext);
-        var grammar = new CompiledGrammar(definition, policy);
-        return grammar.Tokenize(input);
+        var lexer = new LexerEngine(definition, policy);
+        return lexer.Tokenize(new StringReader(input), diagnostics: diagnostics).ToList();
     }
 
     /// <summary>
