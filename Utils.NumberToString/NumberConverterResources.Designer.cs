@@ -691,6 +691,13 @@ namespace Utils {
             }
         }
 
+        /// <summary>Romanian number-to-string configuration.</summary>
+        internal static string NumberConvertionConfiguration_RO {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.RO", resourceCulture);
+            }
+        }
+
         /// <summary>Swedish number-to-string configuration.</summary>
         internal static string NumberConvertionConfiguration_SV {
             get {

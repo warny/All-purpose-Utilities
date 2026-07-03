@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+    <!--
+      Romanian (RO) cardinals.
+
+      Known limitation: Romanian inserts "de" between the multiplier and the scale name
+      when the multiplier is ≥ 20 (e.g. "douăzeci de mii" = 20 000, "o sută de milioane").
+      This requires a scaleConnector/scaleConnectorThreshold engine feature that does not
+      yet exist.  Numbers below 20 × any scale are correct ("o mie", "doisprezece mii",
+      "un milion", "nouăsprezece milioane"); larger multipliers omit "de" for now.
+
+      Gender: "unu/una" (1m/f) and "doi/două" (2m/f) are tracked via the gender variant.
+      The default gender (no variant) is masculine.
+    -->
+    <Language
+        groupSize="3"
+        separator=" "
+        groupSeparator=""
+        zero="zero"
+        minus="minus *"
+        decimalSeparator="virgulă"
+        fractionSeparator="peste"
+    >
+        <Culture>RO</Culture>
+        <Culture>RO-RO</Culture>
+        <Groups>
+            <Group level="1">
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="unu" />
+                <Digit digit="2" string="doi" />
+                <Digit digit="3" string="trei" />
+                <Digit digit="4" string="patru" />
+                <Digit digit="5" string="cinci" />
+                <Digit digit="6" string="șase" />
+                <Digit digit="7" string="șapte" />
+                <Digit digit="8" string="opt" />
+                <Digit digit="9" string="nouă" />
+            </Group>
+            <Group level="2">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="zece" buildString="zece *" />
+                <Digit digit="2" string="douăzeci" buildString="douăzeci și *" />
+                <Digit digit="3" string="treizeci" buildString="treizeci și *" />
+                <Digit digit="4" string="patruzeci" buildString="patruzeci și *" />
+                <Digit digit="5" string="cincizeci" buildString="cincizeci și *" />
+                <Digit digit="6" string="șaizeci" buildString="șaizeci și *" />
+                <Digit digit="7" string="șaptezeci" buildString="șaptezeci și *" />
+                <Digit digit="8" string="optzeci" buildString="optzeci și *" />
+                <Digit digit="9" string="nouăzeci" buildString="nouăzeci și *" />
+            </Group>
+            <Group level="3">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="o sută" buildString="o sută *" />
+                <Digit digit="2" string="două sute" buildString="două sute *" />
+                <Digit digit="3" string="trei sute" buildString="trei sute *" />
+                <Digit digit="4" string="patru sute" buildString="patru sute *" />
+                <Digit digit="5" string="cinci sute" buildString="cinci sute *" />
+                <Digit digit="6" string="șase sute" buildString="șase sute *" />
+                <Digit digit="7" string="șapte sute" buildString="șapte sute *" />
+                <Digit digit="8" string="opt sute" buildString="opt sute *" />
+                <Digit digit="9" string="nouă sute" buildString="nouă sute *" />
+            </Group>
+        </Groups>
+        <NumberScale firstLetterUpperCase="false">
+            <StaticNames>
+                <Scale value="0" string="" />
+                <!--
+                  Scale names use the plural form; singular replacements are handled via onScale+onValue.
+                  "o mie"=1 000, "două mii"=2 000 → Replacements below.
+                  "un milion"=1M, "un miliard"=1B → Replacements below.
+                -->
+                <Scale value="1" string="mii" />
+                <Scale value="2" string="milioane" />
+                <Scale value="3" string="miliarde" />
+            </StaticNames>
+        </NumberScale>
+        <Replacements>
+            <!-- Thousands: fix unu/doi before feminine scale "mii/mie" -->
+            <Replacement oldValue="unu mii"  newValue="o mie"    onScale="1" onValue="1" />
+            <Replacement oldValue="doi mii"  newValue="două mii" onScale="1" onValue="2" />
+            <!-- Millions: fix unu/doi before neuter scale "milioane/milion" -->
+            <Replacement oldValue="unu milioane" newValue="un milion"     onScale="2" onValue="1" />
+            <Replacement oldValue="doi milioane" newValue="două milioane" onScale="2" onValue="2" />
+            <!-- Billions: fix unu/doi before neuter scale "miliarde/miliard" -->
+            <Replacement oldValue="unu miliarde" newValue="un miliard"     onScale="3" onValue="1" />
+            <Replacement oldValue="doi miliarde" newValue="două miliarde"  onScale="3" onValue="2" />
+        </Replacements>
+        <Exceptions>
+            <Number value="1"  string="unu" />
+            <Number value="11" string="unsprezece" />
+            <Number value="12" string="doisprezece" />
+            <Number value="13" string="treisprezece" />
+            <Number value="14" string="paisprezece" />
+            <Number value="15" string="cincisprezece" />
+            <Number value="16" string="șaisprezece" />
+            <Number value="17" string="șaptesprezece" />
+            <Number value="18" string="optsprezece" />
+            <Number value="19" string="nouăsprezece" />
+        </Exceptions>
+        <Variants>
+            <Dimension name="gen" values="masculin,feminin" />
+            <Variant type="gen" variant="feminin">
+                <!-- 1f: una; 2f: două -->
+                <Replacement oldValue="unu" newValue="una"  scope="LastWord" />
+                <Replacement oldValue="doi" newValue="două" scope="LastWord" />
+            </Variant>
+        </Variants>
+    </Language>
+</Numbers>
