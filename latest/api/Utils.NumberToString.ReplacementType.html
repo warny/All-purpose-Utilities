@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_NumberToString_ReplacementType" data-uid="Utils.NumberToString.ReplacementType" class="text-break">
-Class ReplacementType  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L347"><i class="bi bi-code-slash"></i></a>
+Class ReplacementType  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L348"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -242,7 +242,7 @@ Class ReplacementType  <a class="header-action link-secondary" title="View sourc
 
   <h3 id="Utils_NumberToString_ReplacementType_FormVariants" data-uid="Utils.NumberToString.ReplacementType.FormVariants">
   FormVariants
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L378"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L394"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Per-dimension-value form declarations expanded at load time into <code>VariantRule</code>
@@ -275,7 +275,7 @@ replacement entries (see <a class="xref" href="Utils.NumberToString.FormVariantT
 
   <h3 id="Utils_NumberToString_ReplacementType_NewValue" data-uid="Utils.NumberToString.ReplacementType.NewValue">
   NewValue
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L359"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L360"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the base replacement text (default variant).
@@ -308,7 +308,7 @@ May be <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/key
 
   <h3 id="Utils_NumberToString_ReplacementType_OldValue" data-uid="Utils.NumberToString.ReplacementType.OldValue">
   OldValue
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L352"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L353"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the text to replace.</p>
@@ -336,11 +336,78 @@ May be <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/key
 
 
 
+  <a id="Utils_NumberToString_ReplacementType_OnScale_" data-uid="Utils.NumberToString.ReplacementType.OnScale*"></a>
+
+  <h3 id="Utils_NumberToString_ReplacementType_OnScale" data-uid="Utils.NumberToString.ReplacementType.OnScale">
+  OnScale
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L387"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the scale level this replacement is restricted to, or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>
+to apply at all levels. 0 = units group, 1 = thousands, 2 = millions, etc.
+Negative values are reserved for future use (decimal fraction groups).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int? OnScale { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a>?</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_NumberToString_ReplacementType_OnScaleValue_" data-uid="Utils.NumberToString.ReplacementType.OnScaleValue*"></a>
+
+  <h3 id="Utils_NumberToString_ReplacementType_OnScaleValue" data-uid="Utils.NumberToString.ReplacementType.OnScaleValue">
+  OnScaleValue
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L379"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the raw string value of the scale level restriction, or
+<a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> when no restriction is configured.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string? OnScaleValue { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <a id="Utils_NumberToString_ReplacementType_Scope_" data-uid="Utils.NumberToString.ReplacementType.Scope*"></a>
 
   <h3 id="Utils_NumberToString_ReplacementType_Scope" data-uid="Utils.NumberToString.ReplacementType.Scope">
   Scope
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L371"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L372"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the parsed scope that determines how the replacement is applied.</p>
@@ -372,7 +439,7 @@ May be <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/key
 
   <h3 id="Utils_NumberToString_ReplacementType_ScopeValue" data-uid="Utils.NumberToString.ReplacementType.ScopeValue">
   ScopeValue
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L365"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L366"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the textual scope representation supplied by the configuration.</p>
@@ -404,7 +471,7 @@ May be <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/key
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L347" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L348" class="edit-link">Edit this page</a>
         </div>
 
 
