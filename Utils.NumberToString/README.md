@@ -943,7 +943,16 @@ Rules fire either per-group (with `onScale`) or on the final assembled string (w
 
 #### `onScale` — per-group firing
 
-`onScale="N"` restricts the rule to the per-group pass for group `N` (0 = units, 1 = thousands, 2 = millions…). The rule then sees `"digit-text + separator + scale-name"` (e.g. `"ein tausend"`) rather than the fully assembled string. Without `onScale`, the rule fires on the final assembled string.
+`onScale` restricts the rule to the per-group pass for one or more scale groups. It accepts the same comma-separated range syntax as `onValue`:
+
+| Expression | Matches |
+|------------|---------|
+| `1` | Only the thousands group |
+| `1..3` | Thousands, millions, and billions |
+| `2..` | Millions and above |
+| `1,3` | Thousands and billions only |
+
+The rule then sees `"digit-text + separator + scale-name"` (e.g. `"ein tausend"`) rather than the fully assembled string. Without `onScale`, the rule fires on the final assembled string.
 
 #### `onValue` — numeric value filter
 

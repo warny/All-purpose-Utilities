@@ -73,18 +73,17 @@ namespace Utils.NumberToString
                 .ToImmutableArray();
             // Rules with onValue require numeric-value-aware evaluation and are excluded from the
             // fast-path dictionaries.
-            var globalUnfiltered = Replacements.Where(r => !r.OnScale.HasValue && r.OnValue is null).ToImmutableArray();
+            var globalUnfiltered = Replacements.Where(r => r.OnScale is null && r.OnValue is null).ToImmutableArray();
             _replacementLookup = globalUnfiltered.ToImmutableDictionary(r => r.OldValue, r => r.NewValue, StringComparer.Ordinal);
             _substringReplacements = globalUnfiltered.Where(r =>
                 r.Scope is ReplacementScope.Anywhere or ReplacementScope.StartsWith or ReplacementScope.EndsWith)
                 .ToImmutableArray();
             _valueFilteredGlobalReplacements = Replacements
-                .Where(r => !r.OnScale.HasValue && r.OnValue is not null)
+                .Where(r => r.OnScale is null && r.OnValue is not null)
                 .ToImmutableArray();
             _scaleReplacements = Replacements
-                .Where(r => r.OnScale.HasValue)
-                .GroupBy(r => r.OnScale!.Value)
-                .ToImmutableDictionary(g => g.Key, g => g.ToImmutableArray());
+                .Where(r => r.OnScale is not null)
+                .ToImmutableArray();
             Scale = options.Scale;
             LanguageSpecifics = options.LanguageSpecifics ?? new DefaultNumberToStringLanguageSpecifics();
             LanguageIdentifier = options.LanguageIdentifier ?? string.Empty;
@@ -103,7 +102,7 @@ namespace Utils.NumberToString
 
             VariantDimensions = (options.VariantDimensions ?? []).ToImmutableArray();
             VariantRules = (options.VariantRules ?? []).ToImmutableArray();
-            _hasScaleSpecificVariantRules = VariantRules.Any(r => r.Replacements.Any(rr => rr.OnScale.HasValue));
+            _hasScaleSpecificVariantRules = VariantRules.Any(r => r.Replacements.Any(rr => rr.OnScale is not null));
             Triggers = (options.Triggers ?? []).ToImmutableArray();
             _yearFormat = options.YearFormat;
             Multiplicatives = options.Multiplicatives?.ToImmutableDictionary() ?? ImmutableDictionary<int, string>.Empty;
@@ -293,7 +292,7 @@ namespace Utils.NumberToString
         private readonly ImmutableDictionary<string, string> _replacementLookup;
         private readonly ImmutableArray<ReplacementRule> _substringReplacements;
         private readonly ImmutableArray<ReplacementRule> _valueFilteredGlobalReplacements;
-        private readonly ImmutableDictionary<int, ImmutableArray<ReplacementRule>> _scaleReplacements;
+        private readonly ImmutableArray<ReplacementRule> _scaleReplacements;
         private readonly bool _hasScaleSpecificVariantRules;
         private readonly ImmutableDictionary<string, VariantDimension> _dimensionIndex;
         private readonly Func<string, string>? _rawAdjustFunction;
@@ -707,7 +706,7 @@ namespace Utils.NumberToString
 
                 foreach (var replacement in rule.Replacements)
                 {
-                    if (_hasScaleSpecificVariantRules && replacement.OnScale.HasValue) continue;
+                    if (_hasScaleSpecificVariantRules && replacement.OnScale is not null) continue;
                     if (replacement.OnValue is not null && (numericValue is null || !replacement.OnValue.Contains(numericValue.Value)))
                         continue;
                     text = ApplyVariantReplacement(text, replacement);
@@ -740,7 +739,7 @@ namespace Utils.NumberToString
 
                 foreach (var replacement in rule.Replacements)
                 {
-                    if (replacement.OnScale != groupNumber) continue;
+                    if (replacement.OnScale is null || !replacement.OnScale.Contains(groupNumber)) continue;
                     if (replacement.OnValue is not null && !replacement.OnValue.Contains(groupNumericValue))
                         continue;
                     text = ApplyVariantReplacement(text, replacement);
@@ -864,10 +863,11 @@ namespace Utils.NumberToString
             if (string.IsNullOrEmpty(value) || Replacements.Count == 0)
                 return value;
 
-            if (groupNumber.HasValue && _scaleReplacements.TryGetValue(groupNumber.Value, out var scaleRules))
+            if (groupNumber.HasValue && _scaleReplacements.Length > 0)
             {
-                foreach (var rule in scaleRules)
+                foreach (var rule in _scaleReplacements)
                 {
+                    if (!rule.OnScale!.Contains(groupNumber.Value)) continue;
                     if (rule.OnValue is not null && (numericValue is null || !rule.OnValue.Contains(numericValue.Value)))
                         continue;
                     value = ApplyVariantReplacement(value, rule);
@@ -918,12 +918,12 @@ namespace Utils.NumberToString
             /// <param name="newValue">The replacement text.</param>
             /// <param name="scope">The scope that controls how the replacement is applied.</param>
             /// <param name="onScale">
-            /// Scale level this rule is restricted to, or <see langword="null"/> for all levels.
-            /// 0 = units, 1 = thousands, 2 = millions, etc.
+            /// Scale level(s) this rule is restricted to, or <see langword="null"/> for all levels.
+            /// 0 = units, 1 = thousands, 2 = millions, etc. Supports range syntax ("1..3", "2,4..").
             /// </param>
             /// <exception cref="ArgumentException">Thrown when <paramref name="oldValue"/> or <paramref name="newValue"/> is null or empty.</exception>
             public ReplacementRule(string oldValue, string newValue, ReplacementScope scope, int? onScale = null)
-                : this(oldValue, newValue, scope, onScale, null) { }
+                : this(oldValue, newValue, scope, onScale.HasValue ? IntRange.Exact(onScale.Value) : null, null) { }
 
             /// <summary>
             /// Initializes a new instance of the <see cref="ReplacementRule"/> class with a
@@ -933,8 +933,8 @@ namespace Utils.NumberToString
             /// <param name="newValue">The replacement text.</param>
             /// <param name="scope">The scope that controls how the replacement is applied.</param>
             /// <param name="onScale">
-            /// Scale level this rule is restricted to, or <see langword="null"/> for all levels.
-            /// 0 = units, 1 = thousands, 2 = millions, etc.
+            /// Scale level(s) this rule is restricted to, or <see langword="null"/> for all levels.
+            /// 0 = units, 1 = thousands, 2 = millions, etc. Supports range syntax ("1..3", "2,4..").
             /// </param>
             /// <param name="onValue">
             /// Optional numeric-value filter. When set with <paramref name="onScale"/>, the rule
@@ -942,7 +942,7 @@ namespace Utils.NumberToString
             /// <paramref name="onScale"/>, applies to the full number in the final assembled-string pass.
             /// </param>
             /// <exception cref="ArgumentException">Thrown when <paramref name="oldValue"/> or <paramref name="newValue"/> is null or empty.</exception>
-            public ReplacementRule(string oldValue, string newValue, ReplacementScope scope, int? onScale, ValueRange? onValue)
+            public ReplacementRule(string oldValue, string newValue, ReplacementScope scope, IntRange? onScale, IntRange? onValue)
             {
                 if (string.IsNullOrEmpty(oldValue))
                 {
@@ -977,10 +977,10 @@ namespace Utils.NumberToString
             public ReplacementScope Scope { get; }
 
             /// <summary>
-            /// Gets the scale level this rule is restricted to, or <see langword="null"/> to apply globally.
-            /// 0 = units group, 1 = thousands, 2 = millions, etc.
+            /// Gets the scale level(s) this rule is restricted to, or <see langword="null"/> to apply globally.
+            /// 0 = units group, 1 = thousands, 2 = millions, etc. Supports ranges ("1..3").
             /// </summary>
-            public int? OnScale { get; }
+            public IntRange? OnScale { get; }
 
             /// <summary>
             /// Gets the optional numeric-value filter. When non-null and combined with
@@ -988,12 +988,12 @@ namespace Utils.NumberToString
             /// within range. When non-null without <see cref="OnScale"/>, constrains the rule
             /// to matching values in the final assembled-string pass.
             /// </summary>
-            public ValueRange? OnValue { get; }
+            public IntRange? OnValue { get; }
         }
 
         /// <summary>
         /// Represents a set of integer ranges used to restrict a <see cref="ReplacementRule"/>
-        /// via the <c>onValue</c> XML attribute.
+        /// via the <c>onValue</c> or <c>onScale</c> XML attributes.
         /// </summary>
         /// <remarks>
         /// Syntax: comma-separated segments where each segment is one of:
@@ -1005,19 +1005,22 @@ namespace Utils.NumberToString
         /// </list>
         /// Example: <c>"1,5..10,20.."</c> matches 1, five through ten, and any value ≥ 20.
         /// </remarks>
-        public sealed class ValueRange
+        public sealed class IntRange
         {
             private readonly (long? Min, long? Max)[] _segments;
 
-            private ValueRange((long? Min, long? Max)[] segments) => _segments = segments;
+            private IntRange((long? Min, long? Max)[] segments) => _segments = segments;
 
-            /// <summary>Parses a comma-separated <c>onValue</c> expression.</summary>
+            /// <summary>Creates a range that matches exactly one value.</summary>
+            public static IntRange Exact(long value) => new IntRange([(value, value)]);
+
+            /// <summary>Parses a comma-separated range expression.</summary>
             /// <exception cref="ArgumentException">Thrown when <paramref name="s"/> is null or whitespace.</exception>
             /// <exception cref="FormatException">Thrown when a segment cannot be parsed.</exception>
-            public static ValueRange Parse(string s)
+            public static IntRange Parse(string s)
             {
                 if (string.IsNullOrWhiteSpace(s))
-                    throw new ArgumentException("onValue must not be empty.", nameof(s));
+                    throw new ArgumentException("Range expression must not be empty.", nameof(s));
 
                 var parts = s.Split(',');
                 var segments = new (long? Min, long? Max)[parts.Length];
@@ -1028,7 +1031,7 @@ namespace Utils.NumberToString
                     if (rangeIdx < 0)
                     {
                         if (!long.TryParse(part, out long exact))
-                            throw new FormatException($"Invalid onValue segment: '{part}'");
+                            throw new FormatException($"Invalid range segment: '{part}'");
                         segments[i] = (exact, exact);
                     }
                     else
@@ -1036,15 +1039,15 @@ namespace Utils.NumberToString
                         var minStr = part[..rangeIdx].Trim();
                         var maxStr = part[(rangeIdx + 2)..].Trim();
                         long? min = minStr.Length > 0
-                            ? long.TryParse(minStr, out long mn) ? mn : throw new FormatException($"Invalid onValue bound: '{minStr}'")
+                            ? long.TryParse(minStr, out long mn) ? mn : throw new FormatException($"Invalid range bound: '{minStr}'")
                             : null;
                         long? max = maxStr.Length > 0
-                            ? long.TryParse(maxStr, out long mx) ? mx : throw new FormatException($"Invalid onValue bound: '{maxStr}'")
+                            ? long.TryParse(maxStr, out long mx) ? mx : throw new FormatException($"Invalid range bound: '{maxStr}'")
                             : null;
                         segments[i] = (min, max);
                     }
                 }
-                return new ValueRange(segments);
+                return new IntRange(segments);
             }
 
             /// <summary>Returns <see langword="true"/> when <paramref name="value"/> falls within any segment.</summary>
@@ -1057,6 +1060,22 @@ namespace Utils.NumberToString
                 }
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Backward-compatibility alias for <see cref="IntRange"/>. Use <see cref="IntRange"/> in new code.
+        /// </summary>
+        [Obsolete("Use IntRange instead.")]
+        public sealed class ValueRange
+        {
+            private readonly IntRange _inner;
+            private ValueRange(IntRange inner) => _inner = inner;
+            /// <summary>Parses a comma-separated range expression.</summary>
+            public static ValueRange Parse(string s) => new ValueRange(IntRange.Parse(s));
+            /// <summary>Returns <see langword="true"/> when <paramref name="value"/> falls within any segment.</summary>
+            public bool Contains(long value) => _inner.Contains(value);
+            /// <summary>Returns the underlying <see cref="IntRange"/>.</summary>
+            public static implicit operator IntRange(ValueRange? r) => r?._inner ?? throw new ArgumentNullException(nameof(r));
         }
 
         /// <summary>

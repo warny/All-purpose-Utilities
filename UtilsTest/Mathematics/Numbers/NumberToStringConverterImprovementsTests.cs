@@ -2804,21 +2804,21 @@ public class NumberToStringConverterImprovementsTests
         StringAssert.Contains(ex.Message, "DOES-NOT-EXIST");
     }
 
-    // ─── onValue — ValueRange parsing ────────────────────────────────────────
+    // ─── IntRange parsing ─────────────────────────────────────────────────────
 
     [TestMethod]
-    public void ValueRange_Parse_ExactValue()
+    public void IntRange_Parse_ExactValue()
     {
-        var r = NumberToStringConverter.ValueRange.Parse("5");
+        var r = NumberToStringConverter.IntRange.Parse("5");
         Assert.IsTrue(r.Contains(5));
         Assert.IsFalse(r.Contains(4));
         Assert.IsFalse(r.Contains(6));
     }
 
     [TestMethod]
-    public void ValueRange_Parse_InclusiveRange()
+    public void IntRange_Parse_InclusiveRange()
     {
-        var r = NumberToStringConverter.ValueRange.Parse("2..5");
+        var r = NumberToStringConverter.IntRange.Parse("2..5");
         Assert.IsFalse(r.Contains(1));
         Assert.IsTrue(r.Contains(2));
         Assert.IsTrue(r.Contains(3));
@@ -2827,27 +2827,27 @@ public class NumberToStringConverterImprovementsTests
     }
 
     [TestMethod]
-    public void ValueRange_Parse_OpenStart()
+    public void IntRange_Parse_OpenStart()
     {
-        var r = NumberToStringConverter.ValueRange.Parse("..4");
+        var r = NumberToStringConverter.IntRange.Parse("..4");
         Assert.IsTrue(r.Contains(long.MinValue));
         Assert.IsTrue(r.Contains(4));
         Assert.IsFalse(r.Contains(5));
     }
 
     [TestMethod]
-    public void ValueRange_Parse_OpenEnd()
+    public void IntRange_Parse_OpenEnd()
     {
-        var r = NumberToStringConverter.ValueRange.Parse("10..");
+        var r = NumberToStringConverter.IntRange.Parse("10..");
         Assert.IsFalse(r.Contains(9));
         Assert.IsTrue(r.Contains(10));
         Assert.IsTrue(r.Contains(long.MaxValue));
     }
 
     [TestMethod]
-    public void ValueRange_Parse_CommaSeparated()
+    public void IntRange_Parse_CommaSeparated()
     {
-        var r = NumberToStringConverter.ValueRange.Parse("1,3,5..7,20..");
+        var r = NumberToStringConverter.IntRange.Parse("1,3,5..7,20..");
         Assert.IsTrue(r.Contains(1));
         Assert.IsFalse(r.Contains(2));
         Assert.IsTrue(r.Contains(3));
@@ -2861,10 +2861,19 @@ public class NumberToStringConverterImprovementsTests
     }
 
     [TestMethod]
-    public void ValueRange_Parse_InvalidSegment_Throws()
+    public void IntRange_Parse_InvalidSegment_Throws()
     {
-        Assert.ThrowsException<FormatException>(() => NumberToStringConverter.ValueRange.Parse("abc"));
-        Assert.ThrowsException<FormatException>(() => NumberToStringConverter.ValueRange.Parse("1..abc"));
+        Assert.ThrowsException<FormatException>(() => NumberToStringConverter.IntRange.Parse("abc"));
+        Assert.ThrowsException<FormatException>(() => NumberToStringConverter.IntRange.Parse("1..abc"));
+    }
+
+    [TestMethod]
+    public void IntRange_Exact_MatchesSingleValue()
+    {
+        var r = NumberToStringConverter.IntRange.Exact(7);
+        Assert.IsTrue(r.Contains(7));
+        Assert.IsFalse(r.Contains(6));
+        Assert.IsFalse(r.Contains(8));
     }
 
     // ─── onValue — onScale + onValue via XML ─────────────────────────────────
@@ -3037,5 +3046,67 @@ public class NumberToStringConverterImprovementsTests
         Assert.AreEqual("zwei tausend",       c.Convert(2000),  "2 000");
         Assert.AreEqual("tausend ein",        c.Convert(1001),  "1 001 — units group unaffected");
         Assert.AreEqual("einundzwanzig tausend", c.Convert(21000), "21 000 — value≠1, no replacement");
+    }
+
+    // ─── onScale range syntax ─────────────────────────────────────────────────
+
+    private const string OnScaleRangeConfig = """
+        <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+          <Language groupSize="3" separator=" " groupSeparator="" zero="nul" minus="min *" decimalSeparator="komma">
+            <Culture>TEST-SCR</Culture>
+            <Groups>
+              <Group level="1">
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="un" />
+                <Digit digit="2" string="deux" />
+                <Digit digit="3" string="trois" />
+              </Group>
+              <Group level="2">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="dix" buildString="*dix" />
+              </Group>
+              <Group level="3">
+                <Digit digit="0" string="" buildString="*" />
+              </Group>
+            </Groups>
+            <NumberScale firstLetterUpperCase="false">
+              <StaticNames>
+                <Scale value="0" string=""/>
+                <Scale value="1" string="mille"/>
+                <Scale value="2" string="million"/>
+                <Scale value="3" string="milliard"/>
+              </StaticNames>
+            </NumberScale>
+            <Replacements>
+              <!-- Fires for thousands AND millions (groups 1..2): collapse "un X" → "un-X" -->
+              <Replacement oldValue="un mille" newValue="MILLE" onScale="1..2" />
+              <Replacement oldValue="un million" newValue="MILLION" onScale="1..2" />
+            </Replacements>
+          </Language>
+        </Numbers>
+        """;
+
+    [TestMethod]
+    public void OnScale_RangeSyntax_FiresForBothMatchingGroups()
+    {
+        var cs = NumberToStringConverter.ReadConfiguration(OnScaleRangeConfig);
+        var c = cs["TEST-SCR"];
+
+        // onScale="1..2" should fire for group 1 (thousands) and group 2 (millions)
+        Assert.AreEqual("MILLE",         c.Convert(1_000),         "1 000 — thousands group matches");
+        Assert.AreEqual("MILLION",       c.Convert(1_000_000),     "1 000 000 — millions group matches");
+        // Group 3 (milliards) is outside range 1..2
+        Assert.AreEqual("un milliard",   c.Convert(1_000_000_000), "1 000 000 000 — milliard not in 1..2");
+    }
+
+    [TestMethod]
+    public void OnScale_RangeSyntax_DoesNotFireOutsideRange()
+    {
+        var cs = NumberToStringConverter.ReadConfiguration(OnScaleRangeConfig);
+        var c = cs["TEST-SCR"];
+
+        // group 0 (units) is outside range 1..2 → no replacement
+        Assert.AreEqual("un",   c.Convert(1),   "1 — units group not in 1..2");
+        Assert.AreEqual("deux", c.Convert(2),   "2 — units group not in 1..2");
     }
 }

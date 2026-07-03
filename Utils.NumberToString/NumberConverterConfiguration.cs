@@ -380,12 +380,13 @@ public class ReplacementType
     public string? OnScaleValue { get; set; }
 
     /// <summary>
-    /// Gets the scale level this replacement is restricted to, or <see langword="null"/>
+    /// Gets the scale level(s) this replacement is restricted to, or <see langword="null"/>
     /// to apply at all levels. 0 = units group, 1 = thousands, 2 = millions, etc.
-    /// Negative values are reserved for future use (decimal fraction groups).
+    /// Supports range syntax: <c>"1"</c>, <c>"1..3"</c>, <c>"..2"</c>, <c>"1,3.."</c>.
     /// </summary>
     [XmlIgnore]
-    public int? OnScale => int.TryParse(OnScaleValue, out int v) ? v : null;
+    public NumberToStringConverter.IntRange? OnScale =>
+        OnScaleValue is { Length: > 0 } s ? NumberToStringConverter.IntRange.Parse(s) : null;
 
     /// <summary>
     /// Gets or sets the raw value-range expression restricting this rule to specific numeric

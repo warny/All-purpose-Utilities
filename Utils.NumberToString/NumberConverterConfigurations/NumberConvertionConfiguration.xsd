@@ -280,18 +280,25 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="onScale" type="xs:integer" use="optional">
+        <xs:attribute name="onScale" type="xs:string" use="optional">
             <xs:annotation>
                 <xs:documentation>
-                    Restricts this replacement to a single scale group.
+                    Restricts this replacement to one or more scale groups.
                     0 = units (ones), 1 = thousands, 2 = millions, 3 = billions, etc.
+                    Supports the same comma-separated range syntax as onValue:
+                      1       only the thousands group
+                      1..3    thousands, millions, and billions
+                      2..     millions and above
+                      1,3     thousands and billions only
                     When absent the rule applies globally (fires on the final combined string).
-                    Negative values are reserved for future use (decimal fraction groups).
 
                     Rules with onScale fire per-group on the text
                     "digit-text + separator + scale-name" before the groups are assembled.
                     Combined with onValue, the rule fires only when the group's numeric
                     digit value also matches; see the onValue attribute for syntax.
+
+                    Example: onScale="1" onValue="1" fires only for the thousands group
+                    when its digit value is exactly 1 (1 000 but not 21 000).
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
