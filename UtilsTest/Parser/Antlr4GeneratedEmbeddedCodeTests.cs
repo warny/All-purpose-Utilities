@@ -4459,7 +4459,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
 
             A : 'a' ;
             """;
-        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar, enableGeneratedRuleArgumentBinding: true));
         object context = CreateExecutionContext(assembly);
 
         ParseNode result = InvokeParseWithContext(assembly, "a", context);
@@ -4481,7 +4481,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
             child[int value] @after { Seen = $value; } : A ;
             A : 'a' ;
             """;
-        string source = EmitWithAntlrStyleTransformer(grammar);
+        string source = EmitWithAntlrStyleTransformer(grammar, enableGeneratedRuleArgumentBinding: true);
         StringAssert.Contains(source, "GetRequiredRuleParameter<int>(context, \"value\")");
         Assert.IsFalse(source.Contains("Seen = $value;", StringComparison.Ordinal), source);
         var assembly = CompileGeneratedSource(source);
@@ -4506,7 +4506,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
             child[int value] @after { Seen = GetRequiredRuleParameter<int>(context, "value"); } : A ;
             A : 'a' ;
             """;
-        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar, enableGeneratedRuleArgumentBinding: true));
 
         ParseNode result = InvokeParse(assembly, "Parse", "a");
 
@@ -4532,7 +4532,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
                 : A ;
             A : 'a' ;
             """;
-        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar, enableGeneratedRuleArgumentBinding: true));
         object context = CreateExecutionContext(assembly);
 
         ParseNode result = InvokeParseWithContext(assembly, "a", context);
@@ -4554,7 +4554,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
             child[int left, int right] @after { Seen = 1; } : A ;
             A : 'a' ;
             """;
-        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar, enableGeneratedRuleArgumentBinding: true));
         object context = CreateExecutionContext(assembly);
 
         Assert.ThrowsException<TargetInvocationException>(() => InvokeParseWithContext(assembly, "a", context));
@@ -4574,7 +4574,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
             child[int value] @after { Seen = GetRequiredRuleParameter<int>(context, "value"); } : A ;
             A : 'a' ;
             """;
-        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar, enableGeneratedRuleArgumentBinding: true));
         object context = CreateExecutionContext(assembly);
 
         Assert.ThrowsException<TargetInvocationException>(() => InvokeParseWithContext(assembly, "a", context));
@@ -4587,7 +4587,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
     [TestMethod]
     public void ParseWithEmbeddedCode_RollsBackArgumentSeedsWhenAlternativeFails()
     {
-        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(ArgumentRollbackGrammar));
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(ArgumentRollbackGrammar, enableGeneratedRuleArgumentBinding: true));
         object context = CreateExecutionContext(assembly);
 
         ParseNode result = InvokeParseWithContext(assembly, "a", context);
@@ -4602,7 +4602,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
     [TestMethod]
     public void ParseWithEmbeddedCode_DoesNotReuseMemoizedChildAcrossDifferentArgumentValues()
     {
-        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(ArgumentRollbackGrammar));
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(ArgumentRollbackGrammar, enableGeneratedRuleArgumentBinding: true));
         object context = CreateExecutionContext(assembly);
 
         ParseNode result = InvokeParseWithContext(assembly, "a", context);
@@ -4624,7 +4624,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
             A : 'a' ;
             """;
 
-        string source = EmitWithAntlrStyleTransformer(grammar);
+        string source = EmitWithAntlrStyleTransformer(grammar, enableGeneratedRuleArgumentBinding: true);
 
         Assert.IsFalse(source.Contains("child(int value)", StringComparison.Ordinal), source);
         Assert.IsFalse(source.Contains("public ParseNode child", StringComparison.Ordinal), source);
@@ -4643,7 +4643,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
             child[int value] : A ;
             A : 'a' ;
             """;
-        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar, enableGeneratedRuleArgumentBinding: true));
         object context = CreateExecutionContext(assembly);
 
         Assert.ThrowsException<TargetInvocationException>(() => InvokeParseWithContext(assembly, "a", context));
@@ -5708,11 +5708,18 @@ public class Antlr4GeneratedEmbeddedCodeTests
     /// Emits generated C# with the optional C# ANTLR-style transformer enabled for compatibility tests.
     /// </summary>
     /// <param name="grammarText">ANTLR4 grammar source.</param>
+    /// <param name="enableGeneratedRuleArgumentBinding">Whether generated-C# positional argument binding should be emitted for this test grammar.</param>
     /// <returns>Generated C# source with optional ANTLR-style convenience rewrites applied.</returns>
-    private static string EmitWithAntlrStyleTransformer(string grammarText)
+    private static string EmitWithAntlrStyleTransformer(string grammarText, bool enableGeneratedRuleArgumentBinding = false)
     {
         var grammar = new G4Parser(new G4Tokenizer(grammarText).Tokenize()).Parse();
-        return GrammarEmitter.Emit(grammar, "Generated.Tests", "P", "P.g4", new CSharpAntlrStyleParserEmbeddedCodeTransformer(grammar));
+        return GrammarEmitter.Emit(
+            grammar,
+            "Generated.Tests",
+            "P",
+            "P.g4",
+            new CSharpAntlrStyleParserEmbeddedCodeTransformer(grammar),
+            enableGeneratedRuleArgumentBinding);
     }
 
     /// <summary>

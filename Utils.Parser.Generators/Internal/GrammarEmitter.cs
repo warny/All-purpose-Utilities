@@ -20,12 +20,14 @@ internal static partial class GrammarEmitter
     /// <param name="className">Class name for the generated partial class.</param>
     /// <param name="sourceFileName">Original .g4 file name, used in the header comment.</param>
     /// <param name="embeddedCodeTransformer">Optional parser embedded-code transformer.</param>
+    /// <param name="enableGeneratedRuleArgumentBinding">Whether generated-C# <c>ParseWithEmbeddedCode(...)</c> should automatically bind supported positional rule-call arguments.</param>
     public static string Emit(
         G4Grammar grammar,
         string namespaceName,
         string className,
         string sourceFileName,
-        IParserEmbeddedCodeTransformer? embeddedCodeTransformer = null)
+        IParserEmbeddedCodeTransformer? embeddedCodeTransformer = null,
+        bool enableGeneratedRuleArgumentBinding = false)
     {
         embeddedCodeTransformer ??= NoOpParserEmbeddedCodeTransformer.Instance;
         var sb = new StringBuilder();
@@ -192,7 +194,7 @@ internal static partial class GrammarEmitter
 
         sb.AppendLine("}");
         sb.AppendLine();
-        EmitExecutionContext(sb, embeddedHooks, lexerEmbeddedHooks, lifecycleHooks, parserMembers, lexerMembers, className, sourceFileName, grammar, embeddedCodeTransformer, embeddedCodeTransformer is not NoOpParserEmbeddedCodeTransformer);
+        EmitExecutionContext(sb, embeddedHooks, lexerEmbeddedHooks, lifecycleHooks, parserMembers, lexerMembers, className, sourceFileName, grammar, embeddedCodeTransformer, enableGeneratedRuleArgumentBinding);
         EmitParserFooters(sb, parserFooters, grammar, embeddedCodeTransformer);
         EmitLexerFooters(sb, lexerFooters, grammar, embeddedCodeTransformer);
 
