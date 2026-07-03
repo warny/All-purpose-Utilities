@@ -343,3 +343,12 @@ The `$type` / `$channel` / `$mode` write support introduces only bounded action-
 ## Lexer grammar-level named actions
 
 `@lexer::header`, `@lexer::members`, and `@lexer::footer` are generated-C# source injection compatibility blocks for combined and lexer grammars only. They do not participate in parser-managed transactional execution beyond any ordinary fields they add to the existing generated execution context. `@lexer::members` is copied, hashed, and rolled back only to the same extent as other fields on that generated execution context; no separate lexer runtime state, lexer action buffering, lexer predicate execution, or complete ANTLR lexer transactional model is introduced. Parser-only grammars keep scoped `@lexer::*` actions unsupported because no lexer is generated.
+
+
+### Generated-C# opt-in simple positional rule-call binding
+
+Generated parsers now install a generated-C#-only rule-call policy for `ParseWithEmbeddedCode(...)`. When a parser rule call such as `child[42]` targets a parameterized parser rule such as `child[int value]`, the generated policy validates all positional raw arguments before entering the child rule, converts supported simple literals, and submits one atomic managed seed batch to the existing invocation-frame parameter store. The conservative generated `Parse(...)` path remains unchanged and does not execute this binding path.
+
+Supported automatic generated-C# argument forms are intentionally narrow: simple positional literals that the typed literal binding policy can convert to the declared parameter type, including decimal integer literals for `int` parameters. Named arguments and arbitrary C# expressions remain unsupported and are rejected deterministically in the generated-C# opt-in path. Full ANTLR-compatible generated rule signatures such as `child(int value)` are still not emitted; generated hooks should continue to read parameters through frame helpers such as `GetRequiredRuleParameter<T>(context, "name")`, and the optional C# ANTLR-style transformer may rewrite `$name` to those helpers.
+
+The implementation uses existing parser-managed pending seeds, invocation frames, execution-state snapshots, rollback, and memoization boundaries. No target-language expression evaluator was added to `ParserEngine`.

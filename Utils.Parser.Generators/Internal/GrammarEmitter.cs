@@ -192,7 +192,7 @@ internal static partial class GrammarEmitter
 
         sb.AppendLine("}");
         sb.AppendLine();
-        EmitExecutionContext(sb, embeddedHooks, lexerEmbeddedHooks, lifecycleHooks, parserMembers, lexerMembers, className, sourceFileName, grammar, embeddedCodeTransformer);
+        EmitExecutionContext(sb, embeddedHooks, lexerEmbeddedHooks, lifecycleHooks, parserMembers, lexerMembers, className, sourceFileName, grammar, embeddedCodeTransformer, embeddedCodeTransformer is not NoOpParserEmbeddedCodeTransformer);
         EmitParserFooters(sb, parserFooters, grammar, embeddedCodeTransformer);
         EmitLexerFooters(sb, lexerFooters, grammar, embeddedCodeTransformer);
 

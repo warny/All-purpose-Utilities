@@ -51,7 +51,7 @@ internal static partial class GrammarEmitter
         sb.AppendLine("    {");
         sb.AppendLine("        global::System.ArgumentNullException.ThrowIfNull(executionContext);");
         sb.AppendLine("        global::System.ArgumentNullException.ThrowIfNull(basePolicy);");
-        sb.AppendLine("        var grammar = new CompiledGrammar(Build(), executionContext.CreateRuntimePolicy(basePolicy));");
+        sb.AppendLine("        var grammar = new CompiledGrammar(Build(), executionContext.CreateRuntimePolicy(basePolicy, enableGeneratedRuleArgumentBinding: false));");
         sb.AppendLine("        return grammar.Parse(input);");
         sb.AppendLine("    }");
         sb.AppendLine();

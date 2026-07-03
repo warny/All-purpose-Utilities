@@ -162,6 +162,51 @@ internal static partial class GrammarEmitter
         sb.AppendLine();
     }
 
+    /// <summary>
+    /// Emits the generated-C# opt-in rule-call execution policy that binds simple positional arguments before delegating to the caller policy.
+    /// </summary>
+    /// <param name="sb">Source builder receiving generated C#.</param>
+    private static void EmitGeneratedRuleCallExecutionPolicy(StringBuilder sb)
+    {
+        sb.AppendLine("    /// <summary>Performs generated-C# opt-in simple positional rule-argument binding, then delegates to the caller-supplied rule-call policy.</summary>");
+        sb.AppendLine("    private sealed class GeneratedRuleCallExecutionPolicy : IParserRuleCallExecutionPolicy");
+        sb.AppendLine("    {");
+        sb.AppendLine("        private readonly global::Utils.Parser.Runtime.IParserRuleCallExecutionPolicy _fallback;");
+        sb.AppendLine("        private readonly global::Utils.Parser.Runtime.TypedPositionalLiteralRuleCallExecutionPolicy _positionalBinding = new(global::Utils.Parser.Runtime.ParserRuleCallBindingFailureBehavior.Throw);");
+        sb.AppendLine();
+        sb.AppendLine("        /// <summary>Initializes the generated rule-call policy wrapper.</summary>");
+        sb.AppendLine("        public GeneratedRuleCallExecutionPolicy(global::Utils.Parser.Runtime.IParserRuleCallExecutionPolicy fallback)");
+        sb.AppendLine("        {");
+        sb.AppendLine("            _fallback = fallback ?? throw new global::System.ArgumentNullException(nameof(fallback));");
+        sb.AppendLine("        }");
+        sb.AppendLine();
+        sb.AppendLine("        /// <summary>Binds supported positional literals for parameterized rule calls before invoking the fallback policy.</summary>");
+        sb.AppendLine("        public void BeforeRuleCall(global::Utils.Parser.Runtime.ParserRuleCallExecutionContext context)");
+        sb.AppendLine("        {");
+        sb.AppendLine("            global::System.ArgumentNullException.ThrowIfNull(context);");
+        sb.AppendLine("            if (context.PositionalRawArguments is not null && (context.TargetRuleDescriptor?.Parameters.Count ?? 0) > 0)");
+        sb.AppendLine("            {");
+        sb.AppendLine("                if (context.NamedRawArguments is not null)");
+        sb.AppendLine("                {");
+        sb.AppendLine("                    throw new global::Utils.Parser.Runtime.ParserRuleCallBindingException(context.RuleName, context.RawArguments, \"Named rule-call arguments are not supported by generated-C# automatic binding.\");");
+        sb.AppendLine("                }");
+        sb.AppendLine();
+        sb.AppendLine("                _positionalBinding.BeforeRuleCall(context);");
+        sb.AppendLine("            }");
+        sb.AppendLine();
+        sb.AppendLine("            _fallback.BeforeRuleCall(context);");
+        sb.AppendLine("        }");
+        sb.AppendLine();
+        sb.AppendLine("        /// <summary>Delegates completed rule-call metadata to the fallback policy.</summary>");
+        sb.AppendLine("        public void AfterRuleCall(global::Utils.Parser.Runtime.ParserRuleCallExecutionContext context)");
+        sb.AppendLine("        {");
+        sb.AppendLine("            global::System.ArgumentNullException.ThrowIfNull(context);");
+        sb.AppendLine("            _fallback.AfterRuleCall(context);");
+        sb.AppendLine("        }");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+    }
+
 
     /// <summary>
     /// Emits the grammar-specific lexer action executor.

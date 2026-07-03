@@ -21,6 +21,7 @@ internal static partial class GrammarEmitter
     /// <param name="sourceFileName">Original .g4 file name, used in generated XML documentation.</param>
     /// <param name="grammar">Parsed grammar AST used for transformer context.</param>
     /// <param name="embeddedCodeTransformer">Parser embedded-code transformer used for parser members.</param>
+    /// <param name="enableGeneratedRuleArgumentBinding">Whether the generated no-base embedded-code path should bind simple positional arguments automatically.</param>
     private static void EmitExecutionContext(
         StringBuilder sb,
         IReadOnlyList<EmbeddedCodeHook> hooks,
@@ -31,7 +32,8 @@ internal static partial class GrammarEmitter
         string className,
         string sourceFileName,
         G4Grammar grammar,
-        IParserEmbeddedCodeTransformer embeddedCodeTransformer)
+        IParserEmbeddedCodeTransformer embeddedCodeTransformer,
+        bool enableGeneratedRuleArgumentBinding)
     {
         var predicates = hooks.Where(static hook => hook.IsPredicate).ToList();
         var actions = hooks.Where(static hook => !hook.IsPredicate).ToList();
@@ -97,8 +99,9 @@ internal static partial class GrammarEmitter
         EmitRuleSeedingHelpers(sb);
         sb.AppendLine("    /// <summary>Creates a runtime feature policy bound to this execution context instance.</summary>");
         sb.AppendLine("    /// <param name=\"basePolicy\">Optional policy whose non-embedded-code components are preserved.</param>");
+        sb.AppendLine("    /// <param name=\"enableGeneratedRuleArgumentBinding\">Whether generated-C# opt-in simple positional argument binding is enabled.</param>");
         sb.AppendLine("    /// <returns>A runtime policy whose generated dispatchers call this context instance.</returns>");
-        sb.AppendLine("    internal ParserRuntimeFeaturePolicy CreateRuntimePolicy(ParserRuntimeFeaturePolicy? basePolicy = null)");
+        sb.AppendLine("    internal ParserRuntimeFeaturePolicy CreateRuntimePolicy(ParserRuntimeFeaturePolicy? basePolicy = null, bool enableGeneratedRuleArgumentBinding = true)");
         sb.AppendLine("    {");
         sb.AppendLine("        var effectiveBase = basePolicy ?? ParserRuntimeFeaturePolicy.Default;");
         sb.AppendLine("        this._frameManager = new global::Utils.Parser.Runtime.StackParserRuleInvocationFrameManager(");
@@ -110,6 +113,7 @@ internal static partial class GrammarEmitter
         sb.AppendLine("            ParserActionExecutor = new GeneratedParserActionExecutor(this, effectiveBase.ParserActionExecutor),");
         sb.AppendLine("            LexerActionExecutor = new GeneratedLexerActionExecutor(this, effectiveBase.LexerActionExecutor),");
         sb.AppendLine("            LexerPredicateEvaluator = new GeneratedLexerPredicateEvaluator(this, effectiveBase.LexerPredicateEvaluator),");
+        sb.AppendLine($"            RuleCallExecutionPolicy = enableGeneratedRuleArgumentBinding && {(enableGeneratedRuleArgumentBinding ? "true" : "false")} ? new GeneratedRuleCallExecutionPolicy(effectiveBase.RuleCallExecutionPolicy) : effectiveBase.RuleCallExecutionPolicy,");
         sb.AppendLine("            ExecutionStateManager = new GeneratedExecutionStateManager(");
         sb.AppendLine("                this,");
         sb.AppendLine("                result => this._frameManager!.SyncCallResultToCurrentFrame(result),");
@@ -130,6 +134,7 @@ internal static partial class GrammarEmitter
         EmitExecutionStateManager(sb, contextClassName);
         EmitSemanticPredicateEvaluator(sb, predicates, contextClassName);
         EmitParserActionExecutor(sb, actions, contextClassName);
+        EmitGeneratedRuleCallExecutionPolicy(sb);
         EmitLexerActionExecutor(sb, lexerActions, contextClassName);
         EmitLexerPredicateEvaluator(sb, lexerPredicates, contextClassName);
         if (lifecycleHooks.Count > 0)
