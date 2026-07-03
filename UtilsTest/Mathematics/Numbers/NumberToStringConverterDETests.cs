@@ -177,5 +177,42 @@ namespace UtilsTest.Mathematics.Numbers
                 Assert.AreEqual(test.Expected, converter.Convert(test.Number));
             }
         }
+
+        [TestMethod]
+        public void ConvertCurrency_DE_Euro()
+        {
+            var c = NumberToStringConverter.GetConverter("DE");
+            var euro = new CurrencyDefinition
+            {
+                UnitSingular    = "Euro",
+                UnitPlural      = "Euro",
+                SubunitSingular = "Cent",
+                SubunitPlural   = "Cent",
+                Connector       = "und",
+            };
+
+            // Convert(1) = "eins" (standalone); currency context does not apply attributive form
+            Assert.AreEqual("eins Euro",                  c.ConvertCurrency(1m,    euro));
+            Assert.AreEqual("zwei Euro",                  c.ConvertCurrency(2m,    euro));
+            Assert.AreEqual("eins Euro und fünfzig Cent", c.ConvertCurrency(1.50m, euro));
+        }
+
+        [TestMethod]
+        public void ConvertCurrency_DE_Gender_Feminine()
+        {
+            var c = NumberToStringConverter.GetConverter("DE");
+            var krone = new CurrencyDefinition
+            {
+                UnitSingular    = "Krone",
+                UnitPlural      = "Kronen",
+                SubunitSingular = "Heller",
+                SubunitPlural   = "Heller",
+                Connector       = "und",
+            };
+
+            // Convert(1) = "eins"; GermanSpecifics replaces "\bein [A-Z]" → "eine" but not "eins"
+            Assert.AreEqual("eins Krone",  c.ConvertCurrency(1m,  krone));
+            Assert.AreEqual("zwei Kronen", c.ConvertCurrency(2m,  krone));
+        }
     }
 }

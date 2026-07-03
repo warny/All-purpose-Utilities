@@ -21,5 +21,32 @@ namespace UtilsTest.Mathematics.Numbers
                 Assert.AreEqual(test.Expected, converter.Convert(test.Number));
             }
         }
+
+        [TestMethod]
+        public void Cardinals_Basic()
+        {
+            var c = NumberToStringConverter.GetConverter("ZH");
+            (long n, string expected)[] cases =
+            [
+                (1,   "一"),
+                (10,  "十"),
+                (20,  "二十"),
+                (100, "一百"),
+                (1_000, "一 千"),
+            ];
+            foreach (var (n, expected) in cases)
+                Assert.AreEqual(expected, c.Convert(n), $"ZH {n}");
+        }
+
+        [TestMethod]
+        public void Ordinals_PrefixDi()
+        {
+            var c = NumberToStringConverter.GetConverter("ZH");
+
+            Assert.AreEqual("第一",  c.ConvertOrdinal(1));
+            Assert.AreEqual("第二",  c.ConvertOrdinal(2));
+            Assert.AreEqual("第十",  c.ConvertOrdinal(10));
+            Assert.AreEqual("第一百",  c.ConvertOrdinal(100));
+        }
     }
 }

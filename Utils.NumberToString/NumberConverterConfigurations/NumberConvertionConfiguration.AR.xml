@@ -59,6 +59,9 @@
             </Suffixes>
         </NumberScale>
         <Exceptions />
+        <Replacements>
+            <Replacement oldValue="واحد ألف" newValue="ألف" />
+        </Replacements>
         <Ordinals>
             <!-- Masculin indéfini, forme courte (sans article) — les ordinaux arabes
                  sont indépendants des cardinaux et varient en genre avec le nom -->
@@ -109,6 +112,20 @@
         </Ordinals>
         <Variants>
             <Dimension name="gender" values="muʾakar,muʾannath" />
+            <Variant type="gender" variant="muʾannath">
+                <!-- Cardinal gender polarity (3-9): masculine noun context uses feminine-derived form -->
+                <!-- (with tā' marbūṭa ة = default); feminine noun context uses masculine-derived form -->
+                <Replacement oldValue="واحد"   newValue="واحدة"  scope="LastWord" />
+                <Replacement oldValue="اثنان"  newValue="اثنتان" scope="LastWord" />
+                <Replacement oldValue="ثلاثة"  newValue="ثلاث"   scope="LastWord" />
+                <Replacement oldValue="أربعة"  newValue="أربع"   scope="LastWord" />
+                <Replacement oldValue="خمسة"   newValue="خمس"    scope="LastWord" />
+                <Replacement oldValue="ستة"    newValue="ست"     scope="LastWord" />
+                <Replacement oldValue="سبعة"   newValue="سبع"    scope="LastWord" />
+                <Replacement oldValue="ثمانية" newValue="ثمان"   scope="LastWord" />
+                <Replacement oldValue="تسعة"   newValue="تسع"    scope="LastWord" />
+                <Replacement oldValue="عشرة"   newValue="عشر"    scope="LastWord" />
+            </Variant>
         </Variants>
     </Language>
 </Numbers>
