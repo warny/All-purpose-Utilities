@@ -4557,7 +4557,91 @@ public class Antlr4GeneratedEmbeddedCodeTests
         var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar, enableGeneratedRuleArgumentBinding: true));
         object context = CreateExecutionContext(assembly);
 
-        Assert.ThrowsException<TargetInvocationException>(() => InvokeParseWithContext(assembly, "a", context));
+        var ex = Assert.ThrowsException<TargetInvocationException>(() => InvokeParseWithContext(assembly, "a", context));
+
+        Assert.IsInstanceOfType(ex.InnerException, typeof(ParserRuleCallBindingException));
+        StringAssert.Contains(ex.InnerException!.Message, "exactly");
+        StringAssert.Contains(ex.InnerException.Message, "positional argument");
+        Assert.AreEqual(-1, ReadInstanceIntField(context, "Seen"));
+    }
+
+    /// <summary>
+    /// Ensures generated-C# opt-in binding rejects omitted trailing defaults because automatic binding requires exact arity.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_RejectsDefaultedParameterWhenGeneratedBindingRequiresExactArity()
+    {
+        const string grammar = """
+            grammar P;
+            @members { public int Seen = -1; }
+            start : child[40] ;
+            child[int left, int right = 2]
+            @after {
+                Seen = GetRequiredRuleParameter<int>(context, "left")
+                    + GetRequiredRuleParameter<int>(context, "right");
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar, enableGeneratedRuleArgumentBinding: true));
+        object context = CreateExecutionContext(assembly);
+
+        var ex = Assert.ThrowsException<TargetInvocationException>(() => InvokeParseWithContext(assembly, "a", context));
+
+        Assert.IsInstanceOfType(ex.InnerException, typeof(ParserRuleCallBindingException));
+        StringAssert.Contains(ex.InnerException!.Message, "exactly");
+        StringAssert.Contains(ex.InnerException.Message, "positional argument");
+        Assert.AreEqual(-1, ReadInstanceIntField(context, "Seen"));
+    }
+
+    /// <summary>
+    /// Ensures explicit generated-C# positional arguments win when exact arity is supplied even if parameters declare defaults.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_BindsWhenExactArityEvenIfParametersHaveDefaults()
+    {
+        const string grammar = """
+            grammar P;
+            @members { public int Seen; }
+            start : child[40, 2] ;
+            child[int left, int right = 99]
+            @after {
+                Seen = GetRequiredRuleParameter<int>(context, "left")
+                    + GetRequiredRuleParameter<int>(context, "right");
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar, enableGeneratedRuleArgumentBinding: true));
+        object context = CreateExecutionContext(assembly);
+
+        ParseNode result = InvokeParseWithContext(assembly, "a", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(42, ReadInstanceIntField(context, "Seen"));
+    }
+
+    /// <summary>
+    /// Ensures generated-C# opt-in binding rejects positional arguments passed to a parameterless rule.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_RejectsArgumentsForParameterlessRuleWhenGeneratedBindingRequiresExactArity()
+    {
+        const string grammar = """
+            grammar P;
+            @members { public int Seen = -1; }
+            start : child[42] ;
+            child @after { Seen = 1; } : A ;
+            A : 'a' ;
+            """;
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar, enableGeneratedRuleArgumentBinding: true));
+        object context = CreateExecutionContext(assembly);
+
+        var ex = Assert.ThrowsException<TargetInvocationException>(() => InvokeParseWithContext(assembly, "a", context));
+
+        Assert.IsInstanceOfType(ex.InnerException, typeof(ParserRuleCallBindingException));
+        StringAssert.Contains(ex.InnerException!.Message, "exactly 0 positional argument");
+        StringAssert.Contains(ex.InnerException.Message, "received 1");
         Assert.AreEqual(-1, ReadInstanceIntField(context, "Seen"));
     }
 
@@ -4569,7 +4653,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
     {
         const string grammar = """
             grammar P;
-            @members { public int Seen = -1; public int MakeValue() => 42; }
+            @members { public int Seen = -1; public int MakeValue() { Seen = 99; return 42; } }
             start : child[MakeValue()] ;
             child[int value] @after { Seen = GetRequiredRuleParameter<int>(context, "value"); } : A ;
             A : 'a' ;
@@ -4577,7 +4661,35 @@ public class Antlr4GeneratedEmbeddedCodeTests
         var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar, enableGeneratedRuleArgumentBinding: true));
         object context = CreateExecutionContext(assembly);
 
-        Assert.ThrowsException<TargetInvocationException>(() => InvokeParseWithContext(assembly, "a", context));
+        var ex = Assert.ThrowsException<TargetInvocationException>(() => InvokeParseWithContext(assembly, "a", context));
+
+        Assert.IsInstanceOfType(ex.InnerException, typeof(ParserRuleCallBindingException));
+        Assert.AreEqual(-1, ReadInstanceIntField(context, "Seen"));
+    }
+
+    /// <summary>
+    /// Ensures generated-C# automatic binding is absent when the opt-in flag is disabled.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_DoesNotBindDefaultsWhenGeneratedBindingDisabled()
+    {
+        const string grammar = """
+            grammar P;
+            @members { public int Seen = -1; }
+            start : child[40] ;
+            child[int left, int right = 2]
+            @after {
+                Seen = TryGetRuleParameter(context, "left", out _) ? 1 : -1;
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar, enableGeneratedRuleArgumentBinding: false));
+        object context = CreateExecutionContext(assembly);
+
+        ParseNode result = InvokeParseWithContext(assembly, "a", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
         Assert.AreEqual(-1, ReadInstanceIntField(context, "Seen"));
     }
 
@@ -4646,7 +4758,10 @@ public class Antlr4GeneratedEmbeddedCodeTests
         var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar, enableGeneratedRuleArgumentBinding: true));
         object context = CreateExecutionContext(assembly);
 
-        Assert.ThrowsException<TargetInvocationException>(() => InvokeParseWithContext(assembly, "a", context));
+        var ex = Assert.ThrowsException<TargetInvocationException>(() => InvokeParseWithContext(assembly, "a", context));
+
+        Assert.IsInstanceOfType(ex.InnerException, typeof(ParserRuleCallBindingException));
+        StringAssert.Contains(ex.InnerException!.Message, "Named rule-call arguments are not supported");
     }
 
     /// <summary>
