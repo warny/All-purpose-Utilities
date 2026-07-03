@@ -725,13 +725,14 @@ fr.Convert(123456789, 3, "gender=feminin"); // "cent vingt trois millions" (no g
 number
   → ConvertRaw:
       for each group (millions, thousands, units, …):
-          ConvertGroup       (digit text for this group)
-          Trigger group      (optional: text-replacements on digit text)
+          ConvertGroup                    (digit text for this group)
+          Trigger group(N)                (optional: replacements on digit text)
           append scale name
-          Replacements       (per-language substitutions)
-          Trigger groupWithScale  (optional: replacements on digit+scale text)
+          Replacements with onScale=N     (per-group rules, filtered by onValue)
+          Trigger groupWithScale(N)       (optional: replacements on digit+scale text)
           push to stack
       assemble all groups
+      Replacements without onScale        (global rules, filtered by onValue)
   → AdjustFunction      (optional user-supplied transformation)
   → ApplyVariantRules   (morphological replacements, least to most specific)
   → Trigger end         (optional: replacements on fully assembled text)
@@ -743,11 +744,11 @@ number
 
 ```
 number
-  → OrdinalExceptions   (integer-level early exit, e.g. 1 → "premier")
-  → ConvertRaw + Triggers group/groupWithScale
-  → ApplyVariantRules   (default variant values)
+  → OrdinalExceptions      (integer-level early exit, e.g. 1 → "premier")
+  → ConvertRaw + Triggers group/groupWithScale (same as cardinal)
+  → ApplyVariantRules      (default variant values)
   → ApplyOrdinalTransform  (word rules + suffix on last word)
-  → AdjustFunction      (user transform + FinalizeWriting)
+  → AdjustFunction         (user transform + FinalizeWriting)
   → Trigger end
   → sign wrapping
 ```
@@ -807,7 +808,39 @@ on the same language register the same converter under several codes.
 | `decimalSeparator` | | Word between the integer and decimal parts (e.g. `"point"`, `"virgule"`). |
 | `fractionSeparator` | | Connector for fractions (e.g. `"sur"`, `"over"`). |
 | `maxNumber` | | Maximum accepted value; beyond this, `ArgumentOutOfRangeException` is thrown. |
-| `baseOn` | | Reserved (future inheritance). |
+| `baseOn` | | Culture code of a base language to inherit from. All settings are inherited and can be selectively overridden. Chains (A → B → C) are supported; the base must appear earlier in the same file or in a previously loaded file. An empty element (e.g. `<Replacements />`) explicitly overrides the base with an empty list. |
+
+---
+
+### `baseOn` — language inheritance
+
+`baseOn` lets a `<Language>` element inherit all settings from a base language and override only
+the differences. The base must appear earlier in the same file or in a previously loaded file.
+Inheritance chains (A → B → C) are fully supported.
+
+```xml
+<!-- Standard German -->
+<Language groupSize="3" …>
+    <Culture>DE</Culture>
+    <Replacements>
+        <Replacement oldValue="ein tausend" newValue="tausend" />
+    </Replacements>
+    …
+</Language>
+
+<!-- Swiss German: inherits DE, removes the contraction for 1 000 -->
+<Language baseOn="DE">
+    <Culture>de-CH</Culture>
+    <Culture>de-LI</Culture>
+    <!-- Empty element overrides the base list with an empty one -->
+    <Replacements />
+</Language>
+```
+
+**Merge rules**:
+- Scalar attributes (`groupSize`, `separator`, `zero`, …): child wins; absent child attributes inherit from the base.
+- Collection elements (`Groups`, `NumberScale`, `Replacements`, `Exceptions`, `Fractions`, `Variants`): if declared in the child the entire collection replaces the base. Omitted collections are inherited. An empty element (e.g. `<Replacements />`) explicitly overrides with an empty list.
+- `Ordinals`: `OrdinalExceptions` and `OrdinalRules` are merged element-by-element (child wins on key conflicts). `suffix`, `prefix`, and `OrdinalVariants` fall back to the base when absent in the child.
 
 ---
 
@@ -875,13 +908,14 @@ Each `<Digit digit="N" string="…" buildString="…"/>`:
 
 ---
 
-### `<Replacements>` — global substitutions
+### `<Replacements>` — substitutions
 
-Applied **after** raw text assembly and **before** variants.
+Rules fire either per-group (with `onScale`) or on the final assembled string (without `onScale`).
 
 ```xml
 <Replacements>
     <!-- scope omitted → Standalone: replaces only if the entire text = oldValue -->
+    <!-- fires on the final assembled string (no onScale) -->
     <Replacement oldValue="un mille" newValue="mille" />
 
     <!-- Anywhere: replaces all occurrences in the text -->
@@ -889,14 +923,51 @@ Applied **after** raw text assembly and **before** variants.
 
     <!-- LastWord: replaces only if oldValue is the last word -->
     <Replacement oldValue="un" newValue="une" scope="LastWord" />
+
+    <!-- onScale=1: fires per-group on the thousands group text ("digit + scale") -->
+    <!-- onValue=1: further restricts to when the thousands digit value is exactly 1 -->
+    <!-- "ein tausend" → "tausend" only for 1 000; 21 000 is unaffected -->
+    <Replacement oldValue="ein tausend" newValue="tausend" onScale="1" onValue="1" />
 </Replacements>
 ```
+
+#### `scope` values
 
 | Scope | Behaviour |
 |-------|-----------|
 | `Standalone` (default) | Replaces if the entire text equals `oldValue`. |
 | `Anywhere` | Replaces all substring occurrences. |
 | `LastWord` | Replaces `oldValue` only if it matches the last word (preceded by a space, hyphen, or start of string). |
+| `StartsWith` | Replaces if the text starts with `oldValue`. |
+| `EndsWith` | Replaces if the text ends with `oldValue`. |
+
+#### `onScale` — per-group firing
+
+`onScale="N"` restricts the rule to the per-group pass for group `N` (0 = units, 1 = thousands, 2 = millions…). The rule then sees `"digit-text + separator + scale-name"` (e.g. `"ein tausend"`) rather than the fully assembled string. Without `onScale`, the rule fires on the final assembled string.
+
+#### `onValue` — numeric value filter
+
+`onValue` restricts the rule to specific numeric values. Syntax: comma-separated segments.
+
+| Segment | Matches |
+|---------|---------|
+| `1` | Exactly 1 |
+| `1..3` | 1, 2, or 3 (inclusive range) |
+| `..5` | Any value ≤ 5 |
+| `5..` | Any value ≥ 5 |
+| `1,5..10` | 1, or 5 through 10 |
+
+With `onScale`: the value is the per-group digit value (0–999 for 3-digit groups).  
+Without `onScale`: the value is the full absolute number, applied in the final pass.
+
+```xml
+<!-- Fires for the thousands group (onScale=1) only when its digit value is 1 -->
+<!-- 1 000 → "ein tausend" → "tausend";  21 000 → "einundzwanzig tausend" (unchanged) -->
+<Replacement oldValue="ein tausend" newValue="tausend" onScale="1" onValue="1" />
+
+<!-- Fires on the final string only for numbers 1–10 -->
+<Replacement oldValue="ein" newValue="ett" onValue="1..10" />
+```
 
 ---
 
