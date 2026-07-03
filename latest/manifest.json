@@ -13843,6 +13843,16 @@
     },
     {
       "type": "Conceptual",
+      "source_relative_path": "docs/parser/RuleArgumentsAndReturnsPlan.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/parser/RuleArgumentsAndReturnsPlan.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
       "source_relative_path": "docs/parser/RuntimeArchitecture.md",
       "output": {
         ".html": {

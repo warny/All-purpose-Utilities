@@ -73,6 +73,9 @@
         <article data-uid="">
 <h1 id="antlr4-compatibility-matrix">ANTLR4 Compatibility Matrix</h1>
 
+<blockquote>
+<p>Rule arguments/returns plan: <a href="RuleArgumentsAndReturnsPlan.html"><code>RuleArgumentsAndReturnsPlan.md</code></a> is the design reference for rule parameters, call arguments, returns, labels, rollback, and future generated-C# opt-in binding. The matrix rows below describe current behavior only: parameters and returns are metadata plus explicit helper state, raw call arguments are preserved/split syntactically, literal binding policies are explicit opt-in, labels store managed <code>ParserRuleCallResult</code> snapshots, and generated-C# automatic <code>callee[expr]</code> binding is not implemented.</p>
+</blockquote>
 <h2 id="introduction">Introduction</h2>
 <p><code>Utils.Parser</code> supports ANTLR4 grammar ingestion progressively, with a conservative runtime execution model.</p>
 <p>Support levels are intentionally explicit:</p>

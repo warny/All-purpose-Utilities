@@ -80,6 +80,9 @@
 <p>Note: this reference is complementary to <code>Antlr4CompatibilityMatrix.md</code> (high-level matrix).
 Use this file for implementation-oriented usage guidance when behavior differs from standard ANTLR4.</p>
 </blockquote>
+<blockquote>
+<p>Rule arguments and returns integration plan: see <a href="RuleArgumentsAndReturnsPlan.html"><code>RuleArgumentsAndReturnsPlan.md</code></a> for the design split between conservative runtime behavior, explicit runtime policies, generated-C# opt-in helpers, metadata-only facts, rollback boundaries, and future generated-C# argument binding phases. In short, rule parameters are parsed as metadata, rule-call raw arguments are preserved, manual/explicit runtime policy support exists for limited literals, generated-C# automatic ANTLR-style argument binding is not implemented, return metadata and managed return snapshots exist, and ANTLR-style return access remains partial and opt-in.</p>
+</blockquote>
 <hr>
 <h2 id="compatibility-level-estimate">Compatibility level estimate</h2>
 <p>This project should not claim full ANTLR4 compatibility. A practical estimate is:</p>
