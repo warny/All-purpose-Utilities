@@ -1439,6 +1439,40 @@ public class NumberToStringConverterImprovementsTests
         Assert.AreEqual("zeroth", conv.ConvertOrdinal(0));
     }
 
+    [TestMethod]
+    public void ConvertOrdinal_Plugin_LongDefault_FallsBackAboveIntMax()
+    {
+        // OrdinalPluginSpecifics only implements TryConvertOrdinal(int); the default long
+        // implementation delegates for values ≤ int.MaxValue and returns false above.
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        {
+            LanguageSpecifics = new OrdinalPluginSpecifics()
+        };
+        var conv = new NumberToStringConverter(options);
+
+        // int.MaxValue is still within range → plugin handles it
+        Assert.AreEqual($"ORDINAL_{int.MaxValue}", conv.ConvertOrdinal((long)int.MaxValue));
+        // Above int.MaxValue → plugin returns false → XML pipeline produces a non-null result
+        long big = (long)int.MaxValue + 1;
+        string result = conv.ConvertOrdinal(big);
+        Assert.IsNotNull(result);
+        Assert.IsFalse(result.StartsWith("ORDINAL_"), "XML pipeline should have handled the large value");
+    }
+
+    [TestMethod]
+    public void ConvertOrdinal_Plugin_LongOverride_HandlesLargeValues()
+    {
+        // LargeOrdinalPluginSpecifics overrides TryConvertOrdinal(long) directly.
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"))
+        {
+            LanguageSpecifics = new LargeOrdinalPluginSpecifics()
+        };
+        var conv = new NumberToStringConverter(options);
+
+        Assert.AreEqual("ORDINAL_1",   conv.ConvertOrdinal(1L));
+        Assert.AreEqual($"ORDINAL_{(long)int.MaxValue + 1}", conv.ConvertOrdinal((long)int.MaxValue + 1));
+    }
+
     // ─── FR — Ordinal variants (gender=feminin) ───────────────────────────────
 
     [TestMethod]
@@ -1932,6 +1966,22 @@ public class NumberToStringConverterImprovementsTests
         public bool TryConvertOrdinal(int number, IReadOnlyDictionary<string, string> variants, out string? result)
         {
             if (number == 0) { result = null; return false; }
+            result = $"ORDINAL_{number}";
+            return true;
+        }
+    }
+
+    // Implements TryConvertOrdinal(long) directly to handle values above int.MaxValue.
+    private sealed class LargeOrdinalPluginSpecifics
+        : INumberToStringLanguageSpecifics, IOrdinalLanguageSpecifics
+    {
+        public string FinalizeWriting(string lang, string text) => text;
+
+        public bool TryConvertOrdinal(int number, IReadOnlyDictionary<string, string> variants, out string? result)
+            => TryConvertOrdinal((long)number, variants, out result);
+
+        public bool TryConvertOrdinal(long number, IReadOnlyDictionary<string, string> variants, out string? result)
+        {
             result = $"ORDINAL_{number}";
             return true;
         }
@@ -2585,5 +2635,115 @@ public class NumberToStringConverterImprovementsTests
 
         // default variant (masc): no onScale=1 fem rule, no change
         Assert.AreEqual("un mille un", c.Convert(1001), "1001 masc: no change");
+    }
+
+    // ─── baseOn XML inheritance (C1) ──────────────────────────────────────────
+
+    private const string BaseOnTestConfig = """
+        <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+          <Language groupSize="3" separator=" " groupSeparator="" zero="nul" minus="min *" decimalSeparator="komma">
+            <Culture>TEST-BO-BASE</Culture>
+            <Groups>
+              <Group level="1">
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="een" />
+                <Digit digit="2" string="twee" />
+              </Group>
+              <Group level="2">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="tien" buildString="*tien" />
+                <Digit digit="2" string="twintig" buildString="*entwintig" />
+              </Group>
+              <Group level="3">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="honderd" buildString="honderd*" />
+              </Group>
+            </Groups>
+            <NumberScale firstLetterUpperCase="false">
+              <StaticNames>
+                <Scale value="0" string=""/>
+                <Scale value="1" string="duizend"/>
+              </StaticNames>
+            </NumberScale>
+            <Replacements>
+              <Replacement oldValue="een duizend" newValue="duizend" />
+            </Replacements>
+            <Ordinals suffix="de">
+              <OrdinalException value="1" string="eerste" />
+            </Ordinals>
+          </Language>
+          <Language baseOn="TEST-BO-BASE">
+            <Culture>TEST-BO-DERIVED</Culture>
+            <Replacements />
+            <Ordinals>
+              <OrdinalException value="2" string="tweede" />
+            </Ordinals>
+          </Language>
+        </Numbers>
+        """;
+
+    [TestMethod]
+    public void BaseOn_InheritsGroupsAndScaleFromBase()
+    {
+        var cs = NumberToStringConverter.ReadConfiguration(BaseOnTestConfig);
+        var derived = cs["TEST-BO-DERIVED"];
+        Assert.AreEqual("twee",    derived.Convert(2),   "single digit");
+        Assert.AreEqual("tien",    derived.Convert(10),  "tens");
+        Assert.AreEqual("honderd", derived.Convert(100), "hundreds");
+    }
+
+    [TestMethod]
+    public void BaseOn_EmptyReplacementsOverridesBase_ThousandNotCollapsed()
+    {
+        var cs = NumberToStringConverter.ReadConfiguration(BaseOnTestConfig);
+        var baseConv    = cs["TEST-BO-BASE"];
+        var derivedConv = cs["TEST-BO-DERIVED"];
+
+        Assert.AreEqual("duizend",     baseConv.Convert(1000),    "base collapses 1000");
+        Assert.AreEqual("een duizend", derivedConv.Convert(1000), "derived keeps 'een duizend'");
+    }
+
+    [TestMethod]
+    public void BaseOn_OrdinalsAreMerged_ChildExceptionAdded_BaseExceptionInherited()
+    {
+        var cs = NumberToStringConverter.ReadConfiguration(BaseOnTestConfig);
+        var derived = cs["TEST-BO-DERIVED"];
+
+        Assert.AreEqual("eerste", derived.ConvertOrdinal(1),  "exception from base");
+        Assert.AreEqual("tweede", derived.ConvertOrdinal(2),  "exception from child");
+        Assert.AreEqual("tiende", derived.ConvertOrdinal(10), "suffix 'de' inherited from base");
+    }
+
+    [TestMethod]
+    public void BaseOn_DeChInheritsDeConfiguration()
+    {
+        var de   = NumberToStringConverter.GetConverter("DE");
+        var deCh = NumberToStringConverter.GetConverter("de-CH");
+
+        // DE collapses "ein tausend" → "tausend"; DE-CH keeps "ein tausend"
+        Assert.AreEqual("tausend",     de.Convert(1000),   "DE: replacement applied");
+        Assert.AreEqual("ein tausend", deCh.Convert(1000), "DE-CH: no replacement");
+
+        // Both share the inherited ordinal word rules
+        Assert.AreEqual("erste",  de.ConvertOrdinal(1),   "DE: irregular ordinal 1");
+        Assert.AreEqual("erste",  deCh.ConvertOrdinal(1), "DE-CH: inherited ordinal 1");
+
+        // DE-CH has an explicit ordinal exception for 1000
+        Assert.AreEqual("tausendste", deCh.ConvertOrdinal(1000), "DE-CH: ordinal 1000 exception");
+    }
+
+    [TestMethod]
+    public void BaseOn_UnresolvedBase_ThrowsDescriptiveException()
+    {
+        const string bad = """
+            <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+              <Language baseOn="DOES-NOT-EXIST">
+                <Culture>TEST-BAD</Culture>
+              </Language>
+            </Numbers>
+            """;
+        var ex = Assert.ThrowsException<InvalidOperationException>(
+            () => NumberToStringConverter.ReadConfiguration(bad));
+        StringAssert.Contains(ex.Message, "DOES-NOT-EXIST");
     }
 }

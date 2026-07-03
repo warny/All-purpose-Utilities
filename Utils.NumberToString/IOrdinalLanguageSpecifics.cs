@@ -36,4 +36,34 @@ public interface IOrdinalLanguageSpecifics
     /// <see langword="false"/> to fall through to the XML-based ordinal pipeline.
     /// </returns>
     bool TryConvertOrdinal(int number, IReadOnlyDictionary<string, string> activeVariants, out string? result);
+
+    /// <summary>
+    /// Attempts to convert a 64-bit integer to its ordinal string representation.
+    /// The default implementation delegates to
+    /// <see cref="TryConvertOrdinal(int, IReadOnlyDictionary{string, string}, out string)"/> when the value
+    /// fits in <c>int</c>; values above <see cref="int.MaxValue"/> return <see langword="false"/> (fall through
+    /// to the XML ordinal pipeline).
+    /// Override this to handle ordinal values above <see cref="int.MaxValue"/>.
+    /// </summary>
+    /// <param name="number">The absolute value of the number to convert (always ≥ 0).</param>
+    /// <param name="activeVariants">
+    /// The active dimension constraints, e.g. <c>{ "gender" → "feminin" }</c>.
+    /// </param>
+    /// <param name="result">
+    /// The ordinal string when this method returns <see langword="true"/>;
+    /// otherwise <see langword="null"/>.
+    /// </param>
+    /// <returns>
+    /// <see langword="true"/> to use <paramref name="result"/> directly;
+    /// <see langword="false"/> to fall through to the XML-based ordinal pipeline.
+    /// </returns>
+    bool TryConvertOrdinal(long number, IReadOnlyDictionary<string, string> activeVariants, out string? result)
+    {
+        if (number > int.MaxValue)
+        {
+            result = null;
+            return false;
+        }
+        return TryConvertOrdinal((int)number, activeVariants, out result);
+    }
 }

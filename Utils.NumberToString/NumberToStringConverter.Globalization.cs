@@ -65,6 +65,9 @@ namespace Utils.NumberToString
         // Explicitly registered language-specifics instances, consulted before reflection
         private static readonly ConcurrentDictionary<string, INumberToStringLanguageSpecifics> _registeredSpecifics = new(StringComparer.Ordinal);
 
+        // Stores resolved LanguageType objects for cross-document baseOn resolution
+        private static readonly ConcurrentDictionary<string, LanguageType> _cachedLanguageTypes = new(StringComparer.OrdinalIgnoreCase);
+
         /// <summary>
         /// Registers an <see cref="INumberToStringLanguageSpecifics"/> instance under a given type name
         /// so that XML configurations referencing that name find it without reflection.
@@ -119,18 +122,132 @@ namespace Utils.NumberToString
                 obj = (Numbers)serializer.Deserialize(reader);
             }
 
+            // Build a within-document lookup so baseOn can reference a language declared earlier
+            // in the same XML document (case-insensitive culture keys).
+            var docLanguageTypes = new Dictionary<string, LanguageType>(StringComparer.OrdinalIgnoreCase);
+            foreach (var lang in obj.Languages)
+                foreach (var culture in lang.Cultures ?? [])
+                    docLanguageTypes.TryAdd(culture, lang);
+
             var result = new Dictionary<string, NumberToStringConverter>();
             foreach (var language in obj.Languages)
             {
-                foreach (var culture in language.Cultures)
+                var resolved = string.IsNullOrEmpty(language.BaseOn)
+                    ? language
+                    : ResolveBaseOn(language, docLanguageTypes);
+
+                // Cache the resolved LanguageType so other documents can reference it via baseOn.
+                foreach (var culture in resolved.Cultures ?? [])
+                    _cachedLanguageTypes.TryAdd(culture, resolved);
+
+                foreach (var culture in resolved.Cultures ?? [])
                 {
                     if (!result.ContainsKey(culture))
-                    {
-                        result.Add(culture, ReadConverter(language, culture));
-                    }
+                        result.Add(culture, ReadConverter(resolved, culture));
                 }
             }
             return result;
+        }
+
+        /// <summary>
+        /// Looks up the base language and merges it with the child, producing a fully resolved
+        /// <see cref="LanguageType"/>. The base is searched first in <paramref name="docLanguages"/>
+        /// (same document) and then in <see cref="_cachedLanguageTypes"/> (previously loaded documents).
+        /// Throws when the referenced base cannot be found.
+        /// </summary>
+        private static LanguageType ResolveBaseOn(
+            LanguageType child,
+            IReadOnlyDictionary<string, LanguageType> docLanguages)
+        {
+            string baseKey = child.BaseOn;
+            if (!docLanguages.TryGetValue(baseKey, out var baseType)
+                && !_cachedLanguageTypes.TryGetValue(baseKey, out baseType))
+                throw new InvalidOperationException(
+                    $"Language configuration error: baseOn=\"{baseKey}\" cannot be resolved. " +
+                    $"Ensure the base language is registered before the derived language.");
+            return MergeLanguageType(baseType!, child);
+        }
+
+        /// <summary>
+        /// Returns a new <see cref="LanguageType"/> where <paramref name="child"/> values override
+        /// corresponding fields of <paramref name="baseType"/>. A null/default/empty value in the
+        /// child means "inherit from base"; a non-null value means "override". For
+        /// <see cref="OrdinalsType"/>, exceptions and word-rules are merged element-by-element
+        /// so a child can extend rather than replace the base's ordinal configuration.
+        /// </summary>
+        private static LanguageType MergeLanguageType(LanguageType baseType, LanguageType child) =>
+            new()
+            {
+                Cultures = child.Cultures,
+                BaseOn = null,
+                GroupSize = child.GroupSize != 0 ? child.GroupSize : baseType.GroupSize,
+                Separator = child.Separator ?? baseType.Separator,
+                GroupSeparator = child.GroupSeparator ?? baseType.GroupSeparator,
+                Zero = child.Zero ?? baseType.Zero,
+                Minus = child.Minus ?? baseType.Minus,
+                DecimalSeparator = child.DecimalSeparator ?? baseType.DecimalSeparator,
+                FractionSeparator = child.FractionSeparator ?? baseType.FractionSeparator,
+                MaxNumber = child.MaxNumber ?? baseType.MaxNumber,
+                Groups = child.Groups ?? baseType.Groups,
+                Exceptions = child.Exceptions ?? baseType.Exceptions,
+                NumberScale = child.NumberScale ?? baseType.NumberScale,
+                Replacements = child.Replacements ?? baseType.Replacements,
+                LanguageSpecificsTypeName = !string.IsNullOrEmpty(child.LanguageSpecificsTypeName)
+                    ? child.LanguageSpecificsTypeName : baseType.LanguageSpecificsTypeName,
+                Fractions = child.Fractions ?? baseType.Fractions,
+                Ordinals = MergeOrdinalsType(baseType.Ordinals, child.Ordinals),
+                Variants = child.Variants ?? baseType.Variants,
+                YearFormat = child.YearFormat ?? baseType.YearFormat,
+                Triggers = (child.Triggers?.Count > 0) ? child.Triggers : baseType.Triggers,
+                Multiplicatives = child.Multiplicatives ?? baseType.Multiplicatives,
+                GroupConnector = child.GroupConnector ?? baseType.GroupConnector,
+                GroupConnectorThresholdString = child.GroupConnectorThresholdString ?? baseType.GroupConnectorThresholdString,
+                IntraGroupConnector = child.IntraGroupConnector ?? baseType.IntraGroupConnector,
+                IntraGroupConnectorThresholdString = child.IntraGroupConnectorThresholdString ?? baseType.IntraGroupConnectorThresholdString,
+                TimeUnits = child.TimeUnits ?? baseType.TimeUnits,
+                DateFormat = child.DateFormat ?? baseType.DateFormat,
+            };
+
+        /// <summary>
+        /// Merges two <see cref="OrdinalsType"/> instances. When <paramref name="childOrdinals"/> is
+        /// <see langword="null"/>, the base is returned unchanged. Otherwise ordinal exceptions and
+        /// word-rules from the base are merged with those from the child (child values win on conflict,
+        /// new values are added), while suffix, prefix, removeTrailing, and OrdinalVariants are
+        /// overridden only when the child provides them explicitly.
+        /// </summary>
+        private static OrdinalsType? MergeOrdinalsType(OrdinalsType? baseOrdinals, OrdinalsType? childOrdinals)
+        {
+            if (childOrdinals == null) return baseOrdinals;
+            if (baseOrdinals == null) return childOrdinals;
+
+            // Merge OrdinalExceptions: base list, child overrides matching values, new values appended.
+            var mergedExceptions = new List<OrdinalExceptionType>(baseOrdinals.Exceptions ?? []);
+            foreach (var childExc in childOrdinals.Exceptions ?? [])
+            {
+                var existing = mergedExceptions.FirstOrDefault(e => e.Value == childExc.Value);
+                if (existing != null) mergedExceptions.Remove(existing);
+                mergedExceptions.Add(childExc);
+            }
+
+            // Merge OrdinalRules: base list, child overrides matching "from" keys, new rules appended.
+            var mergedRules = new List<OrdinalRuleType>(baseOrdinals.Rules ?? []);
+            foreach (var childRule in childOrdinals.Rules ?? [])
+            {
+                var existing = mergedRules.FirstOrDefault(r =>
+                    string.Equals(r.From, childRule.From, StringComparison.Ordinal));
+                if (existing != null) mergedRules.Remove(existing);
+                mergedRules.Add(childRule);
+            }
+
+            return new OrdinalsType
+            {
+                Suffix = childOrdinals.Suffix ?? baseOrdinals.Suffix,
+                RemoveTrailing = childOrdinals.RemoveTrailing ?? baseOrdinals.RemoveTrailing,
+                Prefix = childOrdinals.Prefix ?? baseOrdinals.Prefix,
+                Exceptions = mergedExceptions,
+                Rules = mergedRules,
+                OrdinalVariantsContainer = childOrdinals.OrdinalVariantsContainer ?? baseOrdinals.OrdinalVariantsContainer,
+            };
         }
 
         /// <summary>
