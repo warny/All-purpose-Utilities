@@ -80,7 +80,7 @@
         </NumberScale>
         <Replacements>
             <!-- Safety net: drop "bir" before "bin" if the engine generates "bir bin" -->
-            <Replacement oldValue="bir bin" newValue="bin" />
+            <Replacement oldValue="bir bin" newValue="bin" onScale="1" onValue="1" />
         </Replacements>
     </Language>
 </Numbers>

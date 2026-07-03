@@ -59,7 +59,7 @@
 			</Suffixes>
 		</NumberScale>
 		<Replacements>
-			<Replacement oldValue="uno mille" newValue="mille" />
+			<Replacement oldValue="uno mille" newValue="mille" onScale="1" onValue="1" />
 		</Replacements>
 		<Exceptions>
 			<Number value="11" string="undici" />

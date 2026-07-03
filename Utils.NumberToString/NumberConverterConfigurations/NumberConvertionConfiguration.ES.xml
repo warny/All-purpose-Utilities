@@ -60,7 +60,7 @@
 			</Suffixes>
 		</NumberScale>
 		<Replacements>
-			<Replacement oldValue="uno mil" newValue="mil" />
+			<Replacement oldValue="uno mil" newValue="mil" onScale="1" onValue="1" />
 		</Replacements>
 		<Exceptions>
 			<Number value="11" string="once" />

@@ -63,7 +63,7 @@
         </NumberScale>
         <Replacements>
             <!-- 1000 = "tisuća", not "jedan tisuća" -->
-            <Replacement oldValue="jedan tisuća" newValue="tisuća" />
+            <Replacement oldValue="jedan tisuća" newValue="tisuća" onScale="1" onValue="1" />
         </Replacements>
         <Exceptions>
             <Number value="11" string="jedanaest" />

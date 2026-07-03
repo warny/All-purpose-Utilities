@@ -68,7 +68,7 @@
         </NumberScale>
         <Replacements>
             <!-- Drop "jeden" before "tisíc": 1000 = "tisíc" not "jeden tisíc" -->
-            <Replacement oldValue="jeden tisíc" newValue="tisíc" />
+            <Replacement oldValue="jeden tisíc" newValue="tisíc" onScale="1" onValue="1" />
         </Replacements>
         <Exceptions>
             <Number value="11" string="jedenásť" />

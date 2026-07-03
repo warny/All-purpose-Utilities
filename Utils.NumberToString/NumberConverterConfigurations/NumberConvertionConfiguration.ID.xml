@@ -82,7 +82,7 @@
         </NumberScale>
         <Replacements>
             <!-- 1000 = "seribu" not "satu ribu" (se- prefix replaces satu before ribu) -->
-            <Replacement oldValue="satu ribu" newValue="seribu" />
+            <Replacement oldValue="satu ribu" newValue="seribu" onScale="1" onValue="1" />
         </Replacements>
         <Exceptions>
             <!-- 11 = "sebelas" (se+belas, not "satu belas") -->

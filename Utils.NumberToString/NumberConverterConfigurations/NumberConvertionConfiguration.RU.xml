@@ -74,7 +74,7 @@
             </Scale0Prefixes>
         </NumberScale>
         <Replacements>
-            <Replacement oldValue="один тысяча" newValue="тысяча" />
+            <Replacement oldValue="один тысяча" newValue="тысяча" onScale="1" onValue="1" />
         </Replacements>
         <Exceptions>
             <Number value="11" string="одиннадцать" />

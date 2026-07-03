@@ -59,7 +59,7 @@
                 </NumberScale>
                 <Replacements>
                         <Replacement oldValue="bat ehun" newValue="ehun" scope="Anywhere" />
-                        <Replacement oldValue="bat mila" newValue="mila" />
+                        <Replacement oldValue="bat mila" newValue="mila" onScale="1" onValue="1" />
                         <Replacement oldValue="hogei eta" newValue="hogeita" scope="Anywhere" />
                         <Replacement oldValue="berrogei eta" newValue="berrogeita" scope="Anywhere" />
                         <Replacement oldValue="hirurogei eta" newValue="hirurogeita" scope="Anywhere" />

@@ -79,7 +79,7 @@
         </NumberScale>
         <Replacements>
             <!-- Drop "ett" before "tusen": 1000 = "tusen" not "ett tusen" -->
-            <Replacement oldValue="ett tusen" newValue="tusen" />
+            <Replacement oldValue="ett tusen" newValue="tusen" onScale="1" onValue="1" />
         </Replacements>
         <Exceptions>
             <Number value="11" string="elva" />

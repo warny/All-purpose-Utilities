@@ -58,7 +58,7 @@
             </Suffixes>
         </NumberScale>
         <Replacements>
-            <Replacement oldValue="jeden tysiąc" newValue="tysiąc" />
+            <Replacement oldValue="jeden tysiąc" newValue="tysiąc" onScale="1" onValue="1" />
         </Replacements>
         <Exceptions>
             <Number value="11" string="jedenaście" />

@@ -71,7 +71,7 @@
 			</TensPrefixes>
 		</NumberScale>
 		<Replacements>
-			<Replacement oldValue="ein tausend" newValue="tausend" />
+			<Replacement oldValue="ein tausend" newValue="tausend" onScale="1" onValue="1" />
 		</Replacements>
 		<Exceptions>
 			<Number value="11" string="elf" />

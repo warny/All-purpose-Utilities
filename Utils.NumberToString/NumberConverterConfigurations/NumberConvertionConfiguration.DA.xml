@@ -67,7 +67,7 @@
         </NumberScale>
         <Replacements>
             <!-- Drop "en" before "tusind": 1000 = "tusind" not "en tusind" -->
-            <Replacement oldValue="en tusind" newValue="tusind" />
+            <Replacement oldValue="en tusind" newValue="tusind" onScale="1" onValue="1" />
         </Replacements>
         <Exceptions>
             <Number value="11" string="elleve" />

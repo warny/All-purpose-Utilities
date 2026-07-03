@@ -82,7 +82,7 @@
         </NumberScale>
         <Replacements>
             <!-- Drop "один" before "тисяч": 1000 = "тисяч" not "один тисяч" -->
-            <Replacement oldValue="один тисяч" newValue="тисяч" />
+            <Replacement oldValue="один тисяч" newValue="тисяч" onScale="1" onValue="1" />
         </Replacements>
         <Exceptions>
             <Number value="11" string="одинадцять" />

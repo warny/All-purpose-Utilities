@@ -70,19 +70,19 @@
         </NumberScale>
         <Replacements>
             <!-- Drop "egy" before scale names: "egyezer" → "ezer", "egyszáz" → "száz" -->
-            <Replacement oldValue="egyezer" newValue="ezer" scope="Anywhere" />
+            <Replacement oldValue="egyezer" newValue="ezer" scope="Anywhere" onScale="1" onValue="1" />
             <Replacement oldValue="egyszáz" newValue="száz" scope="Anywhere" />
-            <Replacement oldValue="egymillió" newValue="millió" scope="Anywhere" />
-            <Replacement oldValue="egymilliárd" newValue="milliárd" scope="Anywhere" />
+            <Replacement oldValue="egymillió" newValue="millió" scope="Anywhere" onScale="2" onValue="1" />
+            <Replacement oldValue="egymilliárd" newValue="milliárd" scope="Anywhere" onScale="3" onValue="1" />
             <!-- Same for generated long-scale names (billió, billiárd, …) -->
-            <Replacement oldValue="egybillió" newValue="billió" scope="Anywhere" />
-            <Replacement oldValue="egybilliárd" newValue="billiárd" scope="Anywhere" />
+            <Replacement oldValue="egybillió" newValue="billió" scope="Anywhere" onScale="4" onValue="1" />
+            <Replacement oldValue="egybilliárd" newValue="billiárd" scope="Anywhere" onScale="5" onValue="1" />
             <!-- Exception[2]="kettő" fires in ConvertGroup when chunk=2; replace back to "két" before scale names -->
-            <Replacement oldValue="kettőezer" newValue="kétezer" scope="Anywhere" />
-            <Replacement oldValue="kettőmillió" newValue="kétmillió" scope="Anywhere" />
-            <Replacement oldValue="kettőmilliárd" newValue="kétmilliárd" scope="Anywhere" />
-            <Replacement oldValue="kettőbillió" newValue="kétbillió" scope="Anywhere" />
-            <Replacement oldValue="kettőbilliárd" newValue="kétbilliárd" scope="Anywhere" />
+            <Replacement oldValue="kettőezer" newValue="kétezer" scope="Anywhere" onScale="1" onValue="2" />
+            <Replacement oldValue="kettőmillió" newValue="kétmillió" scope="Anywhere" onScale="2" onValue="2" />
+            <Replacement oldValue="kettőmilliárd" newValue="kétmilliárd" scope="Anywhere" onScale="3" onValue="2" />
+            <Replacement oldValue="kettőbillió" newValue="kétbillió" scope="Anywhere" onScale="4" onValue="2" />
+            <Replacement oldValue="kettőbilliárd" newValue="kétbilliárd" scope="Anywhere" onScale="5" onValue="2" />
         </Replacements>
         <Exceptions>
             <!-- Standalone 2 = "kettő" (compound uses "két" from Groups) -->

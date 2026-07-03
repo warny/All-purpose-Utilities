@@ -80,7 +80,7 @@
         </NumberScale>
         <Replacements>
             <!-- Drop "едно" before "хиляда": 1000 = "хиляда" not "едно хиляда" -->
-            <Replacement oldValue="едно хиляда" newValue="хиляда" />
+            <Replacement oldValue="едно хиляда" newValue="хиляда" onScale="1" onValue="1" />
         </Replacements>
         <Exceptions>
             <Number value="11" string="единадесет" />

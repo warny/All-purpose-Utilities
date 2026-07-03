@@ -58,7 +58,7 @@
             </Suffixes>
         </NumberScale>
         <Replacements>
-            <Replacement oldValue="एक हज़ार" newValue="हज़ार" />
+            <Replacement oldValue="एक हज़ार" newValue="हज़ार" onScale="1" onValue="1" />
         </Replacements>
         <Exceptions>
             <Number value="11" string="ग्यारह" />

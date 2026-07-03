@@ -68,7 +68,7 @@
         </NumberScale>
         <Replacements>
             <!-- Drop "moja" before "elfu": 1000 = "elfu" not "moja elfu" -->
-            <Replacement oldValue="moja elfu" newValue="elfu" />
+            <Replacement oldValue="moja elfu" newValue="elfu" onScale="1" onValue="1" />
         </Replacements>
     </Language>
 </Numbers>
