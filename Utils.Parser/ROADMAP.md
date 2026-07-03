@@ -683,6 +683,12 @@ Non-goals:
 - No change to the default parser runtime.
 
 
+### ANTLR rule arguments and returns integration
+
+**Status: in progress.**
+
+Current work is design/documentation only. The integration path is progressive: preserve metadata and explicit helper boundaries first, then add narrowly scoped generated-C# opt-in argument binding only in future PRs. Conservative `Parse(...)` must remain unchanged, `ParserEngine` must stay target-language neutral, and `$...` conveniences must remain isolated behind `IParserEmbeddedCodeTransformer`. See `docs/parser/RuleArgumentsAndReturnsPlan.md` for the phase plan covering parameters, call arguments, returns, labels, rollback, memoization, and unsupported ANTLR compatibility boundaries.
+
 ## Recent documentation note: generated-C# lexer attributes
 
 **Status: mostly complete. Ongoing maintenance required.**
