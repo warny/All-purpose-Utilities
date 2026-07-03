@@ -14,6 +14,10 @@ Support levels are intentionally explicit:
 
 This document describes the current implementation status only. It does not define roadmap commitments.
 
+## Compatibility level estimate
+
+This project should not claim full ANTLR4 compatibility. For maintenance planning, the canonical compatibility reference estimates common grammar syntax and deterministic runtime tokenization/parsing at about 60-65% of practical ANTLR4 usage, strict ANTLR4 compatibility at about 40-45%, and embedded-code compatibility specifically at about 35-40%. These numbers are approximate guidance, not a formal conformance score; see `ANTLRCompatibility.md` for the rationale and unsupported boundaries.
+
 ## Supported in current runtime/project compiler
 
 The features below are operational in current runtime and project-compilation flows.

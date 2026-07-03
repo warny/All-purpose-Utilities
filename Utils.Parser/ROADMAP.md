@@ -619,11 +619,11 @@ Parser and lexer grammar-level named-action support is source-generator C# only.
 
 ### Lexer inline actions and predicates roadmap
 
-**Status: not started.**
+**Status: mostly complete. Ongoing maintenance required.**
 
-Design is required before implementation. This work is tracked as a future sub-area of the in-progress ANTLR4 compatibility, code-generation, and embedded-code transformation roadmap items. This roadmap section refines the existing in-progress ANTLR4 compatibility and generated-C# embedded-code work by isolating the future lexer inline action and lexer predicate design. It does not start implementation work.
+This section records the consolidated state after the generated-C# lexer inline action and predicate work. It is no longer a future roadmap for simple generated-C# lexer actions or simple generated-C# lexer predicates; those explicit opt-in paths are implemented within the bounded limits below.
 
-This plan must stay aligned with the existing in-progress sections:
+This state must stay aligned with the existing in-progress sections:
 
 - Phase 6 — ANTLR4 compatibility expansion.
 - Phase 7 — Code generation and tooling.
@@ -639,9 +639,27 @@ Current state:
 - Simple lexer predicates such as `A : { IsEnabled() }? 'a' ;` are supported only by generated-C# opt-in policies. They are evaluated during lexer matching and can reject only the current rule or alternative path; conservative `Parse(...)` does not execute them. The tested boundary includes predicates reached through lexer rule references and fragments, predicates in simple quantifiers, duplicate predicate shapes at distinct positions, and false predicates preventing later accepted-token actions on that path.
 - Runtime discovery still classifies lexer actions and lexer predicates as unsupported for runtime-inline execution. Only generated-C# opt-in policies make simple lexer actions and predicates executable. Lexer `AlternativeIndex` and `ElementIndex` identify the source hook location; quantified iterations do not receive a public iteration index.
 - The source-generator C# path now collects parser hooks and limited generated-C# opt-in lexer action/predicate hooks.
-
 - The generated-C# opt-in lexer attribute surface is consolidated for the current bounded subset. Inline lexer actions may read `$text`, `$type`, `$channel`, `$mode`, `$line`, and `$pos`; `$line`/`$pos` expose the accepted token/chunk start `SourceSpan.Line`/`SourceSpan.Column`, with `$pos` documented as this runtime's 1-based column rather than full ANTLR `charPositionInLine` compatibility. Inline lexer actions may write only simple `$type = ...`, `$channel = ...`, and `$mode = ...` statements with identifier or string values. Those writes flow through `LexerActionExecutionResult`, are applied before lexer commands, and are covered by edge-case tests for last-write-wins, same-action type/channel/mode writes, fragments, lexer rule references, quantifiers, rejected alternatives, `more`, command override, passive read-context behavior, and deterministic diagnostics for complex unsupported forms.
 - Future/non-goal lexer semantics remain explicit: `$text = ...`, `$line = ...`, `$pos = ...`, complex `$mode` writes, `$index`, `$int`, `$token`, `$start`, `$stop`, `$ctx`, `$input`, lexer predicate `$...`, runtime-inline lexer execution, a separate runtime lexer, full ANTLR lexer compatibility, general lexer action replay/buffering, and general lexer rollback are unsupported.
+
+Completed phases:
+
+- Phase 0: audit and documentation — completed.
+- Phase 1: lexer hook metadata audit — completed.
+- Phase 2: lexer context design — completed for bounded generated-C# opt-in.
+- Phase 3: generated-C# lexer inline actions — completed for simple hooks and bounded lexer attributes.
+- Phase 4: generated-C# lexer predicates — completed for simple predicates without `$...` attribute rewriting.
+- Phase 5: optional C# lexer transformer — completed for bounded action reads `$text`, `$type`, `$channel`, `$mode`, `$line`, `$pos` and simple writes `$type`, `$channel`, `$mode`.
+
+Remaining future work:
+
+- richer ANTLR lexer attribute compatibility;
+- lexer predicate `$...` support, if ever designed;
+- full target-language lexer semantics;
+- runtime-inline lexer execution;
+- separate runtime lexer;
+- general action buffering/replay;
+- general lexer rollback.
 
 Required invariants for any future work:
 
@@ -649,65 +667,20 @@ Required invariants for any future work:
 - `Parse(...)` must not start executing lexer code.
 - Any future lexer-code execution must be explicitly opt-in.
 - Lexer actions must not be mixed with parser actions.
-- Lexer predicates must be designed and evaluated separately from lexer actions because predicates change tokenization decisions.
+- Lexer predicates remain separate from lexer actions because predicates change tokenization decisions.
 - No lexer `$...` rewriting may be introduced outside an explicit transformer.
 - No C# target-language logic may be added to `ParserEngine`, `ParserRuntimeFeaturePolicy`, runtime frames, or the core parser model.
 - Unsupported diagnostics must remain deterministic until a feature is intentionally implemented and documented.
-
-Recommended phasing:
-
-1. Phase 0 — Audit and documentation
-   - The Phase 0 audit is tracked in `docs/parser/LexerInlineActionsAndPredicatesAudit.md`.
-   - Record the current support state for grammar-level `@lexer::*`, lexer inline actions, lexer predicates, runtime discovery, and source-generator hook collection.
-   - Identify the ANTLR scenarios affected by lexer inline actions, predicates, modes, channels, and side effects.
-   - Document current limits, risks, invariants, and existing tests before changing behavior.
-2. Phase 1 — Lexer hook metadata audit, without execution
-   - Audit, improve, or clarify how lexer actions and lexer predicates are represented as unsupported metadata without implying execution authority.
-   - Keep unsupported diagnostics in place.
-   - Do not generate executable lexer hooks.
-   - Add indexing or source-position tests only if the metadata representation changes.
-3. Phase 2 — Lexer context design
-   - Decide whether future execution needs a separate lexer context or a lexer sub-context inside the existing generated execution context.
-   - Document how that context interacts with `@lexer::members`.
-   - Define copy, hash, rollback, and memoization responsibilities.
-   - Do not implement lexer action or predicate execution in this phase.
-4. Phase 3 — Lexer inline actions, opt-in source-generator only
-   - Consider execution only through the source-generator C# path.
-   - Require an explicit opt-in and keep conservative `Parse(...)` behavior unchanged.
-   - Do not add lexer predicate support in this phase.
-   - Add dedicated diagnostics and deterministic tests for enabled and disabled paths.
-5. Phase 4 — Lexer predicates, separate phase
-   - Start only after the lexer action model is documented and tested.
-   - Require a lexer-state-aware model because predicates influence tokenization decisions.
-   - Treat predicate execution as behavior-changing.
-   - Cover tokenization outcomes, diagnostics, disabled behavior, and documentation in dedicated tests.
-6. Phase 5 — Optional C# lexer transformer
-   - Treat lexer `$...` or other ANTLR-style convenience rewriting as optional.
-   - Place any transformation behind `IParserEmbeddedCodeTransformer` or a compatible extension point.
-   - Do not add implicit lexer `$...` rewriting.
-   - Keep target-language logic out of the parser core and generator core.
 
 Non-goals:
 
 - No promise of complete ANTLR compatibility.
 - No general replay or action-buffering system.
 - No rollback of external side effects.
-- No implicit support for advanced ANTLR modes, channels, commands, or lexer actions beyond explicitly designed increments.
+- No implicit support for advanced ANTLR target-language modes, channels, commands, or lexer actions beyond explicitly designed increments.
 - No Roslyn semantic model in the generator.
 - No new compiler API.
 - No change to the default parser runtime.
-
-Future test families to plan before implementation:
-
-- Unsupported diagnostics while lexer inline actions and predicates remain unimplemented.
-- Generated source contains no executable lexer hooks before an explicit activation path exists.
-- Deterministic ordering for lexer hooks if hooks are ever generated.
-- Separate coverage for lexer grammars and combined grammars.
-- Parser grammars continue to reject `@lexer::*` as unsupported.
-- A simple lexer inline action in an explicitly enabled generated-C# path.
-- A simple lexer predicate in a later explicitly enabled generated-C# path.
-- Interactions between lexer inline actions, lexer predicates, and `@lexer::members`.
-- No lexer-code execution through conservative `Parse(...)`.
 
 
 ## Recent documentation note: generated-C# lexer attributes

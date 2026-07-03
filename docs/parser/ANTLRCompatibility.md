@@ -11,6 +11,22 @@ This document must be consulted before modifying any grammar-related component, 
 
 ---
 
+## Compatibility level estimate
+
+This project should not claim full ANTLR4 compatibility. A practical estimate is:
+
+- common grammar syntax and deterministic runtime tokenization/parsing: about 60-65% of practical ANTLR4 usage;
+- strict ANTLR4 compatibility including target-language actions, attributes, generated APIs, adaptive prediction, and full embedded-code semantics: about 40-45%;
+- embedded-code compatibility specifically: about 35-40%.
+
+These numbers are approximate maintenance guidance, not a formal conformance score.
+
+The runtime supports common grammar forms, lexer modes, commands, project imports, token vocabularies, direct left recursion with limits, semantic predicates/actions through explicit opt-in paths, and bounded generated-C# lexer action/predicate support.
+
+The project still intentionally does not support full ANTLR target-language semantics, full attribute syntax, automatic typed parameters/returns/locals/labels, lexer predicate attributes, runtime-inline lexer execution, adaptive LL prediction, general action buffering/replay, full external side-effect rollback, or full ANTLR-generated API parity.
+
+---
+
 ## Supported — full runtime support
 
 These features work as in standard ANTLR4.
@@ -683,7 +699,7 @@ Parameters, labeled rule-call returns, list-labeled projections, lexer attribute
 Parser and lexer grammar-level named-action support is source-generator C# only. In parser or combined grammars, unscoped `@header` / `@members` / `@footer` are treated as parser compatibility blocks, and scoped `@parser::header` / `@parser::members` / `@parser::footer` are equivalent parser compatibility blocks. They emit parser header code, generated execution-context members, or deterministic trailing parser source in grammar source order, and they still produce compatibility warnings (`UP1035`, `UP1031`, or `UP1036`) because invalid C# remains a Roslyn responsibility. Scoped lexer named actions (`@lexer::header`, `@lexer::members`, `@lexer::footer`) mirror the same limited injection model in combined or lexer grammars only with dedicated lexer markers; parser-only grammars keep them unsupported because no lexer is generated; lexer members are emitted into the existing generated execution context and do not create a separate ANTLR lexer runtime type. Parser named actions in lexer grammars are invalid for this generator, and unscoped `@header`, `@members`, and `@footer` are not parser compatibility blocks in lexer grammars. Unsupported named actions, unknown lexer/parser action names such as `@lexer::custom` or `@parser::custom`, and unknown scopes such as `@tree::members` produce deterministic `UP1029` diagnostics and are not silently injected. The default/no-op transformer preserves named-action content unchanged; optional transformer behavior remains opt-in, and `$...` current-rule attribute rewriting is intentionally limited to parser actions/lifecycle code, not parser or lexer header/member/footer content. Parser and lexer members can be called from generated inline parser actions and supported `@init`/`@after` lifecycle hooks, simple lexer inline actions and simple lexer predicates are supported only in the explicit generated-C# opt-in path.
 
 
-> Lexer inline actions and predicates: simple source-generator C# lexer inline actions and simple lexer predicates are supported only through the explicit opt-in generated path. `Parse(...)` remains conservative. Predicates run during lexer matching and reject only the current path; actions run after token acceptance and before accepted lexer commands are applied. Commands from rejected paths are not applied, and actions are not executed when an earlier predicate rejects that path. The tested boundary includes rule references, fragments, simple quantifiers, duplicate hook positions, `skip`, `channel(...)`, `type(...)`, `more`, and mode transitions with `mode(...)` and `pushMode(...)`/`popMode`. `AlternativeIndex` and `ElementIndex` identify source hook locations, not quantified runtime iterations. Lexer `$...` rewriting is limited to generated-C# opt-in inline action reads (`$text`, `$type`, `$channel`, `$mode`, `$line`, `$pos`) and simple `$type = ...`/`$channel = ...`/`$mode = ...` statement writes through `LexerActionExecutionResult`; lexer predicate attributes, runtime-inline lexer execution, a separate runtime lexer, complete ANTLR mode/channel/command semantics, generalized action buffering/replay, general lexer rollback, and external side-effect rollback remain unsupported.
+> Lexer inline actions and predicates: simple source-generator C# lexer inline actions and simple lexer predicates are supported only through the explicit opt-in generated path. `Parse(...)` remains conservative. Predicates run during lexer matching and reject only the current path; actions run after token acceptance and before accepted lexer commands are applied. Commands from rejected paths are not applied, and actions are not executed when an earlier predicate rejects that path. The tested boundary includes rule references, fragments, simple quantifiers, duplicate hook positions, `skip`, `channel(...)`, `type(...)`, `more`, and mode transitions with `mode(...)` and `pushMode(...)`/`popMode`. `AlternativeIndex` and `ElementIndex` identify source hook locations, not quantified runtime iterations. Lexer `$...` rewriting is limited to generated-C# opt-in inline action reads (`$text`, `$type`, `$channel`, `$mode`, `$line`, `$pos`) and simple `$type = ...`/`$channel = ...`/`$mode = ...` statement writes through `LexerActionExecutionResult`; lexer predicate attributes, runtime-inline lexer execution, a separate runtime lexer, complete ANTLR target-language lexer command/mode semantics beyond the explicit runtime commands and bounded generated-C# action-result writes documented here, generalized action buffering/replay, general lexer rollback, and external side-effect rollback remain unsupported.
 
 
 ### Limited generated-C# lexer `$...` attributes
