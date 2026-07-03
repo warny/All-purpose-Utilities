@@ -24,10 +24,11 @@ dotnet add package omy.Utils.NumberToString
 | ES | Spanish | ✓ | gender (masculino/femenino) |
 | IT | Italian | ✓ | gender (maschile/femminile) |
 | PT | Portuguese | ✓ | gender (masculino/feminino) |
-| PL | Polish | ✓ | — (numbers are invariable in common usage) |
+| PL | Polish | ✓ | rodzaj (maskulin/feminin/nijaki/plural_mos/plural) × przypadek (mianownik/dopełniacz/…) |
 | NL | Dutch | ✓ | — (numbers are invariable) |
+| RO | Romanian | — | gen (masculin/feminin) |
 | RU | Russian | ✓ | — |
-| AR | Arabic | ✓ (1–10) | gender (muzakkar/muʾannath) |
+| AR | Arabic | ✓ (1–19) | gender (muzakkar/muʾannath) |
 | HE | Hebrew | ✓ | gender (standalone/zachar/nekeva) |
 | ZH | Chinese | ✓ (prefix 第) | — (no inflection) |
 | JA | Japanese | ✓ (prefix 第) | — (no inflection) |
@@ -224,8 +225,9 @@ if (conv.SupportsOrdinals)
 > converter with an uppercase `AdjustFunction` correctly produces `"TWENTY-FIRST"`, not
 > `"TWENTY-ONEth"`.
 
-> **Languages without ordinals**: ZU (Zulu).
+> **Languages without ordinals**: ZU (Zulu), RO (Romanian).
 > Zulu ordinals require noun-class agreement and are not yet implemented.
+> Romanian ordinals are not yet implemented.
 > For languages that have ordinals, `converter.SupportsOrdinals` returns `true`.
 
 ---
@@ -561,7 +563,6 @@ is invariable in common contexts, or because the morphological distinction is no
 | ZH | Chinese | No inflection |
 | JA | Japanese | No inflection |
 | EU | Basque | No grammatical gender (language isolate) |
-| PL | Polish | Numbers are invariable in common usage (nominatif masculin only) |
 | HI | Hindi | Numbers are invariable in common usage |
 | ZU | Zulu | Not yet implemented |
 | EE | Ewe | Not yet implemented |
