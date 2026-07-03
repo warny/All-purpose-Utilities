@@ -2486,4 +2486,104 @@ public class NumberToStringConverterImprovementsTests
         Assert.AreEqual(iface.ConvertCurrency(21m, livre, "gender=feminin"),
                         ((NumberToStringConverter)iface).ConvertCurrency(21m, livre, "gender=feminin"));
     }
+
+    // ─── onScale — replacement restreint à un groupe d'échelle ───────────
+
+    private const string OnScaleTestConfig = """
+        <?xml version="1.0" encoding="utf-8" ?>
+        <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+
+          <!-- TEST-OS-BASE : base <Replacement onScale="1"> -->
+          <Language groupSize="3" separator=" " groupSeparator="" zero="zéro" minus="moins *" decimalSeparator="virgule">
+            <Culture>TEST-OS-BASE</Culture>
+            <Groups>
+              <Group level="1">
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="un" />
+                <Digit digit="2" string="deux" />
+              </Group>
+              <Group level="2">
+                <Digit digit="0" string="" buildString="*" />
+              </Group>
+              <Group level="3">
+                <Digit digit="0" string="" buildString="*" />
+              </Group>
+            </Groups>
+            <NumberScale firstLetterUpperCase="false">
+              <StaticNames>
+                <Scale value="0" string="" />
+                <Scale value="1" string="mille" />
+              </StaticNames>
+            </NumberScale>
+            <Replacements>
+              <!-- fires only when processing the thousands group (onScale=1) -->
+              <Replacement oldValue="un" newValue="MILLE_UN" scope="Anywhere" onScale="1" />
+            </Replacements>
+          </Language>
+
+          <!-- TEST-OS-VARIANT : <Variant>/<Replacement onScale="1"> -->
+          <Language groupSize="3" separator=" " groupSeparator="" zero="zéro" minus="moins *" decimalSeparator="virgule">
+            <Culture>TEST-OS-VARIANT</Culture>
+            <Groups>
+              <Group level="1">
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="un" />
+                <Digit digit="2" string="deux" />
+              </Group>
+              <Group level="2">
+                <Digit digit="0" string="" buildString="*" />
+              </Group>
+              <Group level="3">
+                <Digit digit="0" string="" buildString="*" />
+              </Group>
+            </Groups>
+            <NumberScale firstLetterUpperCase="false">
+              <StaticNames>
+                <Scale value="0" string="" />
+                <Scale value="1" string="mille" />
+              </StaticNames>
+            </NumberScale>
+            <Variants>
+              <Dimension name="gender" values="masc,fem" />
+              <!-- global variant rule: applies on the full combined string -->
+              <Variant type="gender" variant="fem">
+                <Replacement oldValue="deux" newValue="deux_f" scope="Anywhere" />
+              </Variant>
+              <!-- scale-specific: "un"→"une" only inside the thousands group -->
+              <Variant type="gender" variant="fem">
+                <Replacement oldValue="un" newValue="une" scope="Anywhere" onScale="1" />
+              </Variant>
+            </Variants>
+          </Language>
+
+        </Numbers>
+        """;
+
+    [TestMethod]
+    public void BaseReplacement_OnScale_FiresOnlyInTargetGroup()
+    {
+        var c = NumberToStringConverter.ReadConfiguration(OnScaleTestConfig)["TEST-OS-BASE"];
+
+        Assert.AreEqual("MILLE_UN mille",    c.Convert(1000), "1000");
+        Assert.AreEqual("MILLE_UN mille un", c.Convert(1001), "1001: thousands yes, units no");
+        Assert.AreEqual("un",                c.Convert(1),    "1: no thousands group processed");
+        Assert.AreEqual("deux mille",        c.Convert(2000), "2000: 'deux' ≠ 'un'");
+    }
+
+    [TestMethod]
+    public void VariantReplacement_OnScale_FiresPerGroupBeforeCombination()
+    {
+        var c = NumberToStringConverter.ReadConfiguration(OnScaleTestConfig)["TEST-OS-VARIANT"];
+
+        // onScale=1 rule fires for thousands group only
+        Assert.AreEqual("une mille",     c.Convert(1000, "gender=fem"), "1000 fem: thousands inflected");
+        Assert.AreEqual("une mille un",  c.Convert(1001, "gender=fem"), "1001 fem: thousands yes, units no");
+        Assert.AreEqual("un",            c.Convert(1,    "gender=fem"), "1 fem: no thousands group");
+
+        // global variant rule still fires on the full combined string
+        Assert.AreEqual("deux_f mille un", c.Convert(2001, "gender=fem"), "2001 fem: global rule on combined");
+
+        // default variant (masc): no onScale=1 fem rule, no change
+        Assert.AreEqual("un mille un", c.Convert(1001), "1001 masc: no change");
+    }
 }

@@ -249,6 +249,18 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="onScale" type="xs:integer" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Restricts this replacement to a single scale group.
+                    0 = units (ones), 1 = thousands, 2 = millions, 3 = billions, etc.
+                    When absent the rule applies globally (all scale levels).
+                    Negative values are reserved for future use (decimal fraction groups).
+                    Rules with onScale fire per-group before the groups are concatenated;
+                    global rules (no onScale) fire on the final combined string.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="ReplacementsListType">

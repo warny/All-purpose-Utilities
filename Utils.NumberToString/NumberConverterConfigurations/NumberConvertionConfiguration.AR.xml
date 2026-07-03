@@ -88,5 +88,8 @@
                 </Variant>
             </OrdinalVariants>
         </Ordinals>
+        <Variants>
+            <Dimension name="gender" values="muʾakar,muʾannath" />
+        </Variants>
     </Language>
 </Numbers>

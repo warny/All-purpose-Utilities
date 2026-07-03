@@ -142,6 +142,20 @@ namespace Utils.NumberToString
         string Convert(Number number) => Convert(number.Numerator);
 
         /// <summary>
+        /// Converts a rational <see cref="Number"/> into its string representation,
+        /// applying the specified variant parameters.
+        /// The default implementation applies variants to the integer part only, delegating to
+        /// <see cref="Convert(BigInteger, string[])"/>; implementations with full rational
+        /// variant support should override this.
+        /// </summary>
+        /// <param name="number">The rational value to convert.</param>
+        /// <param name="variants">
+        /// Zero or more <c>"dimension=value"</c> strings. Unrecognised dimensions fall back silently.
+        /// </param>
+        /// <returns>The formatted number with the requested variants applied.</returns>
+        string Convert(Number number, params string[] variants) => Convert(number.Numerator, variants);
+
+        /// <summary>
         /// Converts an arbitrarily large integer into its string representation,
         /// applying the specified variant parameters (e.g. <c>"gender=feminin"</c>,
         /// <c>"case=akkusativ"</c>). When no parameter is supplied the first declared

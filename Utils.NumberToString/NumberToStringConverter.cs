@@ -71,10 +71,15 @@ namespace Utils.NumberToString
             Replacements = (options.Replacements ?? Array.Empty<ReplacementRule>())
                 .Select(r => r ?? throw new ArgumentNullException(nameof(options), "Replacement entries must not be null."))
                 .ToImmutableArray();
-            _replacementLookup = Replacements.ToImmutableDictionary(r => r.OldValue, r => r.NewValue, StringComparer.Ordinal);
-            _substringReplacements = Replacements.Where(r =>
+            var globalReplacements = Replacements.Where(r => !r.OnScale.HasValue).ToImmutableArray();
+            _replacementLookup = globalReplacements.ToImmutableDictionary(r => r.OldValue, r => r.NewValue, StringComparer.Ordinal);
+            _substringReplacements = globalReplacements.Where(r =>
                 r.Scope is ReplacementScope.Anywhere or ReplacementScope.StartsWith or ReplacementScope.EndsWith)
                 .ToImmutableArray();
+            _scaleReplacements = Replacements
+                .Where(r => r.OnScale.HasValue)
+                .GroupBy(r => r.OnScale!.Value)
+                .ToImmutableDictionary(g => g.Key, g => g.ToImmutableArray());
             Scale = options.Scale;
             LanguageSpecifics = options.LanguageSpecifics ?? new DefaultNumberToStringLanguageSpecifics();
             LanguageIdentifier = options.LanguageIdentifier ?? string.Empty;
@@ -93,6 +98,7 @@ namespace Utils.NumberToString
 
             VariantDimensions = (options.VariantDimensions ?? []).ToImmutableArray();
             VariantRules = (options.VariantRules ?? []).ToImmutableArray();
+            _hasScaleSpecificVariantRules = VariantRules.Any(r => r.Replacements.Any(rr => rr.OnScale.HasValue));
             Triggers = (options.Triggers ?? []).ToImmutableArray();
             _yearFormat = options.YearFormat;
             Multiplicatives = options.Multiplicatives?.ToImmutableDictionary() ?? ImmutableDictionary<int, string>.Empty;
@@ -281,6 +287,8 @@ namespace Utils.NumberToString
 
         private readonly ImmutableDictionary<string, string> _replacementLookup;
         private readonly ImmutableArray<ReplacementRule> _substringReplacements;
+        private readonly ImmutableDictionary<int, ImmutableArray<ReplacementRule>> _scaleReplacements;
+        private readonly bool _hasScaleSpecificVariantRules;
         private readonly ImmutableDictionary<string, VariantDimension> _dimensionIndex;
         private readonly Func<string, string>? _rawAdjustFunction;
         private readonly string? _groupConnector;
@@ -610,7 +618,9 @@ namespace Utils.NumberToString
                     digits = ApplyTriggers(digits, TriggerAt.Group, groupNumber, variantQuery);
 
                     string resValue = digits + Separator + Scale.GetScaleName(groupNumber).ToPlural(group);
-                    resValue = ApplyReplacements(resValue);
+                    resValue = ApplyReplacements(resValue, groupNumber);
+                    if (variantQuery != null && _hasScaleSpecificVariantRules)
+                        resValue = ApplyVariantRulesForScale(resValue, variantQuery, groupNumber);
                     resValue = ApplyTriggers(resValue, TriggerAt.GroupWithScale, groupNumber, variantQuery);
 
                     groupsValues.Push((resValue.Trim(), group));
@@ -685,7 +695,36 @@ namespace Utils.NumberToString
                 if (!matches) continue;
 
                 foreach (var replacement in rule.Replacements)
+                {
+                    if (_hasScaleSpecificVariantRules && replacement.OnScale.HasValue) continue;
                     text = ApplyVariantReplacement(text, replacement);
+                }
+            }
+
+            return text;
+        }
+
+        /// <summary>
+        /// Applies scale-specific variant replacements for <paramref name="groupNumber"/> only.
+        /// Called per-group inside <see cref="ConvertRaw"/> when scale-specific variant rules exist.
+        /// </summary>
+        private string ApplyVariantRulesForScale(string text, IReadOnlyDictionary<string, string> query, int groupNumber)
+        {
+            if (VariantRules.Count == 0 || query.Count == 0) return text;
+
+            foreach (var rule in VariantRules.OrderBy(r => r.Specificity))
+            {
+                bool matches = rule.Constraints.All(c =>
+                    query.TryGetValue(c.Key, out var v) &&
+                    string.Equals(v, c.Value, StringComparison.OrdinalIgnoreCase));
+
+                if (!matches) continue;
+
+                foreach (var replacement in rule.Replacements)
+                {
+                    if (replacement.OnScale == groupNumber)
+                        text = ApplyVariantReplacement(text, replacement);
+                }
             }
 
             return text;
@@ -785,20 +824,25 @@ namespace Utils.NumberToString
 
         /// <summary>
         /// Applies configured replacements to a generated textual representation.
+        /// When <paramref name="groupNumber"/> is supplied, scale-specific rules for that
+        /// level are applied first (before global rules).
         /// </summary>
         /// <param name="value">The value to adjust.</param>
+        /// <param name="groupNumber">Current scale group index, or <see langword="null"/> for the final combined pass.</param>
         /// <returns>The value after applying any matching replacements.</returns>
-        private string ApplyReplacements(string value)
+        private string ApplyReplacements(string value, int? groupNumber = null)
         {
             if (string.IsNullOrEmpty(value) || Replacements.Count == 0)
-            {
                 return value;
+
+            if (groupNumber.HasValue && _scaleReplacements.TryGetValue(groupNumber.Value, out var scaleRules))
+            {
+                foreach (var rule in scaleRules)
+                    value = ApplyVariantReplacement(value, rule);
             }
 
             if (_replacementLookup.TryGetValue(value, out var exactMatch))
-            {
                 return exactMatch;
-            }
 
             foreach (var replacement in _substringReplacements)
             {
@@ -827,8 +871,12 @@ namespace Utils.NumberToString
             /// <param name="oldValue">The text that should be replaced.</param>
             /// <param name="newValue">The replacement text.</param>
             /// <param name="scope">The scope that controls how the replacement is applied.</param>
+            /// <param name="onScale">
+            /// Scale level this rule is restricted to, or <see langword="null"/> for all levels.
+            /// 0 = units, 1 = thousands, 2 = millions, etc.
+            /// </param>
             /// <exception cref="ArgumentException">Thrown when <paramref name="oldValue"/> or <paramref name="newValue"/> is null or empty.</exception>
-            public ReplacementRule(string oldValue, string newValue, ReplacementScope scope)
+            public ReplacementRule(string oldValue, string newValue, ReplacementScope scope, int? onScale = null)
             {
                 if (string.IsNullOrEmpty(oldValue))
                 {
@@ -843,6 +891,7 @@ namespace Utils.NumberToString
                 OldValue = oldValue;
                 NewValue = newValue;
                 Scope = scope;
+                OnScale = onScale;
             }
 
             /// <summary>
@@ -859,6 +908,12 @@ namespace Utils.NumberToString
             /// Gets the scope that controls how the replacement is applied.
             /// </summary>
             public ReplacementScope Scope { get; }
+
+            /// <summary>
+            /// Gets the scale level this rule is restricted to, or <see langword="null"/> to apply globally.
+            /// 0 = units group, 1 = thousands, 2 = millions, etc.
+            /// </summary>
+            public int? OnScale { get; }
         }
 
         /// <summary>
