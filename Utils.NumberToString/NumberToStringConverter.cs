@@ -594,7 +594,7 @@ namespace Utils.NumberToString
             var query = BuildVariantQuery(variants);
             string raw = ConvertRaw(abs, query);
             if (_rawAdjustFunction != null) raw = _rawAdjustFunction(raw);
-            raw = ApplyVariantRules(raw, query);
+            raw = ApplyVariantRules(raw, query, abs <= long.MaxValue ? (long?)abs : null);
             raw = ApplyTriggers(raw, TriggerAt.End, null, query);
             string final = LanguageSpecifics.FinalizeWriting(LanguageIdentifier, raw);
 
@@ -626,7 +626,7 @@ namespace Utils.NumberToString
                     string resValue = digits + Separator + Scale.GetScaleName(groupNumber).ToPlural(group);
                     resValue = ApplyReplacements(resValue, groupNumber, group);
                     if (variantQuery != null && _hasScaleSpecificVariantRules)
-                        resValue = ApplyVariantRulesForScale(resValue, variantQuery, groupNumber);
+                        resValue = ApplyVariantRulesForScale(resValue, variantQuery, groupNumber, group);
                     resValue = ApplyTriggers(resValue, TriggerAt.GroupWithScale, groupNumber, variantQuery);
 
                     groupsValues.Push((resValue.Trim(), group));
@@ -688,7 +688,12 @@ namespace Utils.NumberToString
         /// Applies variant rules to <paramref name="text"/> in order of ascending specificity.
         /// A rule matches when all its dimension constraints are satisfied by <paramref name="query"/>.
         /// </summary>
-        private string ApplyVariantRules(string text, IReadOnlyDictionary<string, string> query)
+        /// <param name="numericValue">
+        /// The full absolute number value, used to evaluate <see cref="ReplacementRule.OnValue"/>
+        /// predicates on global (no <c>onScale</c>) variant replacements.
+        /// <see langword="null"/> suppresses <c>onValue</c> filtering (rule fires regardless).
+        /// </param>
+        private string ApplyVariantRules(string text, IReadOnlyDictionary<string, string> query, long? numericValue = null)
         {
             if (VariantRules.Count == 0 || query.Count == 0) return text;
 
@@ -703,6 +708,8 @@ namespace Utils.NumberToString
                 foreach (var replacement in rule.Replacements)
                 {
                     if (_hasScaleSpecificVariantRules && replacement.OnScale.HasValue) continue;
+                    if (replacement.OnValue is not null && (numericValue is null || !replacement.OnValue.Contains(numericValue.Value)))
+                        continue;
                     text = ApplyVariantReplacement(text, replacement);
                 }
             }
@@ -714,7 +721,12 @@ namespace Utils.NumberToString
         /// Applies scale-specific variant replacements for <paramref name="groupNumber"/> only.
         /// Called per-group inside <see cref="ConvertRaw"/> when scale-specific variant rules exist.
         /// </summary>
-        private string ApplyVariantRulesForScale(string text, IReadOnlyDictionary<string, string> query, int groupNumber)
+        /// <param name="groupNumericValue">
+        /// The numeric value of the current group (e.g. 1 for the thousands group in 1 000).
+        /// Used to evaluate <see cref="ReplacementRule.OnValue"/> predicates on scale-specific
+        /// variant replacements.
+        /// </param>
+        private string ApplyVariantRulesForScale(string text, IReadOnlyDictionary<string, string> query, int groupNumber, long groupNumericValue = 0)
         {
             if (VariantRules.Count == 0 || query.Count == 0) return text;
 
@@ -728,8 +740,10 @@ namespace Utils.NumberToString
 
                 foreach (var replacement in rule.Replacements)
                 {
-                    if (replacement.OnScale == groupNumber)
-                        text = ApplyVariantReplacement(text, replacement);
+                    if (replacement.OnScale != groupNumber) continue;
+                    if (replacement.OnValue is not null && !replacement.OnValue.Contains(groupNumericValue))
+                        continue;
+                    text = ApplyVariantReplacement(text, replacement);
                 }
             }
 
@@ -860,8 +874,11 @@ namespace Utils.NumberToString
                 }
             }
 
-            // Value-filtered global rules: fire only when the numeric context is known and matches.
-            if (_valueFilteredGlobalReplacements.Length > 0 && numericValue is not null)
+            // Value-filtered global rules (onValue without onScale): fire only in the final
+            // assembled-string pass (groupNumber == null). In the per-group pass numericValue
+            // is the group digit value, not the full number — applying here would contradict the
+            // documented semantics where the value is the full absolute number.
+            if (!groupNumber.HasValue && _valueFilteredGlobalReplacements.Length > 0 && numericValue is not null)
             {
                 foreach (var rule in _valueFilteredGlobalReplacements)
                 {
@@ -904,13 +921,28 @@ namespace Utils.NumberToString
             /// Scale level this rule is restricted to, or <see langword="null"/> for all levels.
             /// 0 = units, 1 = thousands, 2 = millions, etc.
             /// </param>
+            /// <exception cref="ArgumentException">Thrown when <paramref name="oldValue"/> or <paramref name="newValue"/> is null or empty.</exception>
+            public ReplacementRule(string oldValue, string newValue, ReplacementScope scope, int? onScale = null)
+                : this(oldValue, newValue, scope, onScale, null) { }
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="ReplacementRule"/> class with a
+            /// numeric-value filter.
+            /// </summary>
+            /// <param name="oldValue">The text that should be replaced.</param>
+            /// <param name="newValue">The replacement text.</param>
+            /// <param name="scope">The scope that controls how the replacement is applied.</param>
+            /// <param name="onScale">
+            /// Scale level this rule is restricted to, or <see langword="null"/> for all levels.
+            /// 0 = units, 1 = thousands, 2 = millions, etc.
+            /// </param>
             /// <param name="onValue">
             /// Optional numeric-value filter. When set with <paramref name="onScale"/>, the rule
             /// only fires when the group's numeric value falls within this range. When set without
-            /// <paramref name="onScale"/>, applies to the full number in the final pass.
+            /// <paramref name="onScale"/>, applies to the full number in the final assembled-string pass.
             /// </param>
             /// <exception cref="ArgumentException">Thrown when <paramref name="oldValue"/> or <paramref name="newValue"/> is null or empty.</exception>
-            public ReplacementRule(string oldValue, string newValue, ReplacementScope scope, int? onScale = null, ValueRange? onValue = null)
+            public ReplacementRule(string oldValue, string newValue, ReplacementScope scope, int? onScale, ValueRange? onValue)
             {
                 if (string.IsNullOrEmpty(oldValue))
                 {
@@ -1205,7 +1237,7 @@ namespace Utils.NumberToString
                 return isNegative ? Minus.Replace("*", exception) : exception;
 
             string raw = absNumber == 0 ? Zero : ConvertRaw((BigInteger)absNumber, activeVariants);
-            raw = ApplyVariantRules(raw, activeVariants);
+            raw = ApplyVariantRules(raw, activeVariants, absNumber);
             string ordinal = ApplyOrdinalTransform(raw, activeVariant);
             if (_rawAdjustFunction != null) ordinal = _rawAdjustFunction(ordinal);
             ordinal = ApplyTriggers(ordinal, TriggerAt.End, null, activeVariants);
