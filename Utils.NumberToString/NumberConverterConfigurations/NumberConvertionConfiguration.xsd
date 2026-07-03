@@ -211,12 +211,43 @@
     <xs:complexType name="ReplacementType">
         <xs:annotation>
             <xs:documentation>
-                A single text substitution rule. The scope attribute controls where the
-                replacement is applied; see ReplacementScopeType for semantics.
+                A single text substitution rule.
 
+                Firing point
+                ------------
+                Without onScale: fires on the final assembled number string, after all
+                groups have been concatenated. This is the default and most common mode.
+
+                With onScale: fires per-group inside the conversion loop, on the text
+                "digit-text + separator + scale-name" for the group whose scale index
+                equals onScale, before the groups are assembled into the final string.
+                Example: onScale="1" targets the thousands group ("ein tausend").
+
+                onValue restriction
+                -------------------
+                onValue further restricts the rule to specific numeric values:
+                  - With onScale: the value is the per-group digit value (0–999 for
+                    3-digit groups). Example: onScale="1" onValue="1" fires only for
+                    the thousands group when its digit value is exactly 1.
+                  - Without onScale: the value is the full absolute number. Example:
+                    onValue="..10" fires on the final string only for numbers 0–10.
+
+                See the onScale and onValue attribute docs for full syntax details.
+
+                Scope attribute
+                ---------------
+                The scope attribute controls where oldValue is matched within the text;
+                see ReplacementScopeType for semantics.
+
+                Variant children
+                ----------------
                 Child Variant elements declare per-dimension-value replacements using the
                 forms attribute (see FormVariantType). They are expanded at load time into
                 VariantRule entries merged by constraint set.
+
+                Example — "ein tausend" collapsed to "tausend" only for value=1:
+                    &lt;Replacement oldValue="ein tausend" newValue="tausend"
+                                  onScale="1" onValue="1" /&gt;
 
                 Example — German "ein" with four case forms for masculine:
                     &lt;Replacement oldValue="ein" scope="lastWord"&gt;
@@ -249,15 +280,46 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="onScale" type="xs:integer" use="optional">
+        <xs:attribute name="onScale" type="xs:string" use="optional">
             <xs:annotation>
                 <xs:documentation>
-                    Restricts this replacement to a single scale group.
+                    Restricts this replacement to one or more scale groups.
                     0 = units (ones), 1 = thousands, 2 = millions, 3 = billions, etc.
-                    When absent the rule applies globally (all scale levels).
-                    Negative values are reserved for future use (decimal fraction groups).
-                    Rules with onScale fire per-group before the groups are concatenated;
-                    global rules (no onScale) fire on the final combined string.
+                    Supports the same comma-separated range syntax as onValue:
+                      1       only the thousands group
+                      1..3    thousands, millions, and billions
+                      2..     millions and above
+                      1,3     thousands and billions only
+                    When absent the rule applies globally (fires on the final combined string).
+
+                    Rules with onScale fire per-group on the text
+                    "digit-text + separator + scale-name" before the groups are assembled.
+                    Combined with onValue, the rule fires only when the group's numeric
+                    digit value also matches; see the onValue attribute for syntax.
+
+                    Example: onScale="1" onValue="1" fires only for the thousands group
+                    when its digit value is exactly 1 (1 000 but not 21 000).
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="onValue" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Restricts this replacement to specific numeric values.
+                    Comma-separated segments; each segment is one of:
+                      5       exact value 5
+                      1..3    inclusive range [1, 3]
+                      ..5     all values less than or equal to 5
+                      5..     all values greater than or equal to 5
+                    Example: onValue="1,5..10,20.."
+
+                    When combined with onScale, the value is the per-group digit value
+                    (e.g. 1 for the thousands group in 1 000).
+                    When used without onScale, the value is the full absolute number and
+                    the rule fires in the final combined-string pass.
+
+                    Typical use: onScale="1" onValue="1" to replace "un mille" with
+                    "mille" or "ein tausend" with "tausend" only for exactly 1 000.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -862,9 +924,11 @@
                                           and Variants are applied and before FinalizeWriting.
 
                 Pipeline (cardinal):
-                  ConvertGroup → [group(N) triggers] → append scale → Replacements
+                  ConvertGroup → [group(N) triggers] → append scale
+                    → Replacements (onScale=N, filtered by onValue if present)
                     → [groupWithScale(N) triggers] → push
-                  Assemble → Replacements → Variants → [end triggers] → FinalizeWriting
+                  Assemble → Replacements (global, filtered by onValue if present)
+                    → Variants → [end triggers] → FinalizeWriting
 
                 Pipeline (ordinal):
                   Group triggers fire inside ConvertRaw, same as for cardinals.
@@ -1364,8 +1428,31 @@
                         <xs:attribute name="baseOn" type="xs:string">
                             <xs:annotation>
                                 <xs:documentation>
-                                    Reserved for future inheritance: the culture code of a base language
-                                    from which this Language inherits settings.
+                                    Culture code of the base language from which this Language inherits
+                                    all settings. The base must be declared before this language
+                                    (earlier in the same file, or in a previously loaded file).
+
+                                    Merge rules:
+                                      - Scalar attributes (groupSize, separator, zero, etc.): child
+                                        value wins; omitted child attributes inherit from the base.
+                                      - Collections (Groups, NumberScale, Replacements, Exceptions,
+                                        Fractions, Ordinals, Variants): if the child declares the
+                                        element it replaces the base completely; omitted elements are
+                                        inherited. An empty element (e.g. &lt;Replacements /&gt;) explicitly
+                                        overrides the base with an empty list.
+                                      - Ordinals: OrdinalExceptions and OrdinalRules are merged
+                                        element-by-element (child wins on key conflicts); suffix,
+                                        prefix, and OrdinalVariants fall back to the base when absent
+                                        in the child.
+
+                                    Chains (BASE → MID → CHILD) are supported: each intermediate
+                                    language is fully resolved before it is used as a base.
+
+                                    Example — Swiss German inherits from Standard German:
+                                        &lt;Language baseOn="DE"&gt;
+                                            &lt;Culture&gt;de-CH&lt;/Culture&gt;
+                                            &lt;Replacements /&gt;  &lt;!-- remove DE's contraction --&gt;
+                                        &lt;/Language&gt;
                                 </xs:documentation>
                             </xs:annotation>
                         </xs:attribute>
