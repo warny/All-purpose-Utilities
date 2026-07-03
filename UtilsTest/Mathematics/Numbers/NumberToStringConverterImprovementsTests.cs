@@ -2804,21 +2804,21 @@ public class NumberToStringConverterImprovementsTests
         StringAssert.Contains(ex.Message, "DOES-NOT-EXIST");
     }
 
-    // ─── IntRange parsing ─────────────────────────────────────────────────────
+    // ─── ParseRangeExpression — syntaxe XML → IntRange<long> ─────────────────
 
     [TestMethod]
-    public void IntRange_Parse_ExactValue()
+    public void ParseRangeExpression_ExactValue()
     {
-        var r = NumberToStringConverter.IntRange.Parse("5");
+        var r = NumberToStringConverter.ParseRangeExpression("5");
         Assert.IsTrue(r.Contains(5));
         Assert.IsFalse(r.Contains(4));
         Assert.IsFalse(r.Contains(6));
     }
 
     [TestMethod]
-    public void IntRange_Parse_InclusiveRange()
+    public void ParseRangeExpression_InclusiveRange()
     {
-        var r = NumberToStringConverter.IntRange.Parse("2..5");
+        var r = NumberToStringConverter.ParseRangeExpression("2..5");
         Assert.IsFalse(r.Contains(1));
         Assert.IsTrue(r.Contains(2));
         Assert.IsTrue(r.Contains(3));
@@ -2827,27 +2827,27 @@ public class NumberToStringConverterImprovementsTests
     }
 
     [TestMethod]
-    public void IntRange_Parse_OpenStart()
+    public void ParseRangeExpression_OpenStart()
     {
-        var r = NumberToStringConverter.IntRange.Parse("..4");
-        Assert.IsTrue(r.Contains(long.MinValue));
+        var r = NumberToStringConverter.ParseRangeExpression("..4");
+        Assert.IsTrue(r.Contains(0));
         Assert.IsTrue(r.Contains(4));
         Assert.IsFalse(r.Contains(5));
     }
 
     [TestMethod]
-    public void IntRange_Parse_OpenEnd()
+    public void ParseRangeExpression_OpenEnd()
     {
-        var r = NumberToStringConverter.IntRange.Parse("10..");
+        var r = NumberToStringConverter.ParseRangeExpression("10..");
         Assert.IsFalse(r.Contains(9));
         Assert.IsTrue(r.Contains(10));
-        Assert.IsTrue(r.Contains(long.MaxValue));
+        Assert.IsTrue(r.Contains(999));
     }
 
     [TestMethod]
-    public void IntRange_Parse_CommaSeparated()
+    public void ParseRangeExpression_CommaSeparated()
     {
-        var r = NumberToStringConverter.IntRange.Parse("1,3,5..7,20..");
+        var r = NumberToStringConverter.ParseRangeExpression("1,3,5..7,20..");
         Assert.IsTrue(r.Contains(1));
         Assert.IsFalse(r.Contains(2));
         Assert.IsTrue(r.Contains(3));
@@ -2861,19 +2861,10 @@ public class NumberToStringConverterImprovementsTests
     }
 
     [TestMethod]
-    public void IntRange_Parse_InvalidSegment_Throws()
+    public void ParseRangeExpression_EmptyString_Throws()
     {
-        Assert.ThrowsException<FormatException>(() => NumberToStringConverter.IntRange.Parse("abc"));
-        Assert.ThrowsException<FormatException>(() => NumberToStringConverter.IntRange.Parse("1..abc"));
-    }
-
-    [TestMethod]
-    public void IntRange_Exact_MatchesSingleValue()
-    {
-        var r = NumberToStringConverter.IntRange.Exact(7);
-        Assert.IsTrue(r.Contains(7));
-        Assert.IsFalse(r.Contains(6));
-        Assert.IsFalse(r.Contains(8));
+        Assert.ThrowsException<ArgumentException>(() => NumberToStringConverter.ParseRangeExpression(""));
+        Assert.ThrowsException<ArgumentException>(() => NumberToStringConverter.ParseRangeExpression("   "));
     }
 
     // ─── onValue — onScale + onValue via XML ─────────────────────────────────

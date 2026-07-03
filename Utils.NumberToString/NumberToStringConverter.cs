@@ -9,6 +9,7 @@ using System.Text.RegularExpressions;
 using Utils.Mathematics;
 using Utils.Numerics;
 using Utils.Objects;
+using Utils.Range;
 using Utils.String;
 
 namespace Utils.NumberToString
@@ -923,7 +924,7 @@ namespace Utils.NumberToString
             /// </param>
             /// <exception cref="ArgumentException">Thrown when <paramref name="oldValue"/> or <paramref name="newValue"/> is null or empty.</exception>
             public ReplacementRule(string oldValue, string newValue, ReplacementScope scope, int? onScale = null)
-                : this(oldValue, newValue, scope, onScale.HasValue ? IntRange.Exact(onScale.Value) : null, null) { }
+                : this(oldValue, newValue, scope, onScale.HasValue ? new IntRange<long>(onScale.Value.ToString()) : null, null) { }
 
             /// <summary>
             /// Initializes a new instance of the <see cref="ReplacementRule"/> class with a
@@ -942,7 +943,7 @@ namespace Utils.NumberToString
             /// <paramref name="onScale"/>, applies to the full number in the final assembled-string pass.
             /// </param>
             /// <exception cref="ArgumentException">Thrown when <paramref name="oldValue"/> or <paramref name="newValue"/> is null or empty.</exception>
-            public ReplacementRule(string oldValue, string newValue, ReplacementScope scope, IntRange? onScale, IntRange? onValue)
+            public ReplacementRule(string oldValue, string newValue, ReplacementScope scope, IntRange<long>? onScale, IntRange<long>? onValue)
             {
                 if (string.IsNullOrEmpty(oldValue))
                 {
@@ -980,7 +981,7 @@ namespace Utils.NumberToString
             /// Gets the scale level(s) this rule is restricted to, or <see langword="null"/> to apply globally.
             /// 0 = units group, 1 = thousands, 2 = millions, etc. Supports ranges ("1..3").
             /// </summary>
-            public IntRange? OnScale { get; }
+            public IntRange<long>? OnScale { get; }
 
             /// <summary>
             /// Gets the optional numeric-value filter. When non-null and combined with
@@ -988,94 +989,51 @@ namespace Utils.NumberToString
             /// within range. When non-null without <see cref="OnScale"/>, constrains the rule
             /// to matching values in the final assembled-string pass.
             /// </summary>
-            public IntRange? OnValue { get; }
+            public IntRange<long>? OnValue { get; }
         }
 
         /// <summary>
-        /// Represents a set of integer ranges used to restrict a <see cref="ReplacementRule"/>
-        /// via the <c>onValue</c> or <c>onScale</c> XML attributes.
+        /// Parses a comma-separated range expression in the XML attribute syntax and returns
+        /// an <see cref="IntRange{T}">IntRange&lt;long&gt;</see> that can be used with
+        /// <see cref="IntRange{T}.Contains(T)"/>.
         /// </summary>
         /// <remarks>
-        /// Syntax: comma-separated segments where each segment is one of:
+        /// Accepted segment syntax (comma-separated list):
         /// <list type="bullet">
         ///   <item><c>5</c> — exact value 5</item>
         ///   <item><c>1..3</c> — inclusive range [1, 3]</item>
-        ///   <item><c>..5</c> — all values ≤ 5</item>
-        ///   <item><c>5..</c> — all values ≥ 5</item>
+        ///   <item><c>..5</c> — all values ≤ 5 (open lower bound)</item>
+        ///   <item><c>5..</c> — all values ≥ 5 (open upper bound)</item>
         /// </list>
         /// Example: <c>"1,5..10,20.."</c> matches 1, five through ten, and any value ≥ 20.
         /// </remarks>
-        public sealed class IntRange
+        /// <exception cref="ArgumentException">Thrown when <paramref name="s"/> is null or whitespace.</exception>
+        /// <exception cref="FormatException">Thrown when a segment cannot be parsed.</exception>
+        public static IntRange<long> ParseRangeExpression(string s)
         {
-            private readonly (long? Min, long? Max)[] _segments;
+            if (string.IsNullOrWhiteSpace(s))
+                throw new ArgumentException("Range expression must not be empty.", nameof(s));
 
-            private IntRange((long? Min, long? Max)[] segments) => _segments = segments;
-
-            /// <summary>Creates a range that matches exactly one value.</summary>
-            public static IntRange Exact(long value) => new IntRange([(value, value)]);
-
-            /// <summary>Parses a comma-separated range expression.</summary>
-            /// <exception cref="ArgumentException">Thrown when <paramref name="s"/> is null or whitespace.</exception>
-            /// <exception cref="FormatException">Thrown when a segment cannot be parsed.</exception>
-            public static IntRange Parse(string s)
+            // IntRange<T> constructor expects "min-max" with "∞" for open bounds.
+            // Translate our ".." syntax accordingly.
+            var parts = s.Split(',');
+            var converted = new string[parts.Length];
+            for (int i = 0; i < parts.Length; i++)
             {
-                if (string.IsNullOrWhiteSpace(s))
-                    throw new ArgumentException("Range expression must not be empty.", nameof(s));
-
-                var parts = s.Split(',');
-                var segments = new (long? Min, long? Max)[parts.Length];
-                for (int i = 0; i < parts.Length; i++)
+                var part = parts[i].Trim();
+                int dotIdx = part.IndexOf("..", StringComparison.Ordinal);
+                if (dotIdx >= 0)
                 {
-                    var part = parts[i].Trim();
-                    int rangeIdx = part.IndexOf("..", StringComparison.Ordinal);
-                    if (rangeIdx < 0)
-                    {
-                        if (!long.TryParse(part, out long exact))
-                            throw new FormatException($"Invalid range segment: '{part}'");
-                        segments[i] = (exact, exact);
-                    }
-                    else
-                    {
-                        var minStr = part[..rangeIdx].Trim();
-                        var maxStr = part[(rangeIdx + 2)..].Trim();
-                        long? min = minStr.Length > 0
-                            ? long.TryParse(minStr, out long mn) ? mn : throw new FormatException($"Invalid range bound: '{minStr}'")
-                            : null;
-                        long? max = maxStr.Length > 0
-                            ? long.TryParse(maxStr, out long mx) ? mx : throw new FormatException($"Invalid range bound: '{maxStr}'")
-                            : null;
-                        segments[i] = (min, max);
-                    }
+                    var min = part[..dotIdx].Trim();
+                    var max = part[(dotIdx + 2)..].Trim();
+                    converted[i] = $"{(min.Length > 0 ? min : "∞")}-{(max.Length > 0 ? max : "∞")}";
                 }
-                return new IntRange(segments);
-            }
-
-            /// <summary>Returns <see langword="true"/> when <paramref name="value"/> falls within any segment.</summary>
-            public bool Contains(long value)
-            {
-                foreach (var (min, max) in _segments)
+                else
                 {
-                    if ((min is null || value >= min.Value) && (max is null || value <= max.Value))
-                        return true;
+                    converted[i] = part;
                 }
-                return false;
             }
-        }
-
-        /// <summary>
-        /// Backward-compatibility alias for <see cref="IntRange"/>. Use <see cref="IntRange"/> in new code.
-        /// </summary>
-        [Obsolete("Use IntRange instead.")]
-        public sealed class ValueRange
-        {
-            private readonly IntRange _inner;
-            private ValueRange(IntRange inner) => _inner = inner;
-            /// <summary>Parses a comma-separated range expression.</summary>
-            public static ValueRange Parse(string s) => new ValueRange(IntRange.Parse(s));
-            /// <summary>Returns <see langword="true"/> when <paramref name="value"/> falls within any segment.</summary>
-            public bool Contains(long value) => _inner.Contains(value);
-            /// <summary>Returns the underlying <see cref="IntRange"/>.</summary>
-            public static implicit operator IntRange(ValueRange? r) => r?._inner ?? throw new ArgumentNullException(nameof(r));
+            return new IntRange<long>(string.Join(",", converted));
         }
 
         /// <summary>

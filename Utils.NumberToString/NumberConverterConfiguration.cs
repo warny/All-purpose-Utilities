@@ -385,8 +385,8 @@ public class ReplacementType
     /// Supports range syntax: <c>"1"</c>, <c>"1..3"</c>, <c>"..2"</c>, <c>"1,3.."</c>.
     /// </summary>
     [XmlIgnore]
-    public NumberToStringConverter.IntRange? OnScale =>
-        OnScaleValue is { Length: > 0 } s ? NumberToStringConverter.IntRange.Parse(s) : null;
+    public Utils.Range.IntRange<long>? OnScale =>
+        OnScaleValue is { Length: > 0 } s ? NumberToStringConverter.ParseRangeExpression(s) : null;
 
     /// <summary>
     /// Gets or sets the raw value-range expression restricting this rule to specific numeric
@@ -396,6 +396,13 @@ public class ReplacementType
     /// </summary>
     [XmlAttribute("onValue")]
     public string? OnValueRaw { get; set; }
+
+    /// <summary>
+    /// Gets the parsed value-range filter, or <see langword="null"/> when <see cref="OnValueRaw"/> is absent.
+    /// </summary>
+    [XmlIgnore]
+    public Utils.Range.IntRange<long>? OnValue =>
+        OnValueRaw is { Length: > 0 } s ? NumberToStringConverter.ParseRangeExpression(s) : null;
 
     /// <summary>
     /// Per-dimension-value form declarations expanded at load time into <c>VariantRule</c>

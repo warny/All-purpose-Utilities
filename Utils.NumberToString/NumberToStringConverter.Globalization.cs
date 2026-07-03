@@ -292,7 +292,7 @@ namespace Utils.NumberToString
                 list?.Replacements?
                     .Where(r => r.NewValue != null)
                     .Select(r => new NumberToStringConverter.ReplacementRule(r.OldValue, r.NewValue!, r.Scope, r.OnScale,
-                        r.OnValueRaw is { Length: > 0 } ? NumberToStringConverter.IntRange.Parse(r.OnValueRaw) : null))
+                        r.OnValue))
                 ?? [];
 
             static IReadOnlyList<NumberToStringConverter.VariantDimension> ParseVariantDimensions(VariantsType variants) =>
@@ -349,7 +349,7 @@ namespace Utils.NumberToString
                                 syntheticByKey[key] = entry;
                             }
                             entry.Replacements.Add(new NumberToStringConverter.ReplacementRule(repl.OldValue, form, repl.Scope, repl.OnScale,
-                                repl.OnValueRaw is { Length: > 0 } ? NumberToStringConverter.ValueRange.Parse(repl.OnValueRaw) : null));
+                                repl.OnValue));
                         }
                     }
                 }
@@ -383,7 +383,7 @@ namespace Utils.NumberToString
                 var replacements = (variant.Replacements ?? [])
                     .Where(r => r.NewValue != null)
                     .Select(r => new NumberToStringConverter.ReplacementRule(r.OldValue, r.NewValue!, r.Scope, r.OnScale,
-                        r.OnValueRaw is { Length: > 0 } ? NumberToStringConverter.IntRange.Parse(r.OnValueRaw) : null))
+                        r.OnValue))
                     .ToList();
 
                 foreach (var dimValue in dimValues)
