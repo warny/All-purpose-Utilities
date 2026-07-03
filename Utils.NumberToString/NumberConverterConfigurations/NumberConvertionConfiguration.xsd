@@ -261,6 +261,27 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="onValue" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Restricts this replacement to specific numeric values.
+                    Comma-separated segments; each segment is one of:
+                      5       exact value 5
+                      1..3    inclusive range [1, 3]
+                      ..5     all values less than or equal to 5
+                      5..     all values greater than or equal to 5
+                    Example: onValue="1,5..10,20.."
+
+                    When combined with onScale, the value is the per-group digit value
+                    (e.g. 1 for the thousands group in 1 000).
+                    When used without onScale, the value is the full absolute number and
+                    the rule fires in the final combined-string pass.
+
+                    Typical use: onScale="1" onValue="1" to replace "un mille" with
+                    "mille" or "ein tausend" with "tausend" only for exactly 1 000.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="ReplacementsListType">

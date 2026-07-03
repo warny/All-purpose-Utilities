@@ -2803,4 +2803,239 @@ public class NumberToStringConverterImprovementsTests
             () => NumberToStringConverter.ReadConfiguration(bad));
         StringAssert.Contains(ex.Message, "DOES-NOT-EXIST");
     }
+
+    // ─── onValue — ValueRange parsing ────────────────────────────────────────
+
+    [TestMethod]
+    public void ValueRange_Parse_ExactValue()
+    {
+        var r = NumberToStringConverter.ValueRange.Parse("5");
+        Assert.IsTrue(r.Contains(5));
+        Assert.IsFalse(r.Contains(4));
+        Assert.IsFalse(r.Contains(6));
+    }
+
+    [TestMethod]
+    public void ValueRange_Parse_InclusiveRange()
+    {
+        var r = NumberToStringConverter.ValueRange.Parse("2..5");
+        Assert.IsFalse(r.Contains(1));
+        Assert.IsTrue(r.Contains(2));
+        Assert.IsTrue(r.Contains(3));
+        Assert.IsTrue(r.Contains(5));
+        Assert.IsFalse(r.Contains(6));
+    }
+
+    [TestMethod]
+    public void ValueRange_Parse_OpenStart()
+    {
+        var r = NumberToStringConverter.ValueRange.Parse("..4");
+        Assert.IsTrue(r.Contains(long.MinValue));
+        Assert.IsTrue(r.Contains(4));
+        Assert.IsFalse(r.Contains(5));
+    }
+
+    [TestMethod]
+    public void ValueRange_Parse_OpenEnd()
+    {
+        var r = NumberToStringConverter.ValueRange.Parse("10..");
+        Assert.IsFalse(r.Contains(9));
+        Assert.IsTrue(r.Contains(10));
+        Assert.IsTrue(r.Contains(long.MaxValue));
+    }
+
+    [TestMethod]
+    public void ValueRange_Parse_CommaSeparated()
+    {
+        var r = NumberToStringConverter.ValueRange.Parse("1,3,5..7,20..");
+        Assert.IsTrue(r.Contains(1));
+        Assert.IsFalse(r.Contains(2));
+        Assert.IsTrue(r.Contains(3));
+        Assert.IsTrue(r.Contains(5));
+        Assert.IsTrue(r.Contains(6));
+        Assert.IsTrue(r.Contains(7));
+        Assert.IsFalse(r.Contains(8));
+        Assert.IsFalse(r.Contains(19));
+        Assert.IsTrue(r.Contains(20));
+        Assert.IsTrue(r.Contains(999));
+    }
+
+    [TestMethod]
+    public void ValueRange_Parse_InvalidSegment_Throws()
+    {
+        Assert.ThrowsException<FormatException>(() => NumberToStringConverter.ValueRange.Parse("abc"));
+        Assert.ThrowsException<FormatException>(() => NumberToStringConverter.ValueRange.Parse("1..abc"));
+    }
+
+    // ─── onValue — onScale + onValue via XML ─────────────────────────────────
+
+    private const string OnValueConfig = """
+        <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+          <Language groupSize="3" separator=" " groupSeparator="" zero="nul" minus="min *" decimalSeparator="komma">
+            <Culture>TEST-OV</Culture>
+            <Groups>
+              <Group level="1">
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="en" />
+                <Digit digit="2" string="to" />
+                <Digit digit="3" string="tre" />
+              </Group>
+              <Group level="2">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="ti" buildString="*ti" />
+                <Digit digit="2" string="tjue" buildString="tjue*" />
+              </Group>
+              <Group level="3">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="hundre" buildString="hundre*" />
+              </Group>
+            </Groups>
+            <NumberScale firstLetterUpperCase="false">
+              <StaticNames>
+                <Scale value="0" string=""/>
+                <Scale value="1" string="tusen"/>
+              </StaticNames>
+            </NumberScale>
+            <!-- onScale=1 onValue=1 → fires only for the thousands group when its value is 1 -->
+            <Replacements>
+              <Replacement oldValue="en tusen" newValue="tusen" onScale="1" onValue="1" />
+            </Replacements>
+          </Language>
+        </Numbers>
+        """;
+
+    [TestMethod]
+    public void OnValue_OnScale1_Value1_ReplacesExact1000()
+    {
+        var cs = NumberToStringConverter.ReadConfiguration(OnValueConfig);
+        var c = cs["TEST-OV"];
+        // 1 × 1000: group text "en tusen" → replaced → "tusen"
+        Assert.AreEqual("tusen", c.Convert(1000));
+    }
+
+    [TestMethod]
+    public void OnValue_OnScale1_Value2_DoesNotReplace()
+    {
+        var cs = NumberToStringConverter.ReadConfiguration(OnValueConfig);
+        var c = cs["TEST-OV"];
+        // 2 × 1000: group text "to tusen" → onValue="1" does NOT match → unchanged
+        Assert.AreEqual("to tusen", c.Convert(2000));
+    }
+
+    [TestMethod]
+    public void OnValue_OnScale1_Value1_DoesNotAffectOtherGroups()
+    {
+        var cs = NumberToStringConverter.ReadConfiguration(OnValueConfig);
+        var c = cs["TEST-OV"];
+        // 1001: units group = 1 (scale=0, not scale=1) → no replacement for "en"
+        Assert.AreEqual("tusen en", c.Convert(1001));
+    }
+
+    [TestMethod]
+    public void OnValue_OnScale1_Value21_DoesNotReplace()
+    {
+        var cs = NumberToStringConverter.ReadConfiguration(OnValueConfig);
+        var c = cs["TEST-OV"];
+        // 21000: thousands group value is 21, not 1 → no replacement
+        Assert.AreEqual("tjueen tusen", c.Convert(21000));
+    }
+
+    // ─── onValue — global (no onScale) ───────────────────────────────────────
+
+    private const string OnValueGlobalConfig = """
+        <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+          <Language groupSize="3" separator=" " groupSeparator="" zero="nul" minus="min *" decimalSeparator="komma">
+            <Culture>TEST-OVG</Culture>
+            <Groups>
+              <Group level="1">
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="en" />
+                <Digit digit="2" string="to" />
+              </Group>
+              <Group level="2">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="ti" buildString="*ti" />
+              </Group>
+              <Group level="3">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="hundre" buildString="hundre*" />
+              </Group>
+            </Groups>
+            <NumberScale firstLetterUpperCase="false">
+              <StaticNames>
+                <Scale value="0" string=""/>
+                <Scale value="1" string="tusen"/>
+              </StaticNames>
+            </NumberScale>
+            <!-- Global onValue: fires in the final-string pass only when abs==1 -->
+            <Replacements>
+              <Replacement oldValue="en" newValue="ett" onValue="1" />
+            </Replacements>
+          </Language>
+        </Numbers>
+        """;
+
+    [TestMethod]
+    public void OnValue_Global_FiresOnlyForMatchingFullNumber()
+    {
+        var cs = NumberToStringConverter.ReadConfiguration(OnValueGlobalConfig);
+        var c = cs["TEST-OVG"];
+        // abs=1 → final text "en" matches onValue="1" → "ett"
+        Assert.AreEqual("ett", c.Convert(1));
+        // abs=2 → final text "to" → onValue="1" doesn't fire
+        Assert.AreEqual("to", c.Convert(2));
+        // abs=11 → final text "enti" (ten+one combined) → onValue="1" doesn't fire
+        Assert.AreEqual("enti", c.Convert(11));
+    }
+
+    // ─── onValue — real-language scenario (DE variant) ───────────────────────
+
+    [TestMethod]
+    public void OnValue_DE_Scoped_ThousandReplacementViaOnValue()
+    {
+        // Use the built-in DE converter. DE already has a global Replacement
+        // "ein tausend" → "tausend". We verify the same result is achievable by
+        // reading a custom config that uses onScale+onValue instead.
+        const string deVariant = """
+            <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+              <Language groupSize="3" separator=" " groupSeparator="" zero="null" minus="minus *" decimalSeparator="Komma">
+                <Culture>TEST-DE-OV</Culture>
+                <Groups>
+                  <Group level="1">
+                    <Digit digit="0" string="" />
+                    <Digit digit="1" string="ein" />
+                    <Digit digit="2" string="zwei" />
+                    <Digit digit="3" string="drei" />
+                  </Group>
+                  <Group level="2">
+                    <Digit digit="0" string="" buildString="*" />
+                    <Digit digit="1" string="zehn" buildString="*zehn" />
+                    <Digit digit="2" string="zwanzig" buildString="*undzwanzig" />
+                  </Group>
+                  <Group level="3">
+                    <Digit digit="0" string="" buildString="*" />
+                    <Digit digit="1" string="hundert" buildString="einhundert*" />
+                  </Group>
+                </Groups>
+                <NumberScale firstLetterUpperCase="false">
+                  <StaticNames>
+                    <Scale value="0" string=""/>
+                    <Scale value="1" string="tausend"/>
+                  </StaticNames>
+                </NumberScale>
+                <Replacements>
+                  <Replacement oldValue="ein tausend" newValue="tausend" onScale="1" onValue="1" />
+                </Replacements>
+              </Language>
+            </Numbers>
+            """;
+
+        var cs = NumberToStringConverter.ReadConfiguration(deVariant);
+        var c = cs["TEST-DE-OV"];
+
+        Assert.AreEqual("tausend",            c.Convert(1000),  "1 000");
+        Assert.AreEqual("zwei tausend",       c.Convert(2000),  "2 000");
+        Assert.AreEqual("tausend ein",        c.Convert(1001),  "1 001 — units group unaffected");
+        Assert.AreEqual("einundzwanzig tausend", c.Convert(21000), "21 000 — value≠1, no replacement");
+    }
 }

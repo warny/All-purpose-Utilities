@@ -388,6 +388,15 @@ public class ReplacementType
     public int? OnScale => int.TryParse(OnScaleValue, out int v) ? v : null;
 
     /// <summary>
+    /// Gets or sets the raw value-range expression restricting this rule to specific numeric
+    /// group values. Supports comma-separated segments: <c>"1"</c> (exact), <c>"1..3"</c>
+    /// (inclusive range), <c>"..5"</c> (≤ 5), <c>"5.."</c> (≥ 5).
+    /// <see langword="null"/> when absent (no value restriction).
+    /// </summary>
+    [XmlAttribute("onValue")]
+    public string? OnValueRaw { get; set; }
+
+    /// <summary>
     /// Per-dimension-value form declarations expanded at load time into <c>VariantRule</c>
     /// replacement entries (see <see cref="FormVariantType"/>).
     /// </summary>

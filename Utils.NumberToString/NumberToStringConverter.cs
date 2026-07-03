@@ -71,10 +71,15 @@ namespace Utils.NumberToString
             Replacements = (options.Replacements ?? Array.Empty<ReplacementRule>())
                 .Select(r => r ?? throw new ArgumentNullException(nameof(options), "Replacement entries must not be null."))
                 .ToImmutableArray();
-            var globalReplacements = Replacements.Where(r => !r.OnScale.HasValue).ToImmutableArray();
-            _replacementLookup = globalReplacements.ToImmutableDictionary(r => r.OldValue, r => r.NewValue, StringComparer.Ordinal);
-            _substringReplacements = globalReplacements.Where(r =>
+            // Rules with onValue require numeric-value-aware evaluation and are excluded from the
+            // fast-path dictionaries.
+            var globalUnfiltered = Replacements.Where(r => !r.OnScale.HasValue && r.OnValue is null).ToImmutableArray();
+            _replacementLookup = globalUnfiltered.ToImmutableDictionary(r => r.OldValue, r => r.NewValue, StringComparer.Ordinal);
+            _substringReplacements = globalUnfiltered.Where(r =>
                 r.Scope is ReplacementScope.Anywhere or ReplacementScope.StartsWith or ReplacementScope.EndsWith)
+                .ToImmutableArray();
+            _valueFilteredGlobalReplacements = Replacements
+                .Where(r => !r.OnScale.HasValue && r.OnValue is not null)
                 .ToImmutableArray();
             _scaleReplacements = Replacements
                 .Where(r => r.OnScale.HasValue)
@@ -287,6 +292,7 @@ namespace Utils.NumberToString
 
         private readonly ImmutableDictionary<string, string> _replacementLookup;
         private readonly ImmutableArray<ReplacementRule> _substringReplacements;
+        private readonly ImmutableArray<ReplacementRule> _valueFilteredGlobalReplacements;
         private readonly ImmutableDictionary<int, ImmutableArray<ReplacementRule>> _scaleReplacements;
         private readonly bool _hasScaleSpecificVariantRules;
         private readonly ImmutableDictionary<string, VariantDimension> _dimensionIndex;
@@ -618,7 +624,7 @@ namespace Utils.NumberToString
                     digits = ApplyTriggers(digits, TriggerAt.Group, groupNumber, variantQuery);
 
                     string resValue = digits + Separator + Scale.GetScaleName(groupNumber).ToPlural(group);
-                    resValue = ApplyReplacements(resValue, groupNumber);
+                    resValue = ApplyReplacements(resValue, groupNumber, group);
                     if (variantQuery != null && _hasScaleSpecificVariantRules)
                         resValue = ApplyVariantRulesForScale(resValue, variantQuery, groupNumber);
                     resValue = ApplyTriggers(resValue, TriggerAt.GroupWithScale, groupNumber, variantQuery);
@@ -645,7 +651,7 @@ namespace Utils.NumberToString
             }
 
             var finalResult = result.ToString().TrimEnd(GroupSeparator.ToCharArray().Union(Separator.ToCharArray()).ToArray());
-            return ApplyReplacements(finalResult);
+            return ApplyReplacements(finalResult, numericValue: abs <= long.MaxValue ? (long?)abs : null);
         }
 
         /// <summary>
@@ -827,10 +833,19 @@ namespace Utils.NumberToString
         /// When <paramref name="groupNumber"/> is supplied, scale-specific rules for that
         /// level are applied first (before global rules).
         /// </summary>
-        /// <param name="value">The value to adjust.</param>
-        /// <param name="groupNumber">Current scale group index, or <see langword="null"/> for the final combined pass.</param>
+        /// <param name="value">The text to transform.</param>
+        /// <param name="groupNumber">
+        /// Current scale group index, or <see langword="null"/> for the final combined pass.
+        /// 0 = units, 1 = thousands, 2 = millions, etc.
+        /// </param>
+        /// <param name="numericValue">
+        /// For per-group calls: the numeric value of the current group (e.g. 1 for the
+        /// thousands group in 1 000). For the final pass: the full absolute number value.
+        /// Used to evaluate <see cref="ReplacementRule.OnValue"/> predicates.
+        /// <see langword="null"/> suppresses <c>onValue</c> filtering (rule fires regardless).
+        /// </param>
         /// <returns>The value after applying any matching replacements.</returns>
-        private string ApplyReplacements(string value, int? groupNumber = null)
+        private string ApplyReplacements(string value, int? groupNumber = null, long? numericValue = null)
         {
             if (string.IsNullOrEmpty(value) || Replacements.Count == 0)
                 return value;
@@ -838,7 +853,21 @@ namespace Utils.NumberToString
             if (groupNumber.HasValue && _scaleReplacements.TryGetValue(groupNumber.Value, out var scaleRules))
             {
                 foreach (var rule in scaleRules)
+                {
+                    if (rule.OnValue is not null && (numericValue is null || !rule.OnValue.Contains(numericValue.Value)))
+                        continue;
                     value = ApplyVariantReplacement(value, rule);
+                }
+            }
+
+            // Value-filtered global rules: fire only when the numeric context is known and matches.
+            if (_valueFilteredGlobalReplacements.Length > 0 && numericValue is not null)
+            {
+                foreach (var rule in _valueFilteredGlobalReplacements)
+                {
+                    if (rule.OnValue!.Contains(numericValue.Value))
+                        value = ApplyVariantReplacement(value, rule);
+                }
             }
 
             if (_replacementLookup.TryGetValue(value, out var exactMatch))
@@ -875,8 +904,13 @@ namespace Utils.NumberToString
             /// Scale level this rule is restricted to, or <see langword="null"/> for all levels.
             /// 0 = units, 1 = thousands, 2 = millions, etc.
             /// </param>
+            /// <param name="onValue">
+            /// Optional numeric-value filter. When set with <paramref name="onScale"/>, the rule
+            /// only fires when the group's numeric value falls within this range. When set without
+            /// <paramref name="onScale"/>, applies to the full number in the final pass.
+            /// </param>
             /// <exception cref="ArgumentException">Thrown when <paramref name="oldValue"/> or <paramref name="newValue"/> is null or empty.</exception>
-            public ReplacementRule(string oldValue, string newValue, ReplacementScope scope, int? onScale = null)
+            public ReplacementRule(string oldValue, string newValue, ReplacementScope scope, int? onScale = null, ValueRange? onValue = null)
             {
                 if (string.IsNullOrEmpty(oldValue))
                 {
@@ -892,6 +926,7 @@ namespace Utils.NumberToString
                 NewValue = newValue;
                 Scope = scope;
                 OnScale = onScale;
+                OnValue = onValue;
             }
 
             /// <summary>
@@ -914,6 +949,82 @@ namespace Utils.NumberToString
             /// 0 = units group, 1 = thousands, 2 = millions, etc.
             /// </summary>
             public int? OnScale { get; }
+
+            /// <summary>
+            /// Gets the optional numeric-value filter. When non-null and combined with
+            /// <see cref="OnScale"/>, the rule only fires when the group's numeric value is
+            /// within range. When non-null without <see cref="OnScale"/>, constrains the rule
+            /// to matching values in the final assembled-string pass.
+            /// </summary>
+            public ValueRange? OnValue { get; }
+        }
+
+        /// <summary>
+        /// Represents a set of integer ranges used to restrict a <see cref="ReplacementRule"/>
+        /// via the <c>onValue</c> XML attribute.
+        /// </summary>
+        /// <remarks>
+        /// Syntax: comma-separated segments where each segment is one of:
+        /// <list type="bullet">
+        ///   <item><c>5</c> — exact value 5</item>
+        ///   <item><c>1..3</c> — inclusive range [1, 3]</item>
+        ///   <item><c>..5</c> — all values ≤ 5</item>
+        ///   <item><c>5..</c> — all values ≥ 5</item>
+        /// </list>
+        /// Example: <c>"1,5..10,20.."</c> matches 1, five through ten, and any value ≥ 20.
+        /// </remarks>
+        public sealed class ValueRange
+        {
+            private readonly (long? Min, long? Max)[] _segments;
+
+            private ValueRange((long? Min, long? Max)[] segments) => _segments = segments;
+
+            /// <summary>Parses a comma-separated <c>onValue</c> expression.</summary>
+            /// <exception cref="ArgumentException">Thrown when <paramref name="s"/> is null or whitespace.</exception>
+            /// <exception cref="FormatException">Thrown when a segment cannot be parsed.</exception>
+            public static ValueRange Parse(string s)
+            {
+                if (string.IsNullOrWhiteSpace(s))
+                    throw new ArgumentException("onValue must not be empty.", nameof(s));
+
+                var parts = s.Split(',');
+                var segments = new (long? Min, long? Max)[parts.Length];
+                for (int i = 0; i < parts.Length; i++)
+                {
+                    var part = parts[i].Trim();
+                    int rangeIdx = part.IndexOf("..", StringComparison.Ordinal);
+                    if (rangeIdx < 0)
+                    {
+                        if (!long.TryParse(part, out long exact))
+                            throw new FormatException($"Invalid onValue segment: '{part}'");
+                        segments[i] = (exact, exact);
+                    }
+                    else
+                    {
+                        var minStr = part[..rangeIdx].Trim();
+                        var maxStr = part[(rangeIdx + 2)..].Trim();
+                        long? min = minStr.Length > 0
+                            ? long.TryParse(minStr, out long mn) ? mn : throw new FormatException($"Invalid onValue bound: '{minStr}'")
+                            : null;
+                        long? max = maxStr.Length > 0
+                            ? long.TryParse(maxStr, out long mx) ? mx : throw new FormatException($"Invalid onValue bound: '{maxStr}'")
+                            : null;
+                        segments[i] = (min, max);
+                    }
+                }
+                return new ValueRange(segments);
+            }
+
+            /// <summary>Returns <see langword="true"/> when <paramref name="value"/> falls within any segment.</summary>
+            public bool Contains(long value)
+            {
+                foreach (var (min, max) in _segments)
+                {
+                    if ((min is null || value >= min.Value) && (max is null || value <= max.Value))
+                        return true;
+                }
+                return false;
+            }
         }
 
         /// <summary>
