@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+    <Language
+        groupSize="3"
+        separator=" "
+        groupSeparator=""
+        zero="нуль"
+        minus="мінус *"
+        decimalSeparator="кома"
+        fractionSeparator="на"
+    >
+        <Culture>UK</Culture>
+        <Culture>UK-UA</Culture>
+        <Groups>
+            <Group level="1">
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="один" />
+                <Digit digit="2" string="два" />
+                <Digit digit="3" string="три" />
+                <Digit digit="4" string="чотири" />
+                <Digit digit="5" string="п'ять" />
+                <Digit digit="6" string="шість" />
+                <Digit digit="7" string="сім" />
+                <Digit digit="8" string="вісім" />
+                <Digit digit="9" string="дев'ять" />
+            </Group>
+            <Group level="2">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="десять" buildString="десять *" />
+                <Digit digit="2" string="двадцять" buildString="двадцять *" />
+                <Digit digit="3" string="тридцять" buildString="тридцять *" />
+                <Digit digit="4" string="сорок" buildString="сорок *" />
+                <Digit digit="5" string="п'ятдесят" buildString="п'ятдесят *" />
+                <Digit digit="6" string="шістдесят" buildString="шістдесят *" />
+                <Digit digit="7" string="сімдесят" buildString="сімдесят *" />
+                <Digit digit="8" string="вісімдесят" buildString="вісімдесят *" />
+                <Digit digit="9" string="дев'яносто" buildString="дев'яносто *" />
+            </Group>
+            <Group level="3">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="сто" buildString="сто *" />
+                <Digit digit="2" string="двісті" buildString="двісті *" />
+                <Digit digit="3" string="триста" buildString="триста *" />
+                <Digit digit="4" string="чотириста" buildString="чотириста *" />
+                <Digit digit="5" string="п'ятсот" buildString="п'ятсот *" />
+                <Digit digit="6" string="шістсот" buildString="шістсот *" />
+                <Digit digit="7" string="сімсот" buildString="сімсот *" />
+                <Digit digit="8" string="вісімсот" buildString="вісімсот *" />
+                <Digit digit="9" string="дев'ятсот" buildString="дев'ятсот *" />
+            </Group>
+        </Groups>
+        <!-- Long scale with groupSeparator="ль":
+             мі+ль+йон(ів)=мільйон(ів), мі+ль+ярд(ів)=мільярд(ів),
+             бі+ль+йон(ів)=більйон(ів), три+ль+йон(ів)=трильйон(ів)…
+             Note: й (U+0439) starts suffix йон, я (U+044F) starts suffix ярд.
+             Plural (ів) fires for n≥2; 2–4 form (мільйони) is not handled — accepted limitation. -->
+        <NumberScale firstLetterUpperCase="false" groupSeparator="ль">
+            <StaticNames>
+                <Scale value="0" string="" />
+                <!--
+                    Simplified: "тисяч" is used as the invariant thousands word.
+                    Full Ukrainian inflection (тисяча/тисячі/тисяч) is not implemented.
+                -->
+                <Scale value="1" string="тисяч" />
+            </StaticNames>
+            <Suffixes>
+                <Suffix>йон(ів)</Suffix>
+                <Suffix>ярд(ів)</Suffix>
+            </Suffixes>
+            <Scale0Prefixes>
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="мі" />
+                <Digit digit="2" string="бі" />
+                <Digit digit="3" string="три" />
+                <Digit digit="4" string="квадри" />
+                <Digit digit="5" string="квінти" />
+                <Digit digit="6" string="сексти" />
+                <Digit digit="7" string="септи" />
+                <Digit digit="8" string="окти" />
+                <Digit digit="9" string="нони" />
+            </Scale0Prefixes>
+        </NumberScale>
+        <Replacements>
+            <!-- Drop "один" before "тисяч": 1000 = "тисяч" not "один тисяч" -->
+            <Replacement oldValue="один тисяч" newValue="тисяч" />
+        </Replacements>
+        <Exceptions>
+            <Number value="11" string="одинадцять" />
+            <Number value="12" string="дванадцять" />
+            <Number value="13" string="тринадцять" />
+            <Number value="14" string="чотирнадцять" />
+            <Number value="15" string="п'ятнадцять" />
+            <Number value="16" string="шістнадцять" />
+            <Number value="17" string="сімнадцять" />
+            <Number value="18" string="вісімнадцять" />
+            <Number value="19" string="дев'ятнадцять" />
+        </Exceptions>
+    </Language>
+</Numbers>

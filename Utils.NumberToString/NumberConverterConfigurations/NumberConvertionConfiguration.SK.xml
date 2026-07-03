@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+    <Language
+        groupSize="3"
+        separator=" "
+        groupSeparator=""
+        zero="nula"
+        minus="mínus *"
+        decimalSeparator="celá"
+        fractionSeparator="ku"
+    >
+        <Culture>SK</Culture>
+        <Culture>SK-SK</Culture>
+        <Groups>
+            <Group level="1">
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="jeden" />
+                <Digit digit="2" string="dva" />
+                <Digit digit="3" string="tri" />
+                <Digit digit="4" string="štyri" />
+                <Digit digit="5" string="päť" />
+                <Digit digit="6" string="šesť" />
+                <Digit digit="7" string="sedem" />
+                <Digit digit="8" string="osem" />
+                <Digit digit="9" string="deväť" />
+            </Group>
+            <Group level="2">
+                <Digit digit="0" string="" buildString="*" />
+                <!-- 11–19 are handled as Exceptions -->
+                <Digit digit="1" string="desať" buildString="desať *" />
+                <Digit digit="2" string="dvadsať" buildString="dvadsať *" />
+                <Digit digit="3" string="tridsať" buildString="tridsať *" />
+                <Digit digit="4" string="štyridsať" buildString="štyridsať *" />
+                <Digit digit="5" string="päťdesiat" buildString="päťdesiat *" />
+                <Digit digit="6" string="šesťdesiat" buildString="šesťdesiat *" />
+                <Digit digit="7" string="sedemdesiat" buildString="sedemdesiat *" />
+                <Digit digit="8" string="osemdesiat" buildString="osemdesiat *" />
+                <Digit digit="9" string="deväťdesiat" buildString="deväťdesiat *" />
+            </Group>
+            <Group level="3">
+                <Digit digit="0" string="" buildString="*" />
+                <!-- Slovak hundreds: sto, dvesto, tristo, štyri sto, päť sto … deväť sto -->
+                <Digit digit="1" string="sto" buildString="sto *" />
+                <Digit digit="2" string="dvesto" buildString="dvesto *" />
+                <Digit digit="3" string="tristo" buildString="tristo *" />
+                <Digit digit="4" string="štyri sto" buildString="štyri sto *" />
+                <Digit digit="5" string="päť sto" buildString="päť sto *" />
+                <Digit digit="6" string="šesť sto" buildString="šesť sto *" />
+                <Digit digit="7" string="sedem sto" buildString="sedem sto *" />
+                <Digit digit="8" string="osem sto" buildString="osem sto *" />
+                <Digit digit="9" string="deväť sto" buildString="deväť sto *" />
+            </Group>
+        </Groups>
+        <!-- Long scale with groupSeparator="li" (single l): mi+li+ón=milión, mi+li+ard=miliard,
+             bi+li+ón=bilión, bi+li+ard=biliard, tri+li+ón=trilión…
+             Note: Slovak uses "miliarda" (feminine) for 10^9 but invariant "miliard" is used here
+             as a simplification since noun gender inflection is not supported by the engine. -->
+        <NumberScale firstLetterUpperCase="false" groupSeparator="li">
+            <StaticNames>
+                <Scale value="0" string="" />
+                <!-- Slovak: "tisíc" alone for 1000; "jeden tisíc" → "tisíc" via Replacement -->
+                <Scale value="1" string="tisíc" />
+            </StaticNames>
+            <Suffixes>
+                <Suffix>ón</Suffix>
+                <Suffix>ard</Suffix>
+            </Suffixes>
+        </NumberScale>
+        <Replacements>
+            <!-- Drop "jeden" before "tisíc": 1000 = "tisíc" not "jeden tisíc" -->
+            <Replacement oldValue="jeden tisíc" newValue="tisíc" />
+        </Replacements>
+        <Exceptions>
+            <Number value="11" string="jedenásť" />
+            <Number value="12" string="dvanásť" />
+            <Number value="13" string="trinásť" />
+            <Number value="14" string="štrnásť" />
+            <Number value="15" string="pätnásť" />
+            <Number value="16" string="šestnásť" />
+            <Number value="17" string="sedemnásť" />
+            <Number value="18" string="osemnásť" />
+            <Number value="19" string="devätnásť" />
+        </Exceptions>
+    </Language>
+</Numbers>

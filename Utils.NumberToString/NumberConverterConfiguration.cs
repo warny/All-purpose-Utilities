@@ -77,6 +77,15 @@ public class FormVariantType
     [XmlAttribute("forms")]
     public string? Forms { get; set; }
 
+    /// <summary>
+    /// Single output form for the specific dimension value named by <see cref="VariantValue"/>.
+    /// Shorthand for single-value overrides without listing all positional forms.
+    /// Requires <see cref="VariantValue"/> to be set.
+    /// </summary>
+    [XmlAttribute("value")]
+    public string? Value { get; set; }
+
+
     /// <summary>Nested sub-variants that cascade additional constraints.</summary>
     [XmlElement("Variant")]
     public List<FormVariantType>? NestedVariants { get; set; }
@@ -419,6 +428,18 @@ public enum ReplacementScope
     /// suffix rather than a substring.
     /// </summary>
     LastWord,
+
+    /// <summary>
+    /// Indicates that the replacement applies only when <c>oldValue</c> matches the beginning of
+    /// the text, treating the old value as a word-boundary prefix.
+    /// </summary>
+    StartsWith,
+
+    /// <summary>
+    /// Indicates that the replacement applies only when <c>oldValue</c> matches the end of
+    /// the text (similar to <see cref="LastWord"/> but without the word-boundary check).
+    /// </summary>
+    EndsWith,
 }
 
 /// <summary>
@@ -525,6 +546,94 @@ public class FractionListType
     /// </summary>
     [XmlElement("Fraction")]
     public List<FractionType> Fractions { get; set; }
+}
+
+/// <summary>
+/// Describes a single time unit (hour, minute, second) with its singular and plural forms.
+/// </summary>
+public class TimeUnitEntry
+{
+    /// <summary>Canonical unit name (e.g. "hour", "minute", "second").</summary>
+    [XmlAttribute("name")]
+    public string Name { get; set; } = "";
+
+    /// <summary>Singular form of the unit (e.g. "heure").</summary>
+    [XmlAttribute("singular")]
+    public string Singular { get; set; } = "";
+
+    /// <summary>Plural form of the unit (e.g. "heures").</summary>
+    [XmlAttribute("plural")]
+    public string Plural { get; set; } = "";
+
+    /// <summary>
+    /// Optional numeral form to use when count == 1, overriding the standard Convert(1) result.
+    /// Useful when the unit has a grammatical gender that requires a different form of "one"
+    /// (e.g. <c>count1form="eine"</c> for German feminine nouns like "Stunde").
+    /// </summary>
+    [XmlAttribute("count1form")]
+    public string? Count1Form { get; set; }
+}
+
+/// <summary>
+/// Holds time-unit configuration for a language (hours, minutes, seconds).
+/// </summary>
+public class TimeUnitsType
+{
+    /// <summary>Gets or sets the list of time unit definitions.</summary>
+    [XmlElement("Unit")]
+    public List<TimeUnitEntry>? Units { get; set; }
+}
+
+/// <summary>
+/// Holds date-format configuration for a language.
+/// </summary>
+public class DateFormatType
+{
+    /// <summary>
+    /// Pattern for rendering a date. Supported tokens: {month}, {ordinal-day}, {cardinal-day}, {year}.
+    /// Example: "{month} {ordinal-day}, {year}" → "July second, twenty twenty-six".
+    /// </summary>
+    [XmlAttribute("pattern")]
+    public string Pattern { get; set; } = "";
+
+    /// <summary>
+    /// Special string used for the first day of the month (e.g. "premier" in French).
+    /// When set, overrides the ordinal form of day 1 in {ordinal-day}.
+    /// </summary>
+    [XmlAttribute("firstDay")]
+    public string? FirstDay { get; set; }
+
+    /// <summary>Connector between the date and the time when converting a DateTime.</summary>
+    [XmlAttribute("dateTimeConnector")]
+    public string? DateTimeConnector { get; set; }
+}
+
+/// <summary>
+/// Holds multiplicative configuration for a language (e.g. 1 → "once", 2 → "twice").
+/// </summary>
+public class MultiplicativesType
+{
+    /// <summary>Suffix appended to the cardinal for unnamed multiplicatives (e.g. " times").</summary>
+    [XmlAttribute("suffix")]
+    public string? Suffix { get; set; }
+
+    /// <summary>Named multiplicative entries.</summary>
+    [XmlElement("Multiplicative")]
+    public List<MultiplicativeEntryType>? Entries { get; set; }
+}
+
+/// <summary>
+/// Maps a specific multiplier value to its named multiplicative form.
+/// </summary>
+public class MultiplicativeEntryType
+{
+    /// <summary>The multiplier value.</summary>
+    [XmlAttribute("value")]
+    public int Value { get; set; }
+
+    /// <summary>The multiplicative string for this value.</summary>
+    [XmlAttribute("string")]
+    public string String { get; set; } = "";
 }
 
 /// <summary>
@@ -643,11 +752,122 @@ public class LanguageType
     public VariantsType Variants { get; set; }
 
     /// <summary>
-    /// Gets or sets the year-format configuration used by <see cref="NumberToStringConverter.ConvertYear"/>.
+    /// Gets or sets the year-format configuration used by <see cref="NumberToStringConverter.ConvertYear(int)"/>.
     /// When absent, <c>ConvertYear</c> falls back to <c>Convert</c>.
     /// </summary>
     [XmlElement(ElementName = "YearFormat")]
     public YearFormatType? YearFormat { get; set; }
+
+    /// <summary>
+    /// Gets or sets the trigger rules applied at specific points in the conversion pipeline.
+    /// Multiple Trigger elements are processed in declaration order.
+    /// </summary>
+    [XmlElement(ElementName = "Trigger")]
+    public List<TriggerType>? Triggers { get; set; }
+
+    /// <summary>
+    /// Gets or sets the multiplicative configuration (e.g. 1 → "once", 2 → "twice").
+    /// </summary>
+    [XmlElement(ElementName = "Multiplicatives")]
+    public MultiplicativesType? Multiplicatives { get; set; }
+
+    /// <summary>Gets or sets the word inserted between scale groups when the lower group is small.</summary>
+    [XmlAttribute("groupConnector")]
+    public string? GroupConnector { get; set; }
+
+    /// <summary>Gets or sets the threshold (as string) below which the group connector is used.</summary>
+    [XmlAttribute("groupConnectorThreshold")]
+    public string? GroupConnectorThresholdString { get; set; }
+
+    /// <summary>Gets the threshold below which <see cref="GroupConnector"/> is used instead of the regular group separator.</summary>
+    [XmlIgnore]
+    public int GroupConnectorThreshold =>
+        int.TryParse(GroupConnectorThresholdString, out var n) ? n : 100;
+
+    /// <summary>
+    /// Gets or sets the word inserted inside a group between hundreds and the lower part
+    /// when the lower part is below <see cref="IntraGroupConnectorThreshold"/>.
+    /// Example: "linh" for Vietnamese (101 → "một trăm linh một").
+    /// </summary>
+    [XmlAttribute("intraGroupConnector")]
+    public string? IntraGroupConnector { get; set; }
+
+    /// <summary>Gets or sets the threshold (as string) below which the intra-group connector is inserted.</summary>
+    [XmlAttribute("intraGroupConnectorThreshold")]
+    public string? IntraGroupConnectorThresholdString { get; set; }
+
+    /// <summary>Gets the threshold below which <see cref="IntraGroupConnector"/> is inserted.</summary>
+    [XmlIgnore]
+    public int IntraGroupConnectorThreshold =>
+        int.TryParse(IntraGroupConnectorThresholdString, out var n) ? n : 10;
+
+    /// <summary>Gets or sets the time-unit configuration (hours, minutes, seconds).</summary>
+    [XmlElement(ElementName = "TimeUnits")]
+    public TimeUnitsType? TimeUnits { get; set; }
+
+    /// <summary>Gets or sets the date-format configuration.</summary>
+    [XmlElement(ElementName = "DateFormat")]
+    public DateFormatType? DateFormat { get; set; }
+}
+
+/// <summary>
+/// A text-replacement rule inside a <see cref="TriggerType"/>.
+/// Selects the most specific matching variant form, or <see cref="To"/> as the unconditional default.
+/// Uses the same <see cref="FormVariantType"/> nesting as <c>Replacement</c>, <c>Ordinal</c>, and
+/// <c>OrdinalException</c>: leaf nodes provide positional <c>forms</c> or a single <c>value</c>;
+/// intermediate nodes add dimension constraints via <c>type</c>+<c>variant</c>.
+/// </summary>
+public class TriggerReplaceType
+{
+    /// <summary>Gets or sets the text or regex pattern to match.</summary>
+    [XmlAttribute("from")]
+    public string From { get; set; }
+
+    /// <summary>
+    /// Gets or sets the unconditional default replacement.
+    /// May be omitted when all cases are covered by <see cref="FormVariants"/>;
+    /// the first expanded form then serves as default.
+    /// May contain backreferences ($1, ${name}) when <see cref="IsRegex"/> is true.
+    /// </summary>
+    [XmlAttribute("to")]
+    public string? To { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether <see cref="From"/> is treated as a .NET regular expression.
+    /// Defaults to <see langword="false"/> (literal string match).
+    /// </summary>
+    [XmlAttribute("regex")]
+    public bool IsRegex { get; set; }
+
+    /// <summary>
+    /// Per-dimension-value form declarations expanded at load time.
+    /// The most specific matching form is selected at runtime.
+    /// </summary>
+    [XmlElement("Variant")]
+    public List<FormVariantType>? FormVariants { get; set; }
+}
+
+/// <summary>
+/// A trigger that fires at a specific point in the conversion pipeline and applies
+/// text replacements, each optionally selecting a form based on active variant values.
+/// </summary>
+public class TriggerType
+{
+    /// <summary>
+    /// Gets or sets when the trigger fires.
+    /// Syntax: "group", "group(N)", "group(N,M)", "groupWithScale", "groupWithScale(N)", "end".
+    /// Group indices: 0=units, 1=thousands, 2=millions, … (negative values reserved for decimals).
+    /// </summary>
+    [XmlAttribute("executeAt")]
+    public string ExecuteAt { get; set; }
+
+    /// <summary>
+    /// Gets or sets the replacement rules applied when this trigger fires.
+    /// Each Replace is applied independently; for each one the most specific matching
+    /// variant form is selected and applied exactly once.
+    /// </summary>
+    [XmlElement("Replace")]
+    public List<TriggerReplaceType>? Replaces { get; set; }
 }
 
 /// <summary>
@@ -665,7 +885,7 @@ public class YearFormatSplitRangeType
 }
 
 /// <summary>
-/// Configures the year-format algorithm used by <see cref="NumberToStringConverter.ConvertYear"/>.
+/// Configures the year-format algorithm used by <see cref="NumberToStringConverter.ConvertYear(int)"/>.
 /// When present, years within any declared <see cref="SplitRanges"/> are split at the hundreds boundary.
 /// </summary>
 public class YearFormatType
@@ -683,6 +903,15 @@ public class YearFormatType
     /// </summary>
     [XmlAttribute("zeroConnector")]
     public string? ZeroConnector { get; set; }
+
+    /// <summary>
+    /// Gets or sets the suffix appended after the year body for negative (BC) years,
+    /// replacing the default <c>minus</c> prefix.
+    /// Example: <c>"av. J.-C."</c> → -44 reads as "quarante-quatre av. J.-C.".
+    /// When absent, negative years use the language's <c>minus</c> template.
+    /// </summary>
+    [XmlAttribute("beforeChristSuffix")]
+    public string? BeforeChristSuffix { get; set; }
 
     /// <summary>Gets or sets the year ranges for which the split algorithm applies.</summary>
     [XmlElement("SplitRange")]

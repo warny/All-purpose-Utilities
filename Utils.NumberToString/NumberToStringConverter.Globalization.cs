@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -7,6 +8,7 @@ using System.Numerics;
 using System.Reflection;
 using System.Xml;
 using System.Xml.Serialization;
+using Utils.Range;
 
 namespace Utils.NumberToString
 {
@@ -19,35 +21,49 @@ namespace Utils.NumberToString
                 NumberConverterResources.NumberConvertionConfiguration_FR_be_ch,
                 NumberConverterResources.NumberConvertionConfiguration_DE,
                 NumberConverterResources.NumberConvertionConfiguration_DE_ch,
+                NumberConverterResources.NumberConvertionConfiguration_DA,
                 NumberConverterResources.NumberConvertionConfiguration_EN,
                 NumberConverterResources.NumberConvertionConfiguration_ES,
+                NumberConverterResources.NumberConvertionConfiguration_BG,
                 NumberConverterResources.NumberConvertionConfiguration_CA,
                 NumberConverterResources.NumberConvertionConfiguration_EU,
+                NumberConverterResources.NumberConvertionConfiguration_FA,
                 NumberConverterResources.NumberConvertionConfiguration_GL,
                 NumberConverterResources.NumberConvertionConfiguration_IT,
+                NumberConverterResources.NumberConvertionConfiguration_CS,
+                NumberConverterResources.NumberConvertionConfiguration_SK,
                 NumberConverterResources.NumberConvertionConfiguration_FI,
                 NumberConverterResources.NumberConvertionConfiguration_AR,
                 NumberConverterResources.NumberConvertionConfiguration_HE,
+                NumberConverterResources.NumberConvertionConfiguration_HR,
+                NumberConverterResources.NumberConvertionConfiguration_HU,
                 NumberConverterResources.NumberConvertionConfiguration_ZH,
                 NumberConverterResources.NumberConvertionConfiguration_KO,
                 NumberConverterResources.NumberConvertionConfiguration_JA,
                 NumberConverterResources.NumberConvertionConfiguration_PT,
                 NumberConverterResources.NumberConvertionConfiguration_PL,
                 NumberConverterResources.NumberConvertionConfiguration_HI,
+                NumberConverterResources.NumberConvertionConfiguration_ID,
                 NumberConverterResources.NumberConvertionConfiguration_EL,
                 NumberConverterResources.NumberConvertionConfiguration_NL,
+                NumberConverterResources.NumberConvertionConfiguration_NO,
                 NumberConverterResources.NumberConvertionConfiguration_RU,
+                NumberConverterResources.NumberConvertionConfiguration_SV,
+                NumberConverterResources.NumberConvertionConfiguration_SW,
+                NumberConverterResources.NumberConvertionConfiguration_TR,
+                NumberConverterResources.NumberConvertionConfiguration_UK,
+                NumberConverterResources.NumberConvertionConfiguration_VN,
                 NumberConverterResources.NumberConvertionConfiguration_ZU,
                 NumberConverterResources.NumberConvertionConfiguration_EE,
                 NumberConverterResources.NumberConvertionConfiguration_WO
             );
         }
 
-        // Caches configurations for different cultures
-        private static readonly Dictionary<string, NumberToStringConverter> CachedConfigurations = new(StringComparer.InvariantCultureIgnoreCase);
+        // Caches configurations for different cultures — ConcurrentDictionary for thread-safety
+        private static readonly ConcurrentDictionary<string, NumberToStringConverter> CachedConfigurations = new(StringComparer.InvariantCultureIgnoreCase);
 
         // Explicitly registered language-specifics instances, consulted before reflection
-        private static readonly Dictionary<string, INumberToStringLanguageSpecifics> _registeredSpecifics = new(StringComparer.Ordinal);
+        private static readonly ConcurrentDictionary<string, INumberToStringLanguageSpecifics> _registeredSpecifics = new(StringComparer.Ordinal);
 
         /// <summary>
         /// Registers an <see cref="INumberToStringLanguageSpecifics"/> instance under a given type name
@@ -218,6 +234,10 @@ namespace Utils.NumberToString
                 string? dimType = string.IsNullOrEmpty(variant.DimensionType)
                     ? null : NormalizeDimName(variant.DimensionType);
 
+                if (dimType != null && string.IsNullOrEmpty(variant.VariantValue) && string.IsNullOrEmpty(variant.VariantValues))
+                    throw new InvalidOperationException(
+                        $"Variant with type=\"{variant.DimensionType}\" must declare either a \"variant\" or a \"values\" attribute.");
+
                 // values="a,b,c" expands to one rule per value; variant="x" is the single-value form.
                 IEnumerable<string> dimValues =
                     !string.IsNullOrEmpty(variant.VariantValues)
@@ -265,7 +285,12 @@ namespace Utils.NumberToString
                     if (!string.IsNullOrEmpty(node.DimensionType) && !string.IsNullOrEmpty(node.VariantValue))
                         constraints[NormalizeDimName(node.DimensionType)] = node.VariantValue;
 
-                    if (!string.IsNullOrEmpty(node.Forms) && !string.IsNullOrEmpty(node.DimensionType))
+                    if (!string.IsNullOrEmpty(node.Value))
+                    {
+                        // Single-value shorthand: variant="X" value="form" — yields exactly one (constraints, form) pair.
+                        yield return (constraints, node.Value);
+                    }
+                    else if (!string.IsNullOrEmpty(node.Forms) && !string.IsNullOrEmpty(node.DimensionType))
                     {
                         var dimName = NormalizeDimName(node.DimensionType);
                         var dimValues = dims
@@ -326,13 +351,20 @@ namespace Utils.NumberToString
                     return entry;
                 }
 
+                // First forms from elements that omit string=/to= become defaults
+                // (empty-constraint fallback so no-variant calls still resolve correctly).
+                var fallbackExceptions = new Dictionary<long, string>();
+                var fallbackWordRules  = new Dictionary<string, string>();
+
                 foreach (var exc in ordinals?.Exceptions ?? [])
                 {
                     if (exc.FormVariants?.Count > 0)
                     {
+                        bool captureFirst = exc.StringValue == null;
                         foreach (var (c, form) in ExpandFormVariants(exc.FormVariants, parsedDimensions,
                             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)))
                         {
+                            if (captureFirst) { fallbackExceptions.TryAdd(exc.Value, form); captureFirst = false; }
                             var entry = GetOrAddSynthetic(ConstraintKey(c), c);
                             entry.e[exc.Value] = form;
                         }
@@ -343,17 +375,49 @@ namespace Utils.NumberToString
                 {
                     if (rule.FormVariants?.Count > 0)
                     {
+                        bool captureFirst = rule.To == null;
                         foreach (var (c, form) in ExpandFormVariants(rule.FormVariants, parsedDimensions,
                             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)))
                         {
+                            if (captureFirst) { fallbackWordRules.TryAdd(rule.From, form); captureFirst = false; }
                             var entry = GetOrAddSynthetic(ConstraintKey(c), c);
                             entry.w[rule.From] = form;
                         }
                     }
                 }
 
+                // Merge synthetic exceptions/wordRules into any container rule sharing the same
+                // constraint key. Without this, a container rule (suffix=sten, exceptions={}) and
+                // a synthetic rule (exceptions={1:"ersten",...}, suffix=null) both have specificity
+                // 3 and FindBestOrdinalVariant picks whichever appears first, losing the other's data.
+                var containerKeyToIndex = new Dictionary<string, int>(StringComparer.Ordinal);
+                for (int i = 0; i < result.Count; i++)
+                    containerKeyToIndex[ConstraintKey(result[i].Constraints)] = i;
+
                 foreach (var (constraints, exceptions, wordRules) in syntheticByKey.Values)
-                    result.Add(new NumberToStringConverter.OrdinalVariantRule(constraints, exceptions, wordRules, null, null));
+                {
+                    var key = ConstraintKey(constraints);
+                    if (containerKeyToIndex.TryGetValue(key, out var idx))
+                    {
+                        var existing = result[idx];
+                        var mergedExc = new Dictionary<long, string>(existing.Exceptions);
+                        foreach (var kv in exceptions) mergedExc[kv.Key] = kv.Value;
+                        var mergedWr = new Dictionary<string, string>(existing.WordRules);
+                        foreach (var kv in wordRules) mergedWr[kv.Key] = kv.Value;
+                        result[idx] = new NumberToStringConverter.OrdinalVariantRule(
+                            existing.Constraints, mergedExc, mergedWr,
+                            existing.Suffix, existing.RemoveTrailing);
+                    }
+                    else
+                    {
+                        result.Add(new NumberToStringConverter.OrdinalVariantRule(constraints, exceptions, wordRules, null, null));
+                    }
+                }
+
+                if (fallbackExceptions.Count > 0 || fallbackWordRules.Count > 0)
+                    result.Add(new NumberToStringConverter.OrdinalVariantRule(
+                        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
+                        fallbackExceptions, fallbackWordRules, null, null));
 
                 return result;
             }
@@ -365,6 +429,10 @@ namespace Utils.NumberToString
             {
                 string? dimType = string.IsNullOrEmpty(variant.DimensionType)
                     ? null : NormalizeDimName(variant.DimensionType);
+
+                if (dimType != null && string.IsNullOrEmpty(variant.VariantValue) && string.IsNullOrEmpty(variant.VariantValues))
+                    throw new InvalidOperationException(
+                        $"OrdinalVariant with type=\"{variant.DimensionType}\" must declare either a \"variant\" or a \"values\" attribute.");
 
                 // values="a,b,c" expands to one rule per value; variant="x" is the single-value form.
                 IEnumerable<string> dimValues =
@@ -393,6 +461,70 @@ namespace Utils.NumberToString
                     foreach (var child in variant.NestedVariants ?? [])
                         CollectOrdinalVariants(child, constraints, result);
                 }
+            }
+
+            // Parses "group(0,1,-1)" → (Group, [0,1,-1]), "end" → (End, null), etc.
+            static (NumberToStringConverter.TriggerAt At, int[]? Indices) ParseExecuteAt(string raw)
+            {
+                if (string.IsNullOrWhiteSpace(raw)) return (NumberToStringConverter.TriggerAt.End, null);
+                raw = raw.Trim();
+                int parenIdx = raw.IndexOf('(');
+                string core = parenIdx >= 0 ? raw[..parenIdx].Trim() : raw;
+                string? indexPart = parenIdx >= 0 ? raw[(parenIdx + 1)..].TrimEnd(')').Trim() : null;
+
+                var at = core.ToLowerInvariant() switch
+                {
+                    "group"          => NumberToStringConverter.TriggerAt.Group,
+                    "groupwithscale" => NumberToStringConverter.TriggerAt.GroupWithScale,
+                    _                => NumberToStringConverter.TriggerAt.End,
+                };
+
+                int[]? indices = null;
+                if (indexPart != null)
+                {
+                    indices = indexPart.Split(',')
+                        .Select(s => s.Trim()).Where(s => s.Length > 0)
+                        .Select(s => int.Parse(s, System.Globalization.CultureInfo.InvariantCulture))
+                        .ToArray();
+                    if (indices.Length == 0) indices = null;
+                }
+                return (at, indices);
+            }
+
+            IReadOnlyList<NumberToStringConverter.TriggerRule> ParseTriggers(List<TriggerType>? triggers)
+            {
+                if (triggers == null || triggers.Count == 0) return [];
+
+                var result = new List<NumberToStringConverter.TriggerRule>();
+                foreach (var trigger in triggers)
+                {
+                    var (at, indices) = ParseExecuteAt(trigger.ExecuteAt);
+                    var replaces = new List<NumberToStringConverter.TriggerReplace>();
+
+                    foreach (var replace in trigger.Replaces ?? [])
+                    {
+                        string? defaultTo = replace.To;
+                        var forms = new List<(IReadOnlyDictionary<string, string>, string)>();
+
+                        if (replace.FormVariants?.Count > 0)
+                        {
+                            bool captureFirst = defaultTo == null;
+                            foreach (var (constraints, form) in ExpandFormVariants(
+                                replace.FormVariants, parsedDimensions,
+                                new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)))
+                            {
+                                if (captureFirst) { defaultTo = form; captureFirst = false; }
+                                forms.Add((constraints, form));
+                            }
+                        }
+
+                        replaces.Add(new NumberToStringConverter.TriggerReplace(
+                            replace.From, replace.IsRegex, forms, defaultTo));
+                    }
+
+                    result.Add(new NumberToStringConverter.TriggerRule(at, indices, replaces));
+                }
+                return result;
             }
 
             var options = new NumberToStringConverterOptions
@@ -430,13 +562,59 @@ namespace Utils.NumberToString
                 OrdinalVariants = ParseOrdinalVariants(language.Ordinals),
                 VariantDimensions = parsedDimensions,
                 VariantRules = ParseVariantRules(language.Variants),
+                Triggers = ParseTriggers(language.Triggers),
                 YearFormat = language.YearFormat == null ? null : new YearFormatOptions(
                     language.YearFormat.HundredWord,
                     language.YearFormat.ZeroConnector,
-                    language.YearFormat.SplitRanges.Select(r => (r.From, r.To)).ToList()),
+                    language.YearFormat.SplitRanges.Count == 0 ? null
+                        : new IntRange<int>(string.Join(",", language.YearFormat.SplitRanges.Select(r => $"{r.From}-{r.To}"))),
+                    language.YearFormat.BeforeChristSuffix),
+                Multiplicatives = language.Multiplicatives?.Entries
+                    ?.ToDictionary(e => e.Value, e => e.String),
+                MultiplicativeSuffix = language.Multiplicatives?.Suffix,
+                GroupConnector = language.GroupConnector,
+                GroupConnectorThreshold = language.GroupConnectorThreshold,
+                IntraGroupConnector = language.IntraGroupConnector,
+                IntraGroupConnectorThreshold = language.IntraGroupConnectorThreshold,
+                TimeUnits = language.TimeUnits?.Units?
+                    .ToDictionary(u => u.Name, u => (u.Singular, u.Plural, u.Count1Form)),
+                DatePattern = language.DateFormat?.Pattern,
+                DateFirstDay = language.DateFormat?.FirstDay,
+                DateTimeConnector = language.DateFormat?.DateTimeConnector,
             };
 
-            return new NumberToStringConverter(options);
+            var converter = new NumberToStringConverter(options);
+            ValidateVariantReferences(converter, languageIdentifier);
+            return converter;
+        }
+
+        /// <summary>
+        /// Validates that all variant dimension references in TriggerReplace.Forms constraints
+        /// are declared dimensions for the converter. Throws <see cref="InvalidOperationException"/>
+        /// when an unknown dimension key is found.
+        /// </summary>
+        private static void ValidateVariantReferences(NumberToStringConverter converter, string configSource)
+        {
+            var knownDimensions = converter.VariantDimensions
+                .SelectMany(d => new[] { d.Name }.Concat(d.LocalName != null ? [d.LocalName] : []))
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var trigger in converter.Triggers)
+            {
+                foreach (var replace in trigger.Replaces)
+                {
+                    foreach (var (constraints, _) in replace.Forms)
+                    {
+                        foreach (var key in constraints.Keys)
+                        {
+                            if (!knownDimensions.Contains(key))
+                                throw new InvalidOperationException(
+                                    $"[{configSource}] TriggerReplace references unknown variant dimension '{key}'. " +
+                                    $"Declared dimensions: [{string.Join(", ", converter.VariantDimensions.Select(d => d.Name))}].");
+                        }
+                    }
+                }
+            }
         }
 
         /// <summary>

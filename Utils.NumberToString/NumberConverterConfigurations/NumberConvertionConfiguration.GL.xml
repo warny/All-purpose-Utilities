@@ -77,89 +77,55 @@
 		<!--
 		  Galician ordinals: 1-12 use Latin-derived forms; above 12 the system falls
 		  back to the cardinal. Round tens and scale words have explicit word rules.
-		  The feminine variant supplies the feminine ordinal forms for all covered
-		  words, including the feminized unit forms produced by the cardinal variant
-		  ("un→unha", "dous→dúas").
+		  Forms are listed in Dimension order: masculino, feminino.
+		  The first form also serves as the default when no variant is specified.
+		  OrdinalVariants covers only the feminized cardinal forms ("un→unha", "dous→dúas")
+		  which have no corresponding masculine ordinal word rule.
 		-->
 		<Ordinals>
-			<!-- Masculine ordinals 1-12 (irregular) -->
-			<OrdinalException value="1"  string="primeiro" />
-			<OrdinalException value="2"  string="segundo" />
-			<OrdinalException value="3"  string="terceiro" />
-			<OrdinalException value="4"  string="cuarto" />
-			<OrdinalException value="5"  string="quinto" />
-			<OrdinalException value="6"  string="sexto" />
-			<OrdinalException value="7"  string="sétimo" />
-			<OrdinalException value="8"  string="oitavo" />
-			<OrdinalException value="9"  string="noveno" />
-			<OrdinalException value="10" string="décimo" />
-			<OrdinalException value="11" string="undécimo" />
-			<OrdinalException value="12" string="duodécimo" />
+			<!-- Ordinals 1-12 — forms: masculino, feminino -->
+			<OrdinalException value="1">   <Variant type="gender" forms="primeiro,primeira"   /></OrdinalException>
+			<OrdinalException value="2">   <Variant type="gender" forms="segundo,segunda"     /></OrdinalException>
+			<OrdinalException value="3">   <Variant type="gender" forms="terceiro,terceira"   /></OrdinalException>
+			<OrdinalException value="4">   <Variant type="gender" forms="cuarto,cuarta"       /></OrdinalException>
+			<OrdinalException value="5">   <Variant type="gender" forms="quinto,quinta"       /></OrdinalException>
+			<OrdinalException value="6">   <Variant type="gender" forms="sexto,sexta"         /></OrdinalException>
+			<OrdinalException value="7">   <Variant type="gender" forms="sétimo,sétima"       /></OrdinalException>
+			<OrdinalException value="8">   <Variant type="gender" forms="oitavo,oitava"       /></OrdinalException>
+			<OrdinalException value="9">   <Variant type="gender" forms="noveno,novena"       /></OrdinalException>
+			<OrdinalException value="10">  <Variant type="gender" forms="décimo,décima"       /></OrdinalException>
+			<OrdinalException value="11">  <Variant type="gender" forms="undécimo,undécima"   /></OrdinalException>
+			<OrdinalException value="12">  <Variant type="gender" forms="duodécimo,duodécima" /></OrdinalException>
 			<!-- Word rules for units in compounds -->
-			<Ordinal from="un"    to="primeiro" />
-			<Ordinal from="dous"  to="segundo" />
-			<Ordinal from="tres"  to="terceiro" />
-			<Ordinal from="catro" to="cuarto" />
-			<Ordinal from="cinco" to="quinto" />
-			<Ordinal from="seis"  to="sexto" />
-			<Ordinal from="sete"  to="sétimo" />
-			<Ordinal from="oito"  to="oitavo" />
-			<Ordinal from="nove"  to="noveno" />
-			<Ordinal from="dez"   to="décimo" />
+			<Ordinal from="un">    <Variant type="gender" forms="primeiro,primeira" /></Ordinal>
+			<Ordinal from="dous">  <Variant type="gender" forms="segundo,segunda"   /></Ordinal>
+			<Ordinal from="tres">  <Variant type="gender" forms="terceiro,terceira" /></Ordinal>
+			<Ordinal from="catro"> <Variant type="gender" forms="cuarto,cuarta"     /></Ordinal>
+			<Ordinal from="cinco"> <Variant type="gender" forms="quinto,quinta"     /></Ordinal>
+			<Ordinal from="seis">  <Variant type="gender" forms="sexto,sexta"       /></Ordinal>
+			<Ordinal from="sete">  <Variant type="gender" forms="sétimo,sétima"     /></Ordinal>
+			<Ordinal from="oito">  <Variant type="gender" forms="oitavo,oitava"     /></Ordinal>
+			<Ordinal from="nove">  <Variant type="gender" forms="noveno,novena"     /></Ordinal>
+			<Ordinal from="dez">   <Variant type="gender" forms="décimo,décima"     /></Ordinal>
 			<!-- Round tens -->
-			<Ordinal from="vinte"     to="vixésimo" />
-			<Ordinal from="trinta"    to="trixésimo" />
-			<Ordinal from="corenta"   to="cuadragésimo" />
-			<Ordinal from="cincuenta" to="quincuagésimo" />
-			<Ordinal from="sesenta"   to="sexagésimo" />
-			<Ordinal from="setenta"   to="septuagésimo" />
-			<Ordinal from="oitenta"   to="octogésimo" />
-			<Ordinal from="noventa"   to="nonaxésimo" />
+			<Ordinal from="vinte">     <Variant type="gender" forms="vixésimo,vixésima"         /></Ordinal>
+			<Ordinal from="trinta">    <Variant type="gender" forms="trixésimo,trixésima"         /></Ordinal>
+			<Ordinal from="corenta">   <Variant type="gender" forms="cuadragésimo,cuadragésima"   /></Ordinal>
+			<Ordinal from="cincuenta"> <Variant type="gender" forms="quincuagésimo,quincuagésima" /></Ordinal>
+			<Ordinal from="sesenta">   <Variant type="gender" forms="sexagésimo,sexagésima"       /></Ordinal>
+			<Ordinal from="setenta">   <Variant type="gender" forms="septuagésimo,septuagésima"   /></Ordinal>
+			<Ordinal from="oitenta">   <Variant type="gender" forms="octogésimo,octogésima"       /></Ordinal>
+			<Ordinal from="noventa">   <Variant type="gender" forms="nonaxésimo,nonaxésima"       /></Ordinal>
 			<!-- Scale words -->
-			<Ordinal from="cen" to="centésimo" />
-			<Ordinal from="mil" to="milésimo" />
+			<Ordinal from="cen"> <Variant type="gender" forms="centésimo,centésima" /></Ordinal>
+			<Ordinal from="mil"> <Variant type="gender" forms="milésimo,milésima"   /></Ordinal>
 
-			<!-- Feminine variant -->
+			<!-- Feminized cardinal forms not covered by the inline rules above -->
 			<OrdinalVariants>
 				<Variant type="gender" variant="feminino">
-					<OrdinalException value="1"  string="primeira" />
-					<OrdinalException value="2"  string="segunda" />
-					<OrdinalException value="3"  string="terceira" />
-					<OrdinalException value="4"  string="cuarta" />
-					<OrdinalException value="5"  string="quinta" />
-					<OrdinalException value="6"  string="sexta" />
-					<OrdinalException value="7"  string="sétima" />
-					<OrdinalException value="8"  string="oitava" />
-					<OrdinalException value="9"  string="novena" />
-					<OrdinalException value="10" string="décima" />
-					<OrdinalException value="11" string="undécima" />
-					<OrdinalException value="12" string="duodécima" />
-					<!-- Original masculine cardinal forms (for cases not transformed by cardinal variant) -->
-					<Ordinal from="un"    to="primeira" />
-					<Ordinal from="dous"  to="segunda" />
-					<Ordinal from="tres"  to="terceira" />
-					<Ordinal from="catro" to="cuarta" />
-					<Ordinal from="cinco" to="quinta" />
-					<Ordinal from="seis"  to="sexta" />
-					<Ordinal from="sete"  to="sétima" />
-					<Ordinal from="oito"  to="oitava" />
-					<Ordinal from="nove"  to="novena" />
-					<Ordinal from="dez"   to="décima" />
-					<!-- Feminized unit forms (after cardinal "un→unha", "dous→dúas") -->
-					<Ordinal from="unha"  to="primeira" />
-					<Ordinal from="dúas"  to="segunda" />
-					<!-- Round tens (feminine) -->
-					<Ordinal from="vinte"     to="vixésima" />
-					<Ordinal from="trinta"    to="trixésima" />
-					<Ordinal from="corenta"   to="cuadragésima" />
-					<Ordinal from="cincuenta" to="quincuagésima" />
-					<Ordinal from="sesenta"   to="sexagésima" />
-					<Ordinal from="setenta"   to="septuagésima" />
-					<Ordinal from="oitenta"   to="octogésima" />
-					<Ordinal from="noventa"   to="nonaxésima" />
-					<!-- Scale words (feminine) -->
-					<Ordinal from="cen" to="centésima" />
-					<Ordinal from="mil" to="milésima" />
+					<!-- Produced by cardinal variant "un→unha", "dous→dúas" -->
+					<Ordinal from="unha" to="primeira" />
+					<Ordinal from="dúas" to="segunda" />
 				</Variant>
 			</OrdinalVariants>
 		</Ordinals>

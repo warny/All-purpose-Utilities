@@ -27,13 +27,13 @@ dotnet add package omy.Utils.NumberToString
 | PL | Polish | ✓ | — (numbers are invariable in common usage) |
 | NL | Dutch | ✓ | — (numbers are invariable) |
 | RU | Russian | ✓ | — |
-| AR | Arabic | ✓ (1–10 masculine) | — |
+| AR | Arabic | ✓ (1–10) | gender (muzakkar/muʾannath) |
 | HE | Hebrew | ✓ | gender (standalone/zachar/nekeva) |
 | ZH | Chinese | ✓ (prefix 第) | — (no inflection) |
 | JA | Japanese | ✓ (prefix 第) | — (no inflection) |
 | KO | Korean | ✓ (prefix 제) | — (no inflection) |
-| HI | Hindi | ✓ | — |
-| EL | Greek | ✓ | gender (αρσενικό/θηλυκό/ουδέτερο) for 1–12 |
+| HI | Hindi | ✓ | gender (strī) ordinals only |
+| EL | Greek | ✓ | gender (αρσενικό/θηλυκό/ουδέτερο) |
 | FI | Finnish | ✓ | sijamuoto (nominatiivi/partitiivi/genetiivi) |
 | CA | Catalan | ✓ | gender (masculí/femení) |
 | EU | Basque | ✓ | — (no grammatical gender) |
@@ -697,13 +697,44 @@ de.Convert(2_000_000);  // "zwei Millionen"
 
 ---
 
+## Significant-digits precision
+
+Round a number to N most significant digits before converting, using standard rounding (≥ 5 rounds up):
+
+```csharp
+NumberToStringConverter fr = NumberToStringConverter.GetConverter("FR");
+
+fr.Convert(123456789);        // "cent vingt trois millions quatre cent cinquante six mille sept cent quatre-vingt-neuf"
+fr.Convert(123456789, 3);     // "cent vingt trois millions"         (→ 123 000 000)
+fr.Convert(123456789, 2);     // "cent vingt millions"               (→ 120 000 000)
+fr.Convert(123456789, 1);     // "cent millions"                     (→ 100 000 000)
+```
+
+The rounding is done by `MathEx.RoundToSignificantDigits` (from `omy.Utils.Mathematics`) and then
+delegates to the normal `Convert` pipeline, so variants work as expected:
+
+```csharp
+fr.Convert(123456789, 3, "gender=feminin"); // "cent vingt trois millions" (no gender change at this scale)
+```
+
+---
+
 ## Conversion pipeline
 
 ```
 number
-  → ConvertRaw          (digit groups + exceptions + language replacements)
+  → ConvertRaw:
+      for each group (millions, thousands, units, …):
+          ConvertGroup       (digit text for this group)
+          Trigger group      (optional: text-replacements on digit text)
+          append scale name
+          Replacements       (per-language substitutions)
+          Trigger groupWithScale  (optional: replacements on digit+scale text)
+          push to stack
+      assemble all groups
   → AdjustFunction      (optional user-supplied transformation)
   → ApplyVariantRules   (morphological replacements, least to most specific)
+  → Trigger end         (optional: replacements on fully assembled text)
   → FinalizeWriting     (INumberToStringLanguageSpecifics)
   → sign wrapping       (Minus template if negative)
 ```
@@ -713,10 +744,11 @@ number
 ```
 number
   → OrdinalExceptions   (integer-level early exit, e.g. 1 → "premier")
-  → ConvertRaw          (raw cardinal text, no adjustment)
+  → ConvertRaw + Triggers group/groupWithScale
   → ApplyVariantRules   (default variant values)
   → ApplyOrdinalTransform  (word rules + suffix on last word)
   → AdjustFunction      (user transform + FinalizeWriting)
+  → Trigger end
   → sign wrapping
 ```
 
@@ -754,6 +786,7 @@ Language configurations are XML files whose structure is described by
         <Fractions>…</Fractions>               <!-- optional -->
         <Ordinals suffix="…">…</Ordinals>      <!-- optional -->
         <Variants>…</Variants>                 <!-- optional -->
+        <Trigger executeAt="…">…</Trigger>     <!-- optional, one per position -->
 
     </Language>
 </Numbers>
@@ -912,13 +945,19 @@ Allow the decimal part of a number to be expressed with a named denominator.
 
 ### `<Ordinals>` — ordinal conversion
 
-Required to enable `ConvertOrdinal()`. Resolution priority:
-`OrdinalException` → `Ordinal` rule (last word) → suffix (± strip trailing string).
+Required to enable `ConvertOrdinal()`.
+
+**Resolution order** (highest to lowest priority):
+1. Active variant exceptions — from `<OrdinalVariants>`, most-specific constraint first.
+2. Base `<OrdinalException>` — whole-number match.
+3. Active variant word rules — from `<OrdinalVariants>`, most-specific first.
+4. Base `<Ordinal>` word rule — last-word match.
+5. Default suffix (± `removeTrailing` strip).
 
 ```xml
 <Ordinals suffix="ième" removeTrailing="e">
 
-    <!-- Whole-number exceptions (highest priority) -->
+    <!-- Whole-number exceptions (checked before word rules) -->
     <OrdinalException value="1" string="premier" />
 
     <!-- Rules on the last word of the cardinal -->
@@ -935,15 +974,14 @@ Required to enable `ConvertOrdinal()`. Resolution priority:
 
 | Attribute | Description |
 |-----------|-------------|
-| `suffix` | Suffix added to the last word when no rule matches. |
-| `removeTrailing` | String to strip from the end of the last word before adding `suffix` (only when the word ends with this value). |
-| `prefix` | String prepended to the entire ordinal result (e.g. `"第"` for Chinese, `"etsõ "` for Ewe). When `prefix` is set, suffix and word rules are ignored. |
+| `suffix` | Suffix added to the last word when no word rule matches. |
+| `removeTrailing` | String to strip from the end of the last word before adding `suffix` (only when the word actually ends with this value). |
+| `prefix` | String prepended to the entire ordinal result (e.g. `"第"` for Chinese, `"etsõ "` for Ewe). May be combined with exceptions; suffix and word rules are ignored when `prefix` is set. |
 
 ```xml
 <!-- Prefix-based ordinals (ZH, JA, KO, EE) -->
 <Ordinals prefix="第">
     <!-- All numbers: "第" + cardinal -->
-    <!-- Exception: the prefix is added after AdjustFunction, before sign wrapping -->
 </Ordinals>
 
 <!-- Mixed prefix + exception (EE) -->
@@ -953,9 +991,11 @@ Required to enable `ConvertOrdinal()`. Resolution priority:
 </Ordinals>
 ```
 
-Variant-specific ordinal rules (`<OrdinalVariants>`) allow a single ordinal configuration to
-produce gender- or case-inflected ordinals. Resolution order: **variant exceptions → base
-exceptions → cardinal → variant word rules → base word rules → suffix/prefix**.
+#### Variant-specific ordinal rules — `<OrdinalVariants>`
+
+`<OrdinalVariants>` lets a single ordinal configuration produce gender- or case-inflected forms.
+Each `<Variant>` block targets one dimension value via `type=` (dimension name) and `variant=`
+(value). The most-specific matching variant (most constraints) wins.
 
 ```xml
 <Ordinals suffix="ième" removeTrailing="e">
@@ -963,13 +1003,80 @@ exceptions → cardinal → variant word rules → base word rules → suffix/pr
     <Ordinal from="cinq" to="cinquième" />
 
     <OrdinalVariants>
-        <Variant type="gender" variant="féminin">
+        <Variant type="gender" variant="feminin">
             <OrdinalException value="1" string="première" />
-            <Ordinal from="cinq" to="cinquième" />  <!-- suffix -e for feminine -->
+            <!-- overrides suffix for this variant only -->
+            <!-- <suffix override> / <removeTrailing override> also available -->
         </Variant>
     </OrdinalVariants>
 </Ordinals>
 ```
+
+`<Variant>` attributes inside `<OrdinalVariants>`:
+
+| Attribute | Description |
+|-----------|-------------|
+| `type` | Dimension name (e.g. `"gender"`, `"case"`) or its `localName` alias. |
+| `variant` | Single dimension value this block applies to. |
+| `values` | Comma-separated list of values — shorthand for declaring several identical blocks. |
+| `suffix` | Suffix override for this variant (replaces the `<Ordinals>` base suffix). |
+| `removeTrailing` | `removeTrailing` override for this variant. |
+
+Nested `<Variant>` children inherit the parent constraint and add their own (cascade):
+
+```xml
+<OrdinalVariants>
+    <Variant type="gender" variant="feminin">
+        <OrdinalException value="1" string="prima" />
+        <Variant type="case" variant="accusative">
+            <OrdinalException value="1" string="primam" />  <!-- {gender=feminin, case=accusative} -->
+        </Variant>
+    </Variant>
+</OrdinalVariants>
+```
+
+#### Compact multi-gender ordinals with `forms=`
+
+When all dimension values share the same exception or word rule structure, write both forms inline
+instead of duplicating them in `<OrdinalVariants>`. The `<Variant>` child uses the `forms=`
+attribute with one form per dimension value **in declaration order**:
+
+```xml
+<Variants>
+    <Dimension name="gender" values="masculin,feminin" />
+    <!-- cardinal rules, if any -->
+</Variants>
+<Ordinals suffix="ième" removeTrailing="e">
+    <!-- forms are positionally matched to Dimension/@values: masculin, feminin -->
+    <OrdinalException value="1">
+        <Variant type="gender" forms="premier,première" />
+    </OrdinalException>
+    <!-- gender-neutral rules stay as-is -->
+    <Ordinal from="un" to="unième" />
+</Ordinals>
+```
+
+The same syntax applies to word-level rules:
+
+```xml
+<Ordinals>
+    <Ordinal from="uno">
+        <Variant type="gender" forms="primero,primera" />
+    </Ordinal>
+</Ordinals>
+```
+
+**Default form**: when `string=` is absent from `<OrdinalException>` (or `to=` from `<Ordinal>`),
+the **first form** in `forms=` order is automatically registered as the no-variant default.
+`ConvertOrdinal(1)` (no gender) returns `"premier"` without any extra configuration.
+
+**Empty entries**: an empty slot (e.g. `forms=",première"`) skips the corresponding dimension
+value — no rule is generated for that position.
+
+**When to use `<OrdinalVariants>` instead**: use it when a variant requires a suffix override,
+or when some variants need word-form mappings that do not align position-for-position with the
+dimension values (e.g. feminine-only cardinals `"una"/"duas"` that have no masculine counterpart
+among the ordinal word rules).
 
 ---
 
@@ -981,38 +1088,189 @@ Activated by calls to `Convert(number, "dimension=value", …)`.
 ```xml
 <Variants>
 
-    <!-- 1. Dimension declarations (must precede Variant elements) -->
-    <!-- The first value of each dimension is the DEFAULT -->
-    <Dimension name="gender" values="masculin,feminin" />
-    <!-- Multi-dimension example: -->
-    <!-- <Dimension name="kasus" values="nominativ,akkusativ,dativ,genitiv" /> -->
+    <!-- 1. Dimension declarations — must precede all Variant elements.
+            The FIRST value of each dimension is the default. -->
+    <Dimension name="gender" localName="genus" values="maskulin,feminin,neutrum" />
+    <Dimension name="case"   localName="kasus" values="nominativ,akkusativ,dativ,genitiv" />
 
-    <!-- 2. Variant rules -->
-    <!-- Variant with no attributes = wildcard (always applied first) -->
-    <!-- Variant with N attributes = N constraints → higher priority -->
-
-    <Variant gender="feminin">
-        <!-- scope="LastWord": replaces "un" only if it is the last word -->
-        <!-- "un million" → last word = "million" ≠ "un" → no replacement -->
-        <!-- "vingt et un" → last word = "un" → "vingt et une"            -->
-        <Replacement oldValue="un" newValue="une" scope="LastWord" />
+    <!-- 2. One-constraint rule: applied when gender=feminin is active -->
+    <Variant type="gender" variant="feminin">
+        <!-- scope="LastWord": replaces "ein" only at the end of the number text -->
+        <Replacement oldValue="ein" newValue="eine" scope="LastWord" />
     </Variant>
 
-    <!-- 2-constraint example (higher priority than genus alone):
-         see DE configuration for the full genus × kasus implementation -->
-    <!-- <Variant kasus="akkusativ" genus="maskulin">
-        <Replacement oldValue="ein" newValue="einen" scope="LastWord" />
-    </Variant> -->
+    <!-- Multi-value shorthand: both dativ and genitiv share the same body -->
+    <Variant type="case" values="dativ,genitiv">
+        <Replacement oldValue="eine" newValue="einer" scope="LastWord" />
+    </Variant>
+
+    <!-- Nested (2 constraints, higher priority): feminin + dativ -->
+    <Variant type="gender" variant="feminin">
+        <Variant type="case" variant="dativ">
+            <Replacement oldValue="eine" newValue="einer" scope="LastWord" />
+        </Variant>
+    </Variant>
 
 </Variants>
 ```
 
 **Cascade rules**: variants are applied in ascending order of constraint count. A 2-constraint
-variant can therefore override the result of a 1-constraint variant. Undeclared dimensions
-and unknown values are silently ignored.
+variant can therefore override the result of a 1-constraint variant. Unrecognised dimension
+names and unknown values are silently ignored.
+
+`<Dimension>` attributes:
+
+| Attribute | Required | Description |
+|-----------|----------|-------------|
+| `name` | ✓ | Canonical English identifier used in API calls (`"gender"`, `"case"`). |
+| `localName` | | Optional language-specific alias (e.g. `"genus"`, `"sijamuoto"`). Normalised to `name` internally. |
+| `values` | ✓ | Comma-separated ordered list of valid values. The **first** value is the default. |
+
+`<Variant>` attributes inside `<Variants>`:
+
+| Attribute | Description |
+|-----------|-------------|
+| `type` | Dimension name (canonical or `localName`). |
+| `variant` | Single value that must be active. Mutually exclusive with `values`. |
+| `values` | Comma-separated list of values — shorthand for several identical blocks. |
+
+`<Replacement>` elements inside `<Variant>` support child `<Variant>` nodes with `forms=`
+for multi-dimensional replacements (see `FormVariantType` in the XSD):
+
+```xml
+<!-- German "ein" — four accusative/dative/genitive case forms for masculine -->
+<Replacement oldValue="ein" scope="LastWord">
+    <Variant type="gender" variant="maskulin">
+        <Variant type="case" forms="eins,einen,einem,eines" />
+    </Variant>
+</Replacement>
+```
+
+---
+
+### `<YearFormat>` — year conversion
+
+Optional. When present, `ConvertYear(int)` uses a split-at-hundreds algorithm for year values
+within the declared `<SplitRange>` elements. Years outside all ranges fall back to `Convert(year)`.
+
+```xml
+<YearFormat hundredWord="hundred" zeroConnector="oh">
+    <!-- Years 1100–1999: split at hundreds — "nineteen hundred", "nineteen oh five", ... -->
+    <SplitRange from="1100" to="1999" />
+    <!-- Years 2010–2099: also split — "twenty ten", "twenty twenty-one", ... -->
+    <SplitRange from="2010" to="2099" />
+</YearFormat>
+```
+
+| Attribute | Description |
+|-----------|-------------|
+| `hundredWord` | Word appended when the year is a round century (e.g. `"hundred"` → `"nineteen hundred"`). |
+| `zeroConnector` | Connector inserted before single-digit remainders (e.g. `"oh"` → `"twenty oh five"`). |
+
+`<SplitRange from="N" to="M" />` declares an inclusive range `[N, M]` of year values that
+use the split algorithm. Multiple ranges may be declared; ranges outside the list fall back
+to `Convert(year)`.
+
+---
+
+### `<Trigger>` — pipeline hooks
+
+`<Trigger>` elements apply text replacements at a specific moment in the conversion pipeline,
+optionally conditioned on active morphological variant values.
+
+#### Execute positions — `executeAt`
+
+| Value | When it fires | Sees |
+|-------|--------------|------|
+| `"group"` | After `ConvertGroup` for each digit group | Digit text only (no scale name yet) |
+| `"group(N)"` | Same, but only for group N (0 = units, 1 = thousands, 2 = millions, …) | Digit text |
+| `"group(N,M,…)"` | Same, restricted to the listed group indices | Digit text |
+| `"groupWithScale"` | After per-group `Replacements`, before pushing | Digit+scale text |
+| `"groupWithScale(N)"` | Same, restricted to group N | Digit+scale text |
+| `"end"` | After full assembly, `AdjustFunction`, and `ApplyVariantRules` | Final assembled text |
+
+> **Warning**: `group` and `groupWithScale` triggers also fire during `ConvertOrdinal`. If the trigger
+> modifies a word that an ordinal word-rule targets (e.g. it replaces `"ein"` with something else),
+> the ordinal transform may not match. Use `"end"` for post-ordinal corrections.
+
+#### `<Replace>` — replacement rule
+
+Each trigger contains one or more `<Replace>` elements. They are applied in declaration order,
+independently of each other — each selects exactly one form and applies it once.
+
+```xml
+<!-- Simple unconditional replacement -->
+<Trigger executeAt="end">
+    <Replace from="et " to="&amp; " />
+</Trigger>
+
+<!-- Regex replacement -->
+<Trigger executeAt="group(0)">
+    <Replace from="^one$" to="uno" regex="true" />
+</Trigger>
+```
+
+#### Variant-conditioned replacements
+
+When a `<Replace>` has `<Variant>` children, the most specific matching form is selected
+(same best-match algorithm as ordinal variants). The `to=` attribute becomes the unconditional
+default used when no form matches the active variant query.
+
+**Positional forms** — one form per dimension value in declaration order:
+
+```xml
+<Trigger executeAt="end">
+    <!-- genus dimension: maskulin=eins, feminin=eine, neutrum=eins -->
+    <Replace from="ein$" regex="true" to="eins">
+        <Variant type="genus" forms="eins,eine,eins" />
+    </Replace>
+</Trigger>
+```
+
+**Single-value shorthand** with `value=` — overrides exactly one dimension value:
+
+```xml
+<Trigger executeAt="end">
+    <!-- default "eins", but feminin → "eine" -->
+    <Replace from="ein$" regex="true" to="eins">
+        <Variant type="genus" variant="feminin" value="eine" />
+    </Replace>
+</Trigger>
+```
+
+**No default** — when `to=` is absent and no variant matches, the replacement is skipped entirely
+(the regex is never evaluated):
+
+```xml
+<Trigger executeAt="group(0)">
+    <!-- fires only for feminin; other variants are untouched -->
+    <Replace from="uno" regex="false">
+        <Variant type="gender" variant="feminin" value="una" />
+    </Replace>
+</Trigger>
+```
+
+#### `<Replace>` attributes
+
+| Attribute | Required | Description |
+|-----------|----------|-------------|
+| `from` | ✓ | Text or regex pattern to match. |
+| `to` | | Unconditional default replacement. May contain backreferences (`$1`, `${name}`) when `regex="true"`. When absent, the first expanded `<Variant>` form is used as default. |
+| `regex` | | `"true"` to treat `from` as a .NET regular expression. Default: `"false"` (literal match). |
+
+The `<Variant>` children use the same `FormVariantType` syntax as `<Replacement>`, `<Ordinal>`,
+and `<OrdinalException>`:
+
+| Attribute | Description |
+|-----------|-------------|
+| `type` | Dimension name (canonical or `localName`). |
+| `variant` | Single value — marks this node as a constraint leaf. Used with `value=` or nested children. |
+| `forms` | Positional comma-separated forms, one per dimension value in declaration order. Leaf node syntax. |
+| `value` | Single output form for the specific `variant` named by `variant=`. Shorthand for single-value overrides. |
 
 ---
 
 ## Related packages
 
 - `omy.Utils` — contains `NumberToStringConverter`, `NumberToStringConverterOptions`, and all built-in culture XML configurations.
+- `omy.Utils.Mathematics` — provides `MathEx.RoundToSignificantDigits` used by the significant-digits precision overload.

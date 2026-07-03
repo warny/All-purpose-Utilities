@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Numerics;
+using Utils.Range;
 
 namespace Utils.NumberToString;
 
@@ -116,8 +117,57 @@ public sealed class NumberToStringConverterOptions
     /// </summary>
     public IReadOnlyList<NumberToStringConverter.VariantRule> VariantRules { get; set; } = [];
 
-    /// <summary>Year-format configuration used by <see cref="NumberToStringConverter.ConvertYear"/>.</summary>
+    /// <summary>Year-format configuration used by <see cref="NumberToStringConverter.ConvertYear(int)"/>.</summary>
     public YearFormatOptions? YearFormat { get; set; }
+
+    /// <summary>
+    /// Trigger rules applied at specific points in the conversion pipeline.
+    /// Processed in declaration order.
+    /// </summary>
+    public IReadOnlyList<NumberToStringConverter.TriggerRule> Triggers { get; set; } = [];
+
+    /// <summary>Named multiplicative forms (e.g. 2 → "twice"). Key is the multiplier.</summary>
+    public IReadOnlyDictionary<int, string>? Multiplicatives { get; set; }
+
+    /// <summary>Suffix appended to the cardinal for multiplicatives not in <see cref="Multiplicatives"/> (e.g. " times").</summary>
+    public string? MultiplicativeSuffix { get; set; }
+
+    /// <summary>Word inserted between scale groups when the lower group value is below <see cref="GroupConnectorThreshold"/>.</summary>
+    public string? GroupConnector { get; set; }
+
+    /// <summary>Threshold below which <see cref="GroupConnector"/> is used instead of the regular group separator.</summary>
+    public int GroupConnectorThreshold { get; set; } = 100;
+
+    /// <summary>
+    /// Word inserted inside a group between the hundreds and the lower part when the lower part is
+    /// below <see cref="IntraGroupConnectorThreshold"/> (e.g. "linh" for Vietnamese).
+    /// </summary>
+    public string? IntraGroupConnector { get; set; }
+
+    /// <summary>Threshold below which <see cref="IntraGroupConnector"/> is inserted within a group.</summary>
+    public int IntraGroupConnectorThreshold { get; set; } = 10;
+
+    /// <summary>
+    /// Time units keyed by canonical name ("hour", "minute", "second"),
+    /// each with singular, plural, and an optional count-1 override for grammatical gender.
+    /// Required for Convert(TimeSpan/TimeOnly).
+    /// </summary>
+    public IReadOnlyDictionary<string, (string Singular, string Plural, string? Count1Form)>? TimeUnits { get; set; }
+
+    /// <summary>
+    /// Pattern for rendering a date. Supported tokens: {month}, {ordinal-day}, {cardinal-day}, {year}.
+    /// Required for Convert(DateOnly/DateTime).
+    /// </summary>
+    public string? DatePattern { get; set; }
+
+    /// <summary>
+    /// Special string used for the first day of the month (e.g. "premier" in French).
+    /// When set, overrides the ordinal form of day 1 in {ordinal-day}.
+    /// </summary>
+    public string? DateFirstDay { get; set; }
+
+    /// <summary>Connector inserted between date and time when converting a DateTime (defaults to Separator).</summary>
+    public string? DateTimeConnector { get; set; }
 
     /// <summary>Creates an options object with sensible defaults. Required properties
     /// (<see cref="Zero"/>, <see cref="Minus"/>, <see cref="Groups"/>, <see cref="Scale"/>)
@@ -156,7 +206,18 @@ public sealed class NumberToStringConverterOptions
         OrdinalVariants = source.OrdinalVariants;
         VariantDimensions = source.VariantDimensions;
         VariantRules = source.VariantRules;
+        Triggers = source.Triggers;
         YearFormat = source.YearFormat;
+        Multiplicatives = source.Multiplicatives;
+        MultiplicativeSuffix = source.MultiplicativeSuffix;
+        GroupConnector = source.GroupConnector;
+        GroupConnectorThreshold = source.GroupConnectorThreshold;
+        IntraGroupConnector = source.IntraGroupConnector;
+        IntraGroupConnectorThreshold = source.IntraGroupConnectorThreshold;
+        TimeUnits = source.TimeUnits;
+        DatePattern = source.DatePattern;
+        DateFirstDay = source.DateFirstDay;
+        DateTimeConnector = source.DateTimeConnector;
     }
 
     /// <summary>
@@ -174,12 +235,21 @@ public sealed class NumberToStringConverterOptions
 }
 
 /// <summary>
-/// Immutable year-format options that drive <see cref="NumberToStringConverter.ConvertYear"/>.
+/// Immutable year-format options that drive <see cref="NumberToStringConverter.ConvertYear(int)"/>.
 /// </summary>
 /// <param name="HundredWord">Word appended for round centuries (e.g. "hundred").</param>
 /// <param name="ZeroConnector">Connector before single-digit remainders (e.g. "oh").</param>
-/// <param name="SplitRanges">Year ranges where the split-at-hundreds algorithm applies.</param>
+/// <param name="SplitRanges">
+/// Integer ranges for which the split-at-hundreds algorithm applies.
+/// Years outside all declared ranges fall back to <c>Convert(year)</c>.
+/// </param>
+/// <param name="BeforeChristSuffix">
+/// Optional suffix appended after the year body for negative (BC) years instead of the
+/// <c>minus</c> prefix (e.g. <c>"av. J.-C."</c> → "quarante-quatre av. J.-C.").
+/// When <see langword="null"/>, negative years use the standard <c>minus</c> template.
+/// </param>
 public record YearFormatOptions(
     string? HundredWord,
     string? ZeroConnector,
-    IReadOnlyList<(int From, int To)> SplitRanges);
+    IntRange<int>? SplitRanges,
+    string? BeforeChristSuffix = null);

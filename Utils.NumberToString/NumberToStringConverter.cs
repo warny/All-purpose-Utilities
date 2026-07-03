@@ -6,6 +6,7 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Text.RegularExpressions;
+using Utils.Mathematics;
 using Utils.Numerics;
 using Utils.Objects;
 using Utils.String;
@@ -32,11 +33,16 @@ namespace Utils.NumberToString
         /// <returns>The corresponding NumberToStringConverter instance.</returns>
         public static NumberToStringConverter GetConverter(string culture)
         {
-            culture.Length.ArgMustBeIn([2, 5]);  // Ensure culture code length is valid.
+            ArgumentException.ThrowIfNullOrEmpty(culture);
+            if (culture.Length < 2)
+                throw new ArgumentException("Culture code must be at least 2 characters.", nameof(culture));
 
             if (CachedConfigurations.TryGetValue(culture, out var result)) return result;
-            if (culture.Length == 5) return GetConverter(culture[..2]);  // Fallback to the language-only code if region-specific code is not found.
-            return CachedConfigurations["EN"];  // Default to English converter.
+            // Recursively strip the last BCP-47 subtag (e.g. "zh-Hans-CN" → "zh-Hans" → "zh")
+            // until a match is found or only the 2-letter language code remains.
+            int lastSep = culture.LastIndexOf('-');
+            if (lastSep >= 2) return GetConverter(culture[..lastSep]);
+            return CachedConfigurations["EN"];
         }
 
         /// <summary>
@@ -67,7 +73,9 @@ namespace Utils.NumberToString
                 .ToImmutableArray();
             var globalReplacements = Replacements.Where(r => !r.OnScale.HasValue).ToImmutableArray();
             _replacementLookup = globalReplacements.ToImmutableDictionary(r => r.OldValue, r => r.NewValue, StringComparer.Ordinal);
-            _substringReplacements = globalReplacements.Where(r => r.Scope == ReplacementScope.Anywhere).ToImmutableArray();
+            _substringReplacements = globalReplacements.Where(r =>
+                r.Scope is ReplacementScope.Anywhere or ReplacementScope.StartsWith or ReplacementScope.EndsWith)
+                .ToImmutableArray();
             _scaleReplacements = Replacements
                 .Where(r => r.OnScale.HasValue)
                 .GroupBy(r => r.OnScale!.Value)
@@ -91,7 +99,19 @@ namespace Utils.NumberToString
             VariantDimensions = (options.VariantDimensions ?? []).ToImmutableArray();
             VariantRules = (options.VariantRules ?? []).ToImmutableArray();
             _hasScaleSpecificVariantRules = VariantRules.Any(r => r.Replacements.Any(rr => rr.OnScale.HasValue));
+            Triggers = (options.Triggers ?? []).ToImmutableArray();
             _yearFormat = options.YearFormat;
+            Multiplicatives = options.Multiplicatives?.ToImmutableDictionary() ?? ImmutableDictionary<int, string>.Empty;
+            MultiplicativeSuffix = options.MultiplicativeSuffix;
+            _groupConnector = options.GroupConnector;
+            _groupConnectorThreshold = options.GroupConnectorThreshold;
+            _intraGroupConnector = options.IntraGroupConnector;
+            _intraGroupConnectorThreshold = options.IntraGroupConnectorThreshold;
+            _timeUnits = options.TimeUnits?.ToImmutableDictionary()
+                         ?? ImmutableDictionary<string, (string Singular, string Plural, string? Count1Form)>.Empty;
+            _datePattern = options.DatePattern;
+            _dateFirstDay = options.DateFirstDay;
+            _dateTimeConnector = options.DateTimeConnector;
             // Index both canonical name and localName so both are accepted in API calls and XML constraints.
             _dimensionIndex = VariantDimensions
                 .SelectMany(d => string.IsNullOrEmpty(d.LocalName)
@@ -208,10 +228,55 @@ namespace Utils.NumberToString
         /// </summary>
         public IReadOnlyList<VariantRule> VariantRules { get; }
 
+        /// <summary>
+        /// Trigger rules applied at specific points in the conversion pipeline.
+        /// Processed in declaration order.
+        /// </summary>
+        public IReadOnlyList<TriggerRule> Triggers { get; }
+
         private readonly YearFormatOptions? _yearFormat;
 
         /// <summary>Year-format options, or <see langword="null"/> when not configured.</summary>
         internal YearFormatOptions? YearFormat => _yearFormat;
+
+        /// <summary>Named multiplicative forms keyed by multiplier value.</summary>
+        public IReadOnlyDictionary<int, string> Multiplicatives { get; }
+
+        /// <summary>Suffix used for unnamed multiplicatives (e.g. " times").</summary>
+        public string? MultiplicativeSuffix { get; }
+
+        /// <summary>When <see langword="true"/>, calling <see cref="ConvertMultiplicative"/> will produce a result.</summary>
+        public bool SupportsMultiplicative => Multiplicatives.Count > 0 || MultiplicativeSuffix != null;
+
+        /// <summary>Gets the group connector used between scale groups when the lower group is small.</summary>
+        public string? GroupConnector => _groupConnector;
+
+        /// <summary>Gets the threshold below which the group connector is used.</summary>
+        public int GroupConnectorThreshold => (int)_groupConnectorThreshold;
+
+        /// <summary>Gets the intra-group connector inserted between hundreds and lower parts (e.g. "linh" for VN).</summary>
+        public string? IntraGroupConnector => _intraGroupConnector;
+
+        /// <summary>Gets the threshold below which the intra-group connector is inserted.</summary>
+        public int IntraGroupConnectorThreshold => (int)_intraGroupConnectorThreshold;
+
+        /// <inheritdoc/>
+        public bool SupportsTimeConversion => _timeUnits.Count > 0;
+
+        /// <inheritdoc/>
+        public bool SupportsDateConversion => _datePattern != null;
+
+        /// <summary>Gets the time units for time conversion (hours, minutes, seconds).</summary>
+        public IReadOnlyDictionary<string, (string Singular, string Plural, string? Count1Form)> TimeUnits => _timeUnits;
+
+        /// <summary>Gets the date pattern string (tokens: {month}, {ordinal-day}, {cardinal-day}, {year}).</summary>
+        public string? DatePattern => _datePattern;
+
+        /// <summary>Gets the special string for day 1 in date ordinal rendering (e.g. "premier" in French).</summary>
+        public string? DateFirstDay => _dateFirstDay;
+
+        /// <summary>Gets the connector inserted between date and time in DateTime conversion.</summary>
+        public string? DateTimeConnector => _dateTimeConnector;
 
         /// <inheritdoc/>
         public bool SupportsOrdinals =>
@@ -226,12 +291,89 @@ namespace Utils.NumberToString
         private readonly bool _hasScaleSpecificVariantRules;
         private readonly ImmutableDictionary<string, VariantDimension> _dimensionIndex;
         private readonly Func<string, string>? _rawAdjustFunction;
+        private readonly string? _groupConnector;
+        private readonly long _groupConnectorThreshold;
+        private readonly string? _intraGroupConnector;
+        private readonly long _intraGroupConnectorThreshold;
+        private readonly ImmutableDictionary<string, (string Singular, string Plural, string? Count1Form)> _timeUnits;
+        private readonly string? _datePattern;
+        private readonly string? _dateFirstDay;
+        private readonly string? _dateTimeConnector;
 
         /// <summary>
         /// The raw adjust function before composition with <see cref="LanguageSpecifics"/>.
         /// Used by <see cref="NumberToStringConverterOptions"/> for round-trip cloning.
         /// </summary>
         internal Func<string, string>? RawAdjustFunction => _rawAdjustFunction;
+
+        /// <summary>
+        /// Specifies when a <see cref="TriggerRule"/> fires in the conversion pipeline.
+        /// </summary>
+        public enum TriggerAt
+        {
+            /// <summary>Fires on the digit-only text of a group, before the scale name is appended.</summary>
+            Group,
+            /// <summary>Fires on the digit+scale text of a group, after per-group Replacements are applied.</summary>
+            GroupWithScale,
+            /// <summary>Fires on the fully assembled text, after global Replacements and Variants, before FinalizeWriting.</summary>
+            End,
+        }
+
+        /// <summary>
+        /// A compiled text-replacement rule inside a <see cref="TriggerRule"/>.
+        /// When the trigger fires, the most specific matching variant form is selected and
+        /// applied exactly once; <see cref="DefaultTo"/> is used when nothing matches.
+        /// </summary>
+        public sealed class TriggerReplace
+        {
+            /// <summary>Initializes a new <see cref="TriggerReplace"/>.</summary>
+            public TriggerReplace(
+                string from,
+                bool isRegex,
+                IReadOnlyList<(IReadOnlyDictionary<string, string> Constraints, string To)> forms,
+                string? defaultTo)
+            {
+                From = from;
+                IsRegex = isRegex;
+                CompiledRegex = isRegex ? new Regex(from, RegexOptions.Compiled) : null;
+                Forms = forms;
+                DefaultTo = defaultTo;
+            }
+            /// <summary>Gets the text or regex pattern to match.</summary>
+            public string From { get; }
+            /// <summary>Gets whether <see cref="From"/> is a .NET regular expression.</summary>
+            public bool IsRegex { get; }
+            /// <summary>Gets the pre-compiled regex when <see cref="IsRegex"/> is <see langword="true"/>; otherwise <see langword="null"/>.</summary>
+            public Regex? CompiledRegex { get; }
+            /// <summary>
+            /// Gets the variant-specific forms ordered by declaration order.
+            /// At runtime the most specific match (most constraints) wins.
+            /// </summary>
+            public IReadOnlyList<(IReadOnlyDictionary<string, string> Constraints, string To)> Forms { get; }
+            /// <summary>Gets the unconditional default replacement used when no variant form matches.</summary>
+            public string? DefaultTo { get; }
+        }
+
+        /// <summary>
+        /// A trigger that fires at a specific position in the conversion pipeline and applies
+        /// one or more text replacements, each optionally variant-conditioned.
+        /// </summary>
+        public sealed class TriggerRule
+        {
+            /// <summary>Initializes a new <see cref="TriggerRule"/>.</summary>
+            public TriggerRule(TriggerAt executeAt, int[]? groupIndices, IReadOnlyList<TriggerReplace> replaces)
+            {
+                ExecuteAt = executeAt;
+                GroupIndices = groupIndices;
+                Replaces = replaces;
+            }
+            /// <summary>Gets when this trigger fires.</summary>
+            public TriggerAt ExecuteAt { get; }
+            /// <summary>Gets the group indices this trigger is restricted to, or <see langword="null"/> for all groups.</summary>
+            public int[]? GroupIndices { get; }
+            /// <summary>Gets the replacement rules applied when this trigger fires.</summary>
+            public IReadOnlyList<TriggerReplace> Replaces { get; }
+        }
 
         /// <summary>
         /// Converts an integer to its string representation.
@@ -259,69 +401,89 @@ namespace Utils.NumberToString
         /// <returns>The formatted number with the requested variants applied.</returns>
         public string Convert(long number, params string[] variants) => Convert((BigInteger)number, variants);
 
+        /// <inheritdoc cref="INumberToStringConverter.Convert(int, int, string[])"/>
+        public string Convert(int number, int significantDigits, params string[] variants)
+            => Convert((BigInteger)number, significantDigits, variants);
+
+        /// <inheritdoc cref="INumberToStringConverter.Convert(long, int, string[])"/>
+        public string Convert(long number, int significantDigits, params string[] variants)
+            => Convert((BigInteger)number, significantDigits, variants);
+
         /// <summary>
         /// Converts a decimal number to its string representation.
         /// </summary>
-        public string Convert(decimal number)
-        {
-            bool isNegative = number < 0;
-            if (isNegative) number = -number;
-
-            decimal integerPart = decimal.Truncate(number);
-            decimal fraction = number - integerPart;
-
-            var result = new StringBuilder(Convert((BigInteger)integerPart));
-
-            if (fraction != 0)
-            {
-                string digits = fraction.ToString(System.Globalization.CultureInfo.InvariantCulture).Split('.')[1];
-                result.Append(Separator).Append(DecimalSeparator).Append(Separator);
-
-                if (Fractions.TryGetValue(digits.Length, out var suffix))
-                {
-                    var valueText = Convert(BigInteger.Parse(digits)).Replace("-", " ");
-                    result.Append(valueText).Append(Separator).Append(suffix.ToPlural(long.Parse(digits)));
-                }
-                else
-                {
-                    foreach (char c in digits)
-                    {
-                        int d = c - '0';
-                        result.Append(Groups[1][d].StringValue).Append(Separator);
-                    }
-                }
-            }
-
-            var final = result.ToString().Trim();
-            return isNegative ? Minus.Replace("*", final) : AdjustFunction(final);
-        }
+        public string Convert(decimal number) => Convert(number, -1, null, []);
 
         /// <summary>
-        /// Converts a decimal number to its string representation, applying the specified variant parameters.
-        /// Variants are applied to the integer part; the fractional suffix is converted without variants.
+        /// Converts a decimal number to its string representation, applying the specified
+        /// morphological variant parameters.
+        /// </summary>
+        public string Convert(decimal number, params string[] variants)
+            => Convert(number, -1, null, variants);
+
+        /// <summary>
+        /// Converts a decimal number to its string representation with a mandatory number of
+        /// decimal digits, applying optional variant parameters.
         /// </summary>
         /// <param name="number">The value to convert.</param>
+        /// <param name="mandatoryDecimalDigits">
+        /// Negative: show the decimal part as-is. Zero: suppress the decimal part entirely.
+        /// Positive: round to N decimal places and always show exactly N digits (zero-padded).
+        /// </param>
         /// <param name="variants">Zero or more <c>"dimension=value"</c> strings.</param>
-        /// <returns>The formatted number with the requested variants applied.</returns>
-        public string Convert(decimal number, params string[] variants)
+        public string Convert(decimal number, int mandatoryDecimalDigits, params string[] variants)
+            => Convert(number, mandatoryDecimalDigits, null, variants);
+
+        /// <summary>
+        /// Converts a decimal number to its string representation with a mandatory number of
+        /// decimal digits, custom decimal formatting options, and optional variant parameters.
+        /// </summary>
+        /// <param name="number">The value to convert.</param>
+        /// <param name="mandatoryDecimalDigits">
+        /// Negative: show the decimal part as-is. Zero: suppress the decimal part entirely.
+        /// Positive: round to N decimal places and always show exactly N digits (zero-padded).
+        /// </param>
+        /// <param name="options">
+        /// Optional overrides for the decimal separator word, the denomination suffix, and
+        /// zero-decimal suppression. When <see langword="null"/>, the language defaults apply.
+        /// </param>
+        /// <param name="variants">Zero or more <c>"dimension=value"</c> strings.</param>
+        public string Convert(decimal number, int mandatoryDecimalDigits, DecimalFormatOptions? options, params string[] variants)
         {
             bool isNegative = number < 0;
             if (isNegative) number = -number;
+
+            if (mandatoryDecimalDigits >= 0)
+                number = decimal.Round(number, mandatoryDecimalDigits, MidpointRounding.AwayFromZero);
 
             decimal integerPart = decimal.Truncate(number);
             decimal fraction = number - integerPart;
 
             var result = new StringBuilder(Convert((BigInteger)integerPart, variants));
 
-            if (fraction != 0)
-            {
-                string digits = fraction.ToString(System.Globalization.CultureInfo.InvariantCulture).Split('.')[1];
-                result.Append(Separator).Append(DecimalSeparator).Append(Separator);
+            string digits = fraction != 0
+                ? fraction.ToString(System.Globalization.CultureInfo.InvariantCulture).Split('.')[1]
+                : string.Empty;
 
-                if (Fractions.TryGetValue(digits.Length, out var suffix))
+            if (mandatoryDecimalDigits > 0 && digits.Length < mandatoryDecimalDigits)
+                digits = digits.PadRight(mandatoryDecimalDigits, '0');
+
+            bool isZeroDecimal = digits.Length == 0 || BigInteger.Parse(digits) == 0;
+            if (isZeroDecimal && (options?.OmitZeroDecimals ?? false))
+                digits = string.Empty;
+
+            if (digits.Length > 0)
+            {
+                string separatorWord = options?.DecimalSeparator ?? DecimalSeparator;
+                result.Append(Separator).Append(separatorWord.ToPlural((long)integerPart)).Append(Separator);
+
+                Fractions.TryGetValue(digits.Length, out var configuredSuffix);
+                string? activeSuffix = options?.DecimalSuffix ?? configuredSuffix;
+
+                if (activeSuffix != null)
                 {
-                    var valueText = Convert(BigInteger.Parse(digits)).Replace("-", " ");
-                    result.Append(valueText).Append(Separator).Append(suffix.ToPlural(long.Parse(digits)));
+                    var valueText = Convert(BigInteger.Parse(digits), variants).Replace("-", " ");
+                    result.Append(valueText).Append(Separator).Append(activeSuffix.ToPlural(long.Parse(digits)));
                 }
                 else
                 {
@@ -335,20 +497,6 @@ namespace Utils.NumberToString
 
             var final = result.ToString().Trim();
             return isNegative ? Minus.Replace("*", final) : AdjustFunction(final);
-        }
-
-        /// <summary>
-        /// Converts a rational <see cref="Number"/> to its string representation, applying variant parameters.
-        /// Variants are applied to the integer part; for non-integer rationals the fraction text is unaffected.
-        /// </summary>
-        /// <param name="number">The rational number to convert.</param>
-        /// <param name="variants">Zero or more <c>"dimension=value"</c> strings.</param>
-        /// <returns>The formatted number with variants applied.</returns>
-        public string Convert(Number number, params string[] variants)
-        {
-            if (number.Denominator.IsOne)
-                return Convert(number.Numerator, variants);
-            return Convert(number);
         }
 
         /// <summary>
@@ -376,6 +524,22 @@ namespace Utils.NumberToString
             return isNegative ? Minus.Replace("*", final) : AdjustFunction(final);
         }
 
+        /// <inheritdoc cref="INumberToStringConverter.Convert(double, string[])"/>
+        public string Convert(double number, params string[] variants)
+        {
+            if (decimal.TryParse(
+                    number.ToString("R", System.Globalization.CultureInfo.InvariantCulture),
+                    System.Globalization.NumberStyles.Any,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    out decimal d))
+                return Convert(d, variants);
+            return Convert(new System.Numerics.BigInteger(Math.Truncate(number)), variants);
+        }
+
+        /// <inheritdoc cref="INumberToStringConverter.Convert(float, string[])"/>
+        public string Convert(float number, params string[] variants)
+            => Convert((double)number, variants);
+
         /// <summary>
         /// Converts a BigInteger to its string representation using the default variant
         /// (the first declared value of each dimension).
@@ -384,6 +548,19 @@ namespace Utils.NumberToString
         /// Thrown when <paramref name="number"/> exceeds <see cref="MaxNumber"/>.
         /// </exception>
         public string Convert(BigInteger number) => Convert(number, []);
+
+        /// <summary>
+        /// Converts <paramref name="number"/> rounded to <paramref name="significantDigits"/> most significant
+        /// digits into its string representation, applying optional variant parameters.
+        /// Uses standard rounding (≥ 5 rounds up). For example, 123456789 with 3 significant digits
+        /// rounds to 123000000 before conversion.
+        /// </summary>
+        /// <param name="number">The value to convert.</param>
+        /// <param name="significantDigits">Number of significant digits to keep. Must be ≥ 1.</param>
+        /// <param name="variants">Zero or more <c>"dimension=value"</c> strings.</param>
+        /// <returns>The formatted rounded number with variants applied.</returns>
+        public string Convert(BigInteger number, int significantDigits, params string[] variants)
+            => Convert(MathEx.RoundToSignificantDigits(number, significantDigits), variants);
 
         /// <summary>
         /// Converts a BigInteger to its string representation, applying the specified morphological
@@ -409,9 +586,10 @@ namespace Utils.NumberToString
             BigInteger abs = isNegative ? BigInteger.Abs(number) : number;
 
             var query = BuildVariantQuery(variants);
-            string raw = ConvertRaw(abs, _hasScaleSpecificVariantRules ? query : null);
+            string raw = ConvertRaw(abs, query);
             if (_rawAdjustFunction != null) raw = _rawAdjustFunction(raw);
             raw = ApplyVariantRules(raw, query);
+            raw = ApplyTriggers(raw, TriggerAt.End, null, query);
             string final = LanguageSpecifics.FinalizeWriting(LanguageIdentifier, raw);
 
             return isNegative ? Minus.Replace("*", final) : final;
@@ -419,8 +597,6 @@ namespace Utils.NumberToString
 
         /// <summary>
         /// Produces the raw text for a positive number without any adjustment or finalization.
-        /// When <paramref name="variantQuery"/> is supplied, scale-specific variant rules are
-        /// applied per-group before the groups are concatenated.
         /// </summary>
         private string ConvertRaw(BigInteger abs, IReadOnlyDictionary<string, string>? variantQuery = null)
         {
@@ -430,7 +606,7 @@ namespace Utils.NumberToString
             var maxGroup = Groups.Keys.Max();
             var groupValue = BigInteger.Pow(10, maxGroup);
             int groupNumber = 0;
-            var groupsValues = new Stack<string>();
+            var groupsValues = new Stack<(string text, long numericValue)>();
 
             BigInteger remaining = abs;
             while (remaining != 0)
@@ -438,11 +614,16 @@ namespace Utils.NumberToString
                 var group = (long)(remaining % groupValue);
                 if (group != 0)
                 {
-                    string resValue = ConvertGroup(maxGroup, group) + Separator + Scale.GetScaleName(groupNumber).ToPlural(group);
+                    string digits = ConvertGroup(maxGroup, group);
+                    digits = ApplyTriggers(digits, TriggerAt.Group, groupNumber, variantQuery);
+
+                    string resValue = digits + Separator + Scale.GetScaleName(groupNumber).ToPlural(group);
                     resValue = ApplyReplacements(resValue, groupNumber);
-                    if (variantQuery != null)
+                    if (variantQuery != null && _hasScaleSpecificVariantRules)
                         resValue = ApplyVariantRulesForScale(resValue, variantQuery, groupNumber);
-                    groupsValues.Push(resValue.Trim());
+                    resValue = ApplyTriggers(resValue, TriggerAt.GroupWithScale, groupNumber, variantQuery);
+
+                    groupsValues.Push((resValue.Trim(), group));
                 }
                 remaining /= groupValue;
                 groupNumber++;
@@ -450,7 +631,18 @@ namespace Utils.NumberToString
 
             var result = new StringBuilder();
             while (groupsValues.Count > 0)
-                result.Append(groupsValues.Pop().Trim()).Append(GroupSeparator).Append(Separator);
+            {
+                var (text, _) = groupsValues.Pop();
+                result.Append(text);
+                if (groupsValues.Count > 0)
+                {
+                    long nextValue = groupsValues.Peek().numericValue;
+                    if (_groupConnector != null && nextValue < _groupConnectorThreshold)
+                        result.Append(Separator).Append(_groupConnector).Append(Separator);
+                    else
+                        result.Append(GroupSeparator).Append(Separator);
+                }
+            }
 
             var finalResult = result.ToString().TrimEnd(GroupSeparator.ToCharArray().Union(Separator.ToCharArray()).ToArray());
             return ApplyReplacements(finalResult);
@@ -488,8 +680,7 @@ namespace Utils.NumberToString
 
         /// <summary>
         /// Applies variant rules to <paramref name="text"/> in order of ascending specificity.
-        /// Scale-specific replacements (those with <see cref="ReplacementRule.OnScale"/> set) are
-        /// skipped here — they are applied per-group inside <see cref="ConvertRaw"/>.
+        /// A rule matches when all its dimension constraints are satisfied by <paramref name="query"/>.
         /// </summary>
         private string ApplyVariantRules(string text, IReadOnlyDictionary<string, string> query)
         {
@@ -545,11 +736,75 @@ namespace Utils.NumberToString
         private static string ApplyVariantReplacement(string text, ReplacementRule replacement) =>
             replacement.Scope switch
             {
-                ReplacementScope.Standalone => text == replacement.OldValue ? replacement.NewValue : text,
-                ReplacementScope.Anywhere   => text.Replace(replacement.OldValue, replacement.NewValue),
-                ReplacementScope.LastWord   => ApplyLastWordReplacement(text, replacement.OldValue, replacement.NewValue),
-                _                           => text,
+                ReplacementScope.Standalone  => text == replacement.OldValue ? replacement.NewValue : text,
+                ReplacementScope.Anywhere    => text.Replace(replacement.OldValue, replacement.NewValue),
+                ReplacementScope.LastWord    => ApplyLastWordReplacement(text, replacement.OldValue, replacement.NewValue),
+                ReplacementScope.StartsWith  => text.StartsWith(replacement.OldValue, StringComparison.Ordinal)
+                    ? replacement.NewValue + text[replacement.OldValue.Length..]
+                    : text,
+                ReplacementScope.EndsWith    => text.EndsWith(replacement.OldValue, StringComparison.Ordinal)
+                    ? text[..^replacement.OldValue.Length] + replacement.NewValue
+                    : text,
+                _                            => text,
             };
+
+        /// <summary>
+        /// Applies all matching triggers for the given pipeline position to <paramref name="text"/>.
+        /// A trigger matches when its <see cref="TriggerRule.ExecuteAt"/> equals <paramref name="at"/>
+        /// and, if group indices are specified, <paramref name="groupIndex"/> is among them.
+        /// Each Replace within a matching trigger selects the most specific form that satisfies
+        /// <paramref name="query"/>, falling back to <see cref="TriggerReplace.DefaultTo"/>.
+        /// </summary>
+        private string ApplyTriggers(string text, TriggerAt at, int? groupIndex, IReadOnlyDictionary<string, string>? query)
+        {
+            if (Triggers.Count == 0) return text;
+
+            foreach (var trigger in Triggers)
+            {
+                if (trigger.ExecuteAt != at) continue;
+                if (trigger.GroupIndices != null
+                    && (groupIndex == null || !Array.Exists(trigger.GroupIndices, i => i == groupIndex.Value)))
+                    continue;
+
+                foreach (var replace in trigger.Replaces)
+                    text = ApplyTriggerReplace(text, replace, query);
+            }
+            return text;
+        }
+
+        /// <summary>
+        /// Applies a single trigger replace to <paramref name="text"/>, selecting the most specific
+        /// variant form that matches <paramref name="query"/>. Falls back to <see cref="TriggerReplace.DefaultTo"/>.
+        /// Skips the replacement entirely when neither a matching form nor a default exists.
+        /// </summary>
+        private static string ApplyTriggerReplace(string text, TriggerReplace replace, IReadOnlyDictionary<string, string>? query)
+        {
+            string? bestTo = null;
+            int bestScore = -1;
+
+            if (query != null)
+            {
+                foreach (var (constraints, to) in replace.Forms)
+                {
+                    bool matches = constraints.All(c =>
+                        query.TryGetValue(c.Key, out var v) &&
+                        string.Equals(v, c.Value, StringComparison.OrdinalIgnoreCase));
+
+                    if (matches && constraints.Count > bestScore)
+                    {
+                        bestTo = to;
+                        bestScore = constraints.Count;
+                    }
+                }
+            }
+
+            string? effectiveTo = bestTo ?? replace.DefaultTo;
+            if (effectiveTo == null) return text;
+
+            return replace.CompiledRegex != null
+                ? replace.CompiledRegex.Replace(text, effectiveTo)
+                : text.Replace(replace.From, effectiveTo, StringComparison.Ordinal);
+        }
 
         /// <summary>
         /// Replaces <paramref name="oldValue"/> at the end of <paramref name="text"/> when it
@@ -590,7 +845,17 @@ namespace Utils.NumberToString
                 return exactMatch;
 
             foreach (var replacement in _substringReplacements)
-                value = value.Replace(replacement.OldValue, replacement.NewValue);
+            {
+                value = replacement.Scope switch
+                {
+                    ReplacementScope.Anywhere => value.Replace(replacement.OldValue, replacement.NewValue),
+                    ReplacementScope.StartsWith when value.StartsWith(replacement.OldValue, StringComparison.Ordinal)
+                        => replacement.NewValue + value[replacement.OldValue.Length..],
+                    ReplacementScope.EndsWith when value.EndsWith(replacement.OldValue, StringComparison.Ordinal)
+                        => value[..^replacement.OldValue.Length] + replacement.NewValue,
+                    _ => value,
+                };
+            }
 
             return value;
         }
@@ -764,7 +1029,13 @@ namespace Utils.NumberToString
             var leftText = ConvertGroup(groupNumber - 1, remainder);
             var valueText = Groups[groupNumber][groupValue];
 
-            return string.IsNullOrEmpty(leftText) ? valueText.StringValue : valueText.BuildString.Replace("*", leftText);
+            if (string.IsNullOrEmpty(leftText)) return valueText.StringValue;
+
+            // Inject intra-group connector at the hundreds level when there are hundreds AND remainder < threshold
+            if (groupNumber == 3 && _intraGroupConnector != null && groupValue > 0 && remainder > 0 && remainder < _intraGroupConnectorThreshold)
+                return valueText.BuildString.Replace("*", _intraGroupConnector + Separator + leftText);
+
+            return valueText.BuildString.Replace("*", leftText);
         }
 
         /// <summary>
@@ -774,7 +1045,7 @@ namespace Utils.NumberToString
         /// <param name="denominator">The denominator of the fraction.</param>
         /// <param name="allowFractionNames">When <see langword="true"/>, uses named fraction suffixes when available.</param>
         /// <returns>The textual representation of the fraction.</returns>
-        private string BuildFractionText(BigInteger numerator, BigInteger denominator, bool allowFractionNames = true)
+        private string BuildFractionText(BigInteger numerator, BigInteger denominator, bool allowFractionNames = true, string[]? variants = null)
         {
             if (allowFractionNames &&
                 TryGetBase10FractionDigits(denominator, out int digits) &&
@@ -782,12 +1053,12 @@ namespace Utils.NumberToString
                 numerator >= 0 &&
                 numerator <= long.MaxValue)
             {
-                string valueText = Convert(numerator).Replace("-", " ");
+                string valueText = (variants is { Length: > 0 } ? Convert(numerator, variants) : Convert(numerator)).Replace("-", " ");
                 return string.Concat(valueText, Separator, suffix.ToPlural((long)numerator)).Trim();
             }
 
-            string numeratorText = Convert(numerator).Replace("-", " ");
-            string denominatorText = Convert(denominator).Replace("-", " ");
+            string numeratorText = (variants is { Length: > 0 } ? Convert(numerator, variants) : Convert(numerator)).Replace("-", " ");
+            string denominatorText = (variants is { Length: > 0 } ? Convert(denominator, variants) : Convert(denominator)).Replace("-", " ");
 
             string connector = FractionSeparator;
             return string.Concat(numeratorText, Separator, connector, Separator, denominatorText).Trim();
@@ -824,10 +1095,12 @@ namespace Utils.NumberToString
             if (OrdinalExceptions.TryGetValue(absNumber, out var exception))
                 return isNegative ? Minus.Replace("*", exception) : exception;
 
-            string raw = absNumber == 0 ? Zero : ConvertRaw((BigInteger)absNumber, _hasScaleSpecificVariantRules ? activeVariants : null);
+            string raw = absNumber == 0 ? Zero : ConvertRaw((BigInteger)absNumber, activeVariants);
             raw = ApplyVariantRules(raw, activeVariants);
             string ordinal = ApplyOrdinalTransform(raw, activeVariant);
-            string final = AdjustFunction(ordinal);
+            if (_rawAdjustFunction != null) ordinal = _rawAdjustFunction(ordinal);
+            ordinal = ApplyTriggers(ordinal, TriggerAt.End, null, activeVariants);
+            string final = LanguageSpecifics.FinalizeWriting(LanguageIdentifier, ordinal);
             if (!string.IsNullOrEmpty(OrdinalPrefix))
                 final = OrdinalPrefix + final;
             return isNegative ? Minus.Replace("*", final) : final;
@@ -850,13 +1123,19 @@ namespace Utils.NumberToString
             return best;
         }
 
-        /// <summary>
-        /// Converts a decimal currency amount to words using the supplied currency definition.
-        /// </summary>
-        /// <param name="amount">The amount to convert.</param>
-        /// <param name="currency">The currency names and configuration.</param>
-        /// <returns>The amount expressed as words (e.g. "twenty euros and fifty centimes").</returns>
+        /// <inheritdoc cref="INumberToStringConverter.ConvertOrdinal(BigInteger)"/>
+        public string ConvertOrdinal(BigInteger number) => ConvertOrdinal(checked((long)number), []);
+
+        /// <inheritdoc cref="INumberToStringConverter.ConvertOrdinal(BigInteger, string[])"/>
+        public string ConvertOrdinal(BigInteger number, params string[] variants)
+            => ConvertOrdinal(checked((long)number), variants);
+
+        /// <inheritdoc cref="INumberToStringConverter.ConvertCurrency(decimal, CurrencyDefinition)"/>
         public string ConvertCurrency(decimal amount, CurrencyDefinition currency)
+            => ConvertCurrency(amount, currency, []);
+
+        /// <inheritdoc cref="INumberToStringConverter.ConvertCurrency(decimal, CurrencyDefinition, string[])"/>
+        public string ConvertCurrency(decimal amount, CurrencyDefinition currency, params string[] variants)
         {
             ArgumentNullException.ThrowIfNull(currency);
 
@@ -873,12 +1152,12 @@ namespace Utils.NumberToString
             subunits %= subunitFactor;
 
             string unitName = units == 1 ? currency.UnitSingular : currency.UnitPlural;
-            string result = Convert(units) + Separator + unitName;
+            string result = Convert(units, variants) + Separator + unitName;
 
             if (subunits > 0)
             {
                 string subunitName = subunits == 1 ? currency.SubunitSingular : currency.SubunitPlural;
-                string subunitsText = Convert(subunits) + Separator + subunitName;
+                string subunitsText = Convert(subunits, variants) + Separator + subunitName;
                 result = result + Separator + currency.Connector + Separator + subunitsText;
             }
 
@@ -886,30 +1165,151 @@ namespace Utils.NumberToString
         }
 
         /// <inheritdoc cref="INumberToStringConverter.ConvertYear(int)"/>
-        public string ConvertYear(int year)
+        public string ConvertYear(int year) => ConvertYear(year, []);
+
+        /// <inheritdoc cref="INumberToStringConverter.ConvertYear(int, string[])"/>
+        public string ConvertYear(int year, params string[] variants)
         {
             bool isNegative = year < 0;
             int abs = Math.Abs(year);
 
             string body;
-            if (_yearFormat != null && _yearFormat.SplitRanges.Any(r => abs >= r.From && abs <= r.To))
+            if (_yearFormat?.SplitRanges?.Contains(abs) == true)
             {
                 int centuries = abs / 100;
                 int remainder = abs % 100;
 
                 if (remainder == 0 && _yearFormat.HundredWord != null)
-                    body = Convert(centuries) + Separator + _yearFormat.HundredWord;
+                    body = Convert(centuries, variants) + Separator + _yearFormat.HundredWord;
                 else if (remainder is > 0 and < 10 && _yearFormat.ZeroConnector != null)
-                    body = Convert(centuries) + Separator + _yearFormat.ZeroConnector + Separator + Convert(remainder);
+                    body = Convert(centuries, variants) + Separator + _yearFormat.ZeroConnector + Separator + Convert(remainder, variants);
                 else
-                    body = Convert(centuries) + Separator + Convert(remainder);
+                    body = Convert(centuries, variants) + Separator + Convert(remainder, variants);
             }
             else
             {
-                body = Convert(abs);
+                body = Convert(abs, variants);
             }
 
+            if (isNegative && _yearFormat?.BeforeChristSuffix != null)
+                return body + Separator + _yearFormat.BeforeChristSuffix;
             return isNegative ? Minus.Replace("*", body) : body;
+        }
+
+        /// <inheritdoc cref="INumberToStringConverter.ConvertFraction(BigInteger, BigInteger, string[])"/>
+        public string ConvertFraction(BigInteger numerator, BigInteger denominator, params string[] variants)
+            => BuildFractionText(numerator, denominator, allowFractionNames: true, variants);
+
+        /// <summary>
+        /// Converts a multiplier to its spoken form (e.g. 2 → "twice", 3 → "trois fois").
+        /// Named forms are looked up from the configuration; unnamed forms append <see cref="MultiplicativeSuffix"/>
+        /// to the cardinal. Throws <see cref="NotSupportedException"/> when the language has no multiplicative configuration.
+        /// </summary>
+        public string ConvertMultiplicative(int multiplier, params string[] variants)
+        {
+            if (!SupportsMultiplicative)
+                throw new NotSupportedException($"Language '{LanguageIdentifier}' has no multiplicative configuration.");
+            if (Multiplicatives.TryGetValue(multiplier, out var named))
+                return named;
+            if (MultiplicativeSuffix != null)
+                return Convert(multiplier, variants) + MultiplicativeSuffix;
+            // No suffix and no named form — fall back to cardinal
+            return Convert(multiplier, variants);
+        }
+
+        private string FormatTimeUnit(int count, (string Singular, string Plural, string? Count1Form) unit, string[] variants)
+        {
+            string word = count == 1 ? unit.Singular : unit.Plural;
+            string numeral = (count == 1 && unit.Count1Form != null) ? unit.Count1Form : Convert(count, variants);
+            return numeral + Separator + word;
+        }
+
+        /// <inheritdoc cref="INumberToStringConverter.Convert(TimeSpan, string[])"/>
+        public string Convert(TimeSpan duration, params string[] variants)
+        {
+            if (!SupportsTimeConversion)
+                throw new NotSupportedException($"Language '{LanguageIdentifier}' has no <TimeUnits> configuration.");
+
+            var abs = duration < TimeSpan.Zero ? -duration : duration;
+            var parts = new List<string>();
+            int totalHours = (int)(abs.Days * 24 + abs.Hours);
+
+            if (totalHours > 0 && _timeUnits.TryGetValue("hour", out var h))
+                parts.Add(FormatTimeUnit(totalHours, h, variants));
+            if (abs.Minutes > 0 && _timeUnits.TryGetValue("minute", out var m))
+                parts.Add(FormatTimeUnit(abs.Minutes, m, variants));
+            if (abs.Seconds > 0 && _timeUnits.TryGetValue("second", out var s))
+                parts.Add(FormatTimeUnit(abs.Seconds, s, variants));
+
+            string body = parts.Count > 0 ? string.Join(Separator, parts) : Zero;
+            return duration < TimeSpan.Zero ? Minus.Replace("*", body) : body;
+        }
+
+        /// <inheritdoc cref="INumberToStringConverter.Convert(TimeOnly, string[])"/>
+        public string Convert(TimeOnly time, params string[] variants)
+        {
+            if (!SupportsTimeConversion)
+                throw new NotSupportedException($"Language '{LanguageIdentifier}' has no <TimeUnits> configuration.");
+
+            var parts = new List<string>();
+            if (_timeUnits.TryGetValue("hour", out var h))
+                parts.Add(FormatTimeUnit(time.Hour, h, variants));
+            if (time.Minute > 0 && _timeUnits.TryGetValue("minute", out var m))
+                parts.Add(FormatTimeUnit(time.Minute, m, variants));
+            if (time.Second > 0 && _timeUnits.TryGetValue("second", out var s))
+                parts.Add(FormatTimeUnit(time.Second, s, variants));
+
+            return parts.Count > 0 ? string.Join(Separator, parts) : Zero;
+        }
+
+        private string GetMonthName(int month)
+        {
+            try
+            {
+                return CultureInfo.GetCultureInfo(LanguageIdentifier).DateTimeFormat.MonthNames[month - 1];
+            }
+            catch
+            {
+                return month.ToString(CultureInfo.InvariantCulture);
+            }
+        }
+
+        /// <inheritdoc cref="INumberToStringConverter.Convert(DateOnly, string[])"/>
+        public string Convert(DateOnly date, params string[] variants)
+        {
+            if (!SupportsDateConversion)
+                throw new NotSupportedException($"Language '{LanguageIdentifier}' has no <DateFormat> configuration.");
+
+            string month = GetMonthName(date.Month);
+            // firstDay overrides both {ordinal-day} and {cardinal-day} when day == 1
+            string cardinalDay = (date.Day == 1 && _dateFirstDay != null)
+                ? _dateFirstDay
+                : Convert(date.Day, variants);
+            string ordinalDay = (date.Day == 1 && _dateFirstDay != null)
+                ? _dateFirstDay
+                : (SupportsOrdinals ? ConvertOrdinal(date.Day, variants) : cardinalDay);
+            string year = ConvertYear(date.Year, variants);
+
+            return _datePattern!
+                .Replace("{month}", month)
+                .Replace("{ordinal-day}", ordinalDay)
+                .Replace("{cardinal-day}", cardinalDay)
+                .Replace("{year}", year);
+        }
+
+        /// <inheritdoc cref="INumberToStringConverter.Convert(DateTime, string[])"/>
+        public string Convert(DateTime dateTime, params string[] variants)
+        {
+            if (!SupportsDateConversion && !SupportsTimeConversion)
+                throw new NotSupportedException($"Language '{LanguageIdentifier}' has no <DateFormat> or <TimeUnits> configuration.");
+
+            string connector = _dateTimeConnector ?? Separator;
+
+            if (SupportsDateConversion && SupportsTimeConversion)
+                return Convert(DateOnly.FromDateTime(dateTime), variants) + connector + Convert(TimeOnly.FromDateTime(dateTime), variants);
+            if (SupportsDateConversion)
+                return Convert(DateOnly.FromDateTime(dateTime), variants);
+            return Convert(TimeOnly.FromDateTime(dateTime), variants);
         }
 
         /// <summary>
@@ -1015,7 +1415,8 @@ namespace Utils.NumberToString
             FirstLetterUppercase = firstLetterUppercase;
 
             VoidGroup = voidGroup.ToDefaultIfNullOrEmpty("ni");
-            GroupSeparator = groupSeparator.ToDefaultIfNullOrEmpty("lli");
+            // null (not set in XML) → default "lli"; explicit "" → no separator between prefix and suffix
+            GroupSeparator = groupSeparator ?? "lli";
 
             Scale0Prefixes = scale0Prefixes?.ToImmutableArray() ?? Scale0Prefixes;
             UnitsPrefixes = unitsPrefixes?.ToImmutableArray() ?? UnitsPrefixes;

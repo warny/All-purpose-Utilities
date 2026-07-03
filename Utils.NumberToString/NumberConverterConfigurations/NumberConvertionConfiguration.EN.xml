@@ -96,5 +96,16 @@
 			<SplitRange from="1100" to="1999" />
 			<SplitRange from="2010" to="2099" />
 		</YearFormat>
+		<Multiplicatives suffix=" times">
+			<Multiplicative value="1" string="once" />
+			<Multiplicative value="2" string="twice" />
+			<Multiplicative value="3" string="thrice" />
+		</Multiplicatives>
+		<TimeUnits>
+			<Unit name="hour"   singular="hour"   plural="hours"   />
+			<Unit name="minute" singular="minute" plural="minutes" />
+			<Unit name="second" singular="second" plural="seconds" />
+		</TimeUnits>
+		<DateFormat pattern="{month} {ordinal-day}, {year}" />
 	</Language>
 </Numbers>

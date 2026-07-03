@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+    <Language
+        groupSize="3"
+        separator=" "
+        groupSeparator=""
+        zero="nol"
+        minus="negatif *"
+        decimalSeparator="koma"
+        fractionSeparator="per"
+    >
+        <Culture>ID</Culture>
+        <Culture>ID-ID</Culture>
+        <Culture>MS</Culture>
+        <Culture>MS-MY</Culture>
+        <Groups>
+            <Group level="1">
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="satu" />
+                <Digit digit="2" string="dua" />
+                <Digit digit="3" string="tiga" />
+                <Digit digit="4" string="empat" />
+                <Digit digit="5" string="lima" />
+                <Digit digit="6" string="enam" />
+                <Digit digit="7" string="tujuh" />
+                <Digit digit="8" string="delapan" />
+                <Digit digit="9" string="sembilan" />
+            </Group>
+            <Group level="2">
+                <Digit digit="0" string="" buildString="*" />
+                <!-- 11–19 are handled as Exceptions; sepuluh is the fallback for plain 10 -->
+                <Digit digit="1" string="sepuluh" buildString="sepuluh *" />
+                <Digit digit="2" string="dua puluh" buildString="dua puluh *" />
+                <Digit digit="3" string="tiga puluh" buildString="tiga puluh *" />
+                <Digit digit="4" string="empat puluh" buildString="empat puluh *" />
+                <Digit digit="5" string="lima puluh" buildString="lima puluh *" />
+                <Digit digit="6" string="enam puluh" buildString="enam puluh *" />
+                <Digit digit="7" string="tujuh puluh" buildString="tujuh puluh *" />
+                <Digit digit="8" string="delapan puluh" buildString="delapan puluh *" />
+                <Digit digit="9" string="sembilan puluh" buildString="sembilan puluh *" />
+            </Group>
+            <Group level="3">
+                <Digit digit="0" string="" buildString="*" />
+                <!-- 100 = "seratus" (se- prefix, not "satu ratus"); 200+ = "dua ratus" etc. -->
+                <Digit digit="1" string="seratus" buildString="seratus *" />
+                <Digit digit="2" string="dua ratus" buildString="dua ratus *" />
+                <Digit digit="3" string="tiga ratus" buildString="tiga ratus *" />
+                <Digit digit="4" string="empat ratus" buildString="empat ratus *" />
+                <Digit digit="5" string="lima ratus" buildString="lima ratus *" />
+                <Digit digit="6" string="enam ratus" buildString="enam ratus *" />
+                <Digit digit="7" string="tujuh ratus" buildString="tujuh ratus *" />
+                <Digit digit="8" string="delapan ratus" buildString="delapan ratus *" />
+                <Digit digit="9" string="sembilan ratus" buildString="sembilan ratus *" />
+            </Group>
+        </Groups>
+        <!-- Scale: ribu (10^3), juta (10^6), miliar (10^9) as static names.
+             From 10^12 (triliun) onward: generated with suffix "liun", groupSeparator="",
+             startIndex=2 so that scale 4 maps to prefix index 3 ("tri") → "triliun".
+             Scale0Prefixes provide Indonesian/Malay spellings. -->
+        <NumberScale firstLetterUpperCase="false" groupSeparator="" startIndex="2">
+            <StaticNames>
+                <Scale value="0" string="" />
+                <Scale value="1" string="ribu" />
+                <Scale value="2" string="juta" />
+                <Scale value="3" string="miliar" />
+            </StaticNames>
+            <Suffixes>
+                <Suffix>liun</Suffix>
+            </Suffixes>
+            <Scale0Prefixes>
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="" />
+                <Digit digit="2" string="" />
+                <Digit digit="3" string="tri" />
+                <Digit digit="4" string="kuadri" />
+                <Digit digit="5" string="kuinti" />
+                <Digit digit="6" string="seksti" />
+                <Digit digit="7" string="septi" />
+                <Digit digit="8" string="okti" />
+                <Digit digit="9" string="noni" />
+            </Scale0Prefixes>
+        </NumberScale>
+        <Replacements>
+            <!-- 1000 = "seribu" not "satu ribu" (se- prefix replaces satu before ribu) -->
+            <Replacement oldValue="satu ribu" newValue="seribu" />
+        </Replacements>
+        <Exceptions>
+            <!-- 11 = "sebelas" (se+belas, not "satu belas") -->
+            <Number value="11" string="sebelas" />
+            <Number value="12" string="dua belas" />
+            <Number value="13" string="tiga belas" />
+            <Number value="14" string="empat belas" />
+            <Number value="15" string="lima belas" />
+            <Number value="16" string="enam belas" />
+            <Number value="17" string="tujuh belas" />
+            <Number value="18" string="delapan belas" />
+            <Number value="19" string="sembilan belas" />
+        </Exceptions>
+    </Language>
+</Numbers>

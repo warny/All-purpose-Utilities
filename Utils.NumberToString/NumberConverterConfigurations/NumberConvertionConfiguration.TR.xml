@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+    <Language
+        groupSize="3"
+        separator=" "
+        groupSeparator=""
+        zero="sıfır"
+        minus="eksi *"
+        decimalSeparator="virgül"
+        fractionSeparator="bölü"
+    >
+        <Culture>TR</Culture>
+        <Culture>TR-TR</Culture>
+        <Groups>
+            <Group level="1">
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="bir" />
+                <Digit digit="2" string="iki" />
+                <Digit digit="3" string="üç" />
+                <Digit digit="4" string="dört" />
+                <Digit digit="5" string="beş" />
+                <Digit digit="6" string="altı" />
+                <Digit digit="7" string="yedi" />
+                <Digit digit="8" string="sekiz" />
+                <Digit digit="9" string="dokuz" />
+            </Group>
+            <Group level="2">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="on" buildString="on *" />
+                <Digit digit="2" string="yirmi" buildString="yirmi *" />
+                <Digit digit="3" string="otuz" buildString="otuz *" />
+                <Digit digit="4" string="kırk" buildString="kırk *" />
+                <Digit digit="5" string="elli" buildString="elli *" />
+                <Digit digit="6" string="altmış" buildString="altmış *" />
+                <Digit digit="7" string="yetmiş" buildString="yetmiş *" />
+                <Digit digit="8" string="seksen" buildString="seksen *" />
+                <Digit digit="9" string="doksan" buildString="doksan *" />
+            </Group>
+            <Group level="3">
+                <Digit digit="0" string="" buildString="*" />
+                <!-- Turkish: "yüz" alone for 100; "bir yüz" is ungrammatical -->
+                <Digit digit="1" string="yüz" buildString="yüz *" />
+                <Digit digit="2" string="iki yüz" buildString="iki yüz *" />
+                <Digit digit="3" string="üç yüz" buildString="üç yüz *" />
+                <Digit digit="4" string="dört yüz" buildString="dört yüz *" />
+                <Digit digit="5" string="beş yüz" buildString="beş yüz *" />
+                <Digit digit="6" string="altı yüz" buildString="altı yüz *" />
+                <Digit digit="7" string="yedi yüz" buildString="yedi yüz *" />
+                <Digit digit="8" string="sekiz yüz" buildString="sekiz yüz *" />
+                <Digit digit="9" string="dokuz yüz" buildString="dokuz yüz *" />
+            </Group>
+        </Groups>
+        <!-- Turkish hybrid scale: milyon (10^6) and milyar (10^9) are borrowed from French
+             and treated as static names. From 10^12, Turkish uses suffix "lyon" with Turkish
+             prefix names: tri+lyon=trilyon, katri+lyon=katrilyon, kenti+lyon=kentilyon…
+             startIndex=2 shifts the first generated prefix to index 3 ("tri") for scale 4 (10^12). -->
+        <NumberScale firstLetterUpperCase="false" groupSeparator="" startIndex="2">
+            <StaticNames>
+                <Scale value="0" string="" />
+                <!-- Turkish: "bin" alone for 1000; "bir bin" is ungrammatical -->
+                <Scale value="1" string="bin" />
+                <Scale value="2" string="milyon" />
+                <Scale value="3" string="milyar" />
+            </StaticNames>
+            <Suffixes>
+                <Suffix>lyon</Suffix>
+            </Suffixes>
+            <Scale0Prefixes>
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="mi" />
+                <Digit digit="2" string="bi" />
+                <Digit digit="3" string="tri" />
+                <Digit digit="4" string="katri" />
+                <Digit digit="5" string="kenti" />
+                <Digit digit="6" string="seksi" />
+                <Digit digit="7" string="septi" />
+                <Digit digit="8" string="okti" />
+                <Digit digit="9" string="noni" />
+            </Scale0Prefixes>
+        </NumberScale>
+        <Replacements>
+            <!-- Safety net: drop "bir" before "bin" if the engine generates "bir bin" -->
+            <Replacement oldValue="bir bin" newValue="bin" />
+        </Replacements>
+    </Language>
+</Numbers>

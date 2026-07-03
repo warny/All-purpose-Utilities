@@ -15,8 +15,9 @@ public sealed class DefaultLexerActionExecutor : ILexerActionExecutor
 
     /// <summary>Returns <see cref="LexerActionExecutionOutcome.NotExecuted"/> for every lexer action.</summary>
     /// <param name="context">Ignored lexer action context.</param>
+    /// <param name="result">Ignored lexer action mutation result.</param>
     /// <returns>The no-op execution outcome.</returns>
-    public LexerActionExecutionOutcome Execute(LexerActionExecutionContext context)
+    public LexerActionExecutionOutcome Execute(LexerActionExecutionContext context, LexerActionExecutionResult result)
     {
         return LexerActionExecutionOutcome.NotExecuted;
     }

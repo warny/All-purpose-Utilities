@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+    <Language
+        groupSize="3"
+        separator=""
+        groupSeparator=""
+        zero="nulla"
+        minus="mínusz *"
+        decimalSeparator="egész"
+        fractionSeparator="per"
+    >
+        <Culture>HU</Culture>
+        <Culture>HU-HU</Culture>
+        <Groups>
+            <Group level="1">
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="egy" />
+                <!-- "két" is the combining form; standalone 2 = "kettő" via Exception -->
+                <Digit digit="2" string="két" />
+                <Digit digit="3" string="három" />
+                <Digit digit="4" string="négy" />
+                <Digit digit="5" string="öt" />
+                <Digit digit="6" string="hat" />
+                <Digit digit="7" string="hét" />
+                <Digit digit="8" string="nyolc" />
+                <Digit digit="9" string="kilenc" />
+            </Group>
+            <Group level="2">
+                <Digit digit="0" string=""          buildString="*" />
+                <!-- tíz standalone, tizen* for 11–19 -->
+                <Digit digit="1" string="tíz"       buildString="tizen*" />
+                <!-- húsz standalone, huszon* for 21–29 -->
+                <Digit digit="2" string="húsz"      buildString="huszon*" />
+                <Digit digit="3" string="harminc"   buildString="harminc*" />
+                <Digit digit="4" string="negyven"   buildString="negyven*" />
+                <Digit digit="5" string="ötven"     buildString="ötven*" />
+                <Digit digit="6" string="hatvan"    buildString="hatvan*" />
+                <Digit digit="7" string="hetven"    buildString="hetven*" />
+                <Digit digit="8" string="nyolcvan"  buildString="nyolcvan*" />
+                <Digit digit="9" string="kilencven" buildString="kilencven*" />
+            </Group>
+            <Group level="3">
+                <Digit digit="0" string=""            buildString="*" />
+                <!-- 100 = "száz", "egyszáz" → "száz" via Replacement -->
+                <Digit digit="1" string="száz"        buildString="száz*" />
+                <Digit digit="2" string="kétszáz"     buildString="kétszáz*" />
+                <Digit digit="3" string="háromszáz"   buildString="háromszáz*" />
+                <Digit digit="4" string="négyszáz"    buildString="négyszáz*" />
+                <Digit digit="5" string="ötszáz"      buildString="ötszáz*" />
+                <Digit digit="6" string="hatszáz"     buildString="hatszáz*" />
+                <Digit digit="7" string="hétszáz"     buildString="hétszáz*" />
+                <Digit digit="8" string="nyolcszáz"   buildString="nyolcszáz*" />
+                <Digit digit="9" string="kilencszáz"  buildString="kilencszáz*" />
+            </Group>
+        </Groups>
+        <!-- Hungarian long scale: millió / milliárd / billió / billiárd …
+             groupSeparator="ll": mi+ll+ió=millió, mi+ll+iárd=milliárd
+             startIndex="2": scale 4 → prefix index 2+1=3 (bi) → billió ✓ -->
+        <NumberScale firstLetterUpperCase="false" groupSeparator="ll" startIndex="2">
+            <StaticNames>
+                <Scale value="0" string="" />
+                <Scale value="1" string="ezer" />
+                <Scale value="2" string="millió" />
+                <Scale value="3" string="milliárd" />
+            </StaticNames>
+            <Suffixes>
+                <Suffix>ió</Suffix>
+                <Suffix>iárd</Suffix>
+            </Suffixes>
+        </NumberScale>
+        <Replacements>
+            <!-- Drop "egy" before scale names: "egyezer" → "ezer", "egyszáz" → "száz" -->
+            <Replacement oldValue="egyezer" newValue="ezer" scope="Anywhere" />
+            <Replacement oldValue="egyszáz" newValue="száz" scope="Anywhere" />
+            <Replacement oldValue="egymillió" newValue="millió" scope="Anywhere" />
+            <Replacement oldValue="egymilliárd" newValue="milliárd" scope="Anywhere" />
+            <!-- Same for generated long-scale names (billió, billiárd, …) -->
+            <Replacement oldValue="egybillió" newValue="billió" scope="Anywhere" />
+            <Replacement oldValue="egybilliárd" newValue="billiárd" scope="Anywhere" />
+            <!-- Exception[2]="kettő" fires in ConvertGroup when chunk=2; replace back to "két" before scale names -->
+            <Replacement oldValue="kettőezer" newValue="kétezer" scope="Anywhere" />
+            <Replacement oldValue="kettőmillió" newValue="kétmillió" scope="Anywhere" />
+            <Replacement oldValue="kettőmilliárd" newValue="kétmilliárd" scope="Anywhere" />
+            <Replacement oldValue="kettőbillió" newValue="kétbillió" scope="Anywhere" />
+            <Replacement oldValue="kettőbilliárd" newValue="kétbilliárd" scope="Anywhere" />
+        </Replacements>
+        <Exceptions>
+            <!-- Standalone 2 = "kettő" (compound uses "két" from Groups) -->
+            <Number value="2" string="kettő" />
+        </Exceptions>
+        <Ordinals suffix=".">
+            <!-- Hungarian ordinals are formed by appending "." (e.g. 1. = "első")
+                 but the full word forms require specific lexical forms.
+                 This minimal configuration appends "." to the cardinal. -->
+            <OrdinalException value="1"  string="első" />
+            <OrdinalException value="2"  string="második" />
+            <OrdinalException value="3"  string="harmadik" />
+            <OrdinalException value="4"  string="negyedik" />
+            <OrdinalException value="5"  string="ötödik" />
+            <OrdinalException value="6"  string="hatodik" />
+            <OrdinalException value="7"  string="hetedik" />
+            <OrdinalException value="8"  string="nyolcadik" />
+            <OrdinalException value="9"  string="kilencedik" />
+            <OrdinalException value="10" string="tizedik" />
+            <OrdinalException value="20" string="huszadik" />
+            <OrdinalException value="30" string="harmincadik" />
+            <OrdinalException value="100" string="századik" />
+            <OrdinalException value="1000" string="ezredik" />
+        </Ordinals>
+    </Language>
+</Numbers>

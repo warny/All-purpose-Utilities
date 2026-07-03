@@ -96,15 +96,12 @@
 			<Fraction digits="3" string="millième(s)" />
 		</Fractions>
 		<Ordinals suffix="ième" removeTrailing="e">
-			<OrdinalException value="1" string="premier" />
+			<OrdinalException value="1">
+				<Variant type="gender" forms="premier,première" />
+			</OrdinalException>
 			<Ordinal from="un" to="unième" />
 			<Ordinal from="cinq" to="cinquième" />
 			<Ordinal from="neuf" to="neuvième" />
-			<OrdinalVariants>
-				<Variant type="gender" variant="feminin">
-					<OrdinalException value="1" string="première" />
-				</Variant>
-			</OrdinalVariants>
 		</Ordinals>
 		<Variants>
 			<Dimension name="gender" localName="genre" values="masculin,feminin" />
@@ -112,5 +109,16 @@
 				<Replacement oldValue="un" newValue="une" scope="LastWord" />
 			</Variant>
 		</Variants>
+		<Multiplicatives suffix=" fois">
+			<Multiplicative value="1" string="une fois" />
+			<Multiplicative value="2" string="deux fois" />
+			<Multiplicative value="3" string="trois fois" />
+		</Multiplicatives>
+		<TimeUnits>
+			<Unit name="hour"   singular="heure"   plural="heures"   />
+			<Unit name="minute" singular="minute"  plural="minutes"  />
+			<Unit name="second" singular="seconde" plural="secondes" />
+		</TimeUnits>
+		<DateFormat pattern="{cardinal-day} {month} {year}" firstDay="premier" />
 	</Language>
 </Numbers>

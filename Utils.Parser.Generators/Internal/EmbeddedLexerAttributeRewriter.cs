@@ -15,7 +15,9 @@ internal static class EmbeddedLexerAttributeRewriter
         "text",
         "type",
         "channel",
-        "mode"
+        "mode",
+        "line",
+        "pos"
     };
 
     /// <summary>
@@ -57,11 +59,16 @@ internal static class EmbeddedLexerAttributeRewriter
                 continue;
             }
 
+            if (TryRewriteSupportedWrite(code, attribute, attributeStart, attributeEnd, isPredicate, output, errors, ref index))
+            {
+                continue;
+            }
+
             if (IsWriteContext(code, attributeStart, attributeEnd))
             {
                 string reason = IsRefOrOutContext(code, attributeStart)
                     ? "ref/out lexer attributes are not supported by the ANTLR-style transformer."
-                    : "Lexer attribute writes are not supported by the ANTLR-style transformer.";
+                    : "Lexer attribute writes are not supported by the ANTLR-style transformer. Supported lexer attribute writes are $type = ..., $channel = ..., and $mode = ... in lexer inline actions.";
                 errors.Add($"{reason} Unsupported attribute: '{attributeText}'.");
                 output.Append(code, attributeStart, attributeEnd - attributeStart);
                 continue;
@@ -76,7 +83,7 @@ internal static class EmbeddedLexerAttributeRewriter
 
             if (!SupportedActionReads.Contains(attribute))
             {
-                errors.Add($"Lexer attribute '{attributeText}' is not supported. Supported lexer action attributes are $text, $type, $channel, and $mode.");
+                errors.Add($"Lexer attribute '{attributeText}' is not supported. Supported lexer action attributes are $text, $type, $channel, $mode, $line, and $pos.");
                 output.Append(code, attributeStart, attributeEnd - attributeStart);
                 continue;
             }
@@ -87,11 +94,121 @@ internal static class EmbeddedLexerAttributeRewriter
                 "type" => "GetRequiredLexerType(context)",
                 "channel" => "GetRequiredLexerChannel(context)",
                 "mode" => "GetRequiredLexerMode(context)",
+                "line" => "GetRequiredLexerLine(context)",
+                "pos" => "GetRequiredLexerPos(context)",
                 _ => attributeText
             });
         }
 
         return new EmbeddedParserAttributeRewriteResult(output.ToString(), errors);
+    }
+
+    /// <summary>Rewrites a supported simple lexer attribute assignment statement when present.</summary>
+    private static bool TryRewriteSupportedWrite(string code, string attribute, int attributeStart, int attributeEnd, bool isPredicate, StringBuilder output, List<string> errors, ref int index)
+    {
+        int assignment = SkipWhitespace(code, attributeEnd);
+        if (assignment >= code.Length || code[assignment] != '=' || StartsWith(code, assignment, "==") || StartsWith(code, assignment, "=>"))
+        {
+            return false;
+        }
+
+        string attributeText = "$" + attribute;
+        if (isPredicate)
+        {
+            errors.Add($"Lexer attributes are not supported in lexer predicates. Unsupported attribute: '{attributeText}'.");
+            output.Append(code, attributeStart, attributeEnd - attributeStart);
+            return true;
+        }
+
+        if (!string.Equals(attribute, "type", StringComparison.Ordinal) && !string.Equals(attribute, "channel", StringComparison.Ordinal) && !string.Equals(attribute, "mode", StringComparison.Ordinal))
+        {
+            errors.Add($"Lexer attribute write '{attributeText}' is not supported. Supported lexer attribute writes are $type = ..., $channel = ..., and $mode = ... in lexer inline actions.");
+            output.Append(code, attributeStart, attributeEnd - attributeStart);
+            return true;
+        }
+
+        int previous = PreviousNonWhitespace(code, attributeStart - 1);
+        if (previous >= 0 && code[previous] != ';' && code[previous] != '{' && code[previous] != '}')
+        {
+            errors.Add($"Complex lexer attribute write '{attributeText}' is not supported. Supported lexer attribute writes are simple statements only.");
+            output.Append(code, attributeStart, attributeEnd - attributeStart);
+            return true;
+        }
+
+        int valueStart = SkipWhitespace(code, assignment + 1);
+        if (!TryReadSimpleAssignmentValue(code, valueStart, out string? value, out int valueEnd))
+        {
+            errors.Add($"Complex lexer attribute write '{attributeText}' is not supported. Supported lexer attribute writes are simple identifier or string assignments only.");
+            output.Append(code, attributeStart, attributeEnd - attributeStart);
+            return true;
+        }
+
+        int terminator = SkipWhitespace(code, valueEnd);
+        if (terminator >= code.Length || code[terminator] != ';')
+        {
+            errors.Add($"Complex lexer attribute write '{attributeText}' is not supported. Supported lexer attribute writes are simple statements only.");
+            output.Append(code, attributeStart, attributeEnd - attributeStart);
+            return true;
+        }
+
+        output.Append(attribute switch
+        {
+            "type" => "SetLexerType(result, ",
+            "channel" => "SetLexerChannel(result, ",
+            "mode" => "SetLexerMode(result, ",
+            _ => throw new InvalidOperationException($"Unsupported lexer attribute write: {attribute}.")
+        });
+        output.Append('"');
+        output.Append(value.Replace("\\", "\\\\").Replace("\"", "\\\""));
+        output.Append("\");");
+        index = terminator + 1;
+        return true;
+    }
+
+    /// <summary>Reads a supported assignment value as either an identifier or a simple quoted string.</summary>
+    private static bool TryReadSimpleAssignmentValue(string code, int start, out string value, out int end)
+    {
+        value = string.Empty;
+        end = start;
+        if (start >= code.Length)
+        {
+            return false;
+        }
+
+        if (IsIdentifierStart(code[start]))
+        {
+            end = start;
+            value = ReadIdentifier(code, ref end);
+            return true;
+        }
+
+        if (code[start] != '"')
+        {
+            return false;
+        }
+
+        var builder = new StringBuilder();
+        end = start + 1;
+        while (end < code.Length)
+        {
+            char current = code[end++];
+            if (current == '"')
+            {
+                value = builder.ToString();
+                return true;
+            }
+
+            if (current == '\\' && end < code.Length)
+            {
+                char escaped = code[end++];
+                builder.Append(escaped);
+                continue;
+            }
+
+            builder.Append(current);
+        }
+
+        return false;
     }
 
     /// <summary>Copies comments and C# string or character literals without rewriting their contents.</summary>
