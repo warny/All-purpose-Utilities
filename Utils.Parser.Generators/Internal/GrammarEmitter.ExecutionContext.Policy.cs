@@ -191,6 +191,16 @@ internal static partial class GrammarEmitter
         sb.AppendLine("                    throw new global::Utils.Parser.Runtime.ParserRuleCallBindingException(context.RuleName, context.RawArguments, \"Named rule-call arguments are not supported by generated-C# automatic binding.\");");
         sb.AppendLine("                }");
         sb.AppendLine();
+        sb.AppendLine("                int expectedArgumentCount = context.TargetRuleDescriptor!.Parameters.Count;");
+        sb.AppendLine("                int actualArgumentCount = context.PositionalRawArguments.Count;");
+        sb.AppendLine("                if (actualArgumentCount != expectedArgumentCount)");
+        sb.AppendLine("                {");
+        sb.AppendLine("                    throw new global::Utils.Parser.Runtime.ParserRuleCallBindingException(");
+        sb.AppendLine("                        context.RuleName,");
+        sb.AppendLine("                        context.RawArguments,");
+        sb.AppendLine("                        $\"Generated-C# automatic rule-call binding requires exactly {expectedArgumentCount} positional argument(s), but received {actualArgumentCount}. Argument count mismatch.\");");
+        sb.AppendLine("                }");
+        sb.AppendLine();
         sb.AppendLine("                _positionalBinding.BeforeRuleCall(context);");
         sb.AppendLine("            }");
         sb.AppendLine();
