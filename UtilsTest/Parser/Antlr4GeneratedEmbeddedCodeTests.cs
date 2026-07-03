@@ -4437,6 +4437,238 @@ public class Antlr4GeneratedEmbeddedCodeTests
     }
 
     /// <summary>
+    /// Ensures generated-C# opt-in parsing binds a single positional integer argument before the child rule enters.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_BindsSingleIntegerPositionalArgument()
+    {
+        const string grammar = """
+            grammar P;
+
+            @members {
+                public int Seen;
+            }
+
+            start : child[42] ;
+
+            child[int value]
+            @after {
+                Seen = GetRequiredRuleParameter<int>(context, "value");
+            }
+                : A ;
+
+            A : 'a' ;
+            """;
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar, enableGeneratedRuleArgumentBinding: true));
+        object context = CreateExecutionContext(assembly);
+
+        ParseNode result = InvokeParseWithContext(assembly, "a", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(42, ReadInstanceIntField(context, "Seen"));
+    }
+
+    /// <summary>
+    /// Ensures the ANTLR-style transformer can read an automatically-bound positional parameter through <c>$value</c>.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_TransformerRewritesBareParameterRead()
+    {
+        const string grammar = """
+            grammar P;
+            @members { public int Seen; }
+            start : child[42] ;
+            child[int value] @after { Seen = $value; } : A ;
+            A : 'a' ;
+            """;
+        string source = EmitWithAntlrStyleTransformer(grammar, enableGeneratedRuleArgumentBinding: true);
+        StringAssert.Contains(source, "GetRequiredRuleParameter<int>(context, \"value\")");
+        Assert.IsFalse(source.Contains("Seen = $value;", StringComparison.Ordinal), source);
+        var assembly = CompileGeneratedSource(source);
+        object context = CreateExecutionContext(assembly);
+
+        ParseNode result = InvokeParseWithContext(assembly, "a", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(42, ReadInstanceIntField(context, "Seen"));
+    }
+
+    /// <summary>
+    /// Ensures conservative generated <c>Parse</c> does not execute generated-C# positional argument binding or lifecycle hooks.
+    /// </summary>
+    [TestMethod]
+    public void Parse_DoesNotBindOrExecuteGeneratedRuleArguments()
+    {
+        const string grammar = """
+            grammar P;
+            @members { public static int Seen; }
+            start : child[42] ;
+            child[int value] @after { Seen = GetRequiredRuleParameter<int>(context, "value"); } : A ;
+            A : 'a' ;
+            """;
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar, enableGeneratedRuleArgumentBinding: true));
+
+        ParseNode result = InvokeParse(assembly, "Parse", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(0, ReadIntField(assembly, "Seen"));
+    }
+
+    /// <summary>
+    /// Ensures generated-C# opt-in parsing validates and seeds multiple integer arguments as one batch.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_BindsMultipleIntegerPositionalArgumentsAtomically()
+    {
+        const string grammar = """
+            grammar P;
+            @members { public int Sum; }
+            start : child[40, 2] ;
+            child[int left, int right]
+            @after {
+                Sum = GetRequiredRuleParameter<int>(context, "left")
+                    + GetRequiredRuleParameter<int>(context, "right");
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar, enableGeneratedRuleArgumentBinding: true));
+        object context = CreateExecutionContext(assembly);
+
+        ParseNode result = InvokeParseWithContext(assembly, "a", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(42, ReadInstanceIntField(context, "Sum"));
+    }
+
+    /// <summary>
+    /// Ensures generated-C# opt-in positional binding rejects an arity mismatch before the child hook can observe partial seeds.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_RejectsArityMismatchWithoutPartialSeed()
+    {
+        const string grammar = """
+            grammar P;
+            @members { public int Seen = -1; }
+            start : child[42] ;
+            child[int left, int right] @after { Seen = 1; } : A ;
+            A : 'a' ;
+            """;
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar, enableGeneratedRuleArgumentBinding: true));
+        object context = CreateExecutionContext(assembly);
+
+        Assert.ThrowsException<TargetInvocationException>(() => InvokeParseWithContext(assembly, "a", context));
+        Assert.AreEqual(-1, ReadInstanceIntField(context, "Seen"));
+    }
+
+    /// <summary>
+    /// Ensures generated-C# opt-in positional binding rejects unsupported expressions instead of evaluating C#.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_RejectsUnsupportedArgumentExpression()
+    {
+        const string grammar = """
+            grammar P;
+            @members { public int Seen = -1; public int MakeValue() => 42; }
+            start : child[MakeValue()] ;
+            child[int value] @after { Seen = GetRequiredRuleParameter<int>(context, "value"); } : A ;
+            A : 'a' ;
+            """;
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar, enableGeneratedRuleArgumentBinding: true));
+        object context = CreateExecutionContext(assembly);
+
+        Assert.ThrowsException<TargetInvocationException>(() => InvokeParseWithContext(assembly, "a", context));
+        Assert.AreEqual(-1, ReadInstanceIntField(context, "Seen"));
+    }
+
+    /// <summary>
+    /// Ensures parser-managed positional seeds roll back when an alternative fails after a child call.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_RollsBackArgumentSeedsWhenAlternativeFails()
+    {
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(ArgumentRollbackGrammar, enableGeneratedRuleArgumentBinding: true));
+        object context = CreateExecutionContext(assembly);
+
+        ParseNode result = InvokeParseWithContext(assembly, "a", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(2, ReadInstanceIntField(context, "Seen"));
+    }
+
+    /// <summary>
+    /// Ensures memoized child results are not reused across distinct generated-C# argument seed states.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_DoesNotReuseMemoizedChildAcrossDifferentArgumentValues()
+    {
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(ArgumentRollbackGrammar, enableGeneratedRuleArgumentBinding: true));
+        object context = CreateExecutionContext(assembly);
+
+        ParseNode result = InvokeParseWithContext(assembly, "a", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(2, ReadInstanceIntField(context, "Seen"));
+    }
+
+    /// <summary>
+    /// Ensures generated-C# binding remains frame-based and does not emit public ANTLR-compatible typed rule signatures.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_BindingDoesNotCreatePublicAntlrRuleSignature()
+    {
+        const string grammar = """
+            grammar P;
+            start : child[42] ;
+            child[int value] : A ;
+            A : 'a' ;
+            """;
+
+        string source = EmitWithAntlrStyleTransformer(grammar, enableGeneratedRuleArgumentBinding: true);
+
+        Assert.IsFalse(source.Contains("child(int value)", StringComparison.Ordinal), source);
+        Assert.IsFalse(source.Contains("public ParseNode child", StringComparison.Ordinal), source);
+        StringAssert.Contains(source, "GeneratedRuleCallExecutionPolicy");
+    }
+
+    /// <summary>
+    /// Ensures generated-C# automatic binding rejects named arguments deterministically.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_UnsupportedNamedArgumentsRemainUnsupported()
+    {
+        const string grammar = """
+            grammar P;
+            start : child[value = 42] ;
+            child[int value] : A ;
+            A : 'a' ;
+            """;
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar, enableGeneratedRuleArgumentBinding: true));
+        object context = CreateExecutionContext(assembly);
+
+        Assert.ThrowsException<TargetInvocationException>(() => InvokeParseWithContext(assembly, "a", context));
+    }
+
+    /// <summary>
+    /// Shared grammar that distinguishes rollback and memoization by the final observed child parameter.
+    /// </summary>
+    private const string ArgumentRollbackGrammar = """
+        grammar P;
+        @members { public int Seen; }
+        start
+            : child[1] B
+            | child[2]
+            ;
+        child[int value]
+        @after {
+            Seen = GetRequiredRuleParameter<int>(context, "value");
+        }
+            : A ;
+        A : 'a' ;
+        B : 'b' ;
+        """;
+
+    /// <summary>
     /// Ensures predicates can call instance members injected through <c>@members</c>.
     /// </summary>
     [TestMethod]
@@ -5476,11 +5708,18 @@ public class Antlr4GeneratedEmbeddedCodeTests
     /// Emits generated C# with the optional C# ANTLR-style transformer enabled for compatibility tests.
     /// </summary>
     /// <param name="grammarText">ANTLR4 grammar source.</param>
+    /// <param name="enableGeneratedRuleArgumentBinding">Whether generated-C# positional argument binding should be emitted for this test grammar.</param>
     /// <returns>Generated C# source with optional ANTLR-style convenience rewrites applied.</returns>
-    private static string EmitWithAntlrStyleTransformer(string grammarText)
+    private static string EmitWithAntlrStyleTransformer(string grammarText, bool enableGeneratedRuleArgumentBinding = false)
     {
         var grammar = new G4Parser(new G4Tokenizer(grammarText).Tokenize()).Parse();
-        return GrammarEmitter.Emit(grammar, "Generated.Tests", "P", "P.g4", new CSharpAntlrStyleParserEmbeddedCodeTransformer(grammar));
+        return GrammarEmitter.Emit(
+            grammar,
+            "Generated.Tests",
+            "P",
+            "P.g4",
+            new CSharpAntlrStyleParserEmbeddedCodeTransformer(grammar),
+            enableGeneratedRuleArgumentBinding);
     }
 
     /// <summary>

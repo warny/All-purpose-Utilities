@@ -293,3 +293,12 @@ The generated-C# path supports grammar-level `@lexer::header`, `@lexer::members`
 | Full ANTLR lexer embedded-code semantics | Unsupported | Unsupported | Unsupported |
 
 The generated-C# helper values are passive lexer-action metadata, and simple writes cross the generated hook/runtime boundary only through `LexerActionExecutionResult`; they do not add a separate lexer runtime or general target-language logic to the runtime engine. `$type`/`$channel`/`$mode` writes are covered by edge-case tests for last-write-wins, same-action type/channel/mode writes, fragments, lexer rule references, quantifiers, rejected alternatives, `more`, command override, and deterministic diagnostics for complex unsupported forms.
+
+
+### Generated-C# explicit simple positional rule-call binding
+
+Generated parsers can explicitly install a generated-C#-only rule-call policy for `ParseWithEmbeddedCode(...)` when generation enables simple positional rule-argument binding. When a parser rule call such as `child[42]` targets a parameterized parser rule such as `child[int value]`, the generated policy validates all positional raw arguments before entering the child rule, converts supported simple literals, and submits one atomic managed seed batch to the existing invocation-frame parameter store. The conservative generated `Parse(...)` path remains unchanged and does not execute this binding path.
+
+Supported automatic generated-C# argument forms are intentionally narrow: simple positional literals that the typed literal binding policy can convert to the declared parameter type, including decimal integer literals for `int` parameters. Named arguments and arbitrary C# expressions remain unsupported and are rejected deterministically in the generated-C# explicit binding path. Full ANTLR-compatible generated rule signatures such as `child(int value)` are still not emitted; generated hooks should continue to read parameters through frame helpers such as `GetRequiredRuleParameter<T>(context, "name")`, and the optional C# ANTLR-style transformer may rewrite `$name` to those helpers.
+
+The implementation uses existing parser-managed pending seeds, invocation frames, execution-state snapshots, rollback, and memoization boundaries. No target-language expression evaluator was added to `ParserEngine`.
