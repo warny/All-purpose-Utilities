@@ -4622,6 +4622,52 @@ public class Antlr4GeneratedEmbeddedCodeTests
     }
 
     /// <summary>
+    /// Ensures generated-C# opt-in binding rejects positional arguments passed to a parameterless rule.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_RejectsArgumentsForParameterlessRuleWhenGeneratedBindingRequiresExactArity()
+    {
+        const string grammar = """
+            grammar P;
+            @members { public int Seen = -1; }
+            start : child[42] ;
+            child @after { Seen = 1; } : A ;
+            A : 'a' ;
+            """;
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar, enableGeneratedRuleArgumentBinding: true));
+        object context = CreateExecutionContext(assembly);
+
+        var ex = Assert.ThrowsException<TargetInvocationException>(() => InvokeParseWithContext(assembly, "a", context));
+
+        Assert.IsInstanceOfType(ex.InnerException, typeof(ParserRuleCallBindingException));
+        StringAssert.Contains(ex.InnerException!.Message, "exactly 0 positional argument");
+        StringAssert.Contains(ex.InnerException.Message, "received 1");
+        Assert.AreEqual(-1, ReadInstanceIntField(context, "Seen"));
+    }
+
+    /// <summary>
+    /// Ensures generated-C# opt-in binding accepts an explicit empty argument list for a parameterless rule.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_AllowsEmptyArgumentListForParameterlessRuleWhenGeneratedBindingRequiresExactArity()
+    {
+        const string grammar = """
+            grammar P;
+            @members { public int Seen = -1; }
+            start : child[] ;
+            child @after { Seen = 1; } : A ;
+            A : 'a' ;
+            """;
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar, enableGeneratedRuleArgumentBinding: true));
+        object context = CreateExecutionContext(assembly);
+
+        ParseNode result = InvokeParseWithContext(assembly, "a", context);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(1, ReadInstanceIntField(context, "Seen"));
+    }
+
+    /// <summary>
     /// Ensures generated-C# opt-in positional binding rejects unsupported expressions instead of evaluating C#.
     /// </summary>
     [TestMethod]
