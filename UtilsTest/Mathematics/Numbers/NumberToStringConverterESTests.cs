@@ -55,5 +55,42 @@ namespace UtilsTest.Mathematics.Numbers
             StringAssert.Contains(thirtyOneThousand, "uno mil", "Composite thousands should retain the phrase 'uno mil'.");
             Assert.IsFalse(thirtyOneThousand.Contains("treintamil"), "The substring replacement must not collapse 'treintauno mil'.");
         }
+
+        [TestMethod]
+        public void ConvertCurrency_ES_Euro()
+        {
+            var c = NumberToStringConverter.GetConverter("ES");
+            var euro = new CurrencyDefinition
+            {
+                UnitSingular    = "euro",
+                UnitPlural      = "euros",
+                SubunitSingular = "céntimo",
+                SubunitPlural   = "céntimos",
+                Connector       = "con",
+            };
+
+            // Convert(1) = "uno" (standalone); no attributive shortening in ES config
+            Assert.AreEqual("uno euro",                       c.ConvertCurrency(1m,    euro));
+            Assert.AreEqual("dos euros",                      c.ConvertCurrency(2m,    euro));
+            Assert.AreEqual("uno euro con cincuenta céntimos", c.ConvertCurrency(1.50m, euro));
+        }
+
+        [TestMethod]
+        public void ConvertCurrency_ES_Gender_Femenino()
+        {
+            var c = NumberToStringConverter.GetConverter("ES");
+            var peseta = new CurrencyDefinition
+            {
+                UnitSingular    = "peseta",
+                UnitPlural      = "pesetas",
+                SubunitSingular = "céntimo",
+                SubunitPlural   = "céntimos",
+                Connector       = "con",
+            };
+
+            Assert.AreEqual("una peseta",  c.ConvertCurrency(1m, peseta, "gender=femenino"));
+            // 21 is fused ("veintiuno"/"veintiuna") — LastWord replacement does apply here
+            Assert.AreEqual("treinta y una pesetas", c.ConvertCurrency(31m, peseta, "gender=femenino"));
+        }
     }
 }

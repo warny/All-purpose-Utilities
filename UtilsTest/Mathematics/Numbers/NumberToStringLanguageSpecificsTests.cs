@@ -32,4 +32,19 @@ public class NumberToStringLanguageSpecificsTests
 
         Assert.AreEqual(value, specifics.FinalizeWriting("EN", value));
     }
+
+    /// <summary>
+    /// Ensures that PolishOrdinalLanguageSpecifics is found by reflection when referenced in XML.
+    /// </summary>
+    [TestMethod]
+    public void PolishOrdinalSpecifics_ResolvedViaReflection()
+    {
+        // PL config contains <LanguageSpecifics>PolishOrdinalLanguageSpecifics</LanguageSpecifics>
+        // The engine resolves this via reflection on the Utils.NumberToString assembly.
+        var c = NumberToStringConverter.GetConverter("PL");
+
+        // 21 requires the plugin (not XML-only); if reflection fails the plugin is silent and returns wrong form
+        Assert.AreEqual("dwudziesty pierwszy", c.ConvertOrdinal(21), "plugin resolved via reflection");
+        Assert.AreEqual("dwudziesta pierwsza", c.ConvertOrdinal(21, "rodzaj=feminin"), "plugin + feminine");
+    }
 }
