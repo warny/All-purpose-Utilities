@@ -58,10 +58,10 @@
                 <Suffix>مليون</Suffix>
             </Suffixes>
         </NumberScale>
-        <Exceptions />
         <Replacements>
             <Replacement oldValue="واحد ألف" newValue="ألف" />
         </Replacements>
+        <Exceptions />
         <Ordinals>
             <!-- Masculin indéfini, forme courte (sans article) — les ordinaux arabes
                  sont indépendants des cardinaux et varient en genre avec le nom -->
