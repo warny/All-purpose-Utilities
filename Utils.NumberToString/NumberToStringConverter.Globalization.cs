@@ -47,6 +47,7 @@ namespace Utils.NumberToString
                 NumberConverterResources.NumberConvertionConfiguration_EL,
                 NumberConverterResources.NumberConvertionConfiguration_NL,
                 NumberConverterResources.NumberConvertionConfiguration_NO,
+                NumberConverterResources.NumberConvertionConfiguration_RO,
                 NumberConverterResources.NumberConvertionConfiguration_RU,
                 NumberConverterResources.NumberConvertionConfiguration_SV,
                 NumberConverterResources.NumberConvertionConfiguration_SW,

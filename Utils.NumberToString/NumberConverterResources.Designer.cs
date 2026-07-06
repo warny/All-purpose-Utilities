@@ -665,6 +665,13 @@ namespace Utils {
                 return ResourceManager.GetString("NumberConvertionConfiguration.PT", resourceCulture);
             }
         }
+        /// <summary>Romanian number-to-string configuration.</summary>
+        internal static string NumberConvertionConfiguration_RO {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.RO", resourceCulture);
+            }
+        }
+
         
         /// <summary>
         ///   Recherche une chaîne localisée semblable à &lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;

@@ -72,19 +72,38 @@
             <OrdinalException value="8"  string="ثامن" />
             <OrdinalException value="9"  string="تاسع" />
             <OrdinalException value="10" string="عاشر" />
+            <!-- 11-19: [ordinal-root] + عشر (m) / عشرة (f); the root matches 1st-9th ordinals -->
+            <OrdinalException value="11" string="حادي عشر"   />
+            <OrdinalException value="12" string="ثاني عشر"   />
+            <OrdinalException value="13" string="ثالث عشر"   />
+            <OrdinalException value="14" string="رابع عشر"   />
+            <OrdinalException value="15" string="خامس عشر"   />
+            <OrdinalException value="16" string="سادس عشر"   />
+            <OrdinalException value="17" string="سابع عشر"   />
+            <OrdinalException value="18" string="ثامن عشر"   />
+            <OrdinalException value="19" string="تاسع عشر"   />
             <OrdinalVariants>
-                <!-- Forme féminine (muʾannath) pour 1-10 ; au-delà de 10 aucune exception n'est définie -->
+                <!-- Forme féminine (muʾannath) pour 1-19 -->
                 <Variant type="gender" variant="muʾannath">
-                    <OrdinalException value="1"  string="أولى"   />
-                    <OrdinalException value="2"  string="ثانية"  />
-                    <OrdinalException value="3"  string="ثالثة"  />
-                    <OrdinalException value="4"  string="رابعة"  />
-                    <OrdinalException value="5"  string="خامسة"  />
-                    <OrdinalException value="6"  string="سادسة"  />
-                    <OrdinalException value="7"  string="سابعة"  />
-                    <OrdinalException value="8"  string="ثامنة"  />
-                    <OrdinalException value="9"  string="تاسعة"  />
-                    <OrdinalException value="10" string="عاشرة"  />
+                    <OrdinalException value="1"  string="أولى"        />
+                    <OrdinalException value="2"  string="ثانية"       />
+                    <OrdinalException value="3"  string="ثالثة"       />
+                    <OrdinalException value="4"  string="رابعة"       />
+                    <OrdinalException value="5"  string="خامسة"       />
+                    <OrdinalException value="6"  string="سادسة"       />
+                    <OrdinalException value="7"  string="سابعة"       />
+                    <OrdinalException value="8"  string="ثامنة"       />
+                    <OrdinalException value="9"  string="تاسعة"       />
+                    <OrdinalException value="10" string="عاشرة"       />
+                    <OrdinalException value="11" string="حادية عشرة"  />
+                    <OrdinalException value="12" string="ثانية عشرة"  />
+                    <OrdinalException value="13" string="ثالثة عشرة"  />
+                    <OrdinalException value="14" string="رابعة عشرة"  />
+                    <OrdinalException value="15" string="خامسة عشرة"  />
+                    <OrdinalException value="16" string="سادسة عشرة"  />
+                    <OrdinalException value="17" string="سابعة عشرة"  />
+                    <OrdinalException value="18" string="ثامنة عشرة"  />
+                    <OrdinalException value="19" string="تاسعة عشرة"  />
                 </Variant>
             </OrdinalVariants>
         </Ordinals>

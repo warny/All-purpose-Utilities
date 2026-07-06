@@ -10,6 +10,7 @@
         fractionSeparator="przez"
     >
         <Culture>PL</Culture>
+        <LanguageSpecifics>PolishOrdinalLanguageSpecifics</LanguageSpecifics>
         <Groups>
             <Group level="1">
                 <Digit digit="0" string="" />
@@ -262,17 +263,165 @@
                 </Variant>
             </Ordinal>
 
-            <!-- ===== 11-19 (base masculine nominative; same hard-adj. pattern) ===== -->
-            <Ordinal from="jedenaście"     to="jedenasty" />
-            <Ordinal from="dwanaście"      to="dwunasty" />
-            <Ordinal from="trzynaście"     to="trzynasty" />
-            <Ordinal from="czternaście"    to="czternasty" />
-            <Ordinal from="piętnaście"     to="piętnasty" />
-            <Ordinal from="szesnaście"     to="szesnasty" />
-            <Ordinal from="siedemnaście"   to="siedemnasty" />
-            <Ordinal from="osiemnaście"    to="osiemnasty" />
-            <Ordinal from="dziewiętnaście" to="dziewiętnasty" />
+            <!-- ===== 11-19: full hard-adj. declension (-sty pattern) ===== -->
+            <Ordinal from="jedenaście">
+                <Variant type="rodzaj" variant="maskulin">
+                    <Variant type="przypadek" forms="jedenasty,jedenastego,jedenastemu,jedenasty,jedenastym,jedenastym" />
+                </Variant>
+                <Variant type="rodzaj" variant="feminin">
+                    <Variant type="przypadek" forms="jedenasta,jedenastej,jedenastej,jedenastą,jedenastą,jedenastej" />
+                </Variant>
+                <Variant type="rodzaj" variant="nijaki">
+                    <Variant type="przypadek" forms="jedenaste,jedenastego,jedenastemu,jedenaste,jedenastym,jedenastym" />
+                </Variant>
+                <Variant type="rodzaj" variant="plural_mos">
+                    <Variant type="przypadek" forms="jedenaści,jedenastych,jedenastym,jedenastych,jedenastymi,jedenastych" />
+                </Variant>
+                <Variant type="rodzaj" variant="plural">
+                    <Variant type="przypadek" forms="jedenaste,jedenastych,jedenastym,jedenaste,jedenastymi,jedenastych" />
+                </Variant>
+            </Ordinal>
+            <Ordinal from="dwanaście">
+                <Variant type="rodzaj" variant="maskulin">
+                    <Variant type="przypadek" forms="dwunasty,dwunastego,dwunastemu,dwunasty,dwunastym,dwunastym" />
+                </Variant>
+                <Variant type="rodzaj" variant="feminin">
+                    <Variant type="przypadek" forms="dwunasta,dwunastej,dwunastej,dwunastą,dwunastą,dwunastej" />
+                </Variant>
+                <Variant type="rodzaj" variant="nijaki">
+                    <Variant type="przypadek" forms="dwunaste,dwunastego,dwunastemu,dwunaste,dwunastym,dwunastym" />
+                </Variant>
+                <Variant type="rodzaj" variant="plural_mos">
+                    <Variant type="przypadek" forms="dwunaści,dwunastych,dwunastym,dwunastych,dwunastymi,dwunastych" />
+                </Variant>
+                <Variant type="rodzaj" variant="plural">
+                    <Variant type="przypadek" forms="dwunaste,dwunastych,dwunastym,dwunaste,dwunastymi,dwunastych" />
+                </Variant>
+            </Ordinal>
+            <Ordinal from="trzynaście">
+                <Variant type="rodzaj" variant="maskulin">
+                    <Variant type="przypadek" forms="trzynasty,trzynastego,trzynastemu,trzynasty,trzynastym,trzynastym" />
+                </Variant>
+                <Variant type="rodzaj" variant="feminin">
+                    <Variant type="przypadek" forms="trzynasta,trzynastej,trzynastej,trzynastą,trzynastą,trzynastej" />
+                </Variant>
+                <Variant type="rodzaj" variant="nijaki">
+                    <Variant type="przypadek" forms="trzynaste,trzynastego,trzynastemu,trzynaste,trzynastym,trzynastym" />
+                </Variant>
+                <Variant type="rodzaj" variant="plural_mos">
+                    <Variant type="przypadek" forms="trzynaści,trzynastych,trzynastym,trzynastych,trzynastymi,trzynastych" />
+                </Variant>
+                <Variant type="rodzaj" variant="plural">
+                    <Variant type="przypadek" forms="trzynaste,trzynastych,trzynastym,trzynaste,trzynastymi,trzynastych" />
+                </Variant>
+            </Ordinal>
+            <Ordinal from="czternaście">
+                <Variant type="rodzaj" variant="maskulin">
+                    <Variant type="przypadek" forms="czternasty,czternastego,czternastemu,czternasty,czternastym,czternastym" />
+                </Variant>
+                <Variant type="rodzaj" variant="feminin">
+                    <Variant type="przypadek" forms="czternasta,czternastej,czternastej,czternastą,czternastą,czternastej" />
+                </Variant>
+                <Variant type="rodzaj" variant="nijaki">
+                    <Variant type="przypadek" forms="czternaste,czternastego,czternastemu,czternaste,czternastym,czternastym" />
+                </Variant>
+                <Variant type="rodzaj" variant="plural_mos">
+                    <Variant type="przypadek" forms="czternaści,czternastych,czternastym,czternastych,czternastymi,czternastych" />
+                </Variant>
+                <Variant type="rodzaj" variant="plural">
+                    <Variant type="przypadek" forms="czternaste,czternastych,czternastym,czternaste,czternastymi,czternastych" />
+                </Variant>
+            </Ordinal>
+            <Ordinal from="piętnaście">
+                <Variant type="rodzaj" variant="maskulin">
+                    <Variant type="przypadek" forms="piętnasty,piętnastego,piętnastemu,piętnasty,piętnastym,piętnastym" />
+                </Variant>
+                <Variant type="rodzaj" variant="feminin">
+                    <Variant type="przypadek" forms="piętnasta,piętnastej,piętnastej,piętnastą,piętnastą,piętnastej" />
+                </Variant>
+                <Variant type="rodzaj" variant="nijaki">
+                    <Variant type="przypadek" forms="piętnaste,piętnastego,piętnastemu,piętnaste,piętnastym,piętnastym" />
+                </Variant>
+                <Variant type="rodzaj" variant="plural_mos">
+                    <Variant type="przypadek" forms="piętnaści,piętnastych,piętnastym,piętnastych,piętnastymi,piętnastych" />
+                </Variant>
+                <Variant type="rodzaj" variant="plural">
+                    <Variant type="przypadek" forms="piętnaste,piętnastych,piętnastym,piętnaste,piętnastymi,piętnastych" />
+                </Variant>
+            </Ordinal>
+            <Ordinal from="szesnaście">
+                <Variant type="rodzaj" variant="maskulin">
+                    <Variant type="przypadek" forms="szesnasty,szesnastego,szesnastemu,szesnasty,szesnastym,szesnastym" />
+                </Variant>
+                <Variant type="rodzaj" variant="feminin">
+                    <Variant type="przypadek" forms="szesnasta,szesnastej,szesnastej,szesnastą,szesnastą,szesnastej" />
+                </Variant>
+                <Variant type="rodzaj" variant="nijaki">
+                    <Variant type="przypadek" forms="szesnaste,szesnastego,szesnastemu,szesnaste,szesnastym,szesnastym" />
+                </Variant>
+                <Variant type="rodzaj" variant="plural_mos">
+                    <Variant type="przypadek" forms="szesnaści,szesnastych,szesnastym,szesnastych,szesnastymi,szesnastych" />
+                </Variant>
+                <Variant type="rodzaj" variant="plural">
+                    <Variant type="przypadek" forms="szesnaste,szesnastych,szesnastym,szesnaste,szesnastymi,szesnastych" />
+                </Variant>
+            </Ordinal>
+            <Ordinal from="siedemnaście">
+                <Variant type="rodzaj" variant="maskulin">
+                    <Variant type="przypadek" forms="siedemnasty,siedemnastego,siedemnastemu,siedemnasty,siedemnastym,siedemnastym" />
+                </Variant>
+                <Variant type="rodzaj" variant="feminin">
+                    <Variant type="przypadek" forms="siedemnasta,siedemnastej,siedemnastej,siedemnastą,siedemnastą,siedemnastej" />
+                </Variant>
+                <Variant type="rodzaj" variant="nijaki">
+                    <Variant type="przypadek" forms="siedemnaste,siedemnastego,siedemnastemu,siedemnaste,siedemnastym,siedemnastym" />
+                </Variant>
+                <Variant type="rodzaj" variant="plural_mos">
+                    <Variant type="przypadek" forms="siedemnaści,siedemnastych,siedemnastym,siedemnastych,siedemnastymi,siedemnastych" />
+                </Variant>
+                <Variant type="rodzaj" variant="plural">
+                    <Variant type="przypadek" forms="siedemnaste,siedemnastych,siedemnastym,siedemnaste,siedemnastymi,siedemnastych" />
+                </Variant>
+            </Ordinal>
+            <Ordinal from="osiemnaście">
+                <Variant type="rodzaj" variant="maskulin">
+                    <Variant type="przypadek" forms="osiemnasty,osiemnastego,osiemnastemu,osiemnasty,osiemnastym,osiemnastym" />
+                </Variant>
+                <Variant type="rodzaj" variant="feminin">
+                    <Variant type="przypadek" forms="osiemnasta,osiemnastej,osiemnastej,osiemnastą,osiemnastą,osiemnastej" />
+                </Variant>
+                <Variant type="rodzaj" variant="nijaki">
+                    <Variant type="przypadek" forms="osiemnaste,osiemnastego,osiemnastemu,osiemnaste,osiemnastym,osiemnastym" />
+                </Variant>
+                <Variant type="rodzaj" variant="plural_mos">
+                    <Variant type="przypadek" forms="osiemnaści,osiemnastych,osiemnastym,osiemnastych,osiemnastymi,osiemnastych" />
+                </Variant>
+                <Variant type="rodzaj" variant="plural">
+                    <Variant type="przypadek" forms="osiemnaste,osiemnastych,osiemnastym,osiemnaste,osiemnastymi,osiemnastych" />
+                </Variant>
+            </Ordinal>
+            <Ordinal from="dziewiętnaście">
+                <Variant type="rodzaj" variant="maskulin">
+                    <Variant type="przypadek" forms="dziewiętnasty,dziewiętnastego,dziewiętnastemu,dziewiętnasty,dziewiętnastym,dziewiętnastym" />
+                </Variant>
+                <Variant type="rodzaj" variant="feminin">
+                    <Variant type="przypadek" forms="dziewiętnasta,dziewiętnastej,dziewiętnastej,dziewiętnastą,dziewiętnastą,dziewiętnastej" />
+                </Variant>
+                <Variant type="rodzaj" variant="nijaki">
+                    <Variant type="przypadek" forms="dziewiętnaste,dziewiętnastego,dziewiętnastemu,dziewiętnaste,dziewiętnastym,dziewiętnastym" />
+                </Variant>
+                <Variant type="rodzaj" variant="plural_mos">
+                    <Variant type="przypadek" forms="dziewiętnaści,dziewiętnastych,dziewiętnastym,dziewiętnastych,dziewiętnastymi,dziewiętnastych" />
+                </Variant>
+                <Variant type="rodzaj" variant="plural">
+                    <Variant type="przypadek" forms="dziewiętnaste,dziewiętnastych,dziewiętnastym,dziewiętnaste,dziewiętnastymi,dziewiętnastych" />
+                </Variant>
+            </Ordinal>
 
+            <!--
+                20+ are handled by PolishOrdinalLanguageSpecifics (C# plugin).
+                The word rules below are kept for reference but the plugin takes priority.
+            -->
             <!-- ===== Dizaines ===== -->
             <Ordinal from="dwadzieścia"    to="dwudziesty" />
             <Ordinal from="trzydzieści"    to="trzydziesty" />

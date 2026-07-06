@@ -61,26 +61,32 @@ et dans `NumberToStringConverter`.
 constructeur quand `isRegex=true`. `ApplyTriggerReplace` utilise `CompiledRegex.Replace()`
 au lieu de `Regex.Replace()` à chaque appel.
 
-### 8. ~~Langues populaires manquantes~~ — **implémenté (VN, TR, SV, NO, UK)**
-Cinq nouveaux fichiers XML ajoutés :
+### 8. ~~Langues populaires manquantes~~ — **implémenté (VN, TR, SV, NO, UK, RO)**
+Nouveaux fichiers XML ajoutés :
 - **VN/VI/VI-VN (Vietnamien)** : cardinals avec allomorphes mốt/lăm via remplacement `Anywhere`,
   ordinals `thứ N` avec exception `thứ nhất`. Connecteur *linh* non implémenté (nécessite moteur).
 - **TR/TR-TR (Turc)** : cardinals sans `bir yüz` / `bir bin` (règles nationales respectées).
 - **SV/SV-SE (Suédois)** : cardinals avec fusion 20s (`tjugo*`) et espaces 30s-90s.
 - **NO/NB/NB-NO (Norvégien Bokmål)** : cardinals.
 - **UK/UK-UA (Ukrainien)** : cardinals simplifiés (inflexion тисяч invariante).
-- **RO (Roumain)** : non implémenté (système genre+cas trop complexe → reporté).
+- **RO/RO-RO (Roumain)** : cardinals avec noms d'échelle statiques `mii`/`milioane`/`miliarde` ;
+  remplacements `onScale+onValue` pour l'accord `unu/doi` ; variante `gen=feminin` (una/două).
+  Limitation connue : l'insertion de `de` avant les noms d'échelle pour les multiples ≥ 20
+  (ex. "douăzeci de mii") nécessite un attribut `scaleConnector` non encore implémenté dans le moteur.
 
 ### 9. Ordinaux ZU (Zoulou) via `IOrdinalLanguageSpecifics` — **reporté**
 Nécessite une recherche linguistique approfondie (classes nominales 1–17) et une implémentation
 `ZuluOrdinalLanguageSpecifics`. Hors scope d'un correctif XML.
 
-### 10. Ordinaux PL complets — **reporté**
-L'implémentation actuelle couvre le nominatif masculin singulier.
-Les formes complètes (féminin/neutre + 7 cas) nécessitent `PolishOrdinalLanguageSpecifics`.
+### 10. ~~Ordinaux PL complets~~ — **implémenté**
+`PolishOrdinalLanguageSpecifics` (plugin C#) couvre les ordinals 20–999 avec les 30 formes
+`rodzaj × przypadek` (5 genres × 6 cas) ; le XML couvre 1–19 avec des blocs `<Ordinal>` complets.
+Limitation : les ordinals ≥ 1 000 retombent sur les règles XML simples (tysięczny, etc.).
 
-### 11. `ConvertOrdinal` avec accord complet pour AR — **reporté**
-La règle de polarité de genre arabe (3-10) et la forme duelle nécessitent
+### 11. `ConvertOrdinal` avec accord partiel pour AR — **partiellement implémenté**
+Ordinals 11–19 ajoutés (masculin + féminin via la variante `gender=muʾannath`).
+Restant non implémenté : la règle de polarité de genre arabe (3–10 : le masculin prend
+la forme dérivée du féminin et inversement) et la forme duelle — nécessitent
 `ArabicOrdinalLanguageSpecifics`.
 
 ## Priorité basse — robustesse
@@ -150,13 +156,13 @@ et `0 < remainder < threshold`. VN configuré avec `intraGroupConnector="linh" t
 - 101 → "một trăm linh một" ✓  
 - 110 → "một trăm mười" (pas de connecteur, remainder ≥ threshold) ✓
 
-### 23. ~~Nouvelles langues HR et HU~~ — **implémenté** ; RO **reporté**
+### 23. ~~Nouvelles langues HR et HU~~ — **implémenté** ; RO **implémenté (cardinals, voir item 8)**
 - **HR** (croate) : long scale avec `groupSeparator="li"` → milijun/milijarda/bilijun ;
   exceptions 11–19 ; remplacement "jedan tisuća" → "tisuća" ; ordinals (prvi/drugi/treći…).
 - **HU** (hongrois) : séparateur vide (agglutination) ; forme liante `két` vs forme isolée
   `kettő` via `Exception[2]` + Replacements ("kettőezer" → "kétezer") ; `startIndex="2"` pour
   générer billió/billiárd ; "egyezer" → "ezer" ; ordinals lexicaux (első/második…).
-- **RO** (roumain) : genre m/f + "de" devant grands nombres — reporté, trop complexe.
+- **RO** (roumain) : cardinals implémentés (PR #416). Voir item 8 pour les détails et la limitation "de".
 
 ### ~~C1. Numéros romains~~ — **hors périmètre**
 `ConvertRoman` doit faire l'objet d'un système de conversion distinct qui pourrait implémenter

@@ -1607,7 +1607,7 @@ public class NumberToStringConverterImprovementsTests
             (10,  "dziesiąty"),
             (11,  "jedenasty"),
             (20,  "dwudziesty"),
-            (21,  "dwadzieścia pierwszy"), // limitation XML : seul le dernier mot est transformé
+            (21,  "dwudziesty pierwszy"),
             (100, "setny"),
             (1000, "tysięczny"),
         ];
@@ -3099,5 +3099,146 @@ public class NumberToStringConverterImprovementsTests
         // group 0 (units) is outside range 1..2 → no replacement
         Assert.AreEqual("un",   c.Convert(1),   "1 — units group not in 1..2");
         Assert.AreEqual("deux", c.Convert(2),   "2 — units group not in 1..2");
+    }
+
+    // ── AR — Ordinals 11-19 ──────────────────────────────────────────────────
+
+    [TestMethod]
+    public void ConvertOrdinal_AR_11To19_Masculine()
+    {
+        var converter = NumberToStringConverter.GetConverter("AR");
+        (int n, string expected)[] cases =
+        [
+            (11, "حادي عشر"),
+            (12, "ثاني عشر"),
+            (13, "ثالث عشر"),
+            (15, "خامس عشر"),
+            (19, "تاسع عشر"),
+        ];
+        foreach (var (n, expected) in cases)
+            Assert.AreEqual(expected, converter.ConvertOrdinal(n), $"AR masc ordinal of {n}");
+    }
+
+    [TestMethod]
+    public void ConvertOrdinal_AR_11To19_Feminine()
+    {
+        var converter = NumberToStringConverter.GetConverter("AR");
+        (int n, string expected)[] cases =
+        [
+            (11, "حادية عشرة"),
+            (12, "ثانية عشرة"),
+            (13, "ثالثة عشرة"),
+            (15, "خامسة عشرة"),
+            (19, "تاسعة عشرة"),
+        ];
+        foreach (var (n, expected) in cases)
+            Assert.AreEqual(expected, converter.ConvertOrdinal(n, "gender=muʾannath"), $"AR fem ordinal of {n}");
+    }
+
+    // ── PL — Ordinals avec variantes (plugin 20+, XML 11-19) ─────────────────
+
+    [TestMethod]
+    public void ConvertOrdinal_PL_11To19_WithVariants()
+    {
+        var converter = NumberToStringConverter.GetConverter("PL");
+
+        Assert.AreEqual("jedenasty",   converter.ConvertOrdinal(11), "11 maskulin mianownik");
+        Assert.AreEqual("jedenasta",   converter.ConvertOrdinal(11, "rodzaj=feminin"), "11 feminin mianownik");
+        Assert.AreEqual("jedenastą",   converter.ConvertOrdinal(11, "rodzaj=feminin", "przypadek=biernik"),
+                         "11 feminin biernik");
+        Assert.AreEqual("jedenaści",   converter.ConvertOrdinal(11, "rodzaj=plural_mos"), "11 pl_mos mianownik");
+        Assert.AreEqual("jedenastych", converter.ConvertOrdinal(11, "rodzaj=plural_mos", "przypadek=dopełniacz"),
+                         "11 pl_mos dopełniacz");
+    }
+
+    [TestMethod]
+    public void ConvertOrdinal_PL_Plugin_Tens()
+    {
+        var converter = NumberToStringConverter.GetConverter("PL");
+
+        Assert.AreEqual("dwudziesty",   converter.ConvertOrdinal(20),                        "20 maskulin nom");
+        Assert.AreEqual("dwudziesta",   converter.ConvertOrdinal(20, "rodzaj=feminin"),       "20 feminin nom");
+        Assert.AreEqual("trzydziesty",  converter.ConvertOrdinal(30),                        "30 maskulin nom");
+        Assert.AreEqual("osiemdziesiąty", converter.ConvertOrdinal(80),                      "80 maskulin nom");
+        Assert.AreEqual("dziewięćdziesiąci",
+                         converter.ConvertOrdinal(90, "rodzaj=plural_mos"),                  "90 pl_mos nom");
+    }
+
+    [TestMethod]
+    public void ConvertOrdinal_PL_Plugin_Compounds()
+    {
+        var converter = NumberToStringConverter.GetConverter("PL");
+
+        Assert.AreEqual("dwudziesty pierwszy",  converter.ConvertOrdinal(21),                       "21 masc nom");
+        Assert.AreEqual("dwudziesta pierwsza",  converter.ConvertOrdinal(21, "rodzaj=feminin"),      "21 fem nom");
+        Assert.AreEqual("dwudziestego pierwszego",
+                         converter.ConvertOrdinal(21, "przypadek=dopełniacz"),                       "21 masc gen");
+        Assert.AreEqual("trzydziesty drugi",    converter.ConvertOrdinal(32),                       "32 masc nom");
+        Assert.AreEqual("pięćdziesiąty piąty",  converter.ConvertOrdinal(55),                       "55 masc nom");
+        Assert.AreEqual("dziewięćdziesiąty dziewiąty", converter.ConvertOrdinal(99),                "99 masc nom");
+    }
+
+    [TestMethod]
+    public void ConvertOrdinal_PL_Plugin_Hundreds()
+    {
+        var converter = NumberToStringConverter.GetConverter("PL");
+
+        Assert.AreEqual("setny",         converter.ConvertOrdinal(100),                     "100 masc nom");
+        Assert.AreEqual("setna",         converter.ConvertOrdinal(100, "rodzaj=feminin"),   "100 fem nom");
+        Assert.AreEqual("dwusetny",      converter.ConvertOrdinal(200),                     "200 masc nom");
+        Assert.AreEqual("sto pierwszy",  converter.ConvertOrdinal(101),                     "101 masc nom");
+        Assert.AreEqual("sto pierwsza",  converter.ConvertOrdinal(101, "rodzaj=feminin"),   "101 fem nom");
+        Assert.AreEqual("dwieście dwudziesty pierwszy", converter.ConvertOrdinal(221),      "221 masc nom");
+    }
+
+    // ── RO — Cardinals ───────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void Convert_RO_Cardinals_Basic()
+    {
+        var converter = NumberToStringConverter.GetConverter("RO");
+        (long n, string expected)[] cases =
+        [
+            (0,   "zero"),
+            (1,   "unu"),
+            (2,   "doi"),
+            (10,  "zece"),
+            (11,  "unsprezece"),
+            (12,  "doisprezece"),
+            (19,  "nouăsprezece"),
+            (20,  "douăzeci"),
+            (21,  "douăzeci și unu"),
+            (22,  "douăzeci și doi"),
+            (100, "o sută"),
+            (101, "o sută unu"),
+            (200, "două sute"),
+            (999, "nouă sute nouăzeci și nouă"),
+        ];
+        foreach (var (n, expected) in cases)
+            Assert.AreEqual(expected, converter.Convert(n), $"RO cardinal {n}");
+    }
+
+    [TestMethod]
+    public void Convert_RO_Cardinals_Scale()
+    {
+        var converter = NumberToStringConverter.GetConverter("RO");
+
+        Assert.AreEqual("o mie",        converter.Convert(1_000),       "1 000");
+        Assert.AreEqual("două mii",     converter.Convert(2_000),       "2 000");
+        Assert.AreEqual("zece mii",     converter.Convert(10_000),      "10 000");
+        Assert.AreEqual("un milion",    converter.Convert(1_000_000),   "1 000 000");
+        Assert.AreEqual("două milioane", converter.Convert(2_000_000),  "2 000 000");
+        Assert.AreEqual("un miliard",   converter.Convert(1_000_000_000), "1 000 000 000");
+    }
+
+    [TestMethod]
+    public void Convert_RO_Cardinals_Gender()
+    {
+        var converter = NumberToStringConverter.GetConverter("RO");
+
+        Assert.AreEqual("una",              converter.Convert(1,  "gen=feminin"),  "1f");
+        Assert.AreEqual("două",             converter.Convert(2,  "gen=feminin"),  "2f");
+        Assert.AreEqual("douăzeci și una",  converter.Convert(21, "gen=feminin"),  "21f");
+        Assert.AreEqual("douăzeci și două", converter.Convert(22, "gen=feminin"),  "22f");
     }
 }
