@@ -167,3 +167,46 @@ et `0 < remainder < threshold`. VN configuré avec `intraGroupConnector="linh" t
 ### ~~C1. Numéros romains~~ — **hors périmètre**
 `ConvertRoman` doit faire l'objet d'un système de conversion distinct qui pourrait implémenter
 `INumberToStringConverter` mais sans utiliser le moteur XML interne. Hors scope de ce projet.
+
+---
+
+## Améliorations identifiées (2026-07-06)
+
+### 24. Tests manquants : HR, HU, NO, SV, UK, VN
+
+Six langues ont une config XML complète mais aucun fichier de test dédié.
+Une régression de config passerait inaperçue. Fichiers à créer :
+`NumberToStringConverterHRTests.cs`, `NumberToStringConverterHUTests.cs`,
+`NumberToStringConverterNOTests.cs`, `NumberToStringConverterSVTests.cs`,
+`NumberToStringConverterUKTests.cs`, `NumberToStringConverterVNTests.cs`.
+
+### 25. Ordinaux féminins HI non testés
+
+La PR #419 a dû ajouter `<Dimension name="gender" values="puṃ,strī" />` dans la config HI
+pour corriger un bug de validation. La dimension est désormais déclarée ; `ConvertOrdinal(1, "gender=strī")`
+devrait retourner "पहली", mais `NumberToStringConverterHITests.cs` ne teste que les ordinaux masculins.
+
+### 26. Validation des *valeurs* de dimensions
+
+`ValidateVariantReferences` vérifie que les clés de contrainte (`gender`, `case`…) correspondent
+à des dimensions déclarées, mais pas que les *valeurs* utilisées (`strī`, `partitiivi`…) figurent
+dans les valeurs déclarées de la dimension.
+Un typo de valeur (ex. `variant="stri"` au lieu de `"strī"`) passe silencieusement ;
+la règle ne s'applique jamais sans erreur visible.
+Même emplacement dans `ValidateVariantReferences`, même principe que la validation des clés.
+
+### 27. `VariantRules` pré-triées à la construction
+
+`ApplyVariantRules` et `ApplyVariantRulesForScale` appellent chacune `.OrderBy(r => r.Specificity)`
+à chaque appel de `Convert()`. L'ordre est stable et connu à la construction : trier une seule fois
+dans le constructeur et stocker le résultat dans un `ImmutableArray` déjà ordonné.
+Évite une allocation + tri à chaque appel pour les langues avec de nombreuses règles (AR, PL, DE…).
+
+### 28. Config FI et KO : suppression du multiplicateur "1" devant l'unité de mille
+
+- **FI** : 1 000 s'écrit "tuhat" en finnois, pas "yksi tuhat". Ajouter
+  `<Replacement oldValue="yksi tuhat" newValue="tuhat" onScale="1" onValue="1" />` dans `FI.xml`.
+- **KO** : 1 000 s'écrit "천", pas "일 천". Même type de remplacement à ajouter dans `KO.xml`.
+
+Ces deux configs sont les seuls endroits du projet où le multiplicateur 1 n'est pas absorbé
+alors que la langue l'exige.
