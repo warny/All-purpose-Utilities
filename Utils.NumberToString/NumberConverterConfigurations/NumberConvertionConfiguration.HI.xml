@@ -71,6 +71,10 @@
             <Number value="18" string="अठारह" />
             <Number value="19" string="उन्नीस" />
         </Exceptions>
+        <Variants>
+            <!-- Grammatical gender dimension used by OrdinalVariants. -->
+            <Dimension name="gender" values="puṃ,strī" />
+        </Variants>
         <Ordinals suffix="वाँ">
             <!-- 1-4 : formes entièrement irrégulières -->
             <OrdinalException value="1" string="पहला" />

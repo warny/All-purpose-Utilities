@@ -739,8 +739,6 @@ namespace Utils.NumberToString
                 .SelectMany(d => new[] { d.Name }.Concat(d.LocalName != null ? [d.LocalName] : []))
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-            if (knownDimensions.Count == 0) return;
-
             string Declared() =>
                 string.Join(", ", converter.VariantDimensions.Select(d => d.Name));
 
