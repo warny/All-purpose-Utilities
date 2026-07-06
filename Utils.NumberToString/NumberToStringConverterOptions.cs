@@ -148,6 +148,16 @@ public sealed class NumberToStringConverterOptions
     public int IntraGroupConnectorThreshold { get; set; } = 10;
 
     /// <summary>
+    /// Connector word inserted between a group's digit text and the scale name when the group's
+    /// numeric value is at or above <see cref="ScaleConnectorThreshold"/>.
+    /// Example: <c>"de"</c> for Romanian — "douăzeci de mii" (20 000).
+    /// </summary>
+    public string? ScaleConnector { get; set; }
+
+    /// <summary>Threshold at or above which <see cref="ScaleConnector"/> is inserted.</summary>
+    public int ScaleConnectorThreshold { get; set; } = 20;
+
+    /// <summary>
     /// Time units keyed by canonical name ("hour", "minute", "second"),
     /// each with singular, plural, and an optional count-1 override for grammatical gender.
     /// Required for Convert(TimeSpan/TimeOnly).
@@ -214,6 +224,8 @@ public sealed class NumberToStringConverterOptions
         GroupConnectorThreshold = source.GroupConnectorThreshold;
         IntraGroupConnector = source.IntraGroupConnector;
         IntraGroupConnectorThreshold = source.IntraGroupConnectorThreshold;
+        ScaleConnector = source.ScaleConnector;
+        ScaleConnectorThreshold = source.ScaleConnectorThreshold;
         TimeUnits = source.TimeUnits;
         DatePattern = source.DatePattern;
         DateFirstDay = source.DateFirstDay;

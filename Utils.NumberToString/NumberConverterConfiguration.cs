@@ -818,6 +818,23 @@ public class LanguageType
     public int IntraGroupConnectorThreshold =>
         int.TryParse(IntraGroupConnectorThresholdString, out var n) ? n : 10;
 
+    /// <summary>
+    /// Gets or sets the connector word inserted between a group's digit text and the scale name
+    /// when the group's numeric value is at or above <see cref="ScaleConnectorThreshold"/>.
+    /// Example: "de" for Romanian (douăzeci de mii = 20 000).
+    /// </summary>
+    [XmlAttribute("scaleConnector")]
+    public string? ScaleConnector { get; set; }
+
+    /// <summary>Gets or sets the threshold (as string) at or above which <see cref="ScaleConnector"/> is inserted.</summary>
+    [XmlAttribute("scaleConnectorThreshold")]
+    public string? ScaleConnectorThresholdString { get; set; }
+
+    /// <summary>Gets the threshold at or above which <see cref="ScaleConnector"/> is inserted between a multiplier and the scale name.</summary>
+    [XmlIgnore]
+    public int ScaleConnectorThreshold =>
+        int.TryParse(ScaleConnectorThresholdString, out var n) ? n : 20;
+
     /// <summary>Gets or sets the time-unit configuration (hours, minutes, seconds).</summary>
     [XmlElement(ElementName = "TimeUnits")]
     public TimeUnitsType? TimeUnits { get; set; }

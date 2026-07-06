@@ -220,6 +220,8 @@ namespace Utils.NumberToString
                 GroupConnectorThresholdString = child.GroupConnectorThresholdString ?? baseType.GroupConnectorThresholdString,
                 IntraGroupConnector = child.IntraGroupConnector ?? baseType.IntraGroupConnector,
                 IntraGroupConnectorThresholdString = child.IntraGroupConnectorThresholdString ?? baseType.IntraGroupConnectorThresholdString,
+                ScaleConnector = child.ScaleConnector ?? baseType.ScaleConnector,
+                ScaleConnectorThresholdString = child.ScaleConnectorThresholdString ?? baseType.ScaleConnectorThresholdString,
                 TimeUnits = child.TimeUnits ?? baseType.TimeUnits,
                 DateFormat = child.DateFormat ?? baseType.DateFormat,
             };
@@ -712,6 +714,8 @@ namespace Utils.NumberToString
                 GroupConnectorThreshold = language.GroupConnectorThreshold,
                 IntraGroupConnector = language.IntraGroupConnector,
                 IntraGroupConnectorThreshold = language.IntraGroupConnectorThreshold,
+                ScaleConnector = language.ScaleConnector,
+                ScaleConnectorThreshold = language.ScaleConnectorThreshold,
                 TimeUnits = language.TimeUnits?.Units?
                     .ToDictionary(u => u.Name, u => (u.Singular, u.Plural, u.Count1Form)),
                 DatePattern = language.DateFormat?.Pattern,
@@ -725,15 +729,42 @@ namespace Utils.NumberToString
         }
 
         /// <summary>
-        /// Validates that all variant dimension references in TriggerReplace.Forms constraints
-        /// are declared dimensions for the converter. Throws <see cref="InvalidOperationException"/>
-        /// when an unknown dimension key is found.
+        /// Validates that all variant dimension references in VariantRules, OrdinalVariants, and
+        /// TriggerReplace.Forms constraints are declared dimensions for the converter.
+        /// Throws <see cref="InvalidOperationException"/> when an unknown dimension key is found.
         /// </summary>
         private static void ValidateVariantReferences(NumberToStringConverter converter, string configSource)
         {
             var knownDimensions = converter.VariantDimensions
                 .SelectMany(d => new[] { d.Name }.Concat(d.LocalName != null ? [d.LocalName] : []))
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            if (knownDimensions.Count == 0) return;
+
+            string Declared() =>
+                string.Join(", ", converter.VariantDimensions.Select(d => d.Name));
+
+            foreach (var rule in converter.VariantRules)
+            {
+                foreach (var key in rule.Constraints.Keys)
+                {
+                    if (!knownDimensions.Contains(key))
+                        throw new InvalidOperationException(
+                            $"[{configSource}] Variant rule references unknown dimension '{key}'. " +
+                            $"Declared: [{Declared()}].");
+                }
+            }
+
+            foreach (var rule in converter.OrdinalVariants)
+            {
+                foreach (var key in rule.Constraints.Keys)
+                {
+                    if (!knownDimensions.Contains(key))
+                        throw new InvalidOperationException(
+                            $"[{configSource}] OrdinalVariant rule references unknown dimension '{key}'. " +
+                            $"Declared: [{Declared()}].");
+                }
+            }
 
             foreach (var trigger in converter.Triggers)
             {
@@ -745,8 +776,8 @@ namespace Utils.NumberToString
                         {
                             if (!knownDimensions.Contains(key))
                                 throw new InvalidOperationException(
-                                    $"[{configSource}] TriggerReplace references unknown variant dimension '{key}'. " +
-                                    $"Declared dimensions: [{string.Join(", ", converter.VariantDimensions.Select(d => d.Name))}].");
+                                    $"[{configSource}] TriggerReplace references unknown dimension '{key}'. " +
+                                    $"Declared: [{Declared()}].");
                         }
                     }
                 }
@@ -781,16 +812,21 @@ namespace Utils.NumberToString
                                          || string.Equals(t.Name, typeName, StringComparison.Ordinal));
             }
 
-            if (specificsType == null
-                || !typeof(INumberToStringLanguageSpecifics).IsAssignableFrom(specificsType)
+            if (specificsType == null)
+                throw new InvalidOperationException(
+                    $"LanguageSpecifics type '{typeName}' could not be found in any loaded assembly. " +
+                    $"Call RegisterLanguageSpecifics(\"{typeName}\", instance) before loading the configuration.");
+
+            if (!typeof(INumberToStringLanguageSpecifics).IsAssignableFrom(specificsType)
                 || specificsType.IsAbstract
                 || specificsType.IsInterface)
-            {
-                return new DefaultNumberToStringLanguageSpecifics();
-            }
+                throw new InvalidOperationException(
+                    $"LanguageSpecifics type '{typeName}' does not implement INumberToStringLanguageSpecifics " +
+                    $"or is abstract/interface.");
 
             return Activator.CreateInstance(specificsType) as INumberToStringLanguageSpecifics
-                   ?? new DefaultNumberToStringLanguageSpecifics();
+                   ?? throw new InvalidOperationException(
+                       $"LanguageSpecifics type '{typeName}' could not be instantiated.");
         }
 
         /// <summary>

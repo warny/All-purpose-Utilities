@@ -1556,6 +1556,27 @@
                             </xs:annotation>
                         </xs:attribute>
 
+                        <xs:attribute name="scaleConnector" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Connector word inserted between a group's digit text and the scale
+                                    name when the group's numeric value is at or above scaleConnectorThreshold.
+                                    Example: "de" for Romanian — "douăzeci de mii" (20 000).
+                                    Omit when no connector is needed between multiplier and scale name.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+
+                        <xs:attribute name="scaleConnectorThreshold" type="xs:nonNegativeInteger" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Threshold at or above which scaleConnector is inserted between the
+                                    group digit text and the scale name. Defaults to 20 when omitted.
+                                    Example: 20 for Romanian (connector fires for multiples ≥ 20 × any scale).
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+
                     </xs:complexType>
                 </xs:element>
             </xs:sequence>
