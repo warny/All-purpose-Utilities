@@ -3,14 +3,11 @@
     <!--
       Romanian (RO) cardinals.
 
-      Known limitation: Romanian inserts "de" between the multiplier and the scale name
-      when the multiplier is ≥ 20 (e.g. "douăzeci de mii" = 20 000, "o sută de milioane").
-      This requires a scaleConnector/scaleConnectorThreshold engine feature that does not
-      yet exist.  Numbers below 20 × any scale are correct ("o mie", "doisprezece mii",
-      "un milion", "nouăsprezece milioane"); larger multipliers omit "de" for now.
-
       Gender: "unu/una" (1m/f) and "doi/două" (2m/f) are tracked via the gender variant.
       The default gender (no variant) is masculine.
+
+      scaleConnector="de" inserts "de" between the multiplier and the scale name when the
+      multiplier is ≥ 20 (douăzeci de mii, o sută de milioane, etc.).
     -->
     <Language
         groupSize="3"
@@ -20,6 +17,8 @@
         minus="minus *"
         decimalSeparator="virgulă"
         fractionSeparator="peste"
+        scaleConnector="de"
+        scaleConnectorThreshold="20"
     >
         <Culture>RO</Culture>
         <Culture>RO-RO</Culture>

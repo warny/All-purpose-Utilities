@@ -112,6 +112,8 @@ namespace Utils.NumberToString
             _groupConnectorThreshold = options.GroupConnectorThreshold;
             _intraGroupConnector = options.IntraGroupConnector;
             _intraGroupConnectorThreshold = options.IntraGroupConnectorThreshold;
+            _scaleConnector = options.ScaleConnector;
+            _scaleConnectorThreshold = options.ScaleConnectorThreshold;
             _timeUnits = options.TimeUnits?.ToImmutableDictionary()
                          ?? ImmutableDictionary<string, (string Singular, string Plural, string? Count1Form)>.Empty;
             _datePattern = options.DatePattern;
@@ -123,6 +125,7 @@ namespace Utils.NumberToString
                     ? (IEnumerable<(string, VariantDimension)>)[(d.Name, d)]
                     : [(d.Name, d), (d.LocalName, d)])
                 .ToImmutableDictionary(t => t.Item1, t => t.Item2, StringComparer.OrdinalIgnoreCase);
+            ValidateVariantReferences(this, LanguageIdentifier.Length > 0 ? LanguageIdentifier : "programmatic");
         }
 
         /// <summary>
@@ -265,6 +268,12 @@ namespace Utils.NumberToString
         /// <summary>Gets the threshold below which the intra-group connector is inserted.</summary>
         public int IntraGroupConnectorThreshold => (int)_intraGroupConnectorThreshold;
 
+        /// <summary>Gets the connector inserted between a group's digit text and the scale name when the group value ≥ threshold (e.g. "de" for Romanian).</summary>
+        public string? ScaleConnector => _scaleConnector;
+
+        /// <summary>Gets the threshold at or above which <see cref="ScaleConnector"/> is inserted.</summary>
+        public int ScaleConnectorThreshold => (int)_scaleConnectorThreshold;
+
         /// <inheritdoc/>
         public bool SupportsTimeConversion => _timeUnits.Count > 0;
 
@@ -301,6 +310,8 @@ namespace Utils.NumberToString
         private readonly long _groupConnectorThreshold;
         private readonly string? _intraGroupConnector;
         private readonly long _intraGroupConnectorThreshold;
+        private readonly string? _scaleConnector;
+        private readonly long _scaleConnectorThreshold;
         private readonly ImmutableDictionary<string, (string Singular, string Plural, string? Count1Form)> _timeUnits;
         private readonly string? _datePattern;
         private readonly string? _dateFirstDay;
@@ -501,8 +512,8 @@ namespace Utils.NumberToString
                 }
             }
 
-            var final = result.ToString().Trim();
-            return isNegative ? Minus.Replace("*", final) : AdjustFunction(final);
+            string final = AdjustFunction(result.ToString().Trim());
+            return isNegative ? Minus.Replace("*", final) : final;
         }
 
         /// <summary>
@@ -525,9 +536,8 @@ namespace Utils.NumberToString
                 absoluteValue.Denominator,
                 allowFractionNames: false);
 
-            final = final.Trim();
-
-            return isNegative ? Minus.Replace("*", final) : AdjustFunction(final);
+            string adjusted = AdjustFunction(final.Trim());
+            return isNegative ? Minus.Replace("*", adjusted) : adjusted;
         }
 
         /// <inheritdoc cref="INumberToStringConverter.Convert(double, string[])"/>
@@ -623,7 +633,11 @@ namespace Utils.NumberToString
                     string digits = ConvertGroup(maxGroup, group);
                     digits = ApplyTriggers(digits, TriggerAt.Group, groupNumber, variantQuery);
 
-                    string resValue = digits + Separator + Scale.GetScaleName(groupNumber).ToPlural(group);
+                    string scaleName = Scale.GetScaleName(groupNumber).ToPlural(group);
+                    string scaleJoin = (_scaleConnector != null && groupNumber > 0 && group >= _scaleConnectorThreshold)
+                        ? Separator + _scaleConnector + Separator
+                        : Separator;
+                    string resValue = digits + scaleJoin + scaleName;
                     resValue = ApplyReplacements(resValue, groupNumber, group);
                     if (variantQuery != null && _hasScaleSpecificVariantRules)
                         resValue = ApplyVariantRulesForScale(resValue, variantQuery, groupNumber, group);
