@@ -231,8 +231,8 @@ la valeur absolue. `-1/10` bénéficie désormais de la forme nommée ("moins un
 ### ~~31. `ApplyVariantRules` / `ApplyVariantRulesForScale` dupliquées~~ — **implémenté**
 
 Fusionnées en une seule méthode `ApplyVariantRules(text, query, numericValue?, scaleGroupNumber?, scaleGroupValue)` ;
-`ApplyVariantRulesForScale` devient un wrapper fin. Le tri de l'item 27 a été fait dans la
-foulée (`_sortedVariantRules` trié une fois au constructeur).
+`ApplyVariantRulesForScale` devient un wrapper fin qui délègue à la version unifiée
+(`_sortedVariantRules`, trié une fois au constructeur, cf. item 27 implémenté par ailleurs).
 
 ### ~~32. Étendre le fix item 28 (multiplicateur "1" devant mille) à ZH et JA~~ — **implémenté (JA seulement)**
 
@@ -240,8 +240,8 @@ Vérification empirique (et non simple supposition) : le mandarin standard **gar
 devant 千 ("一千" est correct, confirmé par un test ZH déjà existant) — aucune correction
 apportée à `ZH.xml`. Le japonais, en revanche, omet "一" devant 千 comme devant 百 (déjà
 correct) : `<Replacement oldValue="一 千" newValue="千" onScale="1" onValue="1" />` ajouté
-dans `JA.xml`. Item 28 lui-même (FI/KO) a été implémenté au passage (il ne l'était pas malgré
-un statut antérieur trompeur) — voir tests `NumberToStringConverterFITests.cs`/`KOTests.cs`.
+dans `JA.xml`. Item 28 lui-même (FI/KO) avait déjà été implémenté indépendamment (PR #422,
+commit `918d6e3f`).
 
 ### ~~33. PT/GL — centaines sans forme féminine~~ — **déjà implémenté (PT) ; GL déjà correct par conception**
 
