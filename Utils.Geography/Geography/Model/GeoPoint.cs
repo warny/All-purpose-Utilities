@@ -332,10 +332,20 @@ namespace Utils.Geography.Model
         }
 
         /// <summary>
-        /// Returns a hash code consistent with the tolerance-based <see cref="Equals(GeoPoint{T})"/>.
-        /// Values are rounded to the comparer's precision (5 decimal places) so that points considered
-        /// equal by <see cref="Equals(GeoPoint{T})"/> after rounding also produce the same hash code.
+        /// Returns a hash code aligned with the tolerance-based <see cref="Equals(GeoPoint{T})"/>: values
+        /// are rounded to the comparer's precision (5 decimal places) before hashing, matching the
+        /// precision that <see cref="GeoVector{T}.Travel"/> and <see cref="GeoVector{T}.Intersections"/>
+        /// already round their results to.
         /// </summary>
+        /// <remarks>
+        /// This does not make <see cref="GetHashCode"/> fully consistent with <see cref="Equals(GeoPoint{T})"/>
+        /// in all cases: because <see cref="comparer"/> is a non-transitive tolerance (see
+        /// <see cref="FloatingPointComparer{T}"/>), two values within the tolerance interval can still round
+        /// to different buckets when they straddle a rounding boundary (e.g. <c>1.000004</c> and
+        /// <c>1.000006</c>). A hash function that is always exactly consistent with a non-transitive equality
+        /// is not possible without either using a constant hash (destroying lookup performance) or making
+        /// equality exact. Rounding is a practical improvement, not a complete fix.
+        /// </remarks>
         public override int GetHashCode()
         {
             return ObjectUtils.ComputeHash(T.Round(Latitude, 5), T.Round(Longitude, 5));

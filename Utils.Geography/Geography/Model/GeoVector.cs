@@ -487,10 +487,17 @@ public sealed class GeoVector<T> : GeoPoint<T>, IEquatable<GeoVector<T>>, IUnary
         => other is not null && comparer.Compare(Bearing, other.Bearing) == 0 && base.Equals(other);
 
     /// <summary>
-    /// Returns a hash code consistent with the tolerance-based <see cref="Equals(GeoVector{T})"/>.
-    /// Values are rounded to the comparer's precision (5 decimal places) so that vectors considered
-    /// equal by <see cref="Equals(GeoVector{T})"/> after rounding also produce the same hash code.
+    /// Returns a hash code aligned with the tolerance-based <see cref="Equals(GeoVector{T})"/>: latitude,
+    /// longitude, and bearing are all rounded to the comparer's precision (5 decimal places) before
+    /// hashing, matching the precision that <see cref="Travel"/> and <see cref="Intersections"/> already
+    /// round their results to.
     /// </summary>
+    /// <remarks>
+    /// As with <see cref="GeoPoint{T}.GetHashCode"/>, this is a practical improvement over hashing raw
+    /// values, not a complete fix: because equality here is tolerance-based and therefore non-transitive
+    /// (see <see cref="FloatingPointComparer{T}"/>), two vectors within the tolerance interval can still
+    /// round to different hash buckets when a coordinate straddles a rounding boundary.
+    /// </remarks>
     public override int GetHashCode()
         => ObjectUtils.ComputeHash(T.Round(Latitude, 5), T.Round(Longitude, 5), T.Round(Bearing, 5));
 
