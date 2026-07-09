@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Utils.Geography.Model;
 using Utils.Geography.Projections;
+using Utils.Mathematics;
 
 namespace Utils.Geography.Display
 {
@@ -67,9 +68,13 @@ namespace Utils.Geography.Display
         /// <remarks>
         /// Uses <see cref="IProjectionTransformation{T}.Normalize"/> (via <see cref="ProjectedPoint{T}.Projection"/>)
         /// to convert the projected point into <c>[0,1]</c> map-fraction coordinates before scaling by the
-        /// total map size in pixels (<c>tileSize &lt;&lt; zoomLevel</c>), matching
+        /// total map size in pixels (<c>tileSize &lt;&lt; zoomLevel</c>, computed in <see langword="long"/>
+        /// to avoid overflowing <see langword="int"/> at high zoom levels), matching
         /// <see cref="RepresentationConverter{T}.GetMapSize"/> and <see cref="RepresentationConverter{T}.MappointToTile"/>
-        /// exactly, so both paths agree on which tile a given point falls into.
+        /// exactly, so both paths agree on which tile a given point falls into. The resulting pixel
+        /// coordinates are clamped to <c>[0, mapSize - 1]</c>: a normalized value of exactly <c>1</c>
+        /// (e.g. Equirectangular's latitude <c>90°</c>, or Mercator's own <see cref="MercatorProjection{T}.MaxLatitude"/>)
+        /// would otherwise floor to <c>mapSize</c>, one pixel past the last valid one.
         /// </remarks>
         public MapPoint(ProjectedPoint<T> projectedPoint, byte zoomLevel, int tileSize)
         {
@@ -77,9 +82,12 @@ namespace Utils.Geography.Display
             TileSize = tileSize;
 
             var (nx, ny) = projectedPoint.Projection.Normalize(projectedPoint);
-            T mapSize = T.CreateChecked(tileSize << zoomLevel);
-            X = long.CreateChecked(T.Floor(nx * mapSize));
-            Y = long.CreateChecked(T.Floor(ny * mapSize));
+            long mapSize = (long)tileSize << zoomLevel;
+            T mapSizeT = T.CreateChecked(mapSize);
+            T maxPixel = T.CreateChecked(mapSize - 1);
+
+            X = long.CreateChecked(MathEx.Clamp(T.Floor(nx * mapSizeT), T.Zero, maxPixel));
+            Y = long.CreateChecked(MathEx.Clamp(T.Floor(ny * mapSizeT), T.Zero, maxPixel));
         }
 
         /// <summary>

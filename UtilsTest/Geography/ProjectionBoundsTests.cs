@@ -1,4 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 using Utils.Geography.Model;
 using Utils.Geography.Projections;
 
@@ -140,5 +141,44 @@ public class ProjectionBoundsTests
             Assert.IsTrue(x is >= 0 and <= 1, $"{projection.GetType().Name}: x={x}");
             Assert.IsTrue(y is >= 0 and <= 1, $"{projection.GetType().Name}: y={y}");
         }
+    }
+
+    /// <summary>
+    /// A minimal <see cref="IProjectionTransformation{T}"/> implementation that predates
+    /// <c>Bounds</c>/<c>Normalize</c> and does not override either — standing in for a third-party
+    /// projection compiled against an earlier version of this package.
+    /// </summary>
+    private sealed class LegacyProjectionWithoutBounds : IProjectionTransformation<double>
+    {
+        public ProjectedPoint<double> GeoPointToMapPoint(GeoPoint<double> geoPoint)
+            => new(geoPoint.Longitude, geoPoint.Latitude, this);
+
+        public GeoPoint<double> MapPointToGeoPoint(ProjectedPoint<double> mapPoint)
+            => new(mapPoint.Y, mapPoint.X);
+    }
+
+    [TestMethod]
+    public void CustomProjectionsThatDoNotOverrideBoundsStillCompileAndWorkForCoreConversions()
+    {
+        // Regression test for backwards compatibility: adding Bounds to the public interface must not
+        // break third-party IProjectionTransformation<T> implementations compiled before it existed.
+        IProjectionTransformation<double> legacy = new LegacyProjectionWithoutBounds();
+        var geoPoint = new GeoPoint<double>(10, 20);
+
+        var projected = legacy.GeoPointToMapPoint(geoPoint);
+        var roundTripped = legacy.MapPointToGeoPoint(projected);
+
+        Assert.AreEqual(geoPoint.Latitude, roundTripped.Latitude);
+        Assert.AreEqual(geoPoint.Longitude, roundTripped.Longitude);
+    }
+
+    [TestMethod]
+    public void CustomProjectionsThatDoNotOverrideBoundsThrowOnlyWhenNormalizeIsActuallyUsed()
+    {
+        IProjectionTransformation<double> legacy = new LegacyProjectionWithoutBounds();
+        var projected = legacy.GeoPointToMapPoint(new GeoPoint<double>(10, 20));
+
+        Assert.ThrowsException<NotSupportedException>(() => _ = legacy.Bounds);
+        Assert.ThrowsException<NotSupportedException>(() => legacy.Normalize(projected));
     }
 }

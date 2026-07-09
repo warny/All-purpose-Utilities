@@ -139,6 +139,30 @@ Si un usage réel de rendu de tuiles façon slippy-map est prévu, il faudra inv
 part (dans `MapPoint`/`RepresentationConverter`, ou par un flag) — non fait ici faute de demande
 explicite en ce sens.
 
+**Corrections suite à la revue Codex sur la PR #425** :
+- **Compatibilité ascendante de `Bounds`** — ajouter `Bounds` comme membre requis de l'interface
+  publique `IProjectionTransformation<T>` aurait cassé toute implémentation tierce existante
+  (source et binaire). **Fix** : `Bounds` a désormais une implémentation par défaut sur l'interface
+  (C# 8+) qui lève `NotSupportedException` avec un message explicite, plutôt que d'être abstraite.
+  Les implémentations existantes qui ne la redéfinissent pas continuent de compiler et de fonctionner
+  pour `GeoPointToMapPoint`/`MapPointToGeoPoint` sans aucun changement ; elles ne lèvent que si du code
+  appelle réellement `Bounds`/`Normalize` dessus. La classe abstraite `ProjectionTransformation<T>` ne
+  redéclare plus `Bounds` en `abstract` pour la même raison (hérite du même filet de sécurité). Testé :
+  `CustomProjectionsThatDoNotOverrideBoundsStillCompileAndWorkForCoreConversions` et
+  `...ThrowOnlyWhenNormalizeIsActuallyUsed`.
+- **Bord exact `normalized=1` non clampé** — `Floor(1 × mapSize)` vaut `mapSize`, un pixel après le
+  dernier valide (ex. latitude exactement `90°` en Equirectangular, ou exactement
+  `MercatorProjection<T>.MaxLatitude`). `MapPoint` ne clampait pas ce cas alors que `MappointToTile`
+  clampait déjà l'index de tuile — donc les deux chemins auraient pu à nouveau diverger sur cette
+  frontière précise. **Fix** : les deux méthodes clampent désormais le pixel lui-même à
+  `[0, mapSize - 1]` avant tout calcul de tuile. Testé : `PixelCoordinatesAreClampedExactlyAtTheBoundaryEdge`.
+- **Overflow `int` de la taille de carte aux hauts niveaux de zoom** — `tileSize << zoomLevel` en `int`
+  déborde dès le zoom 24 avec une tuile de 256px (`256 << 24` dépasse `int.MaxValue`), produisant une
+  taille de carte négative ou nulle et des tuiles fausses. **Fix** :
+  `RepresentationConverter.GetMapSize` retourne désormais `long` (changement de signature — l'ancien
+  type `int` était trop étroit pour un usage réaliste) ; `MapPoint` calcule aussi sa taille de carte en
+  `long` directement. Testé : `GetMapSizeDoesNotOverflowAtHighZoomLevels`.
+
 ### Avertissement analyseur CA2260 sur `GeoVector<T>` (supprimé via pragma)
 `GeoVector<T> : GeoPoint<T>, IEqualityOperators<GeoVector<T>, GeoVector<T>, bool>` — l'analyseur
 signale que `GeoPoint<T>` (qui implémente lui-même `IEqualityOperators<GeoPoint<T>, GeoPoint<T>,

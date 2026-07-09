@@ -36,12 +36,27 @@ public interface IProjectionTransformation<T>
     /// map-fraction coordinates before scaling to a pixel/tile grid.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// For a projection whose output is genuinely unbounded at some point of the sphere (e.g. Mercator at
     /// the poles), <see cref="Bounds"/> must report a practical, finite envelope rather than the true
     /// (infinite) mathematical range — see each projection's own documentation for how that envelope is
     /// chosen and what it excludes.
+    /// </para>
+    /// <para>
+    /// This member has a default implementation (throwing <see cref="NotSupportedException"/>) rather
+    /// than being required, so that adding it to this public interface does not break existing
+    /// third-party <see cref="IProjectionTransformation{T}"/> implementations: they keep compiling and
+    /// working exactly as before, and only fail — with a clear message — if they (or code that consumes
+    /// them, like <see cref="Normalize"/>, <see cref="Utils.Geography.Display.MapPoint{T}"/>'s
+    /// <see cref="ProjectedPoint{T}"/> constructor, or <see cref="Utils.Geography.Display.RepresentationConverter{T}.MappointToTile"/>)
+    /// actually try to use it without overriding it. All 7 projections built into this package override it.
+    /// </para>
     /// </remarks>
-    (T MinX, T MaxX, T MinY, T MaxY) Bounds { get; }
+    (T MinX, T MaxX, T MinY, T MaxY) Bounds
+        => throw new NotSupportedException(
+            $"{GetType().Name} does not override {nameof(IProjectionTransformation<T>)}.{nameof(Bounds)}, " +
+            $"so it cannot be used with {nameof(Normalize)} or with the APIs that depend on it " +
+            $"(MapPoint<T>'s ProjectedPoint constructor, RepresentationConverter<T>.MappointToTile).");
 
     /// <summary>
     /// Normalizes <paramref name="projectedPoint"/> into map-fraction coordinates using <see cref="Bounds"/>:
@@ -92,8 +107,11 @@ public abstract class ProjectionTransformation<T> :
     /// <inheritdoc/>
     public abstract GeoPoint<T> MapPointToGeoPoint(ProjectedPoint<T> mapPoint);
 
-    /// <inheritdoc/>
-    public abstract (T MinX, T MaxX, T MinY, T MaxY) Bounds { get; }
+    // Bounds is intentionally not redeclared here: leaving it out means every existing subclass of
+    // this base class automatically falls back to IProjectionTransformation<T>.Bounds' default
+    // (throwing) implementation, exactly like a class that doesn't implement the interface member
+    // directly — no breaking change for anyone who already derived from ProjectionTransformation<T>.
+    // Subclasses that want Normalize/Bounds support can still override Bounds directly.
 
     /// <inheritdoc/>
     public override bool Equals(object? obj)

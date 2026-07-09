@@ -294,7 +294,7 @@ Tile<double> tile = converter.MappointToTile(projected, zoomLevel: 10);
 Console.WriteLine($"tile x={tile.TileX}, y={tile.TileY}, zoom={tile.ZoomFactor}");
 
 // Total map size at zoom 8 (256 * 2^8 = 65536 px)
-int mapSize = converter.GetMapSize(zoomLevel: 8);
+long mapSize = converter.GetMapSize(zoomLevel: 8);
 
 // Ground resolution (meters/pixel) at Paris latitude, zoom 14
 double resolution = converter.ComputeGroundResolution(paris.Latitude, zoomLevel: 14);
