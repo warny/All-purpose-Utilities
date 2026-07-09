@@ -665,6 +665,103 @@ corresponding angle in the current measurement system.</p>
 
 
 
+  <a id="Utils_Mathematics_IAngleCalculator_1_AreEqual_" data-uid="Utils.Mathematics.IAngleCalculator`1.AreEqual*"></a>
+
+  <h3 id="Utils_Mathematics_IAngleCalculator_1_AreEqual__0__0__0_" data-uid="Utils.Mathematics.IAngleCalculator`1.AreEqual(`0,`0,`0)">
+  AreEqual(T, T, T)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Mathematics/IAngleCalculator.cs/#L275"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether two angles are equal within the specified tolerance, treating the angle
+system as circular: e.g. in degrees, <code>359.999999</code> and <code>0.000001</code> are almost equal
+(shortest distance <code>0.000002</code>), not ~360 apart as a naive <code>|a - b|</code> would suggest.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">bool AreEqual(T angle1, T angle2, T tolerance)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>angle1</code> <span class="xref">T</span></dt>
+    <dd><p>First angle, expressed in this calculator's measurement system.</p>
+</dd>
+    <dt><code>angle2</code> <span class="xref">T</span></dt>
+    <dd><p>Second angle, expressed in this calculator's measurement system.</p>
+</dd>
+    <dt><code>tolerance</code> <span class="xref">T</span></dt>
+    <dd><p>Maximum allowed angular distance between the two angles.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if the shortest angular distance between <code class="paramref">angle1</code> and
+<code class="paramref">angle2</code> is at most <code class="paramref">tolerance</code>; otherwise <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Mathematics_IAngleCalculator_1_AreEqualRounded_" data-uid="Utils.Mathematics.IAngleCalculator`1.AreEqualRounded*"></a>
+
+  <h3 id="Utils_Mathematics_IAngleCalculator_1_AreEqualRounded__0__0_System_Int32_" data-uid="Utils.Mathematics.IAngleCalculator`1.AreEqualRounded(`0,`0,System.Int32)">
+  AreEqualRounded(T, T, int)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Mathematics/IAngleCalculator.cs/#L290"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether two angles round to the same value at the given decimal precision, after
+normalizing both to <code>[0, </code><a class="xref" href="Utils.Mathematics.IAngleCalculator-1.html#Utils_Mathematics_IAngleCalculator_1_Perigon">Perigon</a><code>)</code> so that wraparound values (e.g. in
+degrees, <code>359.999999</code> and <code>-0.000001</code>) are compared consistently instead of as if they
+were ~360 apart.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">bool AreEqualRounded(T angle1, T angle2, int decimals)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>angle1</code> <span class="xref">T</span></dt>
+    <dd><p>First angle, expressed in this calculator's measurement system.</p>
+</dd>
+    <dt><code>angle2</code> <span class="xref">T</span></dt>
+    <dd><p>Second angle, expressed in this calculator's measurement system.</p>
+</dd>
+    <dt><code>decimals</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Number of decimal places to round to before comparing.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if <code class="paramref">angle1</code> and <code class="paramref">angle2</code> round to the
+same normalized value; otherwise <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
   <a id="Utils_Mathematics_IAngleCalculator_1_Asec_" data-uid="Utils.Mathematics.IAngleCalculator`1.Asec*"></a>
 
   <h3 id="Utils_Mathematics_IAngleCalculator_1_Asec__0_" data-uid="Utils.Mathematics.IAngleCalculator`1.Asec(`0)">
@@ -1184,7 +1281,7 @@ current angle system.</p>
 
   <h3 id="Utils_Mathematics_IAngleCalculator_1_FromRadian__0_" data-uid="Utils.Mathematics.IAngleCalculator`1.FromRadian(`0)">
   FromRadian(T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Mathematics/IAngleCalculator.cs/#L266"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Mathematics/IAngleCalculator.cs/#L309"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts an angle from radians into the current measurement system.</p>
@@ -1281,6 +1378,52 @@ i.e., -180..180 for degrees, -π..π for radians, -200..200 for grads.</p>
   <dl class="parameters">
     <dt><span class="xref">T</span></dt>
     <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Mathematics_IAngleCalculator_1_NormalizeRounded_" data-uid="Utils.Mathematics.IAngleCalculator`1.NormalizeRounded*"></a>
+
+  <h3 id="Utils_Mathematics_IAngleCalculator_1_NormalizeRounded__0_System_Int32_" data-uid="Utils.Mathematics.IAngleCalculator`1.NormalizeRounded(`0,System.Int32)">
+  NormalizeRounded(T, int)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Mathematics/IAngleCalculator.cs/#L302"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Normalizes <code class="paramref">angle</code> to <code>[0, </code><a class="xref" href="Utils.Mathematics.IAngleCalculator-1.html#Utils_Mathematics_IAngleCalculator_1_Perigon">Perigon</a><code>)</code> and rounds it to
+<code class="paramref">decimals</code> decimal places, wrapping a result that rounds up to exactly
+<a class="xref" href="Utils.Mathematics.IAngleCalculator-1.html#Utils_Mathematics_IAngleCalculator_1_Perigon">Perigon</a> back to zero. This is the canonical value <a class="xref" href="Utils.Mathematics.IAngleCalculator-1.html#Utils_Mathematics_IAngleCalculator_1_AreEqualRounded__0__0_System_Int32_">AreEqualRounded(T, T, int)</a>
+compares internally; expose it separately so callers needing a hash-consistent representative
+value (rather than a yes/no comparison) don't have to reimplement the wraparound handling.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">T NormalizeRounded(T angle, int decimals)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>angle</code> <span class="xref">T</span></dt>
+    <dd><p>The angle to normalize and round, expressed in this calculator's measurement system.</p>
+</dd>
+    <dt><code>decimals</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Number of decimal places to round to.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><span class="xref">T</span></dt>
+    <dd><p>The normalized, rounded angle, always in <code>[0, </code><a class="xref" href="Utils.Mathematics.IAngleCalculator-1.html#Utils_Mathematics_IAngleCalculator_1_Perigon">Perigon</a><code>)</code>.</p>
+</dd>
   </dl>
 
 
@@ -1573,7 +1716,7 @@ current angle system.</p>
 
   <h3 id="Utils_Mathematics_IAngleCalculator_1_ToRadian__0_" data-uid="Utils.Mathematics.IAngleCalculator`1.ToRadian(`0)">
   ToRadian(T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Mathematics/IAngleCalculator.cs/#L271"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Mathematics/IAngleCalculator.cs/#L314"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts an angle to radians from the current measurement system.</p>

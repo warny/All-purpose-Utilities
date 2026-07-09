@@ -4250,7 +4250,7 @@
       "Uid": null,
       "IsMRef": true,
       "Title": "Utils.Geography.Projections.LambertAzimuthalEqualArea<T>",
-      "Summary": "<p sourcefile=\"api/Utils.Geography.Projections.LambertAzimuthalEqualArea-1.yml\" sourcestartlinenumber=\"1\">Implements the Lambert azimuthal equal-area projection for spherical coordinates.</p>\n"
+      "Summary": "<p sourcefile=\"api/Utils.Geography.Projections.LambertAzimuthalEqualArea-1.yml\" sourcestartlinenumber=\"1\">Implements the polar aspect of the Lambert azimuthal equal-area projection for spherical\ncoordinates: the projection is centered on the north pole (latitude=90°), which maps to\n(x=0, y=0), not on the equator/prime meridian.</p>\n"
     },
     {
       "type": "ManagedReference",
@@ -4334,7 +4334,7 @@
       "Uid": null,
       "IsMRef": true,
       "Title": "Utils.Geography.Projections.StereographicProjection<T>",
-      "Summary": "<p sourcefile=\"api/Utils.Geography.Projections.StereographicProjection-1.yml\" sourcestartlinenumber=\"1\">Implements the stereographic map projection for spherical coordinates.</p>\n"
+      "Summary": "<p sourcefile=\"api/Utils.Geography.Projections.StereographicProjection-1.yml\" sourcestartlinenumber=\"1\">Implements the stereographic map projection for spherical coordinates, centered at\n(lat=0°, lon=0°).</p>\n"
     },
     {
       "type": "ManagedReference",

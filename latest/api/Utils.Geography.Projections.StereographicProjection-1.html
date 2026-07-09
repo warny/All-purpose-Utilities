@@ -6,7 +6,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="title" content="Class StereographicProjection&lt;T&gt; | omy.Utils Documentation ">
       
-      <meta name="description" content="Implements the stereographic map projection for spherical coordinates.">
+      <meta name="description" content="Implements the stereographic map projection for spherical coordinates, centered at (lat=0&#176;, lon=0&#176;).">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Geography_Projections_StereographicProjection_1" data-uid="Utils.Geography.Projections.StereographicProjection`1" class="text-break">
-Class StereographicProjection&lt;T&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Projections/StereographicProjection.cs/#L11"><i class="bi bi-code-slash"></i></a>
+Class StereographicProjection&lt;T&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Projections/StereographicProjection.cs/#L24"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -97,7 +97,8 @@ Class StereographicProjection&lt;T&gt;  <a class="header-action link-secondary" 
   <dl><dt>Assembly</dt><dd>Utils.Geography.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Implements the stereographic map projection for spherical coordinates.</p>
+  <div class="markdown summary"><p>Implements the stereographic map projection for spherical coordinates, centered at
+(lat=0°, lon=0°).</p>
 </div>
   <div class="markdown conceptual"></div>
 
@@ -244,6 +245,18 @@ Class StereographicProjection&lt;T&gt;  <a class="header-action link-secondary" 
 
 
 
+  <h2 id="Utils_Geography_Projections_StereographicProjection_1_remarks">Remarks</h2>
+  <div class="markdown level0 remarks"><p>This projection has a single true singularity: the antipodal point (lat=0°, lon=±180°), which is
+the &quot;point at infinity&quot; for a stereographic projection centered at (0°, 0°) — there is no finite
+(x, y) that correctly represents it. <a class="xref" href="Utils.Geography.Projections.StereographicProjection-1.html#Utils_Geography_Projections_StereographicProjection_1_GeoPointToMapPoint_Utils_Geography_Model_GeoPoint__0__">GeoPointToMapPoint(GeoPoint&lt;T&gt;)</a> does not throw at that point;
+instead it substitutes <code>T.Epsilon</code> (the smallest positive value representable by <code class="typeparamref">T</code>)
+for the zero denominator, which produces an extremely large but finite <code>k</code> factor and, in turn,
+extremely large (not NaN, but potentially positive infinity after overflow) <code>x</code>/<code>y</code> values
+rather than a clear error. Callers that need points near the antipodal meridian should check for this
+case explicitly (e.g. <code>degree.AreEqual(geoPoint.Latitude, 0, tolerance) &amp;&amp;
+degree.AreEqual(System.Math.Abs(geoPoint.Longitude), 180, tolerance)</code>) rather than relying on the
+output being finite and meaningful.</p>
+</div>
 
 
   <h2 class="section" id="methods">Methods
@@ -254,7 +267,7 @@ Class StereographicProjection&lt;T&gt;  <a class="header-action link-secondary" 
 
   <h3 id="Utils_Geography_Projections_StereographicProjection_1_GeoPointToMapPoint_Utils_Geography_Model_GeoPoint__0__" data-uid="Utils.Geography.Projections.StereographicProjection`1.GeoPointToMapPoint(Utils.Geography.Model.GeoPoint{`0})">
   GeoPointToMapPoint(GeoPoint&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Projections/StereographicProjection.cs/#L24"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Projections/StereographicProjection.cs/#L37"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Projects geographic coordinates onto the stereographic projection plane.</p>
@@ -293,7 +306,7 @@ Class StereographicProjection&lt;T&gt;  <a class="header-action link-secondary" 
 
   <h3 id="Utils_Geography_Projections_StereographicProjection_1_MapPointToGeoPoint_Utils_Geography_Model_ProjectedPoint__0__" data-uid="Utils.Geography.Projections.StereographicProjection`1.MapPointToGeoPoint(Utils.Geography.Model.ProjectedPoint{`0})">
   MapPointToGeoPoint(ProjectedPoint&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Projections/StereographicProjection.cs/#L52"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Projections/StereographicProjection.cs/#L67"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts stereographic projection coordinates back to geographic coordinates.</p>
@@ -332,7 +345,7 @@ Class StereographicProjection&lt;T&gt;  <a class="header-action link-secondary" 
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Projections/StereographicProjection.cs/#L11" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Projections/StereographicProjection.cs/#L24" class="edit-link">Edit this page</a>
         </div>
 
 

@@ -135,7 +135,7 @@ This class supports parsing, formatting, and mathematical operations between geo
   <dl class="typelist derived">
     <dt>Derived</dt>
     <dd>
-      <div><a class="xref" href="Utils.Geography.Model.GeoVector-1.html">GeoVector&lt;T&gt;</a></div>
+      <div><a class="xref" href="Utils.Geography.Model.GeoVector-1.html">GeoVector</a>&lt;T&gt;</div>
     </dd>
   </dl>
 
@@ -254,7 +254,7 @@ This class supports parsing, formatting, and mathematical operations between geo
 
   <h3 id="Utils_Geography_Model_GeoPoint_1__ctor" data-uid="Utils.Geography.Model.GeoPoint`1.#ctor">
   GeoPoint()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L118"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L131"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Protected default constructor used for inheritance scenarios or reflection.</p>
@@ -281,7 +281,7 @@ This class supports parsing, formatting, and mathematical operations between geo
 
   <h3 id="Utils_Geography_Model_GeoPoint_1__ctor_System_String_System_Globalization_CultureInfo___" data-uid="Utils.Geography.Model.GeoPoint`1.#ctor(System.String,System.Globalization.CultureInfo[])">
   GeoPoint(string, params CultureInfo[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L152"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L165"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Creates a GeoPoint by parsing coordinate strings in various cultures.</p>
@@ -317,7 +317,7 @@ This class supports parsing, formatting, and mathematical operations between geo
 
   <h3 id="Utils_Geography_Model_GeoPoint_1__ctor_System_String_System_String_System_Globalization_CultureInfo___" data-uid="Utils.Geography.Model.GeoPoint`1.#ctor(System.String,System.String,System.Globalization.CultureInfo[])">
   GeoPoint(string, string, params CultureInfo[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L184"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L197"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Parses latitude and longitude strings and creates a GeoPoint.</p>
@@ -356,7 +356,7 @@ This class supports parsing, formatting, and mathematical operations between geo
 
   <h3 id="Utils_Geography_Model_GeoPoint_1__ctor_Utils_Geography_Model_GeoPoint__0__" data-uid="Utils.Geography.Model.GeoPoint`1.#ctor(Utils.Geography.Model.GeoPoint{`0})">
   GeoPoint(GeoPoint&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L124"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L137"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Copy constructor for creating a new GeoPoint from an existing one.</p>
@@ -389,7 +389,7 @@ This class supports parsing, formatting, and mathematical operations between geo
 
   <h3 id="Utils_Geography_Model_GeoPoint_1__ctor__0__0_" data-uid="Utils.Geography.Model.GeoPoint`1.#ctor(`0,`0)">
   GeoPoint(T, T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L136"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L149"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Creates a GeoPoint from given coordinates.</p>
@@ -426,6 +426,42 @@ This class supports parsing, formatting, and mathematical operations between geo
 
 
 
+  <h3 id="Utils_Geography_Model_GeoPoint_1_EqualityPrecision" data-uid="Utils.Geography.Model.GeoPoint`1.EqualityPrecision">
+  EqualityPrecision
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L68"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Number of decimal places latitude/longitude (and bearing, for <a class="xref" href="Utils.Geography.Model.GeoVector-1.html">GeoVector&lt;T&gt;</a>) are
+rounded to before being compared in <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html#Utils_Geography_Model_GeoPoint_1_Equals_Utils_Geography_Model_GeoPoint__0__">Equals(GeoPoint&lt;T&gt;?)</a> and hashed in
+<a class="xref" href="Utils.Geography.Model.GeoPoint-1.html#Utils_Geography_Model_GeoPoint_1_GetHashCode">GetHashCode()</a>. Rounding both sides the same way keeps the two members consistent
+with each other by construction, at the cost of treating two values that are extremely close
+but land on opposite sides of a rounding boundary as unequal. See the remarks on
+<a class="xref" href="Utils.Geography.Model.GeoPoint-1.html#Utils_Geography_Model_GeoPoint_1_Equals_Utils_Geography_Model_GeoPoint__0__">Equals(GeoPoint&lt;T&gt;?)</a> for the full rationale and a worked example.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected const int EqualityPrecision = 5</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
   <h3 id="Utils_Geography_Model_GeoPoint_1_MinutesInDegree" data-uid="Utils.Geography.Model.GeoPoint`1.MinutesInDegree">
   MinutesInDegree
   <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L43"><i class="bi bi-code-slash"></i></a>
@@ -459,7 +495,7 @@ This class supports parsing, formatting, and mathematical operations between geo
 
   <h3 id="Utils_Geography_Model_GeoPoint_1_NegativeLatitude" data-uid="Utils.Geography.Model.GeoPoint`1.NegativeLatitude">
   NegativeLatitude
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L83"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L96"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Modifiers that indicate a negative latitude value.</p>
@@ -490,7 +526,7 @@ This class supports parsing, formatting, and mathematical operations between geo
 
   <h3 id="Utils_Geography_Model_GeoPoint_1_NegativeLongitude" data-uid="Utils.Geography.Model.GeoPoint`1.NegativeLongitude">
   NegativeLongitude
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L93"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L106"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Modifiers that indicate a negative longitude value.</p>
@@ -521,7 +557,7 @@ This class supports parsing, formatting, and mathematical operations between geo
 
   <h3 id="Utils_Geography_Model_GeoPoint_1_PositiveLatitude" data-uid="Utils.Geography.Model.GeoPoint`1.PositiveLatitude">
   PositiveLatitude
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L78"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L91"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Modifiers that indicate a positive latitude value.</p>
@@ -552,7 +588,7 @@ This class supports parsing, formatting, and mathematical operations between geo
 
   <h3 id="Utils_Geography_Model_GeoPoint_1_PositiveLongitude" data-uid="Utils.Geography.Model.GeoPoint`1.PositiveLongitude">
   PositiveLongitude
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L88"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L101"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Modifiers that indicate a positive longitude value.</p>
@@ -645,10 +681,13 @@ This class supports parsing, formatting, and mathematical operations between geo
 
   <h3 id="Utils_Geography_Model_GeoPoint_1_comparer" data-uid="Utils.Geography.Model.GeoPoint`1.comparer">
   comparer
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L63"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L76"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Floating-point comparer used to compare latitude and longitude values with tolerance.</p>
+  <div class="markdown level1 summary"><p>Floating-point comparer used for tolerance-based domain checks that are not part of the
+<a class="xref" href="Utils.Geography.Model.GeoPoint-1.html#Utils_Geography_Model_GeoPoint_1_Equals_Utils_Geography_Model_GeoPoint__0__">Equals(GeoPoint&lt;T&gt;?)</a>/<a class="xref" href="Utils.Geography.Model.GeoPoint-1.html#Utils_Geography_Model_GeoPoint_1_GetHashCode">GetHashCode()</a> contract (e.g. detecting degenerate
+meridians in <a class="xref" href="Utils.Geography.Model.GeoVector-1.html#Utils_Geography_Model_GeoVector_1_ComputeBearing_Utils_Geography_Model_GeoPoint__0__Utils_Geography_Model_GeoPoint__0__">ComputeBearing(GeoPoint&lt;T&gt;, GeoPoint&lt;T&gt;)</a>, or the default tolerance used by
+<a class="xref" href="Utils.Geography.Model.GeoPoint-1.html#Utils_Geography_Model_GeoPoint_1_IsApproximately_Utils_Geography_Model_GeoPoint__0__">IsApproximately(GeoPoint&lt;T&gt;)</a>).</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -712,7 +751,7 @@ This class supports parsing, formatting, and mathematical operations between geo
 
   <h3 id="Utils_Geography_Model_GeoPoint_1_Latitude" data-uid="Utils.Geography.Model.GeoPoint`1.Latitude">
   Latitude
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L98"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L111"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Latitude in degrees (immutable).</p>
@@ -744,7 +783,7 @@ This class supports parsing, formatting, and mathematical operations between geo
 
   <h3 id="Utils_Geography_Model_GeoPoint_1_Longitude" data-uid="Utils.Geography.Model.GeoPoint`1.Longitude">
   Longitude
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L103"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L116"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Longitude in degrees (immutable).</p>
@@ -776,7 +815,7 @@ This class supports parsing, formatting, and mathematical operations between geo
 
   <h3 id="Utils_Geography_Model_GeoPoint_1_MaxLatitude" data-uid="Utils.Geography.Model.GeoPoint`1.MaxLatitude">
   MaxLatitude
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L68"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L81"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Maximum valid latitude in degrees.</p>
@@ -808,7 +847,7 @@ This class supports parsing, formatting, and mathematical operations between geo
 
   <h3 id="Utils_Geography_Model_GeoPoint_1_MinLatitude" data-uid="Utils.Geography.Model.GeoPoint`1.MinLatitude">
   MinLatitude
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L73"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L86"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Minimum valid latitude in degrees.</p>
@@ -840,7 +879,7 @@ This class supports parsing, formatting, and mathematical operations between geo
 
   <h3 id="Utils_Geography_Model_GeoPoint_1__" data-uid="Utils.Geography.Model.GeoPoint`1.λ">
   λ
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L113"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L126"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Alias for Longitude.</p>
@@ -872,7 +911,7 @@ This class supports parsing, formatting, and mathematical operations between geo
 
   <h3 id="Utils_Geography_Model_GeoPoint_1__" data-uid="Utils.Geography.Model.GeoPoint`1.φ">
   φ
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L108"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L121"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Alias for Latitude.</p>
@@ -908,7 +947,7 @@ This class supports parsing, formatting, and mathematical operations between geo
 
   <h3 id="Utils_Geography_Model_GeoPoint_1_AngleWith_Utils_Geography_Model_GeoPoint__0__" data-uid="Utils.Geography.Model.GeoPoint`1.AngleWith(Utils.Geography.Model.GeoPoint{`0})">
   AngleWith(GeoPoint&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L307"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L320"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Computes the angular distance between this point and another (central angle on a sphere).</p>
@@ -948,7 +987,7 @@ Multiply by Earth radius (in the same units as your angle measure) for a distanc
 
   <h3 id="Utils_Geography_Model_GeoPoint_1_BuildRegexCoordinates_System_Globalization_CultureInfo_" data-uid="Utils.Geography.Model.GeoPoint`1.BuildRegexCoordinates(System.Globalization.CultureInfo)">
   BuildRegexCoordinates(CultureInfo)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L496"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L610"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Builds or retrieves from cache the regex used to parse coordinate values from strings.</p>
@@ -985,7 +1024,7 @@ Multiply by Earth radius (in the same units as your angle measure) for a distanc
 
   <h3 id="Utils_Geography_Model_GeoPoint_1_Deconstruct__0___0__" data-uid="Utils.Geography.Model.GeoPoint`1.Deconstruct(`0@,`0@)">
   Deconstruct(out T, out T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L524"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L638"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Deconstructs the current <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html">GeoPoint&lt;T&gt;</a> into its latitude and longitude.</p>
@@ -1021,7 +1060,7 @@ Multiply by Earth radius (in the same units as your angle measure) for a distanc
 
   <h3 id="Utils_Geography_Model_GeoPoint_1_Equals_System_Object_" data-uid="Utils.Geography.Model.GeoPoint`1.Equals(System.Object)">
   Equals(object?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L320"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L333"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether the specified object is equal to the current object.</p>
@@ -1060,10 +1099,12 @@ Multiply by Earth radius (in the same units as your angle measure) for a distanc
 
   <h3 id="Utils_Geography_Model_GeoPoint_1_Equals_Utils_Geography_Model_GeoPoint__0__" data-uid="Utils.Geography.Model.GeoPoint`1.Equals(Utils.Geography.Model.GeoPoint{`0})">
   Equals(GeoPoint&lt;T&gt;?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L324"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L381"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Indicates whether the current object is equal to another object of the same type.</p>
+  <div class="markdown level1 summary"><p>Determines whether the specified <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html">GeoPoint&lt;T&gt;</a> represents the same location as this
+instance, comparing latitude and longitude after rounding both to <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html#Utils_Geography_Model_GeoPoint_1_EqualityPrecision">EqualityPrecision</a>
+decimal places.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -1074,14 +1115,15 @@ Multiply by Earth radius (in the same units as your angle measure) for a distanc
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>other</code> <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html">GeoPoint</a>&lt;T&gt;</dt>
-    <dd><p>An object to compare with this object.</p>
+    <dd><p>The point to compare with this instance.</p>
 </dd>
   </dl>
 
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
-    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if the current object is equal to the <code class="paramref">other</code> parameter; otherwise, <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if both points round to the same latitude and longitude (or are both at
+the same pole, regardless of longitude); otherwise <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
 </dd>
   </dl>
 
@@ -1091,6 +1133,41 @@ Multiply by Earth radius (in the same units as your angle measure) for a distanc
 
 
 
+  <h4 class="section" id="Utils_Geography_Model_GeoPoint_1_Equals_Utils_Geography_Model_GeoPoint__0___remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>
+<b>Why rounding, and not a tolerance window:</b> latitude/longitude are floating-point values
+produced by trigonometric computations (<a class="xref" href="Utils.Geography.Model.GeoVector-1.html#Utils_Geography_Model_GeoVector_1_Travel__0_">Travel(T)</a>,
+<a class="xref" href="Utils.Geography.Model.GeoVector-1.html#Utils_Geography_Model_GeoVector_1_Intersections_Utils_Geography_Model_GeoVector__0__">Intersections(GeoVector&lt;T&gt;)</a>, ...), which never land on exact values. An earlier
+implementation compared raw values with a tolerance window (<code>|a - b| &lt;= 1e-5</code>) via
+<a class="xref" href="Utils.Mathematics.FloatingPointComparer-1.html">FloatingPointComparer&lt;T&gt;</a>, but that comparer is <em>intentionally non-transitive</em>
+(see its own documentation) and cannot be paired with a correct <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html#Utils_Geography_Model_GeoPoint_1_GetHashCode">GetHashCode()</a>: two
+values considered equal by the tolerance window could still hash differently, breaking
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.dictionary-2">Dictionary&lt;TKey, TValue&gt;</a>/<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet&lt;T&gt;</a> usage. Rounding both operands to
+the same precision before comparing removes that risk entirely, because <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html#Utils_Geography_Model_GeoPoint_1_Equals_Utils_Geography_Model_GeoPoint__0__">Equals(GeoPoint&lt;T&gt;?)</a>
+and <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html#Utils_Geography_Model_GeoPoint_1_GetHashCode">GetHashCode()</a> then always operate on the exact same rounded values.
+</p>
+<p>
+<b>Known limitation — rounding-boundary straddling:</b> this trades away the "equal within a
+tolerance window" behavior. Two values that are extremely close to each other, but fall on
+opposite sides of a rounding boundary, are now treated as <em>unequal</em>, even though a raw
+tolerance comparison would have called them equal. For example, with
+<a class="xref" href="Utils.Geography.Model.GeoPoint-1.html#Utils_Geography_Model_GeoPoint_1_EqualityPrecision">EqualityPrecision</a> = 5, <code>1.0000449999</code> rounds down to <code>1.00004</code> while
+<code>1.0000450001</code> rounds up to <code>1.00005</code> — a difference of about <code>2e-7</code>, far below
+the old <code>1e-5</code> tolerance, yet the two values are no longer equal. This is a deliberate,
+accepted trade-off (values this close in practice only arise from floating-point noise around a
+rounding boundary, and rounding-consistency was judged more valuable than tolerance-window
+equality for this type). See <code>GeoPointTests.PointsOnOppositeSidesOfARoundingBoundaryAreNotEqual</code>
+for a regression test that pins down this exact behavior.
+</p>
+<p>
+<b>Longitude wraps around, latitude doesn't:</b> longitude is compared via
+<a class="xref" href="Utils.Mathematics.IAngleCalculator-1.html#Utils_Mathematics_IAngleCalculator_1_AreEqualRounded__0__0_System_Int32_">AreEqualRounded(T, T, int)</a> rather than a plain rounded comparison, so that
+values on opposite sides of the antimeridian (e.g. <code>179.9999951°</code> and <code>-179.9999999°</code>,
+which both refer to almost the same point near 180°) round to the same normalized value instead
+of comparing as ~360° apart. Latitude never wraps (it is clamped to [-90°, 90°] and the poles are
+handled separately above), so it only needs a plain rounded comparison.
+</p>
+</div>
 
 
 
@@ -1099,10 +1176,13 @@ Multiply by Earth radius (in the same units as your angle measure) for a distanc
 
   <h3 id="Utils_Geography_Model_GeoPoint_1_GetHashCode" data-uid="Utils.Geography.Model.GeoPoint`1.GetHashCode">
   GetHashCode()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L335"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L402"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Serves as the default hash function.</p>
+  <div class="markdown level1 summary"><p>Returns a hash code consistent with <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html#Utils_Geography_Model_GeoPoint_1_Equals_Utils_Geography_Model_GeoPoint__0__">Equals(GeoPoint&lt;T&gt;?)</a>: latitude is rounded, and
+longitude is normalized (to handle antimeridian wraparound) and rounded, to
+<a class="xref" href="Utils.Geography.Model.GeoPoint-1.html#Utils_Geography_Model_GeoPoint_1_EqualityPrecision">EqualityPrecision</a> decimal places before hashing — the exact same values that
+<a class="xref" href="Utils.Geography.Model.GeoPoint-1.html#Utils_Geography_Model_GeoPoint_1_Equals_Utils_Geography_Model_GeoPoint__0__">Equals(GeoPoint&lt;T&gt;?)</a> compares on, so equal points always hash equally.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -1114,7 +1194,47 @@ Multiply by Earth radius (in the same units as your angle measure) for a distanc
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
-    <dd><p>A hash code for the current object.</p>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_GeoPoint_1_IsApproximately_" data-uid="Utils.Geography.Model.GeoPoint`1.IsApproximately*"></a>
+
+  <h3 id="Utils_Geography_Model_GeoPoint_1_IsApproximately_Utils_Geography_Model_GeoPoint__0__" data-uid="Utils.Geography.Model.GeoPoint`1.IsApproximately(Utils.Geography.Model.GeoPoint{`0})">
+  IsApproximately(GeoPoint&lt;T&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L451"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether this point is within the default tolerance (see <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html#Utils_Geography_Model_GeoPoint_1_comparer">comparer</a>) of
+<code class="paramref">other</code>. See <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html#Utils_Geography_Model_GeoPoint_1_IsApproximately_Utils_Geography_Model_GeoPoint__0___0_">IsApproximately(GeoPoint&lt;T&gt;, T)</a> for the full
+rationale and usage guidance.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool IsApproximately(GeoPoint&lt;T&gt; other)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>other</code> <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html">GeoPoint</a>&lt;T&gt;</dt>
+    <dd><p>The point to compare with this instance.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if both points are within the default tolerance; otherwise <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
 </dd>
   </dl>
 
@@ -1128,11 +1248,71 @@ Multiply by Earth radius (in the same units as your angle measure) for a distanc
 
 
 
+  <a id="Utils_Geography_Model_GeoPoint_1_IsApproximately_" data-uid="Utils.Geography.Model.GeoPoint`1.IsApproximately*"></a>
+
+  <h3 id="Utils_Geography_Model_GeoPoint_1_IsApproximately_Utils_Geography_Model_GeoPoint__0___0_" data-uid="Utils.Geography.Model.GeoPoint`1.IsApproximately(Utils.Geography.Model.GeoPoint{`0},`0)">
+  IsApproximately(GeoPoint&lt;T&gt;, T)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L433"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether this point is within <code class="paramref">tolerance</code> of <code class="paramref">other</code>,
+using a raw angular-distance tolerance window rather than the rounding-based comparison used by
+<a class="xref" href="Utils.Geography.Model.GeoPoint-1.html#Utils_Geography_Model_GeoPoint_1_Equals_Utils_Geography_Model_GeoPoint__0__">Equals(GeoPoint&lt;T&gt;?)</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool IsApproximately(GeoPoint&lt;T&gt; other, T tolerance)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>other</code> <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html">GeoPoint</a>&lt;T&gt;</dt>
+    <dd><p>The point to compare with this instance.</p>
+</dd>
+    <dt><code>tolerance</code> <span class="xref">T</span></dt>
+    <dd><p>Maximum allowed angular distance, in degrees, for latitude and longitude.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if both latitude and longitude are within <code class="paramref">tolerance</code> of
+each other (or both points are at the same pole); otherwise <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section" id="Utils_Geography_Model_GeoPoint_1_IsApproximately_Utils_Geography_Model_GeoPoint__0___0__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>
+<a class="xref" href="Utils.Geography.Model.GeoPoint-1.html#Utils_Geography_Model_GeoPoint_1_Equals_Utils_Geography_Model_GeoPoint__0__">Equals(GeoPoint&lt;T&gt;?)</a> intentionally does <em>not</em> offer this behavior anymore
+(see its remarks): a tolerance window cannot be paired with a correct <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html#Utils_Geography_Model_GeoPoint_1_GetHashCode">GetHashCode()</a>
+because it is non-transitive, so points must not be considered equal, hashed, or stored in a
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.dictionary-2">Dictionary&lt;TKey, TValue&gt;</a>/<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet&lt;T&gt;</a> based on this method. Use it only
+for one-off comparisons (e.g. "is this GPS fix close enough to the target waypoint?"), never as
+a substitute for <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html#Utils_Geography_Model_GeoPoint_1_Equals_Utils_Geography_Model_GeoPoint__0__">Equals(GeoPoint&lt;T&gt;?)</a> in code that also relies on hashing.
+</p>
+<p>
+Longitude comparison correctly handles the antimeridian wraparound via
+<a class="xref" href="Utils.Mathematics.IAngleCalculator-1.html#Utils_Mathematics_IAngleCalculator_1_AreEqual__0__0__0_">AreEqual(T, T, T)</a> (e.g. <code>179.9999999°</code> and <code>-179.9999999°</code> are
+about <code>2e-7°</code> apart, not ~360° apart).
+</p>
+</div>
+
+
+
+
   <a id="Utils_Geography_Model_GeoPoint_1_ParseCoordinate_" data-uid="Utils.Geography.Model.GeoPoint`1.ParseCoordinate*"></a>
 
   <h3 id="Utils_Geography_Model_GeoPoint_1_ParseCoordinate_Utils_Geography_Model_CoordinateDirection_System_String_System_Collections_Generic_IReadOnlyList_System_String__System_Collections_Generic_IReadOnlyList_System_String__System_Globalization_CultureInfo_System_Text_RegularExpressions_Regex_" data-uid="Utils.Geography.Model.GeoPoint`1.ParseCoordinate(Utils.Geography.Model.CoordinateDirection,System.String,System.Collections.Generic.IReadOnlyList{System.String},System.Collections.Generic.IReadOnlyList{System.String},System.Globalization.CultureInfo,System.Text.RegularExpressions.Regex)">
   ParseCoordinate(CoordinateDirection, string, IReadOnlyList&lt;string&gt;, IReadOnlyList&lt;string&gt;, CultureInfo, Regex)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L244"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L257"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Parses a single string coordinate value based on its direction (Latitude/Longitude).</p>
@@ -1179,7 +1359,7 @@ Multiply by Earth radius (in the same units as your angle measure) for a distanc
 
   <h3 id="Utils_Geography_Model_GeoPoint_1_ParseCoordinates_System_String_System_String_System_Globalization_CultureInfo_System_Text_RegularExpressions_Regex__0___0__" data-uid="Utils.Geography.Model.GeoPoint`1.ParseCoordinates(System.String,System.String,System.Globalization.CultureInfo,System.Text.RegularExpressions.Regex,`0@,`0@)">
   ParseCoordinates(string, string, CultureInfo, Regex, out T, out T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L207"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L220"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Attempts to parse the provided latitude and longitude strings using the specified culture and regex.
@@ -1227,7 +1407,7 @@ If successful, lat/lon will be set and <a href="https://learn.microsoft.com/dotn
 
   <h3 id="Utils_Geography_Model_GeoPoint_1_ToString" data-uid="Utils.Geography.Model.GeoPoint`1.ToString">
   ToString()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L344"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L457"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns this geographic point as a string in the format &quot;Latitude, Longitude&quot;
@@ -1260,7 +1440,7 @@ with five decimal places by default.</p>
 
   <h3 id="Utils_Geography_Model_GeoPoint_1_ToString_System_String_" data-uid="Utils.Geography.Model.GeoPoint`1.ToString(System.String)">
   ToString(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L349"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L462"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns this geographic point as a string in the specified format and culture.</p>
@@ -1297,7 +1477,7 @@ with five decimal places by default.</p>
 
   <h3 id="Utils_Geography_Model_GeoPoint_1_ToString_System_String_System_IFormatProvider_" data-uid="Utils.Geography.Model.GeoPoint`1.ToString(System.String,System.IFormatProvider)">
   ToString(string?, IFormatProvider?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L355"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L468"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns this geographic point as a string in the specified format and culture.
@@ -1337,7 +1517,7 @@ Supported formats: &quot;0.#####&quot;, &quot;d&quot; and &quot;D&quot; (for deg
 
   <h3 id="Utils_Geography_Model_GeoPoint_1_TryParse_System_String_System_Globalization_CultureInfo___Utils_Geography_Model_GeoPoint__0___" data-uid="Utils.Geography.Model.GeoPoint`1.TryParse(System.String,System.Globalization.CultureInfo[],Utils.Geography.Model.GeoPoint{`0}@)">
   TryParse(string, CultureInfo[], out GeoPoint&lt;T&gt;?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L430"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L544"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Attempts to parse a combined coordinate string using the specified cultures.</p>
@@ -1378,7 +1558,7 @@ Supported formats: &quot;0.#####&quot;, &quot;d&quot; and &quot;D&quot; (for deg
 
   <h3 id="Utils_Geography_Model_GeoPoint_1_TryParse_System_String_System_String_System_Globalization_CultureInfo___Utils_Geography_Model_GeoPoint__0___" data-uid="Utils.Geography.Model.GeoPoint`1.TryParse(System.String,System.String,System.Globalization.CultureInfo[],Utils.Geography.Model.GeoPoint{`0}@)">
   TryParse(string, string, CultureInfo[], out GeoPoint&lt;T&gt;?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L458"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L572"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Attempts to parse separate latitude and longitude strings using the specified cultures.</p>
@@ -1421,7 +1601,7 @@ Supported formats: &quot;0.#####&quot;, &quot;d&quot; and &quot;D&quot; (for deg
 
   <h3 id="Utils_Geography_Model_GeoPoint_1_TryParse_System_String_System_String_Utils_Geography_Model_GeoPoint__0___" data-uid="Utils.Geography.Model.GeoPoint`1.TryParse(System.String,System.String,Utils.Geography.Model.GeoPoint{`0}@)">
   TryParse(string, string, out GeoPoint&lt;T&gt;?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L452"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L566"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Attempts to parse separate latitude and longitude strings using the current culture then
@@ -1467,7 +1647,7 @@ the invariant culture.</p>
 
   <h3 id="Utils_Geography_Model_GeoPoint_1_TryParse_System_String_Utils_Geography_Model_GeoPoint__0___" data-uid="Utils.Geography.Model.GeoPoint`1.TryParse(System.String,Utils.Geography.Model.GeoPoint{`0}@)">
   TryParse(string, out GeoPoint&lt;T&gt;?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L424"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L538"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Attempts to parse a combined coordinate string (e.g. <code>&quot;48.8566, 2.3522&quot;</code>) using the
@@ -1514,7 +1694,7 @@ current culture then the invariant culture.</p>
 
   <h3 id="Utils_Geography_Model_GeoPoint_1_op_Equality_Utils_Geography_Model_GeoPoint__0__Utils_Geography_Model_GeoPoint__0__" data-uid="Utils.Geography.Model.GeoPoint`1.op_Equality(Utils.Geography.Model.GeoPoint{`0},Utils.Geography.Model.GeoPoint{`0})">
   operator ==(GeoPoint&lt;T&gt;?, GeoPoint&lt;T&gt;?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L479"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L593"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether two geographic points are equal.</p>
@@ -1553,7 +1733,7 @@ current culture then the invariant culture.</p>
 
   <h3 id="Utils_Geography_Model_GeoPoint_1_op_Inequality_Utils_Geography_Model_GeoPoint__0__Utils_Geography_Model_GeoPoint__0__" data-uid="Utils.Geography.Model.GeoPoint`1.op_Inequality(Utils.Geography.Model.GeoPoint{`0},Utils.Geography.Model.GeoPoint{`0})">
   operator !=(GeoPoint&lt;T&gt;?, GeoPoint&lt;T&gt;?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L484"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPoint.cs/#L598"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether two geographic points are not equal.</p>

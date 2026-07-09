@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Geography_Projections_MollweideProjection_1" data-uid="Utils.Geography.Projections.MollweideProjection`1" class="text-break">
-Class MollweideProjection&lt;T&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Projections/MollweidProjection.cs/#L24"><i class="bi bi-code-slash"></i></a>
+Class MollweideProjection&lt;T&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Projections/MollweideProjection.cs/#L24"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -263,13 +263,16 @@ var unprojected = projector.MapPointToGeoPoint(projected);</p>
 
   <h3 id="Utils_Geography_Projections_MollweideProjection_1_GeoPointToMapPoint_Utils_Geography_Model_GeoPoint__0__" data-uid="Utils.Geography.Projections.MollweideProjection`1.GeoPointToMapPoint(Utils.Geography.Model.GeoPoint{`0})">
   GeoPointToMapPoint(GeoPoint&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Projections/MollweidProjection.cs/#L42"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Projections/MollweideProjection.cs/#L46"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Projects (latitude, longitude) in degrees =&gt; Mollweide (x, y).</p>
-<p>Forward formula in &quot;degree-based&quot; Mollweide:
-(1) Solve 2θ + sin(2θ) = 180 * sin(lat), for θ ∈ [-90..+90].
-(2) x = (2√2 / 180) * (lon) * cos(θ)
+<p>The Newton solve and trigonometry are carried out in radians (the mathematically correct
+unit for the classic Mollweide equation); latitude/longitude are only converted to/from
+degrees at the boundary of this method.</p>
+<p>Forward formula:
+(1) Solve 2θ + sin(2θ) = π * sin(lat), for θ ∈ [-π/2..+π/2].
+(2) x = (2√2 / π) * lon * cos(θ)
 (3) y = √2 * sin(θ)</p>
 </div>
   <div class="markdown level1 conceptual"></div>
@@ -304,14 +307,14 @@ var unprojected = projector.MapPointToGeoPoint(projected);</p>
 
   <h3 id="Utils_Geography_Projections_MollweideProjection_1_MapPointToGeoPoint_Utils_Geography_Model_ProjectedPoint__0__" data-uid="Utils.Geography.Projections.MollweideProjection`1.MapPointToGeoPoint(Utils.Geography.Model.ProjectedPoint{`0})">
   MapPointToGeoPoint(ProjectedPoint&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Projections/MollweidProjection.cs/#L74"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Projections/MollweideProjection.cs/#L76"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Unprojects (x,y) in Mollweide =&gt; (lat, lon) in degrees.</p>
-<p>Inverse:
-(1) θ = asin( y / √2 )   [in degrees]
-(2) lon = x * (180 / 2√2 cos(θ))
-(3) lat = asin( [2θ + sin(2θ)] / 180 )</p>
+<p>Inverse (all computed in radians, converted to degrees only for the result):
+(1) θ = asin( y / √2 )
+(2) lon = x * (π / 2√2 cos(θ))
+(3) lat = asin( [2θ + sin(2θ)] / π )</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -345,7 +348,7 @@ var unprojected = projector.MapPointToGeoPoint(projected);</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Projections/MollweidProjection.cs/#L24" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Projections/MollweideProjection.cs/#L24" class="edit-link">Edit this page</a>
         </div>
 
 

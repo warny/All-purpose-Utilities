@@ -117,7 +117,9 @@ lat = asin( y * cos(45°) )</p>
     </dl>
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.Geography.Projections.LambertAzimuthalEqualArea-1.html">LambertAzimuthalEqualArea&lt;T&gt;</a></dt>
-      <dd><p>Implements the Lambert azimuthal equal-area projection for spherical coordinates.</p>
+      <dd><p>Implements the polar aspect of the Lambert azimuthal equal-area projection for spherical
+coordinates: the projection is centered on the north pole (latitude=90°), which maps to
+(x=0, y=0), not on the equator/prime meridian.</p>
 </dd>
     </dl>
     <dl class="jumplist">
@@ -164,7 +166,8 @@ that convert between geographic (<a class="xref" href="Utils.Geography.Model.Geo
     </dl>
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.Geography.Projections.StereographicProjection-1.html">StereographicProjection&lt;T&gt;</a></dt>
-      <dd><p>Implements the stereographic map projection for spherical coordinates.</p>
+      <dd><p>Implements the stereographic map projection for spherical coordinates, centered at
+(lat=0°, lon=0°).</p>
 </dd>
     </dl>
     <h3 id="interfaces">

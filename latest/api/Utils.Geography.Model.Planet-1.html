@@ -247,7 +247,7 @@ Class Planet&lt;T&gt;  <a class="header-action link-secondary" title="View sourc
   <a id="Utils_Geography_Model_Planet_1__ctor_" data-uid="Utils.Geography.Model.Planet`1.#ctor*"></a>
 
   <h3 id="Utils_Geography_Model_Planet_1__ctor__0_System_String_" data-uid="Utils.Geography.Model.Planet`1.#ctor(`0,System.String)">
-  Planet(T, string)
+  Planet(T, string?)
   <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/Planet.cs/#L23"><i class="bi bi-code-slash"></i></a>
   </h3>
 
@@ -256,7 +256,7 @@ Class Planet&lt;T&gt;  <a class="header-action link-secondary" title="View sourc
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public Planet(T equatorialRadius, string name = null)</code></pre>
+    <pre><code class="lang-csharp hljs">public Planet(T equatorialRadius, string? name = null)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
@@ -388,7 +388,7 @@ Class Planet&lt;T&gt;  <a class="header-action link-secondary" title="View sourc
 
   <h3 id="Utils_Geography_Model_Planet_1_Area_System_Collections_Generic_IReadOnlyList_Utils_Geography_Model_GeoPoint__0___" data-uid="Utils.Geography.Model.Planet`1.Area(System.Collections.Generic.IReadOnlyList{Utils.Geography.Model.GeoPoint{`0}})">
   Area(IReadOnlyList&lt;GeoPoint&lt;T&gt;&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/Planet.cs/#L95"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/Planet.cs/#L115"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Calculates the surface area of a spherical polygon defined by a list of geographic points.</p>
@@ -419,6 +419,22 @@ Class Planet&lt;T&gt;  <a class="header-action link-secondary" title="View sourc
 
 
 
+  <h4 class="section" id="Utils_Geography_Model_Planet_1_Area_System_Collections_Generic_IReadOnlyList_Utils_Geography_Model_GeoPoint__0____remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>This uses the standard &quot;sum of longitude differences weighted by latitude&quot; spherical excess
+formula, connecting consecutive vertices with great-circle arcs. It is well-suited to typical,
+reasonably-sized, simple (non-self-intersecting) polygons, but has known limitations:</p>
+<ul><li>
+A polygon that encloses a pole (crosses from one side of it to the other without the pole itself
+being a vertex) is not detected as a special case; the result may be the area of the polygon or of
+its complement on the sphere, depending on winding, rather than throwing or otherwise flagging the
+ambiguity.
+</li><li>
+Self-intersecting polygons do not produce a meaningful area (as with the planar shoelace formula).
+</li><li>
+For polygons that span a very large fraction of the planet's surface, the flat "longitude
+difference" term becomes a coarser approximation of the true spherical geometry.
+</li></ul>
+</div>
 
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
