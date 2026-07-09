@@ -36,3 +36,8 @@ When adding, removing, or materially changing any file in `docs/parser/`, update
 ## Generated-C# positional rule arguments
 
 The parser documentation pages listed here now distinguish conservative `Parse(...)`, explicit runtime literal policies, and generated-C# exact-arity explicit simple positional argument binding for rule calls, including zero-parameter callees, explicit empty argument lists, and the distinction from explicit runtime typed defaults. See `RuleArgumentsAndReturnsPlan.md`, `ANTLRCompatibility.md`, `Antlr4CompatibilityMatrix.md`, `EmbeddedCodeExecutionModel.md`, and `EmbeddedCodeTransactionalState.md` for the current support boundaries.
+
+## Generated-C# returns and labels boundary
+
+The parser documentation now locks the generated-C# rule returns and labeled rule-call boundary to the existing parser named-action and embedded-code transformer strategy: named-action classification stays centralized in `EmbeddedMembersSupport`, parser headers/members/footers use the documented generated-source injection locations, rule-return and label metadata is not automatic ANTLR context support, conservative `Parse(...)` remains unchanged, and future `$...` return/label conveniences must stay behind `IParserEmbeddedCodeTransformer`.
+
