@@ -299,4 +299,73 @@ public class TrigonometryTests
     {
         Assert.AreSame(Trigonometry<double>.Grade, Trigonometry<double>.Get(400));
     }
+
+    // ── Degree — AreEqual (tolerance, circular) ──────────────────────────────
+
+    [TestMethod]
+    public void Degree_AreEqual_TrueForValuesWithinTolerance()
+    {
+        var trig = Trigonometry<double>.Degree;
+        Assert.IsTrue(trig.AreEqual(10.0, 10.000001, 1e-5));
+        Assert.IsTrue(trig.AreEqual(10.0, 10.0, 0));
+    }
+
+    [TestMethod]
+    public void Degree_AreEqual_FalseForValuesBeyondTolerance()
+    {
+        var trig = Trigonometry<double>.Degree;
+        Assert.IsFalse(trig.AreEqual(10.0, 10.1, 1e-5));
+    }
+
+    [TestMethod]
+    public void Degree_AreEqual_HandlesWraparoundAcrossZero()
+    {
+        var trig = Trigonometry<double>.Degree;
+        // 359.999999 and 0.000001 are 0.000002 apart going through the 0/360 seam,
+        // not ~360 apart as a naive |a - b| would suggest.
+        Assert.IsTrue(trig.AreEqual(359.999999, 0.000001, 1e-5));
+        Assert.IsFalse(trig.AreEqual(359.999999, 0.000001, 1e-7));
+    }
+
+    // ── Degree — AreEqualRounded / NormalizeRounded ──────────────────────────
+
+    [TestMethod]
+    public void Degree_AreEqualRounded_TrueWhenBothRoundToSameValue()
+    {
+        var trig = Trigonometry<double>.Degree;
+        Assert.IsTrue(trig.AreEqualRounded(10.123456, 10.1234560001, 5));
+    }
+
+    [TestMethod]
+    public void Degree_AreEqualRounded_FalseAcrossARoundingBoundary()
+    {
+        var trig = Trigonometry<double>.Degree;
+        Assert.IsFalse(trig.AreEqualRounded(1.0000449999, 1.0000450001, 5));
+    }
+
+    [TestMethod]
+    public void Degree_AreEqualRounded_HandlesWraparoundNearZero()
+    {
+        var trig = Trigonometry<double>.Degree;
+        // 359.999998° and -179.999998°+360°=180.000002° style seams: here, a value just
+        // below a full turn and a small positive value near zero must compare equal once
+        // both are normalized to [0, 360) and rounded.
+        Assert.IsTrue(trig.AreEqualRounded(359.999998, 0.000002, 5));
+    }
+
+    [TestMethod]
+    public void Degree_NormalizeRounded_WrapsFullTurnBackToZero()
+    {
+        var trig = Trigonometry<double>.Degree;
+        Assert.AreEqual(0.0, trig.NormalizeRounded(359.999998, 5));
+        Assert.AreEqual(0.0, trig.NormalizeRounded(0.000002, 5));
+    }
+
+    [TestMethod]
+    public void Degree_NormalizeRounded_IsAlwaysWithinPerigonRange()
+    {
+        var trig = Trigonometry<double>.Degree;
+        Assert.AreEqual(180.0, trig.NormalizeRounded(-180.0, 5));
+        Assert.AreEqual(90.0, trig.NormalizeRounded(450.0, 5));
+    }
 }

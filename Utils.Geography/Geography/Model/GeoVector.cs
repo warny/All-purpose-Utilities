@@ -485,8 +485,10 @@ public sealed class GeoVector<T> : GeoPoint<T>, IEquatable<GeoVector<T>>, IUnary
     /// <summary>
     /// Determines whether the specified <see cref="GeoVector{T}"/> has the same position and bearing as
     /// this instance: latitude/longitude are compared via <see cref="GeoPoint{T}.Equals(GeoPoint{T})"/>
-    /// (rounded to <see cref="GeoPoint{T}.EqualityPrecision"/> decimal places), and bearing is rounded to
-    /// the same precision before being compared here.
+    /// (rounded to <see cref="GeoPoint{T}.EqualityPrecision"/> decimal places), and bearing is compared the
+    /// same way longitude is: normalized and rounded to the same precision via
+    /// <see cref="IAngleCalculator{T}.AreEqualRounded"/>, since bearing wraps around at 0°/360° just like
+    /// longitude wraps around at the antimeridian.
     /// </summary>
     /// <param name="other">The vector to compare with this instance.</param>
     /// <returns>
@@ -504,16 +506,20 @@ public sealed class GeoVector<T> : GeoPoint<T>, IEquatable<GeoVector<T>>, IUnary
     /// </remarks>
     public bool Equals(GeoVector<T>? other)
         => other is not null
-           && T.Round(Bearing, EqualityPrecision) == T.Round(other.Bearing, EqualityPrecision)
+           && degree.AreEqualRounded(Bearing, other.Bearing, EqualityPrecision)
            && base.Equals(other);
 
     /// <summary>
-    /// Returns a hash code consistent with <see cref="Equals(GeoVector{T})"/>: latitude, longitude, and
-    /// bearing are all rounded to <see cref="GeoPoint{T}.EqualityPrecision"/> decimal places before
-    /// hashing, using the exact same rounding that <see cref="Equals(GeoVector{T})"/> compares on.
+    /// Returns a hash code consistent with <see cref="Equals(GeoVector{T})"/>: latitude is rounded, and
+    /// longitude/bearing are normalized (to handle antimeridian/0-360° wraparound) and rounded, to
+    /// <see cref="GeoPoint{T}.EqualityPrecision"/> decimal places before hashing — the exact same values
+    /// that <see cref="Equals(GeoVector{T})"/> compares on.
     /// </summary>
     public override int GetHashCode()
-        => ObjectUtils.ComputeHash(T.Round(Latitude, EqualityPrecision), T.Round(Longitude, EqualityPrecision), T.Round(Bearing, EqualityPrecision));
+        => ObjectUtils.ComputeHash(
+            T.Round(Latitude, EqualityPrecision),
+            degree.NormalizeRounded(Longitude, EqualityPrecision),
+            degree.NormalizeRounded(Bearing, EqualityPrecision));
 
     #endregion
 

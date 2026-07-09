@@ -102,5 +102,20 @@ namespace UtilsTest.Geography
 
             Assert.AreNotEqual(point1, point2);
         }
+
+        [TestMethod]
+        public void PointsOnOppositeSidesOfTheAntimeridianAreEqualWhenClose()
+        {
+            // Regression test: longitude wraps around at +-180 deg, so a point just below +180 and a
+            // point just below -180 (going the other way) can be almost the same physical location even
+            // though their raw numeric values are ~360 deg apart. Equals/GetHashCode must normalize
+            // longitude (via IAngleCalculator<T>.AreEqualRounded/NormalizeRounded) before comparing,
+            // not just round the raw value, otherwise these would incorrectly compare as different.
+            var point1 = new GeoPoint<double>(10, 179.999998);
+            var point2 = new GeoPoint<double>(10, -179.999998);
+
+            Assert.AreEqual(point1, point2);
+            Assert.AreEqual(point1.GetHashCode(), point2.GetHashCode());
+        }
     }
 }

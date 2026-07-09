@@ -368,6 +368,14 @@ namespace Utils.Geography.Model
         /// equality for this type). See <c>GeoPointTests.PointsOnOppositeSidesOfARoundingBoundaryAreNotEqual</c>
         /// for a regression test that pins down this exact behavior.
         /// </para>
+        /// <para>
+        /// <b>Longitude wraps around, latitude doesn't:</b> longitude is compared via
+        /// <see cref="IAngleCalculator{T}.AreEqualRounded"/> rather than a plain rounded comparison, so that
+        /// values on opposite sides of the antimeridian (e.g. <c>179.9999951°</c> and <c>-179.9999999°</c>,
+        /// which both refer to almost the same point near 180°) round to the same normalized value instead
+        /// of comparing as ~360° apart. Latitude never wraps (it is clamped to [-90°, 90°] and the poles are
+        /// handled separately above), so it only needs a plain rounded comparison.
+        /// </para>
         /// </remarks>
         public bool Equals(GeoPoint<T>? other)
         {
@@ -381,17 +389,18 @@ namespace Utils.Geography.Model
             if (roundedLatitude == MinLatitude && otherRoundedLatitude == MinLatitude) return true;
 
             return roundedLatitude == otherRoundedLatitude
-                && T.Round(Longitude, EqualityPrecision) == T.Round(other.Longitude, EqualityPrecision);
+                && degree.AreEqualRounded(Longitude, other.Longitude, EqualityPrecision);
         }
 
         /// <summary>
-        /// Returns a hash code consistent with <see cref="Equals(GeoPoint{T})"/>: latitude and longitude are
-        /// rounded to <see cref="EqualityPrecision"/> decimal places before hashing, using the exact same
-        /// rounding that <see cref="Equals(GeoPoint{T})"/> compares on, so equal points always hash equally.
+        /// Returns a hash code consistent with <see cref="Equals(GeoPoint{T})"/>: latitude is rounded, and
+        /// longitude is normalized (to handle antimeridian wraparound) and rounded, to
+        /// <see cref="EqualityPrecision"/> decimal places before hashing — the exact same values that
+        /// <see cref="Equals(GeoPoint{T})"/> compares on, so equal points always hash equally.
         /// </summary>
         public override int GetHashCode()
         {
-            return ObjectUtils.ComputeHash(T.Round(Latitude, EqualityPrecision), T.Round(Longitude, EqualityPrecision));
+            return ObjectUtils.ComputeHash(T.Round(Latitude, EqualityPrecision), degree.NormalizeRounded(Longitude, EqualityPrecision));
         }
 
         /// <summary>

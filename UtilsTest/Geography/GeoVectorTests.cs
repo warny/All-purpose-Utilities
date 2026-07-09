@@ -140,6 +140,21 @@ namespace UtilsTest.Geography
         }
 
         [TestMethod]
+        public void VectorsWithBearingOnOppositeSidesOfZeroAreEqualWhenClose()
+        {
+            // Regression test: bearing wraps around at 0/360 deg, so a bearing just below 360 and a
+            // bearing just above 0 can be almost the same heading even though their raw numeric values
+            // are ~360 deg apart. Equals/GetHashCode must normalize bearing (via
+            // IAngleCalculator<T>.AreEqualRounded/NormalizeRounded) before comparing, not just round the
+            // raw value, otherwise these would incorrectly compare as different.
+            var vector1 = new GeoVector<double>(0, 0, 359.999998);
+            var vector2 = new GeoVector<double>(0, 0, 0.000002);
+
+            Assert.AreEqual(vector1, vector2);
+            Assert.AreEqual(vector1.GetHashCode(), vector2.GetHashCode());
+        }
+
+        [TestMethod]
         public void RecenterOnSelfReturnsOrigin()
         {
             var vector = new GeoVector<double>(45, 30, 90);

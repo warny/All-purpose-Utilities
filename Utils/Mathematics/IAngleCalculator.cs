@@ -259,6 +259,49 @@ public interface IAngleCalculator<T>
     T SubtractAngles(T angle1, T angle2);
     #endregion
 
+    #region Angle Equality
+    /// <summary>
+    /// Determines whether two angles are equal within the specified tolerance, treating the angle
+    /// system as circular: e.g. in degrees, <c>359.999999</c> and <c>0.000001</c> are almost equal
+    /// (shortest distance <c>0.000002</c>), not ~360 apart as a naive <c>|a - b|</c> would suggest.
+    /// </summary>
+    /// <param name="angle1">First angle, expressed in this calculator's measurement system.</param>
+    /// <param name="angle2">Second angle, expressed in this calculator's measurement system.</param>
+    /// <param name="tolerance">Maximum allowed angular distance between the two angles.</param>
+    /// <returns>
+    /// <see langword="true"/> if the shortest angular distance between <paramref name="angle1"/> and
+    /// <paramref name="angle2"/> is at most <paramref name="tolerance"/>; otherwise <see langword="false"/>.
+    /// </returns>
+    bool AreEqual(T angle1, T angle2, T tolerance);
+
+    /// <summary>
+    /// Determines whether two angles round to the same value at the given decimal precision, after
+    /// normalizing both to <c>[0, </c><see cref="Perigon"/><c>)</c> so that wraparound values (e.g. in
+    /// degrees, <c>359.999999</c> and <c>-0.000001</c>) are compared consistently instead of as if they
+    /// were ~360 apart.
+    /// </summary>
+    /// <param name="angle1">First angle, expressed in this calculator's measurement system.</param>
+    /// <param name="angle2">Second angle, expressed in this calculator's measurement system.</param>
+    /// <param name="decimals">Number of decimal places to round to before comparing.</param>
+    /// <returns>
+    /// <see langword="true"/> if <paramref name="angle1"/> and <paramref name="angle2"/> round to the
+    /// same normalized value; otherwise <see langword="false"/>.
+    /// </returns>
+    bool AreEqualRounded(T angle1, T angle2, int decimals);
+
+    /// <summary>
+    /// Normalizes <paramref name="angle"/> to <c>[0, </c><see cref="Perigon"/><c>)</c> and rounds it to
+    /// <paramref name="decimals"/> decimal places, wrapping a result that rounds up to exactly
+    /// <see cref="Perigon"/> back to zero. This is the canonical value <see cref="AreEqualRounded"/>
+    /// compares internally; expose it separately so callers needing a hash-consistent representative
+    /// value (rather than a yes/no comparison) don't have to reimplement the wraparound handling.
+    /// </summary>
+    /// <param name="angle">The angle to normalize and round, expressed in this calculator's measurement system.</param>
+    /// <param name="decimals">Number of decimal places to round to.</param>
+    /// <returns>The normalized, rounded angle, always in <c>[0, </c><see cref="Perigon"/><c>)</c>.</returns>
+    T NormalizeRounded(T angle, int decimals);
+    #endregion
+
     #region Radian Conversions
     /// <summary>
     /// Converts an angle from radians into the current measurement system.
@@ -459,6 +502,25 @@ public class Trigonometry<T> : IAngleCalculator<T>
     /// <inheritdoc />
     public virtual T SubtractAngles(T angle1, T angle2)
         => Normalize0To2Max(angle1 - angle2);
+
+    #endregion
+
+    #region Angle Equality
+
+    /// <inheritdoc />
+    public virtual bool AreEqual(T angle1, T angle2, T tolerance)
+        => T.Abs(NormalizeMinToMax(angle1 - angle2)) <= tolerance;
+
+    /// <inheritdoc />
+    public virtual bool AreEqualRounded(T angle1, T angle2, int decimals)
+        => NormalizeRounded(angle1, decimals) == NormalizeRounded(angle2, decimals);
+
+    /// <inheritdoc />
+    public virtual T NormalizeRounded(T angle, int decimals)
+    {
+        T rounded = T.Round(Normalize0To2Max(angle), decimals);
+        return rounded == Perigon ? T.Zero : rounded;
+    }
 
     #endregion
 
