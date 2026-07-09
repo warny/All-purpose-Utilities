@@ -62,7 +62,8 @@ namespace Utils.Geography.Model
         /// rounded to before being compared in <see cref="Equals(GeoPoint{T})"/> and hashed in
         /// <see cref="GetHashCode"/>. Rounding both sides the same way keeps the two members consistent
         /// with each other by construction, at the cost of treating two values that are extremely close
-        /// but land on opposite sides of a rounding boundary as unequal.
+        /// but land on opposite sides of a rounding boundary as unequal. See the remarks on
+        /// <see cref="Equals(GeoPoint{T})"/> for the full rationale and a worked example.
         /// </summary>
         protected const int EqualityPrecision = 5;
 
@@ -333,13 +334,41 @@ namespace Utils.Geography.Model
 
         /// <summary>
         /// Determines whether the specified <see cref="GeoPoint{T}"/> represents the same location as this
-        /// instance. Latitude and longitude are rounded to <see cref="EqualityPrecision"/> decimal places
-        /// before being compared, so <see cref="Equals(GeoPoint{T})"/> and <see cref="GetHashCode"/> are
-        /// always consistent with each other by construction (both operate on the same rounded values).
-        /// The trade-off is that two values which are extremely close but fall on opposite sides of a
-        /// rounding boundary (e.g. <c>1.0000049999</c> and <c>1.0000050001</c>) are treated as unequal,
-        /// rather than "equal within a tolerance window" as a raw tolerance comparison would.
+        /// instance, comparing latitude and longitude after rounding both to <see cref="EqualityPrecision"/>
+        /// decimal places.
         /// </summary>
+        /// <param name="other">The point to compare with this instance.</param>
+        /// <returns>
+        /// <see langword="true"/> if both points round to the same latitude and longitude (or are both at
+        /// the same pole, regardless of longitude); otherwise <see langword="false"/>.
+        /// </returns>
+        /// <remarks>
+        /// <para>
+        /// <b>Why rounding, and not a tolerance window:</b> latitude/longitude are floating-point values
+        /// produced by trigonometric computations (<see cref="GeoVector{T}.Travel"/>,
+        /// <see cref="GeoVector{T}.Intersections"/>, ...), which never land on exact values. An earlier
+        /// implementation compared raw values with a tolerance window (<c>|a - b| &lt;= 1e-5</c>) via
+        /// <see cref="FloatingPointComparer{T}"/>, but that comparer is <em>intentionally non-transitive</em>
+        /// (see its own documentation) and cannot be paired with a correct <see cref="GetHashCode"/>: two
+        /// values considered equal by the tolerance window could still hash differently, breaking
+        /// <see cref="Dictionary{TKey, TValue}"/>/<see cref="HashSet{T}"/> usage. Rounding both operands to
+        /// the same precision before comparing removes that risk entirely, because <see cref="Equals(GeoPoint{T})"/>
+        /// and <see cref="GetHashCode"/> then always operate on the exact same rounded values.
+        /// </para>
+        /// <para>
+        /// <b>Known limitation — rounding-boundary straddling:</b> this trades away the "equal within a
+        /// tolerance window" behavior. Two values that are extremely close to each other, but fall on
+        /// opposite sides of a rounding boundary, are now treated as <em>unequal</em>, even though a raw
+        /// tolerance comparison would have called them equal. For example, with
+        /// <see cref="EqualityPrecision"/> = 5, <c>1.0000449999</c> rounds down to <c>1.00004</c> while
+        /// <c>1.0000450001</c> rounds up to <c>1.00005</c> — a difference of about <c>2e-7</c>, far below
+        /// the old <c>1e-5</c> tolerance, yet the two values are no longer equal. This is a deliberate,
+        /// accepted trade-off (values this close in practice only arise from floating-point noise around a
+        /// rounding boundary, and rounding-consistency was judged more valuable than tolerance-window
+        /// equality for this type). See <c>GeoPointTests.PointsOnOppositeSidesOfARoundingBoundaryAreNotEqual</c>
+        /// for a regression test that pins down this exact behavior.
+        /// </para>
+        /// </remarks>
         public bool Equals(GeoPoint<T>? other)
         {
             if (other is null) return false;

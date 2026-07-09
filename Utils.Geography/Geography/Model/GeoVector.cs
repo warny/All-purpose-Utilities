@@ -484,11 +484,24 @@ public sealed class GeoVector<T> : GeoPoint<T>, IEquatable<GeoVector<T>>, IUnary
 
     /// <summary>
     /// Determines whether the specified <see cref="GeoVector{T}"/> has the same position and bearing as
-    /// this instance. Bearing is rounded to <see cref="GeoPoint{T}.EqualityPrecision"/> decimal places
-    /// before being compared (latitude/longitude are rounded the same way by <see cref="GeoPoint{T}.Equals(GeoPoint{T})"/>),
-    /// so <see cref="Equals(GeoVector{T})"/> and <see cref="GetHashCode"/> are always consistent with each
-    /// other by construction.
+    /// this instance: latitude/longitude are compared via <see cref="GeoPoint{T}.Equals(GeoPoint{T})"/>
+    /// (rounded to <see cref="GeoPoint{T}.EqualityPrecision"/> decimal places), and bearing is rounded to
+    /// the same precision before being compared here.
     /// </summary>
+    /// <param name="other">The vector to compare with this instance.</param>
+    /// <returns>
+    /// <see langword="true"/> if both vectors round to the same latitude, longitude, and bearing;
+    /// otherwise <see langword="false"/>.
+    /// </returns>
+    /// <remarks>
+    /// This has the exact same known limitation as <see cref="GeoPoint{T}.Equals(GeoPoint{T})"/> (see its
+    /// remarks for the full rationale and a worked example): rounding each coordinate before comparing
+    /// keeps <see cref="Equals(GeoVector{T})"/> and <see cref="GetHashCode"/> always consistent with each
+    /// other, but two bearings that are extremely close yet fall on opposite sides of a rounding boundary
+    /// (e.g. <c>1.0000449999</c> vs <c>1.0000450001</c>, with <see cref="GeoPoint{T}.EqualityPrecision"/> = 5)
+    /// are treated as unequal. See <c>GeoVectorTests.VectorsOnOppositeSidesOfARoundingBoundaryAreNotEqual</c>
+    /// for a regression test pinning down this behavior.
+    /// </remarks>
     public bool Equals(GeoVector<T>? other)
         => other is not null
            && T.Round(Bearing, EqualityPrecision) == T.Round(other.Bearing, EqualityPrecision)
