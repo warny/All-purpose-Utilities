@@ -861,6 +861,57 @@ public class Antlr4GrammarGeneratorDiagnosticsTests
         Assert.IsFalse(generatedSource.Contains("// tree", StringComparison.Ordinal));
     }
 
+
+    /// <summary>
+    /// Ensures <c>@parser::members</c> in lexer grammars stays unsupported with a deterministic reason.
+    /// </summary>
+    [TestMethod]
+    public void ParserScopedMembers_InLexerGrammar_RemainsUnsupportedWithDeterministicDiagnostic()
+    {
+        const string grammar = """
+            lexer grammar L;
+
+            @parser::members {
+                public int Seen = 1;
+            }
+
+            A : 'a' ;
+            """;
+
+        var diagnostics = RunGenerator(grammar, "L.g4");
+        var diagnostic = AssertSingleUnsupportedDiagnostic(diagnostics, "Grammar @parser::members action");
+        string generatedSource = GetGeneratedSource(grammar, "L.g4");
+
+        StringAssert.Contains(diagnostic.GetMessage(), "Parser named action '@parser::members' is not valid in a lexer grammar.");
+        AssertNoMembersInjectedDiagnostics(diagnostics);
+        Assert.IsFalse(generatedSource.Contains("public int Seen = 1;", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// Ensures unknown parser named actions remain unsupported metadata instead of source injection.
+    /// </summary>
+    [TestMethod]
+    public void UnknownParserNamedAction_RemainsMetadataOnlyOrUnsupported()
+    {
+        const string grammar = """
+            grammar P;
+
+            @parser::init {
+                // unsupported init marker
+            }
+
+            start : A ;
+            A : 'a' ;
+            """;
+
+        var diagnostic = AssertSingleUnsupportedDiagnostic(RunGenerator(grammar), "Grammar @parser::init action");
+        string generatedSource = GetGeneratedSource(grammar);
+
+        StringAssert.Contains(diagnostic.GetMessage(), "Parser named action '@parser::init' is not supported by this generator.");
+        AssertNoMembersInjectedDiagnostics(RunGenerator(grammar));
+        Assert.IsFalse(generatedSource.Contains("unsupported init marker", StringComparison.Ordinal));
+    }
+
     /// <summary>
     /// Ensures unknown parser named-action names report deterministic diagnostics.
     /// </summary>
