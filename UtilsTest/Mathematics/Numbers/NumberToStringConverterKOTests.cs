@@ -35,9 +35,10 @@ namespace UtilsTest.Mathematics.Numbers
         public void Cardinals_Thousands()
         {
             var c = NumberToStringConverter.GetConverter("KO");
-            // No replacement for 1000; engine produces "일 천"
-            Assert.AreEqual("일 천",    c.Convert(1_000));
+            // Korean elides the multiplier "일" before "천": 1 000 = "천", not "일 천"
+            Assert.AreEqual("천",       c.Convert(1_000));
             Assert.AreEqual("이 천",    c.Convert(2_000));
+            // 10 000 uses the "만" scale suffix path, unaffected by the onValue=1 replacement above
             Assert.AreEqual("십 천",    c.Convert(10_000));
         }
 

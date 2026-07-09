@@ -112,10 +112,25 @@ namespace Utils.NumberToString
 
         /// <summary>
         /// Converts a double-precision floating-point value into its string representation.
+        /// </summary>
+        /// <param name="number">The value to convert. Must be a finite number.</param>
+        /// <returns>The formatted number.</returns>
+        /// <exception cref="ArgumentException"><paramref name="number"/> is <see cref="double.NaN"/> or infinite.</exception>
+        string Convert(double number) => Convert(number, []);
+
+        /// <summary>
+        /// Converts a double-precision floating-point value into its string representation.
         /// Uses the round-trip format ("R") to convert to decimal, avoiding floating-point artifacts.
         /// </summary>
+        /// <param name="number">The value to convert. Must be a finite number.</param>
+        /// <param name="variants">Zero or more <c>"dimension=value"</c> strings.</param>
+        /// <returns>The formatted number with the requested variants applied.</returns>
+        /// <exception cref="ArgumentException"><paramref name="number"/> is <see cref="double.NaN"/> or infinite.</exception>
         string Convert(double number, params string[] variants)
         {
+            if (double.IsNaN(number) || double.IsInfinity(number))
+                throw new ArgumentException($"Cannot convert non-finite value '{number}' to a number in words.", nameof(number));
+
             if (decimal.TryParse(
                     number.ToString("R", System.Globalization.CultureInfo.InvariantCulture),
                     System.Globalization.NumberStyles.Any,
@@ -129,6 +144,18 @@ namespace Utils.NumberToString
         /// <summary>
         /// Converts a single-precision floating-point value into its string representation.
         /// </summary>
+        /// <param name="number">The value to convert. Must be a finite number.</param>
+        /// <returns>The formatted number.</returns>
+        /// <exception cref="ArgumentException"><paramref name="number"/> is <see cref="float.NaN"/> or infinite.</exception>
+        string Convert(float number) => Convert(number, []);
+
+        /// <summary>
+        /// Converts a single-precision floating-point value into its string representation.
+        /// </summary>
+        /// <param name="number">The value to convert. Must be a finite number.</param>
+        /// <param name="variants">Zero or more <c>"dimension=value"</c> strings.</param>
+        /// <returns>The formatted number with the requested variants applied.</returns>
+        /// <exception cref="ArgumentException"><paramref name="number"/> is <see cref="float.NaN"/> or infinite.</exception>
         string Convert(float number, params string[] variants)
             => Convert((double)number, variants);
 
@@ -169,6 +196,9 @@ namespace Utils.NumberToString
         /// Unrecognised dimensions or values fall back to the default silently.
         /// </param>
         /// <returns>The formatted number with the requested variants applied.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">
+        /// <paramref name="number"/> exceeds <see cref="MaxNumber"/> (implementations that declare one).
+        /// </exception>
         string Convert(BigInteger number, params string[] variants) => Convert(number);
 
         /// <summary>
@@ -244,6 +274,7 @@ namespace Utils.NumberToString
         /// </summary>
         /// <param name="number">The value to convert. Negative values use the minus template.</param>
         /// <returns>The ordinal string for <paramref name="number"/>.</returns>
+        /// <exception cref="NotSupportedException">The converter does not support ordinal conversion (<see cref="SupportsOrdinals"/> is <see langword="false"/>).</exception>
         string ConvertOrdinal(int number)
             => throw new NotSupportedException("Ordinal conversion is not supported by this converter.");
 
@@ -255,6 +286,7 @@ namespace Utils.NumberToString
         /// <param name="number">The value to convert. Negative values use the minus template.</param>
         /// <param name="variants">Zero or more <c>"dimension=value"</c> strings.</param>
         /// <returns>The ordinal string for <paramref name="number"/>.</returns>
+        /// <exception cref="NotSupportedException">The converter does not support ordinal conversion (<see cref="SupportsOrdinals"/> is <see langword="false"/>).</exception>
         string ConvertOrdinal(int number, params string[] variants)
             => ConvertOrdinal(number);
 
@@ -266,6 +298,8 @@ namespace Utils.NumberToString
         /// </summary>
         /// <param name="number">The value to convert. Negative values use the minus template.</param>
         /// <returns>The ordinal string for <paramref name="number"/>.</returns>
+        /// <exception cref="OverflowException"><paramref name="number"/> is outside the <see cref="int"/> range.</exception>
+        /// <exception cref="NotSupportedException">The converter does not support ordinal conversion (<see cref="SupportsOrdinals"/> is <see langword="false"/>).</exception>
         string ConvertOrdinal(long number)
             => ConvertOrdinal(number, []);
 
@@ -279,6 +313,8 @@ namespace Utils.NumberToString
         /// <param name="number">The value to convert. Negative values use the minus template.</param>
         /// <param name="variants">Zero or more <c>"dimension=value"</c> strings.</param>
         /// <returns>The ordinal string for <paramref name="number"/>.</returns>
+        /// <exception cref="OverflowException"><paramref name="number"/> is outside the <see cref="int"/> range.</exception>
+        /// <exception cref="NotSupportedException">The converter does not support ordinal conversion (<see cref="SupportsOrdinals"/> is <see langword="false"/>).</exception>
         string ConvertOrdinal(long number, params string[] variants)
             => ConvertOrdinal(checked((int)number), variants);
 
@@ -289,6 +325,8 @@ namespace Utils.NumberToString
         /// </summary>
         /// <param name="number">The value to convert. Negative values use the minus template.</param>
         /// <returns>The ordinal string for <paramref name="number"/>.</returns>
+        /// <exception cref="OverflowException"><paramref name="number"/> is outside the <see cref="long"/> or <see cref="int"/> range.</exception>
+        /// <exception cref="NotSupportedException">The converter does not support ordinal conversion (<see cref="SupportsOrdinals"/> is <see langword="false"/>).</exception>
         string ConvertOrdinal(BigInteger number)
             => ConvertOrdinal(checked((long)number), []);
 
@@ -301,6 +339,8 @@ namespace Utils.NumberToString
         /// <param name="number">The value to convert. Negative values use the minus template.</param>
         /// <param name="variants">Zero or more <c>"dimension=value"</c> strings.</param>
         /// <returns>The ordinal string for <paramref name="number"/>.</returns>
+        /// <exception cref="OverflowException"><paramref name="number"/> is outside the <see cref="long"/> or <see cref="int"/> range.</exception>
+        /// <exception cref="NotSupportedException">The converter does not support ordinal conversion (<see cref="SupportsOrdinals"/> is <see langword="false"/>).</exception>
         string ConvertOrdinal(BigInteger number, params string[] variants)
             => ConvertOrdinal(checked((long)number), variants);
 
@@ -312,6 +352,7 @@ namespace Utils.NumberToString
         /// <param name="amount">The amount to convert.</param>
         /// <param name="currency">The currency names and configuration.</param>
         /// <returns>The amount expressed as words.</returns>
+        /// <exception cref="NotSupportedException">The converter does not support currency conversion.</exception>
         string ConvertCurrency(decimal amount, CurrencyDefinition currency)
             => throw new NotSupportedException("Currency conversion is not supported by this converter.");
 
@@ -326,6 +367,7 @@ namespace Utils.NumberToString
         /// <param name="currency">The currency names and configuration.</param>
         /// <param name="variants">Zero or more <c>"dimension=value"</c> strings.</param>
         /// <returns>The amount expressed as words with the requested variants applied.</returns>
+        /// <exception cref="NotSupportedException">The converter does not support currency conversion.</exception>
         string ConvertCurrency(decimal amount, CurrencyDefinition currency, params string[] variants)
             => ConvertCurrency(amount, currency);
 
@@ -358,6 +400,28 @@ namespace Utils.NumberToString
             => $"{Convert(numerator, variants)} / {Convert(denominator, variants)}";
 
         /// <summary>
+        /// Converts the fraction <paramref name="numerator"/>/<paramref name="denominator"/> to its
+        /// string representation. Delegates to <see cref="ConvertFraction(BigInteger, BigInteger, string[])"/>.
+        /// </summary>
+        /// <param name="numerator">The numerator of the fraction.</param>
+        /// <param name="denominator">The denominator of the fraction.</param>
+        /// <param name="variants">Zero or more <c>"dimension=value"</c> strings.</param>
+        /// <returns>The textual representation of the fraction.</returns>
+        string ConvertFraction(int numerator, int denominator, params string[] variants)
+            => ConvertFraction((BigInteger)numerator, (BigInteger)denominator, variants);
+
+        /// <summary>
+        /// Converts the fraction <paramref name="numerator"/>/<paramref name="denominator"/> to its
+        /// string representation. Delegates to <see cref="ConvertFraction(BigInteger, BigInteger, string[])"/>.
+        /// </summary>
+        /// <param name="numerator">The numerator of the fraction.</param>
+        /// <param name="denominator">The denominator of the fraction.</param>
+        /// <param name="variants">Zero or more <c>"dimension=value"</c> strings.</param>
+        /// <returns>The textual representation of the fraction.</returns>
+        string ConvertFraction(long numerator, long denominator, params string[] variants)
+            => ConvertFraction((BigInteger)numerator, (BigInteger)denominator, variants);
+
+        /// <summary>
         /// When <see langword="true"/>, <see cref="ConvertMultiplicative"/> produces a result;
         /// when <see langword="false"/>, it throws <see cref="NotSupportedException"/>.
         /// </summary>
@@ -367,6 +431,7 @@ namespace Utils.NumberToString
         /// Converts a multiplier to its spoken multiplicative form (e.g. 2 → "twice", 3 → "trois fois").
         /// Throws <see cref="NotSupportedException"/> when the language has no multiplicative configuration.
         /// </summary>
+        /// <exception cref="NotSupportedException">The converter has no <c>&lt;Multiplicatives&gt;</c> configuration (<see cref="SupportsMultiplicative"/> is <see langword="false"/>).</exception>
         string ConvertMultiplicative(int multiplier, params string[] variants)
             => throw new NotSupportedException("This converter does not support multiplicative forms.");
 
@@ -387,6 +452,7 @@ namespace Utils.NumberToString
         /// (e.g. "two hours thirty minutes five seconds").
         /// Requires <c>&lt;TimeUnits&gt;</c> in the XML configuration.
         /// </summary>
+        /// <exception cref="NotSupportedException">The converter has no <c>&lt;TimeUnits&gt;</c> configuration (<see cref="SupportsTimeConversion"/> is <see langword="false"/>).</exception>
         string Convert(TimeSpan duration, params string[] variants)
             => throw new NotSupportedException("Time conversion requires <TimeUnits> in the XML configuration.");
 
@@ -395,6 +461,7 @@ namespace Utils.NumberToString
         /// (e.g. "quatorze heures trente").
         /// Requires <c>&lt;TimeUnits&gt;</c> in the XML configuration.
         /// </summary>
+        /// <exception cref="NotSupportedException">The converter has no <c>&lt;TimeUnits&gt;</c> configuration (<see cref="SupportsTimeConversion"/> is <see langword="false"/>).</exception>
         string Convert(TimeOnly time, params string[] variants)
             => throw new NotSupportedException("Time conversion requires <TimeUnits> in the XML configuration.");
 
@@ -404,6 +471,7 @@ namespace Utils.NumberToString
         /// Requires <c>&lt;DateFormat&gt;</c> in the XML configuration.
         /// Month names are read from <see cref="System.Globalization.CultureInfo"/>.
         /// </summary>
+        /// <exception cref="NotSupportedException">The converter has no <c>&lt;DateFormat&gt;</c> configuration (<see cref="SupportsDateConversion"/> is <see langword="false"/>).</exception>
         string Convert(DateOnly date, params string[] variants)
             => throw new NotSupportedException("Date conversion requires <DateFormat> in the XML configuration.");
 
@@ -411,6 +479,7 @@ namespace Utils.NumberToString
         /// Converts a <see cref="DateTime"/> to its spoken form by combining
         /// <see cref="Convert(DateOnly, string[])"/> and <see cref="Convert(TimeOnly, string[])"/>.
         /// </summary>
+        /// <exception cref="NotSupportedException">The converter has no <c>&lt;DateFormat&gt;</c> or <c>&lt;TimeUnits&gt;</c> configuration.</exception>
         string Convert(DateTime dateTime, params string[] variants)
             => throw new NotSupportedException("Date/time conversion requires <DateFormat> and <TimeUnits> in the XML configuration.");
     }

@@ -58,6 +58,10 @@
                 <Suffix>만</Suffix>
             </Suffixes>
         </NumberScale>
+        <Replacements>
+            <!-- 1 000 is "천", not "일 천" (the multiplier 1 is elided before the thousands scale name). -->
+            <Replacement oldValue="일 천" newValue="천" onScale="1" onValue="1" />
+        </Replacements>
         <Exceptions />
         <Ordinals prefix="제" />
     </Language>

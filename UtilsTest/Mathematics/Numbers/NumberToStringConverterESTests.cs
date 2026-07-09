@@ -89,8 +89,21 @@ namespace UtilsTest.Mathematics.Numbers
             };
 
             Assert.AreEqual("una peseta",  c.ConvertCurrency(1m, peseta, "gender=femenino"));
-            // 21 is fused ("veintiuno"/"veintiuna") — LastWord replacement does apply here
+            // 31 uses the space-separated buildString ("treinta y *") — LastWord applies directly
             Assert.AreEqual("treinta y una pesetas", c.ConvertCurrency(31m, peseta, "gender=femenino"));
+        }
+
+        [TestMethod]
+        public void Convert_ES_21_29_Gender_Femenino()
+        {
+            var c = NumberToStringConverter.GetConverter("ES");
+
+            // item 41: 21 is a fused word ("veintiuno") — whole-word replacement now covers it.
+            Assert.AreEqual("veintiuna",  c.Convert(21, "gender=femenino"));
+            Assert.AreEqual("veintiuno",  c.Convert(21));
+            // 22-29 do not vary in gender (only the "uno" unit does).
+            Assert.AreEqual("veintidos",  c.Convert(22, "gender=femenino"));
+            Assert.AreEqual("veintinueve", c.Convert(29, "gender=femenino"));
         }
     }
 }

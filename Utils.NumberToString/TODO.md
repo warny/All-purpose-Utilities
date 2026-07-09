@@ -64,15 +64,18 @@ au lieu de `Regex.Replace()` à chaque appel.
 ### 8. ~~Langues populaires manquantes~~ — **implémenté (VN, TR, SV, NO, UK, RO)**
 Nouveaux fichiers XML ajoutés :
 - **VN/VI/VI-VN (Vietnamien)** : cardinals avec allomorphes mốt/lăm via remplacement `Anywhere`,
-  ordinals `thứ N` avec exception `thứ nhất`. Connecteur *linh* non implémenté (nécessite moteur).
+  ordinals `thứ N` avec exception `thứ nhất`. Connecteur *linh* géré via `intraGroupConnector`
+  (voir item 22 plus bas).
 - **TR/TR-TR (Turc)** : cardinals sans `bir yüz` / `bir bin` (règles nationales respectées).
 - **SV/SV-SE (Suédois)** : cardinals avec fusion 20s (`tjugo*`) et espaces 30s-90s.
 - **NO/NB/NB-NO (Norvégien Bokmål)** : cardinals.
 - **UK/UK-UA (Ukrainien)** : cardinals simplifiés (inflexion тисяч invariante).
 - **RO/RO-RO (Roumain)** : cardinals avec noms d'échelle statiques `mii`/`milioane`/`miliarde` ;
   remplacements `onScale+onValue` pour l'accord `unu/doi` ; variante `gen=feminin` (una/două).
-  Limitation connue : l'insertion de `de` avant les noms d'échelle pour les multiples ≥ 20
-  (ex. "douăzeci de mii") nécessite un attribut `scaleConnector` non encore implémenté dans le moteur.
+  L'insertion de `de` avant les noms d'échelle pour les multiples ≥ 20 (ex. "douăzeci de mii")
+  est gérée via l'attribut `scaleConnector`/`scaleConnectorThreshold`, ajouté sur `<Language>`
+  avec la PR #419. Pas d'ordinaux RO à ce jour (voir item 9/11 : mêmes limites de portée
+  que ZU/AR — nécessiterait un plugin C# dédié).
 
 ### 9. Ordinaux ZU (Zoulou) via `IOrdinalLanguageSpecifics` — **reporté**
 Nécessite une recherche linguistique approfondie (classes nominales 1–17) et une implémentation
@@ -170,43 +173,172 @@ et `0 < remainder < threshold`. VN configuré avec `intraGroupConnector="linh" t
 
 ---
 
-## Améliorations identifiées (2026-07-06)
+## Améliorations identifiées (2026-07-06) — toutes implémentées le 2026-07-09
 
-### 24. Tests manquants : HR, HU, NO, SV, UK, VN
+### 24. ~~Tests manquants : HR, HU, NO, SV, UK, VN~~ — **implémenté**
+Six nouveaux fichiers dédiés créés (`NumberToStringConverterHRTests.cs`,
+`NumberToStringConverterHUTests.cs`, `NumberToStringConverterNOTests.cs`,
+`NumberToStringConverterSVTests.cs`, `NumberToStringConverterUKTests.cs`,
+`NumberToStringConverterVNTests.cs`), 31 tests au total couvrant cardinaux, milliers,
+grande échelle et ordinaux (quand supportés).
 
-Six langues ont une config XML complète mais aucun fichier de test dédié.
-Une régression de config passerait inaperçue. Fichiers à créer :
-`NumberToStringConverterHRTests.cs`, `NumberToStringConverterHUTests.cs`,
-`NumberToStringConverterNOTests.cs`, `NumberToStringConverterSVTests.cs`,
-`NumberToStringConverterUKTests.cs`, `NumberToStringConverterVNTests.cs`.
+### 25. ~~Ordinaux féminins HI non testés~~ — **déjà couvert**
+La couverture existait déjà dans `NumberToStringConverterImprovementsTests.cs`
+(section « C13 — Ordinal HI feminine variant », `ConvertOrdinal_HI_StriiVariant_*`),
+ajoutée avec la PR #419. Seul le fichier dédié `NumberToStringConverterHITests.cs`
+n'en avait pas — pas d'action nécessaire, le comportement est vérifié.
 
-### 25. Ordinaux féminins HI non testés
+### 26. ~~Validation des *valeurs* de dimensions~~ — **implémenté**
+`ValidateVariantReferences` (dans `NumberToStringConverter.Globalization.cs`) vérifie désormais
+aussi que chaque valeur de contrainte figure dans les valeurs déclarées de sa dimension
+(comparaison `OrdinalIgnoreCase`, cohérente avec `ApplyVariantRules`). Un typo de valeur lève
+maintenant une `InvalidOperationException` descriptive au chargement, comme pour les clés
+inconnues. La fonction a été factorisée (une seule vérification clé+valeur pour VariantRules,
+OrdinalVariants et TriggerReplace.Forms).
 
-La PR #419 a dû ajouter `<Dimension name="gender" values="puṃ,strī" />` dans la config HI
-pour corriger un bug de validation. La dimension est désormais déclarée ; `ConvertOrdinal(1, "gender=strī")`
-devrait retourner "पहली", mais `NumberToStringConverterHITests.cs` ne teste que les ordinaux masculins.
+### 27. ~~`VariantRules` pré-triées à la construction~~ — **implémenté**
+Nouveau champ `_sortedVariantRules` (`ImmutableArray<VariantRule>`) calculé une fois dans le
+constructeur de `NumberToStringConverter`. `ApplyVariantRules` et `ApplyVariantRulesForScale`
+itèrent sur ce champ au lieu d'appeler `.OrderBy(r => r.Specificity)` à chaque conversion.
 
-### 26. Validation des *valeurs* de dimensions
+### 28. ~~Config FI et KO : suppression du multiplicateur "1" devant l'unité de mille~~ — **implémenté**
+- **FI** : `<Replacement oldValue="yksi tuhat" newValue="tuhat" onScale="1" onValue="1" />`
+  ajouté dans `FI.xml`. 1 000 → "tuhat" (au lieu de "yksi tuhat").
+- **KO** : `<Replacement oldValue="일 천" newValue="천" onScale="1" onValue="1" />`
+  ajouté dans `KO.xml` (le texte de groupe onScale inclut le `separator=" "` configuré).
+  1 000 → "천" (au lieu de "일 천").
 
-`ValidateVariantReferences` vérifie que les clés de contrainte (`gender`, `case`…) correspondent
-à des dimensions déclarées, mais pas que les *valeurs* utilisées (`strī`, `partitiivi`…) figurent
-dans les valeurs déclarées de la dimension.
-Un typo de valeur (ex. `variant="stri"` au lieu de `"strī"`) passe silencieusement ;
-la règle ne s'applique jamais sans erreur visible.
-Même emplacement dans `ValidateVariantReferences`, même principe que la validation des clés.
+Les tests existants qui attendaient l'ancien comportement (`NumberToStringConverterFITests.cs`,
+`NumberToStringConverterKOTests.cs`, et un cas dans `NumberToStringConverterImprovementsTests.cs`)
+ont été mis à jour en conséquence.
 
-### 27. `VariantRules` pré-triées à la construction
+---
 
-`ApplyVariantRules` et `ApplyVariantRulesForScale` appellent chacune `.OrderBy(r => r.Specificity)`
-à chaque appel de `Convert()`. L'ordre est stable et connu à la construction : trier une seule fois
-dans le constructeur et stocker le résultat dans un `ImmutableArray` déjà ordonné.
-Évite une allocation + tri à chaque appel pour les langues avec de nombreuses règles (AR, PL, DE…).
+## Améliorations identifiées (2026-07-09)
 
-### 28. Config FI et KO : suppression du multiplicateur "1" devant l'unité de mille
+### ~~29. `GetMonthName` — catch trop large~~ — **implémenté**
 
-- **FI** : 1 000 s'écrit "tuhat" en finnois, pas "yksi tuhat". Ajouter
-  `<Replacement oldValue="yksi tuhat" newValue="tuhat" onScale="1" onValue="1" />` dans `FI.xml`.
-- **KO** : 1 000 s'écrit "천", pas "일 천". Même type de remplacement à ajouter dans `KO.xml`.
+`catch { }` remplacé par `catch (Exception ex) when (ex is CultureNotFoundException or IndexOutOfRangeException)`
+dans `NumberToStringConverter.cs`. Test de régression via réflexion sur la méthode privée
+(mois hors plage → repli sur la valeur numérique au lieu de propager une exception inattendue).
 
-Ces deux configs sont les seuls endroits du projet où le multiplicateur 1 n'est pas absorbé
-alors que la langue l'exige.
+### ~~30. `BuildFractionText` ignore les numérateurs négatifs pour les suffixes nommés~~ — **implémenté**
+
+Condition changée en `BigInteger.Abs(numerator) <= long.MaxValue` ; `ToPlural` reçoit aussi
+la valeur absolue. `-1/10` bénéficie désormais de la forme nommée ("moins un dixième" /
+"minus one tenth") au lieu de retomber sur la forme brute numérateur/dénominateur.
+
+### ~~31. `ApplyVariantRules` / `ApplyVariantRulesForScale` dupliquées~~ — **implémenté**
+
+Fusionnées en une seule méthode `ApplyVariantRules(text, query, numericValue?, scaleGroupNumber?, scaleGroupValue)` ;
+`ApplyVariantRulesForScale` devient un wrapper fin qui délègue à la version unifiée
+(`_sortedVariantRules`, trié une fois au constructeur, cf. item 27 implémenté par ailleurs).
+
+### ~~32. Étendre le fix item 28 (multiplicateur "1" devant mille) à ZH et JA~~ — **implémenté (JA seulement)**
+
+Vérification empirique (et non simple supposition) : le mandarin standard **garde** le "一"
+devant 千 ("一千" est correct, confirmé par un test ZH déjà existant) — aucune correction
+apportée à `ZH.xml`. Le japonais, en revanche, omet "一" devant 千 comme devant 百 (déjà
+correct) : `<Replacement oldValue="一 千" newValue="千" onScale="1" onValue="1" />` ajouté
+dans `JA.xml`. Item 28 lui-même (FI/KO) avait déjà été implémenté indépendamment (PR #422,
+commit `918d6e3f`).
+
+### ~~33. PT/GL — centaines sans forme féminine~~ — **déjà implémenté (PT) ; GL déjà correct par conception**
+
+Vérification du code : PT a déjà les 8 remplacements -entos→-entas dans `<Variants>` (testé
+dans `Cardinals_Gender_Feminino`). GL a déjà `douscentos→douscentas` (le seul cas variable en
+galicien selon le commentaire du fichier) ; test de régression ajouté pour verrouiller ce
+comportement documenté (200 varie, 300 non).
+
+### ~~34. FR-be-ch — connecteur "et" manquant pour 71/81/91~~ — **déjà correct, non un bug**
+
+Le mécanisme générique (`Group level 1, digit=1 → "et un"`) applique déjà "et" uniquement
+au chiffre 1, quel que soit le mot des dizaines — 71/81/91 en bénéficient automatiquement,
+72-79/82-89/92-99 n'en ont pas besoin. Tests ajoutés (`NumberToStringConverterFRTests.cs`)
+pour verrouiller ce comportement déjà correct mais non testé.
+
+### ~~35. `Convert(double/float)` et `DecimalFormatOptions` quasi uniquement testés en FR~~ — **implémenté**
+
+6 tests ajoutés couvrant DE/ES/IT (`Convert(double)` avec variant, `DecimalFormatOptions`
+avec séparateur/suffixe pluralisés) dans `NumberToStringConverterCoverageGapsTests.cs`.
+
+### ~~36. `Convert(TimeSpan/DateOnly/DateTime)` non testé pour DE~~ — **implémenté**
+
+2 tests ajoutés : `Convert(DateTime)` DE (parties date+heure) et `Convert(DateOnly)` DE avec
+`firstDay="ersten"` appliqué à `{ordinal-day}`.
+
+### ~~37. `Convert(BigInteger, int significantDigits, ...)` sans test par langue~~ — **implémenté**
+
+2 tests ajoutés (DE, ES avec variant de genre) vérifiant l'arrondi de groupe combiné aux
+variants sur un grand nombre.
+
+### ~~38. `ConvertYear` négatif (`beforeChristSuffix`) jamais combiné à des variants~~ — **implémenté**
+
+Découverte en écrivant le test : aucune config XML livrée ne déclare `beforeChristSuffix`
+(seul `NumberToStringConverterBatchTests.cs` l'exerçait via un converter construit à la main).
+Nouveau test construit un converter FR (qui a un genre) + `BeforeChristSuffix`, vérifiant que
+le genre est bien transmis au numéral avant append du suffixe ("un av. J.-C." / "une av. J.-C.").
+
+---
+
+## Améliorations identifiées (2026-07-09, suite)
+
+### 39. EL (grec) — centaines sans forme féminine — **bug linguistique confirmé, bloqué par le moteur**
+
+Les centaines grecques (διακόσια, τριακόσια…) ne sont produites qu'en neutre alors que le
+grec moderne les accorde en genre. Tentative d'implémentation via `<Variant type="gender"
+variant="αρσενικό/θηλυκό">` : **régression découverte** — la valeur par défaut d'une dimension
+est toujours `Values[0]` (`NumberToStringConverter.cs:1099`, non redéfinissable), et cette
+même dimension `gender` est partagée avec le positionnement des `forms=` des ordinaux
+(qui exige `αρσενικό` en premier). Rendre `ουδέτερο` premier casserait le défaut des ordinaux
+(`ConvertOrdinal(1)` sans variant doit rester "πρώτος", pas "πρώτο"). Fix annulé pour éviter
+de casser `Convert(200)` (devenu silencieusement "διακόσιοι" au lieu de "διακόσια"). Nécessite
+soit une dimension `gender` séparée pour les cardinaux (incohérent avec le reste du projet),
+soit une évolution du moteur permettant une valeur par défaut différente de `Values[0]`.
+
+### 40. RU/CS/SK/BG — accord numéral slave (nominatif/génitif sg/pl) absent — limitation architecturale
+
+Les quatre langues slaves n'implémentent aucun mécanisme pour l'accord du nom compté selon
+la règle slave classique (1 → nominatif singulier, 2-4 → génitif singulier, 5+ → génitif
+pluriel ; ex. RU "1 книга" / "2 книги" / "5 книг"). Seul le mot d'échelle "тысяча" a un
+remplacement ponctuel (RU, sans dimension de variant associée). Contrairement aux items
+26/33/39 (accord d'un mot isolé), ce cas porterait sur le nom compté externe, ce que le
+moteur ne modélise pas aujourd'hui — **reporté**, à l'instar de l'item 9 (ZU), nécessiterait
+une extension du système de variants côté appelant plutôt qu'un correctif XML.
+
+### ~~41. ES — composés 21-29 (`veintiuno`) toujours fusionnés sans espace~~ — **implémenté**
+
+Plutôt que d'introduire un espace (qui changerait l'orthographe standard "veintiuno"),
+un remplacement mot-entier dédié a été ajouté : `<Replacement oldValue="veintiuno"
+newValue="veintiuna" scope="Anywhere" />`. 22-29 ne varient pas en genre (seul "uno" varie).
+`Convert(21, "gender=femenino")` → "veintiuna".
+
+### ~~42. README — 14 langues configurées absentes de la liste des langues supportées~~ — **implémenté**
+
+Les 14 langues (BG, CS, DA, FA, HR, HU, ID/MS, NO/NB, SK, SV, SW, TR, UK, VN) ajoutées à la
+table des langues supportées, avec leurs codes de culture réels lus dans chaque XML.
+
+### ~~43. README — connecteurs XML majeurs et `beforeChristSuffix` non documentés~~ — **implémenté**
+
+`groupConnector`/`groupConnectorThreshold`, `intraGroupConnector`/`intraGroupConnectorThreshold`,
+`scaleConnector`/`scaleConnectorThreshold` ajoutés à la table `<Language>` attributes ;
+`beforeChristSuffix` ajouté à la table `<YearFormat>` attributes.
+
+### ~~44. `INumberToStringConverter` — XML docs sans tags `<exception>` structurés~~ — **implémenté**
+
+Tags `<exception cref="...">` ajoutés sur `Convert(BigInteger, variants)`, `ConvertOrdinal`
+(int/long/BigInteger, avec/sans variants), `ConvertCurrency` (avec/sans variants),
+`ConvertMultiplicative`, `Convert(TimeSpan/TimeOnly/DateOnly/DateTime)`, et
+`Convert(double/float)` (voir item 45).
+
+### ~~45. `Convert(double)` / `Convert(float)` — incohérences de surcharge et cas limites non gérés~~ — **implémenté**
+
+Surcharges `Convert(double)`/`Convert(float)` sans `variants` ajoutées (interface + implémentation
+concrète, pour un accès direct sans passer par l'interface). `double.IsNaN`/`IsInfinity` (et
+équivalents `float`) interceptés en tête de méthode : lève désormais `ArgumentException` au lieu
+d'un comportement indéfini.
+
+### ~~46. `ConvertFraction` — pas de surcharge `int`/`long`, uniquement `BigInteger`~~ — **implémenté**
+
+Surcharges `ConvertFraction(int, int, ...)` et `ConvertFraction(long, long, ...)` ajoutées
+(interface + implémentation concrète), délégant à la version `BigInteger`.
