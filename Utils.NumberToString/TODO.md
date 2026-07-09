@@ -211,3 +211,70 @@ itèrent sur ce champ au lieu d'appeler `.OrderBy(r => r.Specificity)` à chaque
 Les tests existants qui attendaient l'ancien comportement (`NumberToStringConverterFITests.cs`,
 `NumberToStringConverterKOTests.cs`, et un cas dans `NumberToStringConverterImprovementsTests.cs`)
 ont été mis à jour en conséquence.
+
+---
+
+## Améliorations identifiées (2026-07-09)
+
+### 29. `GetMonthName` — catch trop large
+
+`NumberToStringConverter.cs:1403` attrape `catch { }` sans type, masquant toute exception
+(pas seulement les erreurs de culture attendues). Même pattern que le fix appliqué à
+`TtfEncoderFactory.cs` en 2026-03-12 : remplacer par les types d'exception réellement
+attendus (ex. `ArgumentOutOfRangeException`).
+
+### 30. `BuildFractionText` ignore les numérateurs négatifs pour les suffixes nommés
+
+`NumberToStringConverter.cs:1182-1192` : le test `numerator >= 0` empêche `-1/3` de
+bénéficier de la forme nommée ("moins un tiers"), elle retombe sur une forme brute
+(numérateur/dénominateur bruts). Extraire la valeur absolue avant le test résoudrait
+l'incohérence.
+
+### 31. `ApplyVariantRules` / `ApplyVariantRulesForScale` dupliquées (~40 lignes)
+
+`NumberToStringConverter.cs:710-732` et `743-765` : même logique d'itération/contrainte/
+remplacement, seul le filtre `OnScale` diffère. À factoriser en une seule méthode
+paramétrée, en même temps que le correctif de tri unique proposé par l'item 27
+(actuellement non implémenté).
+
+### 32. Étendre le fix item 28 (multiplicateur "1" devant mille) à ZH et JA
+
+Le même bug que FI/KO existe potentiellement pour "一千" (ZH) et "一千" (JA) : à vérifier
+et corriger avec le même pattern `<Replacement oldValue="一千" newValue="千" onScale="1" onValue="1" />`
+dans `ZH.xml` et `JA.xml`.
+
+### 33. PT/GL — centaines sans forme féminine
+
+`duzentos`/`trescentos` (PT et GL) n'ont pas d'équivalent féminin contrairement à
+l'espagnol (`doscientas`). À vérifier linguistiquement (le portugais et le galicien
+accordent-ils réellement les centaines en genre comme l'espagnol ?) puis corriger si
+applicable via des `<Variant>` gender=feminino.
+
+### 34. FR-be-ch — connecteur "et" manquant pour 71/81/91
+
+En français de Belgique/Suisse, "septante et un" (71) prend "et" mais "septante-deux" (72)
+n'en prend pas — cette distinction n'est pas modélisée dans `NumberConvertionConfiguration.FR-be-ch.xml`,
+qui n'a pas d'exceptions dédiées pour 71-99 comme le FR standard.
+
+### 35. `Convert(double/float)` et `DecimalFormatOptions` quasi uniquement testés en FR
+
+Ces fonctionnalités (items 1 et 18) ont une couverture de test presque exclusivement FR.
+Étendre à DE/ES/IT pour vérifier l'interaction genre/pluriel avec `DecimalSeparator`,
+`DecimalSuffix` et `OmitZeroDecimals`.
+
+### 36. `Convert(TimeSpan/DateOnly/DateTime)` non testé pour DE
+
+`DE.xml` a pourtant une config complète `<TimeUnits>` + `<DateFormat firstDay="ersten">`,
+mais `NumberToStringConverterTimeAndNewLangTests.cs` ne couvre que EN/FR pour
+`Convert(DateOnly)` et `Convert(DateTime)`.
+
+### 37. `Convert(BigInteger, int significantDigits, ...)` sans test par langue
+
+Ajoutée en item 3, cette surcharge n'a aucun test vérifiant l'arrondi de groupe combiné
+à des variants (ex. genre FR) sur un grand nombre.
+
+### 38. `ConvertYear` négatif (`beforeChristSuffix`) jamais combiné à des variants
+
+Testé uniquement via `ConvertYear(-44)` en EN sans variant ; aucun test ne combine année
+av. J.-C. et variant genre/cas pour une langue où le split par moitié (EN/DE/NL) produit
+des numéraux accordables.
