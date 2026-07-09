@@ -101,6 +101,27 @@ utilisables pour le hachage/les clés de dictionnaire (fenêtre de tolérance no
   auto-intersectants, ou couvrant une très large fraction de la surface).
 - Renommage du fichier `MollweidProjection.cs` → `MollweideProjection.cs` (la classe s'appelait déjà
   `MollweideProjection`, seul le nom de fichier avait une coquille).
+- `README.md` : `Planets<double>.Moon` n'existe pas (les satellites sont préfixés par leur planète —
+  `EarthMoon`, `JupiterEurope`, ... — c'est voulu) → corrigé en `Planets<double>.EarthMoon`. Le bearing
+  Paris→Londres annoncé (`~296°`, à deux endroits) était faux ; vérifié par exécution réelle du
+  snippet : la valeur correcte est `~330°`. Corrigé aux deux occurrences.
+
+### `MapPosition<T>` mutable alors qu'il surcharge `Equals`/`GetHashCode`
+`GeoPoint`/`ZoomLevel` avaient des setters publics alors que `GetHashCode` en dépend : muter l'instance
+après l'avoir stockée dans un `Dictionary`/`HashSet` aurait pu casser silencieusement les lookups, et la
+validation du constructeur (`zoomLevel > 0`) restait contournable après coup. **Fix** : propriétés
+passées en lecture seule (`{ get; }`), comme le reste des types « valeur » du namespace (`GeoPoint`,
+`BoundingBox`, `Tile`, `ProjectedPoint`).
+
+### `GeoPointList<T>`/`GeoPointList2<T>` héritaient directement de `List<T>`
+Contraire au principe de séparation des responsabilités d'AGENTS.md (mélange stockage de collection et
+logique de calcul géométrique). **Fix** : composition plutôt qu'héritage — les deux classes encapsulent
+désormais un `List<T>` privé et implémentent `IList<T>`/`IReadOnlyList<T>` par délégation complète. Le
+comportement observable est inchangé (syntaxe d'initialiseur de collection, indexeur, `Count`, etc.
+vérifiés). **Changement d'API potentiellement cassant** pour du code externe qui ferait
+`List<GeoPoint<T>> x = geoPointList;` (upcast implicite) ou utiliserait des membres spécifiques à `List<T>`
+absents de `IList<T>` (`Sort`, `ForEach`, `AsReadOnly`, etc.) — aucun appelant de ce type trouvé dans le
+dépôt ; à mentionner dans le changelog si une nouvelle version est publiée.
 
 ## Couverture de tests ajoutée
 Avant cet audit, ces classes n'avaient **aucun** test : `BoundingBox<T>`, `GeoPointList<T>`,

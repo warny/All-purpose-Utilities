@@ -114,7 +114,7 @@ var v = new GeoVector<double>(48.8566, 2.3522, bearing: 90.0); // east
 
 // Bearing from two points
 var v2 = new GeoVector<double>(paris, london);
-Console.WriteLine(v2.Bearing); // ~296° (NW towards London)
+Console.WriteLine(v2.Bearing); // ~330° (NNW towards London)
 Console.WriteLine(v2.θ);       // same, alias for Bearing
 
 // Reverse direction
@@ -131,7 +131,7 @@ GeoVector<double> arrived = v2.Travel(angleInDegrees: 1.0);
 ### Compute bearing between two points
 
 ```csharp
-double bearing = GeoVector<double>.ComputeBearing(paris, london); // ~296°
+double bearing = GeoVector<double>.ComputeBearing(paris, london); // ~330°
 ```
 
 ### Intersection of two great-circle paths
@@ -153,7 +153,7 @@ using Utils.Geography.Model;
 
 Planet<double> earth   = Planets<double>.Earth;
 Planet<double> mars    = Planets<double>.Mars;
-Planet<double> moon    = Planets<double>.Moon;
+Planet<double> moon    = Planets<double>.EarthMoon; // satellites are prefixed by their planet's name
 Planet<double> jupiter = Planets<double>.Jupiter;
 ```
 

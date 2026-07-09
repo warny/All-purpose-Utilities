@@ -12,14 +12,21 @@ public sealed class MapPosition<T> : IEquatable<MapPosition<T>>, IEqualityOperat
     where T : struct, IFloatingPointIeee754<T>
 {
     /// <summary>
-    /// Gets or sets the geographical coordinates of the map center.
+    /// Gets the geographical coordinates of the map center.
     /// </summary>
-    public GeoPoint<T> GeoPoint { get; set; }
+    /// <remarks>
+    /// Immutable, like the other value-like types in this namespace (<see cref="GeoPoint{T}"/>,
+    /// <see cref="BoundingBox{T}"/>, ...). Mutable properties would be able to silently invalidate the
+    /// value returned by <see cref="GetHashCode"/> for an instance already stored in a
+    /// <see cref="System.Collections.Generic.Dictionary{TKey, TValue}"/>/<see cref="System.Collections.Generic.HashSet{T}"/>,
+    /// and would let the constructor's <c>zoomLevel &gt; 0</c> validation be bypassed after construction.
+    /// </remarks>
+    public GeoPoint<T> GeoPoint { get; }
 
     /// <summary>
-    /// Gets or sets the zoom level of the map.
+    /// Gets the zoom level of the map.
     /// </summary>
-    public byte ZoomLevel { get; set; }
+    public byte ZoomLevel { get; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MapPosition{T}"/> class.
