@@ -4067,6 +4067,201 @@ public class Antlr4GeneratedRuleLifecycleTests
         Assert.AreEqual(2, ReadIntField(assembly, "Seen"));
     }
 
+
+    /// <summary>Verifies explicit helper access reads an assignment-labeled child return written through bare current-rule return syntax.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_ExplicitHelper_ReadsAssignmentLabelReturn()
+    {
+        const string grammar = """
+            grammar P;
+            start @after { Seen = GetRequiredLabeledRuleCallReturn(context, "c", "value") is int v ? v : -1; } : c=child ;
+            child returns [int value] @after { $value = 42; } : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext { public static int Seen = -1; }
+            """;
+
+        Assembly assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        object result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+        _ = InvokeParse(assembly, "Parse", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(42, ReadIntField(assembly, "Seen"));
+    }
+
+    /// <summary>Verifies explicit try helper access reads an assignment-labeled child return.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_ExplicitHelper_TryReadsAssignmentLabelReturn()
+    {
+        const string grammar = """
+            grammar P;
+            start @after {
+                Found = TryGetLabeledRuleCallReturn(context, "c", "value", out object? value);
+                Seen = value is int v ? v : -1;
+            } : c=child ;
+            child returns [int value] @after { $value = 42; } : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext { public static bool Found; public static int Seen = -1; }
+            """;
+
+        Assembly assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        object result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsTrue(ReadBoolField(assembly, "Found"));
+        Assert.AreEqual(42, ReadIntField(assembly, "Seen"));
+    }
+
+    /// <summary>Verifies required helper access fails deterministically when the assignment label is missing.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_ExplicitHelper_RequiredMissingLabelThrows()
+    {
+        const string grammar = """
+            grammar P;
+            start @after { Seen = GetRequiredLabeledRuleCallReturn(context, "missing", "value") is int v ? v : -1; } : c=child ;
+            child returns [int value] @after { $value = 42; } : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext { public static int Seen = -1; }
+            """;
+
+        Assembly assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        TargetInvocationException exception = Assert.ThrowsException<TargetInvocationException>(() => InvokeParse(assembly, "ParseWithEmbeddedCode", "a"));
+
+        Assert.IsInstanceOfType<ParserAttributeAccessException>(exception.InnerException);
+        Assert.AreEqual("Assignment label 'missing' is not available in the current rule invocation.", exception.InnerException!.Message);
+    }
+
+    /// <summary>Verifies explicit required helper access distinguishes a present-null return from an absent return.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_ExplicitHelper_DistinguishesPresentNullFromMissing()
+    {
+        const string grammar = """
+            grammar P;
+            start @after { IsNull = GetRequiredLabeledRuleCallReturn(context, "c", "value") == null; } : c=child ;
+            child returns [string? value] @after { $value = null; } : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext { public static bool IsNull; }
+            """;
+
+        Assembly assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        object result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsTrue(ReadBoolField(assembly, "IsNull"));
+    }
+
+    /// <summary>Verifies required helper access fails deterministically for a missing return on an existing assignment label.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_ExplicitHelper_MissingReturnOnExistingLabelThrows()
+    {
+        const string grammar = """
+            grammar P;
+            start @after { Seen = GetRequiredLabeledRuleCallReturn(context, "c", "missing") is int v ? v : -1; } : c=child ;
+            child returns [int value] @after { $value = 42; } : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext { public static int Seen = -1; }
+            """;
+
+        Assembly assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        TargetInvocationException exception = Assert.ThrowsException<TargetInvocationException>(() => InvokeParse(assembly, "ParseWithEmbeddedCode", "a"));
+
+        Assert.IsInstanceOfType<ParserAttributeAccessException>(exception.InnerException);
+        Assert.AreEqual("Return 'missing' is not available on assignment label 'c'.", exception.InnerException!.Message);
+    }
+
+    /// <summary>Verifies list-label helper projection preserves successful call order.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_ExplicitHelper_ListLabelReturnsPreserveOrder()
+    {
+        const string grammar = """
+            grammar P;
+            @members { public int Counter; }
+            start @after {
+                var values = GetLabeledRuleCallReturns(context, "xs", "value");
+                Count = values.Count;
+                First = values[0] is int first ? first : -1;
+                Last = values[1] is int last ? last : -1;
+            } : xs+=child xs+=child ;
+            child returns [int value] @after { $value = Counter++; } : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext { public static int Count; public static int First = -1; public static int Last = -1; }
+            """;
+
+        Assembly assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        object result = InvokeParse(assembly, "ParseWithEmbeddedCode", "aa");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(2, ReadIntField(assembly, "Count"));
+        Assert.AreEqual(0, ReadIntField(assembly, "First"));
+        Assert.AreEqual(1, ReadIntField(assembly, "Last"));
+    }
+
+    /// <summary>Verifies absent list labels return an empty projected return list without throwing.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_ExplicitHelper_AbsentListLabelReturnsEmptyList()
+    {
+        const string grammar = """
+            grammar P;
+            start @after { Count = GetLabeledRuleCallReturns(context, "xs", "value").Count; } : child ;
+            child returns [int value] @after { $value = 42; } : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext { public static int Count = -1; }
+            """;
+
+        Assembly assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        object result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(0, ReadIntField(assembly, "Count"));
+    }
+
+    /// <summary>Verifies failed alternatives do not leak assignment-label returns into the successful alternative frame state.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_ExplicitHelper_LabelReturnsRollbackFailedAlternative()
+    {
+        const string grammar = """
+            grammar P;
+            @members { public int Counter; }
+            start @after { Seen = GetRequiredLabeledRuleCallReturn(context, "ok", "value") is int v ? v : -1; }
+                : bad=child B
+                | ok=child A
+                ;
+            child returns [int value] @after { $value = Counter++; } : A ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext { public static int Seen = -1; }
+            """;
+
+        Assembly assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        object result = InvokeParse(assembly, "ParseWithEmbeddedCode", "aa");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(0, ReadIntField(assembly, "Seen"));
+    }
+
     /// <summary>
     /// Verifies generated source exposes only generic metadata-driven labeled-result helpers.
     /// </summary>

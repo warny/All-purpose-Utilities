@@ -361,3 +361,9 @@ Parser embedded code must continue to pass through `IParserEmbeddedCodeTransform
 
 Future simple generated-C# return assignment/access should reuse generated execution-context helpers and optional transformer rewriting. Future labeled rule-call return access should build on existing labeled result storage where available. Any `$...` syntax support must be implemented through the parser embedded-code transformer, not the runtime parser core. No full ANTLR parser context model is promised by the current generated-C# compatibility bridge.
 
+
+## Labeled child-return helper state
+
+Labeled child-return helpers are transactional because they read the existing parser-managed invocation-frame state. `c=child` stores an immutable completed `ParserRuleCallResult` for the assignment label, while `xs+=child` appends immutable successful results in execution order. `GetRequiredLabeledRuleCallReturn` distinguishes a present return whose value is `null` from an absent return key, and `GetLabeledRuleCallReturns` projects only present return keys while preserving list-label call order.
+
+Backtracking snapshots include the labeled result store, so failed alternatives do not leak assignment or list label returns into the selected alternative. Memoized child results restore their return snapshot, but the successful call site still annotates the result with the current label before binding. This preserves helper behavior without adding C#-specific semantics to `ParserEngine`; `$c.value`, `$x.value`, `$xs.value`, `$child.value`, and `$rule.value` remain unsupported transformer syntax until a future sugar-only PR.
