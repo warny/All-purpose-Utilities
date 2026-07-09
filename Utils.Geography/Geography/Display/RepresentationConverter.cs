@@ -86,12 +86,31 @@ namespace Utils.Geography.Display
         /// <param name="projectedPoint">Projected map point.</param>
         /// <param name="zoomLevel">Zoom level of the tile grid.</param>
         /// <returns>The tile containing the projected point.</returns>
+        /// <remarks>
+        /// Uses <see cref="IProjectionTransformation{T}.Normalize"/> to convert the projected point into
+        /// <c>[0,1]</c> map-fraction coordinates before scaling by <see cref="GetMapSize"/>, matching
+        /// <see cref="MapPoint{T}"/>'s own pixel calculation exactly, so both agree on which tile a given
+        /// point falls into. The resulting pixel coordinates are clamped to <c>[0, mapSize - 1]</c> before
+        /// dividing by <see cref="TileSize"/>: a normalized value of exactly <c>1</c> (e.g. Equirectangular's
+        /// latitude <c>90°</c>, or Mercator's own <see cref="MercatorProjection{T}.MaxLatitude"/>) would
+        /// otherwise floor to <c>mapSize</c>, one tile past the last valid one — the same edge case
+        /// <see cref="MapPoint{T}"/> guards against.
+        /// </remarks>
         public Tile<T> MappointToTile(ProjectedPoint<T> projectedPoint, byte zoomLevel)
         {
-            long zoom = 1 << zoomLevel;
+            long zoom = 1L << zoomLevel;
+
+            var (nx, ny) = projectedPoint.Projection.Normalize(projectedPoint);
+            long mapSize = GetMapSize(zoomLevel);
+            T mapSizeT = T.CreateChecked(mapSize);
+            T maxPixel = T.CreateChecked(mapSize - 1);
+
+            long pixelX = long.CreateChecked(MathEx.Clamp(T.Floor(nx * mapSizeT), T.Zero, maxPixel));
+            long pixelY = long.CreateChecked(MathEx.Clamp(T.Floor(ny * mapSizeT), T.Zero, maxPixel));
+
             return new Tile<T>(
-                MathEx.Clamp((long)Convert.ChangeType(projectedPoint.X, typeof(long)) / TileSize, 0, zoom - 1),
-                MathEx.Clamp((long)Convert.ChangeType(projectedPoint.Y, typeof(long)) / TileSize, 0, zoom - 1),
+                MathEx.Clamp(pixelX / TileSize, 0, zoom - 1),
+                MathEx.Clamp(pixelY / TileSize, 0, zoom - 1),
                 zoomLevel,
                 TileSize);
         }
@@ -101,9 +120,14 @@ namespace Utils.Geography.Display
         /// </summary>
         /// <param name="zoomLevel">Zoom level of the tile grid.</param>
         /// <returns>Total map size in pixels.</returns>
-        public int GetMapSize(byte zoomLevel)
+        /// <remarks>
+        /// Returns <see langword="long"/> (rather than <see langword="int"/>) because <c>TileSize &lt;&lt; zoomLevel</c>
+        /// overflows a 32-bit <see langword="int"/> at realistic zoom levels — e.g. with the default 256px
+        /// tile size, zoom 24 already overflows.
+        /// </remarks>
+        public long GetMapSize(byte zoomLevel)
         {
-            return TileSize << zoomLevel;
+            return (long)TileSize << zoomLevel;
         }
 
         /// <summary>
@@ -114,7 +138,7 @@ namespace Utils.Geography.Display
         /// <returns>Ground resolution (meters per pixel) at the specified latitude.</returns>
         public T ComputeGroundResolution(T latitude, byte zoomLevel)
         {
-            var mapSize = (T)Convert.ChangeType(GetMapSize(zoomLevel), typeof(T));
+            var mapSize = T.CreateChecked(GetMapSize(zoomLevel));
             return degree.Cos(latitude) * Planet.EquatorialCircumference / mapSize;
         }
     }

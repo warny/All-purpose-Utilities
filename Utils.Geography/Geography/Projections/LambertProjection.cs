@@ -23,6 +23,23 @@ public class LambertAzimuthalEqualArea<T> : IProjectionTransformation<T>
     /// </summary>
     private static T Sqrt2 { get; } = T.Sqrt(T.CreateChecked(2));
 
+    /// <inheritdoc/>
+    /// <remarks>
+    /// Both axes are finite over the whole sphere for this projection: ρ (and therefore both x and y)
+    /// reaches its maximum, finite value of exactly 2 at the south pole (lat=-90°, the point diametrically
+    /// opposite this projection's center), so no practical cutoff is needed here (unlike, e.g., Mercator).
+    /// Because this is a polar azimuthal projection, x and y do not independently track longitude/latitude
+    /// the way they do for cylindrical projections — see <see cref="IProjectionTransformation{T}.Normalize"/>.
+    /// </remarks>
+    public (T MinX, T MaxX, T MinY, T MaxY) Bounds
+    {
+        get
+        {
+            T two = T.CreateChecked(2);
+            return (-two, two, -two, two);
+        }
+    }
+
     /// <summary>
     /// Projects geographic coordinates onto the Lambert azimuthal equal-area plane.
     /// </summary>

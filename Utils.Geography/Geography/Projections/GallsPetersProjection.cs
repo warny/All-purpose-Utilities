@@ -32,6 +32,15 @@ namespace Utils.Geography.Projections
         private static readonly T cos45 = degree.Cos(T.CreateChecked(45));
         private static readonly T invCos45 = T.One / cos45;
 
+        /// <inheritdoc/>
+        /// <remarks>
+        /// Both axes are finite over the whole sphere for this projection (Y=sin(lat)/cos(45°) reaches
+        /// its extreme, finite value exactly at the poles), so no practical cutoff is needed here (unlike,
+        /// e.g., Mercator).
+        /// </remarks>
+        public (T MinX, T MaxX, T MinY, T MaxY) Bounds
+            => (-cos45 * degree.StraightAngle, cos45 * degree.StraightAngle, -invCos45, invCos45);
+
         /// <summary>
         /// Projects a geographical point (in degrees) to the Gall–Peters projection (also in degrees).
         /// (0°,0°) maps to (0,0), with standard parallels at ±45° for equal-area property.

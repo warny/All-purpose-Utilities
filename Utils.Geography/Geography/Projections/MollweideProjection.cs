@@ -31,6 +31,22 @@ public class MollweideProjection<T> : IProjectionTransformation<T>
     private static readonly T Eps = T.CreateChecked(1.0e-7);
     private const int MaxIter = 10;
 
+    /// <inheritdoc/>
+    /// <remarks>
+    /// Both axes are finite over the whole sphere for this projection (the bounding ellipse fits
+    /// exactly within x ∈ [-2√2, 2√2], y ∈ [-√2, √2], reached at lon=±180°/lat=0° and lat=±90°
+    /// respectively), so no practical cutoff is needed here (unlike, e.g., Mercator).
+    /// </remarks>
+    public (T MinX, T MaxX, T MinY, T MaxY) Bounds
+    {
+        get
+        {
+            T two = T.CreateChecked(2);
+            T maxX = two * Sqrt2;
+            return (-maxX, maxX, -Sqrt2, Sqrt2);
+        }
+    }
+
     /// <summary>
     /// Projects (latitude, longitude) in degrees => Mollweide (x, y).
     ///

@@ -16,6 +16,21 @@ public class MillerProjection<T> : IProjectionTransformation<T>
     /// </summary>
     private static readonly IAngleCalculator<T> degree = Trigonometry<T>.Degree;
 
+    /// <inheritdoc/>
+    /// <remarks>
+    /// Unlike Mercator, Miller's Y is finite even at the poles: the "inside" tangent argument is scaled
+    /// down to <c>45° + (2/5)·lat</c>, which only reaches <c>81°</c> at lat=±90° (well short of the 90°
+    /// singularity), so no practical cutoff is needed here.
+    /// </remarks>
+    public (T MinX, T MaxX, T MinY, T MaxY) Bounds
+    {
+        get
+        {
+            T maxY = GeoPointToMapPoint(new GeoPoint<T>(degree.RightAngle, T.Zero)).Y;
+            return (-degree.StraightAngle, degree.StraightAngle, -maxY, maxY);
+        }
+    }
+
     /// <summary>
     /// Projects geographic coordinates to Miller cylindrical coordinates.
     /// </summary>

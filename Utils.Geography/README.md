@@ -254,6 +254,27 @@ Console.WriteLine(back.Latitude);  // ≈ 48.8566
 IProjectionTransformation<double> p = Projections<double>.GetProjection("lambert");
 ```
 
+### Bounds and normalization
+
+Every projection reports the rectangular bounds (in its own native output units) that
+`GeoPointToMapPoint` stays within, and can normalize a projected point into `[0,1] x [0,1]`
+map-fraction coordinates — this is what `MapPoint<T>`/`RepresentationConverter<T>` use internally to
+convert to pixel/tile coordinates.
+
+```csharp
+var mercator = Projections<double>.Mercator;
+
+// Mercator's Y is unbounded at the poles (tan(90°) is undefined), so its bounds use a documented
+// maximum latitude instead — the standard "Web Mercator" cutoff (~85.05°) used by every major
+// slippy-map implementation.
+Console.WriteLine(MercatorProjection<double>.MaxLatitude); // ~85.05112878
+
+var (minX, maxX, minY, maxY) = mercator.Bounds;
+
+var projected = mercator.GeoPointToMapPoint(paris);
+var (x, y) = mercator.Normalize(projected); // both in [0,1] for any point within Bounds
+```
+
 ## RepresentationConverter examples
 
 `RepresentationConverter<T>` bridges geo coordinates, projected points, and tile grid coordinates.
@@ -273,7 +294,7 @@ Tile<double> tile = converter.MappointToTile(projected, zoomLevel: 10);
 Console.WriteLine($"tile x={tile.TileX}, y={tile.TileY}, zoom={tile.ZoomFactor}");
 
 // Total map size at zoom 8 (256 * 2^8 = 65536 px)
-int mapSize = converter.GetMapSize(zoomLevel: 8);
+long mapSize = converter.GetMapSize(zoomLevel: 8);
 
 // Ground resolution (meters/pixel) at Paris latitude, zoom 14
 double resolution = converter.ComputeGroundResolution(paris.Latitude, zoomLevel: 14);

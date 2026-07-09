@@ -10,6 +10,12 @@ namespace Utils.Geography.Model;
 /// Represents a vector of displacement on a spherical geodesic with a bearing (heading direction).
 /// </summary>
 /// <typeparam name="T">The numeric type used for calculations, typically a floating point.</typeparam>
+// CA2260 expects IEqualityOperators<TSelf, TOther, TResult> to be implemented via CRTP (GeoPoint<TSelf>),
+// but GeoVector<T> classically inherits GeoPoint<T> (same T) instead of GeoPoint<GeoVector<T>>. The ==/!=
+// operators on both types are correct and tested; adopting the CRTP pattern here would require turning
+// GeoPoint<T> into GeoPoint<TSelf, T>, a breaking API change for every consumer of this package. Suppressed
+// as informational-only.
+#pragma warning disable CA2260
 public sealed class GeoVector<T> : GeoPoint<T>, IEquatable<GeoVector<T>>, IUnaryNegationOperators<GeoVector<T>, GeoVector<T>>, IEqualityOperators<GeoVector<T>, GeoVector<T>, bool>
     where T : struct, IFloatingPointIeee754<T>, IDivisionOperators<T, T, T>
 {
@@ -593,3 +599,4 @@ public sealed class GeoVector<T> : GeoPoint<T>, IEquatable<GeoVector<T>>, IUnary
 
     #endregion
 }
+#pragma warning restore CA2260

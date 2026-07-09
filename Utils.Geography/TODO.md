@@ -89,23 +89,6 @@ comportement « égal à epsilon près » a disparu de `Equals`. **Fix** : ajout
 `comparer.Interval`) et des équivalents sur `GeoVector<T>`, explicitement documentés comme *non*
 utilisables pour le hachage/les clés de dictionnaire (fenêtre de tolérance non transitive).
 
-## Documentation mise à jour
-- `LambertAzimuthalEqualArea<T>` : la XML doc ne précisait pas que cette implémentation est l'aspect
-  **polaire** (centré sur le pôle nord, `(lat=90°,lon=0°) → (0,0)`), pas l'aspect équatorial. Un test
-  naïf supposant que `(0,0) → (0,0)` pour toutes les projections a révélé la confusion. Documenté.
-- `StereographicProjection<T>` : documentation de la singularité au point antipodal (lat=0°, lon=±180°)
-  — le dénominateur nul est remplacé par `T.Epsilon` (valeur finie mais énorme) plutôt que de lever une
-  exception ; documenté explicitement plutôt que changé, pour ne pas risquer un changement de
-  comportement non validé.
-- `Planet<T>.Area` : documentation des limites connues de la formule (polygones englobant un pôle,
-  auto-intersectants, ou couvrant une très large fraction de la surface).
-- Renommage du fichier `MollweidProjection.cs` → `MollweideProjection.cs` (la classe s'appelait déjà
-  `MollweideProjection`, seul le nom de fichier avait une coquille).
-- `README.md` : `Planets<double>.Moon` n'existe pas (les satellites sont préfixés par leur planète —
-  `EarthMoon`, `JupiterEurope`, ... — c'est voulu) → corrigé en `Planets<double>.EarthMoon`. Le bearing
-  Paris→Londres annoncé (`~296°`, à deux endroits) était faux ; vérifié par exécution réelle du
-  snippet : la valeur correcte est `~330°`. Corrigé aux deux occurrences.
-
 ### `MapPosition<T>` mutable alors qu'il surcharge `Equals`/`GetHashCode`
 `GeoPoint`/`ZoomLevel` avaient des setters publics alors que `GetHashCode` en dépend : muter l'instance
 après l'avoir stockée dans un `Dictionary`/`HashSet` aurait pu casser silencieusement les lookups, et la
@@ -123,6 +106,90 @@ vérifiés). **Changement d'API potentiellement cassant** pour du code externe q
 absents de `IList<T>` (`Sort`, `ForEach`, `AsReadOnly`, etc.) — aucun appelant de ce type trouvé dans le
 dépôt ; à mentionner dans le changelog si une nouvelle version est publiée.
 
+### `MapPoint<T>`/`Tile<T>`/`RepresentationConverter<T>` : mise à l'échelle incohérente
+Trois façons différentes de passer d'un `ProjectedPoint<T>` à un index de tuile coexistaient sans être
+cohérentes entre elles (`MapPoint` ignorait `tileSize` dans sa mise à l'échelle, `MappointToTile`
+utilisait la coordonnée projetée **brute**, sans mise à l'échelle du tout). Démontré concrètement :
+pour le même `ProjectedPoint` (Paris, Mercator, zoom 10), `MapPoint(...).Tile` donnait `(9, 3)` alors
+que `RepresentationConverter.MappointToTile(...)` donnait `(0, 0)`.
+
+**Fix** — ajout de `IProjectionTransformation<T>.Bounds` (bornes rectangulaires en unités natives de
+la projection) et `Normalize(ProjectedPoint<T>)` (implémentation par défaut sur l'interface, en
+C# 8+ : mise à l'échelle linéaire indépendante par axe vers `[0,1]`) :
+- Chaque projection déclare ses propres bornes. La plupart sont finies et exactes aux pôles
+  (Equirectangular, Gall-Peters, Miller, Mollweide, Lambert) ; **Mercator** est le cas particulier
+  demandé : `Y` diverge à `lat=±90°` (singularité mathématique du logarithme de tangente), donc sa
+  borne est dérivée d'une nouvelle propriété publique `MercatorProjection<T>.MaxLatitude`
+  (`≈85.05112878°`, le seuil standard « Web Mercator » utilisé par OpenStreetMap/Google
+  Maps/Bing/Leaflet, calculé comme `2·atan(e^π) − π/2`) plutôt que d'évaluer à `lat=90°`.
+  **Stereographic** reste un cas limite documenté : sa singularité est au point antipodal
+  (lat=0°,lon=±180°), pas aux pôles, donc ses bornes ne couvrent que l'étendue atteinte aux pôles
+  (`[-1,1]`) — les points proches du méridien antipodal se normalisent légitimement hors `[0,1]`.
+- `MapPoint(ProjectedPoint<T>, zoomLevel, tileSize)` et `RepresentationConverter.MappointToTile`
+  utilisent désormais tous les deux `Normalize` puis la même formule de taille de carte
+  (`tileSize << zoomLevel`, identique à `GetMapSize`) — les deux chemins sont maintenant garantis
+  cohérents entre eux (testé : `MappointToTileAgreesWithMapPointForTheSameProjectedPoint`).
+
+**Limite assumée, à noter si un usage « slippy-map » réel (OSM-like) est prévu** : `Normalize` ne fait
+aucune hypothèse d'orientation cardinale (nécessaire car les projections azimutales comme Lambert/
+Stereographic n'ont pas un axe Y qui suit seul la latitude). Conséquence pour les projections
+cylindriques (Mercator, Equirectangular, ...) : la ligne de tuile augmente **vers le nord**, alors que
+la convention standard OSM/Google/Bing veut que la ligne `0` soit au nord et augmente **vers le sud**.
+Si un usage réel de rendu de tuiles façon slippy-map est prévu, il faudra inverser cet axe Y quelque
+part (dans `MapPoint`/`RepresentationConverter`, ou par un flag) — non fait ici faute de demande
+explicite en ce sens.
+
+**Corrections suite à la revue Codex sur la PR #425** :
+- **Compatibilité ascendante de `Bounds`** — ajouter `Bounds` comme membre requis de l'interface
+  publique `IProjectionTransformation<T>` aurait cassé toute implémentation tierce existante
+  (source et binaire). **Fix** : `Bounds` a désormais une implémentation par défaut sur l'interface
+  (C# 8+) qui lève `NotSupportedException` avec un message explicite, plutôt que d'être abstraite.
+  Les implémentations existantes qui ne la redéfinissent pas continuent de compiler et de fonctionner
+  pour `GeoPointToMapPoint`/`MapPointToGeoPoint` sans aucun changement ; elles ne lèvent que si du code
+  appelle réellement `Bounds`/`Normalize` dessus. La classe abstraite `ProjectionTransformation<T>` ne
+  redéclare plus `Bounds` en `abstract` pour la même raison (hérite du même filet de sécurité). Testé :
+  `CustomProjectionsThatDoNotOverrideBoundsStillCompileAndWorkForCoreConversions` et
+  `...ThrowOnlyWhenNormalizeIsActuallyUsed`.
+- **Bord exact `normalized=1` non clampé** — `Floor(1 × mapSize)` vaut `mapSize`, un pixel après le
+  dernier valide (ex. latitude exactement `90°` en Equirectangular, ou exactement
+  `MercatorProjection<T>.MaxLatitude`). `MapPoint` ne clampait pas ce cas alors que `MappointToTile`
+  clampait déjà l'index de tuile — donc les deux chemins auraient pu à nouveau diverger sur cette
+  frontière précise. **Fix** : les deux méthodes clampent désormais le pixel lui-même à
+  `[0, mapSize - 1]` avant tout calcul de tuile. Testé : `PixelCoordinatesAreClampedExactlyAtTheBoundaryEdge`.
+- **Overflow `int` de la taille de carte aux hauts niveaux de zoom** — `tileSize << zoomLevel` en `int`
+  déborde dès le zoom 24 avec une tuile de 256px (`256 << 24` dépasse `int.MaxValue`), produisant une
+  taille de carte négative ou nulle et des tuiles fausses. **Fix** :
+  `RepresentationConverter.GetMapSize` retourne désormais `long` (changement de signature — l'ancien
+  type `int` était trop étroit pour un usage réaliste) ; `MapPoint` calcule aussi sa taille de carte en
+  `long` directement. Testé : `GetMapSizeDoesNotOverflowAtHighZoomLevels`.
+
+### Avertissement analyseur CA2260 sur `GeoVector<T>` (supprimé via pragma)
+`GeoVector<T> : GeoPoint<T>, IEqualityOperators<GeoVector<T>, GeoVector<T>, bool>` — l'analyseur
+signale que `GeoPoint<T>` (qui implémente lui-même `IEqualityOperators<GeoPoint<T>, GeoPoint<T>,
+bool>`) attend que `T` soit rempli par le type dérivé (CRTP), ce qui n'est pas le cas ici puisque
+`GeoVector<T>` hérite classiquement de `GeoPoint<T>` plutôt que de `GeoPoint<GeoVector<T>>`. Corriger
+proprement demanderait de transformer `GeoPoint<T>` en `GeoPoint<TSelf, T>` (CRTP) — un changement
+d'API cassant pour tous les consommateurs, jugé disproportionné pour un warning informatif sans impact
+fonctionnel connu. **Décision** : `#pragma warning disable/restore CA2260` autour de la classe, avec un
+commentaire expliquant pourquoi.
+
+## Documentation mise à jour
+- `LambertAzimuthalEqualArea<T>` : la XML doc ne précisait pas que cette implémentation est l'aspect
+  **polaire** (centré sur le pôle nord, `(lat=90°,lon=0°) → (0,0)`), pas l'aspect équatorial. Un test
+  naïf supposant que `(0,0) → (0,0)` pour toutes les projections a révélé la confusion. Documenté.
+- `StereographicProjection<T>` : documentation de la singularité au point antipodal (lat=0°, lon=±180°)
+  — le dénominateur nul est remplacé par `T.Epsilon` (valeur finie mais énorme) plutôt que de lever une
+  exception ; documenté explicitement plutôt que changé, pour ne pas risquer un changement de
+  comportement non validé.
+- `Planet<T>.Area` : documentation des limites connues de la formule (polygones englobant un pôle,
+  auto-intersectants, ou couvrant une très large fraction de la surface).
+- Renommage du fichier `MollweidProjection.cs` → `MollweideProjection.cs` (la classe s'appelait déjà
+  `MollweideProjection`, seul le nom de fichier avait une coquille).
+- `README.md` : `Planets<double>.Moon` n'existe pas (les satellites sont préfixés par leur planète —
+  `EarthMoon`, `JupiterEurope`, ... — c'est voulu) → corrigé en `Planets<double>.EarthMoon`. Le bearing
+  Paris→Londres annoncé (`~296°`, à deux endroits) était faux ; vérifié par exécution réelle du
+  snippet : la valeur correcte est `~330°`. Corrigé aux deux occurrences.
+
 ## Couverture de tests ajoutée
 Avant cet audit, ces classes n'avaient **aucun** test : `BoundingBox<T>`, `GeoPointList<T>`,
 `GeoPointList2<T>`, `MapPosition<T>`, `ProjectedPoint<T>`, `Tile<T>`, `MapPoint<T>`,
@@ -134,41 +201,11 @@ Fichiers ajoutés dans `UtilsTest/Geography/` :
 - `BoundingBoxTests.cs`, `GeoPointListTests.cs`, `MapPositionTests.cs`, `ProjectedPointTests.cs`,
   `MapPointTileTests.cs`, `CoordinatesUtilTests.cs`, `RepresentationConverterTests.cs`,
   `ProjectionsRoundTripTests.cs` (round-trip géographique pour les 7 projections + vérification du
-  centre de projection).
+  centre de projection), `ProjectionBoundsTests.cs` (`Bounds`/`Normalize` par projection,
+  `MercatorProjection<T>.MaxLatitude`, et la cohérence `MapPoint`/`RepresentationConverter`).
 - Extension de `GeoPointTests.cs`/`GeoVectorTests.cs` : cohérence hash/égalité, non-double-parsing du
   constructeur string, comportement de `Recenter`.
+- Extension de `RepresentationConverterTests.cs` : régression prouvant l'accord entre `MapPoint.Tile`
+  et `RepresentationConverter.MappointToTile` pour un même `ProjectedPoint`.
 
 Tous les nouveaux tests vont dans **UtilsTest.Unit** (aucune dépendance externe).
-
-## Items connus, non corrigés (nécessitent une décision de conception)
-
-### 1. `MapPoint<T>`/`Tile<T>`/`RepresentationConverter<T>` : mise à l'échelle incohérente — priorité haute si ce sous-système doit être utilisé
-Trois façons différentes de passer d'un `ProjectedPoint<T>` à un index de tuile coexistent et ne sont
-pas cohérentes entre elles :
-- `MapPoint(ProjectedPoint<T>, zoomLevel, tileSize)` multiplie `projectedPoint.X` par
-  `1 << zoomLevel` (pas de facteur `tileSize`).
-- `RepresentationConverter.GetMapSize(zoomLevel)` retourne `tileSize << zoomLevel` (donc suppose que
-  la taille totale de la carte en pixels inclut `tileSize`).
-- `RepresentationConverter.MappointToTile` utilise `projectedPoint.X` **brut** (aucune mise à
-  l'échelle par zoom) divisé par `tileSize`.
-
-Par ailleurs, **aucune** des 7 projections fournies ne produit de coordonnées normalisées `[0,1]`
-(Equirectangular sort des degrés, Mercator un logarithme, etc.), ce qui est le préalable habituel
-pour un système de tuiles à la Web-Mercator/Slippy-map. Sans étape de normalisation explicite entre
-`IProjectionTransformation<T>` et `MapPoint<T>`/`Tile<T>`, ce sous-système d'affichage n'est
-probablement pas utilisable tel quel.
-Aucun test, aucun appelant dans le reste du dépôt ne définit le comportement attendu — impossible de
-« corriger » sans deviner une nouvelle sémantique. **Recommandation** : décider explicitement du
-contrat (ex. ajouter une méthode de normalisation sur `IProjectionTransformation<T>`, ou documenter
-que `MapPoint`/`Tile`/`RepresentationConverter` attendent un `ProjectedPoint` déjà normalisé en
-`[0,1]`), puis aligner les trois formules.
-
-### 2. Avertissement analyseur CA2260 sur `GeoVector<T>`
-`GeoVector<T> : GeoPoint<T>, IEqualityOperators<GeoVector<T>, GeoVector<T>, bool>` — l'analyseur
-signale que `GeoPoint<T>` (qui implémente lui-même `IEqualityOperators<GeoPoint<T>, GeoPoint<T>,
-bool>`) attend que `T` soit rempli par le type dérivé (CRTP), ce qui n'est pas le cas ici puisque
-`GeoVector<T>` hérite classiquement de `GeoPoint<T>` plutôt que de `GeoPoint<GeoVector<T>>`. Corriger
-proprement demanderait de transformer `GeoPoint<T>` en `GeoPoint<TSelf, T>` (CRTP) — un changement
-d'API cassant pour tous les consommateurs. Laissé tel quel ; warning informatif, sans impact
-fonctionnel connu.
-

@@ -13,9 +13,22 @@ public class RepresentationConverterTests
     {
         var converter = new RepresentationConverter<double>(Projections<double>.Equirectangular, tileSize: 256);
 
-        Assert.AreEqual(256, converter.GetMapSize(0));
-        Assert.AreEqual(512, converter.GetMapSize(1));
-        Assert.AreEqual(1024, converter.GetMapSize(2));
+        Assert.AreEqual(256L, converter.GetMapSize(0));
+        Assert.AreEqual(512L, converter.GetMapSize(1));
+        Assert.AreEqual(1024L, converter.GetMapSize(2));
+    }
+
+    [TestMethod]
+    public void GetMapSizeDoesNotOverflowAtHighZoomLevels()
+    {
+        // Regression test: TileSize << zoomLevel used to be computed as `int`, which overflows for
+        // realistic zoom levels (e.g. 256 << 24 already overflows a 32-bit int).
+        var converter = new RepresentationConverter<double>(Projections<double>.Equirectangular, tileSize: 256);
+
+        long mapSize = converter.GetMapSize(24);
+
+        Assert.AreEqual(256L << 24, mapSize);
+        Assert.IsTrue(mapSize > 0);
     }
 
     [TestMethod]
@@ -80,5 +93,63 @@ public class RepresentationConverterTests
         // At zoom level 2 there are 4 tiles per axis (indices 0..3).
         Assert.IsTrue(tile.TileX is >= 0 and <= 3);
         Assert.IsTrue(tile.TileY is >= 0 and <= 3);
+    }
+
+    [TestMethod]
+    public void MappointToTileAgreesWithMapPointForTheSameProjectedPoint()
+    {
+        // Regression test: MapPoint(ProjectedPoint, zoom, tileSize).Tile and
+        // RepresentationConverter.MappointToTile used to disagree (three different, inconsistent
+        // scaling formulas) because MapPoint's pixel scale ignored tileSize, and MappointToTile used
+        // the raw (un-normalized) projected coordinate. Both now go through
+        // IProjectionTransformation<T>.Normalize + the same map-size formula, so they must agree.
+        var paris = new GeoPoint<double>(48.8566, 2.3522);
+        var projection = Projections<double>.Mercator;
+        var projected = projection.GeoPointToMapPoint(paris);
+        var converter = new RepresentationConverter<double>(projection, tileSize: 256);
+
+        var tileViaMapPoint = new MapPoint<double>(projected, zoomLevel: 10, tileSize: 256).Tile;
+        var tileViaConverter = converter.MappointToTile(projected, zoomLevel: 10);
+
+        Assert.AreEqual(tileViaMapPoint.TileX, tileViaConverter.TileX);
+        Assert.AreEqual(tileViaMapPoint.TileY, tileViaConverter.TileY);
+    }
+
+    [TestMethod]
+    public void PixelCoordinatesAreClampedExactlyAtTheBoundaryEdge()
+    {
+        // Regression test: a normalized value of exactly 1 (e.g. Equirectangular's max latitude, 90 deg)
+        // used to floor to `mapSize`, one pixel/tile past the last valid one, disagreeing with the
+        // tile-level clamp applied elsewhere. MapPoint and MappointToTile now both clamp the pixel
+        // coordinate itself, so the last valid tile (index zoom-1) is returned consistently by both.
+        var projection = Projections<double>.Equirectangular;
+        var northPole = new GeoPoint<double>(90, 0);
+        var projected = projection.GeoPointToMapPoint(northPole);
+        var converter = new RepresentationConverter<double>(projection, tileSize: 256);
+
+        var mapPoint = new MapPoint<double>(projected, zoomLevel: 2, tileSize: 256);
+        var tileViaConverter = converter.MappointToTile(projected, zoomLevel: 2);
+
+        long lastValidPixel = converter.GetMapSize(2) - 1;
+        int lastValidTileIndex = (1 << 2) - 1; // 3
+
+        Assert.AreEqual(lastValidPixel, mapPoint.Y);
+        Assert.AreEqual(lastValidTileIndex, mapPoint.Tile.TileY);
+        Assert.AreEqual(lastValidTileIndex, tileViaConverter.TileY);
+    }
+
+    [TestMethod]
+    public void MappointToTileMapsTheEquatorAndPrimeMeridianToTheCenterTile()
+    {
+        var projection = Projections<double>.Mercator;
+        var converter = new RepresentationConverter<double>(projection, tileSize: 256);
+        var origin = new GeoPoint<double>(0, 0);
+        var projectedOrigin = projection.GeoPointToMapPoint(origin);
+
+        var tile = converter.MappointToTile(projectedOrigin, zoomLevel: 10);
+
+        int centerTileIndex = (1 << 10) / 2;
+        Assert.AreEqual(centerTileIndex, tile.TileX);
+        Assert.AreEqual(centerTileIndex, tile.TileY);
     }
 }
