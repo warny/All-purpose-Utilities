@@ -33,10 +33,28 @@ public sealed class GeoVector<T> : GeoPoint<T>, IEquatable<GeoVector<T>>, IUnary
     /// <param name="cultureInfos">Optional cultures to parse; defaults to <see cref="CultureInfo.CurrentCulture"/> and <see cref="CultureInfo.InvariantCulture"/>.</param>
     /// <exception cref="ArgumentException">Thrown if parsing fails or the string is invalid.</exception>
     public GeoVector(string coordinates, params CultureInfo[] cultureInfos)
-        : base(ParseVectorString(coordinates, cultureInfos, out T bearing).latitude,
-               ParseVectorString(coordinates, cultureInfos, out bearing).longitude)
+        : this(ParseVectorTuple(coordinates, cultureInfos))
     {
-        Bearing = bearing;
+    }
+
+    /// <summary>
+    /// Private constructor that consumes an already-parsed (latitude, longitude, bearing) tuple, so that
+    /// the source string is parsed only once (see <see cref="ParseVectorTuple"/>).
+    /// </summary>
+    /// <param name="parsed">The parsed latitude, longitude, and bearing.</param>
+    private GeoVector((T latitude, T longitude, T bearing) parsed)
+        : base(parsed.latitude, parsed.longitude)
+    {
+        Bearing = parsed.bearing;
+    }
+
+    /// <summary>
+    /// Parses <paramref name="coordinates"/> exactly once and returns latitude, longitude, and bearing together.
+    /// </summary>
+    private static (T latitude, T longitude, T bearing) ParseVectorTuple(string coordinates, CultureInfo[] cultureInfos)
+    {
+        var (latitude, longitude) = ParseVectorString(coordinates, cultureInfos, out T bearing);
+        return (latitude, longitude, bearing);
     }
 
     /// <summary>
@@ -306,8 +324,7 @@ public sealed class GeoVector<T> : GeoPoint<T>, IEquatable<GeoVector<T>>, IUnary
     /// <returns>The point recentered with the current vector as new reference</returns>
     public GeoVector<T> Recenter(GeoVector<T> other)
     {
-        // If the caller passes null or the same object, handle gracefully.
-        if (other is null) return null;
+        other.Arg().MustNotBeNull();
 
         // If "other" IS the same instance as "this," map to (0,0,0).
         if (this == other)
@@ -469,9 +486,13 @@ public sealed class GeoVector<T> : GeoPoint<T>, IEquatable<GeoVector<T>>, IUnary
     public bool Equals(GeoVector<T>? other)
         => other is not null && comparer.Compare(Bearing, other.Bearing) == 0 && base.Equals(other);
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Returns a hash code consistent with the tolerance-based <see cref="Equals(GeoVector{T})"/>.
+    /// Values are rounded to the comparer's precision (5 decimal places) so that vectors considered
+    /// equal by <see cref="Equals(GeoVector{T})"/> after rounding also produce the same hash code.
+    /// </summary>
     public override int GetHashCode()
-        => ObjectUtils.ComputeHash(Latitude, Longitude, Bearing);
+        => ObjectUtils.ComputeHash(T.Round(Latitude, 5), T.Round(Longitude, 5), T.Round(Bearing, 5));
 
     #endregion
 
@@ -510,7 +531,7 @@ public sealed class GeoVector<T> : GeoPoint<T>, IEquatable<GeoVector<T>>, IUnary
     public override string ToString(string? format, IFormatProvider? formatProvider)
     {
         formatProvider ??= CultureInfo.InvariantCulture;
-        var textInfo = (TextInfo)formatProvider.GetFormat(typeof(TextInfo));
+        var textInfo = formatProvider.GetFormat(typeof(TextInfo)) as TextInfo;
 
         // Example: "Latitude, Longitude, Bearing"
         return $"{base.ToString(format, formatProvider)}{textInfo?.ListSeparator ?? ","} {Bearing:##0.##}";

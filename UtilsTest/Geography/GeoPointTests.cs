@@ -77,5 +77,18 @@ namespace UtilsTest.Geography
             Assert.IsFalse(ok);
             Assert.IsNull(result);
         }
+
+        [TestMethod]
+        public void EqualPointsProduceEqualHashCodes()
+        {
+            // Regression test: Equals() tolerates a small difference (5-decimal precision), so
+            // GetHashCode() must round to the same precision, otherwise the Equals/GetHashCode
+            // contract is violated for points that differ only in noise beyond that precision.
+            var point1 = new GeoPoint<double>(45.123456, -73.654321);
+            var point2 = new GeoPoint<double>(45.1234560001, -73.6543209999);
+
+            Assert.AreEqual(point1, point2);
+            Assert.AreEqual(point1.GetHashCode(), point2.GetHashCode());
+        }
     }
 }

@@ -20,7 +20,7 @@ public class Planet<T> where T : struct, IFloatingPointIeee754<T>
     /// </summary>
     /// <param name="equatorialRadius">The equatorial radius of the planet.</param>
     /// <param name="name">The name of the planet (optional).</param>
-    public Planet(T equatorialRadius, string name = null)
+    public Planet(T equatorialRadius, string? name = null)
     {
         EquatorialRadius = equatorialRadius;
         EquatorialCircumference = T.Pi * T.CreateChecked(2) * equatorialRadius; // Circumference = 2 * pi * radius
@@ -98,7 +98,6 @@ public class Planet<T> where T : struct, IFloatingPointIeee754<T>
         if (points.Count < 3)
             throw new ArgumentException("At least three points are required", nameof(points));
 
-        T radius = T.CreateChecked(EquatorialRadius);
         var deg = Trigonometry<T>.Degree;
 
         T total = T.Zero;
@@ -107,10 +106,10 @@ public class Planet<T> where T : struct, IFloatingPointIeee754<T>
             var a = points[i];
             var b = points[(i + 1) % points.Count];
 
-            T lon1 = deg.ToRadian(T.CreateChecked(a.Longitude));
-            T lon2 = deg.ToRadian(T.CreateChecked(b.Longitude));
-            T lat1 = deg.ToRadian(T.CreateChecked(a.Latitude));
-            T lat2 = deg.ToRadian(T.CreateChecked(b.Latitude));
+            T lon1 = deg.ToRadian(a.Longitude);
+            T lon2 = deg.ToRadian(b.Longitude);
+            T lat1 = deg.ToRadian(a.Latitude);
+            T lat2 = deg.ToRadian(b.Latitude);
 
             T dLon = lon2 - lon1;
             if (dLon < -T.Pi) dLon += T.Tau;
@@ -119,7 +118,7 @@ public class Planet<T> where T : struct, IFloatingPointIeee754<T>
             total += dLon * (T.Sin(lat1) + T.Sin(lat2));
         }
 
-        T area = T.Abs(total) * radius * radius / T.CreateChecked(2);
+        T area = T.Abs(total) * EquatorialRadius * EquatorialRadius / T.CreateChecked(2);
         return area;
     }
 }

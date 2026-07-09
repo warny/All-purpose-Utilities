@@ -331,10 +331,14 @@ namespace Utils.Geography.Model
                 && comparer.Compare(Longitude, other.Longitude) == 0;
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Returns a hash code consistent with the tolerance-based <see cref="Equals(GeoPoint{T})"/>.
+        /// Values are rounded to the comparer's precision (5 decimal places) so that points considered
+        /// equal by <see cref="Equals(GeoPoint{T})"/> after rounding also produce the same hash code.
+        /// </summary>
         public override int GetHashCode()
         {
-            return ObjectUtils.ComputeHash(Latitude, Longitude);
+            return ObjectUtils.ComputeHash(T.Round(Latitude, 5), T.Round(Longitude, 5));
         }
 
         /// <summary>
@@ -355,7 +359,8 @@ namespace Utils.Geography.Model
         public virtual string ToString(string? format, IFormatProvider? formatProvider)
         {
             formatProvider ??= CultureInfo.InvariantCulture;
-            var textInfo = (TextInfo)formatProvider.GetFormat(typeof(TextInfo));
+            format ??= "0.#####";
+            var textInfo = formatProvider.GetFormat(typeof(TextInfo)) as TextInfo;
             var separator = textInfo?.ListSeparator ?? ",";
 
             return $"{FormatPosition(Latitude, "N", "S", format, formatProvider)}{separator} " +

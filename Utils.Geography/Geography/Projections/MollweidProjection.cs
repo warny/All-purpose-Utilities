@@ -33,31 +33,33 @@ public class MollweideProjection<T> : IProjectionTransformation<T>
 
     /// <summary>
     /// Projects (latitude, longitude) in degrees => Mollweide (x, y).
-    /// 
-    /// Forward formula in "degree-based" Mollweide:
-    ///   (1) Solve 2θ + sin(2θ) = 180 * sin(lat), for θ ∈ [-90..+90].
-    ///   (2) x = (2√2 / 180) * (lon) * cos(θ)
+    ///
+    /// The Newton solve and trigonometry are carried out in radians (the mathematically correct
+    /// unit for the classic Mollweide equation); latitude/longitude are only converted to/from
+    /// degrees at the boundary of this method.
+    ///
+    /// Forward formula:
+    ///   (1) Solve 2θ + sin(2θ) = π * sin(lat), for θ ∈ [-π/2..+π/2].
+    ///   (2) x = (2√2 / π) * lon * cos(θ)
     ///   (3) y = √2 * sin(θ)
     /// </summary>
     public ProjectedPoint<T> GeoPointToMapPoint(GeoPoint<T> geoPoint)
     {
-        // lat, lon in degrees
-        T latDeg = geoPoint.Latitude;
-        T lonDeg = geoPoint.Longitude;
+        T latRad = degree.ToRadian(geoPoint.Latitude);
+        T lonRad = degree.ToRadian(geoPoint.Longitude);
 
-        // 1) Solve for θDeg using Newton's method:
-        T sinLatDeg = degree.Sin(latDeg); // = sin(latDeg°)
-                                          // Right side of eqn: 180° * sin(lat)
-        T target = T.CreateChecked(180) * sinLatDeg;
+        // 1) Solve for θ using Newton's method, starting from θ₀=lat (a close approximation
+        //    that keeps the iteration stable near the poles, where the naive target/2 guess
+        //    can overshoot and fail to converge within the iteration budget):
+        T target = T.Pi * T.Sin(latRad);
+        T theta = SolveTheta(target, latRad);
 
-        T thetaDeg = SolveThetaDeg(target);
+        // 2) x = (2√2/π) * lon * cos(θ)
+        // 3) y = √2 * sin(θ)
+        T cosTheta = T.Cos(theta);
+        T sinTheta = T.Sin(theta);
 
-        // 2) x = (2√2/180) * lon * cos(θDeg)
-        // 3) y = √2 * sin(θDeg)
-        T cosTheta = degree.Cos(thetaDeg);
-        T sinTheta = degree.Sin(thetaDeg);
-
-        T x = (T.CreateChecked(2) * Sqrt2 / T.CreateChecked(180)) * lonDeg * cosTheta;
+        T x = (T.CreateChecked(2) * Sqrt2 / T.Pi) * lonRad * cosTheta;
         T y = Sqrt2 * sinTheta;
 
         return new ProjectedPoint<T>(x, y, this);
@@ -65,89 +67,86 @@ public class MollweideProjection<T> : IProjectionTransformation<T>
 
     /// <summary>
     /// Unprojects (x,y) in Mollweide => (lat, lon) in degrees.
-    /// 
-    /// Inverse:
-    ///   (1) θ = asin( y / √2 )   [in degrees]
-    ///   (2) lon = x * (180 / 2√2 cos(θ))
-    ///   (3) lat = asin( [2θ + sin(2θ)] / 180 )
+    ///
+    /// Inverse (all computed in radians, converted to degrees only for the result):
+    ///   (1) θ = asin( y / √2 )
+    ///   (2) lon = x * (π / 2√2 cos(θ))
+    ///   (3) lat = asin( [2θ + sin(2θ)] / π )
     /// </summary>
     public GeoPoint<T> MapPointToGeoPoint(ProjectedPoint<T> mapPoint)
     {
         T x = mapPoint.X;
         T y = mapPoint.Y;
 
-        // 1) θDeg = asin(y/√2) in degrees
+        // 1) θ = asin(y/√2)
         T ratio = y / Sqrt2;
         // If ratio is outside [-1..1], clamp it
         if (ratio > T.One) ratio = T.One;
         else if (ratio < -T.One) ratio = -T.One;
 
-        T thetaDeg = degree.Asin(ratio);  // => in degrees
-        T cosTheta = degree.Cos(thetaDeg);
+        T theta = T.Asin(ratio);
+        T cosTheta = T.Cos(theta);
 
-        // 2) lonDeg = x / [ (2√2/180) * cos(θDeg ) ]
-        // => multiply by reciprocal => lonDeg = x * 180 / (2√2 cos(θDeg))
-        T lonDeg = T.Zero;
+        // 2) lon = x / [ (2√2/π) * cos(θ) ] => lon = x * π / (2√2 cos(θ))
+        T lonRad = T.Zero;
         if (!T.IsZero(cosTheta))
         {
-            lonDeg = x * T.CreateChecked(180)
-                   / (T.CreateChecked(2) * Sqrt2 * cosTheta);
+            lonRad = x * T.Pi / (T.CreateChecked(2) * Sqrt2 * cosTheta);
         }
 
-        // 3) latDeg => from sin(latDeg) = [2θDeg + sin(2θDeg)] / 180
-        // => latDeg = asin(...)
-        // We'll compute 2θ and sin(2θ) in degrees
-        T twoTheta = thetaDeg + thetaDeg;
-        T sin2θ = degree.Sin(twoTheta);
-        T numerator = twoTheta + sin2θ; // dimension: degrees + dimensionless is "Ok" in this mollweide-degree sense
-                                        // => latFactor = numerator / 180 => sin(latDeg)
-        T latFactor = numerator / T.CreateChecked(180);
+        // 3) lat => from sin(lat) = [2θ + sin(2θ)] / π
+        T twoTheta = theta + theta;
+        T sin2θ = T.Sin(twoTheta);
+        T latFactor = (twoTheta + sin2θ) / T.Pi;
 
         // clamp if out of [-1..1]
         if (latFactor > T.One) latFactor = T.One;
         else if (latFactor < -T.One) latFactor = -T.One;
 
-        T latDeg = degree.Asin(latFactor);
+        T latRad = T.Asin(latFactor);
 
-        return new GeoPoint<T>(latDeg, lonDeg);
+        return new GeoPoint<T>(degree.FromRadian(latRad), degree.FromRadian(lonRad));
     }
 
     /// <summary>
-    /// Solve 2θDeg + sin(2θDeg) = target, with θDeg in degrees.
-    /// 
+    /// Solve 2θ + sin(2θ) = target, with θ in radians.
+    ///
     /// Newton iteration:
     ///   f(θ) = 2θ + sin(2θ) - target
     ///   f'(θ) = 2 + 2 cos(2θ)
     /// </summary>
-    private static T SolveThetaDeg(T target)
+    /// <param name="target">Right-hand side of the equation, π*sin(lat).</param>
+    /// <param name="initialGuess">
+    /// Starting value for θ. Using the latitude itself (rather than <paramref name="target"/>/2)
+    /// keeps the iteration stable near the poles, where the naive guess can overshoot into a
+    /// region with a near-zero derivative and fail to converge within <see cref="MaxIter"/> steps.
+    /// </param>
+    private static T SolveTheta(T target, T initialGuess)
     {
-        // We'll pick an initial guess:
-        // if target=0 => lat=0 => θ=0
-        // a quick guess: θDeg = target/2
-        T thetaDeg = target / T.CreateChecked(2);
+        T theta = initialGuess;
 
         for (int i = 0; i < MaxIter; i++)
         {
             // f(θ)=2θ + sin(2θ) - target
-            T twoTheta = thetaDeg + thetaDeg;
-            T sin2θ = degree.Sin(twoTheta); // sin(2θDeg in degrees)
+            T twoTheta = theta + theta;
+            T sin2θ = T.Sin(twoTheta);
             T f = twoTheta + sin2θ - target;
 
             // f'(θ)=2 + 2 cos(2θ)
-            T cos2θ = degree.Cos(twoTheta);
+            T cos2θ = T.Cos(twoTheta);
             T fprime = T.CreateChecked(2) + (T.CreateChecked(2) * cos2θ);
 
             if (T.IsZero(fprime))
-                break; // degenerate case, not likely unless θ=±90
+                break; // degenerate case, not likely unless θ=±π/2
 
             T dθ = f / fprime;
-            thetaDeg -= dθ;
+            theta -= dθ;
 
             if (T.Abs(dθ) < Eps)
                 break;
         }
 
-        return thetaDeg;
+        return theta;
     }
 
     /// <summary>
