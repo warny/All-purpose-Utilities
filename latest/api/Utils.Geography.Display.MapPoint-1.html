@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Geography_Display_MapPoint_1" data-uid="Utils.Geography.Display.MapPoint`1" class="text-break">
-Class MapPoint&lt;T&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Display/MapPoint.cs/#L16"><i class="bi bi-code-slash"></i></a>
+Class MapPoint&lt;T&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Display/MapPoint.cs/#L18"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -248,7 +248,7 @@ Class MapPoint&lt;T&gt;  <a class="header-action link-secondary" title="View sou
 
   <h3 id="Utils_Geography_Display_MapPoint_1__ctor_System_Int64_System_Int64_System_Byte_System_Int32_" data-uid="Utils.Geography.Display.MapPoint`1.#ctor(System.Int64,System.Int64,System.Byte,System.Int32)">
   MapPoint(long, long, byte, int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Display/MapPoint.cs/#L82"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Display/MapPoint.cs/#L100"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Geography.Display.MapPoint-1.html">MapPoint&lt;T&gt;</a> class from pixel coordinates.</p>
@@ -290,7 +290,7 @@ Class MapPoint&lt;T&gt;  <a class="header-action link-secondary" title="View sou
 
   <h3 id="Utils_Geography_Display_MapPoint_1__ctor_Utils_Geography_Model_ProjectedPoint__0__System_Byte_System_Int32_" data-uid="Utils.Geography.Display.MapPoint`1.#ctor(Utils.Geography.Model.ProjectedPoint{`0},System.Byte,System.Int32)">
   MapPoint(ProjectedPoint&lt;T&gt;, byte, int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Display/MapPoint.cs/#L66"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Display/MapPoint.cs/#L79"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Geography.Display.MapPoint-1.html">MapPoint&lt;T&gt;</a> class from projected coordinates.</p>
@@ -321,6 +321,17 @@ Class MapPoint&lt;T&gt;  <a class="header-action link-secondary" title="View sou
 
 
 
+  <h4 class="section" id="Utils_Geography_Display_MapPoint_1__ctor_Utils_Geography_Model_ProjectedPoint__0__System_Byte_System_Int32__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Uses <a class="xref" href="Utils.Geography.Projections.IProjectionTransformation-1.html#Utils_Geography_Projections_IProjectionTransformation_1_Normalize_Utils_Geography_Model_ProjectedPoint__0__">Normalize(ProjectedPoint&lt;T&gt;)</a> (via <a class="xref" href="Utils.Geography.Model.ProjectedPoint-1.html#Utils_Geography_Model_ProjectedPoint_1_Projection">Projection</a>)
+to convert the projected point into <code>[0,1]</code> map-fraction coordinates before scaling by the
+total map size in pixels (<code>tileSize &lt;&lt; zoomLevel</code>, computed in <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/integral-numeric-types">long</a>
+to avoid overflowing <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/integral-numeric-types">int</a> at high zoom levels), matching
+<a class="xref" href="Utils.Geography.Display.RepresentationConverter-1.html#Utils_Geography_Display_RepresentationConverter_1_GetMapSize_System_Byte_">GetMapSize(byte)</a> and <a class="xref" href="Utils.Geography.Display.RepresentationConverter-1.html#Utils_Geography_Display_RepresentationConverter_1_MappointToTile_Utils_Geography_Model_ProjectedPoint__0__System_Byte_">MappointToTile(ProjectedPoint&lt;T&gt;, byte)</a>
+exactly, so both paths agree on which tile a given point falls into. The resulting pixel
+coordinates are clamped to <code>[0, mapSize - 1]</code>: a normalized value of exactly <code>1</code>
+(e.g. Equirectangular's latitude <code>90°</code>, or Mercator's own <a class="xref" href="Utils.Geography.Projections.MercatorProjection-1.html#Utils_Geography_Projections_MercatorProjection_1_MaxLatitude">MaxLatitude</a>)
+would otherwise floor to <code>mapSize</code>, one pixel past the last valid one.</p>
+</div>
 
 
 
@@ -333,7 +344,7 @@ Class MapPoint&lt;T&gt;  <a class="header-action link-secondary" title="View sou
 
   <h3 id="Utils_Geography_Display_MapPoint_1_Tile" data-uid="Utils.Geography.Display.MapPoint`1.Tile">
   Tile
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Display/MapPoint.cs/#L58"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Display/MapPoint.cs/#L60"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the tile that contains this point.</p>
@@ -370,7 +381,7 @@ rounding towards zero.</p>
 
   <h3 id="Utils_Geography_Display_MapPoint_1_TileSize" data-uid="Utils.Geography.Display.MapPoint`1.TileSize">
   TileSize
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Display/MapPoint.cs/#L38"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Display/MapPoint.cs/#L40"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the tile size, in pixels, used for the grid.</p>
@@ -402,7 +413,7 @@ rounding towards zero.</p>
 
   <h3 id="Utils_Geography_Display_MapPoint_1_TileX" data-uid="Utils.Geography.Display.MapPoint`1.TileX">
   TileX
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Display/MapPoint.cs/#L43"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Display/MapPoint.cs/#L45"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the X coordinate within the tile, always in the range [0, <a class="xref" href="Utils.Geography.Display.MapPoint-1.html#Utils_Geography_Display_MapPoint_1_TileSize">TileSize</a>).</p>
@@ -434,7 +445,7 @@ rounding towards zero.</p>
 
   <h3 id="Utils_Geography_Display_MapPoint_1_TileY" data-uid="Utils.Geography.Display.MapPoint`1.TileY">
   TileY
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Display/MapPoint.cs/#L48"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Display/MapPoint.cs/#L50"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the Y coordinate within the tile, always in the range [0, <a class="xref" href="Utils.Geography.Display.MapPoint-1.html#Utils_Geography_Display_MapPoint_1_TileSize">TileSize</a>).</p>
@@ -466,7 +477,7 @@ rounding towards zero.</p>
 
   <h3 id="Utils_Geography_Display_MapPoint_1_X" data-uid="Utils.Geography.Display.MapPoint`1.X">
   X
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Display/MapPoint.cs/#L23"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Display/MapPoint.cs/#L25"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the projected X coordinate in pixels.</p>
@@ -498,7 +509,7 @@ rounding towards zero.</p>
 
   <h3 id="Utils_Geography_Display_MapPoint_1_Y" data-uid="Utils.Geography.Display.MapPoint`1.Y">
   Y
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Display/MapPoint.cs/#L28"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Display/MapPoint.cs/#L30"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the projected Y coordinate in pixels.</p>
@@ -530,7 +541,7 @@ rounding towards zero.</p>
 
   <h3 id="Utils_Geography_Display_MapPoint_1_ZoomLevel" data-uid="Utils.Geography.Display.MapPoint`1.ZoomLevel">
   ZoomLevel
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Display/MapPoint.cs/#L33"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Display/MapPoint.cs/#L35"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the zoom level associated with the point.</p>
@@ -562,7 +573,7 @@ rounding towards zero.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Display/MapPoint.cs/#L16" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Display/MapPoint.cs/#L18" class="edit-link">Edit this page</a>
         </div>
 
 

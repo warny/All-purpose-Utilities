@@ -395,7 +395,7 @@ Class RepresentationConverter&lt;T&gt;  <a class="header-action link-secondary" 
 
   <h3 id="Utils_Geography_Display_RepresentationConverter_1_ComputeGroundResolution__0_System_Byte_" data-uid="Utils.Geography.Display.RepresentationConverter`1.ComputeGroundResolution(`0,System.Byte)">
   ComputeGroundResolution(T, byte)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Display/RepresentationConverter.cs/#L115"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Display/RepresentationConverter.cs/#L139"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Computes the ground resolution at the specified latitude and zoom level.</p>
@@ -479,7 +479,7 @@ Class RepresentationConverter&lt;T&gt;  <a class="header-action link-secondary" 
 
   <h3 id="Utils_Geography_Display_RepresentationConverter_1_GetMapSize_System_Byte_" data-uid="Utils.Geography.Display.RepresentationConverter`1.GetMapSize(System.Byte)">
   GetMapSize(byte)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Display/RepresentationConverter.cs/#L104"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Display/RepresentationConverter.cs/#L128"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the total map size (in pixels) for the specified zoom level.</p>
@@ -487,7 +487,7 @@ Class RepresentationConverter&lt;T&gt;  <a class="header-action link-secondary" 
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public int GetMapSize(byte zoomLevel)</code></pre>
+    <pre><code class="lang-csharp hljs">public long GetMapSize(byte zoomLevel)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
@@ -499,7 +499,7 @@ Class RepresentationConverter&lt;T&gt;  <a class="header-action link-secondary" 
 
   <h4 class="section">Returns</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int64">long</a></dt>
     <dd><p>Total map size in pixels.</p>
 </dd>
   </dl>
@@ -510,6 +510,11 @@ Class RepresentationConverter&lt;T&gt;  <a class="header-action link-secondary" 
 
 
 
+  <h4 class="section" id="Utils_Geography_Display_RepresentationConverter_1_GetMapSize_System_Byte__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Returns <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/integral-numeric-types">long</a> (rather than <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/integral-numeric-types">int</a>) because <code>TileSize &lt;&lt; zoomLevel</code>
+overflows a 32-bit <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/integral-numeric-types">int</a> at realistic zoom levels — e.g. with the default 256px
+tile size, zoom 24 already overflows.</p>
+</div>
 
 
 
@@ -557,7 +562,7 @@ Class RepresentationConverter&lt;T&gt;  <a class="header-action link-secondary" 
 
   <h3 id="Utils_Geography_Display_RepresentationConverter_1_MappointToTile_Utils_Geography_Model_ProjectedPoint__0__System_Byte_" data-uid="Utils.Geography.Display.RepresentationConverter`1.MappointToTile(Utils.Geography.Model.ProjectedPoint{`0},System.Byte)">
   MappointToTile(ProjectedPoint&lt;T&gt;, byte)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Display/RepresentationConverter.cs/#L89"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Display/RepresentationConverter.cs/#L99"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts a projected map point to tile coordinates at the specified zoom level.</p>
@@ -591,6 +596,16 @@ Class RepresentationConverter&lt;T&gt;  <a class="header-action link-secondary" 
 
 
 
+  <h4 class="section" id="Utils_Geography_Display_RepresentationConverter_1_MappointToTile_Utils_Geography_Model_ProjectedPoint__0__System_Byte__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Uses <a class="xref" href="Utils.Geography.Projections.IProjectionTransformation-1.html#Utils_Geography_Projections_IProjectionTransformation_1_Normalize_Utils_Geography_Model_ProjectedPoint__0__">Normalize(ProjectedPoint&lt;T&gt;)</a> to convert the projected point into
+<code>[0,1]</code> map-fraction coordinates before scaling by <a class="xref" href="Utils.Geography.Display.RepresentationConverter-1.html#Utils_Geography_Display_RepresentationConverter_1_GetMapSize_System_Byte_">GetMapSize(byte)</a>, matching
+<a class="xref" href="Utils.Geography.Display.MapPoint-1.html">MapPoint&lt;T&gt;</a>'s own pixel calculation exactly, so both agree on which tile a given
+point falls into. The resulting pixel coordinates are clamped to <code>[0, mapSize - 1]</code> before
+dividing by <a class="xref" href="Utils.Geography.Display.RepresentationConverter-1.html#Utils_Geography_Display_RepresentationConverter_1_TileSize">TileSize</a>: a normalized value of exactly <code>1</code> (e.g. Equirectangular's
+latitude <code>90°</code>, or Mercator's own <a class="xref" href="Utils.Geography.Projections.MercatorProjection-1.html#Utils_Geography_Projections_MercatorProjection_1_MaxLatitude">MaxLatitude</a>) would
+otherwise floor to <code>mapSize</code>, one tile past the last valid one — the same edge case
+<a class="xref" href="Utils.Geography.Display.MapPoint-1.html">MapPoint&lt;T&gt;</a> guards against.</p>
+</div>
 
 
 

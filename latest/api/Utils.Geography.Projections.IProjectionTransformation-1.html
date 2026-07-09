@@ -209,6 +209,63 @@ Interface IProjectionTransformation&lt;T&gt;  <a class="header-action link-secon
 
 
 
+  <h2 class="section" id="properties">Properties
+</h2>
+
+
+  <a id="Utils_Geography_Projections_IProjectionTransformation_1_Bounds_" data-uid="Utils.Geography.Projections.IProjectionTransformation`1.Bounds*"></a>
+
+  <h3 id="Utils_Geography_Projections_IProjectionTransformation_1_Bounds" data-uid="Utils.Geography.Projections.IProjectionTransformation`1.Bounds">
+  Bounds
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Projections/IProjectionTransformation.cs/#L55"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the rectangular bounds, expressed in this projection's own native output units, that
+<a class="xref" href="Utils.Geography.Projections.IProjectionTransformation-1.html#Utils_Geography_Projections_IProjectionTransformation_1_GeoPointToMapPoint_Utils_Geography_Model_GeoPoint__0__">GeoPointToMapPoint(GeoPoint&lt;T&gt;)</a> stays within for every valid <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html">GeoPoint&lt;T&gt;</a>. Used by
+<a class="xref" href="Utils.Geography.Projections.IProjectionTransformation-1.html#Utils_Geography_Projections_IProjectionTransformation_1_Normalize_Utils_Geography_Model_ProjectedPoint__0__">Normalize(ProjectedPoint&lt;T&gt;)</a> (and, in turn, by <a class="xref" href="Utils.Geography.Display.MapPoint-1.html">MapPoint&lt;T&gt;</a> and
+<a class="xref" href="Utils.Geography.Display.RepresentationConverter-1.html">RepresentationConverter&lt;T&gt;</a>) to convert a projected point into
+map-fraction coordinates before scaling to a pixel/tile grid.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">(T MinX, T MaxX, T MinY, T MaxY) Bounds { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt>(T <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple--0,-0,-0,-0-.minx">MinX</a>, T <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple--0,-0,-0,-0-.maxx">MaxX</a>, T <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple--0,-0,-0,-0-.miny">MinY</a>, T <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple--0,-0,-0,-0-.maxy">MaxY</a>)</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+  <h4 class="section" id="Utils_Geography_Projections_IProjectionTransformation_1_Bounds_remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>
+For a projection whose output is genuinely unbounded at some point of the sphere (e.g. Mercator at
+the poles), <a class="xref" href="Utils.Geography.Projections.IProjectionTransformation-1.html#Utils_Geography_Projections_IProjectionTransformation_1_Bounds">Bounds</a> must report a practical, finite envelope rather than the true
+(infinite) mathematical range — see each projection's own documentation for how that envelope is
+chosen and what it excludes.
+</p>
+<p>
+This member has a default implementation (throwing <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a>) rather
+than being required, so that adding it to this public interface does not break existing
+third-party <a class="xref" href="Utils.Geography.Projections.IProjectionTransformation-1.html">IProjectionTransformation&lt;T&gt;</a> implementations: they keep compiling and
+working exactly as before, and only fail — with a clear message — if they (or code that consumes
+them, like <a class="xref" href="Utils.Geography.Projections.IProjectionTransformation-1.html#Utils_Geography_Projections_IProjectionTransformation_1_Normalize_Utils_Geography_Model_ProjectedPoint__0__">Normalize(ProjectedPoint&lt;T&gt;)</a>, <a class="xref" href="Utils.Geography.Display.MapPoint-1.html">MapPoint&lt;T&gt;</a>'s
+<a class="xref" href="Utils.Geography.Model.ProjectedPoint-1.html">ProjectedPoint&lt;T&gt;</a> constructor, or <a class="xref" href="Utils.Geography.Display.RepresentationConverter-1.html#Utils_Geography_Display_RepresentationConverter_1_MappointToTile_Utils_Geography_Model_ProjectedPoint__0__System_Byte_">MappointToTile(ProjectedPoint&lt;T&gt;, byte)</a>)
+actually try to use it without overriding it. All 7 projections built into this package override it.
+</p>
+</div>
+
+
+
+
   <h2 class="section" id="methods">Methods
 </h2>
 
@@ -287,6 +344,58 @@ Interface IProjectionTransformation&lt;T&gt;  <a class="header-action link-secon
 
 
 
+
+
+
+
+  <a id="Utils_Geography_Projections_IProjectionTransformation_1_Normalize_" data-uid="Utils.Geography.Projections.IProjectionTransformation`1.Normalize*"></a>
+
+  <h3 id="Utils_Geography_Projections_IProjectionTransformation_1_Normalize_Utils_Geography_Model_ProjectedPoint__0__" data-uid="Utils.Geography.Projections.IProjectionTransformation`1.Normalize(Utils.Geography.Model.ProjectedPoint{`0})">
+  Normalize(ProjectedPoint&lt;T&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Projections/IProjectionTransformation.cs/#L81"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Normalizes <code class="paramref">projectedPoint</code> into map-fraction coordinates using <a class="xref" href="Utils.Geography.Projections.IProjectionTransformation-1.html#Utils_Geography_Projections_IProjectionTransformation_1_Bounds">Bounds</a>:
+<code>(MinX, MinY)</code> maps to <code>(0, 0)</code> and <code>(MaxX, MaxY)</code> maps to <code>(1, 1)</code>, independently
+on each axis.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">(T X, T Y) Normalize(ProjectedPoint&lt;T&gt; projectedPoint)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>projectedPoint</code> <a class="xref" href="Utils.Geography.Model.ProjectedPoint-1.html">ProjectedPoint</a>&lt;T&gt;</dt>
+    <dd><p>A point produced by <a class="xref" href="Utils.Geography.Projections.IProjectionTransformation-1.html#Utils_Geography_Projections_IProjectionTransformation_1_GeoPointToMapPoint_Utils_Geography_Model_GeoPoint__0__">GeoPointToMapPoint(GeoPoint&lt;T&gt;)</a> using this projection.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt>(T <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple--0,-0-.x">X</a>, T <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple--0,-0-.y">Y</a>)</dt>
+    <dd><p>The normalized <code>(X, Y)</code> coordinates. For points within <a class="xref" href="Utils.Geography.Projections.IProjectionTransformation-1.html#Utils_Geography_Projections_IProjectionTransformation_1_Bounds">Bounds</a> these are in
+<code>[0, 1]</code>; a point outside <a class="xref" href="Utils.Geography.Projections.IProjectionTransformation-1.html#Utils_Geography_Projections_IProjectionTransformation_1_Bounds">Bounds</a> (e.g. near an excluded singularity, see its
+remarks) normalizes outside that range rather than being clamped.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section" id="Utils_Geography_Projections_IProjectionTransformation_1_Normalize_Utils_Geography_Model_ProjectedPoint__0___remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>This is a plain independent linear rescale of each axis: it does not assume that either axis
+corresponds to a cardinal direction (that assumption only holds for cylindrical/pseudo-cylindrical
+projections such as <a class="xref" href="Utils.Geography.Projections.MercatorProjection-1.html">MercatorProjection&lt;T&gt;</a>/<a class="xref" href="Utils.Geography.Projections.EquirectangularProjection-1.html">EquirectangularProjection&lt;T&gt;</a>,
+not for azimuthal ones such as <a class="xref" href="Utils.Geography.Projections.LambertAzimuthalEqualArea-1.html">LambertAzimuthalEqualArea&lt;T&gt;</a>/<a class="xref" href="Utils.Geography.Projections.StereographicProjection-1.html">StereographicProjection&lt;T&gt;</a>
+where a single axis does not track latitude alone). Callers that need a specific tile-numbering
+orientation (e.g. row 0 = north, matching common slippy-map conventions) must apply that convention
+themselves on top of this normalized value.</p>
+</div>
 
 
 

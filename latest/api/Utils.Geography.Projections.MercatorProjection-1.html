@@ -252,6 +252,105 @@ lat = 2 * [ atan( exp(Y) ) - 45° ]</p>
 
 
 
+  <h2 class="section" id="properties">Properties
+</h2>
+
+
+  <a id="Utils_Geography_Projections_MercatorProjection_1_Bounds_" data-uid="Utils.Geography.Projections.MercatorProjection`1.Bounds*"></a>
+
+  <h3 id="Utils_Geography_Projections_MercatorProjection_1_Bounds" data-uid="Utils.Geography.Projections.MercatorProjection`1.Bounds">
+  Bounds
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Projections/MercatorProjection.cs/#L43"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the rectangular bounds, expressed in this projection's own native output units, that
+<a class="xref" href="Utils.Geography.Projections.IProjectionTransformation-1.html#Utils_Geography_Projections_IProjectionTransformation_1_GeoPointToMapPoint_Utils_Geography_Model_GeoPoint__0__">GeoPointToMapPoint(GeoPoint&lt;T&gt;)</a> stays within for every valid <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html">GeoPoint&lt;T&gt;</a>. Used by
+<a class="xref" href="Utils.Geography.Projections.IProjectionTransformation-1.html#Utils_Geography_Projections_IProjectionTransformation_1_Normalize_Utils_Geography_Model_ProjectedPoint__0__">Normalize(ProjectedPoint&lt;T&gt;)</a> (and, in turn, by <a class="xref" href="Utils.Geography.Display.MapPoint-1.html">MapPoint&lt;T&gt;</a> and
+<a class="xref" href="Utils.Geography.Display.RepresentationConverter-1.html">RepresentationConverter&lt;T&gt;</a>) to convert a projected point into
+map-fraction coordinates before scaling to a pixel/tile grid.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public (T MinX, T MaxX, T MinY, T MaxY) Bounds { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt>(T <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple--0,-0,-0,-0-.minx">MinX</a>, T <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple--0,-0,-0,-0-.maxx">MaxX</a>, T <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple--0,-0,-0,-0-.miny">MinY</a>, T <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple--0,-0,-0,-0-.maxy">MaxY</a>)</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+  <h4 class="section" id="Utils_Geography_Projections_MercatorProjection_1_Bounds_remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>
+For a projection whose output is genuinely unbounded at some point of the sphere (e.g. Mercator at
+the poles), <a class="xref" href="Utils.Geography.Projections.IProjectionTransformation-1.html#Utils_Geography_Projections_IProjectionTransformation_1_Bounds">Bounds</a> must report a practical, finite envelope rather than the true
+(infinite) mathematical range — see each projection's own documentation for how that envelope is
+chosen and what it excludes.
+</p>
+<p>
+This member has a default implementation (throwing <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a>) rather
+than being required, so that adding it to this public interface does not break existing
+third-party <a class="xref" href="Utils.Geography.Projections.IProjectionTransformation-1.html">IProjectionTransformation&lt;T&gt;</a> implementations: they keep compiling and
+working exactly as before, and only fail — with a clear message — if they (or code that consumes
+them, like <a class="xref" href="Utils.Geography.Projections.IProjectionTransformation-1.html#Utils_Geography_Projections_IProjectionTransformation_1_Normalize_Utils_Geography_Model_ProjectedPoint__0__">Normalize(ProjectedPoint&lt;T&gt;)</a>, <a class="xref" href="Utils.Geography.Display.MapPoint-1.html">MapPoint&lt;T&gt;</a>'s
+<a class="xref" href="Utils.Geography.Model.ProjectedPoint-1.html">ProjectedPoint&lt;T&gt;</a> constructor, or <a class="xref" href="Utils.Geography.Display.RepresentationConverter-1.html#Utils_Geography_Display_RepresentationConverter_1_MappointToTile_Utils_Geography_Model_ProjectedPoint__0__System_Byte_">MappointToTile(ProjectedPoint&lt;T&gt;, byte)</a>)
+actually try to use it without overriding it. All 7 projections built into this package override it.
+</p>
+</div>
+
+
+
+
+  <a id="Utils_Geography_Projections_MercatorProjection_1_MaxLatitude_" data-uid="Utils.Geography.Projections.MercatorProjection`1.MaxLatitude*"></a>
+
+  <h3 id="Utils_Geography_Projections_MercatorProjection_1_MaxLatitude" data-uid="Utils.Geography.Projections.MercatorProjection`1.MaxLatitude">
+  MaxLatitude
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Projections/MercatorProjection.cs/#L39"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the maximum (and, by symmetry, minimum negated) latitude this projection treats as
+representable: ~85.05112878°, the standard &quot;Web Mercator&quot; cutoff used by essentially every
+slippy-map implementation (OpenStreetMap, Google Maps, Bing Maps, Leaflet, ...). It is the
+solution of <code>2·atan(e^π) - π/2</code>, i.e. the latitude at which this projection's Y value
+(converted to radians) equals π.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static T MaxLatitude { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><span class="xref">T</span></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+  <h4 class="section" id="Utils_Geography_Projections_MercatorProjection_1_MaxLatitude_remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Unlike latitude itself, Y = ln(tan(45° + lat/2)) grows without bound as latitude approaches ±90°
+(the poles are a genuine mathematical singularity for Mercator: <code>tan(90°)</code> is undefined).
+<a class="xref" href="Utils.Geography.Projections.MercatorProjection-1.html#Utils_Geography_Projections_MercatorProjection_1_Bounds">Bounds</a> therefore cannot use lat=±90° directly and instead evaluates Y at
+<a class="xref" href="Utils.Geography.Projections.MercatorProjection-1.html#Utils_Geography_Projections_MercatorProjection_1_MaxLatitude">MaxLatitude</a>, giving a finite, standard, and widely-recognized envelope.</p>
+</div>
+
+
+
+
   <h2 class="section" id="methods">Methods
 </h2>
 
@@ -260,7 +359,7 @@ lat = 2 * [ atan( exp(Y) ) - 45° ]</p>
 
   <h3 id="Utils_Geography_Projections_MercatorProjection_1_GeoPointToMapPoint_Utils_Geography_Model_GeoPoint__0__" data-uid="Utils.Geography.Projections.MercatorProjection`1.GeoPointToMapPoint(Utils.Geography.Model.GeoPoint{`0})">
   GeoPointToMapPoint(GeoPoint&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Projections/MercatorProjection.cs/#L32"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Projections/MercatorProjection.cs/#L58"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Projects a geographic point (latitude/longitude in degrees) into a 2D &quot;Mercator in degrees&quot;
@@ -300,7 +399,7 @@ space so that (0°,0°) → (0,0).</p>
 
   <h3 id="Utils_Geography_Projections_MercatorProjection_1_MapPointToGeoPoint_Utils_Geography_Model_ProjectedPoint__0__" data-uid="Utils.Geography.Projections.MercatorProjection`1.MapPointToGeoPoint(Utils.Geography.Model.ProjectedPoint{`0})">
   MapPointToGeoPoint(ProjectedPoint&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Projections/MercatorProjection.cs/#L56"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Projections/MercatorProjection.cs/#L82"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Unprojects a map point (X, Y) back to latitude/longitude in degrees.
