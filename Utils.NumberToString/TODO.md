@@ -278,3 +278,72 @@ Ajoutée en item 3, cette surcharge n'a aucun test vérifiant l'arrondi de group
 Testé uniquement via `ConvertYear(-44)` en EN sans variant ; aucun test ne combine année
 av. J.-C. et variant genre/cas pour une langue où le split par moitié (EN/DE/NL) produit
 des numéraux accordables.
+
+---
+
+## Améliorations identifiées (2026-07-09, suite)
+
+### 39. EL (grec) — centaines sans forme féminine
+
+Les centaines grecques (διακόσια, τριακόσια…) ne sont produites qu'en neutre. Le grec
+moderne accorde les centaines en genre selon le nom compté : "διακόσιες λίρες" (féminin
+pluriel) vs "διακόσια δολάρια" (neutre pluriel). Aucun `<Variant>` gender n'existe dans
+`EL.xml` pour ce cas, contrairement à ES qui gère déjà ce type d'accord pour les centaines.
+
+### 40. RU/CS/SK/BG — accord numéral slave (nominatif/génitif sg/pl) absent — limitation architecturale
+
+Les quatre langues slaves n'implémentent aucun mécanisme pour l'accord du nom compté selon
+la règle slave classique (1 → nominatif singulier, 2-4 → génitif singulier, 5+ → génitif
+pluriel ; ex. RU "1 книга" / "2 книги" / "5 книг"). Seul le mot d'échelle "тысяча" a un
+remplacement ponctuel (RU, sans dimension de variant associée). Contrairement aux items
+26/33/39 (accord d'un mot isolé), ce cas porterait sur le nom compté externe, ce que le
+moteur ne modélise pas aujourd'hui — **reporté**, à l'instar de l'item 9 (ZU), nécessiterait
+une extension du système de variants côté appelant plutôt qu'un correctif XML.
+
+### 41. ES — composés 21-29 (`veintiuno`) toujours fusionnés sans espace
+
+L'item 4 a corrigé l'accord féminin pour ES 31-99 (`"treinta y *"`) et IT 21-29
+(`"venti *"`), mais **pas** ES 21-29 : `veintiuno`, `veintidós`… restent fusionnés en un
+seul mot, donc la règle `LastWord` n'atteint jamais le "uno" interne. `Convert(21,
+"gender=femenino")` retourne donc "veintiuno" au lieu de "veintiuna". Nécessite soit un
+espacement (`"veinte y *"` puis remplacement `"veinte y "` → `"veinti"`), soit une règle
+de remplacement dédiée comme pour 31-99.
+
+### 42. README — 14 langues configurées absentes de la liste des langues supportées
+
+`README.md` liste 25 langues alors que 39 fichiers XML existent dans
+`NumberConverterConfigurations/`. Manquent notamment : BG, CS, DA, FA, HR, HU, ID, NO, SK,
+SV, SW, TR, UK, VN — dont plusieurs ajoutées récemment (items 8 et 23) mais jamais
+reportées dans le README.
+
+### 43. README — connecteurs XML majeurs et `beforeChristSuffix` non documentés
+
+La section "XML Configuration" du README ne mentionne pas `groupConnector` /
+`groupConnectorThreshold`, `intraGroupConnector` / `intraGroupConnectorThreshold` (item 22)
+ni `scaleConnector` / `scaleConnectorThreshold` (item 8/RO), bien que ces attributs soient
+dans le XSD et activement utilisés. La section `<YearFormat>` documente `hundredWord` et
+`zeroConnector` mais omet `beforeChristSuffix` (item 14).
+
+### 44. `INumberToStringConverter` — XML docs sans tags `<exception>` structurés
+
+Les exceptions levées (`NotSupportedException` selon `SupportsOrdinals`/`SupportsTimeConversion`/
+etc., `OverflowException` sur les conversions BigInteger→long) ne sont mentionnées qu'en
+texte libre dans les `<summary>`, jamais via des tags `<exception cref="...">` dédiés — à
+compléter sur les ~35 membres publics concernés.
+
+### 45. `Convert(double)` / `Convert(float)` — incohérences de surcharge et cas limites non gérés
+
+Deux problèmes distincts sur la même paire de méthodes (`INumberToStringConverter.cs`) :
+- Contrairement à `Convert(int/long/BigInteger/decimal)` qui ont chacune une surcharge sans
+  `variants`, `Convert(double)`/`Convert(float)` n'existent qu'avec `params string[] variants`.
+- `double.NaN` / `double.PositiveInfinity` ne sont jamais interceptés avant le passage par
+  `ToString("R")` + `decimal.TryParse` : le comportement résultant (échec silencieux ou
+  exception peu explicite) n'est pas défini. Ajouter un test explicite `double.IsNaN`/
+  `IsInfinity` avec un message d'erreur clair.
+
+### 46. `ConvertFraction` — pas de surcharge `int`/`long`, uniquement `BigInteger`
+
+`Convert`, `ConvertOrdinal` et `ConvertCurrency` offrent tous des surcharges `int`/`long`/
+`BigInteger` pour la cohérence de l'API. `ConvertFraction(BigInteger, BigInteger, ...)`
+(item 19) n'a pas d'équivalent `int`/`long`, forçant les appelants à convertir manuellement
+et s'exposant à un `OverflowException` évitable.
