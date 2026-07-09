@@ -34,6 +34,14 @@ public class EquirectangularProjection<T> : IProjectionTransformation<T>
     /// </summary>
     private static T ClampLatitude(T latitude) => MathEx.Clamp(latitude, -MaxLatitude, MaxLatitude);
 
+    /// <inheritdoc/>
+    /// <remarks>
+    /// Both axes are finite over the whole sphere for this projection (X=longitude ∈ [-180°,180°],
+    /// Y=latitude ∈ [-90°,90°]), so no practical cutoff is needed here (unlike, e.g., Mercator).
+    /// </remarks>
+    public (T MinX, T MaxX, T MinY, T MaxY) Bounds
+        => (-degree.StraightAngle, degree.StraightAngle, -MaxLatitude, MaxLatitude);
+
     /// <summary>
     /// Projects a geographic point (lat, lon in degrees) to a 2D plane:
     ///   X = longitude, Y = latitude.

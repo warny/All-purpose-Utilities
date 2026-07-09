@@ -86,12 +86,24 @@ namespace Utils.Geography.Display
         /// <param name="projectedPoint">Projected map point.</param>
         /// <param name="zoomLevel">Zoom level of the tile grid.</param>
         /// <returns>The tile containing the projected point.</returns>
+        /// <remarks>
+        /// Uses <see cref="IProjectionTransformation{T}.Normalize"/> to convert the projected point into
+        /// <c>[0,1]</c> map-fraction coordinates before scaling by <see cref="GetMapSize"/>, matching
+        /// <see cref="MapPoint{T}"/>'s own pixel calculation exactly, so both agree on which tile a given
+        /// point falls into.
+        /// </remarks>
         public Tile<T> MappointToTile(ProjectedPoint<T> projectedPoint, byte zoomLevel)
         {
-            long zoom = 1 << zoomLevel;
+            long zoom = 1L << zoomLevel;
+
+            var (nx, ny) = projectedPoint.Projection.Normalize(projectedPoint);
+            T mapSize = T.CreateChecked(GetMapSize(zoomLevel));
+            long pixelX = long.CreateChecked(T.Floor(nx * mapSize));
+            long pixelY = long.CreateChecked(T.Floor(ny * mapSize));
+
             return new Tile<T>(
-                MathEx.Clamp((long)Convert.ChangeType(projectedPoint.X, typeof(long)) / TileSize, 0, zoom - 1),
-                MathEx.Clamp((long)Convert.ChangeType(projectedPoint.Y, typeof(long)) / TileSize, 0, zoom - 1),
+                MathEx.Clamp(pixelX / TileSize, 0, zoom - 1),
+                MathEx.Clamp(pixelY / TileSize, 0, zoom - 1),
                 zoomLevel,
                 TileSize);
         }

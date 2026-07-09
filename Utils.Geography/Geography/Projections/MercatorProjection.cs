@@ -24,6 +24,32 @@ public class MercatorProjection<T> : IProjectionTransformation<T>
     private static readonly IAngleCalculator<T> degree = Trigonometry<T>.Degree;
 
     /// <summary>
+    /// Gets the maximum (and, by symmetry, minimum negated) latitude this projection treats as
+    /// representable: ~85.05112878°, the standard "Web Mercator" cutoff used by essentially every
+    /// slippy-map implementation (OpenStreetMap, Google Maps, Bing Maps, Leaflet, ...). It is the
+    /// solution of <c>2·atan(e^π) - π/2</c>, i.e. the latitude at which this projection's Y value
+    /// (converted to radians) equals π.
+    /// </summary>
+    /// <remarks>
+    /// Unlike latitude itself, Y = ln(tan(45° + lat/2)) grows without bound as latitude approaches ±90°
+    /// (the poles are a genuine mathematical singularity for Mercator: <c>tan(90°)</c> is undefined).
+    /// <see cref="Bounds"/> therefore cannot use lat=±90° directly and instead evaluates Y at
+    /// <see cref="MaxLatitude"/>, giving a finite, standard, and widely-recognized envelope.
+    /// </remarks>
+    public static T MaxLatitude { get; } = degree.FromRadian(
+        T.CreateChecked(2) * T.Atan(T.Exp(T.Pi)) - T.Pi / T.CreateChecked(2));
+
+    /// <inheritdoc/>
+    public (T MinX, T MaxX, T MinY, T MaxY) Bounds
+    {
+        get
+        {
+            T maxY = GeoPointToMapPoint(new GeoPoint<T>(MaxLatitude, T.Zero)).Y;
+            return (-degree.StraightAngle, degree.StraightAngle, -maxY, maxY);
+        }
+    }
+
+    /// <summary>
     /// Projects a geographic point (latitude/longitude in degrees) into a 2D "Mercator in degrees"
     /// space so that (0°,0°) → (0,0).
     /// </summary>

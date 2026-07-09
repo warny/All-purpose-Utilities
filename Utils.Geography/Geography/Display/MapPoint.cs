@@ -6,6 +6,7 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using Utils.Geography.Model;
+using Utils.Geography.Projections;
 
 namespace Utils.Geography.Display
 {
@@ -63,13 +64,22 @@ namespace Utils.Geography.Display
         /// <param name="projectedPoint">Projected map coordinates.</param>
         /// <param name="zoomLevel">Target zoom level.</param>
         /// <param name="tileSize">Tile size in pixels.</param>
+        /// <remarks>
+        /// Uses <see cref="IProjectionTransformation{T}.Normalize"/> (via <see cref="ProjectedPoint{T}.Projection"/>)
+        /// to convert the projected point into <c>[0,1]</c> map-fraction coordinates before scaling by the
+        /// total map size in pixels (<c>tileSize &lt;&lt; zoomLevel</c>), matching
+        /// <see cref="RepresentationConverter{T}.GetMapSize"/> and <see cref="RepresentationConverter{T}.MappointToTile"/>
+        /// exactly, so both paths agree on which tile a given point falls into.
+        /// </remarks>
         public MapPoint(ProjectedPoint<T> projectedPoint, byte zoomLevel, int tileSize)
         {
-            T zoomFactor = (T)Convert.ChangeType(1 << zoomLevel, typeof(T));
             ZoomLevel = zoomLevel;
-            X = (long)Convert.ChangeType(T.Floor(projectedPoint.X * zoomFactor), typeof(long));
-            Y = (long)Convert.ChangeType(T.Floor(projectedPoint.Y * zoomFactor), typeof(long));
             TileSize = tileSize;
+
+            var (nx, ny) = projectedPoint.Projection.Normalize(projectedPoint);
+            T mapSize = T.CreateChecked(tileSize << zoomLevel);
+            X = long.CreateChecked(T.Floor(nx * mapSize));
+            Y = long.CreateChecked(T.Floor(ny * mapSize));
         }
 
         /// <summary>

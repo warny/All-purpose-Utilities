@@ -29,6 +29,19 @@ public class StereographicProjection<T> : IProjectionTransformation<T>
     /// </summary>
     private static readonly IAngleCalculator<T> degree = Trigonometry<T>.Degree;
 
+    /// <inheritdoc/>
+    /// <remarks>
+    /// Unlike Mercator, this projection's singularity is not at the poles (both poles are finite:
+    /// ρ=1) but at the antipodal point (lat=0°, lon=±180°) — see the class remarks. Because that
+    /// singularity is a single point rather than a well-defined latitude cutoff, there is no clean
+    /// finite envelope that fully contains every representable point the way there is for the other
+    /// projections in this package. <see cref="Bounds"/> reports the finite extent reached at the
+    /// poles (x,y ∈ [-1,1]); points near the antipodal meridian can legitimately fall well outside it,
+    /// and <see cref="IProjectionTransformation{T}.Normalize"/> will report a value outside <c>[0,1]</c>
+    /// for them rather than clamping.
+    /// </remarks>
+    public (T MinX, T MaxX, T MinY, T MaxY) Bounds => (-T.One, T.One, -T.One, T.One);
+
     /// <summary>
     /// Projects geographic coordinates onto the stereographic projection plane.
     /// </summary>

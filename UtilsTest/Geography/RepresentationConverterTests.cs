@@ -81,4 +81,39 @@ public class RepresentationConverterTests
         Assert.IsTrue(tile.TileX is >= 0 and <= 3);
         Assert.IsTrue(tile.TileY is >= 0 and <= 3);
     }
+
+    [TestMethod]
+    public void MappointToTileAgreesWithMapPointForTheSameProjectedPoint()
+    {
+        // Regression test: MapPoint(ProjectedPoint, zoom, tileSize).Tile and
+        // RepresentationConverter.MappointToTile used to disagree (three different, inconsistent
+        // scaling formulas) because MapPoint's pixel scale ignored tileSize, and MappointToTile used
+        // the raw (un-normalized) projected coordinate. Both now go through
+        // IProjectionTransformation<T>.Normalize + the same map-size formula, so they must agree.
+        var paris = new GeoPoint<double>(48.8566, 2.3522);
+        var projection = Projections<double>.Mercator;
+        var projected = projection.GeoPointToMapPoint(paris);
+        var converter = new RepresentationConverter<double>(projection, tileSize: 256);
+
+        var tileViaMapPoint = new MapPoint<double>(projected, zoomLevel: 10, tileSize: 256).Tile;
+        var tileViaConverter = converter.MappointToTile(projected, zoomLevel: 10);
+
+        Assert.AreEqual(tileViaMapPoint.TileX, tileViaConverter.TileX);
+        Assert.AreEqual(tileViaMapPoint.TileY, tileViaConverter.TileY);
+    }
+
+    [TestMethod]
+    public void MappointToTileMapsTheEquatorAndPrimeMeridianToTheCenterTile()
+    {
+        var projection = Projections<double>.Mercator;
+        var converter = new RepresentationConverter<double>(projection, tileSize: 256);
+        var origin = new GeoPoint<double>(0, 0);
+        var projectedOrigin = projection.GeoPointToMapPoint(origin);
+
+        var tile = converter.MappointToTile(projectedOrigin, zoomLevel: 10);
+
+        int centerTileIndex = (1 << 10) / 2;
+        Assert.AreEqual(centerTileIndex, tile.TileX);
+        Assert.AreEqual(centerTileIndex, tile.TileY);
+    }
 }
