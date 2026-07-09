@@ -18,14 +18,17 @@ public class EmbeddedParserAttributeRewriterTests
         A : 'a' ;
         """;
 
-    /// <summary>Verifies assignment-label, list-label, and current-rule reads are rewritten independently.</summary>
+    /// <summary>Verifies current-rule returns are rewritten only from bare attributes while child, labeled, and dotted forms remain unsupported.</summary>
     [TestMethod]
-    public void Rewrite_SupportedReads_RewritesMultipleReferences()
+    public void Rewrite_SupportedCurrentRuleRead_RewritesBareReturnAndRejectsChildReferences()
     {
-        EmbeddedParserAttributeRewriteResult result = Rewrite("Seen = (int)$x.value + $xs.value.Count + $xs.value.Select(v => v).Count() + (int)$start.own;");
+        EmbeddedParserAttributeRewriteResult result = Rewrite("Seen = (int)$x.value + $xs.value.Count + $xs.value.Select(v => v).Count() + (int)$own;");
 
-        Assert.AreEqual("Seen = (int)((int)GetRequiredLabeledRuleCallReturn(context, \"x\", \"value\")!) + GetLabeledRuleCallReturns(context, \"xs\", \"value\").Count + GetLabeledRuleCallReturns(context, \"xs\", \"value\").Select(v => v).Count() + (int)GetRequiredRuleReturn(context, \"own\");", result.Code);
-        Assert.AreEqual(0, result.Errors.Count);
+        Assert.AreEqual("Seen = (int)$x.value + $xs.value.Count + $xs.value.Select(v => v).Count() + (int)GetRequiredRuleReturn<int>(context, \"own\");", result.Code);
+        Assert.AreEqual(3, result.Errors.Count);
+        StringAssert.Contains(result.Errors[0], "Labeled rule-call return attribute '$x.value' is not supported");
+        StringAssert.Contains(result.Errors[1], "Labeled rule-call return attribute '$xs.value' is not supported");
+        StringAssert.Contains(result.Errors[2], "Labeled rule-call return attribute '$xs.value' is not supported");
     }
 
     /// <summary>Verifies current-rule parameters and locals are rewritten through typed helper calls.</summary>
@@ -50,8 +53,9 @@ public class EmbeddedParserAttributeRewriterTests
         StringAssert.Contains(result.Code, "@\"$x.value\"");
         StringAssert.Contains(result.Code, "// $x.value");
         StringAssert.Contains(result.Code, "/* $x.value */");
-        StringAssert.Contains(result.Code, "Seen = ((int)GetRequiredLabeledRuleCallReturn(context, \"x\", \"value\")!)");
-        Assert.AreEqual(0, result.Errors.Count);
+        StringAssert.Contains(result.Code, "Seen = $x.value");
+        Assert.AreEqual(1, result.Errors.Count);
+        StringAssert.Contains(result.Errors[0], "Labeled rule-call return attribute '$x.value' is not supported");
     }
 
     /// <summary>Verifies interpolated and raw string contents are not rewritten.</summary>
@@ -69,10 +73,10 @@ public class EmbeddedParserAttributeRewriterTests
     /// <summary>Verifies unsupported roots, token labels, missing returns, bare reads, and chains are diagnosed.</summary>
     [DataTestMethod]
     [DataRow("$unknown.value", "not the current rule name")]
-    [DataRow("$t.value", "Token label 't'")]
-    [DataRow("$x.missing", "not declared by parser rule 'child'")]
-    [DataRow("$xs.missing", "not declared by any parser rule referenced by list label 'xs'")]
-    [DataRow("$start.missing", "not declared by current parser rule 'start'")]
+    [DataRow("$t.value", "Labeled rule-call return attribute '$t.value' is not supported")]
+    [DataRow("$x.missing", "Labeled rule-call return attribute '$x.missing' is not supported")]
+    [DataRow("$xs.missing", "Labeled rule-call return attribute '$xs.missing' is not supported")]
+    [DataRow("$start.missing", "Dotted current-rule return attribute '$start.missing' is not supported")]
     [DataRow("$x", "label access")]
     [DataRow("$xs", "label access")]
     [DataRow("$x.value.other", "Chained parser attribute '$x.value'")]
@@ -199,24 +203,24 @@ public class EmbeddedParserAttributeRewriterTests
         StringAssert.Contains(result.Errors[0], "not supported in semantic predicates");
     }
 
-    /// <summary>Verifies assignment-labeled child returns are statically unavailable during initialization.</summary>
+    /// <summary>Verifies assignment-labeled child returns remain unsupported during initialization.</summary>
     [TestMethod]
-    public void Rewrite_AssignmentLabelInInit_ReportsLifecycleError()
+    public void Rewrite_AssignmentLabelInInit_ReportsUnsupportedLabelError()
     {
         EmbeddedParserAttributeRewriteResult result = Rewrite("Seen = $x.value;", EmbeddedParserAttributeLocationKind.Init);
 
         Assert.AreEqual(1, result.Errors.Count);
-        StringAssert.Contains(result.Errors[0], "not available in @init");
+        StringAssert.Contains(result.Errors[0], "Labeled rule-call return attribute '$x.value' is not supported");
     }
 
-    /// <summary>Verifies list-labeled child returns are statically unavailable during initialization.</summary>
+    /// <summary>Verifies list-labeled child returns remain unsupported during initialization.</summary>
     [TestMethod]
-    public void Rewrite_ListLabelInInit_ReportsLifecycleError()
+    public void Rewrite_ListLabelInInit_ReportsUnsupportedLabelError()
     {
         EmbeddedParserAttributeRewriteResult result = Rewrite("Seen = $xs.value;", EmbeddedParserAttributeLocationKind.Init);
 
         Assert.AreEqual(1, result.Errors.Count);
-        StringAssert.Contains(result.Errors[0], "List label 'xs' is not available in @init");
+        StringAssert.Contains(result.Errors[0], "Labeled rule-call return attribute '$xs.value' is not supported");
     }
 
     /// <summary>Verifies list-label attributes remain unavailable in semantic predicates.</summary>
@@ -245,14 +249,14 @@ public class EmbeddedParserAttributeRewriterTests
         EmbeddedParserAttributeRewriteResult result = EmbeddedParserAttributeRewriter.Rewrite("Seen = $x.value;", grammar, rule, EmbeddedParserAttributeLocationKind.After);
 
         Assert.AreEqual(1, result.Errors.Count);
-        StringAssert.Contains(result.Errors[0], "used as both assignment and list label");
+        StringAssert.Contains(result.Errors[0], "Labeled rule-call return attribute '$x.value' is not supported");
     }
 
-    /// <summary>Verifies repeated list labels validate all targets without depending on alternative order.</summary>
+    /// <summary>Verifies repeated list-label return convenience remains unsupported regardless of target order.</summary>
     [DataTestMethod]
     [DataRow("xs+=withValue | xs+=withoutValue")]
     [DataRow("xs+=withoutValue | xs+=withValue")]
-    public void Rewrite_RepeatedListLabelTargets_AcceptsReturnDeclaredByAnyTarget(string alternatives)
+    public void Rewrite_RepeatedListLabelTargets_ReportsUnsupportedLabelReturn(string alternatives)
     {
         string grammarText = $$"""
             grammar P;
@@ -266,13 +270,14 @@ public class EmbeddedParserAttributeRewriterTests
 
         EmbeddedParserAttributeRewriteResult result = EmbeddedParserAttributeRewriter.Rewrite("Values = $xs.value;", grammar, rule, EmbeddedParserAttributeLocationKind.After);
 
-        Assert.AreEqual("Values = GetLabeledRuleCallReturns(context, \"xs\", \"value\");", result.Code);
-        Assert.AreEqual(0, result.Errors.Count);
+        Assert.AreEqual("Values = $xs.value;", result.Code);
+        Assert.AreEqual(1, result.Errors.Count);
+        StringAssert.Contains(result.Errors[0], "Labeled rule-call return attribute '$xs.value' is not supported");
     }
 
-    /// <summary>Verifies current-rule name resolution takes precedence over a same-named assignment label.</summary>
+    /// <summary>Verifies dotted current-rule returns remain unsupported even when a label shares the rule name.</summary>
     [TestMethod]
-    public void Rewrite_CurrentRuleName_TakesPrecedenceOverSameNamedLabel()
+    public void Rewrite_CurrentRuleDottedReturn_RemainsUnsupported()
     {
         const string grammarText = """
             grammar P;
@@ -285,8 +290,10 @@ public class EmbeddedParserAttributeRewriterTests
 
         EmbeddedParserAttributeRewriteResult result = EmbeddedParserAttributeRewriter.Rewrite("Seen = $start.own;", grammar, rule, EmbeddedParserAttributeLocationKind.After);
 
-        Assert.AreEqual("Seen = GetRequiredRuleReturn(context, \"own\");", result.Code);
-        Assert.AreEqual(0, result.Errors.Count);
+        Assert.AreEqual("Seen = $start.own;", result.Code);
+        Assert.AreEqual(1, result.Errors.Count);
+        StringAssert.Contains(result.Errors[0], "Dotted current-rule return attribute '$start.own' is not supported");
+        StringAssert.Contains(result.Errors[0], "Use bare '$own' instead");
     }
 
     /// <summary>Verifies labels declared only in child rules are not visible in the parent rule.</summary>
@@ -299,9 +306,9 @@ public class EmbeddedParserAttributeRewriterTests
         StringAssert.Contains(result.Errors[0], "not the current rule name");
     }
 
-    /// <summary>Verifies a parameter takes bare-name precedence while label-return syntax remains label-based.</summary>
+    /// <summary>Verifies a parameter takes bare-name precedence while same-name label-return syntax remains unsupported.</summary>
     [TestMethod]
-    public void Rewrite_ParameterAndLabelSameName_SeparatesBareAndReturnForms()
+    public void Rewrite_ParameterAndLabelSameName_RewritesBareAndRejectsReturnForm()
     {
         const string grammarText = """
             grammar P;
@@ -314,8 +321,9 @@ public class EmbeddedParserAttributeRewriterTests
 
         EmbeddedParserAttributeRewriteResult result = EmbeddedParserAttributeRewriter.Rewrite("A = $x; B = $x.value;", grammar, rule, EmbeddedParserAttributeLocationKind.After);
 
-        Assert.AreEqual("A = GetRequiredRuleParameter<int>(context, \"x\"); B = ((int)GetRequiredLabeledRuleCallReturn(context, \"x\", \"value\")!);", result.Code);
-        Assert.AreEqual(0, result.Errors.Count);
+        Assert.AreEqual("A = GetRequiredRuleParameter<int>(context, \"x\"); B = $x.value;", result.Code);
+        Assert.AreEqual(1, result.Errors.Count);
+        StringAssert.Contains(result.Errors[0], "Labeled rule-call return attribute '$x.value' is not supported");
     }
 
     /// <summary>Rewrites code against the start rule in the shared grammar.</summary>

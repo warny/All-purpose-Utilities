@@ -634,11 +634,11 @@ public class Antlr4GrammarGeneratorDiagnosticsTests
 
     /// <summary>Verifies invalid list-label returns, lifecycle locations, writes, and ambiguity are diagnosed.</summary>
     [DataTestMethod]
-    [DataRow("@after { Seen = $xs.missing; }", "xs+=child", "not declared by any parser rule referenced by list label 'xs'")]
+    [DataRow("@after { Seen = $xs.missing; }", "xs+=child", "Labeled rule-call return attribute '$xs.missing' is not supported")]
     [DataRow("@after { $xs.value = 1; }", "xs+=child", "writes are not supported")]
-    [DataRow("@init { Seen = $xs.value; }", "xs+=child", "not available in @init")]
+    [DataRow("@init { Seen = $xs.value; }", "xs+=child", "Labeled rule-call return attribute '$xs.value' is not supported")]
     [DataRow(": { return $xs.value.Count > 0; }? xs+=child", null, "not supported in semantic predicates")]
-    [DataRow("@after { Seen = $x.value; }", "x=child | x+=child", "used as both assignment and list label")]
+    [DataRow("@after { Seen = $x.value; }", "x=child | x+=child", "Labeled rule-call return attribute '$x.value' is not supported")]
     public void GeneratorDiagnostics_InvalidListParserAttribute_ReportsDedicatedError(string ruleFragment, string? content, string expectedMessage)
     {
         string grammar = $$"""
@@ -655,7 +655,7 @@ public class Antlr4GrammarGeneratorDiagnosticsTests
 
     /// <summary>Verifies assignment-label access in init and attribute writes are rejected before source emission.</summary>
     [DataTestMethod]
-    [DataRow("@init { Seen = $x.value; }", "not available in @init")]
+    [DataRow("@init { Seen = $x.value; }", "Labeled rule-call return attribute '$x.value' is not supported")]
     [DataRow("@after { $x.value = 1; }", "writes are not supported")]
     public void GeneratorDiagnostics_InvalidAttributeLifecycleOrWrite_ReportsDedicatedError(string lifecycle, string expectedMessage)
     {

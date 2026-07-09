@@ -94,9 +94,7 @@ internal static class EmbeddedParserAttributeRewriter
         var errors = new List<string>();
         var output = new StringBuilder(code.Length);
         var labels = CollectLabels(rule.Content);
-        var parserRules = grammar.ParserRules.ToDictionary(static candidate => candidate.Name, StringComparer.Ordinal);
         var returns = ParseTypedDeclarations(rule.Returns);
-        var currentReturns = new HashSet<string>(returns.Keys, StringComparer.Ordinal);
         var parameters = ParseTypedDeclarations(rule.Parameters);
         var locals = ParseTypedDeclarations(rule.Locals.Count == 0 ? null : string.Join(", ", rule.Locals));
         int index = 0;
@@ -190,16 +188,8 @@ internal static class EmbeddedParserAttributeRewriter
 
             if (string.Equals(root, rule.Name, StringComparison.Ordinal))
             {
-                if (!currentReturns.Contains(returnName))
-                {
-                    errors.Add($"Return '{returnName}' is not declared by current parser rule '{rule.Name}'.");
-                    output.Append(code, attributeStart, index - attributeStart);
-                    continue;
-                }
-
-                output.Append("GetRequiredRuleReturn(context, \"")
-                    .Append(Escape(returnName))
-                    .Append("\")");
+                errors.Add($"Dotted current-rule return attribute '{attributeText}' is not supported by the current-rule return transformer. Use bare '${returnName}' instead.");
+                output.Append(code, attributeStart, index - attributeStart);
                 continue;
             }
 
@@ -210,91 +200,9 @@ internal static class EmbeddedParserAttributeRewriter
                 continue;
             }
 
-            if (label.Assignment is not null && label.List.Count > 0)
-            {
-                errors.Add($"Parser attribute root '{root}' is used as both assignment and list label in this rule. Use explicit helpers to disambiguate.");
-                output.Append(code, attributeStart, index - attributeStart);
-                continue;
-            }
-
-            string? assignmentReturnRawType = null;
-            if (label.List.Count > 0)
-            {
-                if (label.List.Any(target => !parserRules.ContainsKey(target.RuleName)))
-                {
-                    errors.Add($"Token label '{root}' cannot be used as a parser rule-return attribute.");
-                    output.Append(code, attributeStart, index - attributeStart);
-                    continue;
-                }
-
-                bool isDeclaredByAnyTarget = label.List
-                    .Select(target => parserRules[target.RuleName])
-                    .Any(targetRule => ParseDeclarationNames(targetRule.Returns).Contains(returnName));
-                if (!isDeclaredByAnyTarget)
-                {
-                    errors.Add($"Return '{returnName}' is not declared by any parser rule referenced by list label '{root}'.");
-                    output.Append(code, attributeStart, index - attributeStart);
-                    continue;
-                }
-            }
-            else
-            {
-                RuleLabelTarget target = label.Assignment!;
-                if (!parserRules.TryGetValue(target.RuleName, out G4Rule? targetRule))
-                {
-                    errors.Add($"Token label '{root}' cannot be used as a parser rule-return attribute.");
-                    output.Append(code, attributeStart, index - attributeStart);
-                    continue;
-                }
-
-                if (!ParseDeclarationNames(targetRule.Returns).Contains(returnName))
-                {
-                    errors.Add($"Return '{returnName}' is not declared by parser rule '{targetRule.Name}' referenced by assignment label '{root}'.");
-                    output.Append(code, attributeStart, index - attributeStart);
-                    continue;
-                }
-
-                if (ParseTypedDeclarations(targetRule.Returns).TryGetValue(returnName, out TypedDeclaration? assignmentReturnDeclaration))
-                {
-                    assignmentReturnRawType = assignmentReturnDeclaration.RawType;
-                }
-            }
-
-            if (locationKind == EmbeddedParserAttributeLocationKind.Init)
-            {
-                string labelKind = label.List.Count == 0 ? "Assignment" : "List";
-                errors.Add($"{labelKind} label '{root}' is not available in @init. Read '{attributeText}' only after the child rule call succeeds.");
-                output.Append(code, attributeStart, index - attributeStart);
-                continue;
-            }
-
-            if (label.List.Count == 0)
-            {
-                if (!string.IsNullOrWhiteSpace(assignmentReturnRawType))
-                {
-                    output.Append("((").Append(assignmentReturnRawType).Append(")");
-                }
-
-                output.Append("GetRequiredLabeledRuleCallReturn(context, \"")
-                    .Append(Escape(root))
-                    .Append("\", \"")
-                    .Append(Escape(returnName))
-                    .Append("\")");
-
-                if (!string.IsNullOrWhiteSpace(assignmentReturnRawType))
-                {
-                    output.Append('!');
-                    output.Append(')');
-                }
-            }
-            else
-            {
-                output.Append("GetLabeledRuleCallReturns(context, \"")
-                    .Append(Escape(root))
-                    .Append("\", \"")
-                    .Append(Escape(returnName))
-                    .Append("\")");
-            }
+            errors.Add($"Labeled rule-call return attribute '{attributeText}' is not supported by the current-rule return transformer.");
+            output.Append(code, attributeStart, index - attributeStart);
+            continue;
         }
 
         return new EmbeddedParserAttributeRewriteResult(output.ToString(), errors);
