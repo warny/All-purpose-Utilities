@@ -596,7 +596,7 @@ Custom policies should therefore avoid invocation-count-dependent decisions unle
 <td>ANTLR attribute syntax</td>
 <td>Unsupported in runtime-inline execution</td>
 <td>Limited in generated C#</td>
-<td>Read-only <code>$x.value</code> assignment-label returns, <code>$xs.value</code> list-return projections, and exact-current-rule <code>$rule.value</code>; no bare/token/lexer attributes, writes, implicit fields, or automatic binding</td>
+<td>Declared current-rule bare <code>$returnName</code> reads/writes, current-rule parameters/locals as documented; <code>$child.value</code>, <code>$c.value</code>, <code>$x.value</code>, <code>$xs.value</code>, and <code>$rule.value</code> remain unsupported; no token/lexer attributes, implicit fields, or automatic binding</td>
 </tr>
 <tr>
 <td>Lexer labels/returns</td>
@@ -617,22 +617,22 @@ Custom policies should therefore avoid invocation-count-dependent decisions unle
 </thead>
 <tbody>
 <tr>
-<td><code>$x.value</code> for <code>x=child</code></td>
-<td>Partially supported in inline parser actions and <code>@after</code></td>
-<td>Returns <code>object?</code> through assignment-label storage only; declared target return is validated; present-null is valid; absent runtime label throws <code>ParserAttributeAccessException</code>; rejected in <code>@init</code> and predicates</td>
+<td><code>$value = ...</code> for a declared current-rule return</td>
+<td>Supported in inline parser actions and <code>@after</code></td>
+<td>Rewrites to typed <code>SetRequiredRuleReturn&lt;T&gt;(context, &quot;value&quot;, ...)</code> and stores in the current invocation frame</td>
 </tr>
 <tr>
-<td><code>$xs.value</code> for <code>xs+=child</code></td>
-<td>Partially supported in inline parser actions and <code>@after</code></td>
-<td>Returns <code>IReadOnlyList&lt;object?&gt;</code>; successful order is preserved, present-null is included, missing returns are skipped, and an absent label yields an empty list; rejected in <code>@init</code> and predicates</td>
+<td><code>$value</code> for a declared current-rule return</td>
+<td>Supported in inline parser actions and <code>@after</code></td>
+<td>Rewrites to typed <code>GetRequiredRuleReturn&lt;T&gt;(context, &quot;value&quot;)</code>; missing runtime values preserve required-helper failure semantics</td>
 </tr>
 <tr>
-<td><code>$rule.value</code> for the exact current rule name</td>
-<td>Partially supported in <code>@init</code>, inline parser actions, and <code>@after</code></td>
-<td>Returns <code>object?</code> from the current invocation frame; declared return is validated; current-rule name wins over a same-named label; missing runtime value throws</td>
+<td><code>$child.value</code>, <code>$c.value</code>, <code>$x.value</code>, <code>$xs.value</code>, <code>$rule.value</code></td>
+<td>Unsupported</td>
+<td>No child, labeled, list-labeled, or dotted current-rule return convenience is generated</td>
 </tr>
 <tr>
-<td>Token attributes, bare attributes, writes, chains, list indexing syntax, lexer attributes</td>
+<td>Token attributes, bare undeclared attributes, writes to undeclared returns, chains, list indexing syntax, lexer attributes</td>
 <td>Unsupported</td>
 <td><code>UP0014</code>; no general ANTLR list-label or lexer compatibility</td>
 </tr>
@@ -672,7 +672,7 @@ Custom policies should therefore avoid invocation-count-dependent decisions unle
 <h3 id="embedded-c-current-rule-return-writes">Embedded C# current-rule return writes</h3>
 <p>Default generation preserves <code>$returnName = ...</code> unchanged. Generated C# can opt into <code>CSharpAntlrStyleParserEmbeddedCodeTransformer</code> for a narrow current-rule return write convenience syntax in rule <code>@after</code> code only. Supported bare return-attribute assignments, compound assignments, and standalone increment/decrement statements are rewritten to typed <code>SetRequiredRuleReturn&lt;T&gt;</code> / <code>GetRequiredRuleReturn&lt;T&gt;</code> helper calls. This is transformation/logical rewrite support only; broader execution semantics and inline action propagation are deferred. Parameters and labels remain read-only, list-label projections remain read-only, semantic predicates and <code>@init</code> reject return writes, <code>ref</code>/<code>out</code> is unsupported, and dotted current-rule return writes such as <code>$rule.value = ...</code> are unsupported.</p>
 <blockquote>
-<p>Current-rule return writes: with the optional C# ANTLR-style transformer, bare declared returns such as <code>$value = ...</code>, <code>$value += ...</code>, and standalone increments are supported in <code>@after</code> and inline parser actions. The default no-op transformer preserves the syntax unchanged. Runtime writes use parser-managed invocation-frame return state, are rollback-safe, are captured into successful <code>ParserRuleCallResult</code> snapshots for parent assignment/list labels, distinguish present-null from missing, and do not auto-initialize returns. Dotted writes (<code>$rule.value = ...</code>), predicates, <code>@init</code>, parameters, labels, list projections, tokens, lexer attributes, and <code>ref</code>/<code>out</code> writes remain unsupported.</p>
+<p>Current-rule return writes: with the optional C# ANTLR-style transformer, bare declared returns such as <code>$value = ...</code>, <code>$value += ...</code>, and standalone increments are supported in <code>@after</code> and inline parser actions. The default no-op transformer preserves the syntax unchanged. Runtime writes use parser-managed invocation-frame return state, are rollback-safe, are captured into successful <code>ParserRuleCallResult</code> snapshots for explicit helper APIs, distinguish present-null from missing, and do not auto-initialize returns. Dotted writes (<code>$rule.value = ...</code>), predicates, <code>@init</code>, parameters, labels, list projections, tokens, lexer attributes, and <code>ref</code>/<code>out</code> writes remain unsupported.</p>
 </blockquote>
 <p>Parser and lexer grammar-level named-action support is source-generator C# only. In parser or combined grammars, unscoped <code>@header</code> / <code>@members</code> / <code>@footer</code> are treated as parser compatibility blocks, and scoped <code>@parser::header</code> / <code>@parser::members</code> / <code>@parser::footer</code> are equivalent parser compatibility blocks. They emit parser header code, generated execution-context members, or deterministic trailing parser source in grammar source order, and they still produce compatibility warnings (<code>UP1035</code>, <code>UP1031</code>, or <code>UP1036</code>) because invalid C# remains a Roslyn responsibility. Scoped lexer named actions (<code>@lexer::header</code>, <code>@lexer::members</code>, <code>@lexer::footer</code>) mirror the same limited injection model in combined or lexer grammars only with dedicated lexer markers; parser-only grammars keep them unsupported because no lexer is generated; lexer members are emitted into the existing generated execution context and do not create a separate ANTLR lexer runtime type. Parser named actions in lexer grammars are invalid for this generator, and unscoped <code>@header</code>, <code>@members</code>, and <code>@footer</code> are not parser compatibility blocks in lexer grammars. Unsupported named actions, unknown lexer/parser action names such as <code>@lexer::custom</code> or <code>@parser::custom</code>, and unknown scopes such as <code>@tree::members</code> produce deterministic <code>UP1029</code> diagnostics and are not silently injected. The default/no-op transformer preserves named-action content unchanged; optional transformer behavior remains opt-in, and <code>$...</code> current-rule attribute rewriting is intentionally limited to parser actions/lifecycle code, not parser or lexer header/member/footer content. Parser and lexer members can be called from generated inline parser actions and supported <code>@init</code>/<code>@after</code> lifecycle hooks, simple lexer inline actions and simple lexer predicates are supported only in the explicit generated-C# opt-in path.</p>
 <h2 id="lexer-named-actions">Lexer named actions</h2>
