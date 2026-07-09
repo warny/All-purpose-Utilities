@@ -66,10 +66,41 @@ et sa regex) était parsée deux fois pour rien. **Fix** : constructeur privé p
 `T.CreateChecked(EquatorialRadius)` et `T.CreateChecked(a.Longitude)` etc. convertissaient une valeur
 déjà de type `T` vers `T` — no-op coûteux dans une boucle par arête de polygone. Supprimé.
 
+### `Equals`/`GetHashCode` ne géraient pas le wraparound circulaire de `Longitude`/`Bearing` (PR #423, revue)
+Suite à la revue de la PR #423 (Codex + retour du mainteneur), l'arrondi comparatif introduit pour
+`GeoPoint<T>.Equals`/`GetHashCode` (voir plus haut) traitait `Longitude` (antiméridien ±180°) et
+`Bearing` (0°/360°) comme des nombres linéaires plutôt que circulaires : deux longitudes comme
+`179.999998°` et `-179.999998°` (quasiment le même point, ~4×10⁻⁶° d'écart réel) étaient considérées
+différentes et hachaient différemment.
+**Fix** : ajout de trois membres génériques sur `IAngleCalculator<T>` (implémentés dans
+`Trigonometry<T>`, donc disponibles pour Degree/Radian/Grade) :
+- `AreEqual(angle1, angle2, tolerance)` — comparaison à tolérance, distance angulaire la plus courte.
+- `AreEqualRounded(angle1, angle2, decimals)` — arrondit après normalisation dans `[0, Perigon)`.
+- `NormalizeRounded(angle, decimals)` — la valeur normalisée-arrondie sous-jacente, exposée pour le hachage.
+
+`GeoPoint<T>.Equals`/`GetHashCode` et `GeoVector<T>.Equals`/`GetHashCode` utilisent désormais
+`degree.AreEqualRounded`/`degree.NormalizeRounded` pour `Longitude`/`Bearing`. `Latitude` n'est pas
+concernée (elle ne boucle pas ; les pôles restent un cas spécial séparé).
+
+### Pas de méthode de comparaison floue explicite après le retrait de la tolérance d'`Equals`
+En rendant `Equals` cohérent avec `GetHashCode` (arrondi plutôt que fenêtre de tolérance), l'ancien
+comportement « égal à epsilon près » a disparu de `Equals`. **Fix** : ajout de
+`GeoPoint<T>.IsApproximately(other, tolerance)` / `IsApproximately(other)` (tolérance par défaut =
+`comparer.Interval`) et des équivalents sur `GeoVector<T>`, explicitement documentés comme *non*
+utilisables pour le hachage/les clés de dictionnaire (fenêtre de tolérance non transitive).
+
 ## Documentation mise à jour
 - `LambertAzimuthalEqualArea<T>` : la XML doc ne précisait pas que cette implémentation est l'aspect
   **polaire** (centré sur le pôle nord, `(lat=90°,lon=0°) → (0,0)`), pas l'aspect équatorial. Un test
   naïf supposant que `(0,0) → (0,0)` pour toutes les projections a révélé la confusion. Documenté.
+- `StereographicProjection<T>` : documentation de la singularité au point antipodal (lat=0°, lon=±180°)
+  — le dénominateur nul est remplacé par `T.Epsilon` (valeur finie mais énorme) plutôt que de lever une
+  exception ; documenté explicitement plutôt que changé, pour ne pas risquer un changement de
+  comportement non validé.
+- `Planet<T>.Area` : documentation des limites connues de la formule (polygones englobant un pôle,
+  auto-intersectants, ou couvrant une très large fraction de la surface).
+- Renommage du fichier `MollweidProjection.cs` → `MollweideProjection.cs` (la classe s'appelait déjà
+  `MollweideProjection`, seul le nom de fichier avait une coquille).
 
 ## Couverture de tests ajoutée
 Avant cet audit, ces classes n'avaient **aucun** test : `BoundingBox<T>`, `GeoPointList<T>`,

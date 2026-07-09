@@ -70,7 +70,8 @@ namespace Utils.Geography.Model
         /// <summary>
         /// Floating-point comparer used for tolerance-based domain checks that are not part of the
         /// <see cref="Equals(GeoPoint{T})"/>/<see cref="GetHashCode"/> contract (e.g. detecting degenerate
-        /// meridians in <see cref="GeoVector{T}.ComputeBearing"/>).
+        /// meridians in <see cref="GeoVector{T}.ComputeBearing"/>, or the default tolerance used by
+        /// <see cref="IsApproximately(GeoPoint{T})"/>).
         /// </summary>
         protected static readonly FloatingPointComparer<T> comparer = new(EqualityPrecision);
 
@@ -402,6 +403,52 @@ namespace Utils.Geography.Model
         {
             return ObjectUtils.ComputeHash(T.Round(Latitude, EqualityPrecision), degree.NormalizeRounded(Longitude, EqualityPrecision));
         }
+
+        /// <summary>
+        /// Determines whether this point is within <paramref name="tolerance"/> of <paramref name="other"/>,
+        /// using a raw angular-distance tolerance window rather than the rounding-based comparison used by
+        /// <see cref="Equals(GeoPoint{T})"/>.
+        /// </summary>
+        /// <param name="other">The point to compare with this instance.</param>
+        /// <param name="tolerance">Maximum allowed angular distance, in degrees, for latitude and longitude.</param>
+        /// <returns>
+        /// <see langword="true"/> if both latitude and longitude are within <paramref name="tolerance"/> of
+        /// each other (or both points are at the same pole); otherwise <see langword="false"/>.
+        /// </returns>
+        /// <remarks>
+        /// <para>
+        /// <see cref="Equals(GeoPoint{T})"/> intentionally does <em>not</em> offer this behavior anymore
+        /// (see its remarks): a tolerance window cannot be paired with a correct <see cref="GetHashCode"/>
+        /// because it is non-transitive, so points must not be considered equal, hashed, or stored in a
+        /// <see cref="Dictionary{TKey, TValue}"/>/<see cref="HashSet{T}"/> based on this method. Use it only
+        /// for one-off comparisons (e.g. "is this GPS fix close enough to the target waypoint?"), never as
+        /// a substitute for <see cref="Equals(GeoPoint{T})"/> in code that also relies on hashing.
+        /// </para>
+        /// <para>
+        /// Longitude comparison correctly handles the antimeridian wraparound via
+        /// <see cref="IAngleCalculator{T}.AreEqual"/> (e.g. <c>179.9999999°</c> and <c>-179.9999999°</c> are
+        /// about <c>2e-7°</c> apart, not ~360° apart).
+        /// </para>
+        /// </remarks>
+        public bool IsApproximately(GeoPoint<T> other, T tolerance)
+        {
+            other.Arg().MustNotBeNull();
+
+            if (degree.AreEqual(Latitude, MaxLatitude, tolerance) && degree.AreEqual(other.Latitude, MaxLatitude, tolerance)) return true;
+            if (degree.AreEqual(Latitude, MinLatitude, tolerance) && degree.AreEqual(other.Latitude, MinLatitude, tolerance)) return true;
+
+            return degree.AreEqual(Latitude, other.Latitude, tolerance)
+                && degree.AreEqual(Longitude, other.Longitude, tolerance);
+        }
+
+        /// <summary>
+        /// Determines whether this point is within the default tolerance (see <see cref="comparer"/>) of
+        /// <paramref name="other"/>. See <see cref="IsApproximately(GeoPoint{T}, T)"/> for the full
+        /// rationale and usage guidance.
+        /// </summary>
+        /// <param name="other">The point to compare with this instance.</param>
+        /// <returns><see langword="true"/> if both points are within the default tolerance; otherwise <see langword="false"/>.</returns>
+        public bool IsApproximately(GeoPoint<T> other) => IsApproximately(other, comparer.Interval);
 
         /// <summary>
         /// Returns this geographic point as a string in the format "Latitude, Longitude"

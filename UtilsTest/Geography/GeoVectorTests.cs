@@ -155,6 +155,26 @@ namespace UtilsTest.Geography
         }
 
         [TestMethod]
+        public void IsApproximately_TrueWithinTolerance_FalseBeyondIt()
+        {
+            var vector1 = new GeoVector<double>(10, 20, 30);
+            var vector2 = new GeoVector<double>(10.00001, 20.00001, 30.00001);
+            var vector3 = new GeoVector<double>(10.1, 20.1, 30.1);
+
+            Assert.IsTrue(vector1.IsApproximately(vector2, 1e-4));
+            Assert.IsFalse(vector1.IsApproximately(vector3, 1e-4));
+        }
+
+        [TestMethod]
+        public void IsApproximately_HandlesBearingWraparound()
+        {
+            var vector1 = new GeoVector<double>(0, 0, 359.9999999);
+            var vector2 = new GeoVector<double>(0, 0, 0.0000001);
+
+            Assert.IsTrue(vector1.IsApproximately(vector2, 1e-5));
+        }
+
+        [TestMethod]
         public void RecenterOnSelfReturnsOrigin()
         {
             var vector = new GeoVector<double>(45, 30, 90);

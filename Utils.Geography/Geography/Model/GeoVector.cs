@@ -521,6 +521,33 @@ public sealed class GeoVector<T> : GeoPoint<T>, IEquatable<GeoVector<T>>, IUnary
             degree.NormalizeRounded(Longitude, EqualityPrecision),
             degree.NormalizeRounded(Bearing, EqualityPrecision));
 
+    /// <summary>
+    /// Determines whether this vector is within <paramref name="tolerance"/> of <paramref name="other"/>,
+    /// using a raw angular-distance tolerance window rather than the rounding-based comparison used by
+    /// <see cref="Equals(GeoVector{T})"/>. See <see cref="GeoPoint{T}.IsApproximately(GeoPoint{T}, T)"/>
+    /// for the full rationale and usage guidance (do not use this for hashing/dictionary keys).
+    /// </summary>
+    /// <param name="other">The vector to compare with this instance.</param>
+    /// <param name="tolerance">Maximum allowed angular distance, in degrees, for latitude, longitude, and bearing.</param>
+    /// <returns>
+    /// <see langword="true"/> if latitude, longitude, and bearing are all within <paramref name="tolerance"/>
+    /// of each other; otherwise <see langword="false"/>.
+    /// </returns>
+    public bool IsApproximately(GeoVector<T> other, T tolerance)
+    {
+        other.Arg().MustNotBeNull();
+        return degree.AreEqual(Bearing, other.Bearing, tolerance) && base.IsApproximately(other, tolerance);
+    }
+
+    /// <summary>
+    /// Determines whether this vector is within the default tolerance (see <see cref="GeoPoint{T}.comparer"/>)
+    /// of <paramref name="other"/>. See <see cref="IsApproximately(GeoVector{T}, T)"/> for the full rationale
+    /// and usage guidance.
+    /// </summary>
+    /// <param name="other">The vector to compare with this instance.</param>
+    /// <returns><see langword="true"/> if both vectors are within the default tolerance; otherwise <see langword="false"/>.</returns>
+    public bool IsApproximately(GeoVector<T> other) => IsApproximately(other, comparer.Interval);
+
     #endregion
 
     #region Operators

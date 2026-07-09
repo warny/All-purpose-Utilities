@@ -5,8 +5,21 @@ using Utils.Mathematics;
 namespace Utils.Geography.Projections;
 
 /// <summary>
-/// Implements the stereographic map projection for spherical coordinates.
+/// Implements the stereographic map projection for spherical coordinates, centered at
+/// (lat=0°, lon=0°).
 /// </summary>
+/// <remarks>
+/// This projection has a single true singularity: the antipodal point (lat=0°, lon=±180°), which is
+/// the "point at infinity" for a stereographic projection centered at (0°, 0°) — there is no finite
+/// (x, y) that correctly represents it. <see cref="GeoPointToMapPoint"/> does not throw at that point;
+/// instead it substitutes <c>T.Epsilon</c> (the smallest positive value representable by <typeparamref name="T"/>)
+/// for the zero denominator, which produces an extremely large but finite <c>k</c> factor and, in turn,
+/// extremely large (not NaN, but potentially positive infinity after overflow) <c>x</c>/<c>y</c> values
+/// rather than a clear error. Callers that need points near the antipodal meridian should check for this
+/// case explicitly (e.g. <c>degree.AreEqual(geoPoint.Latitude, 0, tolerance) &amp;&amp;
+/// degree.AreEqual(System.Math.Abs(geoPoint.Longitude), 180, tolerance)</c>) rather than relying on the
+/// output being finite and meaningful.
+/// </remarks>
 /// <typeparam name="T">Floating-point type used for calculations.</typeparam>
 public class StereographicProjection<T> : IProjectionTransformation<T>
         where T : struct, IFloatingPointIeee754<T>
@@ -30,7 +43,9 @@ public class StereographicProjection<T> : IProjectionTransformation<T>
         T cosLat = degree.Cos(lat);
         T cosLon = degree.Cos(lon);
         T denom = T.One + (cosLat * cosLon);
-        if (T.IsZero(denom)) denom = T.Epsilon; // avoid /0
+        // denom is exactly zero only at the antipodal point (lat=0, lon=+-180): see the class remarks
+        // for why this substitutes a near-zero denominator instead of throwing.
+        if (T.IsZero(denom)) denom = T.Epsilon;
         T k = T.One / denom;
 
         T sinLat = degree.Sin(lat);

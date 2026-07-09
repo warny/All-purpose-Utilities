@@ -92,6 +92,26 @@ public class Planet<T> where T : struct, IFloatingPointIeee754<T>
     /// <returns>The area of the polygon in square meters.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="points"/> is <c>null</c>.</exception>
     /// <exception cref="ArgumentException">Thrown when fewer than three points are supplied.</exception>
+    /// <remarks>
+    /// This uses the standard "sum of longitude differences weighted by latitude" spherical excess
+    /// formula, connecting consecutive vertices with great-circle arcs. It is well-suited to typical,
+    /// reasonably-sized, simple (non-self-intersecting) polygons, but has known limitations:
+    /// <list type="bullet">
+    /// <item><description>
+    /// A polygon that encloses a pole (crosses from one side of it to the other without the pole itself
+    /// being a vertex) is not detected as a special case; the result may be the area of the polygon or of
+    /// its complement on the sphere, depending on winding, rather than throwing or otherwise flagging the
+    /// ambiguity.
+    /// </description></item>
+    /// <item><description>
+    /// Self-intersecting polygons do not produce a meaningful area (as with the planar shoelace formula).
+    /// </description></item>
+    /// <item><description>
+    /// For polygons that span a very large fraction of the planet's surface, the flat "longitude
+    /// difference" term becomes a coarser approximation of the true spherical geometry.
+    /// </description></item>
+    /// </list>
+    /// </remarks>
     public T Area(IReadOnlyList<GeoPoint<T>> points)
     {
         ArgumentNullException.ThrowIfNull(points);

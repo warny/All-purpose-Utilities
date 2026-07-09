@@ -117,5 +117,43 @@ namespace UtilsTest.Geography
             Assert.AreEqual(point1, point2);
             Assert.AreEqual(point1.GetHashCode(), point2.GetHashCode());
         }
+
+        [TestMethod]
+        public void IsApproximately_TrueWithinTolerance_FalseBeyondIt()
+        {
+            var point1 = new GeoPoint<double>(10, 20);
+            var point2 = new GeoPoint<double>(10.00001, 20.00001);
+            var point3 = new GeoPoint<double>(10.1, 20.1);
+
+            Assert.IsTrue(point1.IsApproximately(point2, 1e-4));
+            Assert.IsFalse(point1.IsApproximately(point3, 1e-4));
+        }
+
+        [TestMethod]
+        public void IsApproximately_DefaultOverload_UsesDefaultTolerance()
+        {
+            var point1 = new GeoPoint<double>(10, 20);
+            var point2 = new GeoPoint<double>(10.0000001, 20.0000001);
+
+            Assert.IsTrue(point1.IsApproximately(point2));
+        }
+
+        [TestMethod]
+        public void IsApproximately_HandlesAntimeridianWraparound()
+        {
+            var point1 = new GeoPoint<double>(10, 179.9999999);
+            var point2 = new GeoPoint<double>(10, -179.9999999);
+
+            Assert.IsTrue(point1.IsApproximately(point2, 1e-5));
+        }
+
+        [TestMethod]
+        public void IsApproximately_ConsidersTwoPointsAtTheSamePoleEqualRegardlessOfLongitude()
+        {
+            var point1 = new GeoPoint<double>(90, 10);
+            var point2 = new GeoPoint<double>(90, -170);
+
+            Assert.IsTrue(point1.IsApproximately(point2, 1e-9));
+        }
     }
 }
