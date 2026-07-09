@@ -95,7 +95,6 @@ internal static class EmbeddedParserAttributeRewriter
         var output = new StringBuilder(code.Length);
         var labels = CollectLabels(rule.Content);
         var returns = ParseTypedDeclarations(rule.Returns);
-        var currentReturns = new HashSet<string>(returns.Keys, StringComparer.Ordinal);
         var parameters = ParseTypedDeclarations(rule.Parameters);
         var locals = ParseTypedDeclarations(rule.Locals.Count == 0 ? null : string.Join(", ", rule.Locals));
         int index = 0;
@@ -189,16 +188,8 @@ internal static class EmbeddedParserAttributeRewriter
 
             if (string.Equals(root, rule.Name, StringComparison.Ordinal))
             {
-                if (!currentReturns.Contains(returnName))
-                {
-                    errors.Add($"Return '{returnName}' is not declared by current parser rule '{rule.Name}'.");
-                    output.Append(code, attributeStart, index - attributeStart);
-                    continue;
-                }
-
-                output.Append("GetRequiredRuleReturn(context, \"")
-                    .Append(Escape(returnName))
-                    .Append("\")");
+                errors.Add($"Dotted current-rule return attribute '{attributeText}' is not supported by the current-rule return transformer. Use bare '${returnName}' instead.");
+                output.Append(code, attributeStart, index - attributeStart);
                 continue;
             }
 

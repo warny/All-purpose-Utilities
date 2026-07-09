@@ -440,7 +440,7 @@ The optional C# ANTLR-style transformer supports a narrow current-rule return wr
 
 Supported forms use the bare return attribute declared by the current rule in `@after` and inline parser actions, for example `$value = 42;`, compound assignments such as `$value += 1;`, and standalone increment/decrement statements. The transformer rewrites those forms to explicit typed helper calls such as `SetRequiredRuleReturn<T>(context, "value", ...)` and `GetRequiredRuleReturn<T>(context, "value")`. These helpers write the parser-managed current-rule invocation frame. The default no-op transformer still preserves `$returnName = ...` unchanged.
 
-Parameters, child return access such as `$child.value`, labeled rule-call returns such as `$c.value`, list-labeled projections, lexer attributes, `ref`/`out`, semantic predicates, `@init`, and dotted current-rule return writes such as `$rule.value = ...` remain unsupported/read-only in this PR. Use bare `$returnName = ...` only for declared current-rule return attributes when opting into the C# transformer.
+Parameters, child return access such as `$child.value`, labeled rule-call returns such as `$c.value`, list-labeled projections, lexer attributes, `ref`/`out`, semantic predicates, `@init`, and dotted current-rule return attributes such as `$rule.value` and `$rule.value = ...` remain unsupported in this PR. Use bare `$returnName = ...` only for declared current-rule return attributes when opting into the C# transformer.
 
 
 ### Generated-C# explicit simple positional rule-call binding

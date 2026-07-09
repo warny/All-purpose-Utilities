@@ -18,13 +18,13 @@ public class EmbeddedParserAttributeRewriterTests
         A : 'a' ;
         """;
 
-    /// <summary>Verifies current-rule returns are rewritten while child and labeled returns remain unsupported.</summary>
+    /// <summary>Verifies current-rule returns are rewritten only from bare attributes while child, labeled, and dotted forms remain unsupported.</summary>
     [TestMethod]
-    public void Rewrite_SupportedCurrentRuleRead_RewritesAndRejectsChildReferences()
+    public void Rewrite_SupportedCurrentRuleRead_RewritesBareReturnAndRejectsChildReferences()
     {
-        EmbeddedParserAttributeRewriteResult result = Rewrite("Seen = (int)$x.value + $xs.value.Count + $xs.value.Select(v => v).Count() + (int)$start.own;");
+        EmbeddedParserAttributeRewriteResult result = Rewrite("Seen = (int)$x.value + $xs.value.Count + $xs.value.Select(v => v).Count() + (int)$own;");
 
-        Assert.AreEqual("Seen = (int)$x.value + $xs.value.Count + $xs.value.Select(v => v).Count() + (int)GetRequiredRuleReturn(context, \"own\");", result.Code);
+        Assert.AreEqual("Seen = (int)$x.value + $xs.value.Count + $xs.value.Select(v => v).Count() + (int)GetRequiredRuleReturn<int>(context, \"own\");", result.Code);
         Assert.AreEqual(3, result.Errors.Count);
         StringAssert.Contains(result.Errors[0], "Labeled rule-call return attribute '$x.value' is not supported");
         StringAssert.Contains(result.Errors[1], "Labeled rule-call return attribute '$xs.value' is not supported");
@@ -76,7 +76,7 @@ public class EmbeddedParserAttributeRewriterTests
     [DataRow("$t.value", "Labeled rule-call return attribute '$t.value' is not supported")]
     [DataRow("$x.missing", "Labeled rule-call return attribute '$x.missing' is not supported")]
     [DataRow("$xs.missing", "Labeled rule-call return attribute '$xs.missing' is not supported")]
-    [DataRow("$start.missing", "not declared by current parser rule 'start'")]
+    [DataRow("$start.missing", "Dotted current-rule return attribute '$start.missing' is not supported")]
     [DataRow("$x", "label access")]
     [DataRow("$xs", "label access")]
     [DataRow("$x.value.other", "Chained parser attribute '$x.value'")]
@@ -275,9 +275,9 @@ public class EmbeddedParserAttributeRewriterTests
         StringAssert.Contains(result.Errors[0], "Labeled rule-call return attribute '$xs.value' is not supported");
     }
 
-    /// <summary>Verifies current-rule name resolution takes precedence over a same-named assignment label.</summary>
+    /// <summary>Verifies dotted current-rule returns remain unsupported even when a label shares the rule name.</summary>
     [TestMethod]
-    public void Rewrite_CurrentRuleName_TakesPrecedenceOverSameNamedLabel()
+    public void Rewrite_CurrentRuleDottedReturn_RemainsUnsupported()
     {
         const string grammarText = """
             grammar P;
@@ -290,8 +290,10 @@ public class EmbeddedParserAttributeRewriterTests
 
         EmbeddedParserAttributeRewriteResult result = EmbeddedParserAttributeRewriter.Rewrite("Seen = $start.own;", grammar, rule, EmbeddedParserAttributeLocationKind.After);
 
-        Assert.AreEqual("Seen = GetRequiredRuleReturn(context, \"own\");", result.Code);
-        Assert.AreEqual(0, result.Errors.Count);
+        Assert.AreEqual("Seen = $start.own;", result.Code);
+        Assert.AreEqual(1, result.Errors.Count);
+        StringAssert.Contains(result.Errors[0], "Dotted current-rule return attribute '$start.own' is not supported");
+        StringAssert.Contains(result.Errors[0], "Use bare '$own' instead");
     }
 
     /// <summary>Verifies labels declared only in child rules are not visible in the parent rule.</summary>
