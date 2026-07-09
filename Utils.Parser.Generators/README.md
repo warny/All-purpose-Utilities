@@ -303,7 +303,7 @@ start @after {
     : x=child ;
 ```
 
-Labels remain explicit managed metadata: no bare `$x`, `$xs`, implicit label variables, typed label fields/properties, automatic parse-node storage, automatic binding, automatic argument evaluation, automatic parameter seeding, or generated parser method signatures are added. The narrow read-only `$x.value` return projection described below is the only attribute exception. Labels on non-rule-reference elements (literals, groups, etc.) emit diagnostic `UP1022 LabelOnNonRuleReferenceIgnored`. Conservative `Parse(...)` remains conservative; hooks do not execute and label metadata is not exposed. No lexer label support is added.
+Labels remain explicit managed metadata: no bare `$x`, `$xs`, `$x.value`, `$xs.value`, implicit label variables, typed label fields/properties, automatic parse-node storage, automatic binding, automatic argument evaluation, automatic parameter seeding, or generated parser method signatures are added. Labels on non-rule-reference elements (literals, groups, etc.) emit diagnostic `UP1022 LabelOnNonRuleReferenceIgnored`. Conservative `Parse(...)` remains conservative; hooks do not execute and label metadata is not exposed. No lexer label support is added.
 
 ## Shared runtime metadata alignment
 
@@ -436,11 +436,11 @@ The default/no-op embedded-code transformer preserves `$local = ...` and every o
 
 ### Optional C# transformer current-rule return writes
 
-The optional C# ANTLR-style transformer supports a narrow current-rule return write convenience syntax in rule `@after` code only. The default no-op transformer preserves bare `$returnName = ...` text unchanged. This is a logic-stage source rewrite only: broader execution semantics, parent visibility, rollback propagation, and inline action return-write semantics remain separate work.
+The optional C# ANTLR-style transformer supports a narrow current-rule return write convenience syntax in rule `@after` code and inline parser actions. The default no-op transformer preserves bare `$returnName = ...` text unchanged. This is a logic-stage source rewrite only: broader ANTLR return semantics and parent convenience access remain separate work.
 
-Supported forms use the bare return attribute declared by the current rule in `@after` and inline parser actions, for example `$value = 42;`, compound assignments such as `$value += 1;`, and standalone increment/decrement statements. The transformer rewrites those forms to explicit typed helper calls such as `SetRequiredRuleReturn<T>(context, "value", ...)` and `GetRequiredRuleReturn<T>(context, "value")`. These helpers write the parser-managed current-rule invocation frame, so successful child rule completions expose final return values through assignment labels and list-label projections. The default no-op transformer still preserves `$returnName = ...` unchanged.
+Supported forms use the bare return attribute declared by the current rule in `@after` and inline parser actions, for example `$value = 42;`, compound assignments such as `$value += 1;`, and standalone increment/decrement statements. The transformer rewrites those forms to explicit typed helper calls such as `SetRequiredRuleReturn<T>(context, "value", ...)` and `GetRequiredRuleReturn<T>(context, "value")`. These helpers write the parser-managed current-rule invocation frame. The default no-op transformer still preserves `$returnName = ...` unchanged.
 
-Parameters, labeled rule-call returns, list-labeled projections, lexer attributes, `ref`/`out`, semantic predicates, `@init`, and dotted current-rule return writes such as `$rule.value = ...` remain unsupported/read-only in this PR. Use bare `$returnName = ...` only for declared current-rule return attributes when opting into the C# transformer.
+Parameters, child return access such as `$child.value`, labeled rule-call returns such as `$c.value`, list-labeled projections, lexer attributes, `ref`/`out`, semantic predicates, `@init`, and dotted current-rule return writes such as `$rule.value = ...` remain unsupported/read-only in this PR. Use bare `$returnName = ...` only for declared current-rule return attributes when opting into the C# transformer.
 
 
 ### Generated-C# explicit simple positional rule-call binding
