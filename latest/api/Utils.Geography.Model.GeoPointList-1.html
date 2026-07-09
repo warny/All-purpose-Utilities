@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Geography_Model_GeoPointList_1" data-uid="Utils.Geography.Model.GeoPointList`1" class="text-break">
-Class GeoPointList&lt;T&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPointList.cs/#L13"><i class="bi bi-code-slash"></i></a>
+Class GeoPointList&lt;T&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPointList.cs/#L18"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -102,7 +102,7 @@ Class GeoPointList&lt;T&gt;  <a class="header-action link-secondary" title="View
   <div class="markdown conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public class GeoPointList&lt;T&gt; : List&lt;GeoPoint&lt;T&gt;&gt;, IList&lt;GeoPoint&lt;T&gt;&gt;, ICollection&lt;GeoPoint&lt;T&gt;&gt;, IReadOnlyList&lt;GeoPoint&lt;T&gt;&gt;, IReadOnlyCollection&lt;GeoPoint&lt;T&gt;&gt;, IEnumerable&lt;GeoPoint&lt;T&gt;&gt;, IList, ICollection, IEnumerable where T : struct, IFloatingPointIeee754&lt;T&gt;</code></pre>
+    <pre><code class="lang-csharp hljs">public class GeoPointList&lt;T&gt; : IList&lt;GeoPoint&lt;T&gt;&gt;, ICollection&lt;GeoPoint&lt;T&gt;&gt;, IReadOnlyList&lt;GeoPoint&lt;T&gt;&gt;, IReadOnlyCollection&lt;GeoPoint&lt;T&gt;&gt;, IEnumerable&lt;GeoPoint&lt;T&gt;&gt;, IEnumerable where T : struct, IFloatingPointIeee754&lt;T&gt;</code></pre>
   </div>
 
 
@@ -118,7 +118,6 @@ Class GeoPointList&lt;T&gt;  <a class="header-action link-secondary" title="View
     <dt>Inheritance</dt>
     <dd>
       <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
-      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1">List</a>&lt;<a class="xref" href="Utils.Geography.Model.GeoPoint-1.html">GeoPoint</a>&lt;T&gt;&gt;</div>
       <div><span class="xref">GeoPointList&lt;T&gt;</span></div>
     </dd>
   </dl>
@@ -131,8 +130,6 @@ Class GeoPointList&lt;T&gt;  <a class="header-action link-secondary" title="View
       <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1">IReadOnlyList</a>&lt;<a class="xref" href="Utils.Geography.Model.GeoPoint-1.html">GeoPoint</a>&lt;T&gt;&gt;</div>
       <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlycollection-1">IReadOnlyCollection</a>&lt;<a class="xref" href="Utils.Geography.Model.GeoPoint-1.html">GeoPoint</a>&lt;T&gt;&gt;</div>
       <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<a class="xref" href="Utils.Geography.Model.GeoPoint-1.html">GeoPoint</a>&lt;T&gt;&gt;</div>
-      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.ilist">IList</a></div>
-      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.icollection">ICollection</a></div>
       <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.ienumerable">IEnumerable</a></div>
     </dd>
   </dl>
@@ -141,159 +138,6 @@ Class GeoPointList&lt;T&gt;  <a class="header-action link-secondary" title="View
   <dl class="typelist inheritedMembers">
     <dt>Inherited Members</dt>
     <dd>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.add">List&lt;GeoPoint&lt;T&gt;&gt;.Add(GeoPoint&lt;T&gt;)</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.addrange">List&lt;GeoPoint&lt;T&gt;&gt;.AddRange(IEnumerable&lt;GeoPoint&lt;T&gt;&gt;)</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.asreadonly">List&lt;GeoPoint&lt;T&gt;&gt;.AsReadOnly()</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.binarysearch#system-collections-generic-list-1-binarysearch(system-int32-system-int32-0-system-collections-generic-icomparer((-0)))">List&lt;GeoPoint&lt;T&gt;&gt;.BinarySearch(int, int, GeoPoint&lt;T&gt;, IComparer&lt;GeoPoint&lt;T&gt;&gt;)</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.binarysearch#system-collections-generic-list-1-binarysearch(-0)">List&lt;GeoPoint&lt;T&gt;&gt;.BinarySearch(GeoPoint&lt;T&gt;)</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.binarysearch#system-collections-generic-list-1-binarysearch(-0-system-collections-generic-icomparer((-0)))">List&lt;GeoPoint&lt;T&gt;&gt;.BinarySearch(GeoPoint&lt;T&gt;, IComparer&lt;GeoPoint&lt;T&gt;&gt;)</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.clear">List&lt;GeoPoint&lt;T&gt;&gt;.Clear()</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.contains">List&lt;GeoPoint&lt;T&gt;&gt;.Contains(GeoPoint&lt;T&gt;)</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.convertall">List&lt;GeoPoint&lt;T&gt;&gt;.ConvertAll&lt;TOutput&gt;(Converter&lt;GeoPoint&lt;T&gt;, TOutput&gt;)</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.copyto#system-collections-generic-list-1-copyto(system-int32-0()-system-int32-system-int32)">List&lt;GeoPoint&lt;T&gt;&gt;.CopyTo(int, GeoPoint&lt;T&gt;[], int, int)</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.copyto#system-collections-generic-list-1-copyto(-0())">List&lt;GeoPoint&lt;T&gt;&gt;.CopyTo(GeoPoint&lt;T&gt;[])</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.copyto#system-collections-generic-list-1-copyto(-0()-system-int32)">List&lt;GeoPoint&lt;T&gt;&gt;.CopyTo(GeoPoint&lt;T&gt;[], int)</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.ensurecapacity">List&lt;GeoPoint&lt;T&gt;&gt;.EnsureCapacity(int)</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.exists">List&lt;GeoPoint&lt;T&gt;&gt;.Exists(Predicate&lt;GeoPoint&lt;T&gt;&gt;)</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.find">List&lt;GeoPoint&lt;T&gt;&gt;.Find(Predicate&lt;GeoPoint&lt;T&gt;&gt;)</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.findall">List&lt;GeoPoint&lt;T&gt;&gt;.FindAll(Predicate&lt;GeoPoint&lt;T&gt;&gt;)</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.findindex#system-collections-generic-list-1-findindex(system-int32-system-int32-system-predicate((-0)))">List&lt;GeoPoint&lt;T&gt;&gt;.FindIndex(int, int, Predicate&lt;GeoPoint&lt;T&gt;&gt;)</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.findindex#system-collections-generic-list-1-findindex(system-int32-system-predicate((-0)))">List&lt;GeoPoint&lt;T&gt;&gt;.FindIndex(int, Predicate&lt;GeoPoint&lt;T&gt;&gt;)</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.findindex#system-collections-generic-list-1-findindex(system-predicate((-0)))">List&lt;GeoPoint&lt;T&gt;&gt;.FindIndex(Predicate&lt;GeoPoint&lt;T&gt;&gt;)</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.findlast">List&lt;GeoPoint&lt;T&gt;&gt;.FindLast(Predicate&lt;GeoPoint&lt;T&gt;&gt;)</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.findlastindex#system-collections-generic-list-1-findlastindex(system-int32-system-int32-system-predicate((-0)))">List&lt;GeoPoint&lt;T&gt;&gt;.FindLastIndex(int, int, Predicate&lt;GeoPoint&lt;T&gt;&gt;)</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.findlastindex#system-collections-generic-list-1-findlastindex(system-int32-system-predicate((-0)))">List&lt;GeoPoint&lt;T&gt;&gt;.FindLastIndex(int, Predicate&lt;GeoPoint&lt;T&gt;&gt;)</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.findlastindex#system-collections-generic-list-1-findlastindex(system-predicate((-0)))">List&lt;GeoPoint&lt;T&gt;&gt;.FindLastIndex(Predicate&lt;GeoPoint&lt;T&gt;&gt;)</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.foreach">List&lt;GeoPoint&lt;T&gt;&gt;.ForEach(Action&lt;GeoPoint&lt;T&gt;&gt;)</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.getenumerator">List&lt;GeoPoint&lt;T&gt;&gt;.GetEnumerator()</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.getrange">List&lt;GeoPoint&lt;T&gt;&gt;.GetRange(int, int)</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.indexof#system-collections-generic-list-1-indexof(-0)">List&lt;GeoPoint&lt;T&gt;&gt;.IndexOf(GeoPoint&lt;T&gt;)</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.indexof#system-collections-generic-list-1-indexof(-0-system-int32)">List&lt;GeoPoint&lt;T&gt;&gt;.IndexOf(GeoPoint&lt;T&gt;, int)</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.indexof#system-collections-generic-list-1-indexof(-0-system-int32-system-int32)">List&lt;GeoPoint&lt;T&gt;&gt;.IndexOf(GeoPoint&lt;T&gt;, int, int)</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.insert">List&lt;GeoPoint&lt;T&gt;&gt;.Insert(int, GeoPoint&lt;T&gt;)</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.insertrange">List&lt;GeoPoint&lt;T&gt;&gt;.InsertRange(int, IEnumerable&lt;GeoPoint&lt;T&gt;&gt;)</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.lastindexof#system-collections-generic-list-1-lastindexof(-0)">List&lt;GeoPoint&lt;T&gt;&gt;.LastIndexOf(GeoPoint&lt;T&gt;)</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.lastindexof#system-collections-generic-list-1-lastindexof(-0-system-int32)">List&lt;GeoPoint&lt;T&gt;&gt;.LastIndexOf(GeoPoint&lt;T&gt;, int)</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.lastindexof#system-collections-generic-list-1-lastindexof(-0-system-int32-system-int32)">List&lt;GeoPoint&lt;T&gt;&gt;.LastIndexOf(GeoPoint&lt;T&gt;, int, int)</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.remove">List&lt;GeoPoint&lt;T&gt;&gt;.Remove(GeoPoint&lt;T&gt;)</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.removeall">List&lt;GeoPoint&lt;T&gt;&gt;.RemoveAll(Predicate&lt;GeoPoint&lt;T&gt;&gt;)</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.removeat">List&lt;GeoPoint&lt;T&gt;&gt;.RemoveAt(int)</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.removerange">List&lt;GeoPoint&lt;T&gt;&gt;.RemoveRange(int, int)</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.reverse#system-collections-generic-list-1-reverse">List&lt;GeoPoint&lt;T&gt;&gt;.Reverse()</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.reverse#system-collections-generic-list-1-reverse(system-int32-system-int32)">List&lt;GeoPoint&lt;T&gt;&gt;.Reverse(int, int)</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.slice">List&lt;GeoPoint&lt;T&gt;&gt;.Slice(int, int)</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.sort#system-collections-generic-list-1-sort">List&lt;GeoPoint&lt;T&gt;&gt;.Sort()</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.sort#system-collections-generic-list-1-sort(system-collections-generic-icomparer((-0)))">List&lt;GeoPoint&lt;T&gt;&gt;.Sort(IComparer&lt;GeoPoint&lt;T&gt;&gt;)</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.sort#system-collections-generic-list-1-sort(system-comparison((-0)))">List&lt;GeoPoint&lt;T&gt;&gt;.Sort(Comparison&lt;GeoPoint&lt;T&gt;&gt;)</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.sort#system-collections-generic-list-1-sort(system-int32-system-int32-system-collections-generic-icomparer((-0)))">List&lt;GeoPoint&lt;T&gt;&gt;.Sort(int, int, IComparer&lt;GeoPoint&lt;T&gt;&gt;)</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.toarray">List&lt;GeoPoint&lt;T&gt;&gt;.ToArray()</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.trimexcess">List&lt;GeoPoint&lt;T&gt;&gt;.TrimExcess()</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.trueforall">List&lt;GeoPoint&lt;T&gt;&gt;.TrueForAll(Predicate&lt;GeoPoint&lt;T&gt;&gt;)</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.capacity">List&lt;GeoPoint&lt;T&gt;&gt;.Capacity</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.count">List&lt;GeoPoint&lt;T&gt;&gt;.Count</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">List&lt;GeoPoint&lt;T&gt;&gt;.this[int]</a>
-    </div>
     <div>
       <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)">object.Equals(object)</a>
     </div>
@@ -477,6 +321,12 @@ Class GeoPointList&lt;T&gt;  <a class="header-action link-secondary" title="View
 
 
 
+  <h2 id="Utils_Geography_Model_GeoPointList_1_remarks">Remarks</h2>
+  <div class="markdown level0 remarks"><p>Wraps a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1">List&lt;T&gt;</a> rather than inheriting from it, so that the collection storage
+(data) stays separate from the bounding-box computation (processing logic exposed through
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ilist-1">IList&lt;T&gt;</a>/<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1">IReadOnlyList&lt;T&gt;</a>). All list operations still work exactly as
+before, including collection-initializer syntax (<code>new GeoPointList&lt;double&gt; { p1, p2 }</code>).</p>
+</div>
 
 
   <h2 class="section" id="constructors">Constructors
@@ -487,7 +337,7 @@ Class GeoPointList&lt;T&gt;  <a class="header-action link-secondary" title="View
 
   <h3 id="Utils_Geography_Model_GeoPointList_1__ctor" data-uid="Utils.Geography.Model.GeoPointList`1.#ctor">
   GeoPointList()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPointList.cs/#L47"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPointList.cs/#L54"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new empty instance of <a class="xref" href="Utils.Geography.Model.GeoPointList-1.html">GeoPointList&lt;T&gt;</a>.</p>
@@ -514,7 +364,7 @@ Class GeoPointList&lt;T&gt;  <a class="header-action link-secondary" title="View
 
   <h3 id="Utils_Geography_Model_GeoPointList_1__ctor_System_Collections_Generic_IEnumerable_Utils_Geography_Model_GeoPoint__0___" data-uid="Utils.Geography.Model.GeoPointList`1.#ctor(System.Collections.Generic.IEnumerable{Utils.Geography.Model.GeoPoint{`0}})">
   GeoPointList(IEnumerable&lt;GeoPoint&lt;T&gt;&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPointList.cs/#L53"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPointList.cs/#L60"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of <a class="xref" href="Utils.Geography.Model.GeoPointList-1.html">GeoPointList&lt;T&gt;</a> that contains elements copied from the specified collection.</p>
@@ -547,7 +397,7 @@ Class GeoPointList&lt;T&gt;  <a class="header-action link-secondary" title="View
 
   <h3 id="Utils_Geography_Model_GeoPointList_1__ctor_System_Int32_" data-uid="Utils.Geography.Model.GeoPointList`1.#ctor(System.Int32)">
   GeoPointList(int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPointList.cs/#L59"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPointList.cs/#L66"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of <a class="xref" href="Utils.Geography.Model.GeoPointList-1.html">GeoPointList&lt;T&gt;</a> with the specified capacity.</p>
@@ -584,7 +434,7 @@ Class GeoPointList&lt;T&gt;  <a class="header-action link-secondary" title="View
 
   <h3 id="Utils_Geography_Model_GeoPointList_1_BoundingBox" data-uid="Utils.Geography.Model.GeoPointList`1.BoundingBox">
   BoundingBox
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPointList.cs/#L19"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPointList.cs/#L26"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the bounding box that encapsulates all GeoPoints in this list.</p>
@@ -612,11 +462,492 @@ Class GeoPointList&lt;T&gt;  <a class="header-action link-secondary" title="View
 
 
 
+  <a id="Utils_Geography_Model_GeoPointList_1_Count_" data-uid="Utils.Geography.Model.GeoPointList`1.Count*"></a>
+
+  <h3 id="Utils_Geography_Model_GeoPointList_1_Count" data-uid="Utils.Geography.Model.GeoPointList`1.Count">
+  Count
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPointList.cs/#L80"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the number of elements contained in the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.icollection-1">ICollection&lt;T&gt;</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int Count { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>The number of elements contained in the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.icollection-1">ICollection&lt;T&gt;</a>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_GeoPointList_1_IsReadOnly_" data-uid="Utils.Geography.Model.GeoPointList`1.IsReadOnly*"></a>
+
+  <h3 id="Utils_Geography_Model_GeoPointList_1_IsReadOnly" data-uid="Utils.Geography.Model.GeoPointList`1.IsReadOnly">
+  IsReadOnly
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPointList.cs/#L83"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets a value indicating whether the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.icollection-1">ICollection&lt;T&gt;</a> is read-only.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool IsReadOnly { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.icollection-1">ICollection&lt;T&gt;</a> is read-only; otherwise, <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_GeoPointList_1_Item_" data-uid="Utils.Geography.Model.GeoPointList`1.Item*"></a>
+
+  <h3 id="Utils_Geography_Model_GeoPointList_1_Item_System_Int32_" data-uid="Utils.Geography.Model.GeoPointList`1.Item(System.Int32)">
+  this[int]
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPointList.cs/#L73"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the element at the specified index.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public GeoPoint&lt;T&gt; this[int index] { get; set; }</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>index</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>The zero-based index of the element to get or set.</p>
+</dd>
+  </dl>
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Geography.Model.GeoPoint-1.html">GeoPoint</a>&lt;T&gt;</dt>
+    <dd><p>The element at the specified index.</p>
+</dd>
+  </dl>
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p><code class="paramref">index</code> is not a valid index in the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ilist-1">IList&lt;T&gt;</a>.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a></dt>
+    <dd><p>The property is set and the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ilist-1">IList&lt;T&gt;</a> is read-only.</p>
+</dd>
+  </dl>
+
+
+
+  <h2 class="section" id="methods">Methods
+</h2>
+
+
+  <a id="Utils_Geography_Model_GeoPointList_1_Add_" data-uid="Utils.Geography.Model.GeoPointList`1.Add*"></a>
+
+  <h3 id="Utils_Geography_Model_GeoPointList_1_Add_Utils_Geography_Model_GeoPoint__0__" data-uid="Utils.Geography.Model.GeoPointList`1.Add(Utils.Geography.Model.GeoPoint{`0})">
+  Add(GeoPoint&lt;T&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPointList.cs/#L86"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Adds an item to the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.icollection-1">ICollection&lt;T&gt;</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void Add(GeoPoint&lt;T&gt; item)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>item</code> <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html">GeoPoint</a>&lt;T&gt;</dt>
+    <dd><p>The object to add to the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.icollection-1">ICollection&lt;T&gt;</a>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a></dt>
+    <dd><p>The <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.icollection-1">ICollection&lt;T&gt;</a> is read-only.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Geography_Model_GeoPointList_1_Clear_" data-uid="Utils.Geography.Model.GeoPointList`1.Clear*"></a>
+
+  <h3 id="Utils_Geography_Model_GeoPointList_1_Clear" data-uid="Utils.Geography.Model.GeoPointList`1.Clear">
+  Clear()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPointList.cs/#L89"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Removes all items from the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.icollection-1">ICollection&lt;T&gt;</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void Clear()</code></pre>
+  </div>
+
+
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a></dt>
+    <dd><p>The <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.icollection-1">ICollection&lt;T&gt;</a> is read-only.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Geography_Model_GeoPointList_1_Contains_" data-uid="Utils.Geography.Model.GeoPointList`1.Contains*"></a>
+
+  <h3 id="Utils_Geography_Model_GeoPointList_1_Contains_Utils_Geography_Model_GeoPoint__0__" data-uid="Utils.Geography.Model.GeoPointList`1.Contains(Utils.Geography.Model.GeoPoint{`0})">
+  Contains(GeoPoint&lt;T&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPointList.cs/#L92"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.icollection-1">ICollection&lt;T&gt;</a> contains a specific value.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool Contains(GeoPoint&lt;T&gt; item)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>item</code> <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html">GeoPoint</a>&lt;T&gt;</dt>
+    <dd><p>The object to locate in the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.icollection-1">ICollection&lt;T&gt;</a>.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if <code class="paramref">item</code> is found in the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.icollection-1">ICollection&lt;T&gt;</a>; otherwise, <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_GeoPointList_1_CopyTo_" data-uid="Utils.Geography.Model.GeoPointList`1.CopyTo*"></a>
+
+  <h3 id="Utils_Geography_Model_GeoPointList_1_CopyTo_Utils_Geography_Model_GeoPoint__0____System_Int32_" data-uid="Utils.Geography.Model.GeoPointList`1.CopyTo(Utils.Geography.Model.GeoPoint{`0}[],System.Int32)">
+  CopyTo(GeoPoint&lt;T&gt;[], int)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPointList.cs/#L95"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Copies the elements of the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.icollection-1">ICollection&lt;T&gt;</a> to an <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.array">Array</a>, starting at a particular <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.array">Array</a> index.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void CopyTo(GeoPoint&lt;T&gt;[] array, int arrayIndex)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>array</code> <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html">GeoPoint</a>&lt;T&gt;[]</dt>
+    <dd><p>The one-dimensional <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.array">Array</a> that is the destination of the elements copied from <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.icollection-1">ICollection&lt;T&gt;</a>. The <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.array">Array</a> must have zero-based indexing.</p>
+</dd>
+    <dt><code>arrayIndex</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>The zero-based index in <code class="paramref">array</code> at which copying begins.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p><code class="paramref">array</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p><code class="paramref">arrayIndex</code> is less than 0.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>The number of elements in the source <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.icollection-1">ICollection&lt;T&gt;</a> is greater than the available space from <code class="paramref">arrayIndex</code> to the end of the destination <code class="paramref">array</code>.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Geography_Model_GeoPointList_1_GetEnumerator_" data-uid="Utils.Geography.Model.GeoPointList`1.GetEnumerator*"></a>
+
+  <h3 id="Utils_Geography_Model_GeoPointList_1_GetEnumerator" data-uid="Utils.Geography.Model.GeoPointList`1.GetEnumerator">
+  GetEnumerator()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPointList.cs/#L98"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns an enumerator that iterates through the collection.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public IEnumerator&lt;GeoPoint&lt;T&gt;&gt; GetEnumerator()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerator-1">IEnumerator</a>&lt;<a class="xref" href="Utils.Geography.Model.GeoPoint-1.html">GeoPoint</a>&lt;T&gt;&gt;</dt>
+    <dd><p>An enumerator that can be used to iterate through the collection.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_GeoPointList_1_IndexOf_" data-uid="Utils.Geography.Model.GeoPointList`1.IndexOf*"></a>
+
+  <h3 id="Utils_Geography_Model_GeoPointList_1_IndexOf_Utils_Geography_Model_GeoPoint__0__" data-uid="Utils.Geography.Model.GeoPointList`1.IndexOf(Utils.Geography.Model.GeoPoint{`0})">
+  IndexOf(GeoPoint&lt;T&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPointList.cs/#L101"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines the index of a specific item in the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ilist-1">IList&lt;T&gt;</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int IndexOf(GeoPoint&lt;T&gt; item)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>item</code> <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html">GeoPoint</a>&lt;T&gt;</dt>
+    <dd><p>The object to locate in the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ilist-1">IList&lt;T&gt;</a>.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>The index of <code class="paramref">item</code> if found in the list; otherwise, -1.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Geography_Model_GeoPointList_1_Insert_" data-uid="Utils.Geography.Model.GeoPointList`1.Insert*"></a>
+
+  <h3 id="Utils_Geography_Model_GeoPointList_1_Insert_System_Int32_Utils_Geography_Model_GeoPoint__0__" data-uid="Utils.Geography.Model.GeoPointList`1.Insert(System.Int32,Utils.Geography.Model.GeoPoint{`0})">
+  Insert(int, GeoPoint&lt;T&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPointList.cs/#L104"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Inserts an item to the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ilist-1">IList&lt;T&gt;</a> at the specified index.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void Insert(int index, GeoPoint&lt;T&gt; item)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>index</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>The zero-based index at which <code class="paramref">item</code> should be inserted.</p>
+</dd>
+    <dt><code>item</code> <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html">GeoPoint</a>&lt;T&gt;</dt>
+    <dd><p>The object to insert into the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ilist-1">IList&lt;T&gt;</a>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p><code class="paramref">index</code> is not a valid index in the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ilist-1">IList&lt;T&gt;</a>.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a></dt>
+    <dd><p>The <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ilist-1">IList&lt;T&gt;</a> is read-only.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Geography_Model_GeoPointList_1_Remove_" data-uid="Utils.Geography.Model.GeoPointList`1.Remove*"></a>
+
+  <h3 id="Utils_Geography_Model_GeoPointList_1_Remove_Utils_Geography_Model_GeoPoint__0__" data-uid="Utils.Geography.Model.GeoPointList`1.Remove(Utils.Geography.Model.GeoPoint{`0})">
+  Remove(GeoPoint&lt;T&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPointList.cs/#L107"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Removes the first occurrence of a specific object from the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.icollection-1">ICollection&lt;T&gt;</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool Remove(GeoPoint&lt;T&gt; item)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>item</code> <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html">GeoPoint</a>&lt;T&gt;</dt>
+    <dd><p>The object to remove from the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.icollection-1">ICollection&lt;T&gt;</a>.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if <code class="paramref">item</code> was successfully removed from the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.icollection-1">ICollection&lt;T&gt;</a>; otherwise, <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>. This method also returns <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> if <code class="paramref">item</code> is not found in the original <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.icollection-1">ICollection&lt;T&gt;</a>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a></dt>
+    <dd><p>The <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.icollection-1">ICollection&lt;T&gt;</a> is read-only.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Geography_Model_GeoPointList_1_RemoveAt_" data-uid="Utils.Geography.Model.GeoPointList`1.RemoveAt*"></a>
+
+  <h3 id="Utils_Geography_Model_GeoPointList_1_RemoveAt_System_Int32_" data-uid="Utils.Geography.Model.GeoPointList`1.RemoveAt(System.Int32)">
+  RemoveAt(int)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPointList.cs/#L110"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Removes the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ilist-1">IList&lt;T&gt;</a> item at the specified index.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void RemoveAt(int index)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>index</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>The zero-based index of the item to remove.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p><code class="paramref">index</code> is not a valid index in the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ilist-1">IList&lt;T&gt;</a>.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a></dt>
+    <dd><p>The <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ilist-1">IList&lt;T&gt;</a> is read-only.</p>
+</dd>
+  </dl>
+
+
+
 
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPointList.cs/#L13" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoPointList.cs/#L18" class="edit-link">Edit this page</a>
         </div>
 
 
