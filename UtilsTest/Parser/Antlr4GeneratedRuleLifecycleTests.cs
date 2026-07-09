@@ -1239,7 +1239,7 @@ public class Antlr4GeneratedRuleLifecycleTests
         StringAssert.Contains(source, "private static global::Utils.Parser.Runtime.ParserRuleCallResult? GetLastRuleCallResult(ParserRuleLifecycleContext context)");
         StringAssert.Contains(source, "private static bool TryGetLastRuleCallReturn(ParserRuleLifecycleContext context, string returnName, out object? value)");
         StringAssert.Contains(source, "private static bool TryGetLastRuleCallRawArguments(ParserRuleLifecycleContext context, string ruleName, out string? rawArguments)");
-        Assert.IsFalse(source.Contains("$child.value", StringComparison.Ordinal), "Implicit $rule.value must not be generated.");
+        Assert.IsFalse(source.Contains("GetRequiredRuleReturn(context, \"value\")", StringComparison.Ordinal), "Implicit $rule.value must not be generated.");
         Assert.IsFalse(source.Contains("int value;", StringComparison.Ordinal), "No typed return field must be generated.");
     }
 
@@ -3982,15 +3982,15 @@ public class Antlr4GeneratedRuleLifecycleTests
         const string grammar = """
             grammar P;
             start @after {
-                Found = $x.value is int;
-                Seen = $x.value is int i ? i : -1;
-                IsNull = $x.nullable == null;
+                Found = GetRequiredLabeledRuleCallReturn(context, "x", "value") is int;
+                Seen = GetRequiredLabeledRuleCallReturn(context, "x", "value") is int i ? i : -1;
+                IsNull = GetRequiredLabeledRuleCallReturn(context, "x", "nullable") == null;
             } : x=child ;
             child returns [int value, object nullable]
             @after {
                 SetRuleReturn(context, "value", 42);
                 SetRuleReturn(context, "nullable", null);
-                Current = $child.value is int i ? i : -1;
+                Current = GetRequiredRuleReturn(context, "value") is int i ? i : -1;
             } : A ;
             A : 'a' ;
             """;
@@ -4027,7 +4027,7 @@ public class Antlr4GeneratedRuleLifecycleTests
     {
         const string grammar = """
             grammar P;
-            start @after { Seen = $x.value; } : x=child B | y=child ;
+            start @after { Seen = GetRequiredLabeledRuleCallReturn(context, "x", "value"); } : x=child B | y=child ;
             child returns [int value] @after { SetRuleReturn(context, "value", 42); } : A ;
             A : 'a' ;
             B : 'b' ;
@@ -4050,7 +4050,7 @@ public class Antlr4GeneratedRuleLifecycleTests
     {
         const string grammar = """
             grammar P;
-            start @after { Seen = $y.value is int i ? i : -1; } : x=child B | y=child ;
+            start @after { Seen = GetRequiredLabeledRuleCallReturn(context, "y", "value") is int i ? i : -1; } : x=child B | y=child ;
             child returns [int value] @after { SetRuleReturn(context, "value", 2); } : A ;
             A : 'a' ;
             B : 'b' ;
@@ -4067,16 +4067,19 @@ public class Antlr4GeneratedRuleLifecycleTests
         Assert.AreEqual(2, ReadIntField(assembly, "Seen"));
     }
 
-    // ── Infrastructure helpers (mirrored from Antlr4GeneratedEmbeddedCodeTests) ──────────
-
-    /// <summary>Emits generated C# for the supplied grammar.</summary>
     /// <summary>
     /// Verifies generated source exposes only generic metadata-driven labeled-result helpers.
     /// </summary>
     [TestMethod]
     public void GeneratedSource_ContainsGenericLabeledRuleCallHelpers()
     {
-        string source = Emit("grammar P; start @after { Values = $xs.value; } : x=child | xs+=child ; child returns [int value] : A ; A : 'a' ;");
+        string source = Emit("""
+            grammar P;
+            start @after { Values = GetLabeledRuleCallReturns(context, "xs", "value"); }
+                : x=child | xs+=child ;
+            child returns [int value] : A ;
+            A : 'a' ;
+            """);
 
         StringAssert.Contains(source, "TryGetLabeledRuleCallResult");
         StringAssert.Contains(source, "GetLabeledRuleCallResults");
@@ -4149,7 +4152,7 @@ public class Antlr4GeneratedRuleLifecycleTests
             grammar P;
             start @after {
                 ResultCount = GetLabeledRuleCallResults(context, "xs").Count;
-                var values = $xs.value;
+                var values = GetLabeledRuleCallReturns(context, "xs", "value");
                 ValueCount = values.Count;
                 First = values[0] is int first ? first : -1;
                 Last = values[2] is int last ? last : -1;
@@ -4190,7 +4193,7 @@ public class Antlr4GeneratedRuleLifecycleTests
         const string grammar = """
             grammar P;
             start @after {
-                var values = $xs.value;
+                var values = GetLabeledRuleCallReturns(context, "xs", "value");
                 Count = values.Count;
                 First = values[0] is int first ? first : -1;
                 NullAtEnd = values[1] == null;
@@ -4232,7 +4235,7 @@ public class Antlr4GeneratedRuleLifecycleTests
         const string grammar = """
             grammar P;
             start @after {
-                var values = $xs.value;
+                var values = GetLabeledRuleCallReturns(context, "xs", "value");
                 Count = values.Count;
                 Seen = values[0] is int value ? value : -1;
             }
@@ -4269,9 +4272,9 @@ public class Antlr4GeneratedRuleLifecycleTests
         const string grammar = """
             grammar P;
             start @after {
-                XCount = $xs.value.Count;
-                YCount = $ys.value.Count;
-                Seen = $ys.value[0] is int value ? value : -1;
+                XCount = GetLabeledRuleCallReturns(context, "xs", "value").Count;
+                YCount = GetLabeledRuleCallReturns(context, "ys", "value").Count;
+                Seen = GetLabeledRuleCallReturns(context, "ys", "value")[0] is int value ? value : -1;
             }
                 : xs+=child B
                 | ys+=child
