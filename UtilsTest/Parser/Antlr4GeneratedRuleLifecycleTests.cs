@@ -4091,6 +4091,50 @@ public class Antlr4GeneratedRuleLifecycleTests
         Assert.AreEqual(42, ReadIntField(assembly, "Seen"));
     }
 
+    /// <summary>Verifies assignment-label return sugar reads a child return through the required helper rewrite.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_AssignmentLabelReturnSugar_ReadsReturn()
+    {
+        const string grammar = """
+            grammar P;
+            start @after { Seen = $c.value is int v ? v : -1; } : c=child ;
+            child returns [int value] @after { $value = 42; } : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext { public static int Seen = -1; }
+            """;
+
+        Assembly assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        object result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(42, ReadIntField(assembly, "Seen"));
+    }
+
+    /// <summary>Verifies assignment-label return sugar preserves present-null child return semantics.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_AssignmentLabelReturnSugar_DistinguishesPresentNullFromMissing()
+    {
+        const string grammar = """
+            grammar P;
+            start @after { IsNull = $c.value == null; } : c=child ;
+            child returns [string? value] @after { $value = null; } : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext { public static bool IsNull; }
+            """;
+
+        Assembly assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        object result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsTrue(ReadBoolField(assembly, "IsNull"));
+    }
+
     /// <summary>Verifies explicit try helper access reads an assignment-labeled child return.</summary>
     [TestMethod]
     public void ParseWithEmbeddedCode_ExplicitHelper_TryReadsAssignmentLabelReturn()
@@ -4243,6 +4287,33 @@ public class Antlr4GeneratedRuleLifecycleTests
             grammar P;
             @members { public int Counter; }
             start @after { Seen = GetRequiredLabeledRuleCallReturn(context, "ok", "value") is int v ? v : -1; }
+                : bad=child B
+                | ok=child A
+                ;
+            child returns [int value] @after { $value = Counter++; } : A ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext { public static int Seen = -1; }
+            """;
+
+        Assembly assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        object result = InvokeParse(assembly, "ParseWithEmbeddedCode", "aa");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(0, ReadIntField(assembly, "Seen"));
+    }
+
+    /// <summary>Verifies assignment-label return sugar follows explicit-helper rollback behavior for failed alternatives.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_AssignmentLabelReturnSugar_RollsBackFailedAlternative()
+    {
+        const string grammar = """
+            grammar P;
+            @members { public int Counter; }
+            start @after { Seen = $ok.value is int v ? v : -1; }
                 : bad=child B
                 | ok=child A
                 ;

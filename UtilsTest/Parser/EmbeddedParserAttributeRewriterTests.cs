@@ -18,17 +18,16 @@ public class EmbeddedParserAttributeRewriterTests
         A : 'a' ;
         """;
 
-    /// <summary>Verifies current-rule returns are rewritten only from bare attributes while child, labeled, and dotted forms remain unsupported.</summary>
+    /// <summary>Verifies current-rule returns and assignment-label child returns are rewritten while list labels remain unsupported.</summary>
     [TestMethod]
-    public void Rewrite_SupportedCurrentRuleRead_RewritesBareReturnAndRejectsChildReferences()
+    public void Rewrite_SupportedCurrentRuleRead_RewritesBareReturnAndAssignmentLabelReturn()
     {
         EmbeddedParserAttributeRewriteResult result = Rewrite("Seen = (int)$x.value + $xs.value.Count + $xs.value.Select(v => v).Count() + (int)$own;");
 
-        Assert.AreEqual("Seen = (int)$x.value + $xs.value.Count + $xs.value.Select(v => v).Count() + (int)GetRequiredRuleReturn<int>(context, \"own\");", result.Code);
-        Assert.AreEqual(3, result.Errors.Count);
-        StringAssert.Contains(result.Errors[0], "Labeled rule-call return attribute '$x.value' is not supported");
-        StringAssert.Contains(result.Errors[1], "Labeled rule-call return attribute '$xs.value' is not supported");
-        StringAssert.Contains(result.Errors[2], "Labeled rule-call return attribute '$xs.value' is not supported");
+        Assert.AreEqual("Seen = (int)GetRequiredLabeledRuleCallReturn(context, \"x\", \"value\") + $xs.value.Count + $xs.value.Select(v => v).Count() + (int)GetRequiredRuleReturn<int>(context, \"own\");", result.Code);
+        Assert.AreEqual(2, result.Errors.Count);
+        StringAssert.Contains(result.Errors[0], "List-label parser attribute '$xs.value' is not supported");
+        StringAssert.Contains(result.Errors[1], "List-label parser attribute '$xs.value' is not supported");
     }
 
     /// <summary>Verifies current-rule parameters and locals are rewritten through typed helper calls.</summary>
@@ -53,9 +52,8 @@ public class EmbeddedParserAttributeRewriterTests
         StringAssert.Contains(result.Code, "@\"$x.value\"");
         StringAssert.Contains(result.Code, "// $x.value");
         StringAssert.Contains(result.Code, "/* $x.value */");
-        StringAssert.Contains(result.Code, "Seen = $x.value");
-        Assert.AreEqual(1, result.Errors.Count);
-        StringAssert.Contains(result.Errors[0], "Labeled rule-call return attribute '$x.value' is not supported");
+        StringAssert.Contains(result.Code, "Seen = GetRequiredLabeledRuleCallReturn(context, \"x\", \"value\")");
+        Assert.AreEqual(0, result.Errors.Count);
     }
 
     /// <summary>Verifies interpolated and raw string contents are not rewritten.</summary>
@@ -73,9 +71,9 @@ public class EmbeddedParserAttributeRewriterTests
     /// <summary>Verifies unsupported roots, token labels, missing returns, bare reads, and chains are diagnosed.</summary>
     [DataTestMethod]
     [DataRow("$unknown.value", "not the current rule name")]
-    [DataRow("$t.value", "Labeled rule-call return attribute '$t.value' is not supported")]
-    [DataRow("$x.missing", "Labeled rule-call return attribute '$x.missing' is not supported")]
-    [DataRow("$xs.missing", "Labeled rule-call return attribute '$xs.missing' is not supported")]
+    [DataRow("$t.value", "Token label 't' cannot be used as a parser rule-return attribute")]
+    [DataRow("$x.missing", "Return 'missing' is not declared by parser rule 'child' referenced by assignment label 'x'")]
+    [DataRow("$xs.missing", "List-label parser attribute '$xs.missing' is not supported")]
     [DataRow("$start.missing", "Dotted current-rule return attribute '$start.missing' is not supported")]
     [DataRow("$x", "label access")]
     [DataRow("$xs", "label access")]
@@ -127,8 +125,6 @@ public class EmbeddedParserAttributeRewriterTests
         Assert.AreEqual(1, result.Errors.Count);
         StringAssert.Contains(result.Errors[0], code.Contains("ref") || code.Contains("out") ? "ref/out parser attributes are not supported" : "read-only");
     }
-
-
 
     /// <summary>Verifies current-rule return writes are rewritten to typed helper calls in @after.</summary>
     [TestMethod]
@@ -203,14 +199,14 @@ public class EmbeddedParserAttributeRewriterTests
         StringAssert.Contains(result.Errors[0], "not supported in semantic predicates");
     }
 
-    /// <summary>Verifies assignment-labeled child returns remain unsupported during initialization.</summary>
+    /// <summary>Verifies assignment-labeled child returns are unavailable during initialization.</summary>
     [TestMethod]
-    public void Rewrite_AssignmentLabelInInit_ReportsUnsupportedLabelError()
+    public void Rewrite_AssignmentLabelInInit_ReportsLifecycleError()
     {
         EmbeddedParserAttributeRewriteResult result = Rewrite("Seen = $x.value;", EmbeddedParserAttributeLocationKind.Init);
 
         Assert.AreEqual(1, result.Errors.Count);
-        StringAssert.Contains(result.Errors[0], "Labeled rule-call return attribute '$x.value' is not supported");
+        StringAssert.Contains(result.Errors[0], "Assignment label 'x' is not available in @init");
     }
 
     /// <summary>Verifies list-labeled child returns remain unsupported during initialization.</summary>
@@ -220,7 +216,7 @@ public class EmbeddedParserAttributeRewriterTests
         EmbeddedParserAttributeRewriteResult result = Rewrite("Seen = $xs.value;", EmbeddedParserAttributeLocationKind.Init);
 
         Assert.AreEqual(1, result.Errors.Count);
-        StringAssert.Contains(result.Errors[0], "Labeled rule-call return attribute '$xs.value' is not supported");
+        StringAssert.Contains(result.Errors[0], "List-label parser attribute '$xs.value' is not supported");
     }
 
     /// <summary>Verifies list-label attributes remain unavailable in semantic predicates.</summary>
@@ -248,8 +244,9 @@ public class EmbeddedParserAttributeRewriterTests
 
         EmbeddedParserAttributeRewriteResult result = EmbeddedParserAttributeRewriter.Rewrite("Seen = $x.value;", grammar, rule, EmbeddedParserAttributeLocationKind.After);
 
+        Assert.AreEqual("Seen = $x.value;", result.Code);
         Assert.AreEqual(1, result.Errors.Count);
-        StringAssert.Contains(result.Errors[0], "Labeled rule-call return attribute '$x.value' is not supported");
+        StringAssert.Contains(result.Errors[0], "List-label parser attribute '$x.value' is not supported");
     }
 
     /// <summary>Verifies repeated list-label return convenience remains unsupported regardless of target order.</summary>
@@ -272,7 +269,7 @@ public class EmbeddedParserAttributeRewriterTests
 
         Assert.AreEqual("Values = $xs.value;", result.Code);
         Assert.AreEqual(1, result.Errors.Count);
-        StringAssert.Contains(result.Errors[0], "Labeled rule-call return attribute '$xs.value' is not supported");
+        StringAssert.Contains(result.Errors[0], "List-label parser attribute '$xs.value' is not supported");
     }
 
     /// <summary>Verifies dotted current-rule returns remain unsupported even when a label shares the rule name.</summary>
@@ -306,9 +303,9 @@ public class EmbeddedParserAttributeRewriterTests
         StringAssert.Contains(result.Errors[0], "not the current rule name");
     }
 
-    /// <summary>Verifies a parameter takes bare-name precedence while same-name label-return syntax remains unsupported.</summary>
+    /// <summary>Verifies a parameter takes bare-name precedence while same-name label-return syntax still rewrites through the label helper.</summary>
     [TestMethod]
-    public void Rewrite_ParameterAndLabelSameName_RewritesBareAndRejectsReturnForm()
+    public void Rewrite_ParameterAndLabelSameName_RewritesBareAndLabelReturnForm()
     {
         const string grammarText = """
             grammar P;
@@ -321,20 +318,16 @@ public class EmbeddedParserAttributeRewriterTests
 
         EmbeddedParserAttributeRewriteResult result = EmbeddedParserAttributeRewriter.Rewrite("A = $x; B = $x.value;", grammar, rule, EmbeddedParserAttributeLocationKind.After);
 
-        Assert.AreEqual("A = GetRequiredRuleParameter<int>(context, \"x\"); B = $x.value;", result.Code);
-        Assert.AreEqual(1, result.Errors.Count);
-        StringAssert.Contains(result.Errors[0], "Labeled rule-call return attribute '$x.value' is not supported");
+        Assert.AreEqual("A = GetRequiredRuleParameter<int>(context, \"x\"); B = GetRequiredLabeledRuleCallReturn(context, \"x\", \"value\");", result.Code);
+        Assert.AreEqual(0, result.Errors.Count);
     }
 
-
-    /// <summary>Verifies labeled and rule-name return convenience syntax remains unsupported instead of being rewritten.</summary>
+    /// <summary>Verifies only assignment-label child return syntax is rewritten, while other dotted forms stay unsupported.</summary>
     [DataTestMethod]
-    [DataRow("Seen = $c.value;", "Labeled rule-call return attribute '$c.value' is not supported")]
-    [DataRow("Seen = $x.value;", "Labeled rule-call return attribute '$x.value' is not supported")]
-    [DataRow("Seen = $xs.value.Count;", "Labeled rule-call return attribute '$xs.value' is not supported")]
+    [DataRow("Seen = $xs.value.Count;", "List-label parser attribute '$xs.value' is not supported")]
     [DataRow("Seen = $child.value;", "not the current rule name")]
     [DataRow("Seen = $start.value;", "Dotted current-rule return attribute '$start.value' is not supported")]
-    public void ParseWithEmbeddedCode_TransformerStillRejectsLabelReturnSyntax(string code, string expectedMessage)
+    public void ParseWithEmbeddedCode_TransformerStillRejectsUnsupportedLabelReturnSyntax(string code, string expectedMessage)
     {
         const string grammarText = """
             grammar P;
@@ -350,6 +343,16 @@ public class EmbeddedParserAttributeRewriterTests
         Assert.AreEqual(code, result.Code);
         Assert.AreEqual(1, result.Errors.Count);
         StringAssert.Contains(result.Errors[0], expectedMessage);
+    }
+
+    /// <summary>Verifies assignment-label child return syntax rewrites to the required helper.</summary>
+    [TestMethod]
+    public void Rewrite_AssignmentLabelReturn_RewritesToRequiredHelper()
+    {
+        EmbeddedParserAttributeRewriteResult result = Rewrite("Seen = $x.value;");
+
+        Assert.AreEqual("Seen = GetRequiredLabeledRuleCallReturn(context, \"x\", \"value\");", result.Code);
+        Assert.AreEqual(0, result.Errors.Count);
     }
 
     /// <summary>Rewrites code against the start rule in the shared grammar.</summary>

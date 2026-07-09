@@ -200,8 +200,11 @@ internal static class EmbeddedParserAttributeRewriter
                 continue;
             }
 
-            errors.Add($"Labeled rule-call return attribute '{attributeText}' is not supported by the current-rule return transformer.");
-            output.Append(code, attributeStart, index - attributeStart);
+            if (!TryRewriteAssignmentLabelReturn(grammar, locationKind, errors, output, root, returnName, attributeText, label, attributeStart, index, code))
+            {
+                output.Append(code, attributeStart, index - attributeStart);
+            }
+
             continue;
         }
 
@@ -263,6 +266,74 @@ internal static class EmbeddedParserAttributeRewriter
                 CollectLabels(negation.Inner, labels);
                 break;
         }
+    }
+
+    /// <summary>
+    /// Rewrites one supported assignment-label child return read to the generated helper API.
+    /// </summary>
+    /// <param name="grammar">Grammar that owns the current parser rule.</param>
+    /// <param name="locationKind">Embedded-code lifecycle location.</param>
+    /// <param name="errors">Destination for deterministic diagnostics.</param>
+    /// <param name="output">Destination for rewritten C#.</param>
+    /// <param name="labelName">Visible assignment label name.</param>
+    /// <param name="returnName">Requested child return name.</param>
+    /// <param name="attributeText">Original attribute text for diagnostics.</param>
+    /// <param name="label">Collected label targets for <paramref name="labelName"/>.</param>
+    /// <param name="attributeStart">Start index of the attribute in <paramref name="code"/>.</param>
+    /// <param name="attributeEnd">End index of the parsed attribute in <paramref name="code"/>.</param>
+    /// <param name="code">Original embedded C# source.</param>
+    /// <returns><c>true</c> when the caller should not copy the original attribute text.</returns>
+    private static bool TryRewriteAssignmentLabelReturn(
+        G4Grammar grammar,
+        EmbeddedParserAttributeLocationKind locationKind,
+        List<string> errors,
+        StringBuilder output,
+        string labelName,
+        string returnName,
+        string attributeText,
+        RuleLabelTargets label,
+        int attributeStart,
+        int attributeEnd,
+        string code)
+    {
+        if (label.List.Count > 0)
+        {
+            errors.Add($"List-label parser attribute '{attributeText}' is not supported. Use GetLabeledRuleCallReturns(context, \"{Escape(labelName)}\", \"{Escape(returnName)}\") explicitly for list labels.");
+            return false;
+        }
+
+        if (locationKind == EmbeddedParserAttributeLocationKind.Init)
+        {
+            errors.Add($"Assignment label '{labelName}' is not available in @init. Labeled child rule-call returns can be read only after the child rule call succeeds.");
+            return false;
+        }
+
+        if (label.Assignment is null)
+        {
+            errors.Add($"Parser attribute root '{labelName}' is not a visible assignment rule-reference label.");
+            return false;
+        }
+
+        G4Rule? targetRule = grammar.ParserRules.FirstOrDefault(candidate => string.Equals(candidate.Name, label.Assignment.RuleName, StringComparison.Ordinal));
+        if (targetRule is null)
+        {
+            errors.Add($"Token label '{labelName}' cannot be used as a parser rule-return attribute.");
+            return false;
+        }
+
+        Dictionary<string, TypedDeclaration> targetReturns = ParseTypedDeclarations(targetRule.Returns);
+        if (!targetReturns.ContainsKey(returnName))
+        {
+            errors.Add($"Return '{returnName}' is not declared by parser rule '{targetRule.Name}' referenced by assignment label '{labelName}'.");
+            return false;
+        }
+
+        output.Append("GetRequiredLabeledRuleCallReturn(context, \"")
+            .Append(Escape(labelName))
+            .Append("\", \"")
+            .Append(Escape(returnName))
+            .Append("\")");
+        return true;
     }
 
 
