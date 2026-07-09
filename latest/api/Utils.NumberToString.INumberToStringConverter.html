@@ -244,7 +244,7 @@ the largest supported number for validation purposes.</p>
 
   <h3 id="Utils_NumberToString_INumberToStringConverter_SupportsDateConversion" data-uid="Utils.NumberToString.INumberToStringConverter.SupportsDateConversion">
   SupportsDateConversion
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L383"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L448"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>When <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a>, <a class="xref" href="Utils.NumberToString.INumberToStringConverter.html#Utils_NumberToString_INumberToStringConverter_Convert_System_DateOnly_System_String___">Convert(DateOnly, params string[])</a> and
@@ -277,7 +277,7 @@ the largest supported number for validation purposes.</p>
 
   <h3 id="Utils_NumberToString_INumberToStringConverter_SupportsMultiplicative" data-uid="Utils.NumberToString.INumberToStringConverter.SupportsMultiplicative">
   SupportsMultiplicative
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L364"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L428"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>When <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a>, <a class="xref" href="Utils.NumberToString.INumberToStringConverter.html#Utils_NumberToString_INumberToStringConverter_ConvertMultiplicative_System_Int32_System_String___">ConvertMultiplicative(int, params string[])</a> produces a result;
@@ -310,7 +310,7 @@ when <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/built
 
   <h3 id="Utils_NumberToString_INumberToStringConverter_SupportsOrdinals" data-uid="Utils.NumberToString.INumberToStringConverter.SupportsOrdinals">
   SupportsOrdinals
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L237"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L267"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a value indicating whether this converter supports ordinal conversion.
@@ -345,7 +345,7 @@ implementations that support ordinals should override this.</p>
 
   <h3 id="Utils_NumberToString_INumberToStringConverter_SupportsTimeConversion" data-uid="Utils.NumberToString.INumberToStringConverter.SupportsTimeConversion">
   SupportsTimeConversion
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L377"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L442"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>When <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a>, <a class="xref" href="Utils.NumberToString.INumberToStringConverter.html#Utils_NumberToString_INumberToStringConverter_Convert_System_TimeSpan_System_String___">Convert(TimeSpan, params string[])</a> and
@@ -418,7 +418,7 @@ Implementations that pre-date variant support may leave this at its default (emp
 
   <h3 id="Utils_NumberToString_INumberToStringConverter_Convert_System_DateOnly_System_String___" data-uid="Utils.NumberToString.INumberToStringConverter.Convert(System.DateOnly,System.String[])">
   Convert(DateOnly, params string[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L407"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L475"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.dateonly">DateOnly</a> date to its spoken form
@@ -453,6 +453,12 @@ Month names are read from <a class="xref" href="https://learn.microsoft.com/dotn
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a></dt>
+    <dd><p>The converter has no <code>&lt;DateFormat&gt;</code> configuration (<a class="xref" href="Utils.NumberToString.INumberToStringConverter.html#Utils_NumberToString_INumberToStringConverter_SupportsDateConversion">SupportsDateConversion</a> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>).</p>
+</dd>
+  </dl>
 
 
 
@@ -460,7 +466,7 @@ Month names are read from <a class="xref" href="https://learn.microsoft.com/dotn
 
   <h3 id="Utils_NumberToString_INumberToStringConverter_Convert_System_DateTime_System_String___" data-uid="Utils.NumberToString.INumberToStringConverter.Convert(System.DateTime,System.String[])">
   Convert(DateTime, params string[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L414"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L483"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a> to its spoken form by combining
@@ -493,6 +499,12 @@ Month names are read from <a class="xref" href="https://learn.microsoft.com/dotn
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a></dt>
+    <dd><p>The converter has no <code>&lt;DateFormat&gt;</code> or <code>&lt;TimeUnits&gt;</code> configuration.</p>
+</dd>
+  </dl>
 
 
 
@@ -693,9 +705,54 @@ The default implementation ignores variant parameters and delegates to
 
   <a id="Utils_NumberToString_INumberToStringConverter_Convert_" data-uid="Utils.NumberToString.INumberToStringConverter.Convert*"></a>
 
+  <h3 id="Utils_NumberToString_INumberToStringConverter_Convert_System_Double_" data-uid="Utils.NumberToString.INumberToStringConverter.Convert(System.Double)">
+  Convert(double)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L119"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Converts a double-precision floating-point value into its string representation.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">string Convert(double number)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>number</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
+    <dd><p>The value to convert. Must be a finite number.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>The formatted number.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p><code class="paramref">number</code> is <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double.nan">NaN</a> or infinite.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_NumberToString_INumberToStringConverter_Convert_" data-uid="Utils.NumberToString.INumberToStringConverter.Convert*"></a>
+
   <h3 id="Utils_NumberToString_INumberToStringConverter_Convert_System_Double_System_String___" data-uid="Utils.NumberToString.INumberToStringConverter.Convert(System.Double,System.String[])">
   Convert(double, params string[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L117"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L129"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts a double-precision floating-point value into its string representation.
@@ -710,15 +767,18 @@ Uses the round-trip format (&quot;R&quot;) to convert to decimal, avoiding float
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>number</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
-    <dd></dd>
+    <dd><p>The value to convert. Must be a finite number.</p>
+</dd>
     <dt><code>variants</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>[]</dt>
-    <dd></dd>
+    <dd><p>Zero or more <code>&quot;dimension=value&quot;</code> strings.</p>
+</dd>
   </dl>
 
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd></dd>
+    <dd><p>The formatted number with the requested variants applied.</p>
+</dd>
   </dl>
 
 
@@ -728,6 +788,12 @@ Uses the round-trip format (&quot;R&quot;) to convert to decimal, avoiding float
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p><code class="paramref">number</code> is <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double.nan">NaN</a> or infinite.</p>
+</dd>
+  </dl>
 
 
 
@@ -774,7 +840,7 @@ Uses the round-trip format (&quot;R&quot;) to convert to decimal, avoiding float
 
   <h3 id="Utils_NumberToString_INumberToStringConverter_Convert_System_Int32_System_Int32_System_String___" data-uid="Utils.NumberToString.INumberToStringConverter.Convert(System.Int32,System.Int32,System.String[])">
   Convert(int, int, params string[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L206"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L236"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts a 32-bit signed integer rounded to <code class="paramref">significantDigits</code> most
@@ -820,7 +886,7 @@ The default implementation delegates to <a class="xref" href="Utils.NumberToStri
 
   <h3 id="Utils_NumberToString_INumberToStringConverter_Convert_System_Int32_System_String___" data-uid="Utils.NumberToString.INumberToStringConverter.Convert(System.Int32,System.String[])">
   Convert(int, params string[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L196"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L226"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts a 32-bit signed integer into its string representation,
@@ -904,7 +970,7 @@ The default implementation ignores variant parameters and delegates to
 
   <h3 id="Utils_NumberToString_INumberToStringConverter_Convert_System_Int64_System_Int32_System_String___" data-uid="Utils.NumberToString.INumberToStringConverter.Convert(System.Int64,System.Int32,System.String[])">
   Convert(long, int, params string[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L228"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L258"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts a 64-bit signed integer rounded to <code class="paramref">significantDigits</code> most
@@ -950,7 +1016,7 @@ The default implementation delegates to <a class="xref" href="Utils.NumberToStri
 
   <h3 id="Utils_NumberToString_INumberToStringConverter_Convert_System_Int64_System_String___" data-uid="Utils.NumberToString.INumberToStringConverter.Convert(System.Int64,System.String[])">
   Convert(long, params string[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L218"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L248"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts a 64-bit signed integer into its string representation,
@@ -1034,7 +1100,7 @@ The default implementation ignores variant parameters and delegates to
 
   <h3 id="Utils_NumberToString_INumberToStringConverter_Convert_System_Numerics_BigInteger_System_Int32_System_String___" data-uid="Utils.NumberToString.INumberToStringConverter.Convert(System.Numerics.BigInteger,System.Int32,System.String[])">
   Convert(BigInteger, int, params string[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L184"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L214"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts <code class="paramref">number</code> rounded to <code class="paramref">significantDigits</code> most significant
@@ -1082,7 +1148,7 @@ with 3 significant digits rounds to 123000000 before conversion.</p>
 
   <h3 id="Utils_NumberToString_INumberToStringConverter_Convert_System_Numerics_BigInteger_System_String___" data-uid="Utils.NumberToString.INumberToStringConverter.Convert(System.Numerics.BigInteger,System.String[])">
   Convert(BigInteger, params string[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L172"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L202"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts an arbitrarily large integer into its string representation,
@@ -1123,6 +1189,57 @@ Unrecognised dimensions or values fall back to the default silently.</p>
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p><code class="paramref">number</code> exceeds <a class="xref" href="Utils.NumberToString.INumberToStringConverter.html#Utils_NumberToString_INumberToStringConverter_MaxNumber">MaxNumber</a> (implementations that declare one).</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_NumberToString_INumberToStringConverter_Convert_" data-uid="Utils.NumberToString.INumberToStringConverter.Convert*"></a>
+
+  <h3 id="Utils_NumberToString_INumberToStringConverter_Convert_System_Single_" data-uid="Utils.NumberToString.INumberToStringConverter.Convert(System.Single)">
+  Convert(float)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L150"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Converts a single-precision floating-point value into its string representation.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">string Convert(float number)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>number</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd><p>The value to convert. Must be a finite number.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>The formatted number.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p><code class="paramref">number</code> is <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single.nan">NaN</a> or infinite.</p>
+</dd>
+  </dl>
 
 
 
@@ -1130,7 +1247,7 @@ Unrecognised dimensions or values fall back to the default silently.</p>
 
   <h3 id="Utils_NumberToString_INumberToStringConverter_Convert_System_Single_System_String___" data-uid="Utils.NumberToString.INumberToStringConverter.Convert(System.Single,System.String[])">
   Convert(float, params string[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L132"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L159"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts a single-precision floating-point value into its string representation.</p>
@@ -1144,15 +1261,18 @@ Unrecognised dimensions or values fall back to the default silently.</p>
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>number</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
-    <dd></dd>
+    <dd><p>The value to convert. Must be a finite number.</p>
+</dd>
     <dt><code>variants</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>[]</dt>
-    <dd></dd>
+    <dd><p>Zero or more <code>&quot;dimension=value&quot;</code> strings.</p>
+</dd>
   </dl>
 
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd></dd>
+    <dd><p>The formatted number with the requested variants applied.</p>
+</dd>
   </dl>
 
 
@@ -1162,6 +1282,12 @@ Unrecognised dimensions or values fall back to the default silently.</p>
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p><code class="paramref">number</code> is <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single.nan">NaN</a> or infinite.</p>
+</dd>
+  </dl>
 
 
 
@@ -1169,7 +1295,7 @@ Unrecognised dimensions or values fall back to the default silently.</p>
 
   <h3 id="Utils_NumberToString_INumberToStringConverter_Convert_System_TimeOnly_System_String___" data-uid="Utils.NumberToString.INumberToStringConverter.Convert(System.TimeOnly,System.String[])">
   Convert(TimeOnly, params string[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L398"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L465"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.timeonly">TimeOnly</a> time-of-day to its spoken form
@@ -1203,6 +1329,12 @@ Requires <code>&lt;TimeUnits&gt;</code> in the XML configuration.</p>
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a></dt>
+    <dd><p>The converter has no <code>&lt;TimeUnits&gt;</code> configuration (<a class="xref" href="Utils.NumberToString.INumberToStringConverter.html#Utils_NumberToString_INumberToStringConverter_SupportsTimeConversion">SupportsTimeConversion</a> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>).</p>
+</dd>
+  </dl>
 
 
 
@@ -1210,7 +1342,7 @@ Requires <code>&lt;TimeUnits&gt;</code> in the XML configuration.</p>
 
   <h3 id="Utils_NumberToString_INumberToStringConverter_Convert_System_TimeSpan_System_String___" data-uid="Utils.NumberToString.INumberToStringConverter.Convert(System.TimeSpan,System.String[])">
   Convert(TimeSpan, params string[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L390"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L456"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.timespan">TimeSpan</a> duration to its spoken form
@@ -1244,6 +1376,12 @@ Requires <code>&lt;TimeUnits&gt;</code> in the XML configuration.</p>
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a></dt>
+    <dd><p>The converter has no <code>&lt;TimeUnits&gt;</code> configuration (<a class="xref" href="Utils.NumberToString.INumberToStringConverter.html#Utils_NumberToString_INumberToStringConverter_SupportsTimeConversion">SupportsTimeConversion</a> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>).</p>
+</dd>
+  </dl>
 
 
 
@@ -1251,7 +1389,7 @@ Requires <code>&lt;TimeUnits&gt;</code> in the XML configuration.</p>
 
   <h3 id="Utils_NumberToString_INumberToStringConverter_Convert_Utils_Numerics_Number_" data-uid="Utils.NumberToString.INumberToStringConverter.Convert(Utils.Numerics.Number)">
   Convert(Number)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L142"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L169"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts a rational <a class="xref" href="Utils.Numerics.Number.html">Number</a> into its string representation.
@@ -1292,7 +1430,7 @@ that support rational conversion should override this.</p>
 
   <h3 id="Utils_NumberToString_INumberToStringConverter_Convert_Utils_Numerics_Number_System_String___" data-uid="Utils.NumberToString.INumberToStringConverter.Convert(Utils.Numerics.Number,System.String[])">
   Convert(Number, params string[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L156"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L183"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts a rational <a class="xref" href="Utils.Numerics.Number.html">Number</a> into its string representation,
@@ -1338,7 +1476,7 @@ variant support should override this.</p>
 
   <h3 id="Utils_NumberToString_INumberToStringConverter_ConvertCurrency_System_Decimal_Utils_NumberToString_CurrencyDefinition_" data-uid="Utils.NumberToString.INumberToStringConverter.ConvertCurrency(System.Decimal,Utils.NumberToString.CurrencyDefinition)">
   ConvertCurrency(decimal, CurrencyDefinition)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L315"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L356"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts a decimal currency amount to words using the supplied currency definition.
@@ -1375,6 +1513,12 @@ implementations that support currency conversion should override this.</p>
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a></dt>
+    <dd><p>The converter does not support currency conversion.</p>
+</dd>
+  </dl>
 
 
 
@@ -1382,7 +1526,7 @@ implementations that support currency conversion should override this.</p>
 
   <h3 id="Utils_NumberToString_INumberToStringConverter_ConvertCurrency_System_Decimal_Utils_NumberToString_CurrencyDefinition_System_String___" data-uid="Utils.NumberToString.INumberToStringConverter.ConvertCurrency(System.Decimal,Utils.NumberToString.CurrencyDefinition,System.String[])">
   ConvertCurrency(decimal, CurrencyDefinition, params string[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L329"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L371"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts a decimal currency amount to words using the supplied currency definition,
@@ -1424,6 +1568,104 @@ The default implementation ignores variant parameters and delegates to
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a></dt>
+    <dd><p>The converter does not support currency conversion.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_NumberToString_INumberToStringConverter_ConvertFraction_" data-uid="Utils.NumberToString.INumberToStringConverter.ConvertFraction*"></a>
+
+  <h3 id="Utils_NumberToString_INumberToStringConverter_ConvertFraction_System_Int32_System_Int32_System_String___" data-uid="Utils.NumberToString.INumberToStringConverter.ConvertFraction(System.Int32,System.Int32,System.String[])">
+  ConvertFraction(int, int, params string[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L410"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Converts the fraction <code class="paramref">numerator</code>/<code class="paramref">denominator</code> to its
+string representation. Delegates to <a class="xref" href="Utils.NumberToString.INumberToStringConverter.html#Utils_NumberToString_INumberToStringConverter_ConvertFraction_System_Numerics_BigInteger_System_Numerics_BigInteger_System_String___">ConvertFraction(BigInteger, BigInteger, params string[])</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">string ConvertFraction(int numerator, int denominator, params string[] variants)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>numerator</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>The numerator of the fraction.</p>
+</dd>
+    <dt><code>denominator</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>The denominator of the fraction.</p>
+</dd>
+    <dt><code>variants</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>[]</dt>
+    <dd><p>Zero or more <code>&quot;dimension=value&quot;</code> strings.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>The textual representation of the fraction.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_NumberToString_INumberToStringConverter_ConvertFraction_" data-uid="Utils.NumberToString.INumberToStringConverter.ConvertFraction*"></a>
+
+  <h3 id="Utils_NumberToString_INumberToStringConverter_ConvertFraction_System_Int64_System_Int64_System_String___" data-uid="Utils.NumberToString.INumberToStringConverter.ConvertFraction(System.Int64,System.Int64,System.String[])">
+  ConvertFraction(long, long, params string[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L421"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Converts the fraction <code class="paramref">numerator</code>/<code class="paramref">denominator</code> to its
+string representation. Delegates to <a class="xref" href="Utils.NumberToString.INumberToStringConverter.html#Utils_NumberToString_INumberToStringConverter_ConvertFraction_System_Numerics_BigInteger_System_Numerics_BigInteger_System_String___">ConvertFraction(BigInteger, BigInteger, params string[])</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">string ConvertFraction(long numerator, long denominator, params string[] variants)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>numerator</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int64">long</a></dt>
+    <dd><p>The numerator of the fraction.</p>
+</dd>
+    <dt><code>denominator</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int64">long</a></dt>
+    <dd><p>The denominator of the fraction.</p>
+</dd>
+    <dt><code>variants</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>[]</dt>
+    <dd><p>Zero or more <code>&quot;dimension=value&quot;</code> strings.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>The textual representation of the fraction.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
 
 
 
@@ -1431,7 +1673,7 @@ The default implementation ignores variant parameters and delegates to
 
   <h3 id="Utils_NumberToString_INumberToStringConverter_ConvertFraction_System_Numerics_BigInteger_System_Numerics_BigInteger_System_String___" data-uid="Utils.NumberToString.INumberToStringConverter.ConvertFraction(System.Numerics.BigInteger,System.Numerics.BigInteger,System.String[])">
   ConvertFraction(BigInteger, BigInteger, params string[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L357"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L399"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts the fraction <code class="paramref">numerator</code>/<code class="paramref">denominator</code> to its
@@ -1474,7 +1716,7 @@ with <code>/</code>; language-specific implementations may use named fraction fo
 
   <h3 id="Utils_NumberToString_INumberToStringConverter_ConvertMultiplicative_System_Int32_System_String___" data-uid="Utils.NumberToString.INumberToStringConverter.ConvertMultiplicative(System.Int32,System.String[])">
   ConvertMultiplicative(int, params string[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L370"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L435"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts a multiplier to its spoken multiplicative form (e.g. 2 → &quot;twice&quot;, 3 → &quot;trois fois&quot;).
@@ -1507,6 +1749,12 @@ Throws <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsu
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a></dt>
+    <dd><p>The converter has no <code>&lt;Multiplicatives&gt;</code> configuration (<a class="xref" href="Utils.NumberToString.INumberToStringConverter.html#Utils_NumberToString_INumberToStringConverter_SupportsMultiplicative">SupportsMultiplicative</a> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>).</p>
+</dd>
+  </dl>
 
 
 
@@ -1514,7 +1762,7 @@ Throws <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsu
 
   <h3 id="Utils_NumberToString_INumberToStringConverter_ConvertOrdinal_System_Int32_" data-uid="Utils.NumberToString.INumberToStringConverter.ConvertOrdinal(System.Int32)">
   ConvertOrdinal(int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L247"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L278"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts a positive integer into its ordinal string representation
@@ -1549,6 +1797,12 @@ implementations that support ordinal conversion should override this.</p>
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a></dt>
+    <dd><p>The converter does not support ordinal conversion (<a class="xref" href="Utils.NumberToString.INumberToStringConverter.html#Utils_NumberToString_INumberToStringConverter_SupportsOrdinals">SupportsOrdinals</a> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>).</p>
+</dd>
+  </dl>
 
 
 
@@ -1556,7 +1810,7 @@ implementations that support ordinal conversion should override this.</p>
 
   <h3 id="Utils_NumberToString_INumberToStringConverter_ConvertOrdinal_System_Int32_System_String___" data-uid="Utils.NumberToString.INumberToStringConverter.ConvertOrdinal(System.Int32,System.String[])">
   ConvertOrdinal(int, params string[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L258"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L290"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts a positive integer into its ordinal string representation,
@@ -1593,6 +1847,12 @@ The default implementation ignores variants and delegates to <a class="xref" hre
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a></dt>
+    <dd><p>The converter does not support ordinal conversion (<a class="xref" href="Utils.NumberToString.INumberToStringConverter.html#Utils_NumberToString_INumberToStringConverter_SupportsOrdinals">SupportsOrdinals</a> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>).</p>
+</dd>
+  </dl>
 
 
 
@@ -1600,7 +1860,7 @@ The default implementation ignores variants and delegates to <a class="xref" hre
 
   <h3 id="Utils_NumberToString_INumberToStringConverter_ConvertOrdinal_System_Int64_" data-uid="Utils.NumberToString.INumberToStringConverter.ConvertOrdinal(System.Int64)">
   ConvertOrdinal(long)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L269"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L303"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts a 64-bit integer into its ordinal string representation.
@@ -1635,6 +1895,15 @@ Implementations that natively support large ordinals should override this.</p>
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.overflowexception">OverflowException</a></dt>
+    <dd><p><code class="paramref">number</code> is outside the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a> range.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a></dt>
+    <dd><p>The converter does not support ordinal conversion (<a class="xref" href="Utils.NumberToString.INumberToStringConverter.html#Utils_NumberToString_INumberToStringConverter_SupportsOrdinals">SupportsOrdinals</a> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>).</p>
+</dd>
+  </dl>
 
 
 
@@ -1642,7 +1911,7 @@ Implementations that natively support large ordinals should override this.</p>
 
   <h3 id="Utils_NumberToString_INumberToStringConverter_ConvertOrdinal_System_Int64_System_String___" data-uid="Utils.NumberToString.INumberToStringConverter.ConvertOrdinal(System.Int64,System.String[])">
   ConvertOrdinal(long, params string[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L282"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L318"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts a 64-bit integer into its ordinal string representation,
@@ -1681,6 +1950,15 @@ Implementations that natively support large ordinals should override this.</p>
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.overflowexception">OverflowException</a></dt>
+    <dd><p><code class="paramref">number</code> is outside the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a> range.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a></dt>
+    <dd><p>The converter does not support ordinal conversion (<a class="xref" href="Utils.NumberToString.INumberToStringConverter.html#Utils_NumberToString_INumberToStringConverter_SupportsOrdinals">SupportsOrdinals</a> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>).</p>
+</dd>
+  </dl>
 
 
 
@@ -1688,7 +1966,7 @@ Implementations that natively support large ordinals should override this.</p>
 
   <h3 id="Utils_NumberToString_INumberToStringConverter_ConvertOrdinal_System_Numerics_BigInteger_" data-uid="Utils.NumberToString.INumberToStringConverter.ConvertOrdinal(System.Numerics.BigInteger)">
   ConvertOrdinal(BigInteger)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L292"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L330"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts an arbitrarily large integer into its ordinal string representation.
@@ -1722,6 +2000,15 @@ cast; values outside the <code>long</code> range throw <a class="xref" href="htt
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.overflowexception">OverflowException</a></dt>
+    <dd><p><code class="paramref">number</code> is outside the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int64">long</a> or <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a> range.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a></dt>
+    <dd><p>The converter does not support ordinal conversion (<a class="xref" href="Utils.NumberToString.INumberToStringConverter.html#Utils_NumberToString_INumberToStringConverter_SupportsOrdinals">SupportsOrdinals</a> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>).</p>
+</dd>
+  </dl>
 
 
 
@@ -1729,7 +2016,7 @@ cast; values outside the <code>long</code> range throw <a class="xref" href="htt
 
   <h3 id="Utils_NumberToString_INumberToStringConverter_ConvertOrdinal_System_Numerics_BigInteger_System_String___" data-uid="Utils.NumberToString.INumberToStringConverter.ConvertOrdinal(System.Numerics.BigInteger,System.String[])">
   ConvertOrdinal(BigInteger, params string[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L304"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L344"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts an arbitrarily large integer into its ordinal string representation,
@@ -1767,6 +2054,15 @@ cast; values outside the <code>long</code> range throw <a class="xref" href="htt
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.overflowexception">OverflowException</a></dt>
+    <dd><p><code class="paramref">number</code> is outside the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int64">long</a> or <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a> range.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a></dt>
+    <dd><p>The converter does not support ordinal conversion (<a class="xref" href="Utils.NumberToString.INumberToStringConverter.html#Utils_NumberToString_INumberToStringConverter_SupportsOrdinals">SupportsOrdinals</a> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>).</p>
+</dd>
+  </dl>
 
 
 
@@ -1774,7 +2070,7 @@ cast; values outside the <code>long</code> range throw <a class="xref" href="htt
 
   <h3 id="Utils_NumberToString_INumberToStringConverter_ConvertYear_System_Int32_" data-uid="Utils.NumberToString.INumberToStringConverter.ConvertYear(System.Int32)">
   ConvertYear(int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L340"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L382"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts a year number into its spoken string representation.
@@ -1816,7 +2112,7 @@ For all other years or unconfigured languages, falls back to <a class="xref" hre
 
   <h3 id="Utils_NumberToString_INumberToStringConverter_ConvertYear_System_Int32_System_String___" data-uid="Utils.NumberToString.INumberToStringConverter.ConvertYear(System.Int32,System.String[])">
   ConvertYear(int, params string[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L350"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/INumberToStringConverter.cs/#L392"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts a year number into its spoken string representation,
