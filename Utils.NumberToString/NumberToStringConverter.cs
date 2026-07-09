@@ -103,7 +103,7 @@ namespace Utils.NumberToString
 
             VariantDimensions = (options.VariantDimensions ?? []).ToImmutableArray();
             VariantRules = (options.VariantRules ?? []).ToImmutableArray();
-            _sortedVariantRules = VariantRules.OrderBy(r => r.Specificity).ToImmutableArray();
+            _sortedVariantRules = [.. VariantRules.OrderBy(r => r.Specificity)];
             _hasScaleSpecificVariantRules = VariantRules.Any(r => r.Replacements.Any(rr => rr.OnScale is not null));
             Triggers = (options.Triggers ?? []).ToImmutableArray();
             _yearFormat = options.YearFormat;
@@ -542,9 +542,15 @@ namespace Utils.NumberToString
             return isNegative ? Minus.Replace("*", adjusted) : adjusted;
         }
 
+        /// <inheritdoc cref="INumberToStringConverter.Convert(double)"/>
+        public string Convert(double number) => Convert(number, []);
+
         /// <inheritdoc cref="INumberToStringConverter.Convert(double, string[])"/>
         public string Convert(double number, params string[] variants)
         {
+            if (double.IsNaN(number) || double.IsInfinity(number))
+                throw new ArgumentException($"Cannot convert non-finite value '{number}' to a number in words.", nameof(number));
+
             if (decimal.TryParse(
                     number.ToString("R", System.Globalization.CultureInfo.InvariantCulture),
                     System.Globalization.NumberStyles.Any,
@@ -553,6 +559,9 @@ namespace Utils.NumberToString
                 return Convert(d, variants);
             return Convert(new System.Numerics.BigInteger(Math.Truncate(number)), variants);
         }
+
+        /// <inheritdoc cref="INumberToStringConverter.Convert(float)"/>
+        public string Convert(float number) => Convert((double)number, []);
 
         /// <inheritdoc cref="INumberToStringConverter.Convert(float, string[])"/>
         public string Convert(float number, params string[] variants)
@@ -701,15 +710,30 @@ namespace Utils.NumberToString
         }
 
         /// <summary>
-        /// Applies variant rules to <paramref name="text"/> in order of ascending specificity.
+        /// Applies variant rules to <paramref name="text"/> in order of ascending specificity
+        /// (pre-sorted once at construction time in <see cref="_sortedVariantRules"/>).
         /// A rule matches when all its dimension constraints are satisfied by <paramref name="query"/>.
+        /// Two mutually exclusive modes are supported via <paramref name="scaleGroupNumber"/>:
+        /// global replacements (no <c>onScale</c>) when <see langword="null"/>, or scale-specific
+        /// replacements for a single group when set (used by <see cref="ApplyVariantRulesForScale"/>).
         /// </summary>
+        /// <param name="text">The already-converted text to apply variant replacements to.</param>
+        /// <param name="query">The active variant dimension values (e.g. gender, case) to match rules against.</param>
         /// <param name="numericValue">
         /// The full absolute number value, used to evaluate <see cref="ReplacementRule.OnValue"/>
-        /// predicates on global (no <c>onScale</c>) variant replacements.
+        /// predicates on global (no <c>onScale</c>) variant replacements. Ignored in scale mode.
         /// <see langword="null"/> suppresses <c>onValue</c> filtering (rule fires regardless).
         /// </param>
-        private string ApplyVariantRules(string text, IReadOnlyDictionary<string, string> query, long? numericValue = null)
+        /// <param name="scaleGroupNumber">
+        /// When set, restricts matching to scale-specific replacements whose <c>onScale</c> range
+        /// contains this group number (scale mode). When <see langword="null"/>, only global
+        /// (non-scale) replacements are applied.
+        /// </param>
+        /// <param name="scaleGroupValue">
+        /// The numeric value of the current group in scale mode (e.g. 1 for the thousands group
+        /// in 1 000), evaluated against <see cref="ReplacementRule.OnValue"/>.
+        /// </param>
+        private string ApplyVariantRules(string text, IReadOnlyDictionary<string, string> query, long? numericValue = null, int? scaleGroupNumber = null, long scaleGroupValue = 0)
         {
             if (VariantRules.Count == 0 || query.Count == 0) return text;
 
@@ -723,9 +747,17 @@ namespace Utils.NumberToString
 
                 foreach (var replacement in rule.Replacements)
                 {
-                    if (_hasScaleSpecificVariantRules && replacement.OnScale is not null) continue;
-                    if (replacement.OnValue is not null && (numericValue is null || !replacement.OnValue.Contains(numericValue.Value)))
-                        continue;
+                    if (scaleGroupNumber is int groupNumber)
+                    {
+                        if (replacement.OnScale is null || !replacement.OnScale.Contains(groupNumber)) continue;
+                        if (replacement.OnValue is not null && !replacement.OnValue.Contains(scaleGroupValue)) continue;
+                    }
+                    else
+                    {
+                        if (_hasScaleSpecificVariantRules && replacement.OnScale is not null) continue;
+                        if (replacement.OnValue is not null && (numericValue is null || !replacement.OnValue.Contains(numericValue.Value)))
+                            continue;
+                    }
                     text = ApplyVariantReplacement(text, replacement);
                 }
             }
@@ -736,35 +768,18 @@ namespace Utils.NumberToString
         /// <summary>
         /// Applies scale-specific variant replacements for <paramref name="groupNumber"/> only.
         /// Called per-group inside <see cref="ConvertRaw"/> when scale-specific variant rules exist.
+        /// Thin wrapper over <see cref="ApplyVariantRules"/> in scale mode.
         /// </summary>
+        /// <param name="text">The already-converted text to apply variant replacements to.</param>
+        /// <param name="query">The active variant dimension values (e.g. gender, case) to match rules against.</param>
+        /// <param name="groupNumber">The scale group number the replacements must target via <c>onScale</c>.</param>
         /// <param name="groupNumericValue">
         /// The numeric value of the current group (e.g. 1 for the thousands group in 1 000).
         /// Used to evaluate <see cref="ReplacementRule.OnValue"/> predicates on scale-specific
         /// variant replacements.
         /// </param>
-        private string ApplyVariantRulesForScale(string text, IReadOnlyDictionary<string, string> query, int groupNumber, long groupNumericValue = 0)
-        {
-            if (VariantRules.Count == 0 || query.Count == 0) return text;
-
-            foreach (var rule in _sortedVariantRules)
-            {
-                bool matches = rule.Constraints.All(c =>
-                    query.TryGetValue(c.Key, out var v) &&
-                    string.Equals(v, c.Value, StringComparison.OrdinalIgnoreCase));
-
-                if (!matches) continue;
-
-                foreach (var replacement in rule.Replacements)
-                {
-                    if (replacement.OnScale is null || !replacement.OnScale.Contains(groupNumber)) continue;
-                    if (replacement.OnValue is not null && !replacement.OnValue.Contains(groupNumericValue))
-                        continue;
-                    text = ApplyVariantReplacement(text, replacement);
-                }
-            }
-
-            return text;
-        }
+        private string ApplyVariantRulesForScale(string text, IReadOnlyDictionary<string, string> query, int groupNumber, long groupNumericValue = 0) =>
+            ApplyVariantRules(text, query, scaleGroupNumber: groupNumber, scaleGroupValue: groupNumericValue);
 
         /// <summary>
         /// Applies a single replacement rule to <paramref name="text"/> according to its scope.
@@ -1180,17 +1195,17 @@ namespace Utils.NumberToString
         /// <param name="numerator">The numerator of the fraction.</param>
         /// <param name="denominator">The denominator of the fraction.</param>
         /// <param name="allowFractionNames">When <see langword="true"/>, uses named fraction suffixes when available.</param>
+        /// <param name="variants">Optional variant dimension values (e.g. gender) forwarded to the numerator/denominator conversions.</param>
         /// <returns>The textual representation of the fraction.</returns>
         private string BuildFractionText(BigInteger numerator, BigInteger denominator, bool allowFractionNames = true, string[]? variants = null)
         {
             if (allowFractionNames &&
                 TryGetBase10FractionDigits(denominator, out int digits) &&
                 Fractions.TryGetValue(digits, out var suffix) &&
-                numerator >= 0 &&
-                numerator <= long.MaxValue)
+                BigInteger.Abs(numerator) <= long.MaxValue)
             {
                 string valueText = (variants is { Length: > 0 } ? Convert(numerator, variants) : Convert(numerator)).Replace("-", " ");
-                return string.Concat(valueText, Separator, suffix.ToPlural((long)numerator)).Trim();
+                return string.Concat(valueText, Separator, suffix.ToPlural((long)BigInteger.Abs(numerator))).Trim();
             }
 
             string numeratorText = (variants is { Length: > 0 } ? Convert(numerator, variants) : Convert(numerator)).Replace("-", " ");
@@ -1334,6 +1349,14 @@ namespace Utils.NumberToString
         public string ConvertFraction(BigInteger numerator, BigInteger denominator, params string[] variants)
             => BuildFractionText(numerator, denominator, allowFractionNames: true, variants);
 
+        /// <inheritdoc cref="INumberToStringConverter.ConvertFraction(int, int, string[])"/>
+        public string ConvertFraction(int numerator, int denominator, params string[] variants)
+            => ConvertFraction((BigInteger)numerator, (BigInteger)denominator, variants);
+
+        /// <inheritdoc cref="INumberToStringConverter.ConvertFraction(long, long, string[])"/>
+        public string ConvertFraction(long numerator, long denominator, params string[] variants)
+            => ConvertFraction((BigInteger)numerator, (BigInteger)denominator, variants);
+
         /// <summary>
         /// Converts a multiplier to its spoken form (e.g. 2 → "twice", 3 → "trois fois").
         /// Named forms are looked up from the configuration; unnamed forms append <see cref="MultiplicativeSuffix"/>
@@ -1402,7 +1425,7 @@ namespace Utils.NumberToString
             {
                 return CultureInfo.GetCultureInfo(LanguageIdentifier).DateTimeFormat.MonthNames[month - 1];
             }
-            catch
+            catch (Exception ex) when (ex is CultureNotFoundException or IndexOutOfRangeException)
             {
                 return month.ToString(CultureInfo.InvariantCulture);
             }

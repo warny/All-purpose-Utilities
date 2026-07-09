@@ -75,15 +75,19 @@
 			  In Spanish, only "uno" (1) and compound hundreds (-cientos) vary in
 			  gender. The 21-29 compounds are fused words (veintiuno, veintidós…):
 			  LastWord does not transform "uno" inside "veintiuno" because the
-			  preceding character ('i') is neither a space nor a hyphen. Fixing
-			  the buildStrings (adding a space and "y") would extend coverage to
-			  the 31-99 forms.
+			  preceding character ('i') is neither a space nor a hyphen — handled
+			  instead via a whole-word replacement below (item 41). 31-99 already
+			  use a space-separated buildString ("treinta y *"), so LastWord works there.
 			-->
 			<Dimension name="gender" localName="género" values="masculino,femenino" />
 
 			<Variant type="gender" variant="femenino">
 				<!-- Units: "uno" alone or at end of group (preceded by a space or hyphen) -->
 				<Replacement oldValue="uno" newValue="una" scope="LastWord" />
+				<!-- item 41: 21 is a fused word ("veintiuno") that LastWord cannot reach
+				     (no space/hyphen before "uno"); handled with a whole-word replacement instead.
+				     22-29 do not vary in gender ("uno" is the only variable unit). -->
+				<Replacement oldValue="veintiuno" newValue="veintiuna" scope="Anywhere" />
 				<!-- Hundreds: replaces the -cientos form with -cientas everywhere
 				     (safe because these words do not appear in scale names) -->
 				<Replacement oldValue="doscientos"    newValue="doscientas"    scope="Anywhere" />

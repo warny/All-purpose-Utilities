@@ -42,6 +42,20 @@ dotnet add package omy.Utils.NumberToString
 | ZU | Zulu | — | — (not yet implemented) |
 | EE | Ewe | ✓ (prefix etsõ) | — |
 | WO | Wolof | ✓ | — |
+| HR | Croatian | ✓ | — (numbers are invariable) |
+| HU | Hungarian | ✓ | — (numbers are invariable) |
+| VN, VI, VI-VN | Vietnamese | ✓ | — (numbers are invariable) |
+| TR, TR-TR | Turkish | — | — (numbers are invariable) |
+| SV, SV-SE | Swedish | — | — (numbers are invariable) |
+| NO, NB, NB-NO | Norwegian (Bokmål) | — | — (numbers are invariable) |
+| UK, UK-UA | Ukrainian | — | — (numbers are invariable) |
+| DA, DA-DK | Danish | — | — (numbers are invariable) |
+| CS, CS-CZ | Czech | — | — (numbers are invariable) |
+| SK, SK-SK | Slovak | — | — (numbers are invariable) |
+| BG, BG-BG | Bulgarian | — | — (numbers are invariable) |
+| ID, MS | Indonesian / Malay | — | — (numbers are invariable) |
+| FA, FA-IR | Persian (Farsi) | — | — (numbers are invariable) |
+| SW | Swahili | — | — (numbers are invariable) |
 
 ---
 
@@ -810,6 +824,9 @@ on the same language register the same converter under several codes.
 | `fractionSeparator` | | Connector for fractions (e.g. `"sur"`, `"over"`). |
 | `maxNumber` | | Maximum accepted value; beyond this, `ArgumentOutOfRangeException` is thrown. |
 | `baseOn` | | Culture code of a base language to inherit from. All settings are inherited and can be selectively overridden. Chains (A → B → C) are supported; the base must appear earlier in the same file or in a previously loaded file. An empty element (e.g. `<Replacements />`) explicitly overrides the base with an empty list. |
+| `groupConnector` / `groupConnectorThreshold` | | Word inserted between the last two groups when the lowest group's value is below the threshold (e.g. English "one thousand **and** one" — `groupConnector="and" groupConnectorThreshold="100"`). |
+| `intraGroupConnector` / `intraGroupConnectorThreshold` | | Word inserted between the hundreds digit and the remainder within a group of 3, when hundreds are present and the remainder is below the threshold (e.g. Vietnamese 101 → "một trăm **linh** một" — `intraGroupConnector="linh" intraGroupConnectorThreshold="10"`). |
+| `scaleConnector` / `scaleConnectorThreshold` | | Word inserted between a group's text and its scale name (thousand/million/…) when the group's value is at or above the threshold (e.g. Romanian 20 000 → "douăzeci **de** mii" — `scaleConnector="de" scaleConnectorThreshold="20"`). |
 
 ---
 
@@ -1247,6 +1264,7 @@ within the declared `<SplitRange>` elements. Years outside all ranges fall back 
 |-----------|-------------|
 | `hundredWord` | Word appended when the year is a round century (e.g. `"hundred"` → `"nineteen hundred"`). |
 | `zeroConnector` | Connector inserted before single-digit remainders (e.g. `"oh"` → `"twenty oh five"`). |
+| `beforeChristSuffix` | Suffix appended to negative years instead of the `minus` template (e.g. `"BC"` → `ConvertYear(-44)` → `"forty-four BC"` instead of `"minus forty-four"`). |
 
 `<SplitRange from="N" to="M" />` declares an inclusive range `[N, M]` of year values that
 use the split algorithm. Multiple ranges may be declared; ranges outside the list fall back

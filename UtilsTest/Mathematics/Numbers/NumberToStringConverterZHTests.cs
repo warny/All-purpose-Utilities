@@ -32,6 +32,8 @@ namespace UtilsTest.Mathematics.Numbers
                 (10,  "十"),
                 (20,  "二十"),
                 (100, "一百"),
+                // item 32 evaluated "一千" for a possible elision fix (as done for FI/KO/JA) but
+                // standard Mandarin requires "一" before both 百 and 千 — left unchanged.
                 (1_000, "一 千"),
             ];
             foreach (var (n, expected) in cases)

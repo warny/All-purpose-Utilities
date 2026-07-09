@@ -38,6 +38,7 @@ namespace UtilsTest.Mathematics.Numbers
             // Korean elides the multiplier "일" before "천": 1 000 = "천", not "일 천"
             Assert.AreEqual("천",       c.Convert(1_000));
             Assert.AreEqual("이 천",    c.Convert(2_000));
+            // 10 000 uses the "만" scale suffix path, unaffected by the onValue=1 replacement above
             Assert.AreEqual("십 천",    c.Convert(10_000));
         }
 

@@ -28,8 +28,12 @@ namespace UtilsTest.Mathematics.Numbers
                 (60, "soixante"),
                 (61, "soixante et un"),
                 (62, "soixante deux"),
+                // item 34: "et" appears only before the unit "un" (71/81/91), not before 72-79/82-89/92-99
+                (71, "septante et un"),
                 (72, "septante deux"),
+                (81, "huitante et un"),
                 (82, "huitante deux"),
+                (91, "nonante et un"),
                 (92, "nonante deux"),
                 (111, "cent onze"),
                 (121, "cent vingt et un"),

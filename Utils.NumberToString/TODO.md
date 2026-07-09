@@ -216,79 +216,85 @@ ont été mis à jour en conséquence.
 
 ## Améliorations identifiées (2026-07-09)
 
-### 29. `GetMonthName` — catch trop large
+### ~~29. `GetMonthName` — catch trop large~~ — **implémenté**
 
-`NumberToStringConverter.cs:1403` attrape `catch { }` sans type, masquant toute exception
-(pas seulement les erreurs de culture attendues). Même pattern que le fix appliqué à
-`TtfEncoderFactory.cs` en 2026-03-12 : remplacer par les types d'exception réellement
-attendus (ex. `ArgumentOutOfRangeException`).
+`catch { }` remplacé par `catch (Exception ex) when (ex is CultureNotFoundException or IndexOutOfRangeException)`
+dans `NumberToStringConverter.cs`. Test de régression via réflexion sur la méthode privée
+(mois hors plage → repli sur la valeur numérique au lieu de propager une exception inattendue).
 
-### 30. `BuildFractionText` ignore les numérateurs négatifs pour les suffixes nommés
+### ~~30. `BuildFractionText` ignore les numérateurs négatifs pour les suffixes nommés~~ — **implémenté**
 
-`NumberToStringConverter.cs:1182-1192` : le test `numerator >= 0` empêche `-1/3` de
-bénéficier de la forme nommée ("moins un tiers"), elle retombe sur une forme brute
-(numérateur/dénominateur bruts). Extraire la valeur absolue avant le test résoudrait
-l'incohérence.
+Condition changée en `BigInteger.Abs(numerator) <= long.MaxValue` ; `ToPlural` reçoit aussi
+la valeur absolue. `-1/10` bénéficie désormais de la forme nommée ("moins un dixième" /
+"minus one tenth") au lieu de retomber sur la forme brute numérateur/dénominateur.
 
-### 31. `ApplyVariantRules` / `ApplyVariantRulesForScale` dupliquées (~40 lignes)
+### ~~31. `ApplyVariantRules` / `ApplyVariantRulesForScale` dupliquées~~ — **implémenté**
 
-`NumberToStringConverter.cs:710-732` et `743-765` : même logique d'itération/contrainte/
-remplacement, seul le filtre `OnScale` diffère. À factoriser en une seule méthode
-paramétrée, en même temps que le correctif de tri unique proposé par l'item 27
-(actuellement non implémenté).
+Fusionnées en une seule méthode `ApplyVariantRules(text, query, numericValue?, scaleGroupNumber?, scaleGroupValue)` ;
+`ApplyVariantRulesForScale` devient un wrapper fin. Le tri de l'item 27 a été fait dans la
+foulée (`_sortedVariantRules` trié une fois au constructeur).
 
-### 32. Étendre le fix item 28 (multiplicateur "1" devant mille) à ZH et JA
+### ~~32. Étendre le fix item 28 (multiplicateur "1" devant mille) à ZH et JA~~ — **implémenté (JA seulement)**
 
-Le même bug que FI/KO existe potentiellement pour "一千" (ZH) et "一千" (JA) : à vérifier
-et corriger avec le même pattern `<Replacement oldValue="一千" newValue="千" onScale="1" onValue="1" />`
-dans `ZH.xml` et `JA.xml`.
+Vérification empirique (et non simple supposition) : le mandarin standard **garde** le "一"
+devant 千 ("一千" est correct, confirmé par un test ZH déjà existant) — aucune correction
+apportée à `ZH.xml`. Le japonais, en revanche, omet "一" devant 千 comme devant 百 (déjà
+correct) : `<Replacement oldValue="一 千" newValue="千" onScale="1" onValue="1" />` ajouté
+dans `JA.xml`. Item 28 lui-même (FI/KO) a été implémenté au passage (il ne l'était pas malgré
+un statut antérieur trompeur) — voir tests `NumberToStringConverterFITests.cs`/`KOTests.cs`.
 
-### 33. PT/GL — centaines sans forme féminine
+### ~~33. PT/GL — centaines sans forme féminine~~ — **déjà implémenté (PT) ; GL déjà correct par conception**
 
-`duzentos`/`trescentos` (PT et GL) n'ont pas d'équivalent féminin contrairement à
-l'espagnol (`doscientas`). À vérifier linguistiquement (le portugais et le galicien
-accordent-ils réellement les centaines en genre comme l'espagnol ?) puis corriger si
-applicable via des `<Variant>` gender=feminino.
+Vérification du code : PT a déjà les 8 remplacements -entos→-entas dans `<Variants>` (testé
+dans `Cardinals_Gender_Feminino`). GL a déjà `douscentos→douscentas` (le seul cas variable en
+galicien selon le commentaire du fichier) ; test de régression ajouté pour verrouiller ce
+comportement documenté (200 varie, 300 non).
 
-### 34. FR-be-ch — connecteur "et" manquant pour 71/81/91
+### ~~34. FR-be-ch — connecteur "et" manquant pour 71/81/91~~ — **déjà correct, non un bug**
 
-En français de Belgique/Suisse, "septante et un" (71) prend "et" mais "septante-deux" (72)
-n'en prend pas — cette distinction n'est pas modélisée dans `NumberConvertionConfiguration.FR-be-ch.xml`,
-qui n'a pas d'exceptions dédiées pour 71-99 comme le FR standard.
+Le mécanisme générique (`Group level 1, digit=1 → "et un"`) applique déjà "et" uniquement
+au chiffre 1, quel que soit le mot des dizaines — 71/81/91 en bénéficient automatiquement,
+72-79/82-89/92-99 n'en ont pas besoin. Tests ajoutés (`NumberToStringConverterFRTests.cs`)
+pour verrouiller ce comportement déjà correct mais non testé.
 
-### 35. `Convert(double/float)` et `DecimalFormatOptions` quasi uniquement testés en FR
+### ~~35. `Convert(double/float)` et `DecimalFormatOptions` quasi uniquement testés en FR~~ — **implémenté**
 
-Ces fonctionnalités (items 1 et 18) ont une couverture de test presque exclusivement FR.
-Étendre à DE/ES/IT pour vérifier l'interaction genre/pluriel avec `DecimalSeparator`,
-`DecimalSuffix` et `OmitZeroDecimals`.
+6 tests ajoutés couvrant DE/ES/IT (`Convert(double)` avec variant, `DecimalFormatOptions`
+avec séparateur/suffixe pluralisés) dans `NumberToStringConverterCoverageGapsTests.cs`.
 
-### 36. `Convert(TimeSpan/DateOnly/DateTime)` non testé pour DE
+### ~~36. `Convert(TimeSpan/DateOnly/DateTime)` non testé pour DE~~ — **implémenté**
 
-`DE.xml` a pourtant une config complète `<TimeUnits>` + `<DateFormat firstDay="ersten">`,
-mais `NumberToStringConverterTimeAndNewLangTests.cs` ne couvre que EN/FR pour
-`Convert(DateOnly)` et `Convert(DateTime)`.
+2 tests ajoutés : `Convert(DateTime)` DE (parties date+heure) et `Convert(DateOnly)` DE avec
+`firstDay="ersten"` appliqué à `{ordinal-day}`.
 
-### 37. `Convert(BigInteger, int significantDigits, ...)` sans test par langue
+### ~~37. `Convert(BigInteger, int significantDigits, ...)` sans test par langue~~ — **implémenté**
 
-Ajoutée en item 3, cette surcharge n'a aucun test vérifiant l'arrondi de groupe combiné
-à des variants (ex. genre FR) sur un grand nombre.
+2 tests ajoutés (DE, ES avec variant de genre) vérifiant l'arrondi de groupe combiné aux
+variants sur un grand nombre.
 
-### 38. `ConvertYear` négatif (`beforeChristSuffix`) jamais combiné à des variants
+### ~~38. `ConvertYear` négatif (`beforeChristSuffix`) jamais combiné à des variants~~ — **implémenté**
 
-Testé uniquement via `ConvertYear(-44)` en EN sans variant ; aucun test ne combine année
-av. J.-C. et variant genre/cas pour une langue où le split par moitié (EN/DE/NL) produit
-des numéraux accordables.
+Découverte en écrivant le test : aucune config XML livrée ne déclare `beforeChristSuffix`
+(seul `NumberToStringConverterBatchTests.cs` l'exerçait via un converter construit à la main).
+Nouveau test construit un converter FR (qui a un genre) + `BeforeChristSuffix`, vérifiant que
+le genre est bien transmis au numéral avant append du suffixe ("un av. J.-C." / "une av. J.-C.").
 
 ---
 
 ## Améliorations identifiées (2026-07-09, suite)
 
-### 39. EL (grec) — centaines sans forme féminine
+### 39. EL (grec) — centaines sans forme féminine — **bug linguistique confirmé, bloqué par le moteur**
 
-Les centaines grecques (διακόσια, τριακόσια…) ne sont produites qu'en neutre. Le grec
-moderne accorde les centaines en genre selon le nom compté : "διακόσιες λίρες" (féminin
-pluriel) vs "διακόσια δολάρια" (neutre pluriel). Aucun `<Variant>` gender n'existe dans
-`EL.xml` pour ce cas, contrairement à ES qui gère déjà ce type d'accord pour les centaines.
+Les centaines grecques (διακόσια, τριακόσια…) ne sont produites qu'en neutre alors que le
+grec moderne les accorde en genre. Tentative d'implémentation via `<Variant type="gender"
+variant="αρσενικό/θηλυκό">` : **régression découverte** — la valeur par défaut d'une dimension
+est toujours `Values[0]` (`NumberToStringConverter.cs:1099`, non redéfinissable), et cette
+même dimension `gender` est partagée avec le positionnement des `forms=` des ordinaux
+(qui exige `αρσενικό` en premier). Rendre `ουδέτερο` premier casserait le défaut des ordinaux
+(`ConvertOrdinal(1)` sans variant doit rester "πρώτος", pas "πρώτο"). Fix annulé pour éviter
+de casser `Convert(200)` (devenu silencieusement "διακόσιοι" au lieu de "διακόσια"). Nécessite
+soit une dimension `gender` séparée pour les cardinaux (incohérent avec le reste du projet),
+soit une évolution du moteur permettant une valeur par défaut différente de `Values[0]`.
 
 ### 40. RU/CS/SK/BG — accord numéral slave (nominatif/génitif sg/pl) absent — limitation architecturale
 
@@ -300,50 +306,39 @@ remplacement ponctuel (RU, sans dimension de variant associée). Contrairement a
 moteur ne modélise pas aujourd'hui — **reporté**, à l'instar de l'item 9 (ZU), nécessiterait
 une extension du système de variants côté appelant plutôt qu'un correctif XML.
 
-### 41. ES — composés 21-29 (`veintiuno`) toujours fusionnés sans espace
+### ~~41. ES — composés 21-29 (`veintiuno`) toujours fusionnés sans espace~~ — **implémenté**
 
-L'item 4 a corrigé l'accord féminin pour ES 31-99 (`"treinta y *"`) et IT 21-29
-(`"venti *"`), mais **pas** ES 21-29 : `veintiuno`, `veintidós`… restent fusionnés en un
-seul mot, donc la règle `LastWord` n'atteint jamais le "uno" interne. `Convert(21,
-"gender=femenino")` retourne donc "veintiuno" au lieu de "veintiuna". Nécessite soit un
-espacement (`"veinte y *"` puis remplacement `"veinte y "` → `"veinti"`), soit une règle
-de remplacement dédiée comme pour 31-99.
+Plutôt que d'introduire un espace (qui changerait l'orthographe standard "veintiuno"),
+un remplacement mot-entier dédié a été ajouté : `<Replacement oldValue="veintiuno"
+newValue="veintiuna" scope="Anywhere" />`. 22-29 ne varient pas en genre (seul "uno" varie).
+`Convert(21, "gender=femenino")` → "veintiuna".
 
-### 42. README — 14 langues configurées absentes de la liste des langues supportées
+### ~~42. README — 14 langues configurées absentes de la liste des langues supportées~~ — **implémenté**
 
-`README.md` liste 25 langues alors que 39 fichiers XML existent dans
-`NumberConverterConfigurations/`. Manquent notamment : BG, CS, DA, FA, HR, HU, ID, NO, SK,
-SV, SW, TR, UK, VN — dont plusieurs ajoutées récemment (items 8 et 23) mais jamais
-reportées dans le README.
+Les 14 langues (BG, CS, DA, FA, HR, HU, ID/MS, NO/NB, SK, SV, SW, TR, UK, VN) ajoutées à la
+table des langues supportées, avec leurs codes de culture réels lus dans chaque XML.
 
-### 43. README — connecteurs XML majeurs et `beforeChristSuffix` non documentés
+### ~~43. README — connecteurs XML majeurs et `beforeChristSuffix` non documentés~~ — **implémenté**
 
-La section "XML Configuration" du README ne mentionne pas `groupConnector` /
-`groupConnectorThreshold`, `intraGroupConnector` / `intraGroupConnectorThreshold` (item 22)
-ni `scaleConnector` / `scaleConnectorThreshold` (item 8/RO), bien que ces attributs soient
-dans le XSD et activement utilisés. La section `<YearFormat>` documente `hundredWord` et
-`zeroConnector` mais omet `beforeChristSuffix` (item 14).
+`groupConnector`/`groupConnectorThreshold`, `intraGroupConnector`/`intraGroupConnectorThreshold`,
+`scaleConnector`/`scaleConnectorThreshold` ajoutés à la table `<Language>` attributes ;
+`beforeChristSuffix` ajouté à la table `<YearFormat>` attributes.
 
-### 44. `INumberToStringConverter` — XML docs sans tags `<exception>` structurés
+### ~~44. `INumberToStringConverter` — XML docs sans tags `<exception>` structurés~~ — **implémenté**
 
-Les exceptions levées (`NotSupportedException` selon `SupportsOrdinals`/`SupportsTimeConversion`/
-etc., `OverflowException` sur les conversions BigInteger→long) ne sont mentionnées qu'en
-texte libre dans les `<summary>`, jamais via des tags `<exception cref="...">` dédiés — à
-compléter sur les ~35 membres publics concernés.
+Tags `<exception cref="...">` ajoutés sur `Convert(BigInteger, variants)`, `ConvertOrdinal`
+(int/long/BigInteger, avec/sans variants), `ConvertCurrency` (avec/sans variants),
+`ConvertMultiplicative`, `Convert(TimeSpan/TimeOnly/DateOnly/DateTime)`, et
+`Convert(double/float)` (voir item 45).
 
-### 45. `Convert(double)` / `Convert(float)` — incohérences de surcharge et cas limites non gérés
+### ~~45. `Convert(double)` / `Convert(float)` — incohérences de surcharge et cas limites non gérés~~ — **implémenté**
 
-Deux problèmes distincts sur la même paire de méthodes (`INumberToStringConverter.cs`) :
-- Contrairement à `Convert(int/long/BigInteger/decimal)` qui ont chacune une surcharge sans
-  `variants`, `Convert(double)`/`Convert(float)` n'existent qu'avec `params string[] variants`.
-- `double.NaN` / `double.PositiveInfinity` ne sont jamais interceptés avant le passage par
-  `ToString("R")` + `decimal.TryParse` : le comportement résultant (échec silencieux ou
-  exception peu explicite) n'est pas défini. Ajouter un test explicite `double.IsNaN`/
-  `IsInfinity` avec un message d'erreur clair.
+Surcharges `Convert(double)`/`Convert(float)` sans `variants` ajoutées (interface + implémentation
+concrète, pour un accès direct sans passer par l'interface). `double.IsNaN`/`IsInfinity` (et
+équivalents `float`) interceptés en tête de méthode : lève désormais `ArgumentException` au lieu
+d'un comportement indéfini.
 
-### 46. `ConvertFraction` — pas de surcharge `int`/`long`, uniquement `BigInteger`
+### ~~46. `ConvertFraction` — pas de surcharge `int`/`long`, uniquement `BigInteger`~~ — **implémenté**
 
-`Convert`, `ConvertOrdinal` et `ConvertCurrency` offrent tous des surcharges `int`/`long`/
-`BigInteger` pour la cohérence de l'API. `ConvertFraction(BigInteger, BigInteger, ...)`
-(item 19) n'a pas d'équivalent `int`/`long`, forçant les appelants à convertir manuellement
-et s'exposant à un `OverflowException` évitable.
+Surcharges `ConvertFraction(int, int, ...)` et `ConvertFraction(long, long, ...)` ajoutées
+(interface + implémentation concrète), délégant à la version `BigInteger`.

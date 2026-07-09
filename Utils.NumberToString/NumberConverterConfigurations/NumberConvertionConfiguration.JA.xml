@@ -58,6 +58,10 @@
 				<Suffix>万</Suffix>
 			</Suffixes>
 		</NumberScale>
+		<Replacements>
+			<!-- 1 000 is "千", not "一 千" (unlike Chinese, which keeps "一千") -->
+			<Replacement oldValue="一 千" newValue="千" onScale="1" onValue="1" />
+		</Replacements>
 		<Exceptions />
 		<Ordinals prefix="第" />
 	</Language>
