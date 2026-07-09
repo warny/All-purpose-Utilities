@@ -482,24 +482,25 @@ public sealed class GeoVector<T> : GeoPoint<T>, IEquatable<GeoVector<T>>, IUnary
         return base.Equals(obj);
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Determines whether the specified <see cref="GeoVector{T}"/> has the same position and bearing as
+    /// this instance. Bearing is rounded to <see cref="GeoPoint{T}.EqualityPrecision"/> decimal places
+    /// before being compared (latitude/longitude are rounded the same way by <see cref="GeoPoint{T}.Equals(GeoPoint{T})"/>),
+    /// so <see cref="Equals(GeoVector{T})"/> and <see cref="GetHashCode"/> are always consistent with each
+    /// other by construction.
+    /// </summary>
     public bool Equals(GeoVector<T>? other)
-        => other is not null && comparer.Compare(Bearing, other.Bearing) == 0 && base.Equals(other);
+        => other is not null
+           && T.Round(Bearing, EqualityPrecision) == T.Round(other.Bearing, EqualityPrecision)
+           && base.Equals(other);
 
     /// <summary>
-    /// Returns a hash code aligned with the tolerance-based <see cref="Equals(GeoVector{T})"/>: latitude,
-    /// longitude, and bearing are all rounded to the comparer's precision (5 decimal places) before
-    /// hashing, matching the precision that <see cref="Travel"/> and <see cref="Intersections"/> already
-    /// round their results to.
+    /// Returns a hash code consistent with <see cref="Equals(GeoVector{T})"/>: latitude, longitude, and
+    /// bearing are all rounded to <see cref="GeoPoint{T}.EqualityPrecision"/> decimal places before
+    /// hashing, using the exact same rounding that <see cref="Equals(GeoVector{T})"/> compares on.
     /// </summary>
-    /// <remarks>
-    /// As with <see cref="GeoPoint{T}.GetHashCode"/>, this is a practical improvement over hashing raw
-    /// values, not a complete fix: because equality here is tolerance-based and therefore non-transitive
-    /// (see <see cref="FloatingPointComparer{T}"/>), two vectors within the tolerance interval can still
-    /// round to different hash buckets when a coordinate straddles a rounding boundary.
-    /// </remarks>
     public override int GetHashCode()
-        => ObjectUtils.ComputeHash(T.Round(Latitude, 5), T.Round(Longitude, 5), T.Round(Bearing, 5));
+        => ObjectUtils.ComputeHash(T.Round(Latitude, EqualityPrecision), T.Round(Longitude, EqualityPrecision), T.Round(Bearing, EqualityPrecision));
 
     #endregion
 

@@ -81,14 +81,26 @@ namespace UtilsTest.Geography
         [TestMethod]
         public void EqualPointsProduceEqualHashCodes()
         {
-            // Regression test: Equals() tolerates a small difference (5-decimal precision), so
-            // GetHashCode() must round to the same precision, otherwise the Equals/GetHashCode
-            // contract is violated for points that differ only in noise beyond that precision.
+            // Regression test: Equals() and GetHashCode() both round latitude/longitude to the same
+            // precision (5 decimal places) before comparing/hashing, so points that only differ in
+            // noise beyond that precision are equal and always hash equally.
             var point1 = new GeoPoint<double>(45.123456, -73.654321);
             var point2 = new GeoPoint<double>(45.1234560001, -73.6543209999);
 
             Assert.AreEqual(point1, point2);
             Assert.AreEqual(point1.GetHashCode(), point2.GetHashCode());
+        }
+
+        [TestMethod]
+        public void PointsOnOppositeSidesOfARoundingBoundaryAreNotEqual()
+        {
+            // Documents a deliberate trade-off: comparing on rounded values (rather than a raw
+            // tolerance window) keeps Equals/GetHashCode always consistent, at the cost of treating
+            // two very close values as different when they straddle the rounding boundary.
+            var point1 = new GeoPoint<double>(1.0000449999, 0);
+            var point2 = new GeoPoint<double>(1.0000450001, 0);
+
+            Assert.AreNotEqual(point1, point2);
         }
     }
 }

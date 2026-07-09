@@ -118,13 +118,25 @@ namespace UtilsTest.Geography
         [TestMethod]
         public void EqualVectorsProduceEqualHashCodes()
         {
-            // Regression test: Equals() tolerates a small difference (5-decimal precision), so
-            // GetHashCode() must round to the same precision to keep the Equals/GetHashCode contract.
-            var vector1 = new GeoVector<double>(45.123456, -73.654321, 10.000001);
-            var vector2 = new GeoVector<double>(45.1234560001, -73.6543209999, 10.0000009999);
+            // Regression test: Equals() and GetHashCode() both round latitude/longitude/bearing to the
+            // same precision (5 decimal places) before comparing/hashing, so vectors that only differ in
+            // noise beyond that precision are equal and always hash equally.
+            var vector1 = new GeoVector<double>(45.123456, -73.654321, 10.123456);
+            var vector2 = new GeoVector<double>(45.1234560001, -73.6543209999, 10.1234560001);
 
             Assert.AreEqual(vector1, vector2);
             Assert.AreEqual(vector1.GetHashCode(), vector2.GetHashCode());
+        }
+
+        [TestMethod]
+        public void VectorsOnOppositeSidesOfARoundingBoundaryAreNotEqual()
+        {
+            // Documents the same deliberate trade-off as GeoPointTests.
+            // PointsOnOppositeSidesOfARoundingBoundaryAreNotEqual, applied to bearing.
+            var vector1 = new GeoVector<double>(0, 0, 1.0000449999);
+            var vector2 = new GeoVector<double>(0, 0, 1.0000450001);
+
+            Assert.AreNotEqual(vector1, vector2);
         }
 
         [TestMethod]

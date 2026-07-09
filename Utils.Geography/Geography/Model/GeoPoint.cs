@@ -58,9 +58,20 @@ namespace Utils.Geography.Model
         protected static readonly IAngleCalculator<T> degree = Trigonometry<T>.Degree;
 
         /// <summary>
-        /// Floating-point comparer used to compare latitude and longitude values with tolerance.
+        /// Number of decimal places latitude/longitude (and bearing, for <see cref="GeoVector{T}"/>) are
+        /// rounded to before being compared in <see cref="Equals(GeoPoint{T})"/> and hashed in
+        /// <see cref="GetHashCode"/>. Rounding both sides the same way keeps the two members consistent
+        /// with each other by construction, at the cost of treating two values that are extremely close
+        /// but land on opposite sides of a rounding boundary as unequal.
         /// </summary>
-        protected static readonly FloatingPointComparer<T> comparer = new(5);
+        protected const int EqualityPrecision = 5;
+
+        /// <summary>
+        /// Floating-point comparer used for tolerance-based domain checks that are not part of the
+        /// <see cref="Equals(GeoPoint{T})"/>/<see cref="GetHashCode"/> contract (e.g. detecting degenerate
+        /// meridians in <see cref="GeoVector{T}.ComputeBearing"/>).
+        /// </summary>
+        protected static readonly FloatingPointComparer<T> comparer = new(EqualityPrecision);
 
         /// <summary>
         /// Maximum valid latitude in degrees.
@@ -320,35 +331,38 @@ namespace Utils.Geography.Model
         public override bool Equals(object? obj) =>
             obj is GeoPoint<T> other && Equals(other);
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Determines whether the specified <see cref="GeoPoint{T}"/> represents the same location as this
+        /// instance. Latitude and longitude are rounded to <see cref="EqualityPrecision"/> decimal places
+        /// before being compared, so <see cref="Equals(GeoPoint{T})"/> and <see cref="GetHashCode"/> are
+        /// always consistent with each other by construction (both operate on the same rounded values).
+        /// The trade-off is that two values which are extremely close but fall on opposite sides of a
+        /// rounding boundary (e.g. <c>1.0000049999</c> and <c>1.0000050001</c>) are treated as unequal,
+        /// rather than "equal within a tolerance window" as a raw tolerance comparison would.
+        /// </summary>
         public bool Equals(GeoPoint<T>? other)
         {
             if (other is null) return false;
-            if (comparer.Compare(Latitude, MaxLatitude) == 0 && comparer.Compare(other.Latitude, MaxLatitude) == 0) return true;
-            if (comparer.Compare(Latitude, MinLatitude) == 0 && comparer.Compare(other.Latitude, MinLatitude) == 0) return true;
 
-            return comparer.Compare(Latitude, other.Latitude) == 0
-                && comparer.Compare(Longitude, other.Longitude) == 0;
+            T roundedLatitude = T.Round(Latitude, EqualityPrecision);
+            T otherRoundedLatitude = T.Round(other.Latitude, EqualityPrecision);
+
+            // Any longitude at a pole refers to the same point.
+            if (roundedLatitude == MaxLatitude && otherRoundedLatitude == MaxLatitude) return true;
+            if (roundedLatitude == MinLatitude && otherRoundedLatitude == MinLatitude) return true;
+
+            return roundedLatitude == otherRoundedLatitude
+                && T.Round(Longitude, EqualityPrecision) == T.Round(other.Longitude, EqualityPrecision);
         }
 
         /// <summary>
-        /// Returns a hash code aligned with the tolerance-based <see cref="Equals(GeoPoint{T})"/>: values
-        /// are rounded to the comparer's precision (5 decimal places) before hashing, matching the
-        /// precision that <see cref="GeoVector{T}.Travel"/> and <see cref="GeoVector{T}.Intersections"/>
-        /// already round their results to.
+        /// Returns a hash code consistent with <see cref="Equals(GeoPoint{T})"/>: latitude and longitude are
+        /// rounded to <see cref="EqualityPrecision"/> decimal places before hashing, using the exact same
+        /// rounding that <see cref="Equals(GeoPoint{T})"/> compares on, so equal points always hash equally.
         /// </summary>
-        /// <remarks>
-        /// This does not make <see cref="GetHashCode"/> fully consistent with <see cref="Equals(GeoPoint{T})"/>
-        /// in all cases: because <see cref="comparer"/> is a non-transitive tolerance (see
-        /// <see cref="FloatingPointComparer{T}"/>), two values within the tolerance interval can still round
-        /// to different buckets when they straddle a rounding boundary (e.g. <c>1.000004</c> and
-        /// <c>1.000006</c>). A hash function that is always exactly consistent with a non-transitive equality
-        /// is not possible without either using a constant hash (destroying lookup performance) or making
-        /// equality exact. Rounding is a practical improvement, not a complete fix.
-        /// </remarks>
         public override int GetHashCode()
         {
-            return ObjectUtils.ComputeHash(T.Round(Latitude, 5), T.Round(Longitude, 5));
+            return ObjectUtils.ComputeHash(T.Round(Latitude, EqualityPrecision), T.Round(Longitude, EqualityPrecision));
         }
 
         /// <summary>
