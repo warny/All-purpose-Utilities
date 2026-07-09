@@ -38,19 +38,24 @@ namespace Utils.Geography.Display
         public int TileSize { get; set; }
 
         /// <summary>
-        /// Gets the X coordinate within the tile.
+        /// Gets the X coordinate within the tile, always in the range [0, <see cref="TileSize"/>).
         /// </summary>
-        public int TileX => (int)(X % TileSize);
+        public int TileX => (int)(((X % TileSize) + TileSize) % TileSize);
 
         /// <summary>
-        /// Gets the Y coordinate within the tile.
+        /// Gets the Y coordinate within the tile, always in the range [0, <see cref="TileSize"/>).
         /// </summary>
-        public int TileY => (int)(Y % TileSize);
+        public int TileY => (int)(((Y % TileSize) + TileSize) % TileSize);
 
         /// <summary>
         /// Gets the tile that contains this point.
         /// </summary>
-        public Tile<T> Tile => new Tile<T>(X / TileSize, Y / TileSize, ZoomLevel, TileSize);
+        /// <remarks>
+        /// Uses floored division (via <see cref="TileX"/>/<see cref="TileY"/>) rather than truncated
+        /// integer division, so that negative coordinates resolve to the correct tile instead of
+        /// rounding towards zero.
+        /// </remarks>
+        public Tile<T> Tile => new Tile<T>((X - TileX) / TileSize, (Y - TileY) / TileSize, ZoomLevel, TileSize);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MapPoint{T}"/> class from projected coordinates.

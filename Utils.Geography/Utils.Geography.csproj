@@ -14,12 +14,12 @@
 		<PackageId>omy.Utils.Geography</PackageId>
 		<Version>1.2.1</Version>
 		<Copyright>Olivier MARTY</Copyright>
-                <Description>Geography helpers including coordinates, bounding boxes, map projections, and tile utilities.</Description>
-                <PackageTags>omy;utilities;geography;maps;projection;tile</PackageTags>
+		<Description>Geography helpers including coordinates, bounding boxes, map projections, and tile utilities.</Description>
+		<PackageTags>omy;utilities;geography;maps;projection;tile</PackageTags>
 		<RepositoryUrl>https://github.com/warny/All-purpose-Utilities</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<PackageProjectUrl>https://github.com/warny/All-purpose-Utilities</PackageProjectUrl>
-        </PropertyGroup>
+	</PropertyGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\Utils\Utils.csproj" />

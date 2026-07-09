@@ -58,9 +58,9 @@ public class EquirectangularProjection<T> : IProjectionTransformation<T>
     public GeoPoint<T> MapPointToGeoPoint(ProjectedPoint<T> mappoint)
     {
         // Possibly clamp Y to ±90:
-        T lat = ClampLatitude(mappoint.Y) / degree.RightAngle;
+        T lat = ClampLatitude(mappoint.Y);
         // Keep X as is:
-        T lon = mappoint.X / degree.StraightAngle;
+        T lon = mappoint.X;
 
         return new GeoPoint<T>(lat, lon);
     }

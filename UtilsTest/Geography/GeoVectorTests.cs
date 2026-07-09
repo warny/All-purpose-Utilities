@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 using Utils.Arrays;
 using Utils.Geography.Model;
@@ -112,6 +113,103 @@ namespace UtilsTest.Geography
                     Assert.Fail("Result [{0}] differs from target [{1}]", strResult, strTarget);
                 }
             }
+        }
+
+        [TestMethod]
+        public void EqualVectorsProduceEqualHashCodes()
+        {
+            // Regression test: Equals() and GetHashCode() both round latitude/longitude/bearing to the
+            // same precision (5 decimal places) before comparing/hashing, so vectors that only differ in
+            // noise beyond that precision are equal and always hash equally.
+            var vector1 = new GeoVector<double>(45.123456, -73.654321, 10.123456);
+            var vector2 = new GeoVector<double>(45.1234560001, -73.6543209999, 10.1234560001);
+
+            Assert.AreEqual(vector1, vector2);
+            Assert.AreEqual(vector1.GetHashCode(), vector2.GetHashCode());
+        }
+
+        [TestMethod]
+        public void VectorsOnOppositeSidesOfARoundingBoundaryAreNotEqual()
+        {
+            // Documents the same deliberate trade-off as GeoPointTests.
+            // PointsOnOppositeSidesOfARoundingBoundaryAreNotEqual, applied to bearing.
+            var vector1 = new GeoVector<double>(0, 0, 1.0000449999);
+            var vector2 = new GeoVector<double>(0, 0, 1.0000450001);
+
+            Assert.AreNotEqual(vector1, vector2);
+        }
+
+        [TestMethod]
+        public void VectorsWithBearingOnOppositeSidesOfZeroAreEqualWhenClose()
+        {
+            // Regression test: bearing wraps around at 0/360 deg, so a bearing just below 360 and a
+            // bearing just above 0 can be almost the same heading even though their raw numeric values
+            // are ~360 deg apart. Equals/GetHashCode must normalize bearing (via
+            // IAngleCalculator<T>.AreEqualRounded/NormalizeRounded) before comparing, not just round the
+            // raw value, otherwise these would incorrectly compare as different.
+            var vector1 = new GeoVector<double>(0, 0, 359.999998);
+            var vector2 = new GeoVector<double>(0, 0, 0.000002);
+
+            Assert.AreEqual(vector1, vector2);
+            Assert.AreEqual(vector1.GetHashCode(), vector2.GetHashCode());
+        }
+
+        [TestMethod]
+        public void IsApproximately_TrueWithinTolerance_FalseBeyondIt()
+        {
+            var vector1 = new GeoVector<double>(10, 20, 30);
+            var vector2 = new GeoVector<double>(10.00001, 20.00001, 30.00001);
+            var vector3 = new GeoVector<double>(10.1, 20.1, 30.1);
+
+            Assert.IsTrue(vector1.IsApproximately(vector2, 1e-4));
+            Assert.IsFalse(vector1.IsApproximately(vector3, 1e-4));
+        }
+
+        [TestMethod]
+        public void IsApproximately_HandlesBearingWraparound()
+        {
+            var vector1 = new GeoVector<double>(0, 0, 359.9999999);
+            var vector2 = new GeoVector<double>(0, 0, 0.0000001);
+
+            Assert.IsTrue(vector1.IsApproximately(vector2, 1e-5));
+        }
+
+        [TestMethod]
+        public void RecenterOnSelfReturnsOrigin()
+        {
+            var vector = new GeoVector<double>(45, 30, 90);
+            var recentered = vector.Recenter(vector);
+
+            Assert.AreEqual(new GeoVector<double>(0, 0, 0), recentered);
+        }
+
+        [TestMethod]
+        public void RecenterOnNullThrows()
+        {
+            var vector = new GeoVector<double>(45, 30, 90);
+            Assert.ThrowsException<ArgumentNullException>(() => vector.Recenter(null!));
+        }
+
+        [TestMethod]
+        public void RecenterMapsOtherPointToNewLatitudeEqualToAngularDistance()
+        {
+            var reference = new GeoVector<double>(0, 0, 90);
+            var other = new GeoVector<double>(0, 10, 90);
+
+            var recentered = reference.Recenter(other);
+
+            Assert.AreEqual(reference.AngleWith(other), recentered.Latitude, 1e-9);
+        }
+
+        [TestMethod]
+        public void StringConstructorParsesSameResultAsNumericConstructor()
+        {
+            // Regression test: the string constructor used to parse the input string twice; make
+            // sure the parsed latitude/longitude/bearing still match the numeric constructor.
+            var fromString = new GeoVector<double>("N45.5, W45.5, 370", CultureInfo.InvariantCulture);
+            var fromNumbers = new GeoVector<double>(45.5, -45.5, 370);
+
+            Assert.AreEqual(fromNumbers, fromString);
         }
     }
 }

@@ -58,9 +58,22 @@ namespace Utils.Geography.Model
         protected static readonly IAngleCalculator<T> degree = Trigonometry<T>.Degree;
 
         /// <summary>
-        /// Floating-point comparer used to compare latitude and longitude values with tolerance.
+        /// Number of decimal places latitude/longitude (and bearing, for <see cref="GeoVector{T}"/>) are
+        /// rounded to before being compared in <see cref="Equals(GeoPoint{T})"/> and hashed in
+        /// <see cref="GetHashCode"/>. Rounding both sides the same way keeps the two members consistent
+        /// with each other by construction, at the cost of treating two values that are extremely close
+        /// but land on opposite sides of a rounding boundary as unequal. See the remarks on
+        /// <see cref="Equals(GeoPoint{T})"/> for the full rationale and a worked example.
         /// </summary>
-        protected static readonly FloatingPointComparer<T> comparer = new(5);
+        protected const int EqualityPrecision = 5;
+
+        /// <summary>
+        /// Floating-point comparer used for tolerance-based domain checks that are not part of the
+        /// <see cref="Equals(GeoPoint{T})"/>/<see cref="GetHashCode"/> contract (e.g. detecting degenerate
+        /// meridians in <see cref="GeoVector{T}.ComputeBearing"/>, or the default tolerance used by
+        /// <see cref="IsApproximately(GeoPoint{T})"/>).
+        /// </summary>
+        protected static readonly FloatingPointComparer<T> comparer = new(EqualityPrecision);
 
         /// <summary>
         /// Maximum valid latitude in degrees.
@@ -320,22 +333,122 @@ namespace Utils.Geography.Model
         public override bool Equals(object? obj) =>
             obj is GeoPoint<T> other && Equals(other);
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Determines whether the specified <see cref="GeoPoint{T}"/> represents the same location as this
+        /// instance, comparing latitude and longitude after rounding both to <see cref="EqualityPrecision"/>
+        /// decimal places.
+        /// </summary>
+        /// <param name="other">The point to compare with this instance.</param>
+        /// <returns>
+        /// <see langword="true"/> if both points round to the same latitude and longitude (or are both at
+        /// the same pole, regardless of longitude); otherwise <see langword="false"/>.
+        /// </returns>
+        /// <remarks>
+        /// <para>
+        /// <b>Why rounding, and not a tolerance window:</b> latitude/longitude are floating-point values
+        /// produced by trigonometric computations (<see cref="GeoVector{T}.Travel"/>,
+        /// <see cref="GeoVector{T}.Intersections"/>, ...), which never land on exact values. An earlier
+        /// implementation compared raw values with a tolerance window (<c>|a - b| &lt;= 1e-5</c>) via
+        /// <see cref="FloatingPointComparer{T}"/>, but that comparer is <em>intentionally non-transitive</em>
+        /// (see its own documentation) and cannot be paired with a correct <see cref="GetHashCode"/>: two
+        /// values considered equal by the tolerance window could still hash differently, breaking
+        /// <see cref="Dictionary{TKey, TValue}"/>/<see cref="HashSet{T}"/> usage. Rounding both operands to
+        /// the same precision before comparing removes that risk entirely, because <see cref="Equals(GeoPoint{T})"/>
+        /// and <see cref="GetHashCode"/> then always operate on the exact same rounded values.
+        /// </para>
+        /// <para>
+        /// <b>Known limitation — rounding-boundary straddling:</b> this trades away the "equal within a
+        /// tolerance window" behavior. Two values that are extremely close to each other, but fall on
+        /// opposite sides of a rounding boundary, are now treated as <em>unequal</em>, even though a raw
+        /// tolerance comparison would have called them equal. For example, with
+        /// <see cref="EqualityPrecision"/> = 5, <c>1.0000449999</c> rounds down to <c>1.00004</c> while
+        /// <c>1.0000450001</c> rounds up to <c>1.00005</c> — a difference of about <c>2e-7</c>, far below
+        /// the old <c>1e-5</c> tolerance, yet the two values are no longer equal. This is a deliberate,
+        /// accepted trade-off (values this close in practice only arise from floating-point noise around a
+        /// rounding boundary, and rounding-consistency was judged more valuable than tolerance-window
+        /// equality for this type). See <c>GeoPointTests.PointsOnOppositeSidesOfARoundingBoundaryAreNotEqual</c>
+        /// for a regression test that pins down this exact behavior.
+        /// </para>
+        /// <para>
+        /// <b>Longitude wraps around, latitude doesn't:</b> longitude is compared via
+        /// <see cref="IAngleCalculator{T}.AreEqualRounded"/> rather than a plain rounded comparison, so that
+        /// values on opposite sides of the antimeridian (e.g. <c>179.9999951°</c> and <c>-179.9999999°</c>,
+        /// which both refer to almost the same point near 180°) round to the same normalized value instead
+        /// of comparing as ~360° apart. Latitude never wraps (it is clamped to [-90°, 90°] and the poles are
+        /// handled separately above), so it only needs a plain rounded comparison.
+        /// </para>
+        /// </remarks>
         public bool Equals(GeoPoint<T>? other)
         {
             if (other is null) return false;
-            if (comparer.Compare(Latitude, MaxLatitude) == 0 && comparer.Compare(other.Latitude, MaxLatitude) == 0) return true;
-            if (comparer.Compare(Latitude, MinLatitude) == 0 && comparer.Compare(other.Latitude, MinLatitude) == 0) return true;
 
-            return comparer.Compare(Latitude, other.Latitude) == 0
-                && comparer.Compare(Longitude, other.Longitude) == 0;
+            T roundedLatitude = T.Round(Latitude, EqualityPrecision);
+            T otherRoundedLatitude = T.Round(other.Latitude, EqualityPrecision);
+
+            // Any longitude at a pole refers to the same point.
+            if (roundedLatitude == MaxLatitude && otherRoundedLatitude == MaxLatitude) return true;
+            if (roundedLatitude == MinLatitude && otherRoundedLatitude == MinLatitude) return true;
+
+            return roundedLatitude == otherRoundedLatitude
+                && degree.AreEqualRounded(Longitude, other.Longitude, EqualityPrecision);
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Returns a hash code consistent with <see cref="Equals(GeoPoint{T})"/>: latitude is rounded, and
+        /// longitude is normalized (to handle antimeridian wraparound) and rounded, to
+        /// <see cref="EqualityPrecision"/> decimal places before hashing — the exact same values that
+        /// <see cref="Equals(GeoPoint{T})"/> compares on, so equal points always hash equally.
+        /// </summary>
         public override int GetHashCode()
         {
-            return ObjectUtils.ComputeHash(Latitude, Longitude);
+            return ObjectUtils.ComputeHash(T.Round(Latitude, EqualityPrecision), degree.NormalizeRounded(Longitude, EqualityPrecision));
         }
+
+        /// <summary>
+        /// Determines whether this point is within <paramref name="tolerance"/> of <paramref name="other"/>,
+        /// using a raw angular-distance tolerance window rather than the rounding-based comparison used by
+        /// <see cref="Equals(GeoPoint{T})"/>.
+        /// </summary>
+        /// <param name="other">The point to compare with this instance.</param>
+        /// <param name="tolerance">Maximum allowed angular distance, in degrees, for latitude and longitude.</param>
+        /// <returns>
+        /// <see langword="true"/> if both latitude and longitude are within <paramref name="tolerance"/> of
+        /// each other (or both points are at the same pole); otherwise <see langword="false"/>.
+        /// </returns>
+        /// <remarks>
+        /// <para>
+        /// <see cref="Equals(GeoPoint{T})"/> intentionally does <em>not</em> offer this behavior anymore
+        /// (see its remarks): a tolerance window cannot be paired with a correct <see cref="GetHashCode"/>
+        /// because it is non-transitive, so points must not be considered equal, hashed, or stored in a
+        /// <see cref="Dictionary{TKey, TValue}"/>/<see cref="HashSet{T}"/> based on this method. Use it only
+        /// for one-off comparisons (e.g. "is this GPS fix close enough to the target waypoint?"), never as
+        /// a substitute for <see cref="Equals(GeoPoint{T})"/> in code that also relies on hashing.
+        /// </para>
+        /// <para>
+        /// Longitude comparison correctly handles the antimeridian wraparound via
+        /// <see cref="IAngleCalculator{T}.AreEqual"/> (e.g. <c>179.9999999°</c> and <c>-179.9999999°</c> are
+        /// about <c>2e-7°</c> apart, not ~360° apart).
+        /// </para>
+        /// </remarks>
+        public bool IsApproximately(GeoPoint<T> other, T tolerance)
+        {
+            other.Arg().MustNotBeNull();
+
+            if (degree.AreEqual(Latitude, MaxLatitude, tolerance) && degree.AreEqual(other.Latitude, MaxLatitude, tolerance)) return true;
+            if (degree.AreEqual(Latitude, MinLatitude, tolerance) && degree.AreEqual(other.Latitude, MinLatitude, tolerance)) return true;
+
+            return degree.AreEqual(Latitude, other.Latitude, tolerance)
+                && degree.AreEqual(Longitude, other.Longitude, tolerance);
+        }
+
+        /// <summary>
+        /// Determines whether this point is within the default tolerance (see <see cref="comparer"/>) of
+        /// <paramref name="other"/>. See <see cref="IsApproximately(GeoPoint{T}, T)"/> for the full
+        /// rationale and usage guidance.
+        /// </summary>
+        /// <param name="other">The point to compare with this instance.</param>
+        /// <returns><see langword="true"/> if both points are within the default tolerance; otherwise <see langword="false"/>.</returns>
+        public bool IsApproximately(GeoPoint<T> other) => IsApproximately(other, comparer.Interval);
 
         /// <summary>
         /// Returns this geographic point as a string in the format "Latitude, Longitude"
@@ -355,7 +468,8 @@ namespace Utils.Geography.Model
         public virtual string ToString(string? format, IFormatProvider? formatProvider)
         {
             formatProvider ??= CultureInfo.InvariantCulture;
-            var textInfo = (TextInfo)formatProvider.GetFormat(typeof(TextInfo));
+            format ??= "0.#####";
+            var textInfo = formatProvider.GetFormat(typeof(TextInfo)) as TextInfo;
             var separator = textInfo?.ListSeparator ?? ",";
 
             return $"{FormatPosition(Latitude, "N", "S", format, formatProvider)}{separator} " +

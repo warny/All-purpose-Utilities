@@ -28,7 +28,7 @@ namespace Utils.Geography.Projections
                                 "miller" => new MillerProjection<T>(),
                                 "lambert" => new LambertAzimuthalEqualArea<T>(),
                                 "stereographic" => new StereographicProjection<T>(),
-                                _ => null,
+                                _ => null!, // never dereferenced: the `return value != null` below reports failure.
                             };
                             return value != null;
                         },

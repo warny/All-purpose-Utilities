@@ -22,10 +22,10 @@ namespace Utils.Geography.Model
             {
                 if (this.Count == 0) throw new InvalidOperationException("Cannot calculate bounding box for an empty list.");
 
-                T minLatitude = (T)Convert.ChangeType(10000, typeof(T));
-                T minLongitude = (T)Convert.ChangeType(10000, typeof(T));
-                T maxLatitude = T.Zero;
-                T maxLongitude = T.Zero;
+                T minLatitude = this[0].Latitude;
+                T minLongitude = this[0].Longitude;
+                T maxLatitude = this[0].Latitude;
+                T maxLongitude = this[0].Longitude;
 
                 foreach (GeoPoint<T> geoPoint in this)
                 {
@@ -77,10 +77,11 @@ namespace Utils.Geography.Model
             {
                 if (this.Count == 0) throw new InvalidOperationException("Cannot calculate bounding box for an empty list.");
 
-                T minLatitude = (T)Convert.ChangeType(10000, typeof(T));
-                T minLongitude = (T)Convert.ChangeType(10000, typeof(T));
-                T maxLatitude = T.Zero;
-                T maxLongitude = T.Zero;
+                var firstBox = this[0].BoundingBox;
+                T minLatitude = firstBox.MinLatitude;
+                T minLongitude = firstBox.MinLongitude;
+                T maxLatitude = firstBox.MaxLatitude;
+                T maxLongitude = firstBox.MaxLongitude;
 
                 foreach (var geoPointList in this)
                 {

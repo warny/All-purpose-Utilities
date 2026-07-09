@@ -5,7 +5,9 @@ using Utils.Mathematics;
 namespace Utils.Geography.Projections;
 
 /// <summary>
-/// Implements the Lambert azimuthal equal-area projection for spherical coordinates.
+/// Implements the polar aspect of the Lambert azimuthal equal-area projection for spherical
+/// coordinates: the projection is centered on the north pole (latitude=90°), which maps to
+/// (x=0, y=0), not on the equator/prime meridian.
 /// </summary>
 /// <typeparam name="T">Floating-point type used for calculations.</typeparam>
 public class LambertAzimuthalEqualArea<T> : IProjectionTransformation<T>

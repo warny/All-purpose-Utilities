@@ -20,7 +20,7 @@ public class Planet<T> where T : struct, IFloatingPointIeee754<T>
     /// </summary>
     /// <param name="equatorialRadius">The equatorial radius of the planet.</param>
     /// <param name="name">The name of the planet (optional).</param>
-    public Planet(T equatorialRadius, string name = null)
+    public Planet(T equatorialRadius, string? name = null)
     {
         EquatorialRadius = equatorialRadius;
         EquatorialCircumference = T.Pi * T.CreateChecked(2) * equatorialRadius; // Circumference = 2 * pi * radius
@@ -92,13 +92,32 @@ public class Planet<T> where T : struct, IFloatingPointIeee754<T>
     /// <returns>The area of the polygon in square meters.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="points"/> is <c>null</c>.</exception>
     /// <exception cref="ArgumentException">Thrown when fewer than three points are supplied.</exception>
+    /// <remarks>
+    /// This uses the standard "sum of longitude differences weighted by latitude" spherical excess
+    /// formula, connecting consecutive vertices with great-circle arcs. It is well-suited to typical,
+    /// reasonably-sized, simple (non-self-intersecting) polygons, but has known limitations:
+    /// <list type="bullet">
+    /// <item><description>
+    /// A polygon that encloses a pole (crosses from one side of it to the other without the pole itself
+    /// being a vertex) is not detected as a special case; the result may be the area of the polygon or of
+    /// its complement on the sphere, depending on winding, rather than throwing or otherwise flagging the
+    /// ambiguity.
+    /// </description></item>
+    /// <item><description>
+    /// Self-intersecting polygons do not produce a meaningful area (as with the planar shoelace formula).
+    /// </description></item>
+    /// <item><description>
+    /// For polygons that span a very large fraction of the planet's surface, the flat "longitude
+    /// difference" term becomes a coarser approximation of the true spherical geometry.
+    /// </description></item>
+    /// </list>
+    /// </remarks>
     public T Area(IReadOnlyList<GeoPoint<T>> points)
     {
         ArgumentNullException.ThrowIfNull(points);
         if (points.Count < 3)
             throw new ArgumentException("At least three points are required", nameof(points));
 
-        T radius = T.CreateChecked(EquatorialRadius);
         var deg = Trigonometry<T>.Degree;
 
         T total = T.Zero;
@@ -107,10 +126,10 @@ public class Planet<T> where T : struct, IFloatingPointIeee754<T>
             var a = points[i];
             var b = points[(i + 1) % points.Count];
 
-            T lon1 = deg.ToRadian(T.CreateChecked(a.Longitude));
-            T lon2 = deg.ToRadian(T.CreateChecked(b.Longitude));
-            T lat1 = deg.ToRadian(T.CreateChecked(a.Latitude));
-            T lat2 = deg.ToRadian(T.CreateChecked(b.Latitude));
+            T lon1 = deg.ToRadian(a.Longitude);
+            T lon2 = deg.ToRadian(b.Longitude);
+            T lat1 = deg.ToRadian(a.Latitude);
+            T lat2 = deg.ToRadian(b.Latitude);
 
             T dLon = lon2 - lon1;
             if (dLon < -T.Pi) dLon += T.Tau;
@@ -119,7 +138,7 @@ public class Planet<T> where T : struct, IFloatingPointIeee754<T>
             total += dLon * (T.Sin(lat1) + T.Sin(lat2));
         }
 
-        T area = T.Abs(total) * radius * radius / T.CreateChecked(2);
+        T area = T.Abs(total) * EquatorialRadius * EquatorialRadius / T.CreateChecked(2);
         return area;
     }
 }

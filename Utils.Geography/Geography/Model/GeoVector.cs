@@ -33,10 +33,28 @@ public sealed class GeoVector<T> : GeoPoint<T>, IEquatable<GeoVector<T>>, IUnary
     /// <param name="cultureInfos">Optional cultures to parse; defaults to <see cref="CultureInfo.CurrentCulture"/> and <see cref="CultureInfo.InvariantCulture"/>.</param>
     /// <exception cref="ArgumentException">Thrown if parsing fails or the string is invalid.</exception>
     public GeoVector(string coordinates, params CultureInfo[] cultureInfos)
-        : base(ParseVectorString(coordinates, cultureInfos, out T bearing).latitude,
-               ParseVectorString(coordinates, cultureInfos, out bearing).longitude)
+        : this(ParseVectorTuple(coordinates, cultureInfos))
     {
-        Bearing = bearing;
+    }
+
+    /// <summary>
+    /// Private constructor that consumes an already-parsed (latitude, longitude, bearing) tuple, so that
+    /// the source string is parsed only once (see <see cref="ParseVectorTuple"/>).
+    /// </summary>
+    /// <param name="parsed">The parsed latitude, longitude, and bearing.</param>
+    private GeoVector((T latitude, T longitude, T bearing) parsed)
+        : base(parsed.latitude, parsed.longitude)
+    {
+        Bearing = parsed.bearing;
+    }
+
+    /// <summary>
+    /// Parses <paramref name="coordinates"/> exactly once and returns latitude, longitude, and bearing together.
+    /// </summary>
+    private static (T latitude, T longitude, T bearing) ParseVectorTuple(string coordinates, CultureInfo[] cultureInfos)
+    {
+        var (latitude, longitude) = ParseVectorString(coordinates, cultureInfos, out T bearing);
+        return (latitude, longitude, bearing);
     }
 
     /// <summary>
@@ -306,8 +324,7 @@ public sealed class GeoVector<T> : GeoPoint<T>, IEquatable<GeoVector<T>>, IUnary
     /// <returns>The point recentered with the current vector as new reference</returns>
     public GeoVector<T> Recenter(GeoVector<T> other)
     {
-        // If the caller passes null or the same object, handle gracefully.
-        if (other is null) return null;
+        other.Arg().MustNotBeNull();
 
         // If "other" IS the same instance as "this," map to (0,0,0).
         if (this == other)
@@ -465,13 +482,71 @@ public sealed class GeoVector<T> : GeoPoint<T>, IEquatable<GeoVector<T>>, IUnary
         return base.Equals(obj);
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Determines whether the specified <see cref="GeoVector{T}"/> has the same position and bearing as
+    /// this instance: latitude/longitude are compared via <see cref="GeoPoint{T}.Equals(GeoPoint{T})"/>
+    /// (rounded to <see cref="GeoPoint{T}.EqualityPrecision"/> decimal places), and bearing is compared the
+    /// same way longitude is: normalized and rounded to the same precision via
+    /// <see cref="IAngleCalculator{T}.AreEqualRounded"/>, since bearing wraps around at 0°/360° just like
+    /// longitude wraps around at the antimeridian.
+    /// </summary>
+    /// <param name="other">The vector to compare with this instance.</param>
+    /// <returns>
+    /// <see langword="true"/> if both vectors round to the same latitude, longitude, and bearing;
+    /// otherwise <see langword="false"/>.
+    /// </returns>
+    /// <remarks>
+    /// This has the exact same known limitation as <see cref="GeoPoint{T}.Equals(GeoPoint{T})"/> (see its
+    /// remarks for the full rationale and a worked example): rounding each coordinate before comparing
+    /// keeps <see cref="Equals(GeoVector{T})"/> and <see cref="GetHashCode"/> always consistent with each
+    /// other, but two bearings that are extremely close yet fall on opposite sides of a rounding boundary
+    /// (e.g. <c>1.0000449999</c> vs <c>1.0000450001</c>, with <see cref="GeoPoint{T}.EqualityPrecision"/> = 5)
+    /// are treated as unequal. See <c>GeoVectorTests.VectorsOnOppositeSidesOfARoundingBoundaryAreNotEqual</c>
+    /// for a regression test pinning down this behavior.
+    /// </remarks>
     public bool Equals(GeoVector<T>? other)
-        => other is not null && comparer.Compare(Bearing, other.Bearing) == 0 && base.Equals(other);
+        => other is not null
+           && degree.AreEqualRounded(Bearing, other.Bearing, EqualityPrecision)
+           && base.Equals(other);
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Returns a hash code consistent with <see cref="Equals(GeoVector{T})"/>: latitude is rounded, and
+    /// longitude/bearing are normalized (to handle antimeridian/0-360° wraparound) and rounded, to
+    /// <see cref="GeoPoint{T}.EqualityPrecision"/> decimal places before hashing — the exact same values
+    /// that <see cref="Equals(GeoVector{T})"/> compares on.
+    /// </summary>
     public override int GetHashCode()
-        => ObjectUtils.ComputeHash(Latitude, Longitude, Bearing);
+        => ObjectUtils.ComputeHash(
+            T.Round(Latitude, EqualityPrecision),
+            degree.NormalizeRounded(Longitude, EqualityPrecision),
+            degree.NormalizeRounded(Bearing, EqualityPrecision));
+
+    /// <summary>
+    /// Determines whether this vector is within <paramref name="tolerance"/> of <paramref name="other"/>,
+    /// using a raw angular-distance tolerance window rather than the rounding-based comparison used by
+    /// <see cref="Equals(GeoVector{T})"/>. See <see cref="GeoPoint{T}.IsApproximately(GeoPoint{T}, T)"/>
+    /// for the full rationale and usage guidance (do not use this for hashing/dictionary keys).
+    /// </summary>
+    /// <param name="other">The vector to compare with this instance.</param>
+    /// <param name="tolerance">Maximum allowed angular distance, in degrees, for latitude, longitude, and bearing.</param>
+    /// <returns>
+    /// <see langword="true"/> if latitude, longitude, and bearing are all within <paramref name="tolerance"/>
+    /// of each other; otherwise <see langword="false"/>.
+    /// </returns>
+    public bool IsApproximately(GeoVector<T> other, T tolerance)
+    {
+        other.Arg().MustNotBeNull();
+        return degree.AreEqual(Bearing, other.Bearing, tolerance) && base.IsApproximately(other, tolerance);
+    }
+
+    /// <summary>
+    /// Determines whether this vector is within the default tolerance (see <see cref="GeoPoint{T}.comparer"/>)
+    /// of <paramref name="other"/>. See <see cref="IsApproximately(GeoVector{T}, T)"/> for the full rationale
+    /// and usage guidance.
+    /// </summary>
+    /// <param name="other">The vector to compare with this instance.</param>
+    /// <returns><see langword="true"/> if both vectors are within the default tolerance; otherwise <see langword="false"/>.</returns>
+    public bool IsApproximately(GeoVector<T> other) => IsApproximately(other, comparer.Interval);
 
     #endregion
 
@@ -510,7 +585,7 @@ public sealed class GeoVector<T> : GeoPoint<T>, IEquatable<GeoVector<T>>, IUnary
     public override string ToString(string? format, IFormatProvider? formatProvider)
     {
         formatProvider ??= CultureInfo.InvariantCulture;
-        var textInfo = (TextInfo)formatProvider.GetFormat(typeof(TextInfo));
+        var textInfo = formatProvider.GetFormat(typeof(TextInfo)) as TextInfo;
 
         // Example: "Latitude, Longitude, Bearing"
         return $"{base.ToString(format, formatProvider)}{textInfo?.ListSeparator ?? ","} {Bearing:##0.##}";
