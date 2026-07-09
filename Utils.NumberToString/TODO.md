@@ -64,15 +64,18 @@ au lieu de `Regex.Replace()` à chaque appel.
 ### 8. ~~Langues populaires manquantes~~ — **implémenté (VN, TR, SV, NO, UK, RO)**
 Nouveaux fichiers XML ajoutés :
 - **VN/VI/VI-VN (Vietnamien)** : cardinals avec allomorphes mốt/lăm via remplacement `Anywhere`,
-  ordinals `thứ N` avec exception `thứ nhất`. Connecteur *linh* non implémenté (nécessite moteur).
+  ordinals `thứ N` avec exception `thứ nhất`. Connecteur *linh* géré via `intraGroupConnector`
+  (voir item 22 plus bas).
 - **TR/TR-TR (Turc)** : cardinals sans `bir yüz` / `bir bin` (règles nationales respectées).
 - **SV/SV-SE (Suédois)** : cardinals avec fusion 20s (`tjugo*`) et espaces 30s-90s.
 - **NO/NB/NB-NO (Norvégien Bokmål)** : cardinals.
 - **UK/UK-UA (Ukrainien)** : cardinals simplifiés (inflexion тисяч invariante).
 - **RO/RO-RO (Roumain)** : cardinals avec noms d'échelle statiques `mii`/`milioane`/`miliarde` ;
   remplacements `onScale+onValue` pour l'accord `unu/doi` ; variante `gen=feminin` (una/două).
-  Limitation connue : l'insertion de `de` avant les noms d'échelle pour les multiples ≥ 20
-  (ex. "douăzeci de mii") nécessite un attribut `scaleConnector` non encore implémenté dans le moteur.
+  L'insertion de `de` avant les noms d'échelle pour les multiples ≥ 20 (ex. "douăzeci de mii")
+  est gérée via l'attribut `scaleConnector`/`scaleConnectorThreshold`, ajouté sur `<Language>`
+  avec la PR #419. Pas d'ordinaux RO à ce jour (voir item 9/11 : mêmes limites de portée
+  que ZU/AR — nécessiterait un plugin C# dédié).
 
 ### 9. Ordinaux ZU (Zoulou) via `IOrdinalLanguageSpecifics` — **reporté**
 Nécessite une recherche linguistique approfondie (classes nominales 1–17) et une implémentation
@@ -170,43 +173,41 @@ et `0 < remainder < threshold`. VN configuré avec `intraGroupConnector="linh" t
 
 ---
 
-## Améliorations identifiées (2026-07-06)
+## Améliorations identifiées (2026-07-06) — toutes implémentées le 2026-07-09
 
-### 24. Tests manquants : HR, HU, NO, SV, UK, VN
+### 24. ~~Tests manquants : HR, HU, NO, SV, UK, VN~~ — **implémenté**
+Six nouveaux fichiers dédiés créés (`NumberToStringConverterHRTests.cs`,
+`NumberToStringConverterHUTests.cs`, `NumberToStringConverterNOTests.cs`,
+`NumberToStringConverterSVTests.cs`, `NumberToStringConverterUKTests.cs`,
+`NumberToStringConverterVNTests.cs`), 31 tests au total couvrant cardinaux, milliers,
+grande échelle et ordinaux (quand supportés).
 
-Six langues ont une config XML complète mais aucun fichier de test dédié.
-Une régression de config passerait inaperçue. Fichiers à créer :
-`NumberToStringConverterHRTests.cs`, `NumberToStringConverterHUTests.cs`,
-`NumberToStringConverterNOTests.cs`, `NumberToStringConverterSVTests.cs`,
-`NumberToStringConverterUKTests.cs`, `NumberToStringConverterVNTests.cs`.
+### 25. ~~Ordinaux féminins HI non testés~~ — **déjà couvert**
+La couverture existait déjà dans `NumberToStringConverterImprovementsTests.cs`
+(section « C13 — Ordinal HI feminine variant », `ConvertOrdinal_HI_StriiVariant_*`),
+ajoutée avec la PR #419. Seul le fichier dédié `NumberToStringConverterHITests.cs`
+n'en avait pas — pas d'action nécessaire, le comportement est vérifié.
 
-### 25. Ordinaux féminins HI non testés
+### 26. ~~Validation des *valeurs* de dimensions~~ — **implémenté**
+`ValidateVariantReferences` (dans `NumberToStringConverter.Globalization.cs`) vérifie désormais
+aussi que chaque valeur de contrainte figure dans les valeurs déclarées de sa dimension
+(comparaison `OrdinalIgnoreCase`, cohérente avec `ApplyVariantRules`). Un typo de valeur lève
+maintenant une `InvalidOperationException` descriptive au chargement, comme pour les clés
+inconnues. La fonction a été factorisée (une seule vérification clé+valeur pour VariantRules,
+OrdinalVariants et TriggerReplace.Forms).
 
-La PR #419 a dû ajouter `<Dimension name="gender" values="puṃ,strī" />` dans la config HI
-pour corriger un bug de validation. La dimension est désormais déclarée ; `ConvertOrdinal(1, "gender=strī")`
-devrait retourner "पहली", mais `NumberToStringConverterHITests.cs` ne teste que les ordinaux masculins.
+### 27. ~~`VariantRules` pré-triées à la construction~~ — **implémenté**
+Nouveau champ `_sortedVariantRules` (`ImmutableArray<VariantRule>`) calculé une fois dans le
+constructeur de `NumberToStringConverter`. `ApplyVariantRules` et `ApplyVariantRulesForScale`
+itèrent sur ce champ au lieu d'appeler `.OrderBy(r => r.Specificity)` à chaque conversion.
 
-### 26. Validation des *valeurs* de dimensions
+### 28. ~~Config FI et KO : suppression du multiplicateur "1" devant l'unité de mille~~ — **implémenté**
+- **FI** : `<Replacement oldValue="yksi tuhat" newValue="tuhat" onScale="1" onValue="1" />`
+  ajouté dans `FI.xml`. 1 000 → "tuhat" (au lieu de "yksi tuhat").
+- **KO** : `<Replacement oldValue="일 천" newValue="천" onScale="1" onValue="1" />`
+  ajouté dans `KO.xml` (le texte de groupe onScale inclut le `separator=" "` configuré).
+  1 000 → "천" (au lieu de "일 천").
 
-`ValidateVariantReferences` vérifie que les clés de contrainte (`gender`, `case`…) correspondent
-à des dimensions déclarées, mais pas que les *valeurs* utilisées (`strī`, `partitiivi`…) figurent
-dans les valeurs déclarées de la dimension.
-Un typo de valeur (ex. `variant="stri"` au lieu de `"strī"`) passe silencieusement ;
-la règle ne s'applique jamais sans erreur visible.
-Même emplacement dans `ValidateVariantReferences`, même principe que la validation des clés.
-
-### 27. `VariantRules` pré-triées à la construction
-
-`ApplyVariantRules` et `ApplyVariantRulesForScale` appellent chacune `.OrderBy(r => r.Specificity)`
-à chaque appel de `Convert()`. L'ordre est stable et connu à la construction : trier une seule fois
-dans le constructeur et stocker le résultat dans un `ImmutableArray` déjà ordonné.
-Évite une allocation + tri à chaque appel pour les langues avec de nombreuses règles (AR, PL, DE…).
-
-### 28. Config FI et KO : suppression du multiplicateur "1" devant l'unité de mille
-
-- **FI** : 1 000 s'écrit "tuhat" en finnois, pas "yksi tuhat". Ajouter
-  `<Replacement oldValue="yksi tuhat" newValue="tuhat" onScale="1" onValue="1" />` dans `FI.xml`.
-- **KO** : 1 000 s'écrit "천", pas "일 천". Même type de remplacement à ajouter dans `KO.xml`.
-
-Ces deux configs sont les seuls endroits du projet où le multiplicateur 1 n'est pas absorbé
-alors que la langue l'exige.
+Les tests existants qui attendaient l'ancien comportement (`NumberToStringConverterFITests.cs`,
+`NumberToStringConverterKOTests.cs`, et un cas dans `NumberToStringConverterImprovementsTests.cs`)
+ont été mis à jour en conséquence.

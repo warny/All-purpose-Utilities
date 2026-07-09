@@ -710,8 +710,8 @@ public class NumberToStringConverterImprovementsTests
         // Scale words alone
         Assert.AreEqual("kymmentä",      converter.Convert(10,  "sijamuoto=partitiivi"));
         Assert.AreEqual("sataa",         converter.Convert(100, "sijamuoto=partitiivi"));
-        // 1000: FI has no replacement "yksi tuhat"→"tuhat", so "yksi" stays
-        Assert.AreEqual("yksi tuhatta",  converter.Convert(1000, "sijamuoto=partitiivi"));
+        // 1000: FI elides the multiplier "yksi tuhat"→"tuhat" before the case is applied
+        Assert.AreEqual("tuhatta",  converter.Convert(1000, "sijamuoto=partitiivi"));
         // Compounds: tens + unit
         Assert.AreEqual("kaksikymmentä yhtä", converter.Convert(21, "sijamuoto=partitiivi"));
         Assert.AreEqual("kaksikymmentä kahta", converter.Convert(22, "sijamuoto=partitiivi"));

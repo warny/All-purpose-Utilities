@@ -730,39 +730,41 @@ namespace Utils.NumberToString
 
         /// <summary>
         /// Validates that all variant dimension references in VariantRules, OrdinalVariants, and
-        /// TriggerReplace.Forms constraints are declared dimensions for the converter.
-        /// Throws <see cref="InvalidOperationException"/> when an unknown dimension key is found.
+        /// TriggerReplace.Forms constraints are declared dimensions for the converter, and that
+        /// the constraint values used are among the values declared for that dimension.
+        /// Throws <see cref="InvalidOperationException"/> when an unknown dimension key or an
+        /// undeclared value is found.
         /// </summary>
         private static void ValidateVariantReferences(NumberToStringConverter converter, string configSource)
         {
-            var knownDimensions = converter.VariantDimensions
-                .SelectMany(d => new[] { d.Name }.Concat(d.LocalName != null ? [d.LocalName] : []))
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var dimensionsByKey = converter.VariantDimensions
+                .SelectMany(d => new[] { d.Name }.Concat(d.LocalName != null ? [d.LocalName] : [])
+                    .Select(key => (key, dimension: d)))
+                .ToDictionary(t => t.key, t => t.dimension, StringComparer.OrdinalIgnoreCase);
 
             string Declared() =>
                 string.Join(", ", converter.VariantDimensions.Select(d => d.Name));
 
-            foreach (var rule in converter.VariantRules)
+            void ValidateKeyValue(string kind, string key, string value)
             {
-                foreach (var key in rule.Constraints.Keys)
-                {
-                    if (!knownDimensions.Contains(key))
-                        throw new InvalidOperationException(
-                            $"[{configSource}] Variant rule references unknown dimension '{key}'. " +
-                            $"Declared: [{Declared()}].");
-                }
+                if (!dimensionsByKey.TryGetValue(key, out var dimension))
+                    throw new InvalidOperationException(
+                        $"[{configSource}] {kind} references unknown dimension '{key}'. " +
+                        $"Declared: [{Declared()}].");
+
+                if (!dimension.Values.Contains(value, StringComparer.OrdinalIgnoreCase))
+                    throw new InvalidOperationException(
+                        $"[{configSource}] {kind} references unknown value '{value}' for dimension '{key}'. " +
+                        $"Declared values: [{string.Join(", ", dimension.Values)}].");
             }
 
+            foreach (var rule in converter.VariantRules)
+                foreach (var (key, value) in rule.Constraints)
+                    ValidateKeyValue("Variant rule", key, value);
+
             foreach (var rule in converter.OrdinalVariants)
-            {
-                foreach (var key in rule.Constraints.Keys)
-                {
-                    if (!knownDimensions.Contains(key))
-                        throw new InvalidOperationException(
-                            $"[{configSource}] OrdinalVariant rule references unknown dimension '{key}'. " +
-                            $"Declared: [{Declared()}].");
-                }
-            }
+                foreach (var (key, value) in rule.Constraints)
+                    ValidateKeyValue("OrdinalVariant rule", key, value);
 
             foreach (var trigger in converter.Triggers)
             {
@@ -770,13 +772,8 @@ namespace Utils.NumberToString
                 {
                     foreach (var (constraints, _) in replace.Forms)
                     {
-                        foreach (var key in constraints.Keys)
-                        {
-                            if (!knownDimensions.Contains(key))
-                                throw new InvalidOperationException(
-                                    $"[{configSource}] TriggerReplace references unknown dimension '{key}'. " +
-                                    $"Declared: [{Declared()}].");
-                        }
+                        foreach (var (key, value) in constraints)
+                            ValidateKeyValue("TriggerReplace", key, value);
                     }
                 }
             }

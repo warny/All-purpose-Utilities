@@ -58,6 +58,10 @@
                 <Suffix>miljoona</Suffix>
             </Suffixes>
         </NumberScale>
+        <Replacements>
+            <!-- 1 000 is "tuhat", not "yksi tuhat" (the multiplier 1 is elided before the thousands scale name). -->
+            <Replacement oldValue="yksi tuhat" newValue="tuhat" onScale="1" onValue="1" />
+        </Replacements>
         <Exceptions>
             <Number value="11" string="yksitoista" />
             <Number value="12" string="kaksitoista" />

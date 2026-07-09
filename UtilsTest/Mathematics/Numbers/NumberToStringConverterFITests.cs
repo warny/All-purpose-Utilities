@@ -35,8 +35,8 @@ namespace UtilsTest.Mathematics.Numbers
         public void Cardinals_Thousands()
         {
             var c = NumberToStringConverter.GetConverter("FI");
-            // Finnish: no replacement rule for 1×tuhat; engine outputs "yksi tuhat"
-            Assert.AreEqual("yksi tuhat",   c.Convert(1_000));
+            // Finnish elides the multiplier "yksi" before "tuhat": 1 000 = "tuhat", not "yksi tuhat"
+            Assert.AreEqual("tuhat",        c.Convert(1_000));
             Assert.AreEqual("kaksi tuhat",  c.Convert(2_000));
         }
 
@@ -55,8 +55,8 @@ namespace UtilsTest.Mathematics.Numbers
             Assert.AreEqual("kahdestoista",   c.ConvertOrdinal(12));
             Assert.AreEqual("kahdeskymmenes", c.ConvertOrdinal(20));
             Assert.AreEqual("sadas",          c.ConvertOrdinal(100));
-            // 1000 = "yksi tuhat" → last word "tuhat" → "tuhannes"
-            Assert.AreEqual("yksi tuhannes",  c.ConvertOrdinal(1_000));
+            // 1000 = "tuhat" (multiplier elided) → last word "tuhat" → "tuhannes"
+            Assert.AreEqual("tuhannes",  c.ConvertOrdinal(1_000));
         }
 
         [TestMethod]
@@ -69,8 +69,8 @@ namespace UtilsTest.Mathematics.Numbers
             Assert.AreEqual("kolmea",    c.Convert(3,     "case=partitiivi"));
             Assert.AreEqual("kymmentä",  c.Convert(10,    "case=partitiivi"));
             Assert.AreEqual("sataa",         c.Convert(100,   "case=partitiivi"));
-            // 1000 = "yksi tuhat" → LastWord "tuhat" → "tuhatta" → "yksi tuhatta"
-            Assert.AreEqual("yksi tuhatta", c.Convert(1_000, "case=partitiivi"));
+            // 1000 = "tuhat" (multiplier elided) → LastWord "tuhat" → "tuhatta"
+            Assert.AreEqual("tuhatta", c.Convert(1_000, "case=partitiivi"));
         }
 
         [TestMethod]
@@ -80,8 +80,8 @@ namespace UtilsTest.Mathematics.Numbers
             Assert.AreEqual("yhden",    c.Convert(1,     "case=genetiivi"));
             Assert.AreEqual("kahden",   c.Convert(2,     "case=genetiivi"));
             Assert.AreEqual("sadan",     c.Convert(100,   "case=genetiivi"));
-            // "tuhat" in "yksi tuhat" uses scope="Standalone" in config → not replaced when not alone
-            Assert.AreEqual("yksi tuhat", c.Convert(1_000, "case=genetiivi"));
+            // 1000 = "tuhat" (multiplier elided) → Standalone genetiivi rule applies → "tuhannen"
+            Assert.AreEqual("tuhannen", c.Convert(1_000, "case=genetiivi"));
         }
 
         [TestMethod]

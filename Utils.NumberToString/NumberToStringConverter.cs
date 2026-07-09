@@ -103,6 +103,7 @@ namespace Utils.NumberToString
 
             VariantDimensions = (options.VariantDimensions ?? []).ToImmutableArray();
             VariantRules = (options.VariantRules ?? []).ToImmutableArray();
+            _sortedVariantRules = VariantRules.OrderBy(r => r.Specificity).ToImmutableArray();
             _hasScaleSpecificVariantRules = VariantRules.Any(r => r.Replacements.Any(rr => rr.OnScale is not null));
             Triggers = (options.Triggers ?? []).ToImmutableArray();
             _yearFormat = options.YearFormat;
@@ -304,6 +305,7 @@ namespace Utils.NumberToString
         private readonly ImmutableArray<ReplacementRule> _valueFilteredGlobalReplacements;
         private readonly ImmutableArray<ReplacementRule> _scaleReplacements;
         private readonly bool _hasScaleSpecificVariantRules;
+        private readonly ImmutableArray<VariantRule> _sortedVariantRules;
         private readonly ImmutableDictionary<string, VariantDimension> _dimensionIndex;
         private readonly Func<string, string>? _rawAdjustFunction;
         private readonly string? _groupConnector;
@@ -711,7 +713,7 @@ namespace Utils.NumberToString
         {
             if (VariantRules.Count == 0 || query.Count == 0) return text;
 
-            foreach (var rule in VariantRules.OrderBy(r => r.Specificity))
+            foreach (var rule in _sortedVariantRules)
             {
                 bool matches = rule.Constraints.All(c =>
                     query.TryGetValue(c.Key, out var v) &&
@@ -744,7 +746,7 @@ namespace Utils.NumberToString
         {
             if (VariantRules.Count == 0 || query.Count == 0) return text;
 
-            foreach (var rule in VariantRules.OrderBy(r => r.Specificity))
+            foreach (var rule in _sortedVariantRules)
             {
                 bool matches = rule.Constraints.All(c =>
                     query.TryGetValue(c.Key, out var v) &&
