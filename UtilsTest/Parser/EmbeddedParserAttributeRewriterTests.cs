@@ -326,6 +326,32 @@ public class EmbeddedParserAttributeRewriterTests
         StringAssert.Contains(result.Errors[0], "Labeled rule-call return attribute '$x.value' is not supported");
     }
 
+
+    /// <summary>Verifies labeled and rule-name return convenience syntax remains unsupported instead of being rewritten.</summary>
+    [DataTestMethod]
+    [DataRow("Seen = $c.value;", "Labeled rule-call return attribute '$c.value' is not supported")]
+    [DataRow("Seen = $x.value;", "Labeled rule-call return attribute '$x.value' is not supported")]
+    [DataRow("Seen = $xs.value.Count;", "Labeled rule-call return attribute '$xs.value' is not supported")]
+    [DataRow("Seen = $child.value;", "not the current rule name")]
+    [DataRow("Seen = $start.value;", "Dotted current-rule return attribute '$start.value' is not supported")]
+    public void ParseWithEmbeddedCode_TransformerStillRejectsLabelReturnSyntax(string code, string expectedMessage)
+    {
+        const string grammarText = """
+            grammar P;
+            start returns [int value] : c=child | x=child | xs+=child ;
+            child returns [int value] : A ;
+            A : 'a' ;
+            """;
+        G4Grammar grammar = Parse(grammarText);
+        G4Rule rule = grammar.ParserRules.Single(candidate => candidate.Name == "start");
+
+        EmbeddedParserAttributeRewriteResult result = EmbeddedParserAttributeRewriter.Rewrite(code, grammar, rule, EmbeddedParserAttributeLocationKind.After);
+
+        Assert.AreEqual(code, result.Code);
+        Assert.AreEqual(1, result.Errors.Count);
+        StringAssert.Contains(result.Errors[0], expectedMessage);
+    }
+
     /// <summary>Rewrites code against the start rule in the shared grammar.</summary>
     private static EmbeddedParserAttributeRewriteResult Rewrite(string code, EmbeddedParserAttributeLocationKind kind = EmbeddedParserAttributeLocationKind.After)
     {

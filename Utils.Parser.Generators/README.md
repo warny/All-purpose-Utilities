@@ -459,3 +459,29 @@ Parser embedded code must continue to pass through `IParserEmbeddedCodeTransform
 
 Future simple generated-C# return assignment/access should reuse generated execution-context helpers and optional transformer rewriting. Future labeled rule-call return access should build on existing labeled result storage where available. Any `$...` syntax support must be implemented through the parser embedded-code transformer, not the runtime parser core. No full ANTLR parser context model is promised by the current generated-C# compatibility bridge.
 
+
+### Explicit labeled return helper examples
+
+Generated C# currently reads parent/labeled child returns with explicit helpers only. A child can write its current-rule return with bare `$value` when the optional C# transformer is enabled, but the parent should use helper calls:
+
+```antlr
+grammar P;
+
+@members { public int Seen = -1; }
+
+start
+@after {
+    Seen = GetRequiredLabeledRuleCallReturn(context, "c", "value") is int v ? v : -1;
+}
+    : c=child ;
+
+child returns [int value]
+@after {
+    $value = 42;
+}
+    : A ;
+
+A : 'a' ;
+```
+
+List labels use `GetLabeledRuleCallResults(context, "xs")` and `GetLabeledRuleCallReturns(context, "xs", "value")`; absent list labels return empty lists. `TryGetLabeledRuleCallReturn` distinguishes missing returns from present-null values by returning `true` with `value == null` for present-null entries. Required helper calls throw deterministic parser attribute access exceptions for missing labels or return names. Failed alternatives are rolled back, and memoized child results keep child returns while applying the current successful call-site label. `$c.value`, `$x.value`, `$xs.value`, `$child.value`, `$rule.value`, `$c.ctx`, and `$ctx` remain unsupported syntax; a future PR may add `$c.value` only as sugar over these helpers.
