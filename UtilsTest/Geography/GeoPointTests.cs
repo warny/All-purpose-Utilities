@@ -62,9 +62,8 @@ namespace UtilsTest.Geography
         {
             foreach (var point in points)
             {
-                bool ok = GeoPoint<double>.TryParse(point.coordinates, out GeoPoint<double>? result);
+                bool ok = GeoPoint<double>.TryParse(point.coordinates, out GeoPoint<double> result);
                 Assert.IsTrue(ok);
-                Assert.IsNotNull(result);
                 Assert.AreEqual(point.latitude, result.Latitude, 1e-9);
                 Assert.AreEqual(point.longitude, result.Longitude, 1e-9);
             }
@@ -73,9 +72,9 @@ namespace UtilsTest.Geography
         [TestMethod]
         public void TryParse_InvalidCoordinates_ReturnsFalse()
         {
-            bool ok = GeoPoint<double>.TryParse("not a coordinate", out GeoPoint<double>? result);
+            bool ok = GeoPoint<double>.TryParse("not a coordinate", out GeoPoint<double> result);
             Assert.IsFalse(ok);
-            Assert.IsNull(result);
+            Assert.AreEqual(default, result);
         }
 
         [TestMethod]

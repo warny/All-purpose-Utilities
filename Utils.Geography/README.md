@@ -102,7 +102,10 @@ double lonSpan = bbox.LongitudeSpan;         // 0.3
 
 ## GeoVector examples
 
-`GeoVector<T>` extends `GeoPoint<T>` with a bearing, representing a point and direction.
+`GeoVector<T>` wraps a `GeoPoint<T>` (its `Point` property) plus a bearing, representing a point and
+direction. It composes a `GeoPoint<T>` rather than inheriting from it — a vector "has a" position, it
+isn't itself a point — so `Latitude`/`Longitude`/`φ`/`λ` remain available as convenience aliases forwarding
+to `Point`.
 
 ### Construction
 

@@ -163,15 +163,23 @@ explicite en ce sens.
   type `int` était trop étroit pour un usage réaliste) ; `MapPoint` calcule aussi sa taille de carte en
   `long` directement. Testé : `GetMapSizeDoesNotOverflowAtHighZoomLevels`.
 
-### Avertissement analyseur CA2260 sur `GeoVector<T>` (supprimé via pragma)
+### Avertissement analyseur CA2260 sur `GeoVector<T>` (résolu, 2026-07-10 : composition + struct)
 `GeoVector<T> : GeoPoint<T>, IEqualityOperators<GeoVector<T>, GeoVector<T>, bool>` — l'analyseur
-signale que `GeoPoint<T>` (qui implémente lui-même `IEqualityOperators<GeoPoint<T>, GeoPoint<T>,
-bool>`) attend que `T` soit rempli par le type dérivé (CRTP), ce qui n'est pas le cas ici puisque
-`GeoVector<T>` hérite classiquement de `GeoPoint<T>` plutôt que de `GeoPoint<GeoVector<T>>`. Corriger
-proprement demanderait de transformer `GeoPoint<T>` en `GeoPoint<TSelf, T>` (CRTP) — un changement
-d'API cassant pour tous les consommateurs, jugé disproportionné pour un warning informatif sans impact
-fonctionnel connu. **Décision** : `#pragma warning disable/restore CA2260` autour de la classe, avec un
-commentaire expliquant pourquoi.
+signalait que `GeoPoint<T>` (qui implémente lui-même `IEqualityOperators<GeoPoint<T>, GeoPoint<T>,
+bool>`) attendait que `T` soit rempli par le type dérivé (CRTP), ce qui n'était pas le cas ici puisque
+`GeoVector<T>` héritait classiquement de `GeoPoint<T>` plutôt que de `GeoPoint<GeoVector<T>>`.
+**Résolu** : `GeoVector<T>` et `GeoPoint<T>` ont été transformés en `readonly struct` indépendants ;
+`GeoVector<T>` compose désormais un `GeoPoint<T>` (propriété `Point`) plutôt que d'en hériter — une
+struct ne peut de toute façon pas hériter, donc CA2260 ne se pose plus. Le pragma a été supprimé.
+Cette refonte corrige aussi un bug réel que l'héritage masquait : `GeoPoint<T>.Equals(object?)`
+matche `obj is GeoPoint<T>`, donc comparer un `GeoPoint<T>` brut à un `GeoVector<T>` aux mêmes
+coordonnées les déclarait égaux en ignorant silencieusement le bearing, alors que leurs
+`GetHashCode()` respectifs (lat/lon vs lat/lon/bearing) différaient — un contrat Equals/GetHashCode
+cassé pour tout `Dictionary`/`HashSet` mélangeant les deux types. Composition + struct rend ce
+mélange impossible : les deux types sont désormais sans relation. Voir aussi les tests mis à jour
+dans `GeoPointTests.cs`/`GeoVectorTests.cs` (pattern `TryParse(out T result)` non-nullable idiomatique
+des structs, suppression des tests `null` désormais impossibles à écrire pour des paramètres struct
+non-nullables).
 
 ## Documentation mise à jour
 - `LambertAzimuthalEqualArea<T>` : la XML doc ne précisait pas que cette implémentation est l'aspect
