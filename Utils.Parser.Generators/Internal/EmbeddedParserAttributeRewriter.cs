@@ -139,7 +139,7 @@ internal static class EmbeddedParserAttributeRewriter
             string attributeText = $"${root}.{returnName}";
             int next = SkipWhitespace(code, index);
             bool isUnambiguousListRoot = labels.TryGetValue(root, out RuleLabelTargets? earlyLabel)
-                && earlyLabel.Assignment is null
+                && earlyLabel.Assignments.Count == 0
                 && earlyLabel.List.Count > 0;
             bool continuesWithSupportedListMember = isUnambiguousListRoot
                 && next < code.Length
@@ -162,7 +162,7 @@ internal static class EmbeddedParserAttributeRewriter
                 {
                     errors.Add("Current-rule dotted return writes are not supported by the ANTLR-style transformer. Use bare '$returnName = ...' or SetRuleReturn(...) explicitly.");
                 }
-                else if (labels.TryGetValue(root, out RuleLabelTargets? writeLabel) && writeLabel.List.Count > 0 && writeLabel.Assignment is null)
+                else if (labels.TryGetValue(root, out RuleLabelTargets? writeLabel) && writeLabel.List.Count > 0 && writeLabel.Assignments.Count == 0)
                 {
                     errors.Add("List-labeled rule-call return projections are read-only. Parser attribute writes are not supported.");
                 }
@@ -308,23 +308,35 @@ internal static class EmbeddedParserAttributeRewriter
             return false;
         }
 
-        if (label.Assignment is null)
+        if (label.Assignments.Count == 0)
         {
             errors.Add($"Parser attribute root '{labelName}' is not a visible assignment rule-reference label.");
             return false;
         }
 
-        G4Rule? targetRule = grammar.ParserRules.FirstOrDefault(candidate => string.Equals(candidate.Name, label.Assignment.RuleName, StringComparison.Ordinal));
-        if (targetRule is null)
+        var targetRules = new List<G4Rule>();
+        foreach (RuleLabelTarget assignment in label.Assignments)
         {
-            errors.Add($"Token label '{labelName}' cannot be used as a parser rule-return attribute.");
-            return false;
+            G4Rule? targetRule = grammar.ParserRules.FirstOrDefault(candidate => string.Equals(candidate.Name, assignment.RuleName, StringComparison.Ordinal));
+            if (targetRule is null)
+            {
+                errors.Add($"Token label '{labelName}' cannot be used as a parser rule-return attribute.");
+                return false;
+            }
+
+            targetRules.Add(targetRule);
         }
 
-        Dictionary<string, TypedDeclaration> targetReturns = ParseTypedDeclarations(targetRule.Returns);
-        if (!targetReturns.ContainsKey(returnName))
+        List<string> missingReturnRules = targetRules
+            .Where(targetRule => !ParseTypedDeclarations(targetRule.Returns).ContainsKey(returnName))
+            .Select(targetRule => targetRule.Name)
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+        if (missingReturnRules.Count > 0)
         {
-            errors.Add($"Return '{returnName}' is not declared by parser rule '{targetRule.Name}' referenced by assignment label '{labelName}'.");
+            string missingRules = string.Join("', '", missingReturnRules);
+            string ruleText = missingReturnRules.Count == 1 ? $"parser rule '{missingRules}'" : $"parser rules '{missingRules}'";
+            errors.Add($"Return '{returnName}' is not declared by every parser rule referenced by assignment label '{labelName}'. Missing on {ruleText}.");
             return false;
         }
 
@@ -1015,8 +1027,8 @@ internal static class EmbeddedParserAttributeRewriter
     /// <summary>Stores assignment and list targets for one visible lexical label name.</summary>
     private sealed class RuleLabelTargets
     {
-        /// <summary>Gets the last assignment-label target, when present.</summary>
-        public RuleLabelTarget? Assignment { get; private set; }
+        /// <summary>Gets every assignment-label target in lexical encounter order.</summary>
+        public List<RuleLabelTarget> Assignments { get; } = [];
 
         /// <summary>Gets every list-label target in lexical encounter order.</summary>
         public List<RuleLabelTarget> List { get; } = [];
@@ -1032,7 +1044,7 @@ internal static class EmbeddedParserAttributeRewriter
             }
             else
             {
-                Assignment = target;
+                Assignments.Add(target);
             }
         }
     }

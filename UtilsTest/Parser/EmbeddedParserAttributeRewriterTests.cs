@@ -72,7 +72,7 @@ public class EmbeddedParserAttributeRewriterTests
     [DataTestMethod]
     [DataRow("$unknown.value", "not the current rule name")]
     [DataRow("$t.value", "Token label 't' cannot be used as a parser rule-return attribute")]
-    [DataRow("$x.missing", "Return 'missing' is not declared by parser rule 'child' referenced by assignment label 'x'")]
+    [DataRow("$x.missing", "Return 'missing' is not declared by every parser rule referenced by assignment label 'x'. Missing on parser rule 'child'")]
     [DataRow("$xs.missing", "List-label parser attribute '$xs.missing' is not supported")]
     [DataRow("$start.missing", "Dotted current-rule return attribute '$start.missing' is not supported")]
     [DataRow("$x", "label access")]
@@ -247,6 +247,51 @@ public class EmbeddedParserAttributeRewriterTests
         Assert.AreEqual("Seen = $x.value;", result.Code);
         Assert.AreEqual(1, result.Errors.Count);
         StringAssert.Contains(result.Errors[0], "List-label parser attribute '$x.value' is not supported");
+    }
+
+
+    /// <summary>Verifies reused assignment labels validate every referenced parser-rule target before rewriting.</summary>
+    [DataTestMethod]
+    [DataRow("x=withoutValue | x=withValue")]
+    [DataRow("x=withValue | x=withoutValue")]
+    public void Rewrite_ReusedAssignmentLabelTargets_RejectsWhenAnyTargetMissingReturn(string alternatives)
+    {
+        string grammarText = $$"""
+            grammar P;
+            start : {{alternatives}} ;
+            withValue returns [int value] : A ;
+            withoutValue : A ;
+            A : 'a' ;
+            """;
+        G4Grammar grammar = Parse(grammarText);
+        G4Rule rule = grammar.ParserRules.Single(candidate => candidate.Name == "start");
+
+        EmbeddedParserAttributeRewriteResult result = EmbeddedParserAttributeRewriter.Rewrite("Seen = $x.value;", grammar, rule, EmbeddedParserAttributeLocationKind.After);
+
+        Assert.AreEqual("Seen = $x.value;", result.Code);
+        Assert.AreEqual(1, result.Errors.Count);
+        StringAssert.Contains(result.Errors[0], "Return 'value' is not declared by every parser rule referenced by assignment label 'x'");
+        StringAssert.Contains(result.Errors[0], "withoutValue");
+    }
+
+    /// <summary>Verifies reused assignment labels rewrite when every referenced parser-rule target declares the requested return.</summary>
+    [TestMethod]
+    public void Rewrite_ReusedAssignmentLabelTargets_RewritesWhenAllTargetsDeclareReturn()
+    {
+        const string grammarText = """
+            grammar P;
+            start : x=left | x=right ;
+            left returns [int value] : A ;
+            right returns [int value] : A ;
+            A : 'a' ;
+            """;
+        G4Grammar grammar = Parse(grammarText);
+        G4Rule rule = grammar.ParserRules.Single(candidate => candidate.Name == "start");
+
+        EmbeddedParserAttributeRewriteResult result = EmbeddedParserAttributeRewriter.Rewrite("Seen = $x.value;", grammar, rule, EmbeddedParserAttributeLocationKind.After);
+
+        Assert.AreEqual("Seen = GetRequiredLabeledRuleCallReturn(context, \"x\", \"value\");", result.Code);
+        Assert.AreEqual(0, result.Errors.Count);
     }
 
     /// <summary>Verifies repeated list-label return convenience remains unsupported regardless of target order.</summary>
