@@ -174,32 +174,23 @@ IPv4 sends an Echo Reply type instead of Echo Request, ignores the actual receiv
 
 **Priority:** P2.
 
-## Strong type and API design work
+## Wake-on-LAN API work
 
-### 29. Introduce a dedicated `MacAddress` specific type
-`PhysicalAddress` accepts arbitrary byte lengths and therefore cannot enforce the six-byte invariant required by classic Ethernet MAC addresses and Wake-on-LAN magic packets.
+### 29. Keep `PhysicalAddress` and validate the classic Ethernet invariant
+A dedicated `MacAddress` type is unnecessary because `System.Net.NetworkInformation.PhysicalAddress` already provides the appropriate value object, parsing, formatting, equality and hashing behavior.
 
-Create a dedicated immutable strong type, preferably generated through the planned `Specific<T>` source-generator mechanism:
+`WakeOnLan.CreateMagicPacket` and `SendMagicPacketAsync` should accept `PhysicalAddress` directly rather than exposing a raw `byte[]` API. At the command boundary, call `GetAddressBytes()` and require exactly six bytes because the classic Wake-on-LAN magic-packet format is defined for a 48-bit Ethernet hardware address.
 
-```csharp
-public readonly partial struct MacAddress : ISpecific<PhysicalAddress>;
-```
+**Fix:**
 
-The generated/custom validation must guarantee exactly six bytes at construction and parsing time. The type should provide:
-
-- canonical `XX:XX:XX:XX:XX:XX` formatting;
-- parsing of colon, hyphen and compact hexadecimal forms;
-- value equality and stable hashing based on the six bytes;
-- conversion to `PhysicalAddress` and `ReadOnlySpan<byte>` without exposing mutable state;
-- rejection of multicast/broadcast addresses only where a specific API requires a unicast address, not globally;
-- an explicit broadcast constant where useful.
-
-Update `WakeOnLan`, `ArpUtils`, `ArpPacket` and other Ethernet-specific APIs to accept `MacAddress`. Keep compatibility overloads taking `PhysicalAddress` only if they validate and delegate to the strong type.
-
-**Priority:** P3 design improvement, but it should be implemented with the Wake-on-LAN validation fix.
-
-### 30. Wake-on-LAN parameters still require runtime validation
-Even after introducing `MacAddress`, validate UDP port range, broadcast-address family and cancellation. Document that Wake-on-LAN is unauthenticated and should not be treated as an authorization mechanism.
+- retain `PhysicalAddress` as the public parameter type;
+- remove or obsolete any overload accepting raw `byte[]` for the target address;
+- validate `macAddress.GetAddressBytes().Length == 6` before constructing the packet;
+- throw a clear `ArgumentException` for unsupported hardware-address lengths;
+- keep the packet-building implementation internal or expose it only with the validated `PhysicalAddress` input;
+- validate UDP port range and broadcast-address family;
+- add cancellation support to the asynchronous send operation;
+- document that Wake-on-LAN is unauthenticated and must not be used as an authorization mechanism.
 
 **Priority:** P3.
 
@@ -217,8 +208,8 @@ Even after introducing `MacAddress`, validate UDP port range, broadcast-address 
 - Verify handler exceptions and concurrent output behavior.
 - Test ICMP cancellation, request type, received-length parsing and reply correlation.
 - Test cancellation and maximum-response limits for Time, Echo and QOTD clients.
-- Test all accepted `MacAddress` textual forms, equality, formatting and rejection of non-six-byte values.
-- Verify Wake-on-LAN packet layout using `MacAddress` and reject invalid ports/address families.
+- Verify Wake-on-LAN packet layout from a six-byte `PhysicalAddress`.
+- Reject non-six-byte `PhysicalAddress` values, invalid UDP ports and incompatible broadcast-address families.
 
 ## Priority roadmap
 
@@ -239,7 +230,7 @@ Even after introducing `MacAddress`, validate UDP port range, broadcast-address 
 | P2 | ICMP timeout/construction/reply-correlation defects |
 | P2 | Legacy clients lack deadlines, cancellation and size limits |
 | P2 | Command-response client lifecycle state is unreliable |
-| P3 | Introduce `MacAddress` and harden Wake-on-LAN API parameters |
+| P3 | Keep `PhysicalAddress`; validate six-byte Wake-on-LAN addresses and API parameters |
 
 ## Deployment warning
 
