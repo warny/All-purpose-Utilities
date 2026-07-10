@@ -82,11 +82,11 @@ The floating-point constructor `ColorArgb(ColorArgb64 color)` divides 16-bit cha
 **Priority:** P1 functional bug.
 
 ### 10. 8-bit to 16-bit color expansion is not range-preserving
-`ColorArgb64(ColorArgb32)` and `ColorArgb64(System.Drawing.Color)` expand channels with `value << 8`. This maps `255` to `65280`, not `65535`, and all intermediate values are biased low. Exact 8-to-16 expansion should replicate the byte (`value * 257`, equivalently `(value << 8) | value`).
+`ColorArgb64(ColorArgb32)` and `ColorArgb64(System.Drawing.Color)` expand channels with `value << 8`. This maps `255` to `65280`, not `65535`, and all intermediate values are biased low. Exact 8-to-16 expansion must replicate the source byte into both bytes of the destination word.
 
 **Risk:** white is no longer full white, opaque alpha is not fully opaque and repeated 8↔16 conversions lose precision systematically.
 
-**Fix:** use `value * 257`; add exhaustive tests for all 256 input values and verify round-trip stability.
+**Fix:** use the explicit binary expansion `((ushort)value << 8) | value` for every channel. Centralize this operation in a small helper used by all 8→16 conversion paths. Do not replace it with an unchecked narrowing conversion. Add exhaustive tests for all 256 input values and verify exact 8→16→8 round trips.
 
 **Priority:** P1 functional bug.
 
@@ -192,7 +192,7 @@ Conversions from floating components to byte/ushort use truncating casts rather 
 - Test straight-alpha and premultiplied-alpha formats separately.
 - Run common sprite behavior tests through generic, 32-bit and 64-bit accessors.
 - Verify `ColorArgb64 → ColorArgb` endpoints: 0 maps to 0 and 65535 maps to 1.
-- Exhaustively test 8→16 expansion for all channel values and exact 8→16→8 round trips.
+- Exhaustively test binary 8→16 expansion for every byte value using `((ushort)value << 8) | value`; verify `0 → 0`, `1 → 257`, `128 → 32896`, `255 → 65535`, and exact 8→16→8 round trips.
 - Validate Porter-Duff `Over` against reference vectors for transparent, opaque and partially transparent foreground/background combinations across all color types.
 - Test canonical packed ARGB values independently of native memory layout.
 - Exercise the `IColorArgb<byte>` constructor with every byte value and ensure no wraparound.
@@ -210,7 +210,7 @@ Conversions from floating components to byte/ushort use truncating casts rather 
 | P1 | Transformer allocation and mask dimensions are unchecked |
 | P1 | Weight matrices allow mutable/non-finite data |
 | P1 | 16-bit floating conversion uses an invalid divisor |
-| P1 | 8-bit to 16-bit expansion loses full range |
+| P1 | 8-bit to 16-bit expansion must replicate bits with shift/OR |
 | P1 | Porter-Duff compositing is inconsistent and incorrect |
 | P1 | Convolution normalization semantics are incorrect |
 | P2 | Pixel-format aliases and premultiplied formats are mishandled |
