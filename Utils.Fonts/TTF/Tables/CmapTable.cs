@@ -168,23 +168,31 @@ public class CmapTable : TrueTypeTable, IEnumerable<CMap.CMapFormatBase>
         int numberSubtables = data.Read<Int16>();
 
         // Read subtable directory records.
-        var subTables = new (short platformID, short platformSpecificID, int offset, int length)[numberSubtables];
-        int lastOffset = 0;
+        var subTables = new (short platformID, short platformSpecificID, int offset)[numberSubtables];
         for (int i = 0; i < numberSubtables; i++)
         {
             var platformID = data.Read<Int16>();
             var platformSpecificID = data.Read<Int16>();
             var offset = data.Read<Int32>();
-            // Length is calculated as the difference between current and previous offset.
-            subTables[i] = (platformID, platformSpecificID, offset, offset - lastOffset);
-            lastOffset = offset;
+            subTables[i] = (platformID, platformSpecificID, offset);
+        }
+
+        // A subtable's length is the distance to the next greater offset: subtables are stored
+        // contiguously and sorted by offset per the TrueType spec, and several platform/encoding
+        // records may legitimately share the same offset when they point at the same subtable.
+        var orderedOffsets = subTables.Select(s => s.offset).Distinct().OrderBy(o => o).ToArray();
+        int SubtableEnd(int offset)
+        {
+            int index = Array.IndexOf(orderedOffsets, offset);
+            return index + 1 < orderedOffsets.Length ? orderedOffsets[index + 1] : (int)data.Stream.Length;
         }
 
         // Read each subtable.
         for (int i = 0; i < numberSubtables; i++)
         {
             var subTable = subTables[i];
-            Reader mapData = data.Slice(subTable.offset, subTable.length);
+            int length = SubtableEnd(subTable.offset) - subTable.offset;
+            Reader mapData = data.Slice(subTable.offset, length);
             try
             {
                 CMap.CMapFormatBase cMap = CMap.CMapFormatBase.GetMap(mapData);
