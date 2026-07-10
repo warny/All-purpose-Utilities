@@ -13,13 +13,22 @@ non traitées, sauf mention contraire.
 ## Architecture du code embarqué (priorité haute)
 
 ### 1. Introduire une représentation typée du code transformé
-Les chemins actuels manipulent le code brut et le code transformé sous forme de simples chaînes.
-`EmbeddedCodeHook` et `LexerEmbeddedCodeHook` initialisent notamment `EmittedCode` avec le code brut,
-ce qui permet théoriquement une émission avant transformation.
+**Corrigé.** Le pipeline distingue désormais `RawEmbeddedCode` et `TransformedEmbeddedCode` dans
+`Utils.Parser.Diagnostics.EmbeddedCode`. `EmbeddedCodeSource` expose le texte source sous forme de
+`RawEmbeddedCode`, les hooks générés conservent le code brut dans `RawCode`, et leur `EmittedCode`
+est un `TransformedEmbeddedCode` rempli uniquement après l'appel à `IParserEmbeddedCodeTransformer`.
+`GrammarEmitter.TransformEmbeddedCode` et `ExpressionEmbeddedCodePreparer.TransformSource` retournent
+un code transformé typé, et les chemins d'émission C# ou de compilation via `IExpressionCompiler`
+consomment explicitement ce type avant d'extraire le texte final.
 
-**Fix proposé** : introduire des types distincts, par exemple `RawEmbeddedCode` et
-`TransformedEmbeddedCode`, et faire en sorte que les composants d'injection et de compilation
-n'acceptent que `TransformedEmbeddedCode`.
+Tests ajoutés :
+
+- `ExpressionEmbeddedCodePreparerTests.EmbeddedCodeSource_WhenCreated_ExposesTypedRawCode` ;
+- `ExpressionEmbeddedCodePreparerTests.PrepareSemanticPredicate_WhenTransformerProvided_CompilerReceivesTransformedCode` ;
+- `ExpressionEmbeddedCodePreparerTests.PrepareParserAction_WhenNoOpTransformerUsed_CompilerReceivesTextuallyIdenticalTransformedCode` ;
+- `Antlr4GeneratedEmbeddedCodeTests.Emit_WhenTransformerReplacesParserPredicateAndAction_RawCodeDoesNotAppearInGeneratedHookBodies` ;
+- `Antlr4GeneratedEmbeddedCodeTests.Emit_WhenTransformerReplacesLexerHook_RawCodeDoesNotAppearInGeneratedHookBodies` ;
+- `Antlr4GeneratedEmbeddedCodeTests.EmbeddedCodeHookTypes_UseTypedRawAndTransformedCodeFields`.
 
 ### 2. Centraliser l'appel au transformer et la validation des diagnostics
 `GrammarEmitter.TransformEmbeddedCode` et `ExpressionEmbeddedCodePreparer.TransformSource` réalisent

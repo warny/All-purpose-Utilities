@@ -104,7 +104,7 @@ internal static partial class GrammarEmitter
         foreach (var predicate in predicates)
         {
             sb.AppendLine($"            if (string.Equals(context.Rule.Name, \"{Escape(predicate.RuleName)}\", global::System.StringComparison.Ordinal)");
-            sb.AppendLine($"                && string.Equals(context.PredicateCode, \"{Escape(predicate.Code)}\", global::System.StringComparison.Ordinal)");
+            sb.AppendLine($"                && string.Equals(context.PredicateCode, \"{Escape(predicate.RawCode.Text)}\", global::System.StringComparison.Ordinal)");
             sb.AppendLine($"                && context.AlternativeIndex == {predicate.AlternativeIndex}");
             sb.AppendLine($"                && context.ElementIndex == {predicate.ElementIndex})");
             sb.AppendLine("            {");
@@ -146,7 +146,7 @@ internal static partial class GrammarEmitter
         foreach (var action in actions)
         {
             sb.AppendLine($"            if (string.Equals(context.Rule.Name, \"{Escape(action.RuleName)}\", global::System.StringComparison.Ordinal)");
-            sb.AppendLine($"                && string.Equals(context.ActionCode, \"{Escape(action.Code)}\", global::System.StringComparison.Ordinal)");
+            sb.AppendLine($"                && string.Equals(context.ActionCode, \"{Escape(action.RawCode.Text)}\", global::System.StringComparison.Ordinal)");
             sb.AppendLine($"                && context.AlternativeIndex == {action.AlternativeIndex}");
             sb.AppendLine($"                && context.ElementIndex == {action.ElementIndex})");
             sb.AppendLine("            {");
@@ -248,7 +248,7 @@ internal static partial class GrammarEmitter
         foreach (var action in lexerActions)
         {
             sb.AppendLine($"            if (string.Equals(context.Rule.Name, \"{Escape(action.RuleName)}\", global::System.StringComparison.Ordinal)");
-            sb.AppendLine($"                && string.Equals(context.ActionCode, \"{Escape(action.Code)}\", global::System.StringComparison.Ordinal)");
+            sb.AppendLine($"                && string.Equals(context.ActionCode, \"{Escape(action.RawCode.Text)}\", global::System.StringComparison.Ordinal)");
             sb.AppendLine($"                && context.AlternativeIndex == {action.AlternativeIndex}");
             sb.AppendLine($"                && context.ElementIndex == {action.ElementIndex})");
             sb.AppendLine("            {");
@@ -292,7 +292,7 @@ internal static partial class GrammarEmitter
         foreach (var predicate in lexerPredicates)
         {
             sb.AppendLine($"            if (string.Equals(context.Rule.Name, \"{Escape(predicate.RuleName)}\", global::System.StringComparison.Ordinal)");
-            sb.AppendLine($"                && string.Equals(context.PredicateCode, \"{Escape(predicate.Code)}\", global::System.StringComparison.Ordinal)");
+            sb.AppendLine($"                && string.Equals(context.PredicateCode, \"{Escape(predicate.RawCode.Text)}\", global::System.StringComparison.Ordinal)");
             sb.AppendLine($"                && context.AlternativeIndex == {predicate.AlternativeIndex}");
             sb.AppendLine($"                && context.ElementIndex == {predicate.ElementIndex})");
             sb.AppendLine("            {");

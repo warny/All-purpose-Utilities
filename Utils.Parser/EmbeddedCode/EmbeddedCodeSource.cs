@@ -1,3 +1,4 @@
+using Utils.Parser.Diagnostics.EmbeddedCode;
 using Utils.Parser.Source;
 
 namespace Utils.Parser.EmbeddedCode;
@@ -28,6 +29,7 @@ public sealed record EmbeddedCodeSource
         ValidateIndex(alternativeIndex, nameof(alternativeIndex));
         ValidateIndex(elementIndex, nameof(elementIndex));
 
+        RawCode = new RawEmbeddedCode(sourceText);
         SourceText = sourceText;
         Kind = kind;
         RuleName = ruleName;
@@ -40,6 +42,11 @@ public sealed record EmbeddedCodeSource
     /// Gets the raw embedded-code source text without surrounding ANTLR delimiters.
     /// </summary>
     public string SourceText { get; }
+
+    /// <summary>
+    /// Gets the typed raw embedded-code source text without surrounding ANTLR delimiters.
+    /// </summary>
+    public RawEmbeddedCode RawCode { get; }
 
     /// <summary>
     /// Gets the kind of ANTLR construct that owns the source text.

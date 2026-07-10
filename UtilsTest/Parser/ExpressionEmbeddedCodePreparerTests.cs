@@ -36,6 +36,45 @@ public class ExpressionEmbeddedCodePreparerTests
         Assert.AreEqual(SemanticPredicateEvaluationStatus.Satisfied, result.Artifact.Evaluate(CreatePredicateContext("true")).Status);
     }
 
+
+    [TestMethod]
+    public void EmbeddedCodeSource_WhenCreated_ExposesTypedRawCode()
+    {
+        var source = CreateSource("true", EmbeddedCodeKind.SemanticPredicate);
+
+        Assert.AreEqual("true", source.RawCode.Text);
+        Assert.IsInstanceOfType(source.RawCode, typeof(RawEmbeddedCode));
+    }
+
+    [TestMethod]
+    public void PrepareSemanticPredicate_WhenTransformerProvided_CompilerReceivesTransformedCode()
+    {
+        var compiler = new FakeExpressionCompiler();
+        var preparer = new ExpressionEmbeddedCodePreparer(compiler, new ReplaceRuntimeCodeTransformer());
+
+        var result = preparer.PrepareSemanticPredicate(
+            CreateSource("__TOKEN_PREDICATE__", EmbeddedCodeKind.SemanticPredicate),
+            CreateContext(EmbeddedCodeTarget.RuntimeInlineExpression));
+
+        Assert.AreEqual(EmbeddedCodePreparationStatus.Succeeded, result.Status);
+        Assert.AreEqual("true", compiler.LastContent);
+        Assert.AreNotEqual("__TOKEN_PREDICATE__", compiler.LastContent);
+    }
+
+    [TestMethod]
+    public void PrepareParserAction_WhenNoOpTransformerUsed_CompilerReceivesTextuallyIdenticalTransformedCode()
+    {
+        var compiler = new FakeExpressionCompiler();
+        var preparer = new ExpressionEmbeddedCodePreparer(compiler, NoOpParserEmbeddedCodeTransformer.Instance);
+
+        var result = preparer.PrepareParserAction(
+            CreateSource("increment", EmbeddedCodeKind.ParserInlineAction),
+            CreateContext(EmbeddedCodeTarget.RuntimeInlineExpression));
+
+        Assert.AreEqual(EmbeddedCodePreparationStatus.Succeeded, result.Status);
+        Assert.AreEqual("increment", compiler.LastContent);
+    }
+
     [TestMethod]
     public void PrepareSemanticPredicate_WhenPredicateIsNotBoolean_ReturnsCompilationFailed()
     {
@@ -422,7 +461,7 @@ public class ExpressionEmbeddedCodePreparerTests
         /// <inheritdoc />
         public ParserEmbeddedCodeTransformationResult Transform(ParserEmbeddedCodeTransformationContext context)
         {
-            return new ParserEmbeddedCodeTransformationResult { Code = context.Code.Replace("__TOKEN__", "increment") };
+            return new ParserEmbeddedCodeTransformationResult { Code = context.Code.Replace("__TOKEN__", "increment").Replace("__TOKEN_PREDICATE__", "true") };
         }
     }
 
