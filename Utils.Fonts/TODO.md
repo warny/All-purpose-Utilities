@@ -2,7 +2,12 @@
 
 Audit complet du package : conformité AGENTS.md, bugs, dette technique, couverture de tests.
 Package : parsing/écriture de polices PostScript (`Utils.Fonts/PostScript/`) et TrueType/OpenType
-(`Utils.Fonts/TTF/`). Propositions ci-dessous, aucune n'est encore corrigée.
+(`Utils.Fonts/TTF/`).
+
+**État (2026-07-10, suite) :** les 8 bugs fonctionnels (items 1-8) sont corrigés, chacun avec un
+commit dédié et un test de régression dans `UtilsTest.Functional/Fonts/`. Les items 9-20 (dette
+technique, cosmétique, couverture de tests) restent des propositions non traitées, sauf mention
+contraire.
 
 ## Bugs fonctionnels (priorité haute)
 
@@ -16,6 +21,7 @@ symbol + BMP), les slices passées à `CMapFormatBase.GetMap` ont la mauvaise lo
 tronquer la dernière sous-table ou décaler la lecture des autres.
 **Fix proposé** : calculer `length[i] = offset[i+1] - offset[i]` (ou `dataLength_de_la_table - offset[i]`
 pour la dernière sous-table), avec un offset "suivant" plutôt que "précédent".
+**Corrigé.** Test de régression : `CmapTableTests.MultipleSubtables_AllSurviveRoundTrip`.
 
 ### 2. `CMapFormat4.WriteData` — troncature des indices de glyphe sur 1 octet au lieu de 2
 `Utils.Fonts/TTF/Tables/Cmap/CMapFormat4.cs:376-379`
@@ -25,12 +31,21 @@ déclare bien `Map.Count * sizeof(short)`). Toute police avec plus de 255 glyphe
 correspondance explicite produira un flux cmap corrompu en écriture (glyphIdArray tronqué +
 désalignement de tout ce qui suit).
 **Fix proposé** : `data.Write<Int16>(index)`.
+**Corrigé**, avec deux bugs supplémentaires trouvés en écrivant les tests d'aller-retour : l'ordre
+d'écriture endCode[]/startCode[] était inversé par rapport à `ReadData` (et le spec), et
+`segCountX2` était écrit/lu avec le décalage de bits inversé (`>> 1` au lieu de `<< 1` à l'écriture,
+et vice-versa à la lecture — les deux bugs se compensaient pour un nombre de segments pair, d'où
+l'absence de détection sur la police Arial réelle utilisée par `TrueTypeFontTests`). Voir le détail
+dans le message du commit. Tests : `CMapFormat4Tests.cs` (nouveau fichier).
 
 ### 3. `CMapFormat4.WriteData` — calcul de `glyphArrayOffset` incohérent avec l'écriture réelle
 `Utils.Fonts/TTF/Tables/Cmap/CMapFormat4.cs:367-382`
 `glyphArrayOffset += tableMap.Map.Count * 2` suppose 2 octets par entrée alors que la boucle
 d'écriture correspondante (item 2) n'en écrit qu'un actuellement. À corriger conjointement avec
 l'item 2, puis revalider avec un test d'aller-retour (plusieurs `TableMap` consécutifs).
+**Corrigé** en même temps que l'item 2 (devient cohérent automatiquement une fois l'écriture en
+`Int16` corrigée). Un bug de double-comptage annexe a aussi été corrigé dans
+`TableMap.Length`/`DeltaMap.Length` (voir le commit).
 
 ### 4. `GlyphSimple.WriteData` — tailles d'octets inversées par rapport à `ReadData`/`GetFlags`
 `Utils.Fonts/TTF/Tables/Glyf/GlyphSimple.cs:237-259`
@@ -43,11 +58,24 @@ police TrueType contenant des contours. Aucun test ne couvre `GlyphSimple.WriteD
 d'où le passage inaperçu.
 **Fix proposé** : inverser la logique — `isByte` posé ⇒ écrire un octet (signe selon `isSame`),
 sinon ⇒ écrire `Int16`.
+**Corrigé**, avec deux bugs supplémentaires trouvés en écrivant les tests d'aller-retour :
+`GetFlags` calculait les flags `IsByte`/`IsSame` sur la coordonnée absolue au lieu du delta par
+rapport au point précédent (les coordonnées `glyf` sont toujours des deltas), et inversait la
+polarité du bit `IsSame` pour les deltas encodés sur un octet (le spec dit : bit posé = positif,
+absent = négatif — c'était l'inverse) ; `WriteData` écrivait aussi le nombre de points par contour
+au lieu de l'index du dernier point (`count` au lieu de `count - 1`) attendu par `ReadData`. Tests :
+`GlyphSimpleTests.cs` (nouveau fichier).
+**Relecture PR (Codex)** : ce dernier point était encore faux pour les glyphes à plusieurs contours —
+`count - 1` donne l'index local au contour, pas l'index cumulatif dans le tableau de points aplati du
+glyphe entier qu'exige réellement `endPtsOfContours` (correct par coïncidence pour le premier contour
+seulement). Corrigé avec un total courant (`cumulativePointIndex += contours[i].Length`). Test ajouté :
+`GlyphSimpleTests.ReadThenWrite_TwoContours_ProducesCumulativeEndPoints`.
 
 ### 5. `PostMapFormat0.stdNames[63]` — nom de glyphe erroné
 `Utils.Fonts/TTF/Tables/PostTable.cs:73` : `"ackslash"` au lieu de `"backslash"`.
 Casse la correspondance nom↔index standard Macintosh pour l'index 63 (`getGlyphNameIndex("backslash")`
 retourne 0/`.notdef` au lieu de 63). **Fix proposé** : corriger la faute de frappe.
+**Corrigé.** Test : `PostTableTests.Format0_BackslashResolvesToIndex63`.
 
 ### 6. `PostMapFormat2.WriteData` — `Seek(0)` parasite en fin d'écriture
 `Utils.Fonts/TTF/Tables/PostTable.cs:203-215`
@@ -56,6 +84,7 @@ Après avoir écrit `glyphNameIndex` et les noms de glyphes, la méthode fait
 (ou l'appelant `TrueTypeFont.WriteFont`) écrit autre chose après cet appel dans le même flux, les
 données précédentes seront écrasées. Ressemble à un artefact de debug oublié.
 **Fix proposé** : supprimer cette ligne.
+**Corrigé.** Test : `PostTableTests.Format2_WriteData_LeavesStreamPositionedAfterItsOwnData`.
 
 ### 7. `TtfEncoderFactory.GetEncoding` — confusion entre `TtfLanguageID` et code page Windows
 `Utils.Fonts/TTF/TtfEncoderFactory.cs:23-47`
@@ -70,6 +99,17 @@ lues via `NameTable.ReadData`/`WriteData`.
 **Fix proposé** : construire une vraie table de correspondance LanguageID→Encoding (ou a minima
 PlatformID/PlatformSpecificID→Encoding, le triplet réellement pertinent selon la spec OpenType — le
 languageID seul ne détermine pas l'encodage).
+**Corrigé** : `GetEncoding` bascule désormais sur `PlatformSpecificID` (Roman → MacRoman pour
+Macintosh, toujours UTF-16BE pour Microsoft/Unicode) et n'utilise plus `languageID` pour choisir
+l'encodage. Tests réécrits dans `TtfEncoderFactoryTests.cs` (les anciens asseraient le comportement
+buggy comme voulu).
+**Relecture PR (Codex)** : le "toujours UTF-16BE" pour Microsoft était incomplet — les IDs
+d'encodage legacy CJK (2=ShiftJIS, 3=PRC, 4=Big5, 5=Wansung, 6=Johab) doivent utiliser leurs propres
+code pages (932/936/950/949/1361), pas UTF-16BE. `TtfPlatformSpecificID` ne déclare aucun nom pour
+ces valeurs (et sa valeur 3 s'appelle `UNICODE_V2`, un sens Macintosh/versioning Unicode sans rapport
+qui partage la même valeur numérique que l'ID Microsoft PRC — piège de nommage). Ajouté
+`GetMicrosoftEncoding` qui dispatche sur la valeur numérique brute. Test :
+`TtfEncoderFactoryTests.Microsoft_LegacyCjkEncodingIds_ReturnTheirOwnCodePage`.
 
 ### 8. `TtfHinting.MovePoint`/`ScalePoints` — troncature des coordonnées de points en `short`
 `Utils.Fonts/TTF/TtfHinting.cs:61-83`
@@ -79,6 +119,8 @@ est perdue immédiatement, à l'encontre de l'objet même du hinting (ajustement
 limitée : `TtfHinting` semble être une infrastructure expérimentale sans appelant de production
 identifié.
 **Fix proposé** : conserver le résultat en `float`, sans cast intermédiaire vers `short`.
+**Corrigé.** Tests (item 20 traité au passage) : `TtfHintingTests.cs` (nouveau fichier, `TtfHinting`
+n'avait aucun test avant).
 
 ## Dette technique / non-conformité AGENTS.md
 
@@ -104,6 +146,9 @@ fin des données de chaîne). Ça fonctionne actuellement par accident de l'impl
 `MemoryStream` (qui s'étend correctement via `Seek`+écritures), mais c'est fragile et non documenté.
 **Fix proposé** : documenter l'invariant, ou repositionner explicitement `data.Position` à la fin du
 bloc de chaînes avant de retourner.
+**Corrigé** (en écrivant les tests de l'item 16) : `WriteData` repositionne désormais explicitement
+le flux à la fin de la zone de chaînes avant de retourner. Un second bug, plus grave, a été trouvé au
+passage — voir la note sur l'item 16.
 
 ### 12. Style — tableau non-bracket dans `PostMapFormat0.stdNames`
 `Utils.Fonts/TTF/Tables/PostTable.cs:65` : `protected internal string[] stdNames = { ... }` utilise
@@ -143,6 +188,16 @@ round-trip (`ParseFont` → `WriteFont` → `ParseFont`, comparer les valeurs) s
 multi-glyphes aurait très probablement détecté les bugs 2 et 4.
 **Fix proposé** : ajouter des tests dédiés par table dans `UtilsTest.Functional/Fonts/`, en
 particulier un test d'aller-retour bit-exact sur `TrueTypeFont.WriteFont()`.
+**Corrigé** : les 10 tables listées ont désormais chacune un fichier de test dédié
+(`CmapTableTests`, `CMapFormat4Tests`, `GlyphSimpleTests`, `HmtxTableTests`, `KernTableTests`,
+`NameTableTests`, `LocaTableTests`, `MaxpTableTests`, `HheaTableTests`, `VmtxTableTests`,
+`PostTableTests`). Écrire le test de `NameTable` a révélé un second bug réel (`WriteData` passait un
+nombre de caractères à `WriteFixedLengthString` au lieu du nombre d'octets déjà calculé — invisible
+tant que `TtfEncoderFactory` retombait toujours sur ASCII avant l'item 7, où 1 caractère = 1 octet ;
+exposé dès que l'encodage UTF-16BE correct a été utilisé), corrigé dans le même commit que le fix du
+point 11 ci-dessous (les deux bugs cohabitaient dans `NameTable.WriteData`). Pas encore fait : un
+test d'aller-retour bit-exact sur `TrueTypeFont.WriteFont()` complet (toutes les tables d'une police
+réelle) — les tests ajoutés valident chaque table isolément.
 
 ### 17. Aucun test pour `Type3Font`, `Type42Font`, `CidKeyedFont`
 `Utils.Fonts/PostScript/Type3Font.cs`, `Type42Font.cs`, `CidKeyedFont.cs`
@@ -150,6 +205,13 @@ Seul `PostScriptFont` est couvert (`UtilsTest.Functional/Fonts/PostScriptFontTes
 autres classes du même répertoire — dont deux (`Type3Font`, `CidKeyedFont`) contiennent une logique
 de parsing regex+charstring non triviale largement dupliquée depuis `PostScriptFont` — n'ont aucune
 couverture.
+**Correction du constat** : en y regardant de plus près, `PostScriptFontTests.cs` couvrait déjà
+`Type3Font`/`Type42Font`/`CidKeyedFont` par des tests de fumée (`LoadType3Font`, `LoadType42Font`,
+`ParseCidKeyedFont`, `Type3FontParsesFontMatrixAndFontBBox`, etc., 14 tests au total) — l'audit
+initial avait raté ce fichier. **Complété** : `Type3FontTests.cs` ajouté pour vérifier les commandes
+de tracé réellement produites par `moveto`/`lineto`/`curveto` (jamais vérifiées avant, seule la
+présence du glyphe l'était) et le fallback `MapName` sur un nom multi-caractères inconnu. Aucun bug
+trouvé.
 
 ### 18. Aucun test pour les tables AAT restantes
 Tables concernées : `Feat`, `Fdsc`, `Fmtx`, `Lcar`, `Opbd`, `Prop`, `Trak`, `Hdmx`. Toutes bien
@@ -158,29 +220,55 @@ testés (`AcntTableTests`, `AvarTableTests`, `BslnTableTests`, `CvarTableTests`,
 `GaspTableTests`, `LtshTableTests`, `Os2TableTests`, `PcltTableTests`, `VheaTableTests`,
 `DsigTableTests`). Vu la cohérence de style avec les tables déjà testées, probablement un oubli
 plutôt qu'un choix — bonne opportunité de compléter la suite existante par symétrie.
+**Corrigé** : les 8 tables ont désormais un fichier de test dédié (`FeatTableTests`, `FdscTableTests`,
+`FmtxTableTests`, `LcarTableTests`, `OpbdTableTests`, `PropTableTests`, `TrakTableTests`,
+`HdmxTableTests`). Aucun bug trouvé.
 
 ### 19. `CvtTable`/`FpgmTable`/`PrepTable` sans test
 Ces trois tables (bytecode brut) sont fonctionnellement triviales et sans bug détecté, mais sans
 aucun test dédié ni indirect. Risque faible vu la simplicité du code.
+**Corrigé** : `CvtTableTests`, `FpgmTableTests`, `PrepTableTests` ajoutés. Aucun bug trouvé.
 
 ### 20. `TtfHinting.cs` (`TtfHintingContext`/`TtfHintingProcessor`) sans aucun test
-Aucune référence dans les dossiers de test. Combiné à l'item 8 (troncature `short`), cette
-infrastructure semble non exercée en pratique.
+**Traité** en corrigeant l'item 8 : `TtfHintingTests.cs` couvre désormais `MovePoint` et
+`ScalePoints`. `NOP` reste non testé (trivial, pas de comportement à vérifier).
 
 ## Résumé priorisé
 
-| # | Sévérité | Fichier |
-|---|---|---|
-| 4 | Bug fonctionnel majeur | `GlyphSimple.cs` (WriteData round-trip cassé) |
-| 1 | Bug fonctionnel | `CmapTable.cs` (longueurs de sous-table décalées) |
-| 2, 3 | Bug fonctionnel | `CMapFormat4.cs` (troncature glyph index en écriture) |
-| 7 | Bug fonctionnel connu/documenté | `TtfEncoderFactory.cs` (LCID confondu avec code page) |
-| 6 | Bug fonctionnel potentiel | `PostTable.cs` (`Seek(0)` parasite) |
-| 5 | Bug fonctionnel mineur | `PostTable.cs` (typo "ackslash") |
-| 8 | Bug fonctionnel (portée limitée) | `TtfHinting.cs` (troncature `short`) |
-| 16 | Manque de test (racine des bugs 1-6) | Cmap/Glyf/Hmtx/Kern/Name/Loca/Maxp/Hhea/Vmtx/Post |
-| 17 | Manque de test | Type3Font/Type42Font/CidKeyedFont |
-| 10 | Dette technique | `Acnt/` (code mort) |
-| 9, 12, 13 | Cosmétique | using inutile, initialiseur de tableau, params |
-| 11, 14, 15 | Dette technique mineure | position flux NameTable, duplication AAT header, docs incomplètes |
-| 18, 19, 20 | Manque de test | tables AAT restantes, Cvt/Fpgm/Prep, TtfHinting |
+| # | Sévérité | Fichier | État |
+|---|---|---|---|
+| 4 | Bug fonctionnel majeur | `GlyphSimple.cs` (WriteData round-trip cassé + endPtsOfContours cumulatif) | Corrigé |
+| 1 | Bug fonctionnel | `CmapTable.cs` (longueurs de sous-table décalées) | Corrigé |
+| 2, 3 | Bug fonctionnel | `CMapFormat4.cs` (troncature glyph index en écriture) | Corrigé |
+| 7 | Bug fonctionnel connu/documenté | `TtfEncoderFactory.cs` (LCID confondu avec code page + CJK legacy) | Corrigé |
+| 6 | Bug fonctionnel potentiel | `PostTable.cs` (`Seek(0)` parasite) | Corrigé |
+| 5 | Bug fonctionnel mineur | `PostTable.cs` (typo "ackslash") | Corrigé |
+| 8 | Bug fonctionnel (portée limitée) | `TtfHinting.cs` (troncature `short`) | Corrigé |
+| 16 | Manque de test (racine des bugs 1-6) | Cmap/Glyf/Hmtx/Kern/Name/Loca/Maxp/Hhea/Vmtx/Post | Corrigé (tests par table ; reste : round-trip `WriteFont()` complet) |
+| 17 | Manque de test (constat partiellement erroné) | Type3Font/Type42Font/CidKeyedFont | Corrigé |
+| 10 | Dette technique | `Acnt/` (code mort) | Ouvert |
+| 9, 12, 13 | Cosmétique | using inutile, initialiseur de tableau, params | Ouvert |
+| 14, 15 | Dette technique mineure | duplication AAT header, docs incomplètes | Ouvert |
+| 11 | Bug fonctionnel (trouvé via l'item 16) | `NameTable.cs` (position flux + overflow `WriteFixedLengthString`) | Corrigé |
+| 18, 19 | Manque de test | tables AAT restantes, Cvt/Fpgm/Prep | Corrigé |
+| 20 | Manque de test | TtfHinting | Corrigé (via item 8) |
+
+## Bilan (2026-07-10, fin de session)
+Tous les items de test (16, 17, 18, 19, 20) et tous les bugs fonctionnels (1-8, plus le 11 et le bug
+`NameTable.WriteData`/`WriteFixedLengthString` trouvé en cours de route) sont corrigés, chacun avec
+son propre commit et son test de régression. Restent ouverts, tous de dette technique/cosmétique
+sans impact fonctionnel connu : 9 (using inutile), 10 (code mort `Acnt/`), 12 (style tableau), 13
+(`params IEnumerable<T>`), 14 (duplication AAT header), 15 (docs XML incomplètes).
+
+**Relecture de la PR #432 (Codex)** : deux corrections supplémentaires apportées suite aux
+commentaires de revue, chacune avec son propre commit + test — voir le détail dans les items 4 et 7
+ci-dessus :
+- `GlyphSimple.WriteData` : `endPtsOfContours` doit être cumulatif sur l'ensemble du glyphe, pas
+  local à chaque contour (mon premier fix ne marchait que pour un glyphe à un seul contour).
+- `TtfEncoderFactory.GetMicrosoftEncoding` : les IDs d'encodage Microsoft legacy CJK (2-6) utilisent
+  des code pages spécifiques (932/936/950/949/1361), pas UTF-16BE comme je l'avais généralisé.
+
+Ces deux corrections ont aussi nécessité de fusionner `origin/master` dans la branche
+(`claude/fonts-fix-write-bugs`) après que la PR #431 (doc-only) a été squash-mergée entre-temps —
+conflit add/add sur ce même fichier `TODO.md`, résolu en conservant la version de cette branche (sur-
+ensemble strict de celle de master).

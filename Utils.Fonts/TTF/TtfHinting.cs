@@ -59,8 +59,9 @@ namespace Utils.Fonts.TTF.Hinting
             if (pointIndex >= 0 && pointIndex < context.GlyphPoints.Length)
             {
                 TTFPoint pt = context.GlyphPoints[pointIndex];
-                // On modifie la coordonnée Y (par exemple) en ajoutant le delta.
-                context.GlyphPoints[pointIndex] = new TTFPoint(pt.X, (short)(pt.Y + delta), pt.OnCurve);
+                // On modifie la coordonnée Y (par exemple) en ajoutant le delta. TTFPoint stores
+                // float coordinates so hinting sub-pixel adjustments are not truncated away.
+                context.GlyphPoints[pointIndex] = new TTFPoint(pt.X, pt.Y + delta, pt.OnCurve);
             }
         }
 
@@ -77,8 +78,9 @@ namespace Utils.Fonts.TTF.Hinting
             for (int i = 0; i < context.GlyphPoints.Length; i++)
             {
                 TTFPoint pt = context.GlyphPoints[i];
-                // Appliquer l'échelle aux coordonnées X et Y.
-                context.GlyphPoints[i] = new TTFPoint((short)(pt.X * scale), (short)(pt.Y * scale), pt.OnCurve);
+                // Appliquer l'échelle aux coordonnées X et Y, sans tronquer vers un entier: TTFPoint
+                // stocke des coordonnées float justement pour conserver la précision sous-pixel.
+                context.GlyphPoints[i] = new TTFPoint((float)(pt.X * scale), (float)(pt.Y * scale), pt.OnCurve);
             }
         }
 
