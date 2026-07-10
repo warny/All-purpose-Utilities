@@ -396,12 +396,14 @@ chargées sur le même worker simulé, appels routés par handle, `Unload` d'une
 l'autre, appel sur un handle déchargé rejeté), `UtilsTest/Reflection/EmitWorkerPoolTests.cs` (sémantique
 de disposal du pool sans lancer de vrai process).
 
-#### 33. Coût par appel non documenté
+#### 33. ~~Coût par appel non documenté~~ — **documenté**
 Chaque appel round-trip en JSON + pipe nommé, sérialisé par un seul `SemaphoreSlim` (`callLock`) —
-aucun appel concurrent n'est possible sur un même worker. Ce n'est mentionné nulle part dans le README ;
-pour un usage haute fréquence (boucle serrée), c'est une régression de performance potentiellement
-surprenante par rapport à `EmitInProcess`/P-Invoke direct. Proposition minimale : documenter le
-trade-off dans le README, à côté de la section « Interface emit approach ».
+aucun appel concurrent n'est possible sur un même worker. **Fix** : encart « Performance note » ajouté
+dans le README juste après la description de `Emit<TInterface>`, expliquant le coût de sérialisation/IPC
+par appel, l'absence de concurrence intra-worker, et recommandant `EmitInProcess<TInterface>` pour les
+boucles d'appels haute fréquence sur une interface pleinement fiable ; mention des paramètres
+`loadTimeout`/`callTimeout` (voir item 28) à cet endroit également. Changement purement documentaire,
+aucun nouveau test (cohérent avec les autres items « documenté » de cette liste).
 
 #### 34. Aucun parallélisme des appels à l'intérieur d'un même worker (threads)
 Le protocole hôte↔worker est strictement mono-appel-en-vol des deux côtés : côté hôte,

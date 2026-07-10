@@ -125,6 +125,15 @@ process; `IntPtr`/pointers/handles are never supported, because they are meaning
 process that produced them. `Emit<TInterface>` throws `NotSupportedException` immediately (before starting any
 process) when the interface doesn't qualify.
 
+> **Performance note.** Isolation is not free: every call is JSON-serialized, sent over a named pipe to
+> the worker, executed there, and the result serialized back — a real cost compared to a direct P/Invoke
+> or `EmitInProcess<TInterface>` call. Calls on a single worker are also fully serialized (one in flight
+> at a time, even from multiple threads); there is no internal concurrency. For a tight, high-frequency
+> call loop where that overhead matters and the interface is fully trusted, prefer
+> `EmitInProcess<TInterface>` instead. `loadTimeout`/`callTimeout` parameters on `Emit<TInterface>` bound
+> how long a call can block waiting for the worker (30 seconds by default for each) before it is killed
+> and a `TimeoutException` is thrown.
+
 #### In-process emit (no isolation)
 
 For interfaces that need pointer/handle parameters, or when you fully trust the interface definition
