@@ -193,6 +193,13 @@ Seul `PostScriptFont` est couvert (`UtilsTest.Functional/Fonts/PostScriptFontTes
 autres classes du même répertoire — dont deux (`Type3Font`, `CidKeyedFont`) contiennent une logique
 de parsing regex+charstring non triviale largement dupliquée depuis `PostScriptFont` — n'ont aucune
 couverture.
+**Correction du constat** : en y regardant de plus près, `PostScriptFontTests.cs` couvrait déjà
+`Type3Font`/`Type42Font`/`CidKeyedFont` par des tests de fumée (`LoadType3Font`, `LoadType42Font`,
+`ParseCidKeyedFont`, `Type3FontParsesFontMatrixAndFontBBox`, etc., 14 tests au total) — l'audit
+initial avait raté ce fichier. **Complété** : `Type3FontTests.cs` ajouté pour vérifier les commandes
+de tracé réellement produites par `moveto`/`lineto`/`curveto` (jamais vérifiées avant, seule la
+présence du glyphe l'était) et le fallback `MapName` sur un nom multi-caractères inconnu. Aucun bug
+trouvé.
 
 ### 18. Aucun test pour les tables AAT restantes
 Tables concernées : `Feat`, `Fdsc`, `Fmtx`, `Lcar`, `Opbd`, `Prop`, `Trak`, `Hdmx`. Toutes bien
@@ -222,7 +229,7 @@ aucun test dédié ni indirect. Risque faible vu la simplicité du code.
 | 5 | Bug fonctionnel mineur | `PostTable.cs` (typo "ackslash") | Corrigé |
 | 8 | Bug fonctionnel (portée limitée) | `TtfHinting.cs` (troncature `short`) | Corrigé |
 | 16 | Manque de test (racine des bugs 1-6) | Cmap/Glyf/Hmtx/Kern/Name/Loca/Maxp/Hhea/Vmtx/Post | Corrigé (tests par table ; reste : round-trip `WriteFont()` complet) |
-| 17 | Manque de test | Type3Font/Type42Font/CidKeyedFont | Ouvert |
+| 17 | Manque de test (constat partiellement erroné) | Type3Font/Type42Font/CidKeyedFont | Corrigé |
 | 10 | Dette technique | `Acnt/` (code mort) | Ouvert |
 | 9, 12, 13 | Cosmétique | using inutile, initialiseur de tableau, params | Ouvert |
 | 14, 15 | Dette technique mineure | duplication AAT header, docs incomplètes | Ouvert |
