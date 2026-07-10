@@ -297,14 +297,22 @@ ou au moins un avertissement XML doc explicite sur la non thread-safety.
 
 ### Priorité haute — robustesse
 
-#### 28. [PRIORITAIRE] Aucun timeout sur les échanges Load/Call/Shutdown avec le worker isolé
-Seul le handshake de connexion initial (`EmitWorkerProcess.Start`, `WaitForConnectionAsync`) a un
-`CancellationTokenSource(10s)`. `InvokeMethod`/`Load`/`Dispose` appellent ensuite `SendAndReceive` →
-`reader.ReadLine()` sans aucune limite de temps. Si l'appel natif à l'intérieur du worker se bloque
-(I/O bloquant, deadlock), le thread hôte reste bloqué indéfiniment — y compris dans `Dispose()`, ce qui
-peut geler l'arrêt de l'application appelante. Proposition : timeout configurable sur
-`InvokeMethod`/`Load`, et un timeout court sur le `Shutdown` de `Dispose()` avec repli sur
-`KillSilently` en cas de dépassement.
+#### 28. [PRIORITAIRE] ~~Aucun timeout sur les échanges Load/Call/Shutdown avec le worker isolé~~ — **implémenté**
+Seul le handshake de connexion initial (`EmitWorkerProcess.Start`, `WaitForConnectionAsync`) avait un
+`CancellationTokenSource(10s)`. `InvokeMethod`/`Load`/`Dispose` appelaient ensuite `SendAndReceive` →
+`reader.ReadLine()` sans aucune limite de temps — un appel natif bloqué à l'intérieur du worker gelait le
+thread hôte indéfiniment, y compris dans `Dispose()`. **Fix** : `SendAndReceive` utilise désormais
+`reader.ReadLineAsync(CancellationToken)` sous un `CancellationTokenSource` par requête
+(`DefaultLoadTimeout`/`DefaultCallTimeout` = 30s, `ShutdownTimeout` = 5s pour `Dispose()`). En cas de
+dépassement : `TimeoutException`, et l'instance est « empoisonnée » (`PoisonAfterTimeout`) — le worker est
+tué et toute réutilisation ultérieure échoue immédiatement (pas de tentative de resynchronisation du
+protocole après un `ReadLine` abandonné en plein vol). `LibraryMapper.Emit<TInterface>` expose désormais
+`loadTimeout`/`callTimeout` optionnels (compatibles avec les appelants existants). Tests :
+`UtilsTest/Reflection/EmitWorkerProcessTests.cs` (valeurs par défaut),
+`UtilsTest.Functional/Reflection/EmitWorkerProcessTimeoutTests.cs` (valide que
+`StreamReader.ReadLineAsync(CancellationToken)` sur un vrai `NamedPipeServerStream` observe bien
+l'annulation — le mécanisme exact dont dépend le fix — sans passer par un vrai second process, limite
+déjà acceptée pour ce fichier).
 
 ### Priorité moyenne — qualité de code
 
@@ -344,3 +352,33 @@ aucun appel concurrent n'est possible sur un même worker. Ce n'est mentionné n
 pour un usage haute fréquence (boucle serrée), c'est une régression de performance potentiellement
 surprenante par rapport à `EmitInProcess`/P-Invoke direct. Proposition minimale : documenter le
 trade-off dans le README, à côté de la section « Interface emit approach ».
+
+#### 34. Aucun parallélisme des appels à l'intérieur d'un même worker (threads)
+Le protocole hôte↔worker est strictement mono-appel-en-vol des deux côtés : côté hôte,
+`EmitWorkerProcess.InvokeMethod` sérialise tous les appels via un unique `SemaphoreSlim(1,1)`
+(`callLock`), quel que soit le nombre de threads appelants côté application ; côté worker,
+`EmitWorkerHost.Run` est une boucle mono-thread qui lit une requête, l'exécute de façon synchrone, écrit
+la réponse, puis lit la suivante — aucune requête n'est déléguée à un thread/`Task` séparé. Rien
+n'empêche techniquement un process sandboxé (AppContainer/bwrap/sandbox-exec) de créer des threads : les
+trois mécanismes d'isolation du projet restreignent des ressources OS externes (réseau, écriture disque,
+accès périphériques, environnement) mais aucun ne limite la création de threads, purement intra-process.
+Pour retrouver du parallélisme sur les appels natifs, il faudrait faire évoluer le protocole des deux
+côtés : dispatcher chaque requête entrante du worker vers `Task.Run`/un pool de threads plutôt que de la
+traiter inline, et remplacer le `callLock` strict côté hôte par plusieurs requêtes en vol simultanément,
+corrélées via le champ `Id` déjà présent dans `WorkerRequest`/`WorkerResponse` (par exemple
+`Dictionary<int, TaskCompletionSource<WorkerResponse>>`). Prérequis externe à documenter : la
+bibliothèque native appelée via P/Invoke doit elle-même être thread-safe pour supporter des appels
+concurrents — responsabilité de l'appelant, indépendante de ce changement. Indépendant de l'item 35
+(qui vise la parallélisation via plusieurs process plutôt que plusieurs threads dans un seul worker).
+
+#### 35. Round-robin sur plusieurs process workers pour la parallélisation
+Alternative plus simple à mettre en œuvre que l'item 34 (pas de changement de protocole ni de dépendance
+à la thread-safety de la bibliothèque native appelée), mais plus coûteuse en ressources : ouvrir
+plusieurs process workers en parallèle et répartir les appels entre eux en round-robin, plutôt que de
+réécrire le protocole pour du multiplexage sur une seule connexion. Chaque worker resterait mono-appel
+comme aujourd'hui, mais N workers en parallèle donneraient un parallélisme de degré N côté appelant.
+Cela multiplie le coût de démarrage par worker déjà identifié comme point faible à l'item 32 — à
+combiner éventuellement avec un pool (item 32) pour amortir ce coût, mais les deux points sont
+indépendants et peuvent être traités séparément : l'item 32 vise à réduire le nombre de process pour
+plusieurs *interfaces différentes*, celui-ci vise à distribuer les appels d'une *même* interface sur
+plusieurs process pour paralléliser.

@@ -52,4 +52,16 @@ public class EmitWorkerProcessTests
             new[] { entryAssemblyLocation, "--utils-reflection-emit-worker", "pipe-name" },
             arguments);
     }
+
+    [TestMethod]
+    public void DefaultLoadTimeout_Is30Seconds()
+    {
+        Assert.AreEqual(TimeSpan.FromSeconds(30), EmitWorkerProcess.DefaultLoadTimeout);
+    }
+
+    [TestMethod]
+    public void DefaultCallTimeout_Is30Seconds()
+    {
+        Assert.AreEqual(TimeSpan.FromSeconds(30), EmitWorkerProcess.DefaultCallTimeout);
+    }
 }

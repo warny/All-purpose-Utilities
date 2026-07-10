@@ -22,12 +22,26 @@ namespace Utils.Reflection.Reflection.Emit;
 /// </summary>
 internal sealed class EmitWorkerProcess : IDisposable
 {
+    /// <summary>Default timeout for the initial <see cref="WorkerRequestKind.Load"/> request.</summary>
+    internal static readonly TimeSpan DefaultLoadTimeout = TimeSpan.FromSeconds(30);
+
+    /// <summary>Default timeout for each <see cref="WorkerRequestKind.Call"/> request.</summary>
+    internal static readonly TimeSpan DefaultCallTimeout = TimeSpan.FromSeconds(30);
+
+    /// <summary>
+    /// Timeout for the graceful <see cref="WorkerRequestKind.Shutdown"/> handshake in
+    /// <see cref="Dispose"/>. Short and non-configurable: a slow shutdown response falls back to
+    /// <see cref="KillSilently"/> regardless, so there is nothing to gain from waiting longer.
+    /// </summary>
+    private static readonly TimeSpan ShutdownTimeout = TimeSpan.FromSeconds(5);
+
     private IProcessContainer? sandbox;
     private readonly Process workerProcess;
     private readonly NamedPipeServerStream pipe;
     private readonly System.IO.StreamReader reader;
     private readonly System.IO.StreamWriter writer;
     private readonly SemaphoreSlim callLock = new(1, 1);
+    private readonly TimeSpan callTimeout;
     private int nextId;
     private bool disposed;
 
@@ -36,13 +50,15 @@ internal sealed class EmitWorkerProcess : IDisposable
         Process workerProcess,
         NamedPipeServerStream pipe,
         System.IO.StreamReader reader,
-        System.IO.StreamWriter writer)
+        System.IO.StreamWriter writer,
+        TimeSpan callTimeout)
     {
         this.sandbox = sandbox;
         this.workerProcess = workerProcess;
         this.pipe = pipe;
         this.reader = reader;
         this.writer = writer;
+        this.callTimeout = callTimeout;
     }
 
     /// <summary>
@@ -53,8 +69,20 @@ internal sealed class EmitWorkerProcess : IDisposable
     /// <param name="interfaceType">Interface whose members will be mapped to native exports.</param>
     /// <param name="dllPath">Path to the native DLL to load inside the worker.</param>
     /// <param name="callingConvention">Calling convention used for the generated delegates.</param>
+    /// <param name="loadTimeout">
+    /// Maximum time to wait for the worker's response to the initial <see cref="WorkerRequestKind.Load"/>
+    /// request (compiling the mapping class and loading the native DLL). Defaults to
+    /// <see cref="DefaultLoadTimeout"/> when <see langword="null"/>.
+    /// </param>
+    /// <param name="callTimeout">
+    /// Maximum time to wait for the worker's response to each subsequent
+    /// <see cref="WorkerRequestKind.Call"/> request, applied by <see cref="InvokeMethod"/>. Defaults to
+    /// <see cref="DefaultCallTimeout"/> when <see langword="null"/>.
+    /// </param>
     /// <returns>A connected, loaded worker ready to receive <see cref="WorkerRequestKind.Call"/> requests.</returns>
-    internal static EmitWorkerProcess Start(Type interfaceType, string dllPath, CallingConvention callingConvention)
+    internal static EmitWorkerProcess Start(
+        Type interfaceType, string dllPath, CallingConvention callingConvention,
+        TimeSpan? loadTimeout = null, TimeSpan? callTimeout = null)
     {
         CrossProcessMarshaling.EnsureInterfaceIsSupported(interfaceType);
 
@@ -113,10 +141,10 @@ internal sealed class EmitWorkerProcess : IDisposable
         var reader = new System.IO.StreamReader(serverPipe, leaveOpen: true);
         var writer = new System.IO.StreamWriter(serverPipe, leaveOpen: true) { AutoFlush = true };
 
-        var worker = new EmitWorkerProcess(sandbox, process, serverPipe, reader, writer);
+        var worker = new EmitWorkerProcess(sandbox, process, serverPipe, reader, writer, callTimeout ?? DefaultCallTimeout);
         try
         {
-            worker.Load(interfaceType, dllPath, callingConvention);
+            worker.Load(interfaceType, dllPath, callingConvention, loadTimeout ?? DefaultLoadTimeout);
         }
         catch
         {
@@ -127,7 +155,7 @@ internal sealed class EmitWorkerProcess : IDisposable
         return worker;
     }
 
-    private void Load(Type interfaceType, string dllPath, CallingConvention callingConvention)
+    private void Load(Type interfaceType, string dllPath, CallingConvention callingConvention, TimeSpan timeout)
     {
         var request = new WorkerRequest
         {
@@ -139,7 +167,7 @@ internal sealed class EmitWorkerProcess : IDisposable
             CallingConvention = callingConvention,
         };
 
-        WorkerResponse response = SendAndReceive(request);
+        WorkerResponse response = SendAndReceive(request, timeout);
         ThrowIfFailed(response);
     }
 
@@ -174,7 +202,7 @@ internal sealed class EmitWorkerProcess : IDisposable
                 ArgumentsJson = argumentsJson,
             };
 
-            WorkerResponse response = SendAndReceive(request);
+            WorkerResponse response = SendAndReceive(request, callTimeout);
             ThrowIfFailed(response, method.Name);
 
             for (int i = 0; i < parameters.Length; i++)
@@ -211,15 +239,90 @@ internal sealed class EmitWorkerProcess : IDisposable
         }
     }
 
-    private WorkerResponse SendAndReceive(WorkerRequest request)
+    /// <summary>
+    /// Writes <paramref name="request"/> and blocks for the matching response line, up to
+    /// <paramref name="timeout"/>.
+    /// </summary>
+    /// <remarks>
+    /// Unlike the initial connect handshake in <see cref="Start"/> (already bounded by a 10s
+    /// <see cref="CancellationTokenSource"/>), every request after that used to block on
+    /// <c>reader.ReadLine()</c> with no time limit: a worker stuck inside a hanging native call (blocking
+    /// I/O, a deadlock) would freeze the host thread forever, including inside <see cref="Dispose"/>
+    /// during application shutdown. On timeout, the worker is treated as unrecoverable — there is no way
+    /// to resynchronize the request/response protocol after abandoning a read mid-flight — so it is
+    /// killed and this instance is poisoned (see <see cref="PoisonAfterTimeout"/>) before throwing.
+    /// </remarks>
+    /// <param name="request">Request to send.</param>
+    /// <param name="timeout">Maximum time to wait for the response line.</param>
+    /// <returns>The deserialized response.</returns>
+    /// <exception cref="TimeoutException">Thrown when the worker does not respond within <paramref name="timeout"/>.</exception>
+    private WorkerResponse SendAndReceive(WorkerRequest request, TimeSpan timeout)
     {
         writer.WriteLine(JsonSerializer.Serialize(request));
 
-        string? line = reader.ReadLine()
-            ?? throw new InvalidOperationException("The isolated Emit worker closed the connection unexpectedly.");
+        string? line;
+        using (var timeoutSource = new CancellationTokenSource(timeout))
+        {
+            try
+            {
+                line = reader.ReadLineAsync(timeoutSource.Token).AsTask().GetAwaiter().GetResult();
+            }
+            catch (OperationCanceledException) when (timeoutSource.IsCancellationRequested)
+            {
+                PoisonAfterTimeout();
+                throw new TimeoutException(
+                    $"The isolated Emit worker did not respond to a '{request.Kind}' request within {timeout}.");
+            }
+        }
+
+        if (line is null)
+        {
+            throw new InvalidOperationException("The isolated Emit worker closed the connection unexpectedly.");
+        }
 
         return JsonSerializer.Deserialize<WorkerResponse>(line)
             ?? throw new InvalidOperationException("The isolated Emit worker returned an invalid response.");
+    }
+
+    /// <summary>
+    /// Kills the worker process and releases the pipe/sandbox after a request timeout, and marks this
+    /// instance unusable. There is no way to recover the request/response protocol once a read has been
+    /// abandoned mid-flight (a late response for the timed-out request would be misread as the response
+    /// to the next one), so every subsequent call must fail fast instead of appearing to hang or
+    /// desynchronize silently.
+    /// </summary>
+    /// <remarks>
+    /// Deliberately does not touch <see cref="callLock"/> (unlike <see cref="Dispose"/>): when this runs
+    /// from <see cref="InvokeMethod"/>, that method's own <c>finally</c> still needs to call
+    /// <c>callLock.Release()</c> on the way out, which would throw <see cref="ObjectDisposedException"/>
+    /// (masking the real <see cref="TimeoutException"/>) if the semaphore were disposed here first. A
+    /// caller-triggered <see cref="Dispose"/> after this runs sees <see cref="disposed"/> already
+    /// <see langword="true"/> and returns immediately without reaching its own <c>callLock.Dispose()</c>
+    /// — an accepted, harmless leak of the managed <see cref="SemaphoreSlim"/> object, since it never has
+    /// its <c>AvailableWaitHandle</c> materialized and so holds no unmanaged OS handle to leak.
+    /// </remarks>
+    private void PoisonAfterTimeout()
+    {
+        if (disposed)
+        {
+            return;
+        }
+
+        disposed = true;
+
+        try
+        {
+            reader.Dispose();
+            writer.Dispose();
+            pipe.Dispose();
+        }
+        catch
+        {
+            // Best-effort; the pipe may already be in a broken state after the abandoned read.
+        }
+
+        KillSilently(workerProcess);
+        sandbox?.Dispose();
     }
 
     /// <summary>
@@ -394,7 +497,7 @@ internal sealed class EmitWorkerProcess : IDisposable
                 var shutdown = new WorkerRequest { Id = Interlocked.Increment(ref nextId), Kind = WorkerRequestKind.Shutdown };
                 try
                 {
-                    SendAndReceive(shutdown);
+                    SendAndReceive(shutdown, ShutdownTimeout);
                 }
                 catch
                 {

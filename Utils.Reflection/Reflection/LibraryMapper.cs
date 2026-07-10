@@ -75,14 +75,31 @@ namespace Utils.Reflection
         /// <typeparam name="TInterface">The interface that defines the functions to map.</typeparam>
         /// <param name="dllPath">The path to the DLL.</param>
         /// <param name="callingConvention">The calling convention of the functions.</param>
+        /// <param name="loadTimeout">
+        /// Maximum time to wait for the worker to load <paramref name="dllPath"/> and emit the mapping
+        /// class before giving up and killing it. Defaults to 30 seconds when <see langword="null"/>.
+        /// </param>
+        /// <param name="callTimeout">
+        /// Maximum time to wait for the worker's response to each native call forwarded through the
+        /// returned proxy before giving up and killing it. Defaults to 30 seconds when
+        /// <see langword="null"/>. A hung native call inside the worker would otherwise block the
+        /// calling thread indefinitely, with no way to recover.
+        /// </param>
         /// <returns>A proxy implementing <typeparamref name="TInterface"/> that forwards every call to the isolated worker.</returns>
         /// <exception cref="NotSupportedException">
         /// Thrown when <typeparamref name="TInterface"/> uses a type that cannot cross a process boundary.
         /// </exception>
-        public static TInterface Emit<TInterface>(string dllPath, CallingConvention callingConvention)
+        /// <exception cref="TimeoutException">
+        /// Thrown by this method (initial load) or by the returned proxy's members (subsequent calls)
+        /// when the worker does not respond within <paramref name="loadTimeout"/>/<paramref name="callTimeout"/>.
+        /// The worker is killed and the proxy becomes unusable when this happens.
+        /// </exception>
+        public static TInterface Emit<TInterface>(
+            string dllPath, CallingConvention callingConvention,
+            TimeSpan? loadTimeout = null, TimeSpan? callTimeout = null)
             where TInterface : class, IDisposable
         {
-            EmitWorkerProcess worker = EmitWorkerProcess.Start(typeof(TInterface), dllPath, callingConvention);
+            EmitWorkerProcess worker = EmitWorkerProcess.Start(typeof(TInterface), dllPath, callingConvention, loadTimeout, callTimeout);
             try
             {
                 TInterface proxy = DispatchProxy.Create<TInterface, EmitWorkerProxy>();
