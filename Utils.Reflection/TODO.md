@@ -333,11 +333,19 @@ par `EmitWorkerHost` à l'intérieur du worker) puisque les deux passent par `Em
 Tests : `UtilsTest/Reflection/EmitDllMappableClassRobustnessTests.cs`
 (`Emit_GenericInterface_ThrowsNotSupportedException`, `Emit_InterfaceWithGenericMethod_ThrowsNotSupportedException`).
 
-#### 30. Pas de bump de version / changelog pour le breaking change de `Emit<TInterface>`
+#### 30. ~~Pas de bump de version / changelog pour le breaking change de `Emit<TInterface>`~~ — **implémenté**
 Déjà signalé lors de la relecture précédente (« flagged to the user, no version bump made
-unilaterally ») mais toujours pas actionné — le package est publié sur NuGet
-(`omy.Utils.Reflection` v1.2.1) et `Emit<TInterface>` change de comportement à signature identique. À
-trancher : bump mineur/majeur + entrée de changelog avant la prochaine publication.
+unilaterally ») mais resté sans suite jusqu'ici — le package est publié sur NuGet et `Emit<TInterface>`
+change de comportement à signature identique (isolation par défaut, exigence de `RunWorkerIfRequested`,
+`NotSupportedException` immédiate pour les types non JSON-représentables, coût par appel). **Fix** :
+`Utils.Reflection.csproj` : `<Version>1.2.1</Version>` → `<Version>2.0.0</Version>` (bump majeur, cohérent
+avec la politique semver du dépôt documentée dans `docs/getting-started.md` — un changement de
+comportement à signature identique n'est pas un patch/minor « non-breaking »). Entrées ajoutées dans
+`CHANGELOG.md` sous `## [Unreleased]` : section « Changed — omy.Utils.Reflection (BREAKING, v1.2.1 →
+2.0.0) » détaillant le changement de comportement de `Emit<TInterface>` et l'immutabilité de
+`ProcessContainerPermissions.Default`, section « Added — omy.Utils.Reflection » listant les items
+26-29/32 de cette relecture (timeouts, `EmitWorkerPool`, durcissement `ProcessIsolation`, validation
+interfaces génériques, alias `Platform.IsMacOS`).
 
 #### 31. `EmitWorkerInvocationException` ne transporte pas la stack trace distante
 Seuls `message` et `RemoteExceptionTypeName` (nom de type) sont propagés

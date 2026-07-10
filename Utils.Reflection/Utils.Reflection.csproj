@@ -10,7 +10,7 @@
 		<PackageId>omy.Utils.Reflection</PackageId>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<Version>1.2.1</Version>
+		<Version>2.0.0</Version>
                 <Description>Reflection helpers that wrap fields/properties and simplify delegate invocation.</Description>
                 <PackageTags>omy;utilities;reflection;delegate</PackageTags>
 		<RepositoryUrl>https://github.com/warny/All-purpose-Utilities</RepositoryUrl>
