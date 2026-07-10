@@ -424,12 +424,16 @@ comparaison future à `UNICODE_DEFAULT` sans vérifier `platformID` en premier s
 **Fix proposé** : scinder en deux enums distincts par plateforme (`MacintoshEncodingID`,
 `MicrosoftEncodingID`), ou documenter le piège par un commentaire XML sur chaque valeur partagée.
 **Sévérité** : dette technique / cosmétique (latent, pas encore exploité par un bug réel).
+**Corrigé** (option documentation, pour rester non-breaking en attendant le batch de version 2.0.0) :
+`<remarks>` ajouté sur l'enum expliquant le piège et renvoyant vers `TtfEncoderFactory.GetEncoding`
+comme pattern correct.
 
 ### 6. `GaspTable` — commentaire XML dupliqué sur le constructeur
 `Utils.Fonts/TTF/Tables/GaspTable.cs:46-50` : deux blocs `<summary>Initializes a new instance...`
 consécutifs précèdent le même constructeur — artefact de copier-coller.
 **Fix proposé** : supprimer le premier bloc dupliqué.
 **Sévérité** : cosmétique.
+**Corrigé.**
 
 ### 7. `DsigTable` — doc XML de classe incohérente avec le code ("12-byte" vs 8 octets réels)
 `Utils.Fonts/TTF/Tables/DsigTable.cs:14-21`. Le résumé de la classe affirme un en-tête de 12 octets
@@ -438,6 +442,7 @@ alors que `ReadData`/`WriteData`/`Length` (`8 + SignatureData.Length`) utilisent
 DSIG réelle. Le code est correct ; c'est la documentation qui ment.
 **Fix proposé** : corriger "12-byte" en "8-byte" dans le commentaire XML.
 **Sévérité** : cosmétique (doc trompeuse, AGENTS.md exige une doc XML exacte).
+**Corrigé.**
 
 ### 8. `PropTable` format 2 — incohérence mineure de convention de sentinel avec `BslnTable`
 `Utils.Fonts/TTF/Tables/PropTable.cs:133` teste `if (firstGlyph == 0xFFFF) break;` alors que
@@ -448,6 +453,8 @@ partiellement adapté — augmente le risque qu'une future modification n'en cor
 **Fix proposé** : uniformiser sur un seul champ de test, éventuellement en factorisant le lecteur de
 format 2 commun aux tables AAT (même esprit que `AatBinarySearchHeader`).
 **Sévérité** : cosmétique / dette technique mineure (aucun bug actif).
+**Corrigé** : les deux formats (2 et 4) de `PropTable` testent désormais `lastGlyph == 0xFFFF`,
+alignés sur `BslnTable`.
 
 ### 9. `CidKeyedFont.GetGlyph(char c)` — limite CID > 0xFFFF non documentée
 `Utils.Fonts/PostScript/CidKeyedFont.cs:18-44`. Le glyph est stocké par CID (`int`, pouvant dépasser
@@ -456,6 +463,7 @@ l'interface `IFont`, pas de cette classe spécifiquement, mais non documentée s
 **Fix proposé** : étoffer le commentaire `<remarks>` pour documenter explicitement la limite de
 plage (CID > 0xFFFF inatteignables via cette API).
 **Sévérité** : cosmétique / documentation.
+**Corrigé.**
 
 ## Manque de test
 
@@ -493,6 +501,27 @@ checksum global) qu'aucun test par-table ne peut voir.
 existante, appelle `WriteFont()`, reparse, et compare au minimum les métriques de plusieurs glyphes
 (avance, contours, points) avant/après.
 **Sévérité** : manque de test (déjà signalé au premier passage, toujours pas comblé).
+**Corrigé.** Test ajouté : `TrueTypeFontTests.WriteFont_RoundTrip_PreservesGlyphMetricsAndOutlines`.
+Comme prévu, ce test a immédiatement révélé des bugs réels qu'aucun test par-table ne pouvait voir,
+tous corrigés dans des commits séparés sur la même branche :
+- `TrueTypeFont.WriteFont()` écrivait l'en-tête sfnt et le répertoire des tables en little-endian
+  (writer par défaut) au lieu de big-endian.
+- `TrueTypeFont.WriteFont()` écrivait le padding d'alignement (0-3 octets) après avoir restauré le
+  curseur d'écriture dans la zone du répertoire des tables (`Pop()` appelé trop tôt), corrompant le
+  répertoire de toute police avec plus d'une table dont la taille n'est pas multiple de 4.
+- `GlyfTable.Length` plantait (`NullReferenceException`) sur tout glyphe vide (ex. l'espace, entrée
+  `loca` de taille 0 → entrée `null` dans le tableau de glyphes), alors que `WriteData` gérait déjà ce
+  cas via `?.`.
+- `GlyphCompound` ignorait totalement le flag `ARGS_ARE_WORDS` : les arguments de composant étaient
+  toujours lus/écrits comme des mots (2 octets), alors que de nombreuses polices réelles (dont Arial)
+  les stockent en un octet signé quand la valeur le permet — désynchronisant le flux binaire pour
+  tout ce qui suit dans le glyphe composite concerné.
+- `GlyphSimple.Length` sous-comptait les octets réellement écrits par `WriteData` pour toute run de
+  flags répétés de plus d'un point (`WriteData` écrit une paire de 2 octets par run, `Length` ne
+  comptait qu'un octet par run distincte).
+- `LocaTable.WriteData` réécrivait les offsets figés à la lecture au lieu de les recalculer à partir
+  des longueurs réelles des glyphes au moment de l'écriture — désormais recalculés à la demande via
+  `GlyfTable` (voir `RefreshOffsetsFromGlyf`).
 
 ## Résumé priorisé
 
