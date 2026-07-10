@@ -38,6 +38,16 @@ public interface IEmitDllMappableClassConcurrentTarget : IDisposable
     int Ping(int value);
 }
 
+/// <summary>
+/// Interface with a <see langword="void"/>-returning method, used to verify the generated mapping class
+/// compiles: <c>Type.FullName</c> for <see langword="void"/> is the CLR metadata name
+/// <c>"System.Void"</c>, not valid C# source in a return-type position.
+/// </summary>
+public interface IEmitDllMappableClassVoidReturnTarget : IDisposable
+{
+    void DoSomething(int value);
+}
+
 /// <summary>Generic interface used to verify <see cref="EmitDllMappableClass.Emit(Type, CallingConvention)"/> rejects it upfront.</summary>
 public interface IEmitDllMappableClassGenericTarget<T> : IDisposable
 {
@@ -103,6 +113,23 @@ public class EmitDllMappableClassRobustnessTests
 
         Assert.IsNotNull(instance);
         Assert.IsInstanceOfType(instance, typeof(IEmitDllMappableClassRefOutTarget));
+    }
+
+    [TestMethod]
+    public void Emit_InterfaceWithVoidReturningMethod_GeneratesAndInstantiatesWithoutError()
+    {
+        // Regression test: Type.FullName for typeof(void) is "System.Void", which used to be written
+        // verbatim into the generated delegate/method return type — invalid C# source ("System.Void"
+        // is not usable as a return type; only the "void" keyword is), failing Roslyn compilation for
+        // every interface with a void-returning method. Discovered by
+        // EmitWorkerHostLoopTests.Run_ExecutesTwoSlowCallsConcurrently_NotSequentially (item 34), which
+        // was the first test in the suite to exercise a void-returning native export.
+#pragma warning disable UTILSREFL001
+        object instance = EmitDllMappableClass.Emit(typeof(IEmitDllMappableClassVoidReturnTarget), CallingConvention.Cdecl);
+#pragma warning restore UTILSREFL001
+
+        Assert.IsNotNull(instance);
+        Assert.IsInstanceOfType(instance, typeof(IEmitDllMappableClassVoidReturnTarget));
     }
 
     [TestMethod]

@@ -181,12 +181,28 @@ public static class EmitDllMappableClass
         string delegateName = methodInfo.Name + "Delegate";
         // Emit [UnmanagedFunctionPointer] so the P/Invoke marshaller uses the correct calling convention.
         csCode.AppendLine($"\t\t[{typeof(UnmanagedFunctionPointerAttribute).FullName}({typeof(CallingConvention).FullName}.{callingConvention})]");
-        csCode.Append($"\t\tprivate delegate {methodInfo.ReturnType.FullName} {delegateName} ");
+        csCode.Append($"\t\tprivate delegate {GetReturnTypeName(methodInfo.ReturnType)} {delegateName} ");
         csCode.WriteFunctionParameters(methodInfo, true);
         csCode.AppendLine(";");
 
         return delegateName;
     }
+
+    /// <summary>
+    /// Returns the C# source spelling of <paramref name="returnType"/> for use as a delegate/method
+    /// return type in generated code.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="Type.FullName"/> for <see langword="void"/> is the CLR metadata name
+    /// <c>"System.Void"</c>, which is not valid C# source in a return-type position — only the
+    /// <c>void</c> keyword is (<c>System.Void</c> is otherwise a normal, if unusable-by-hand, struct
+    /// type). Every other return type is unaffected: its <see cref="Type.FullName"/> is already valid
+    /// C# source, exactly as used everywhere else in this generator.
+    /// </remarks>
+    /// <param name="returnType">Return type to spell out.</param>
+    /// <returns><c>"void"</c> for <see langword="void"/>; otherwise <paramref name="returnType"/>'s <see cref="Type.FullName"/>.</returns>
+    private static string GetReturnTypeName(Type returnType) =>
+        returnType == typeof(void) ? "void" : returnType.FullName!;
 
     /// <summary>
     /// Writes the function parameters for a method to the provided StringBuilder.
@@ -265,7 +281,7 @@ public static class EmitDllMappableClass
     /// <param name="delegateFieldName">The name of the delegate field</param>
     private static void WriteFunctionCall(this StringBuilder csCode, MethodInfo methodInfo, string delegateFieldName)
     {
-        csCode.Append("public ").Append(methodInfo.ReturnType.FullName).Append(" ").Append(methodInfo.Name);
+        csCode.Append("public ").Append(GetReturnTypeName(methodInfo.ReturnType)).Append(" ").Append(methodInfo.Name);
         csCode.WriteFunctionParameters(methodInfo, true);
         csCode.Append(" => ").Append(delegateFieldName);
         csCode.WriteFunctionParameters(methodInfo, false);

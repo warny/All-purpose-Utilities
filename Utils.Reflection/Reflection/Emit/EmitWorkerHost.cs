@@ -1,8 +1,10 @@
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Reflection;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Utils.Reflection.Reflection.Emit;
 
@@ -11,6 +13,16 @@ namespace Utils.Reflection.Reflection.Emit;
 /// <see cref="TextReader"/>, performs the requested load/call/unload/shutdown, and writes back
 /// <see cref="WorkerResponse"/> lines.
 /// </summary>
+/// <remarks>
+/// Each request is dispatched to the thread pool (<see cref="Task.Run(Action)"/>) as soon as it is read,
+/// instead of being handled inline before the next line is read: several <see cref="WorkerRequestKind.Call"/>
+/// requests can therefore execute concurrently inside the worker, matching <see cref="EmitWorkerProcess"/>'s
+/// id-correlated protocol on the host side, which no longer waits for one call to finish before sending
+/// the next. Response order on the wire is not guaranteed to match request order as a result — the host
+/// does not rely on it, matching responses to requests by <see cref="WorkerResponse.Id"/> instead. The
+/// native library backing a mapped interface must itself be safe to call concurrently for this to be
+/// safe; this worker has no way to know or enforce that, so it is entirely the caller's responsibility.
+/// </remarks>
 internal static class EmitWorkerHost
 {
     /// <summary>
@@ -37,8 +49,10 @@ internal static class EmitWorkerHost
     /// <param name="output">Writer for outgoing JSON-line responses.</param>
     internal static void Run(TextReader input, TextWriter output)
     {
-        var loaded = new Dictionary<int, LoadedInterface>();
-        int nextHandle = 0;
+        var loaded = new ConcurrentDictionary<int, LoadedInterface>();
+        var nextHandleBox = new int[1];
+        var writeLock = new object();
+        var dispatched = new ConcurrentBag<Task>();
 
         string? line;
         while ((line = input.ReadLine()) is not null)
@@ -62,43 +76,87 @@ internal static class EmitWorkerHost
 
             if (request.Kind == WorkerRequestKind.Shutdown)
             {
-                WriteResponse(output, new WorkerResponse { Id = request.Id, Success = true });
+                DrainDispatched(dispatched);
+                WriteResponse(output, writeLock, new WorkerResponse { Id = request.Id, Success = true });
                 return;
             }
 
-            WorkerResponse response;
-            try
-            {
-                response = request.Kind switch
-                {
-                    WorkerRequestKind.Load => HandleLoad(request, loaded, ref nextHandle),
-                    WorkerRequestKind.Call => HandleCall(GetLoadedOrThrow(loaded, request.Handle), request),
-                    WorkerRequestKind.Unload => HandleUnload(loaded, request),
-                    _ => throw new InvalidOperationException($"Unknown worker request kind '{request.Kind}'."),
-                };
-            }
-            catch (Exception ex)
-            {
-                Exception effective = ex is TargetInvocationException { InnerException: { } inner } ? inner : ex;
-                response = new WorkerResponse
-                {
-                    Id = request.Id,
-                    Success = false,
-                    ErrorMessage = effective.Message,
-                    ErrorTypeName = effective.GetType().FullName,
-                    ErrorStackTrace = effective.StackTrace,
-                };
-            }
-
-            WriteResponse(output, response);
+            WorkerRequest dispatchedRequest = request;
+            dispatched.Add(Task.Run(() => ProcessRequest(dispatchedRequest, loaded, nextHandleBox, output, writeLock)));
         }
+
+        // The input ended without an explicit Shutdown request (for example, the host's side of the
+        // pipe closed abruptly). Still give already-dispatched requests a chance to finish and write
+        // their response before returning, for the same reason the Shutdown path below does — otherwise
+        // a request dispatched just before the last line was read could be silently dropped.
+        DrainDispatched(dispatched);
+    }
+
+    /// <summary>
+    /// Best-effort: waits for every request dispatched so far to finish (and write its response) before
+    /// <see cref="Run"/> returns, so requests already in flight are not silently abandoned. Not a hard
+    /// guarantee — a request that is itself stuck is bounded by <see cref="EmitWorkerProcess.SendAndReceive"/>'s
+    /// per-request timeout on the host side, not by this drain, and can still be abandoned here.
+    /// </summary>
+    private static void DrainDispatched(ConcurrentBag<Task> dispatched)
+    {
+        try
+        {
+            Task.WaitAll([.. dispatched], TimeSpan.FromSeconds(5));
+        }
+        catch
+        {
+            // Best-effort; the caller proceeds (shuts down or returns) regardless.
+        }
+    }
+
+    /// <summary>
+    /// Handles a single dispatched request end to end (Load/Call/Unload, or capturing the exception as
+    /// a failure response) and writes its response. Runs on a thread-pool thread, concurrently with any
+    /// other in-flight request on the same worker — see the class remarks.
+    /// </summary>
+    private static void ProcessRequest(
+        WorkerRequest request, ConcurrentDictionary<int, LoadedInterface> loaded, int[] nextHandleBox,
+        TextWriter output, object writeLock)
+    {
+        WorkerResponse response;
+        try
+        {
+            response = request.Kind switch
+            {
+                WorkerRequestKind.Load => HandleLoad(request, loaded, nextHandleBox),
+                WorkerRequestKind.Call => HandleCall(GetLoadedOrThrow(loaded, request.Handle), request),
+                WorkerRequestKind.Unload => HandleUnload(loaded, request),
+                _ => throw new InvalidOperationException($"Unknown worker request kind '{request.Kind}'."),
+            };
+        }
+        catch (Exception ex)
+        {
+            Exception effective = ex is TargetInvocationException { InnerException: { } inner } ? inner : ex;
+            response = new WorkerResponse
+            {
+                Id = request.Id,
+                Success = false,
+                ErrorMessage = effective.Message,
+                ErrorTypeName = effective.GetType().FullName,
+                ErrorStackTrace = effective.StackTrace,
+            };
+        }
+
+        WriteResponse(output, writeLock, response);
     }
 
     /// <summary>
     /// Loads the interface's declaring assembly, validates it can be marshaled across the process
     /// boundary, emits/wires the native mapping instance, and allocates a new handle for it.
     /// </summary>
-    private static WorkerResponse HandleLoad(WorkerRequest request, Dictionary<int, LoadedInterface> loaded, ref int nextHandle)
+    /// <param name="nextHandleBox">
+    /// Single-element box holding the last allocated handle, incremented atomically
+    /// (<see cref="Interlocked.Increment(ref int)"/>) since concurrently dispatched <see cref="WorkerRequestKind.Load"/>
+    /// requests must never be handed the same handle. A plain <see langword="ref"/> local cannot be
+    /// captured by the <see cref="Task.Run(Action)"/> closures in <see cref="Run"/>, hence the boxed array.
+    /// </param>
+    private static WorkerResponse HandleLoad(WorkerRequest request, ConcurrentDictionary<int, LoadedInterface> loaded, int[] nextHandleBox)
     {
         Assembly interfaceAssembly = Assembly.LoadFrom(
             request.InterfaceAssemblyPath ?? throw new InvalidOperationException("Load request is missing the interface assembly path."));
@@ -119,7 +177,7 @@ internal static class EmitWorkerHost
             request.CallingConvention);
 #pragma warning restore UTILSREFL001
 
-        int handle = ++nextHandle;
+        int handle = Interlocked.Increment(ref nextHandleBox[0]);
         loaded[handle] = new LoadedInterface(nativeInstance, interfaceType);
 
         return new WorkerResponse { Id = request.Id, Success = true, Handle = handle };
@@ -133,9 +191,17 @@ internal static class EmitWorkerHost
     /// cleanup request, and the caller (<see cref="EmitWorkerProcess.UnloadInterface"/>) has no
     /// further use for the handle either way once it asks to release it.
     /// </summary>
-    private static WorkerResponse HandleUnload(Dictionary<int, LoadedInterface> loaded, WorkerRequest request)
+    /// <remarks>
+    /// A <see cref="WorkerRequestKind.Call"/> for the same handle dispatched concurrently with this
+    /// request races exactly as a concurrent Dispose/call pair would in-process: whichever runs first
+    /// wins, and a Call that loses the race fails with an unknown-handle error rather than corrupting
+    /// state. Callers that need a strict ordering between the two must serialize them themselves (for
+    /// example, only calling <see cref="EmitWorkerProcess.UnloadInterface"/> once no other thread holds
+    /// a reference to the corresponding proxy).
+    /// </remarks>
+    private static WorkerResponse HandleUnload(ConcurrentDictionary<int, LoadedInterface> loaded, WorkerRequest request)
     {
-        if (loaded.Remove(request.Handle, out LoadedInterface entry) && entry.Instance is IDisposable disposable)
+        if (loaded.TryRemove(request.Handle, out LoadedInterface entry) && entry.Instance is IDisposable disposable)
         {
             disposable.Dispose();
         }
@@ -147,7 +213,7 @@ internal static class EmitWorkerHost
     /// Resolves the <see cref="WorkerRequestKind.Load"/>-allocated handle referenced by a
     /// <see cref="WorkerRequestKind.Call"/> request.
     /// </summary>
-    private static LoadedInterface GetLoadedOrThrow(Dictionary<int, LoadedInterface> loaded, int handle)
+    private static LoadedInterface GetLoadedOrThrow(ConcurrentDictionary<int, LoadedInterface> loaded, int handle)
     {
         if (!loaded.TryGetValue(handle, out LoadedInterface entry))
         {
@@ -199,9 +265,16 @@ internal static class EmitWorkerHost
         };
     }
 
-    private static void WriteResponse(TextWriter output, WorkerResponse response)
+    /// <summary>
+    /// Writes one response line, guarded by <paramref name="writeLock"/> so concurrently completing
+    /// dispatched requests (see <see cref="ProcessRequest"/>) never interleave their output.
+    /// </summary>
+    private static void WriteResponse(TextWriter output, object writeLock, WorkerResponse response)
     {
-        output.WriteLine(JsonSerializer.Serialize(response));
-        output.Flush();
+        lock (writeLock)
+        {
+            output.WriteLine(JsonSerializer.Serialize(response));
+            output.Flush();
+        }
     }
 }

@@ -268,8 +268,9 @@ publics, et test documentant explicitement le comportement par défaut cassé de
 ## Nouvelles propositions (relecture 2026-07-10)
 
 Seconde relecture du package une fois les items 1-25 et les corrections post-revue de la PR #428 en
-place. Aucun de ces points n'est traité pour l'instant — liste de propositions à discuter/prioriser.
-**Marqués par l'utilisateur comme prioritaires : items 26, 28 et 32.**
+place. **Marqués par l'utilisateur comme prioritaires : items 26, 28 et 32.** Items 26-34 implémentés ;
+35 (round-robin multi-process) et 36 (documentation détaillée avec exemples) restent à l'état de
+proposition — voir leur section respective pour le détail.
 
 ### Priorité haute — sécurité
 
@@ -379,6 +380,9 @@ pour tous les appels suivants sur la même instance de pool.
   (démarre + charge une seule interface — chemin historique de `Emit<TInterface>`) ; `LoadInterface`/
   `UnloadInterface`/`InvokeMethod(handle, ...)` protégés par le `callLock` existant (plusieurs interfaces
   sur un même worker doivent sérialiser leurs appels sur le même tube, comme un seul appel le faisait déjà).
+  **Note (mise à jour par l'item 34)** : `callLock` a depuis été retiré — le protocole hôte↔worker
+  supporte désormais plusieurs requêtes en vol simultanément, corrélées par id ; la description
+  ci-dessus reflète l'état du code au moment où l'item 32 a été implémenté, pas l'état actuel.
 - **Trade-off explicitement documenté** (XML doc de `EmitWorkerPool`) : partager un worker réduit
   l'isolation entre les interfaces qui y sont chargées (un crash/comportement hostile sur l'une peut
   affecter les autres) — opt-in réservé aux interfaces d'une même frontière de confiance, à ne pas utiliser
@@ -398,30 +402,64 @@ de disposal du pool sans lancer de vrai process).
 
 #### 33. ~~Coût par appel non documenté~~ — **documenté**
 Chaque appel round-trip en JSON + pipe nommé, sérialisé par un seul `SemaphoreSlim` (`callLock`) —
-aucun appel concurrent n'est possible sur un même worker. **Fix** : encart « Performance note » ajouté
-dans le README juste après la description de `Emit<TInterface>`, expliquant le coût de sérialisation/IPC
-par appel, l'absence de concurrence intra-worker, et recommandant `EmitInProcess<TInterface>` pour les
-boucles d'appels haute fréquence sur une interface pleinement fiable ; mention des paramètres
-`loadTimeout`/`callTimeout` (voir item 28) à cet endroit également. Changement purement documentaire,
-aucun nouveau test (cohérent avec les autres items « documenté » de cette liste).
+au moment où cet item a été traité, aucun appel concurrent n'était possible sur un même worker. **Fix**
+initial : encart « Performance note » ajouté dans le README juste après la description de
+`Emit<TInterface>`, expliquant le coût de sérialisation/IPC par appel et recommandant
+`EmitInProcess<TInterface>` pour les boucles d'appels haute fréquence ; mention des paramètres
+`loadTimeout`/`callTimeout` (item 28) à cet endroit également. Changement purement documentaire à
+l'origine, aucun nouveau test. **Mis à jour par l'item 34** : le protocole ne sérialise plus les appels
+(le `callLock` a été retiré) ; l'encart README a été réécrit en conséquence pour refléter la concurrence
+intra-worker désormais réelle et son prérequis (thread-safety de la bibliothèque native appelée).
 
-#### 34. Aucun parallélisme des appels à l'intérieur d'un même worker (threads)
-Le protocole hôte↔worker est strictement mono-appel-en-vol des deux côtés : côté hôte,
-`EmitWorkerProcess.InvokeMethod` sérialise tous les appels via un unique `SemaphoreSlim(1,1)`
-(`callLock`), quel que soit le nombre de threads appelants côté application ; côté worker,
-`EmitWorkerHost.Run` est une boucle mono-thread qui lit une requête, l'exécute de façon synchrone, écrit
-la réponse, puis lit la suivante — aucune requête n'est déléguée à un thread/`Task` séparé. Rien
-n'empêche techniquement un process sandboxé (AppContainer/bwrap/sandbox-exec) de créer des threads : les
-trois mécanismes d'isolation du projet restreignent des ressources OS externes (réseau, écriture disque,
-accès périphériques, environnement) mais aucun ne limite la création de threads, purement intra-process.
-Pour retrouver du parallélisme sur les appels natifs, il faudrait faire évoluer le protocole des deux
-côtés : dispatcher chaque requête entrante du worker vers `Task.Run`/un pool de threads plutôt que de la
-traiter inline, et remplacer le `callLock` strict côté hôte par plusieurs requêtes en vol simultanément,
-corrélées via le champ `Id` déjà présent dans `WorkerRequest`/`WorkerResponse` (par exemple
-`Dictionary<int, TaskCompletionSource<WorkerResponse>>`). Prérequis externe à documenter : la
-bibliothèque native appelée via P/Invoke doit elle-même être thread-safe pour supporter des appels
-concurrents — responsabilité de l'appelant, indépendante de ce changement. Indépendant de l'item 35
-(qui vise la parallélisation via plusieurs process plutôt que plusieurs threads dans un seul worker).
+#### 34. ~~Aucun parallélisme des appels à l'intérieur d'un même worker (threads)~~ — **implémenté**
+Le protocole hôte↔worker était strictement mono-appel-en-vol des deux côtés : côté hôte,
+`EmitWorkerProcess.InvokeMethod` sérialisait tous les appels via un unique `SemaphoreSlim(1,1)`
+(`callLock`) ; côté worker, `EmitWorkerHost.Run` était une boucle mono-thread traitant une requête à la
+fois. **Fix** : protocole étendu pour supporter plusieurs requêtes en vol simultanément, corrélées par
+`WorkerRequest.Id`/`WorkerResponse.Id` (déjà présents) :
+- **Côté hôte** (`EmitWorkerProcess`) : `callLock` (`SemaphoreSlim`) retiré, remplacé par
+  `ConcurrentDictionary<int, TaskCompletionSource<WorkerResponse>> pending` + une boucle de lecture en
+  arrière-plan (`RunReaderLoop`, tâche démarrée dans le constructeur) qui lit les réponses en continu et
+  complète le `TaskCompletionSource` correspondant. `SendAndReceive` enregistre son `TaskCompletionSource`
+  puis écrit la requête sous un simple verrou d'écriture (`writeLock`, un `object`, pas un `SemaphoreSlim`
+  — la section critique ne fait qu'écrire une ligne, jamais attendre une réponse) sans jamais bloquer les
+  autres appels en vol.
+- **Côté worker** (`EmitWorkerHost.Run`) : chaque requête lue est dispatchée via `Task.Run` au lieu d'être
+  traitée en ligne ; `loaded` devient un `ConcurrentDictionary`, l'allocation de handle utilise
+  `Interlocked.Increment` sur un compteur boxé (`int[]`, un `ref int` local n'étant pas capturable dans
+  une lambda) ; l'écriture des réponses est protégée par un verrou dédié pour éviter l'entrelacement de
+  lignes JSON concurrentes.
+- **Sémantique de timeout revue** (supersède la description de l'item 28) : grâce à la corrélation par id,
+  un timeout n'a plus besoin de « empoisonner » tout le worker (`PoisonAfterTimeout` supprimé) — seule la
+  requête concernée échoue (`TaskCompletionSource.TrySetCanceled`, retiré de `pending`) ; une réponse
+  tardive pour une requête déjà abandonnée ne trouve simplement plus d'entrée correspondante et est
+  ignorée, au lieu d'être prise à tort pour la réponse d'une autre requête. Le worker et les autres appels
+  en vol restent intacts. Le pipe cassé (fin de `RunReaderLoop`, EOF ou exception) reste, lui, traité comme
+  fatal pour tout le worker (`FailAllPending` + arrêt du process si ce n'est pas déjà un `Dispose()`
+  délibéré).
+- **Bug réel découvert en écrivant le test de concurrence** (`Sleep`, retour `void`) : `EmitDllMappableClass`
+  écrivait `System.Void` (nom CLR de `Type.FullName` pour `void`) au lieu du mot-clé `void` dans le type de
+  retour du délégué et de la méthode générés — syntaxe C# invalide, échec de compilation Roslyn pour
+  **toute** interface avec une méthode sans valeur de retour (bug préexistant, jamais détecté faute d'un
+  test exerçant ce cas). **Fix** : `EmitDllMappableClass.GetReturnTypeName` retourne `"void"` littéralement
+  pour `typeof(void)`, `Type.FullName` sinon.
+- Rien n'empêchait techniquement un process sandboxé (AppContainer/bwrap/sandbox-exec) de créer des
+  threads — confirmé, les trois mécanismes d'isolation du projet restreignent des ressources OS externes
+  mais aucun ne limite la création de threads, purement intra-process.
+- **Prérequis documenté** (XML doc `InvokeMethod`, README) : la bibliothèque native appelée via P/Invoke
+  doit elle-même être thread-safe pour supporter des appels concurrents — responsabilité de l'appelant,
+  indépendante de ce changement.
+
+Tests : `UtilsTest.Functional/Reflection/EmitWorkerHostLoopTests.cs` réécrit pour piloter
+`EmitWorkerHost.Run` de façon interactive (`LineQueueTextReader`/`LineQueueTextWriter`, une file
+bloquante en mémoire) plutôt qu'avec un script `StringReader` figé — nécessaire car sous dispatch
+concurrent, l'ordre des réponses n'est plus garanti égal à l'ordre des requêtes, et un script figé ne
+peut pas exprimer « attendre la réponse du Load avant d'envoyer le Call qui dépend de son handle » (ce
+qu'un hôte réel fait toujours). Nouveau test
+`Run_ExecutesTwoSlowCallsConcurrently_NotSequentially` : deux appels `Sleep(800ms)` envoyés sans attendre
+la réponse du premier doivent se terminer en ~800ms, pas ~1600ms. `UtilsTest/Reflection/EmitDllMappableClassRobustnessTests.cs` :
+`Emit_InterfaceWithVoidReturningMethod_GeneratesAndInstantiatesWithoutError` (régression dédiée pour le
+bug `System.Void`).
 
 #### 35. Round-robin sur plusieurs process workers pour la parallélisation
 Alternative plus simple à mettre en œuvre que l'item 34 (pas de changement de protocole ni de dépendance

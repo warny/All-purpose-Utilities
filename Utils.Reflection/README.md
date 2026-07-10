@@ -127,12 +127,15 @@ process) when the interface doesn't qualify.
 
 > **Performance note.** Isolation is not free: every call is JSON-serialized, sent over a named pipe to
 > the worker, executed there, and the result serialized back — a real cost compared to a direct P/Invoke
-> or `EmitInProcess<TInterface>` call. Calls on a single worker are also fully serialized (one in flight
-> at a time, even from multiple threads); there is no internal concurrency. For a tight, high-frequency
-> call loop where that overhead matters and the interface is fully trusted, prefer
-> `EmitInProcess<TInterface>` instead. `loadTimeout`/`callTimeout` parameters on `Emit<TInterface>` bound
-> how long a call can block waiting for the worker (30 seconds by default for each) before it is killed
-> and a `TimeoutException` is thrown.
+> or `EmitInProcess<TInterface>` call. Calls from multiple threads on the same worker do run concurrently
+> (each is independently correlated to its response, and the worker dispatches every request to the
+> thread pool instead of handling them one at a time) — but the native library backing the interface must
+> itself be safe to call concurrently for that to be safe; this is entirely the caller's responsibility.
+> For a tight, high-frequency call loop where the per-call IPC overhead matters and the interface is
+> fully trusted, prefer `EmitInProcess<TInterface>` instead. `loadTimeout`/`callTimeout` parameters on
+> `Emit<TInterface>` bound how long a call can block waiting for the worker (30 seconds by default for
+> each) before it times out; unlike a full worker restart, a single call timing out does not affect any
+> other concurrently in-flight call on the same worker.
 
 #### In-process emit (no isolation)
 
