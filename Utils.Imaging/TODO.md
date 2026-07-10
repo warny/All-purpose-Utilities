@@ -72,23 +72,50 @@ The constructor retains the caller's mutable `double[,]` and does not reject `Na
 
 **Priority:** P1.
 
+### 9. `ColorArgb64` to `ColorArgb` conversion uses the wrong divisor
+The floating-point constructor `ColorArgb(ColorArgb64 color)` divides 16-bit channels by `255.0` instead of `65535.0`. Any channel above 255 yields a value greater than 1 and therefore violates the constructor's own `[0,1]` validation.
+
+**Risk:** almost every non-dark 16-bit color conversion throws or produces unusable values. This breaks implicit conversion paths and can abort image processing midway.
+
+**Fix:** divide all four channels by `ushort.MaxValue`; add exact endpoint and randomized round-trip tests.
+
+**Priority:** P1 functional bug.
+
+### 10. 8-bit to 16-bit color expansion is not range-preserving
+`ColorArgb64(ColorArgb32)` and `ColorArgb64(System.Drawing.Color)` expand channels with `value << 8`. This maps `255` to `65280`, not `65535`, and all intermediate values are biased low. Exact 8-to-16 expansion should replicate the byte (`value * 257`, equivalently `(value << 8) | value`).
+
+**Risk:** white is no longer full white, opaque alpha is not fully opaque and repeated 8↔16 conversions lose precision systematically.
+
+**Fix:** use `value * 257`; add exhaustive tests for all 256 input values and verify round-trip stability.
+
+**Priority:** P1 functional bug.
+
+### 11. Porter-Duff `Over` implementations mix straight and premultiplied formulas
+`ColorArgb`, `ColorArgb32` and `ColorArgb64` compute output alpha and RGB with inconsistent formulas. The floating and 8-bit versions multiply the foreground by alpha but do not correctly include background alpha or divide by output alpha for straight-color output. The 64-bit implementation computes an `alpha` argument but does not use it in the color formula and also omits background alpha.
+
+**Risk:** semi-transparent compositing produces incorrect colors and halos; the same logical operation yields different results depending on component type.
+
+**Fix:** choose and document one representation: straight alpha or premultiplied alpha. Implement a single generic, numerically stable Porter-Duff formula and have every color type delegate to it. Add reference-vector tests against known compositing results.
+
+**Priority:** P1 functional bug.
+
 ## Functional correctness and design findings
 
-### 9. Convolution semantics incorrectly normalize by positive weight sum only
+### 12. Convolution semantics incorrectly normalize by positive weight sum only
 `MatrixImageTransformer` divides every accumulated component by `sumW` only when `sumW > 0`. Edge-detection, sharpening and other valid kernels commonly have zero or negative sums. Such pixels are silently left unchanged or normalized incorrectly.
 
 **Fix:** separate convolution from normalized weighted averaging. Provide explicit policies such as `NoNormalization`, `NormalizeBySum`, divisor/bias and border handling. Do not infer semantics from the sign of the weight sum.
 
 **Priority:** P1 functional bug.
 
-### 10. Pixel-format aliases are treated as concrete storage formats
+### 13. Pixel-format aliases are treated as concrete storage formats
 `BitmapAccessor.ColorDepths` includes flag-like or alias values such as `PixelFormat.Alpha`, `PAlpha` and `Canonical`. These do not necessarily describe a lockable concrete byte layout by themselves.
 
 **Fix:** support only explicitly tested concrete formats and validate them with `Image.GetPixelFormatSize`; reject flags and aliases that do not uniquely define memory layout.
 
 **Priority:** P2.
 
-### 11. Premultiplied-alpha formats are exposed as straight ARGB
+### 14. Premultiplied-alpha formats are exposed as straight ARGB
 `BitmapAccessor` accepts `Format32bppPArgb` and `Format64bppPArgb`, but sprite blending reads and writes components as ordinary straight-alpha colors. Premultiplied data requires different conversion and blending rules.
 
 **Risk:** dark fringes, incorrect colors and invalid premultiplied pixels.
@@ -97,26 +124,60 @@ The constructor retains the caller's mutable `double[,]` and does not reject `Na
 
 **Priority:** P2.
 
-### 12. Duplicate sprite-blending implementations
+### 15. Duplicate sprite-blending implementations
 Sprite application exists in `BitmapAccessor`, `BitmapArgb64Accessor` and generic `ImageAccessorExtensions`. The specialized implementations duplicate clipping and blend traversal and can diverge in behavior.
 
 **Fix:** retain one generic traversal implementation and expose optimized internal pixel primitives where profiling justifies specialization. Test all accessors against the same behavioral contract.
 
 **Priority:** P2 maintainability.
 
-### 13. Resource ownership is implicit and inconsistent
+### 16. Resource ownership is implicit and inconsistent
 Accessors always leave the bitmap alive, but this is not represented through a `leaveOpen`/ownership option. Finalizers call `UnlockBits` through managed `Bitmap` state, making cleanup timing nondeterministic.
 
 **Fix:** document and standardize ownership, prefer deterministic disposal, and consider removing finalizers after ensuring callers use scoped access. If a finalizer remains, keep it minimal and robust against shutdown/disposed bitmap state.
 
 **Priority:** P2.
 
-### 14. `System.Drawing` platform constraints need to be explicit
+### 17. `System.Drawing` platform constraints need to be explicit
 The package is built around `System.Drawing.Bitmap` and GDI+ locking. Modern .NET support is effectively Windows-oriented for `System.Drawing.Common`.
 
 **Fix:** target/document Windows explicitly or isolate the GDI implementation behind abstractions and provide a cross-platform backend. Add platform guards and CI coverage matching supported targets.
 
 **Priority:** P2 compatibility.
+
+### 18. Packed color layouts are architecture-dependent
+`ColorArgb32` and `ColorArgb64` use explicit field overlays whose byte/component interpretation assumes little-endian memory layout. The public `Value` property is therefore not a portable canonical ARGB integer representation across architectures.
+
+**Risk:** serialized packed values and component access can disagree on big-endian platforms or when exchanged with APIs expecting canonical `0xAARRGGBB` ordering.
+
+**Fix:** define `Value` explicitly using shifts/masks independent of host endianness, or document it as native-layout-only and expose separate canonical pack/unpack APIs.
+
+**Priority:** P2.
+
+### 19. Color conversion naming and generic constructor intent are misleading
+`ColorArgb32(IColorArgb<byte> colorArgb64)` accepts byte components but multiplies each by 255 before casting back to byte, which wraps for most values. The parameter name also claims a 64-bit source although the interface uses `byte`.
+
+**Risk:** silent corruption when this constructor is called through the interface.
+
+**Fix:** either copy byte components directly or replace the constructor with correctly typed overloads. Rename parameters to match actual types and add analyzer/tests preventing narrowing/wrapping conversions.
+
+**Priority:** P2 functional bug.
+
+### 20. Gradient APIs use inconsistent interpolation semantics and validation
+`ColorArgb.Gradient` clamps the factor and performs square-space interpolation, while `ColorArgb32.LinearGradient` neither clamps nor rejects factors outside `[0,1]` and converts unchecked results to bytes. The naming does not make the color space or gamma behavior explicit.
+
+**Risk:** out-of-range factors wrap or truncate, and equivalent APIs produce visibly different results.
+
+**Fix:** define explicit interpolation methods (`LinearRgb`, `Srgb`, `Perceptual`) with common factor validation and shared conversion/rounding rules.
+
+**Priority:** P2.
+
+### 21. Numeric conversion policy is inconsistent
+Conversions from floating components to byte/ushort use truncating casts rather than a documented rounding strategy. `MatrixImageTransformer` rounds integral values, while color constructors truncate. `T.CreateChecked` can also throw after partial image mutation.
+
+**Fix:** centralize clamp/round/convert helpers and validate all output ranges before mutating the destination. Prefer staging a row/tile before commit when a conversion can fail.
+
+**Priority:** P2.
 
 ## Required regression and security tests
 
@@ -130,6 +191,12 @@ The package is built around `System.Drawing.Bitmap` and GDI+ locking. Modern .NE
 - Add golden-image tests for blur, sharpen, edge-detection, zero-sum and negative-sum kernels with explicit border/normalization policies.
 - Test straight-alpha and premultiplied-alpha formats separately.
 - Run common sprite behavior tests through generic, 32-bit and 64-bit accessors.
+- Verify `ColorArgb64 → ColorArgb` endpoints: 0 maps to 0 and 65535 maps to 1.
+- Exhaustively test 8→16 expansion for all channel values and exact 8→16→8 round trips.
+- Validate Porter-Duff `Over` against reference vectors for transparent, opaque and partially transparent foreground/background combinations across all color types.
+- Test canonical packed ARGB values independently of native memory layout.
+- Exercise the `IColorArgb<byte>` constructor with every byte value and ensure no wraparound.
+- Test gradient factors below 0, within range and above 1 with explicit interpolation semantics.
 
 ## Priority roadmap
 
@@ -142,11 +209,17 @@ The package is built around `System.Drawing.Bitmap` and GDI+ locking. Modern .NE
 | P1 | Region and pointer arithmetic validation is incomplete |
 | P1 | Transformer allocation and mask dimensions are unchecked |
 | P1 | Weight matrices allow mutable/non-finite data |
+| P1 | 16-bit floating conversion uses an invalid divisor |
+| P1 | 8-bit to 16-bit expansion loses full range |
+| P1 | Porter-Duff compositing is inconsistent and incorrect |
 | P1 | Convolution normalization semantics are incorrect |
 | P2 | Pixel-format aliases and premultiplied formats are mishandled |
 | P2 | Sprite traversal is duplicated |
 | P2 | Ownership/finalization and platform support need clarification |
+| P2 | Packed values depend on native endianness |
+| P2 | Generic byte-color constructor wraps values |
+| P2 | Gradient and numeric conversion policies are inconsistent |
 
 ## Deployment warning
 
-Until the P0 findings are fixed, do not expose bitmap coordinates, regions, formats or dimensions derived from untrusted input to these unsafe accessors. A managed bounds exception is not guaranteed: current code can read or write native memory outside the locked image buffer.
+Until the P0 findings are fixed, do not expose bitmap coordinates, regions, formats or dimensions derived from untrusted input to these unsafe accessors. A managed bounds exception is not guaranteed: current code can read or write native memory outside the locked image buffer. Until the P1 color-conversion findings are fixed, avoid relying on implicit 16-bit conversions or semi-transparent compositing for correctness-sensitive image pipelines.
