@@ -70,47 +70,45 @@ public class GlyphSimple : GlyphBase
     /// <returns>An enumerable of <see cref="OutlineFlags"/> for each point.</returns>
     private static IEnumerable<OutlineFlags> GetFlags((short X, short Y, bool onCurve)[] points)
     {
-        // Use nullable shorts for the previous point coordinates.
-        (short? X, short? Y, bool onCurve) lastPoint = (null, null, false);
+        // Coordinates are stored as deltas from the previous point (both here and on the wire),
+        // not as absolute values, so the byte/short decision below must be based on the delta.
+        short lastX = 0;
+        short lastY = 0;
 
-        // Convert each point to a tuple of floats and compute flags.
-        foreach (var point in points.Select(p => (X: (float)p.X, Y: (float)p.Y, p.onCurve)))
+        foreach (var point in points)
         {
             OutlineFlags flag = OutlineFlags.None;
+            int dx = point.X - lastX;
+            int dy = point.Y - lastY;
 
-            if (point.X == lastPoint.X)
+            // Per the TrueType spec, when the "IsByte" flag is set, "IsSame" doubles as the sign
+            // bit of the byte-encoded delta (set = positive, clear = negative) rather than
+            // meaning "unchanged".
+            if (dx == 0)
             {
                 flag |= OutlineFlags.XIsSame;
             }
-            else if (point.X.Between(0, 0xFF))
+            else if (dx is >= -0xFF and <= 0xFF)
             {
                 flag |= OutlineFlags.XIsByte;
-            }
-            else if (point.X.Between(-0xFF, 0))
-            {
-                flag |= OutlineFlags.XIsByte;
-                flag |= OutlineFlags.XIsSame;
+                if (dx > 0) flag |= OutlineFlags.XIsSame;
             }
 
-            if (point.Y == lastPoint.Y)
+            if (dy == 0)
             {
                 flag |= OutlineFlags.YIsSame;
             }
-            else if (point.Y.Between(0, 0xFF))
+            else if (dy is >= -0xFF and <= 0xFF)
             {
                 flag |= OutlineFlags.YIsByte;
-            }
-            else if (point.Y.Between(-0xFF, 0))
-            {
-                flag |= OutlineFlags.YIsByte;
-                flag |= OutlineFlags.YIsSame;
+                if (dy > 0) flag |= OutlineFlags.YIsSame;
             }
 
             flag |= point.onCurve ? OutlineFlags.OnCurve : 0;
 
             yield return flag;
-            // Update lastPoint for next iteration.
-            lastPoint = ((short)point.X, (short)point.Y, point.onCurve);
+            lastX = point.X;
+            lastY = point.Y;
         }
     }
 
@@ -201,10 +199,11 @@ public class GlyphSimple : GlyphBase
         // Write the basic glyph header data.
         base.WriteData(data);
 
-        // Write the number of points per contour.
+        // Write the end-point index (0-based, i.e. point count - 1) of each contour: ReadData
+        // adds 1 back to recover the point count, per the TrueType endPtsOfContours convention.
         for (int i = 0; i < NumContours; i++)
         {
-            data.Write<Int16>((short)contours[i].Length);
+            data.Write<Int16>((short)(contours[i].Length - 1));
         }
 
         // Write instruction count and instructions.
@@ -233,28 +232,28 @@ public class GlyphSimple : GlyphBase
             }
         }
 
-        // Local function to write coordinates based on flags.
+        // Local function to write coordinate deltas based on flags. Mirrors ReadData's
+        // "coordinates" local function exactly, since coordinates are deltas from the previous
+        // point, not absolute values.
         void Write(OutlineFlags isByte, OutlineFlags isSame, Func<(float X, float Y, bool OnCurve), short> getValue)
         {
+            short previous = 0;
             for (int i = 0; i < PointsCount; i++)
             {
                 OutlineFlags flag = flags[i];
                 short value = getValue(points[i]);
+                int delta = value - previous;
                 if (flag.HasFlag(isByte))
                 {
-                    if (flag.HasFlag(isSame))
-                    {
-                        data.Write<Int16>(value);
-                    }
+                    // Magnitude fits a byte; isSame doubles as the sign bit (set = positive).
+                    data.WriteByte((byte)(flag.HasFlag(isSame) ? delta : -delta));
                 }
-                else if (flag.HasFlag(isSame))
+                else if (!flag.HasFlag(isSame))
                 {
-                    data.WriteByte((byte)(-value));
+                    data.Write<Int16>((short)delta);
                 }
-                else
-                {
-                    data.WriteByte((byte)value);
-                }
+                // else: isSame set without isByte means the coordinate is unchanged, nothing to write.
+                previous = value;
             }
         }
 
