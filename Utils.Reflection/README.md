@@ -185,6 +185,27 @@ where `Emit<TInterface>`'s one-worker-per-interface default keeps failures conta
 interface. Disposing a proxy returned by the pool only releases that interface's resources on the shared
 worker; dispose the pool itself to shut the worker process down.
 
+#### Spreading calls across several processes (`EmitRoundRobin`)
+
+Calls from multiple threads on a single `Emit<TInterface>` worker already run concurrently (see the
+performance note above) — but they all still execute inside the same worker process, so the native
+library must itself be safe to call concurrently. `LibraryMapper.EmitRoundRobin<TInterface>` sidesteps
+that requirement by starting several independent worker processes up front and picking the next one, in
+round-robin order, for every call — each process has its own separate load of the native DLL, so calls
+can never race inside the same one:
+
+```csharp
+using IMathLib math = LibraryMapper.EmitRoundRobin<IMathLib>("math.dll", CallingConvention.Cdecl, workerCount: 4);
+
+// Each call goes to the next of the 4 worker processes, in turn.
+int a = math.Add(1, 2);
+int b = math.Add(3, 4);
+```
+
+This costs `workerCount` full sandboxed process startups up front, rather than one — pick a worker count
+that matches the parallelism you actually need. The set of workers is fixed for the proxy's lifetime;
+disposing it disposes every worker in the set.
+
 ## Process isolation examples
 
 `ProcessContainerFactory` wraps OS sandboxing APIs to constrain child processes. It returns `null` gracefully when no sandbox is available.

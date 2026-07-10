@@ -268,9 +268,9 @@ publics, et test documentant explicitement le comportement par défaut cassé de
 ## Nouvelles propositions (relecture 2026-07-10)
 
 Seconde relecture du package une fois les items 1-25 et les corrections post-revue de la PR #428 en
-place. **Marqués par l'utilisateur comme prioritaires : items 26, 28 et 32.** Items 26-34 implémentés ;
-35 (round-robin multi-process) et 36 (documentation détaillée avec exemples) restent à l'état de
-proposition — voir leur section respective pour le détail.
+place. **Marqués par l'utilisateur comme prioritaires : items 26, 28 et 32.** Items 26-35 implémentés ;
+36 (documentation détaillée avec exemples) reste à l'état de proposition — voir sa section pour le
+détail.
 
 ### Priorité haute — sécurité
 
@@ -461,17 +461,28 @@ la réponse du premier doivent se terminer en ~800ms, pas ~1600ms. `UtilsTest/Re
 `Emit_InterfaceWithVoidReturningMethod_GeneratesAndInstantiatesWithoutError` (régression dédiée pour le
 bug `System.Void`).
 
-#### 35. Round-robin sur plusieurs process workers pour la parallélisation
-Alternative plus simple à mettre en œuvre que l'item 34 (pas de changement de protocole ni de dépendance
-à la thread-safety de la bibliothèque native appelée), mais plus coûteuse en ressources : ouvrir
-plusieurs process workers en parallèle et répartir les appels entre eux en round-robin, plutôt que de
-réécrire le protocole pour du multiplexage sur une seule connexion. Chaque worker resterait mono-appel
-comme aujourd'hui, mais N workers en parallèle donneraient un parallélisme de degré N côté appelant.
-Cela multiplie le coût de démarrage par worker déjà identifié comme point faible à l'item 32 — à
-combiner éventuellement avec un pool (item 32) pour amortir ce coût, mais les deux points sont
-indépendants et peuvent être traités séparément : l'item 32 vise à réduire le nombre de process pour
-plusieurs *interfaces différentes*, celui-ci vise à distribuer les appels d'une *même* interface sur
-plusieurs process pour paralléliser.
+#### 35. ~~Round-robin sur plusieurs process workers pour la parallélisation~~ — **implémenté**
+Alternative à l'item 34 (parallélisme intra-worker par threads, déjà implémenté) qui ne dépend pas de la
+thread-safety de la bibliothèque native appelée, au prix d'un coût de démarrage plus élevé : ouvrir
+plusieurs process workers indépendants et répartir les appels entre eux en round-robin, chaque process
+ayant son propre chargement séparé de la DLL native (donc jamais de risque de course entre deux appels
+qui tomberaient dans le même worker). **Fix** : `LibraryMapper.EmitRoundRobin<TInterface>(dllPath,
+callingConvention, workerCount, loadTimeout, callTimeout)` — démarre `workerCount` workers isolés
+indépendants (chacun via `EmitWorkerProcess.Start(Type, ...)`, le même chemin que `Emit<TInterface>`),
+retourne un proxy unique. Nouvelle classe `EmitWorkerRoundRobinProxy : DispatchProxy` (non scellée —
+requis par `DispatchProxy.Create`, comme `EmitWorkerProxy`) qui conserve `(EmitWorkerProcess, int
+handle)[]` et sélectionne le membre suivant via `Interlocked.Increment` sur un compteur `int` (caste en
+`uint` avant le modulo pour rester dans les bornes même après un débordement du compteur après ~2^31
+appels). `Dispose()` sur le proxy dispose tous les workers du jeu. Si le démarrage d'un worker échoue en
+cours de boucle, les workers déjà démarrés sont disposés avant de relancer l'exception (cohérent avec les
+autres chemins de démarrage `EmitWorkerProcess`). Le jeu de workers est figé pour la durée de vie du
+proxy — pas de remplacement dynamique d'un worker mort ; ses tours de round-robin échouent simplement
+avec l'exception que lève `InvokeMethod` pour une connexion cassée. Complémentaire de l'item 32
+(`EmitWorkerPool`, qui réduit le nombre de process pour plusieurs *interfaces différentes*) : celui-ci
+distribue les appels d'une *même* interface sur plusieurs process pour paralléliser.
+Tests : `UtilsTest/Reflection/EmitWorkerRoundRobinProxyTests.cs` (génération du proxy, comportement avant
+attachement des workers, validation `workerCount < 1`) — sans lancer de vrais process, même limite déjà
+acceptée pour `EmitWorkerProxyTests`/`EmitWorkerPoolTests`.
 
 #### 36. Documentation détaillée, avec exemples, du fonctionnement du système de process/threads
 Le README documente l'usage de haut niveau (`Emit<TInterface>`, `EmitInProcess<TInterface>`,
