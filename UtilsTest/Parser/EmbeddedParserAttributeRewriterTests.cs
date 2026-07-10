@@ -18,16 +18,14 @@ public class EmbeddedParserAttributeRewriterTests
         A : 'a' ;
         """;
 
-    /// <summary>Verifies current-rule returns and assignment-label child returns are rewritten while list labels remain unsupported.</summary>
+    /// <summary>Verifies current-rule returns plus assignment-label and list-label child returns are rewritten.</summary>
     [TestMethod]
     public void Rewrite_SupportedCurrentRuleRead_RewritesBareReturnAndAssignmentLabelReturn()
     {
         EmbeddedParserAttributeRewriteResult result = Rewrite("Seen = (int)$x.value + $xs.value.Count + $xs.value.Select(v => v).Count() + (int)$own;");
 
-        Assert.AreEqual("Seen = (int)GetRequiredLabeledRuleCallReturn(context, \"x\", \"value\") + $xs.value.Count + $xs.value.Select(v => v).Count() + (int)GetRequiredRuleReturn<int>(context, \"own\");", result.Code);
-        Assert.AreEqual(2, result.Errors.Count);
-        StringAssert.Contains(result.Errors[0], "List-label parser attribute '$xs.value' is not supported");
-        StringAssert.Contains(result.Errors[1], "List-label parser attribute '$xs.value' is not supported");
+        Assert.AreEqual("Seen = (int)GetRequiredLabeledRuleCallReturn(context, \"x\", \"value\") + GetLabeledRuleCallReturns(context, \"xs\", \"value\").Count + GetLabeledRuleCallReturns(context, \"xs\", \"value\").Select(v => v).Count() + (int)GetRequiredRuleReturn<int>(context, \"own\");", result.Code);
+        Assert.AreEqual(0, result.Errors.Count);
     }
 
     /// <summary>Verifies current-rule parameters and locals are rewritten through typed helper calls.</summary>
@@ -73,13 +71,12 @@ public class EmbeddedParserAttributeRewriterTests
     [DataRow("$unknown.value", "not the current rule name")]
     [DataRow("$t.value", "Token label 't' cannot be used as a parser rule-return attribute")]
     [DataRow("$x.missing", "Return 'missing' is not declared by every parser rule referenced by assignment label 'x'. Missing on parser rule 'child'")]
-    [DataRow("$xs.missing", "List-label parser attribute '$xs.missing' is not supported")]
+    [DataRow("$xs.missing", "Return 'missing' is not declared by every parser rule referenced by list label 'xs'")]
     [DataRow("$start.missing", "Dotted current-rule return attribute '$start.missing' is not supported")]
     [DataRow("$x", "label access")]
     [DataRow("$xs", "label access")]
     [DataRow("$x.value.other", "Chained parser attribute '$x.value'")]
-    [DataRow("$xs.value.other", "Chained parser attribute '$xs.value'")]
-    public void Rewrite_UnsupportedReference_ReportsDeterministicError(string code, string expectedMessage)
+        public void Rewrite_UnsupportedReference_ReportsDeterministicError(string code, string expectedMessage)
     {
         EmbeddedParserAttributeRewriteResult result = Rewrite(code);
 
@@ -209,14 +206,14 @@ public class EmbeddedParserAttributeRewriterTests
         StringAssert.Contains(result.Errors[0], "Assignment label 'x' is not available in @init");
     }
 
-    /// <summary>Verifies list-labeled child returns remain unsupported during initialization.</summary>
+    /// <summary>Verifies list-labeled child returns remain unavailable during initialization.</summary>
     [TestMethod]
-    public void Rewrite_ListLabelInInit_ReportsUnsupportedLabelError()
+    public void Rewrite_ListLabelInInit_ReportsLifecycleError()
     {
         EmbeddedParserAttributeRewriteResult result = Rewrite("Seen = $xs.value;", EmbeddedParserAttributeLocationKind.Init);
 
         Assert.AreEqual(1, result.Errors.Count);
-        StringAssert.Contains(result.Errors[0], "List-label parser attribute '$xs.value' is not supported");
+        StringAssert.Contains(result.Errors[0], "List label 'xs' is not available in @init");
     }
 
     /// <summary>Verifies list-label attributes remain unavailable in semantic predicates.</summary>
@@ -246,7 +243,7 @@ public class EmbeddedParserAttributeRewriterTests
 
         Assert.AreEqual("Seen = $x.value;", result.Code);
         Assert.AreEqual(1, result.Errors.Count);
-        StringAssert.Contains(result.Errors[0], "List-label parser attribute '$x.value' is not supported");
+        StringAssert.Contains(result.Errors[0], "used as both assignment and list label");
     }
 
 
@@ -294,11 +291,11 @@ public class EmbeddedParserAttributeRewriterTests
         Assert.AreEqual(0, result.Errors.Count);
     }
 
-    /// <summary>Verifies repeated list-label return convenience remains unsupported regardless of target order.</summary>
+    /// <summary>Verifies repeated list-label targets validate every referenced parser-rule target before rewriting.</summary>
     [DataTestMethod]
     [DataRow("xs+=withValue | xs+=withoutValue")]
     [DataRow("xs+=withoutValue | xs+=withValue")]
-    public void Rewrite_RepeatedListLabelTargets_ReportsUnsupportedLabelReturn(string alternatives)
+    public void Rewrite_RepeatedListLabelTargets_RejectsWhenAnyTargetMissingReturn(string alternatives)
     {
         string grammarText = $$"""
             grammar P;
@@ -314,7 +311,7 @@ public class EmbeddedParserAttributeRewriterTests
 
         Assert.AreEqual("Values = $xs.value;", result.Code);
         Assert.AreEqual(1, result.Errors.Count);
-        StringAssert.Contains(result.Errors[0], "List-label parser attribute '$xs.value' is not supported");
+        StringAssert.Contains(result.Errors[0], "Return 'value' is not declared by every parser rule referenced by list label 'xs'");
     }
 
     /// <summary>Verifies dotted current-rule returns remain unsupported even when a label shares the rule name.</summary>
@@ -367,10 +364,9 @@ public class EmbeddedParserAttributeRewriterTests
         Assert.AreEqual(0, result.Errors.Count);
     }
 
-    /// <summary>Verifies only assignment-label child return syntax is rewritten, while other dotted forms stay unsupported.</summary>
+    /// <summary>Verifies unsupported dotted forms stay rejected after list-label sugar support.</summary>
     [DataTestMethod]
-    [DataRow("Seen = $xs.value.Count;", "List-label parser attribute '$xs.value' is not supported")]
-    [DataRow("Seen = $child.value;", "not the current rule name")]
+        [DataRow("Seen = $child.value;", "not the current rule name")]
     [DataRow("Seen = $start.value;", "Dotted current-rule return attribute '$start.value' is not supported")]
     public void ParseWithEmbeddedCode_TransformerStillRejectsUnsupportedLabelReturnSyntax(string code, string expectedMessage)
     {

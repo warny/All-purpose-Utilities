@@ -4279,6 +4279,138 @@ public class Antlr4GeneratedRuleLifecycleTests
         Assert.AreEqual(0, ReadIntField(assembly, "Count"));
     }
 
+
+    /// <summary>Verifies list-label return sugar projects child returns in successful call order.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_ListLabelReturnSugar_ProjectsReturnsInOrder()
+    {
+        const string grammar = """
+            grammar P;
+            @members { public int Counter; }
+            start @after {
+                var values = $xs.value;
+                Count = values.Count;
+                First = values[0] is int first ? first : -1;
+                Last = values[1] is int last ? last : -1;
+            } : xs+=child xs+=child ;
+            child returns [int value] @after { $value = Counter++; } : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext { public static int Count; public static int First = -1; public static int Last = -1; }
+            """;
+
+        Assembly assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        object result = InvokeParse(assembly, "ParseWithEmbeddedCode", "aa");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(2, ReadIntField(assembly, "Count"));
+        Assert.AreEqual(0, ReadIntField(assembly, "First"));
+        Assert.AreEqual(1, ReadIntField(assembly, "Last"));
+    }
+
+    /// <summary>Verifies list-label return sugar permits ordinary C# member access after the root projection rewrite.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_ListLabelReturnSugar_AllowsCountMemberAccess()
+    {
+        const string grammar = """
+            grammar P;
+            start @after { Count = $xs.value.Count; } : xs+=child xs+=child ;
+            child returns [int value] @after { $value = 42; } : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext { public static int Count = -1; }
+            """;
+
+        Assembly assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        object result = InvokeParse(assembly, "ParseWithEmbeddedCode", "aa");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(2, ReadIntField(assembly, "Count"));
+    }
+
+    /// <summary>Verifies list-label return sugar preserves present-null projected values.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_ListLabelReturnSugar_PreservesPresentNull()
+    {
+        const string grammar = """
+            grammar P;
+            start @after {
+                var values = $xs.value;
+                IsNull = values.Count == 1 && values[0] == null;
+            } : xs+=child ;
+            child returns [string? value] @after { $value = null; } : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext { public static bool IsNull; }
+            """;
+
+        Assembly assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        object result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsTrue(ReadBoolField(assembly, "IsNull"));
+    }
+
+    /// <summary>Verifies list-label return sugar returns an empty projection when no visible optional occurrence succeeds.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_ListLabelReturnSugar_ReturnsEmptyListWhenNoSuccessfulOccurrences()
+    {
+        const string grammar = """
+            grammar P;
+            start @after { Count = $xs.value.Count; } : (xs+=child)? ;
+            child returns [int value] @after { $value = 42; } : A ;
+            A : 'a' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext { public static int Count = -1; }
+            """;
+
+        Assembly assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        object result = InvokeParse(assembly, "ParseWithEmbeddedCode", "");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(0, ReadIntField(assembly, "Count"));
+    }
+
+    /// <summary>Verifies list-label return sugar follows explicit-helper rollback behavior for failed alternatives.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_ListLabelReturnSugar_RollsBackFailedAlternative()
+    {
+        const string grammar = """
+            grammar P;
+            @members { public int Counter; }
+            start @after {
+                var values = $xs.value;
+                Count = values.Count;
+                First = values.Count > 0 && values[0] is int v ? v : -1;
+            }
+                : xs+=child B
+                | xs+=child A
+                ;
+            child returns [int value] @after { $value = Counter++; } : A ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        const string userPartial = """
+            namespace Generated.Tests;
+            internal sealed partial class PExecutionContext { public static int Count; public static int First = -1; }
+            """;
+
+        Assembly assembly = CompileGeneratedSource(Emit(grammar), userPartial);
+        object result = InvokeParse(assembly, "ParseWithEmbeddedCode", "aa");
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(1, ReadIntField(assembly, "Count"));
+        Assert.AreEqual(0, ReadIntField(assembly, "First"));
+    }
+
     /// <summary>Verifies failed alternatives do not leak assignment-label returns into the successful alternative frame state.</summary>
     [TestMethod]
     public void ParseWithEmbeddedCode_ExplicitHelper_LabelReturnsRollbackFailedAlternative()
