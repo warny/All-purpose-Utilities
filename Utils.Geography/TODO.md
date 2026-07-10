@@ -3,6 +3,113 @@
 Audit complet du package : conformité AGENTS.md, bugs, performance, couverture de tests.
 Branche de travail : voir `git log` sur `Utils.Geography/` et `UtilsTest/Geography/` autour de cette date.
 
+## Open findings from the follow-up audit (2026-07-10)
+
+The following issues were identified during a second independent pass. They are not fixed yet.
+
+### 1. `GeoPoint<T>` — `Equals`/`GetHashCode` contract is still broken at the poles
+
+`GeoPoint<T>.Equals` deliberately treats every longitude at the same pole as the same geographic
+point: once both rounded latitudes equal `+90°` or `-90°`, it returns `true` without comparing
+longitude. `GetHashCode`, however, still includes normalized longitude unconditionally. Therefore
+`new GeoPoint<double>(90, 10)` and `new GeoPoint<double>(90, -170)` compare equal but can produce
+different hash codes, breaking `Dictionary<GeoPoint<T>, ...>` and `HashSet<GeoPoint<T>>`.
+
+**Proposed fix**: when rounded latitude is either pole, hash latitude only. Otherwise hash rounded
+latitude together with normalized/rounded longitude. Add regression tests for both poles that assert
+both equality and identical hash codes for different longitudes.
+
+**Severity**: high — direct violation of the .NET equality/hash contract.
+
+### 2. `GeoPoint<T>.FormatPosition` — DMS seconds are multiplied by 3600 instead of 60
+
+After extracting degrees, the code multiplies the fractional degree by 60 and extracts whole
+minutes. At that point the remaining fraction is a fraction of a minute, but it is multiplied by
+`SecondsInDegree` (`3600`) instead of `SecondsInMinute` (`60`). Coordinates containing non-zero
+seconds are therefore formatted with values up to roughly 3599 seconds instead of `[0, 59]`.
+Existing tests only use values whose seconds are exactly zero, so they do not expose the bug.
+
+**Proposed fix**: replace the second multiplication by `SecondsInMinute`. Add tests such as
+`45.508333333...° -> 45°30'30"` and equivalent negative coordinates.
+
+**Severity**: high — public formatting returns incorrect geographic coordinates.
+
+### 3. Coordinate parsing regex accepts valid substrings inside invalid input
+
+`GeoPoint<T>.BuildRegexCoordinates` creates a regex without `^` and `$` anchors, and
+`ParseCoordinate` uses `Regex.Match`. Inputs containing arbitrary text before or after a valid
+coordinate can therefore be accepted by matching only the valid substring. `Parse`/constructors and
+`TryParse` should validate the complete coordinate string, not extract a coordinate from free text.
+
+**Proposed fix**: anchor the expression, allow surrounding whitespace explicitly, and add tests that
+reject trailing or leading garbage while preserving intended whitespace support.
+
+**Severity**: medium to high — malformed input may be silently accepted.
+
+### 4. `CoordinatesUtil<T>.ParseCoordinatestring` silently removes empty coordinates
+
+The method splits with `StringSplitOptions.RemoveEmptyEntries`. An invalid positional list such as
+`"1,,2,3,4"` becomes four tokens and may be accepted when four coordinates are expected, shifting all
+values after the empty position. Empty coordinates are semantically significant and must not be
+removed.
+
+**Proposed fix**: use `StringSplitOptions.None`, verify the exact token count, reject null/empty or
+whitespace-only tokens, then parse. Add regression tests for leading, middle and trailing empty
+values.
+
+**Severity**: high — invalid data may be accepted with shifted coordinate positions.
+
+### 5. `BoundingBox<T>.ToString()` is not parseable by `BoundingBox<T>.FromString()`
+
+`FromString` expects four comma-separated numeric values in the order
+`minLat,minLon,maxLat,maxLon`, while `ToString()` emits a descriptive representation containing
+labels such as `minLatitude=`. A natural round-trip through `FromString(box.ToString())` therefore
+fails. This may be intentional, but the API names imply a symmetry that does not exist.
+
+**Proposed fix**: either make the default representation parseable, add an explicit parseable format
+specifier, implement `IParsable<BoundingBox<T>>`, or rename the parsing API to make the accepted
+format explicit.
+
+**Severity**: medium — API contract and discoverability issue.
+
+### 6. `BoundingBox<T>` cannot represent a box crossing the antimeridian
+
+`ValidateBoundingBox` always orders longitudes with `T.Min`/`T.Max`. A box intended to run from
+`170°E` to `170°W` should span 20 degrees across the antimeridian, but it is converted into a
+340-degree box. `Contains`, `Intersects`, `LongitudeSpan`, and `GetCenterpoint` inherit that
+interpretation.
+
+**Proposed fix**: either document that antimeridian-crossing boxes are unsupported, or model this
+case explicitly (for example with a `CrossesAntimeridian` invariant and circular longitude logic).
+Add tests for containment, intersection, center and span around `±180°`.
+
+**Severity**: significant functional limitation for global mapping use cases.
+
+### 7. Trigonometric inverse inputs are not clamped against floating-point drift
+
+`GeoPoint<T>.AngleWith` passes a computed spherical dot product directly to `Acos`. Although the
+mathematical value is in `[-1, 1]`, floating-point rounding can produce a value just outside the
+interval and return `NaN`, especially for identical or nearly identical points. Similar direct
+`Acos`/`Asin` calls exist in `GeoVector<T>.Intersections`.
+
+**Proposed fix**: clamp mathematically bounded inputs to `[-1, 1]` immediately before inverse
+trigonometric calls. Add tests for identical points, nearly identical points, antipodal points, and
+near-degenerate great-circle intersections.
+
+**Severity**: medium — rare but plausible numerical failures.
+
+### Follow-up priority
+
+| Priority | Finding |
+| --- | --- |
+| P0 | Pole equality/hash inconsistency |
+| P1 | Incorrect DMS seconds conversion |
+| P1 | Empty coordinate tokens silently removed |
+| P1 | Coordinate regex not anchored |
+| P2 | Missing clamp before inverse trigonometric functions |
+| P2 | Antimeridian-crossing bounding boxes unsupported |
+| P3 | `BoundingBox.ToString`/`FromString` are not round-trip compatible |
+
 ## Bugs corrigés
 
 ### Incohérence hash/égalité (`GeoPoint<T>`, `GeoVector<T>`)
