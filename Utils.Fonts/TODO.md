@@ -65,6 +65,11 @@ polarité du bit `IsSame` pour les deltas encodés sur un octet (le spec dit : b
 absent = négatif — c'était l'inverse) ; `WriteData` écrivait aussi le nombre de points par contour
 au lieu de l'index du dernier point (`count` au lieu de `count - 1`) attendu par `ReadData`. Tests :
 `GlyphSimpleTests.cs` (nouveau fichier).
+**Relecture PR (Codex)** : ce dernier point était encore faux pour les glyphes à plusieurs contours —
+`count - 1` donne l'index local au contour, pas l'index cumulatif dans le tableau de points aplati du
+glyphe entier qu'exige réellement `endPtsOfContours` (correct par coïncidence pour le premier contour
+seulement). Corrigé avec un total courant (`cumulativePointIndex += contours[i].Length`). Test ajouté :
+`GlyphSimpleTests.ReadThenWrite_TwoContours_ProducesCumulativeEndPoints`.
 
 ### 5. `PostMapFormat0.stdNames[63]` — nom de glyphe erroné
 `Utils.Fonts/TTF/Tables/PostTable.cs:73` : `"ackslash"` au lieu de `"backslash"`.
@@ -98,6 +103,13 @@ languageID seul ne détermine pas l'encodage).
 Macintosh, toujours UTF-16BE pour Microsoft/Unicode) et n'utilise plus `languageID` pour choisir
 l'encodage. Tests réécrits dans `TtfEncoderFactoryTests.cs` (les anciens asseraient le comportement
 buggy comme voulu).
+**Relecture PR (Codex)** : le "toujours UTF-16BE" pour Microsoft était incomplet — les IDs
+d'encodage legacy CJK (2=ShiftJIS, 3=PRC, 4=Big5, 5=Wansung, 6=Johab) doivent utiliser leurs propres
+code pages (932/936/950/949/1361), pas UTF-16BE. `TtfPlatformSpecificID` ne déclare aucun nom pour
+ces valeurs (et sa valeur 3 s'appelle `UNICODE_V2`, un sens Macintosh/versioning Unicode sans rapport
+qui partage la même valeur numérique que l'ID Microsoft PRC — piège de nommage). Ajouté
+`GetMicrosoftEncoding` qui dispatche sur la valeur numérique brute. Test :
+`TtfEncoderFactoryTests.Microsoft_LegacyCjkEncodingIds_ReturnTheirOwnCodePage`.
 
 ### 8. `TtfHinting.MovePoint`/`ScalePoints` — troncature des coordonnées de points en `short`
 `Utils.Fonts/TTF/TtfHinting.cs:61-83`
@@ -225,10 +237,10 @@ aucun test dédié ni indirect. Risque faible vu la simplicité du code.
 
 | # | Sévérité | Fichier | État |
 |---|---|---|---|
-| 4 | Bug fonctionnel majeur | `GlyphSimple.cs` (WriteData round-trip cassé) | Corrigé |
+| 4 | Bug fonctionnel majeur | `GlyphSimple.cs` (WriteData round-trip cassé + endPtsOfContours cumulatif) | Corrigé |
 | 1 | Bug fonctionnel | `CmapTable.cs` (longueurs de sous-table décalées) | Corrigé |
 | 2, 3 | Bug fonctionnel | `CMapFormat4.cs` (troncature glyph index en écriture) | Corrigé |
-| 7 | Bug fonctionnel connu/documenté | `TtfEncoderFactory.cs` (LCID confondu avec code page) | Corrigé |
+| 7 | Bug fonctionnel connu/documenté | `TtfEncoderFactory.cs` (LCID confondu avec code page + CJK legacy) | Corrigé |
 | 6 | Bug fonctionnel potentiel | `PostTable.cs` (`Seek(0)` parasite) | Corrigé |
 | 5 | Bug fonctionnel mineur | `PostTable.cs` (typo "ackslash") | Corrigé |
 | 8 | Bug fonctionnel (portée limitée) | `TtfHinting.cs` (troncature `short`) | Corrigé |
@@ -247,3 +259,16 @@ Tous les items de test (16, 17, 18, 19, 20) et tous les bugs fonctionnels (1-8, 
 son propre commit et son test de régression. Restent ouverts, tous de dette technique/cosmétique
 sans impact fonctionnel connu : 9 (using inutile), 10 (code mort `Acnt/`), 12 (style tableau), 13
 (`params IEnumerable<T>`), 14 (duplication AAT header), 15 (docs XML incomplètes).
+
+**Relecture de la PR #432 (Codex)** : deux corrections supplémentaires apportées suite aux
+commentaires de revue, chacune avec son propre commit + test — voir le détail dans les items 4 et 7
+ci-dessus :
+- `GlyphSimple.WriteData` : `endPtsOfContours` doit être cumulatif sur l'ensemble du glyphe, pas
+  local à chaque contour (mon premier fix ne marchait que pour un glyphe à un seul contour).
+- `TtfEncoderFactory.GetMicrosoftEncoding` : les IDs d'encodage Microsoft legacy CJK (2-6) utilisent
+  des code pages spécifiques (932/936/950/949/1361), pas UTF-16BE comme je l'avais généralisé.
+
+Ces deux corrections ont aussi nécessité de fusionner `origin/master` dans la branche
+(`claude/fonts-fix-write-bugs`) après que la PR #431 (doc-only) a été squash-mergée entre-temps —
+conflit add/add sur ce même fichier `TODO.md`, résolu en conservant la version de cette branche (sur-
+ensemble strict de celle de master).
