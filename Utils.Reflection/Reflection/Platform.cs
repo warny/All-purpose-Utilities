@@ -109,6 +109,13 @@ namespace Utils.Reflection
         /// <summary>True if runtime platform is macOS.</summary>
         public static bool IsMacOsX { get; }
 
+        /// <summary>
+        /// True if runtime platform is macOS. Alias for <see cref="IsMacOsX"/> using Apple's current
+        /// platform name (matching <see cref="OperatingSystem.IsMacOS"/>, used internally), kept
+        /// alongside it for source/binary compatibility with existing callers of <see cref="IsMacOsX"/>.
+        /// </summary>
+        public static bool IsMacOS => IsMacOsX;
+
         /// <summary>True if runtime platform is iOS.</summary>
         public static bool IsIOS { get; }
 
@@ -176,7 +183,7 @@ namespace Utils.Reflection
         public static int NativeULongSize
         {
             get => _nativeULongSize;
-            private set
+            set
             {
                 if (value != 4 && value != 8)
                     throw new ArgumentException("NativeULongSize must be 4 or 8.");
