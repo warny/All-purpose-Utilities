@@ -12906,6 +12906,20 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Reflection.Reflection.Emit.EmitWorkerPool.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Reflection.Reflection.Emit.EmitWorkerPool.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Reflection.Reflection.Emit.EmitWorkerPool",
+      "Summary": "<p sourcefile=\"api/Utils.Reflection.Reflection.Emit.EmitWorkerPool.yml\" sourcestartlinenumber=\"1\">Maps several native interfaces onto a single shared isolated Emit worker process, instead of the\none-process-per-interface cost of <xref href=\"Utils.Reflection.LibraryMapper.Emit%60%601(System.String%2cSystem.Runtime.InteropServices.CallingConvention%2cSystem.Nullable%7bSystem.TimeSpan%7d%2cSystem.Nullable%7bSystem.TimeSpan%7d)\" data-throw-if-not-resolved=\"false\"></xref>.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.Reflection.Reflection.Emit.EmitWorkerProxy.yml",
       "output": {
         ".html": {
@@ -12916,7 +12930,21 @@
       "Uid": null,
       "IsMRef": true,
       "Title": "Utils.Reflection.Reflection.Emit.EmitWorkerProxy",
-      "Summary": "<p sourcefile=\"api/Utils.Reflection.Reflection.Emit.EmitWorkerProxy.yml\" sourcestartlinenumber=\"1\"><xref href=\"System.Reflection.DispatchProxy\" data-throw-if-not-resolved=\"false\"></xref> that forwards every interface call to an isolated\n<xref href=\"Utils.Reflection.Reflection.Emit.EmitWorkerProcess\" data-throw-if-not-resolved=\"false\"></xref>. Instances are produced by <xref href=\"Utils.Reflection.LibraryMapper.Emit%60%601(System.String%2cSystem.Runtime.InteropServices.CallingConvention)\" data-throw-if-not-resolved=\"false\"></xref> via\n<xref href=\"System.Reflection.DispatchProxy.Create%60%602\" data-throw-if-not-resolved=\"false\"></xref>; the generated proxy type never contains\ncaller-controlled source, so it does not carry the code-generation risk documented on\n<xref href=\"Utils.Reflection.Reflection.Emit.EmitDllMappableClass\" data-throw-if-not-resolved=\"false\"></xref>.</p>\n"
+      "Summary": "<p sourcefile=\"api/Utils.Reflection.Reflection.Emit.EmitWorkerProxy.yml\" sourcestartlinenumber=\"1\"><xref href=\"System.Reflection.DispatchProxy\" data-throw-if-not-resolved=\"false\"></xref> that forwards every interface call to an isolated\n<xref href=\"Utils.Reflection.Reflection.Emit.EmitWorkerProcess\" data-throw-if-not-resolved=\"false\"></xref>. Instances are produced by <xref href=\"Utils.Reflection.LibraryMapper.Emit%60%601(System.String%2cSystem.Runtime.InteropServices.CallingConvention%2cSystem.Nullable%7bSystem.TimeSpan%7d%2cSystem.Nullable%7bSystem.TimeSpan%7d)\" data-throw-if-not-resolved=\"false\"></xref> via\n<xref href=\"System.Reflection.DispatchProxy.Create%60%602\" data-throw-if-not-resolved=\"false\"></xref>; the generated proxy type never contains\ncaller-controlled source, so it does not carry the code-generation risk documented on\n<xref href=\"Utils.Reflection.Reflection.Emit.EmitDllMappableClass\" data-throw-if-not-resolved=\"false\"></xref>.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Reflection.Reflection.Emit.EmitWorkerRoundRobinProxy.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Reflection.Reflection.Emit.EmitWorkerRoundRobinProxy.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Reflection.Reflection.Emit.EmitWorkerRoundRobinProxy",
+      "Summary": "<p sourcefile=\"api/Utils.Reflection.Reflection.Emit.EmitWorkerRoundRobinProxy.yml\" sourcestartlinenumber=\"1\"><xref href=\"System.Reflection.DispatchProxy\" data-throw-if-not-resolved=\"false\"></xref> that round-robins each call across a fixed set of independent isolated\nEmit worker processes, produced by <xref href=\"Utils.Reflection.LibraryMapper.EmitRoundRobin%60%601(System.String%2cSystem.Runtime.InteropServices.CallingConvention%2cSystem.Int32%2cSystem.Nullable%7bSystem.TimeSpan%7d%2cSystem.Nullable%7bSystem.TimeSpan%7d)\" data-throw-if-not-resolved=\"false\"></xref>.</p>\n"
     },
     {
       "type": "ManagedReference",
@@ -13939,6 +13967,16 @@
       "output": {
         ".html": {
           "relative_path": "docs/parser/SharedLookAheadPreparation.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/reflection/ProcessAndThreadModel.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/reflection/ProcessAndThreadModel.html"
         }
       },
       "version": ""

@@ -703,7 +703,7 @@ alongside it for source/binary compatibility with existing callers of <a class="
 
   <h3 id="Utils_Reflection_Platform_NativeULongSize" data-uid="Utils.Reflection.Platform.NativeULongSize">
   NativeULongSize
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Platform.cs/#L183"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Platform.cs/#L193"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Size of native (unmanaged) 'ulong' (e.g., CK_ULONG in PKCS#11).
@@ -733,6 +733,16 @@ This value can be overridden by setter if needed.</li>
 
 
 
+  <h4 class="section" id="Utils_Reflection_Platform_NativeULongSize_remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p><b>Not thread-safe.</b> This is process-wide mutable state, not scoped to a caller or a
+single library binding: setting it from one component (for example, one PKCS#11 provider
+with unusual struct layout needs) changes the value observed by every other concurrent
+consumer of <a class="xref" href="Utils.Reflection.Platform.html">Platform</a> in the same process, including ones that never touched
+this property themselves. There is no synchronization around reads/writes, so a set racing
+with a get from another thread is also a plain (if usually benign, given <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/integral-numeric-types">int</a>
+writes are atomic on supported platforms) data race. Only set this once, as early as
+possible during startup, before any other code that might read it runs concurrently.</p>
+</div>
 
 
 
@@ -741,7 +751,7 @@ This value can be overridden by setter if needed.</li>
 
   <h3 id="Utils_Reflection_Platform_StructPackingSize" data-uid="Utils.Reflection.Platform.StructPackingSize">
   StructPackingSize
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Platform.cs/#L220"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Platform.cs/#L235"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Controls alignment of unmanaged struct fields:</p>
@@ -770,6 +780,11 @@ This can be overridden by setter if needed.</li>
 
 
 
+  <h4 class="section" id="Utils_Reflection_Platform_StructPackingSize_remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p><b>Not thread-safe</b> — see the identical caveat on <a class="xref" href="Utils.Reflection.Platform.html#Utils_Reflection_Platform_NativeULongSize">NativeULongSize</a>: this is
+process-wide mutable state shared by every consumer of <a class="xref" href="Utils.Reflection.Platform.html">Platform</a>, with no
+synchronization. Only set this once, as early as possible during startup.</p>
+</div>
 
 
 

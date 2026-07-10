@@ -98,7 +98,7 @@ Class EmitWorkerProxy  <a class="header-action link-secondary" title="View sourc
   </div>
 
   <div class="markdown summary"><p><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.reflection.dispatchproxy">DispatchProxy</a> that forwards every interface call to an isolated
-<span class="xref">Utils.Reflection.Reflection.Emit.EmitWorkerProcess</span>. Instances are produced by <a class="xref" href="Utils.Reflection.LibraryMapper.html#Utils_Reflection_LibraryMapper_Emit__1_System_String_System_Runtime_InteropServices_CallingConvention_">Emit&lt;TInterface&gt;(string, CallingConvention)</a> via
+<span class="xref">Utils.Reflection.Reflection.Emit.EmitWorkerProcess</span>. Instances are produced by <a class="xref" href="Utils.Reflection.LibraryMapper.html#Utils_Reflection_LibraryMapper_Emit__1_System_String_System_Runtime_InteropServices_CallingConvention_System_Nullable_System_TimeSpan__System_Nullable_System_TimeSpan__">Emit&lt;TInterface&gt;(string, CallingConvention, TimeSpan?, TimeSpan?)</a> via
 <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.reflection.dispatchproxy.create#system-reflection-dispatchproxy-create-2">Create&lt;T, TProxy&gt;()</a>; the generated proxy type never contains
 caller-controlled source, so it does not carry the code-generation risk documented on
 <a class="xref" href="Utils.Reflection.Reflection.Emit.EmitDllMappableClass.html">EmitDllMappableClass</a>.</p>
@@ -253,7 +253,7 @@ caller-controlled source, so it does not carry the code-generation risk document
 
   <h3 id="Utils_Reflection_Reflection_Emit_EmitWorkerProxy_Invoke_System_Reflection_MethodInfo_System_Object___" data-uid="Utils.Reflection.Reflection.Emit.EmitWorkerProxy.Invoke(System.Reflection.MethodInfo,System.Object[])">
   Invoke(MethodInfo?, object?[]?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Emit/EmitWorkerProxy.cs/#L25"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Emit/EmitWorkerProxy.cs/#L41"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Whenever any method on the generated proxy type is called, this method is invoked to dispatch control.</p>

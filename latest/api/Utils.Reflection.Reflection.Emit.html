@@ -109,12 +109,24 @@ DLL or invoking one of its mapped functions.</p>
 </dd>
     </dl>
     <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Reflection.Reflection.Emit.EmitWorkerPool.html">EmitWorkerPool</a></dt>
+      <dd><p>Maps several native interfaces onto a single shared isolated Emit worker process, instead of the
+one-process-per-interface cost of <a class="xref" href="Utils.Reflection.LibraryMapper.html#Utils_Reflection_LibraryMapper_Emit__1_System_String_System_Runtime_InteropServices_CallingConvention_System_Nullable_System_TimeSpan__System_Nullable_System_TimeSpan__">Emit&lt;TInterface&gt;(string, CallingConvention, TimeSpan?, TimeSpan?)</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
       <dt><a class="xref" href="Utils.Reflection.Reflection.Emit.EmitWorkerProxy.html">EmitWorkerProxy</a></dt>
       <dd><p><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.reflection.dispatchproxy">DispatchProxy</a> that forwards every interface call to an isolated
-<span class="xref">Utils.Reflection.Reflection.Emit.EmitWorkerProcess</span>. Instances are produced by <a class="xref" href="Utils.Reflection.LibraryMapper.html#Utils_Reflection_LibraryMapper_Emit__1_System_String_System_Runtime_InteropServices_CallingConvention_">Emit&lt;TInterface&gt;(string, CallingConvention)</a> via
+<span class="xref">Utils.Reflection.Reflection.Emit.EmitWorkerProcess</span>. Instances are produced by <a class="xref" href="Utils.Reflection.LibraryMapper.html#Utils_Reflection_LibraryMapper_Emit__1_System_String_System_Runtime_InteropServices_CallingConvention_System_Nullable_System_TimeSpan__System_Nullable_System_TimeSpan__">Emit&lt;TInterface&gt;(string, CallingConvention, TimeSpan?, TimeSpan?)</a> via
 <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.reflection.dispatchproxy.create#system-reflection-dispatchproxy-create-2">Create&lt;T, TProxy&gt;()</a>; the generated proxy type never contains
 caller-controlled source, so it does not carry the code-generation risk documented on
 <a class="xref" href="Utils.Reflection.Reflection.Emit.EmitDllMappableClass.html">EmitDllMappableClass</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Reflection.Reflection.Emit.EmitWorkerRoundRobinProxy.html">EmitWorkerRoundRobinProxy</a></dt>
+      <dd><p><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.reflection.dispatchproxy">DispatchProxy</a> that round-robins each call across a fixed set of independent isolated
+Emit worker processes, produced by <a class="xref" href="Utils.Reflection.LibraryMapper.html#Utils_Reflection_LibraryMapper_EmitRoundRobin__1_System_String_System_Runtime_InteropServices_CallingConvention_System_Int32_System_Nullable_System_TimeSpan__System_Nullable_System_TimeSpan__">EmitRoundRobin&lt;TInterface&gt;(string, CallingConvention, int, TimeSpan?, TimeSpan?)</a>.</p>
 </dd>
     </dl>
 

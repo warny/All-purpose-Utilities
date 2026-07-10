@@ -155,7 +155,7 @@ using the DllMapper class.</p>
 parameter names obtained through reflection on the target interface. CLR metadata names are far
 less constrained than C# lexical identifiers, so an interface sourced from an untrusted or
 dynamically generated assembly could inject arbitrary C# into the compiled/loaded assembly. Only
-call these methods with interfaces you fully trust. <a class="xref" href="Utils.Reflection.LibraryMapper.html#Utils_Reflection_LibraryMapper_Emit__1_System_String_System_Runtime_InteropServices_CallingConvention_">Emit&lt;TInterface&gt;(string, CallingConvention)</a>
+call these methods with interfaces you fully trust. <a class="xref" href="Utils.Reflection.LibraryMapper.html#Utils_Reflection_LibraryMapper_Emit__1_System_String_System_Runtime_InteropServices_CallingConvention_System_Nullable_System_TimeSpan__System_Nullable_System_TimeSpan__">Emit&lt;TInterface&gt;(string, CallingConvention, TimeSpan?, TimeSpan?)</a>
 performs the same generation inside an isolated worker process instead, which contains that risk.</p>
 </div>
 
@@ -168,7 +168,7 @@ performs the same generation inside an isolated worker process instead, which co
 
   <h3 id="Utils_Reflection_Reflection_Emit_EmitDllMappableClass_Emit_System_Type_System_Runtime_InteropServices_CallingConvention_" data-uid="Utils.Reflection.Reflection.Emit.EmitDllMappableClass.Emit(System.Type,System.Runtime.InteropServices.CallingConvention)">
   Emit(Type, CallingConvention)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Emit/EmitDllMappableClass.cs/#L66"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Emit/EmitDllMappableClass.cs/#L70"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Emits a class that implements the specified interface and maps the interface methods to DLL functions.</p>
@@ -204,6 +204,13 @@ public static object Emit(Type type, CallingConvention callingConvention = Calli
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a></dt>
+    <dd><p>Thrown when <code class="paramref">type</code> is not an interface, or is a generic interface, or declares a
+generic method.</p>
+</dd>
+  </dl>
 
 
 
