@@ -61,7 +61,7 @@ public class PostTable : TrueTypeTable
     /// </summary>
     internal class PostMapFormat0 : PostMap
     {
-        protected internal string[] stdNames = {
+        protected internal string[] stdNames = [
             /* 0 */     ".notdef", ".null", "nonmarkingreturn", "space", "exclam", "quotedbl", "numbersign", "dollar",
             /* 8 */     "percent", "ampersand", "quotesingle", "parenleft", "parenright", "asterisk", "plus", "comma",
             /* 16 */    "hyphen", "period", "slash", "zero", "one", "two", "three", "four",
@@ -95,7 +95,7 @@ public class PostTable : TrueTypeTable
             /* 240 */   "multiply", "onesuperior", "twosuperior", "threesuperior", "onehalf", "onequarter", "threequarters", "franc",
             /* 248 */   "Gbreve", "gbreve", "Idotaccent", "Scedilla", "scedilla", "Cacute", "cacute", "Ccaron",
             /* 256 */   "ccaron", "dcroat"
-        };
+        ];
 
         /// <summary>
         /// Returns the standard glyph index for the specified character name.
