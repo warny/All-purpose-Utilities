@@ -91,7 +91,17 @@ internal sealed class AppContainerSandbox : IProcessContainer
             return null;
         }
 
+        // The Job Object with KillOnJobClose is what guarantees the worker dies if this process
+        // crashes or is killed. If it cannot be created, degrade to "no container" (the caller
+        // falls back to an unsandboxed process) rather than silently handing back a sandbox whose
+        // most important safety net is missing.
         IntPtr job = CreateConfiguredJobObject();
+        if (job == IntPtr.Zero)
+        {
+            WindowsNativeMethods.FreeSid(sid);
+            return null;
+        }
+
         return new AppContainerSandbox(sid, job);
     }
 
@@ -141,10 +151,17 @@ internal sealed class AppContainerSandbox : IProcessContainer
             security.AddAccessRule(rule);
             new DirectoryInfo(directoryPath).SetAccessControl(security);
         }
-        catch
+        catch (Exception ex) when (
+            ex is IOException or
+            UnauthorizedAccessException or
+            System.Security.SecurityException or
+            ArgumentException)
         {
-            // ACL modification is best-effort. The worker may fail to read the plugin DLLs,
-            // which is preferable to blocking extension startup.
+            // ACL modification is best-effort: the worker may fail to read the plugin DLLs, which
+            // is preferable to blocking extension startup. Still trace the failure so it can be
+            // diagnosed instead of silently manifesting as an unexplained DLL load failure later.
+            Trace.TraceWarning(
+                $"AppContainerSandbox.GrantDirectoryReadAccess failed for '{directoryPath}': {ex}");
         }
     }
 
@@ -231,7 +248,24 @@ internal sealed class AppContainerSandbox : IProcessContainer
             // no window where the process could escape the job.
             if (jobObjectHandle != IntPtr.Zero)
             {
-                WindowsNativeMethods.AssignProcessToJobObject(jobObjectHandle, procInfo.hProcess);
+                bool assigned = WindowsNativeMethods.AssignProcessToJobObject(jobObjectHandle, procInfo.hProcess);
+                if (!assigned)
+                {
+                    int assignError = Marshal.GetLastWin32Error();
+                    WindowsNativeMethods.CloseHandle(procInfo.hProcess);
+                    WindowsNativeMethods.CloseHandle(procInfo.hThread);
+
+                    // The process was created but could not be placed under the Job Object that
+                    // guarantees KillOnJobClose. Running it anyway would silently drop that safety
+                    // net, so terminate it instead of returning a process the caller believes is
+                    // contained.
+                    TerminateOrphanedProcess(pid);
+
+                    throw new InvalidOperationException(
+                        $"AssignProcessToJobObject failed: {assignError}. The sandboxed process was " +
+                        $"terminated because it could not be attached to the Job Object that guarantees " +
+                        $"it is killed if this process exits.");
+                }
             }
 
             WindowsNativeMethods.CloseHandle(procInfo.hProcess);
@@ -256,6 +290,14 @@ internal sealed class AppContainerSandbox : IProcessContainer
 
     public void Dispose()
     {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    private void Dispose(bool disposing)
+    {
+        _ = disposing; // Both handles are unmanaged; the cleanup is identical either way.
+
         if (disposed)
         {
             return;
@@ -274,6 +316,12 @@ internal sealed class AppContainerSandbox : IProcessContainer
             WindowsNativeMethods.CloseHandle(jobObjectHandle);
         }
     }
+
+    /// <summary>
+    /// Frees the unmanaged AppContainer SID and Job Object handle if <see cref="Dispose()"/> was
+    /// never called (for example because an exception unwound past a missing <c>using</c>).
+    /// </summary>
+    ~AppContainerSandbox() => Dispose(false);
 
     // ─── Private helpers ─────────────────────────────────────────────────────────
 
@@ -326,6 +374,28 @@ internal sealed class AppContainerSandbox : IProcessContainer
     }
 
     /// <summary>
+    /// Best-effort termination of a process that was created but could not be placed under the
+    /// Job Object, so it must not be left running outside of the sandbox's lifetime guarantees.
+    /// </summary>
+    /// <param name="processId">Identifier of the process to terminate.</param>
+    private static void TerminateOrphanedProcess(int processId)
+    {
+        try
+        {
+            using Process orphan = Process.GetProcessById(processId);
+            if (!orphan.HasExited)
+            {
+                orphan.Kill(entireProcessTree: true);
+            }
+        }
+        catch
+        {
+            // The process may have already exited on its own, or termination raced with exit;
+            // either way there is nothing actionable left to do here.
+        }
+    }
+
+    /// <summary>
     /// Allocates and initializes a <c>PROC_THREAD_ATTRIBUTE_LIST</c> for the given number of attributes.
     /// The caller must free this with <see cref="WindowsNativeMethods.DeleteProcThreadAttributeList"/>
     /// followed by <see cref="Marshal.FreeHGlobal"/>.
@@ -353,7 +423,7 @@ internal sealed class AppContainerSandbox : IProcessContainer
     /// </summary>
     /// <param name="arguments">Ordered arguments to escape and join.</param>
     /// <returns>An escaped command-line argument string.</returns>
-    private static string BuildArgumentString(IEnumerable<string> arguments)
+    internal static string BuildArgumentString(IEnumerable<string> arguments)
     {
         var escaped = new List<string>();
         foreach (string argument in arguments)
@@ -369,7 +439,7 @@ internal sealed class AppContainerSandbox : IProcessContainer
     /// </summary>
     /// <param name="argument">Argument to escape.</param>
     /// <returns>The escaped argument.</returns>
-    private static string QuoteArgument(string argument)
+    internal static string QuoteArgument(string argument)
     {
         if (argument.Length == 0)
         {

@@ -79,7 +79,10 @@ int result = lib.Add(3, 4); // 7
 
 ### Interface emit approach
 
-When you don't want to define a subclass, `Emit<I>` generates the implementation at runtime:
+When you don't want to define a subclass, `Emit<TInterface>` generates the implementation at runtime — in an
+**isolated worker process** by default, so a maliciously crafted interface (see the security note
+below) can only do as much damage as the OS sandbox permits, never running with the full trust of your
+process:
 
 ```csharp
 using System.Runtime.InteropServices;
@@ -96,6 +99,53 @@ public interface IMathLib : IDisposable
 
 using IMathLib lib = LibraryMapper.Emit<IMathLib>("math.dll", CallingConvention.Cdecl);
 int result = lib.Add(10, 3); // 13
+```
+
+`Emit<TInterface>` re-launches the current executable as a sandboxed worker process and forwards every call to
+it over a named pipe. **This requires your application's entry point to call
+`LibraryMapper.RunWorkerIfRequested(args)` as the very first statement of `Main`**, before any other
+startup logic — otherwise the re-launched copy of your process won't recognize that it should run as a
+worker, and `Emit<TInterface>` will fail to start it:
+
+```csharp
+static void Main(string[] args)
+{
+    if (LibraryMapper.RunWorkerIfRequested(args))
+    {
+        return; // this process instance is a worker; it already ran its request loop.
+    }
+
+    // ... normal application startup ...
+}
+```
+
+Only interfaces whose members use JSON-representable types (primitives, `string`, enums, and
+arrays/structs made of these) can be mapped this way, since every call round-trips to the worker
+process; `IntPtr`/pointers/handles are never supported, because they are meaningless outside the
+process that produced them. `Emit<TInterface>` throws `NotSupportedException` immediately (before starting any
+process) when the interface doesn't qualify.
+
+#### In-process emit (no isolation)
+
+For interfaces that need pointer/handle parameters, or when you fully trust the interface definition
+and want to avoid the cost of a worker process, `LibraryMapper.EmitInProcess<TInterface>` reproduces the
+original (pre-isolation) behavior: it compiles and loads the generated mapping class directly in the
+current process.
+
+> **Security warning:** the code generator builds C# source by concatenating type/method/parameter
+> names obtained through reflection on `TInterface`. CLR metadata names are far less constrained than C#
+> identifiers, so an interface sourced from an untrusted or dynamically generated assembly could
+> inject arbitrary C# — including a static constructor that runs with the full trust of this process.
+> Only call `EmitInProcess<TInterface>` with interfaces you fully trust (typically ones you compiled yourself).
+
+Because of that risk, `EmitInProcess<TInterface>` (and the lower-level `EmitDllMappableClass.Emit` it is built
+on) are marked `[Experimental("UTILSREFL001")]`: calling them without acknowledging the risk fails to
+compile. Suppress the diagnostic explicitly to opt in:
+
+```csharp
+#pragma warning disable UTILSREFL001 // Trusted interface, compiled by us — see the security note above.
+using IMathLib lib = LibraryMapper.EmitInProcess<IMathLib>("math.dll", CallingConvention.Cdecl);
+#pragma warning restore UTILSREFL001
 ```
 
 ## Process isolation examples
@@ -148,6 +198,13 @@ IProcessContainer? container = ProcessContainerFactory.TryCreate(
 ```
 
 > **Note:** On Windows, any permission beyond `AllowDiskRead` disables AppContainer isolation and `TryCreate` returns `null`. On Linux, `bwrap` (bubblewrap) is used; on macOS, `sandbox-exec`.
+
+> **Note — file-read scope differs by platform.** Windows (`AppContainerSandbox`) denies file reads
+> by default and only grants them per-directory via `GrantDirectoryReadAccess`. Linux and macOS
+> currently grant read access to the entire host filesystem to every sandboxed process (subject to
+> normal OS user permissions) regardless of what's granted through `GrantDirectoryReadAccess`, which
+> is a no-op on those platforms. Don't assume identical read scoping across platforms when writing
+> code against `IProcessContainer` generically.
 
 ### IPC ACL hardening (Windows)
 

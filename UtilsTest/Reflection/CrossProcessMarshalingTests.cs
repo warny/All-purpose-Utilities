@@ -1,0 +1,147 @@
+using System;
+
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+using Utils.Reflection.Reflection.Emit;
+
+namespace UtilsTest.Reflection;
+
+/// <summary>
+/// Validates which interface member shapes can be forwarded across a process boundary for the
+/// isolated <c>LibraryMapper.Emit&lt;I&gt;</c> path.
+/// </summary>
+[TestClass]
+public class CrossProcessMarshalingTests
+{
+    public enum SampleEnum { A, B }
+
+    public struct BlittableStruct
+    {
+        public int X;
+        public double Y;
+        public SampleEnum Kind;
+    }
+
+    public struct NestedUnsupportedStruct
+    {
+        public int X;
+        public object Reference;
+    }
+
+    public sealed class ReferenceType { }
+
+    public interface ISupportedOperations : IDisposable
+    {
+        int Add(int a, int b);
+        string Concat(string a, string b);
+        SampleEnum Identity(SampleEnum value);
+        BlittableStruct Transform(BlittableStruct value);
+        int[] Sum(int[] values, int count);
+        void SetByRef(ref int value);
+        bool TryParse(string text, out int value);
+    }
+
+    public interface IUnsupportedPointer : IDisposable
+    {
+        void Foo(IntPtr handle);
+    }
+
+    public interface IUnsupportedReferenceType : IDisposable
+    {
+        void Foo(ReferenceType value);
+    }
+
+    public interface IUnsupportedNestedField : IDisposable
+    {
+        void Foo(NestedUnsupportedStruct value);
+    }
+
+    public interface IUnsupportedReturnType : IDisposable
+    {
+        ReferenceType Foo();
+    }
+
+    [TestMethod]
+    [DataRow(typeof(int))]
+    [DataRow(typeof(uint))]
+    [DataRow(typeof(long))]
+    [DataRow(typeof(bool))]
+    [DataRow(typeof(double))]
+    [DataRow(typeof(char))]
+    [DataRow(typeof(string))]
+    [DataRow(typeof(SampleEnum))]
+    [DataRow(typeof(BlittableStruct))]
+    [DataRow(typeof(int[]))]
+    public void IsSupportedType_ReturnsTrue_ForMarshalableShapes(Type type)
+    {
+        Assert.IsTrue(CrossProcessMarshaling.IsSupportedType(type, 0));
+    }
+
+    [TestMethod]
+    public void IsSupportedType_ReturnsFalse_ForIntPtr()
+    {
+        Assert.IsFalse(CrossProcessMarshaling.IsSupportedType(typeof(IntPtr), 0));
+        Assert.IsFalse(CrossProcessMarshaling.IsSupportedType(typeof(UIntPtr), 0));
+    }
+
+    [TestMethod]
+    public void IsSupportedType_ReturnsFalse_ForRawPointer()
+    {
+        Type pointerType = typeof(int).MakePointerType();
+        Assert.IsFalse(CrossProcessMarshaling.IsSupportedType(pointerType, 0));
+    }
+
+    [TestMethod]
+    public void IsSupportedType_ReturnsFalse_ForArbitraryReferenceType()
+    {
+        Assert.IsFalse(CrossProcessMarshaling.IsSupportedType(typeof(ReferenceType), 0));
+    }
+
+    [TestMethod]
+    public void IsSupportedType_ReturnsFalse_ForStructWithUnsupportedField()
+    {
+        Assert.IsFalse(CrossProcessMarshaling.IsSupportedType(typeof(NestedUnsupportedStruct), 0));
+    }
+
+    [TestMethod]
+    public void IsSupportedType_ReturnsTrue_ForByRefOfSupportedType()
+    {
+        Type byRefInt = typeof(int).MakeByRefType();
+        Assert.IsTrue(CrossProcessMarshaling.IsSupportedType(byRefInt, 0));
+    }
+
+    [TestMethod]
+    public void EnsureInterfaceIsSupported_DoesNotThrow_ForFullySupportedInterface()
+    {
+        CrossProcessMarshaling.EnsureInterfaceIsSupported(typeof(ISupportedOperations));
+    }
+
+    [TestMethod]
+    public void EnsureInterfaceIsSupported_Throws_ForIntPtrParameter()
+    {
+        var ex = Assert.ThrowsException<NotSupportedException>(
+            () => CrossProcessMarshaling.EnsureInterfaceIsSupported(typeof(IUnsupportedPointer)));
+        StringAssert.Contains(ex.Message, "EmitInProcess");
+    }
+
+    [TestMethod]
+    public void EnsureInterfaceIsSupported_Throws_ForArbitraryReferenceTypeParameter()
+    {
+        Assert.ThrowsException<NotSupportedException>(
+            () => CrossProcessMarshaling.EnsureInterfaceIsSupported(typeof(IUnsupportedReferenceType)));
+    }
+
+    [TestMethod]
+    public void EnsureInterfaceIsSupported_Throws_ForStructWithUnsupportedField()
+    {
+        Assert.ThrowsException<NotSupportedException>(
+            () => CrossProcessMarshaling.EnsureInterfaceIsSupported(typeof(IUnsupportedNestedField)));
+    }
+
+    [TestMethod]
+    public void EnsureInterfaceIsSupported_Throws_ForUnsupportedReturnType()
+    {
+        Assert.ThrowsException<NotSupportedException>(
+            () => CrossProcessMarshaling.EnsureInterfaceIsSupported(typeof(IUnsupportedReturnType)));
+    }
+}

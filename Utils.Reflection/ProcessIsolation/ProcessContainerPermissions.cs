@@ -2,37 +2,41 @@ namespace Utils.Reflection.ProcessIsolation;
 
 /// <summary>
 /// Represents coarse-grained permissions for child processes started through a process container.
+/// Instances are immutable after construction (<c>init</c>-only properties): use an object
+/// initializer to customize a permission set, or <c>Default</c> for the restrictive baseline.
 /// </summary>
 public sealed class ProcessContainerPermissions
 {
     /// <summary>
-    /// Gets the default permission set used for plugin worker isolation.
+    /// Gets a fresh instance of the default (most restrictive) permission set used for plugin
+    /// worker isolation. Each access returns a new, independent instance, so callers cannot
+    /// mutate a shared baseline and silently weaken isolation for other consumers.
     /// </summary>
-    public static ProcessContainerPermissions Default { get; } = new();
+    public static ProcessContainerPermissions Default => new();
 
     /// <summary>
-    /// Gets or sets whether read access to files is allowed.
+    /// Gets whether read access to files is allowed.
     /// This must remain enabled for managed executables and dependencies to load.
     /// </summary>
-    public bool AllowDiskRead { get; set; } = true;
+    public bool AllowDiskRead { get; init; } = true;
 
     /// <summary>
-    /// Gets or sets whether write access to files is allowed.
+    /// Gets whether write access to files is allowed.
     /// </summary>
-    public bool AllowDiskWrite { get; set; }
+    public bool AllowDiskWrite { get; init; }
 
     /// <summary>
-    /// Gets or sets whether outbound/inbound network access is allowed.
+    /// Gets whether outbound/inbound network access is allowed.
     /// </summary>
-    public bool AllowNetwork { get; set; }
+    public bool AllowNetwork { get; init; }
 
     /// <summary>
-    /// Gets or sets whether access to host devices is allowed.
+    /// Gets whether access to host devices is allowed.
     /// </summary>
-    public bool AllowDeviceAccess { get; set; }
+    public bool AllowDeviceAccess { get; init; }
 
     /// <summary>
-    /// Gets or sets whether process debugging / inspection capabilities are allowed.
+    /// Gets whether process debugging / inspection capabilities are allowed.
     /// </summary>
-    public bool AllowProcessDebugging { get; set; }
+    public bool AllowProcessDebugging { get; init; }
 }

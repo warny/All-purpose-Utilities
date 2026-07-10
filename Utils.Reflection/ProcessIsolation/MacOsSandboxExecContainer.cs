@@ -8,6 +8,23 @@ namespace Utils.Reflection.ProcessIsolation;
 /// <summary>
 /// macOS process container backed by <c>sandbox-exec</c> when available.
 /// </summary>
+/// <remarks>
+/// <para>
+/// <b>File-read and process operations are always allowed.</b> <see cref="BuildProfile"/> always
+/// includes <c>(allow file-read*)</c> and <c>(allow process*)</c> regardless of the requested
+/// <see cref="ProcessContainerPermissions"/> — the sandboxed process can read any file the OS user
+/// can read (there is no per-directory scoping like <see cref="AppContainerSandbox"/> on Windows;
+/// <see cref="GrantDirectoryReadAccess"/> is a no-op here for that reason), and the always-present
+/// <c>process*</c> wildcard already covers most <c>process-info*</c> operations that
+/// <see cref="ProcessContainerPermissions.AllowProcessDebugging"/> is meant to gate, so that flag
+/// has limited additional effect on this platform.
+/// </para>
+/// <para>
+/// <c>sandbox-exec</c> has been marked deprecated by Apple since macOS 10.12, with no announced
+/// removal date as of this writing. If Apple removes it, this container will need to move to the
+/// modern App Sandbox entitlement model instead.
+/// </para>
+/// </remarks>
 internal sealed class MacOsSandboxExecContainer : IProcessContainer
 {
     private const string SandboxExecutableName = "sandbox-exec";
@@ -52,9 +69,10 @@ internal sealed class MacOsSandboxExecContainer : IProcessContainer
             UseShellExecute = false,
             CreateNoWindow = true,
         };
+        SandboxedProcessEnvironment.ApplyMinimalEnvironment(psi);
 
         psi.ArgumentList.Add("-p");
-        psi.ArgumentList.Add(BuildProfile());
+        psi.ArgumentList.Add(BuildProfile(permissions));
         psi.ArgumentList.Add(executablePath);
 
         foreach (string argument in arguments)
@@ -67,9 +85,10 @@ internal sealed class MacOsSandboxExecContainer : IProcessContainer
     }
 
     /// <summary>
-    /// Grants read access to a directory.
+    /// No-op: <see cref="BuildProfile"/> always allows <c>file-read*</c> for every sandboxed
+    /// process on macOS (see the class remarks), so there is no narrower grant to apply here.
     /// </summary>
-    /// <param name="directoryPath">Directory that should remain readable.</param>
+    /// <param name="directoryPath">Unused.</param>
     public void GrantDirectoryReadAccess(string directoryPath)
     {
         _ = directoryPath;
@@ -94,15 +113,22 @@ internal sealed class MacOsSandboxExecContainer : IProcessContainer
     }
 
     /// <summary>
-    /// Builds a sandbox-exec profile from the selected permission set.
+    /// Builds a sandbox-exec profile from the selected permission set, without touching the OS.
+    /// A <see langword="static"/> method (rather than an instance member reading the container's own
+    /// <see cref="permissions"/> field) so the mapping from <see cref="ProcessContainerPermissions"/>
+    /// to sandbox-exec clauses can be unit-tested on any platform, without actually being able to run
+    /// <c>sandbox-exec</c>.
     /// </summary>
+    /// <param name="permissions">Requested process permissions.</param>
     /// <returns>A complete sandbox-exec profile string.</returns>
-    private string BuildProfile()
+    internal static string BuildProfile(ProcessContainerPermissions permissions)
     {
         var clauses = new List<string>
         {
             "(version 1)",
             "(deny default)",
+            // Always allowed, regardless of requested permissions — see the class remarks for why
+            // this makes file reads and most process introspection unconditionally available.
             "(allow process*)",
             "(allow file-read*)",
             "(allow sysctl-read)",

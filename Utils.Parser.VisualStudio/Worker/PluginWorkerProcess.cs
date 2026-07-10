@@ -353,13 +353,15 @@ internal sealed class PluginWorkerProcess : IAsyncDisposable
     /// <returns>Permission settings consumed by <see cref="ProcessContainerFactory"/>.</returns>
     private static ProcessContainerPermissions LoadPermissionsFromEnvironment()
     {
-        var permissions = new ProcessContainerPermissions();
-        permissions.AllowDiskRead = ReadBool(WorkerPermissionEnvironmentVariable.AllowDiskRead, permissions.AllowDiskRead);
-        permissions.AllowDiskWrite = ReadBool(WorkerPermissionEnvironmentVariable.AllowDiskWrite, permissions.AllowDiskWrite);
-        permissions.AllowNetwork = ReadBool(WorkerPermissionEnvironmentVariable.AllowNetwork, permissions.AllowNetwork);
-        permissions.AllowDeviceAccess = ReadBool(WorkerPermissionEnvironmentVariable.AllowDeviceAccess, permissions.AllowDeviceAccess);
-        permissions.AllowProcessDebugging = ReadBool(WorkerPermissionEnvironmentVariable.AllowDebugging, permissions.AllowProcessDebugging);
-        return permissions;
+        ProcessContainerPermissions defaults = new();
+        return new ProcessContainerPermissions
+        {
+            AllowDiskRead = ReadBool(WorkerPermissionEnvironmentVariable.AllowDiskRead, defaults.AllowDiskRead),
+            AllowDiskWrite = ReadBool(WorkerPermissionEnvironmentVariable.AllowDiskWrite, defaults.AllowDiskWrite),
+            AllowNetwork = ReadBool(WorkerPermissionEnvironmentVariable.AllowNetwork, defaults.AllowNetwork),
+            AllowDeviceAccess = ReadBool(WorkerPermissionEnvironmentVariable.AllowDeviceAccess, defaults.AllowDeviceAccess),
+            AllowProcessDebugging = ReadBool(WorkerPermissionEnvironmentVariable.AllowDebugging, defaults.AllowProcessDebugging),
+        };
     }
 
     /// <summary>
