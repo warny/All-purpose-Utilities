@@ -130,7 +130,7 @@ public class PropTable : TrueTypeTable
                     ushort lastGlyph  = data.Read<UInt16>();
                     ushort firstGlyph = data.Read<UInt16>();
                     ushort value      = data.Read<UInt16>();
-                    if (firstGlyph == 0xFFFF) break;
+                    if (lastGlyph == 0xFFFF) break; // sentinel segment, matches BslnTable's convention
                     for (ushort g = firstGlyph; g <= lastGlyph; g++)
                         result[g] = value;
                 }
@@ -147,7 +147,7 @@ public class PropTable : TrueTypeTable
                     ushort lastGlyph  = data.Read<UInt16>();
                     ushort firstGlyph = data.Read<UInt16>();
                     ushort offset     = data.Read<UInt16>();
-                    if (firstGlyph == 0xFFFF) break;
+                    if (lastGlyph == 0xFFFF) break; // sentinel segment, matches BslnTable's convention
                     data.Push((int)(tableStart + offset), SeekOrigin.Begin);
                     for (ushort g = firstGlyph; g <= lastGlyph; g++)
                         result[g] = data.Read<UInt16>();
