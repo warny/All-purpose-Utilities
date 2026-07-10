@@ -137,6 +137,7 @@ distincte de `AcntTable` (hiérarchie `AccentDescription.Single`/`Multiple`, tes
 appelée par `TrueTypeFont`.
 **Fix proposé** : supprimer le dossier `TTF/Tables/Acnt/` (3 fichiers), ou documenter explicitement
 pourquoi il est conservé.
+**Corrigé.** Dossier `TTF/Tables/Acnt/` supprimé (3 fichiers).
 
 ### 11. `NameTable.WriteData` — positionnement du flux non garanti en fin d'écriture
 `Utils.Fonts/TTF/Tables/NameTable.cs:200-225`
@@ -181,6 +182,9 @@ même calcul `BitOperations.Log2`/`searchRange`/`entrySelector`/`rangeShift`).
 **Fix proposé** : factoriser dans une méthode statique partagée (ex.
 `AatBinarySearchHeader.Compute(int unitCount, int unitSize)`), pour éviter qu'un futur correctif ne
 soit appliqué qu'à un sous-ensemble des tables.
+**Corrigé** : `AatBinarySearchHeader.Compute(unitCount, unitSize)` ajouté
+(`Utils.Fonts/TTF/Tables/AatBinarySearchHeader.cs`), les 5 tables l'utilisent désormais. Changement
+sans impact comportemental (les tests de round-trip existants de chaque table passent inchangés).
 
 ### 15. Documentation XML manquante sur certains membres internes de collections
 Ex. `LocaTable` : les champs privés `headTable`/`maxpTable`/`offsets` n'ont pas de doc XML,
@@ -258,9 +262,9 @@ aucun test dédié ni indirect. Risque faible vu la simplicité du code.
 | 8 | Bug fonctionnel (portée limitée) | `TtfHinting.cs` (troncature `short`) | Corrigé |
 | 16 | Manque de test (racine des bugs 1-6) | Cmap/Glyf/Hmtx/Kern/Name/Loca/Maxp/Hhea/Vmtx/Post | Corrigé (tests par table ; reste : round-trip `WriteFont()` complet) |
 | 17 | Manque de test (constat partiellement erroné) | Type3Font/Type42Font/CidKeyedFont | Corrigé |
-| 10 | Dette technique | `Acnt/` (code mort) | Ouvert |
-| 9, 12, 13 | Cosmétique | using inutile, initialiseur de tableau, params | Ouvert |
-| 14, 15 | Dette technique mineure | duplication AAT header, docs incomplètes | Ouvert |
+| 10 | Dette technique | `Acnt/` (code mort) | Corrigé |
+| 9, 12, 13 | Cosmétique | using inutile, initialiseur de tableau, params | Corrigé (13 : non applicable, voir détail) |
+| 14, 15 | Dette technique mineure | duplication AAT header, docs incomplètes | Corrigé |
 | 11 | Bug fonctionnel (trouvé via l'item 16) | `NameTable.cs` (position flux + overflow `WriteFixedLengthString`) | Corrigé |
 | 18, 19 | Manque de test | tables AAT restantes, Cvt/Fpgm/Prep | Corrigé |
 | 20 | Manque de test | TtfHinting | Corrigé (via item 8) |
@@ -268,9 +272,23 @@ aucun test dédié ni indirect. Risque faible vu la simplicité du code.
 ## Bilan (2026-07-10, fin de session)
 Tous les items de test (16, 17, 18, 19, 20) et tous les bugs fonctionnels (1-8, plus le 11 et le bug
 `NameTable.WriteData`/`WriteFixedLengthString` trouvé en cours de route) sont corrigés, chacun avec
-son propre commit et son test de régression. Restent ouverts, tous de dette technique/cosmétique
-sans impact fonctionnel connu : 9 (using inutile), 10 (code mort `Acnt/`), 12 (style tableau), 13
-(`params IEnumerable<T>`), 14 (duplication AAT header), 15 (docs XML incomplètes).
+son propre commit et son test de régression.
+
+**Suite (même jour) — items de dette technique/cosmétique traités** : les items restants (9, 10, 12,
+13, 14, 15) ont tous été traités sur la branche `claude/fonts-todo-cleanup` :
+- 9 : `using` inutile supprimé de `TrueTypeFont.cs`.
+- 10 : dossier mort `TTF/Tables/Acnt/` supprimé.
+- 12 : `PostMapFormat0.stdNames` passé en syntaxe crochets `[ ]`.
+- 13 : les deux candidats (`TTFTableAttribute.dependsOn`, `IGraphicConverter.BezierTo`) se sont
+  révélés **non applicables** à l'examen — un constructeur d'attribut ne peut pas prendre
+  `IEnumerable<T>` (CS0181), et `BitmapGraphicConverter.BezierTo` utilise un accès indexé
+  (`points[^1]`) qui justifie de garder `params T[]`. Documenté, aucun changement de code.
+- 14 : calcul d'en-tête de recherche binaire AAT factorisé dans
+  `AatBinarySearchHeader.Compute(unitCount, unitSize)`, utilisé par les 5 tables concernées.
+- 15 : docs XML ajoutées sur les champs privés de `LocaTable`.
+
+Tous les items du TODO sont désormais traités (corrigés, ou documentés comme non applicables avec
+justification).
 
 **Relecture de la PR #432 (Codex)** : deux corrections supplémentaires apportées suite aux
 commentaires de revue, chacune avec son propre commit + test — voir le détail dans les items 4 et 7
