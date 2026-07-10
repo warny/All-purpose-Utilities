@@ -218,10 +218,20 @@ public class NameTable : TrueTypeTable
             data.Write<Int16>((short)offset);
             data.Push();
             data.Seek((6 + 12 * Count) + offset, System.IO.SeekOrigin.Begin);
-            data.WriteFixedLengthString(text, text.Length, encoding);
+            // length is the byte count (from encoding.GetByteCount above), not text.Length (a
+            // character count): passing the character count here overflows WriteFixedLengthString's
+            // buffer for any encoding using more than 1 byte per character (e.g. UTF-16BE, used for
+            // every Microsoft-platform record since TtfEncoderFactory was fixed to stop always
+            // falling back to ASCII).
+            data.WriteFixedLengthString(text, length, encoding);
             data.Pop();
             offset += length;
         }
+        // The loop above only ever advances the stream position up to the last directory entry
+        // (each string is written via Push()/Seek()/Pop(), which restores the pre-seek position);
+        // reposition explicitly at the end of the string storage area so callers writing more data
+        // to the same stream right after this call don't overwrite the table's own string bytes.
+        data.Seek((6 + 12 * Count) + offset, System.IO.SeekOrigin.Begin);
     }
 
     /// <inheritdoc/>
