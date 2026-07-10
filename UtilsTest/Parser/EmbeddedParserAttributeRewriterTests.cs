@@ -69,14 +69,20 @@ public class EmbeddedParserAttributeRewriterTests
     /// <summary>Verifies unsupported roots, token labels, missing returns, bare reads, and chains are diagnosed.</summary>
     [DataTestMethod]
     [DataRow("$unknown.value", "not the current rule name")]
+    [DataRow("$child.value", "not the current rule name")]
+    [DataRow("$ctx", "does not resolve to a current-rule parameter, local, or return")]
+    [DataRow("$x.ctx", "Return 'ctx' is not declared by every parser rule referenced by assignment label 'x'")]
+    [DataRow("$xs.ctx", "Return 'ctx' is not declared by every parser rule referenced by list label 'xs'")]
     [DataRow("$t.value", "Token label 't' cannot be used as a parser rule-return attribute")]
+    [DataRow("$t.text", "Token label 't' cannot be used as a parser rule-return attribute")]
     [DataRow("$x.missing", "Return 'missing' is not declared by every parser rule referenced by assignment label 'x'. Missing on parser rule 'child'")]
     [DataRow("$xs.missing", "Return 'missing' is not declared by every parser rule referenced by list label 'xs'")]
     [DataRow("$start.missing", "Dotted current-rule return attribute '$start.missing' is not supported")]
     [DataRow("$x", "label access")]
     [DataRow("$xs", "label access")]
+    [DataRow("$t", "label access")]
     [DataRow("$x.value.other", "Chained parser attribute '$x.value'")]
-        public void Rewrite_UnsupportedReference_ReportsDeterministicError(string code, string expectedMessage)
+    public void Rewrite_UnsupportedReference_ReportsDeterministicError(string code, string expectedMessage)
     {
         EmbeddedParserAttributeRewriteResult result = Rewrite(code);
 
@@ -91,6 +97,7 @@ public class EmbeddedParserAttributeRewriterTests
     [DataRow("$x.value += 1;")]
     [DataRow("$x.value++;")]
     [DataRow("$xs.value = 1;")]
+    [DataRow("$xs.value = new object[0];")]
     [DataRow("$xs.value += 1;")]
     [DataRow("$xs.value++;")]
     [DataRow("++$x.value;")]
@@ -224,6 +231,17 @@ public class EmbeddedParserAttributeRewriterTests
 
         Assert.AreEqual(1, result.Errors.Count);
         StringAssert.Contains(result.Errors[0], "not supported in semantic predicates");
+    }
+
+
+    /// <summary>Verifies assignment-label attributes remain unavailable in semantic predicates.</summary>
+    [TestMethod]
+    public void Rewrite_AssignmentLabelInPredicate_ReportsLifecycleError()
+    {
+        EmbeddedParserAttributeRewriteResult result = Rewrite("$x.value != null", EmbeddedParserAttributeLocationKind.Predicate);
+
+        Assert.AreEqual(1, result.Errors.Count);
+        StringAssert.Contains(result.Errors[0], "Parser attribute read '$x.value' is not supported in semantic predicates");
     }
 
     /// <summary>Verifies a lexical name shared by assignment and list labels requires explicit helpers.</summary>

@@ -3506,6 +3506,47 @@ public class Antlr4GeneratedEmbeddedCodeTests
         Assert.AreEqual(42, ReadInstanceIntField(executionContext, "Seen"));
     }
 
+    /// <summary>Ensures supported current-rule, assignment-label, and list-label return sugar executes together.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_SupportedReturnAndLabelSugar_ExecutesTogether()
+    {
+        const string grammar = """
+            grammar P;
+
+            @members {
+                public int Seen = -1;
+                public int Count = -1;
+                public int Own = -1;
+            }
+
+            start returns [int value]
+            @after {
+                $value = 7;
+                Own = $value;
+                Seen = $c.value is int v ? v : -1;
+                Count = $xs.value.Count;
+            }
+                : c=child xs+=child ;
+
+            child returns [int value]
+            @after {
+                $value = 42;
+            }
+                : A ;
+
+            A : 'a' ;
+            """;
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        var executionContext = CreateExecutionContext(assembly);
+
+        ParseNode result = InvokeParseWithContext(assembly, "aa", executionContext);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(7, ReadInstanceIntField(executionContext, "Own"));
+        Assert.AreEqual(42, ReadInstanceIntField(executionContext, "Seen"));
+        Assert.AreEqual(1, ReadInstanceIntField(executionContext, "Count"));
+    }
+
     /// <summary>Ensures current-rule return reads before assignment use required-return helper semantics.</summary>
     [TestMethod]
     public void ParseWithEmbeddedCode_CurrentRuleReturnReadRequiresPriorAssignment()
@@ -3572,6 +3613,37 @@ public class Antlr4GeneratedEmbeddedCodeTests
     public void ParseWithEmbeddedCode_DoesNotSupportUnlabeledChildReturnAccessYet()
     {
         AssertTransformerDiagnostic("start @after { Seen = $child.value; } : child ; child returns [int value] @after { $value = 42; } : A ; A : 'a' ;", "Parser attribute root 'child' is not the current rule name or a visible assignment rule-reference label.");
+    }
+
+    /// <summary>Ensures conservative Parse remains unchanged when generated-C# label sugar is available only to embedded-code parsing.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_LabelReturnSugarDoesNotChangeConservativeParse()
+    {
+        const string grammar = """
+            grammar P;
+            @members { public static int Count = -1; }
+            start
+            @after {
+                Count = $xs.value.Count;
+            }
+                : xs+=child ;
+            child returns [int value]
+            @after {
+                $value = 42;
+            }
+                : A ;
+            A : 'a' ;
+            """;
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+
+        ParseNode conservativeResult = InvokeParse(assembly, "Parse", "a");
+        Assert.IsNotInstanceOfType(conservativeResult, typeof(ErrorNode));
+        Assert.AreEqual(-1, ReadIntField(assembly, "Count"));
+
+        ParseNode embeddedResult = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
+
+        Assert.IsNotInstanceOfType(embeddedResult, typeof(ErrorNode));
+        Assert.AreEqual(1, ReadIntField(assembly, "Count"));
     }
 
     /// <summary>Ensures arbitrary object current-rule returns do not make state-key hashing throw.</summary>
@@ -5156,6 +5228,34 @@ public class Antlr4GeneratedEmbeddedCodeTests
 
         StringAssert.Contains(source, "public string Raw => \"$value should stay raw here\";");
         _ = CompileGeneratedSource(source);
+    }
+
+    /// <summary>
+    /// Ensures parser members are injected without label-return sugar rewriting.
+    /// </summary>
+    [TestMethod]
+    public void GeneratedSource_ParserMembers_DoNotRewriteLabelReturnSugarLiteral()
+    {
+        const string grammar = """
+            grammar P;
+
+            @members {
+                public string Literal = "$xs.value";
+            }
+
+            start
+                : xs+=child ;
+
+            child returns [int value]
+                : A ;
+
+            A : 'a' ;
+            """;
+
+        string source = EmitWithAntlrStyleTransformer(grammar);
+
+        StringAssert.Contains(source, "public string Literal = \"$xs.value\";");
+        Assert.IsFalse(source.Contains("GetLabeledRuleCallReturns(context, \"xs\", \"value\")", StringComparison.Ordinal));
     }
 
     /// <summary>

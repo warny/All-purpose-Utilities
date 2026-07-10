@@ -367,3 +367,14 @@ Future simple generated-C# return assignment/access should reuse generated execu
 Labeled child-return helpers, and generated-C# `$c.value` sugar that rewrites to the required assignment-label helper, are transactional because they read the existing parser-managed invocation-frame state. `c=child` stores an immutable completed `ParserRuleCallResult` for the assignment label, while `xs+=child` appends immutable successful results in execution order. `GetRequiredLabeledRuleCallReturn` distinguishes a present return whose value is `null` from an absent return key, and `GetLabeledRuleCallReturns` projects only present return keys while preserving list-label call order.
 
 Backtracking snapshots include the labeled result store, so failed alternatives do not leak assignment or list label returns into the selected alternative. Memoized child results restore their return snapshot, but the successful call site still annotates the result with the current label before binding. This preserves helper behavior without adding C#-specific semantics to `ParserEngine`; `$c.value`/`$x.value` are supported generated-C# assignment-label transformer sugar in inline parser actions and `@after`, and `$xs.value` is supported generated-C# read-only list-label projection sugar for visible `xs+=child` parser-rule labels. The list form rewrites to `GetLabeledRuleCallReturns(context, "xs", "value")`, preserves order, preserves present-null values, and rolls back with the explicit helper state. `$child.value`, `$rule.value`, `$xs.ctx`, and `$ctx` remain unsupported transformer syntax.
+### Generated-C# parser return convenience boundary
+
+Supported generated-C# opt-in convenience forms are deliberately narrow:
+
+- bare `$value` reads/writes a declared return of the current rule;
+- `$c.value` / `$x.value` read a declared child return through an assignment label such as `c=child`;
+- `$xs.value` reads a list-label projection through `xs+=child` and returns the generated helper list.
+
+The following remain unsupported and must produce deterministic transformer diagnostics rather than new runtime syntax: `$child.value`, `$rule.value`, `$ctx`, `$c.ctx`, `$xs.ctx`, bare `$c` / `$xs` label objects, writes to `$c.value` or `$xs.value`, label-return reads in `@init`, label-return reads in semantic predicates, token attributes such as `$t.text`, lexer attributes, typed parser contexts, public ANTLR-style parser rule methods, and general ANTLR attribute compatibility.
+
+These forms are optional `IParserEmbeddedCodeTransformer` rewrites for generated C# only. The default/no-op transformer leaves `$...` text unchanged, conservative `Parse(...)` remains unchanged, and `ParserEngine` remains target-language-neutral. Parser-managed return and label state follows the existing rollback semantics; no rollback of external side effects is implied.
