@@ -235,6 +235,14 @@ public class GlyphCompound : GlyphBase
     }
 
     /// <summary>
+    /// Gets a value indicating whether any component declared <see cref="CompoundGlyfFlags.HasInstructions"/>,
+    /// meaning a trailing instruction-length word (and instruction bytes) follow the components --
+    /// even when there happen to be zero instruction bytes. Mirrors the condition <see cref="ReadData"/>
+    /// uses to decide whether to read that trailing data.
+    /// </summary>
+    private bool HasInstructionsFlag => Components.Any(c => c.Flags.HasFlag(CompoundGlyfFlags.HasInstructions));
+
+    /// <summary>
     /// Gets the length (in bytes) of the compound-glyph-specific data (components plus any
     /// trailing instructions), on top of the 10-byte header written by <see cref="GlyphBase"/>.
     /// </summary>
@@ -259,7 +267,7 @@ public class GlyphCompound : GlyphBase
                     _ => 0,
                 };
             }
-            if (Instructions.Length > 0)
+            if (HasInstructionsFlag)
             {
                 size += 2 + Instructions.Length;
             }
@@ -310,7 +318,7 @@ public class GlyphCompound : GlyphBase
                 data.Write<Int16>((short)Math.Round(component.M22 * 16384f));
             }
         }
-        if (Instructions.Length > 0)
+        if (HasInstructionsFlag)
         {
             data.Write<UInt16>((ushort)Instructions.Length);
             foreach (byte b in Instructions)

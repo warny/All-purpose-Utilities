@@ -35,11 +35,14 @@ public class GlyphCompoundTests
     }
 
     // Builds a compound glyph with a single component (HasTwoByTwo, ArgsAreXY) referencing glyph
-    // index 0, with the given matrix/translation/extra flags.
+    // index 0, with the given matrix/translation/extra flags. When extraFlags includes
+    // HasInstructions, a trailing instruction-length word (and that many bytes) is appended, exactly
+    // as ReadData expects.
     private static byte[] BuildCompoundGlyphBytes(
         short translateX, short translateY,
         float m11, float m21, float m12, float m22,
-        CompoundGlyfFlags extraFlags)
+        CompoundGlyfFlags extraFlags,
+        byte[] instructions = null)
     {
         using var ms = new MemoryStream();
         var w = new Writer(ms, BigEndianWriter.WriterDelegates);
@@ -55,6 +58,16 @@ public class GlyphCompoundTests
         w.Write<short>((short)System.Math.Round(m21 * 16384f));
         w.Write<short>((short)System.Math.Round(m12 * 16384f));
         w.Write<short>((short)System.Math.Round(m22 * 16384f));
+
+        if (flags.HasFlag(CompoundGlyfFlags.HasInstructions))
+        {
+            instructions ??= [];
+            w.Write<ushort>((ushort)instructions.Length);
+            foreach (byte b in instructions)
+            {
+                w.WriteByte(b);
+            }
+        }
 
         return ms.ToArray();
     }
@@ -166,5 +179,27 @@ public class GlyphCompoundTests
         Assert.AreEqual(50f, point.X, 1e-3f);
         // AdjustY must be 2 (doubled because |M21|-|M22| ~ 0), not 1 (the old, wrongly-paired check).
         Assert.AreEqual(200f, point.Y, 1e-3f);
+    }
+
+    // Regression test: WriteData/Length used to gate the trailing instruction block on
+    // `Instructions.Length > 0` instead of on whether HasInstructions was actually declared. A
+    // component with HasInstructions set but zero instruction bytes (a valid, spec-compliant case)
+    // round-tripped through ReadData/WriteData would silently drop the 2-byte instruction-length
+    // word, truncating the glyph and under-reporting Length by 2 bytes.
+    [TestMethod]
+    public void ReadThenWrite_HasInstructionsFlagWithZeroLengthInstructions_PreservesLengthWord()
+    {
+        byte[] original = BuildCompoundGlyphBytes(
+            50, 100, 1f, 0f, 0f, 1f,
+            extraFlags: CompoundGlyfFlags.HasInstructions,
+            instructions: []);
+        var glyph = (GlyphCompound)GlyphBase.CreateGlyf(MakeReader(original), null);
+
+        using var ms = new MemoryStream();
+        var writer = new Writer(ms, BigEndianWriter.WriterDelegates);
+        glyph.WriteData(writer);
+
+        Assert.AreEqual(glyph.Length, ms.ToArray().Length);
+        CollectionAssert.AreEqual(original, ms.ToArray());
     }
 }
