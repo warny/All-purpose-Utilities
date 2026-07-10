@@ -4082,7 +4082,7 @@
       "Uid": null,
       "IsMRef": true,
       "Title": "Utils.Geography.Model.GeoPoint<T>",
-      "Summary": "<p sourcefile=\"api/Utils.Geography.Model.GeoPoint-1.yml\" sourcestartlinenumber=\"1\">Represents an immutable geographic point with latitude and longitude.\nThis class supports parsing, formatting, and mathematical operations between geographic points.</p>\n"
+      "Summary": "<p sourcefile=\"api/Utils.Geography.Model.GeoPoint-1.yml\" sourcestartlinenumber=\"1\">Represents an immutable geographic point with latitude and longitude.\nThis type supports parsing, formatting, and mathematical operations between geographic points.</p>\n"
     },
     {
       "type": "ManagedReference",
