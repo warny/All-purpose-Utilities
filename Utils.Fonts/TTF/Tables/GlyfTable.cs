@@ -53,7 +53,13 @@ public class GlyfTable : TrueTypeTable
     /// <summary>
     /// Gets the total length (in bytes) of the glyf table, calculated as the sum of the lengths of all glyph data.
     /// </summary>
-    public override int Length => glyphs.Sum(g => g.Length);
+    /// <remarks>
+    /// A glyph index with a zero-length 'loca' entry (e.g. the space character, which has no
+    /// contours) has a null entry in <see cref="glyphs"/> rather than an empty <see cref="GlyphBase"/>
+    /// instance -- see <see cref="ReadData"/> -- so this must be null-safe, matching
+    /// <see cref="WriteData"/>'s use of <c>glyf?.WriteData(data)</c>.
+    /// </remarks>
+    public override int Length => glyphs.Sum(g => g?.Length ?? 0);
 
     /// <summary>
     /// Retrieves the glyph data for the glyph at the specified index.
