@@ -268,9 +268,8 @@ publics, et test documentant explicitement le comportement par défaut cassé de
 ## Nouvelles propositions (relecture 2026-07-10)
 
 Seconde relecture du package une fois les items 1-25 et les corrections post-revue de la PR #428 en
-place. **Marqués par l'utilisateur comme prioritaires : items 26, 28 et 32.** Items 26-35 implémentés ;
-36 (documentation détaillée avec exemples) reste à l'état de proposition — voir sa section pour le
-détail.
+place. **Marqués par l'utilisateur comme prioritaires : items 26, 28 et 32.** Items 26-36 tous
+implémentés — voir chaque section pour le détail.
 
 ### Priorité haute — sécurité
 
@@ -484,7 +483,7 @@ Tests : `UtilsTest/Reflection/EmitWorkerRoundRobinProxyTests.cs` (génération d
 attachement des workers, validation `workerCount < 1`) — sans lancer de vrais process, même limite déjà
 acceptée pour `EmitWorkerProxyTests`/`EmitWorkerPoolTests`.
 
-#### 36. Documentation détaillée, avec exemples, du fonctionnement du système de process/threads
+#### 36. ~~Documentation détaillée, avec exemples, du fonctionnement du système de process/threads~~ — **implémenté**
 Le README documente l'usage de haut niveau (`Emit<TInterface>`, `EmitInProcess<TInterface>`,
 `ProcessContainerFactory`) mais pas le *fonctionnement interne* des mécanismes de process/threads eux-
 mêmes — utile pour quiconque doit déboguer, étendre le protocole, ou décider entre les options
@@ -516,3 +515,11 @@ Pour les points 4 et 5, la documentation ne peut être écrite « avec exemples 
 eux-mêmes implémentés (ou, à défaut, présentée explicitement comme un design proposé et non un
 comportement existant) — à séquencer après ces deux items si l'objectif est une doc reflétant un système
 réellement livré.
+
+**Fix** : items 34 et 35 ayant été implémentés d'abord, les 5 points sont documentés avec des exemples de
+code réels (pas de design proposé) dans `docs/reflection/ProcessAndThreadModel.md`, suivant la convention
+déjà en place pour les docs approfondies (`docs/parser/*.md`, entrée dans `docs/toc.yml`) plutôt qu'un
+fichier isolé sous `Utils.Reflection/`. Chaque section inclut un schéma texte du flux de messages
+`WorkerRequest`/`WorkerResponse` pertinent. Lien ajouté depuis `Utils.Reflection/README.md` (section
+« Further reading »). Changement purement documentaire, aucun nouveau test (cohérent avec les autres
+items « documenté »/« implémenté-doc » de cette liste).

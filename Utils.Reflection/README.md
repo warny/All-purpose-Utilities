@@ -287,6 +287,11 @@ if (CommandAvailability.Exists(@"C:\tools\ffmpeg.exe"))
     Console.WriteLine("ffmpeg found");
 ```
 
+## Further reading
+- [Process and Thread Model](../docs/reflection/ProcessAndThreadModel.md) — how DLL loading, process
+  launching, `EmitWorkerPool`, intra-worker call concurrency, and `EmitRoundRobin` actually work
+  underneath, with message-flow examples.
+
 ## Related packages
 - `omy.Utils` – base utilities used by reflection helpers.
 - `omy.Utils.IO` – binary serialization that uses `PropertyOrFieldInfo` from this package.
