@@ -356,6 +356,10 @@ choisit des paires où le code caractère ASCII coïncide par construction avec 
 via `cmap` avant d'appeler `kernTable.GetSpacingCorrection` ; `KernTable.GetSpacingCorrection`
 devrait accepter des `ushort` (glyph index) plutôt que des `char`.
 **Sévérité** : bug fonctionnel (kerning silencieusement incorrect sur toute police réelle non triviale).
+**Corrigé.** `TrueTypeFont` factorise la résolution char→glyph index (`ResolveGlyphIndex`, partagée
+avec `GetGlyph`) et `GetSpacingCorrection` l'utilise avant d'interroger `KernTable`, dont la
+signature accepte désormais des `ushort` (glyph index) plutôt que des `char`. Test :
+`TrueTypeFontTests.GetSpacingCorrection_ResolvesCharactersToGlyphIndicesViaCmap`.
 
 ### 2. `GlyphCompound.ComputeTransform` — mauvaise paire de coefficients pour `AdjustY`
 `Utils.Fonts/TTF/Tables/Glyf/GlyphCompound.cs:84-97`.
@@ -371,6 +375,9 @@ doublement de `AdjustY` (33/65535) se déclenche sur la mauvaise condition.
 **Sévérité** : bug fonctionnel (portée limitée aux glyphes composites avec cisaillement asymétrique
 — rare mais réel). *À revalider contre la spec primaire avant application, la formule exacte des
 indices matriciels est subtile.*
+**Corrigé** : `Math.Abs(Math.Abs(M21) - Math.Abs(M22)) < limit` pour la branche `AdjustY`, avec un
+`<remarks>` documentant la correspondance a/b/c/d (spec) ↔ M11/M21/M12/M22 (code). Test :
+`GlyphCompoundTests.Transform_ScaledOffset_AdjustYUsesCorrectCoefficientPair`.
 
 ### 3. `GlyphCompound.Transform` — mise à l'échelle inconditionnelle de l'offset de translation
 `Utils.Fonts/TTF/Tables/Glyf/GlyphCompound.cs:113-118`.
@@ -388,12 +395,22 @@ n'appliquer `AdjustX`/`AdjustY` à la translation que si `ScaledComponentOffset`
 posé (ne pas les appliquer par défaut, pour matcher le comportement de facto standard).
 **Sévérité** : bug fonctionnel (positionnement incorrect des glyphes composites accentués/composés
 dès qu'une échelle est présente — cas courant pour les caractères accentués Latin).
+**Corrigé** : `Transform` ne multiplie plus l'offset par `AdjustX`/`AdjustY` que si
+`ScaledComponentOffset` est posé (les flags viennent d'être ajoutés, item 4). Test :
+`GlyphCompoundTests.Transform_NeitherScaledNorUnscaledFlagSet_OffsetIsNotScaled`.
+
+En corrigeant les items 2/3, découverte d'un bug plus sévère dans la même classe, absent des deux
+audits : **`GlyphCompound` n'avait aucun `WriteData`/`Length`**, héritant silencieusement de
+l'implémentation `GlyphBase` (en-tête 10 octets seul) — écrire un glyphe composite (caractères
+accentués, ligatures...) produisait des données tronquées/corrompues. Ajouté. Test :
+`GlyphCompoundTests.ReadThenWrite_SingleComponent_ProducesIdenticalBytes`.
 
 ### 4. `CompoundGlyfFlags` — flags `SCALED_COMPONENT_OFFSET`/`UNSCALED_COMPONENT_OFFSET` manquants
 `Utils.Fonts/Enums.cs:216-267`. Conséquence directe de l'item 3 : l'énumération ne déclare que 10
 des 12 flags du spec glyf composite (il manque les bits 0x0800 et 0x1000).
 **Fix proposé** : ajouter `ScaledComponentOffset = 0x0800` et `UnscaledComponentOffset = 0x1000`.
 **Sévérité** : dette technique (prérequis du fix de l'item 3).
+**Corrigé.**
 
 ## Dette technique / non-conformité AGENTS.md
 
@@ -452,6 +469,8 @@ rendue vérifiée) les aurait détectés.
 l'item 2, (c) test du flag `SCALED_COMPONENT_OFFSET`/`UNSCALED_COMPONENT_OFFSET` une fois l'item 3
 corrigé.
 **Sévérité** : manque de test (racine des bugs 2 et 3).
+**Corrigé.** `GlyphCompoundTests.cs` ajouté (round-trip byte-exact, offset non scellé, cisaillement
+asymétrique via le flag `ScaledComponentOffset`).
 
 ### 11. Aucun test ne couvre `KernTable.GetSpacingCorrection` avec un glyph index ≠ code caractère
 `UtilsTest.Functional/Fonts/KernTableTests.cs` — le test existant choisit des valeurs où code
@@ -460,6 +479,8 @@ caractère == glyph index par construction, masquant le bug de l'item 1 plutôt 
 caractère, pour vérifier que `TrueTypeFont.GetSpacingCorrection` résout bien l'index avant
 d'interroger `KernTable`.
 **Sévérité** : manque de test (aurait révélé le bug 1 immédiatement).
+**Corrigé.** Test ajouté :
+`TrueTypeFontTests.GetSpacingCorrection_ResolvesCharactersToGlyphIndicesViaCmap`.
 
 ### 12. Aucun test de round-trip bit-exact sur `TrueTypeFont.WriteFont()` complet
 Toujours pas traité malgré la mention explicite dans la section précédente (item 16, "reste : round-
