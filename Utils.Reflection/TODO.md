@@ -286,14 +286,18 @@ flag `CREATE_UNICODE_ENVIRONMENT` (nouvelle constante dans `WindowsNativeMethods
 `finally` existant. Tests : `UtilsTest/Reflection/SandboxedProcessEnvironmentTests.cs` (exclusion d'une
 variable arbitraire, présence de `PATH`, terminaison double `\0`, tri alphabétique des entrées).
 
-#### 27. `Platform.NativeULongSize` / `StructPackingSize` sont des setters statiques mutables globaux
+#### 27. ~~`Platform.NativeULongSize` / `StructPackingSize` sont des setters statiques mutables globaux~~ — **documenté**
 Même famille de problème que `ProcessContainerPermissions.Default` avant sa correction (item 1 de la
-relecture précédente), mais jamais traitée pour `Platform` (`Reflection/Platform.cs:183` et `:220`).
-N'importe quel composant qui fait `Platform.NativeULongSize = 8` change silencieusement le comportement
-pour tous les autres consommateurs du même process — problématique en particulier si plusieurs
-bibliothèques d'interop PKCS#11 cohabitent. À minima, documenter clairement le risque de concurrence ;
-idéalement, remplacer par un mécanisme scindé par appelant (paramètre explicite plutôt qu'état global)
-ou au moins un avertissement XML doc explicite sur la non thread-safety.
+relecture précédente). N'importe quel composant qui fait `Platform.NativeULongSize = 8` change
+silencieusement le comportement pour tous les autres consommateurs du même process — problématique en
+particulier si plusieurs bibliothèques d'interop PKCS#11 cohabitent. **Choix retenu** : documentation
+explicite plutôt que refonte de l'API (option « à minima » de la proposition initiale) — les deux
+propriétés sont publiques et déjà documentées comme modifiables par setter depuis la publication du
+package (`omy.Utils.Reflection`), donc les remplacer par un mécanisme scindé par appelant serait un
+breaking change non demandé. XML doc de `NativeULongSize`/`StructPackingSize` complétée d'un avertissement
+explicite : état process-wide non synchronisé, à ne positionner qu'une seule fois au tout début du
+démarrage, avant toute lecture concurrente possible. Pas de nouveau test — changement purement
+documentaire, aucun comportement modifié.
 
 ### Priorité haute — robustesse
 
