@@ -112,16 +112,34 @@ The server calls the authenticator for every attempt without delay, rate limit, 
 
 **Severity:** High.
 
+### 13. DNS parser does not respect the actual received length
+`DNSPacketReader.Read(Stream)` allocates a 512-byte buffer and records the actual number of bytes read in `Datas.Length`, but primitive readers use `Datagram.Length` and direct indexing instead of `Length`. `ReadByte` performs no bounds check at all. The unused tail of the buffer is zero-filled and can therefore be consumed as if it were part of the packet.
+
+**Risk:** truncated DNS messages can be accepted as structurally valid using fabricated zero bytes, while malicious count and length fields can also trigger uncontrolled `IndexOutOfRangeException` or parser desynchronization. This creates both integrity and denial-of-service risks.
+
+**Proposed fix:** make every primitive read validate against the actual received length; remove direct array indexing from parser logic; reject packets shorter than the DNS header; use exact-read semantics for streams and preserve only the received bytes.
+
+**Severity:** High.
+
+### 14. DNS RDATA boundaries are not enforced
+The parser creates a `Context` with `RDLength`, but `ReadByte` merely decrements `BytesLeft` and permits it to become negative. Reads are checked only against the whole datagram, not against the current RDATA boundary. After materializing a record, the parser does not require `BytesLeft == 0`. Compression-name parsing temporarily clears the context, further weakening the boundary.
+
+**Risk:** a malformed record can consume bytes belonging to subsequent records, causing parser confusion, forged record interpretation or denial of service. Record-specific readers can silently under-read or over-read their declared RDATA.
+
+**Proposed fix:** enforce the current RDATA end offset on every read; allow compression pointers to reference the packet while keeping the original sequential cursor bounded; require exact RDATA consumption or explicitly skip validated remaining bytes for record types that permit it.
+
+**Severity:** High.
+
 ## Medium-severity findings
 
-### 13. SMTP envelope addresses are not validated strictly
+### 15. SMTP envelope addresses are not validated strictly
 `SmtpServer.ExtractAddress` only extracts text between the first `<` and `>`, or returns the raw first argument. Empty values, missing domains, control characters, ignored suffixes and excessive lengths are accepted.
 
 **Proposed fix:** implement a deliberately limited but strict SMTP path parser; reject ambiguous syntax and control characters; enforce length limits; handle the null reverse-path explicitly rather than treating arbitrary empty input as valid.
 
 **Severity:** Medium to High.
 
-### 14. Untrusted protocol data is logged without sanitization or truncation
+### 16. Untrusted protocol data is logged without sanitization or truncation
 Received response codes/messages and commands are written to logs without filtering control characters or limiting size.
 
 **Risk:** log forging, terminal/control-sequence injection, excessive log volume and accidental disclosure of message content.
@@ -130,14 +148,14 @@ Received response codes/messages and commands are written to logs without filter
 
 **Severity:** Medium.
 
-### 15. Client-side responses and POP3 payloads have no resource limits
+### 17. Client-side responses and POP3 payloads have no resource limits
 `SendCommandAsync`, POP3 multiline readers and message retrieval collect all data before returning. Numeric response parsing can also throw on oversized values.
 
 **Proposed fix:** enforce response line/count/byte limits, use `TryParse` with explicit range validation, and expose streaming retrieval methods.
 
 **Severity:** Medium.
 
-### 16. DNS truncation and modern UDP response sizes are not handled
+### 18. DNS truncation and modern UDP response sizes are not handled
 `DNSLookup` allocates a fixed 512-byte buffer. It does not negotiate EDNS(0), inspect the TC flag and retry over TCP, or distinguish truncation from a complete response. All transport and parse exceptions are swallowed while iterating name servers.
 
 **Risk:** valid modern DNS replies may be silently truncated or discarded, while callers receive only a generic exception with no diagnostic cause. Security-related records such as DNSSEC chains are particularly likely to exceed 512 bytes.
@@ -146,7 +164,7 @@ Received response codes/messages and commands are written to logs without filter
 
 **Severity:** Medium.
 
-### 17. Concurrent server writes are not serialized
+### 19. Concurrent server writes are not serialized
 `CommandResponseServer.SendResponseAsync` writes directly to the shared `StreamWriter`, while `ProcessQueueAsync` also writes responses. No send lock protects these paths.
 
 **Risk:** unsolicited and command responses can interleave or corrupt the text protocol framing, potentially producing ambiguous state transitions or leaking portions of unrelated responses.
@@ -155,12 +173,46 @@ Received response codes/messages and commands are written to logs without filter
 
 **Severity:** Medium.
 
-### 18. Cancellation tokens are not propagated into protocol dependencies
+### 20. Cancellation tokens are not propagated into protocol dependencies
 SMTP, POP3 and NNTP handlers generally call authenticator/store methods without a cancellation token. A slow or malicious backend can therefore keep a connection handler alive after client disconnect or server shutdown.
 
 **Proposed fix:** add cancellation-aware interface overloads and propagate the per-session token through authentication, listing, retrieval, storage, deletion and posting operations.
 
 **Severity:** Medium.
+
+### 21. DNS compression and label syntax validation is incomplete
+`ReadDomainName` treats any label whose two high bits are non-zero as a compression pointer, although only the `11xxxxxx` form is valid. Reserved `01` and `10` label forms are therefore misparsed. The parser also lacks explicit enforcement of the 63-byte label limit and 255-byte full-name limit, and decodes arbitrary label octets as UTF-8.
+
+**Risk:** malformed packets can be interpreted inconsistently, bypass structural validation or trigger parser failures. Different DNS implementations may disagree on the resulting name.
+
+**Proposed fix:** accept compression pointers only when `(length & 0xC0) == 0xC0`; reject reserved forms; enforce label and complete-name limits; preserve DNS label octets safely and apply IDNA conversion only at explicit presentation boundaries.
+
+**Severity:** Medium.
+
+### 22. ICMP asynchronous operations can wait indefinitely
+`IcmpUtils` sets `SocketOptionName.ReceiveTimeout`, then calls `ReceiveAsync`. Socket receive timeouts generally apply to synchronous receive operations, not task-based asynchronous receives. No cancellation token or explicit timeout race is used.
+
+**Risk:** echo and traceroute calls can remain blocked indefinitely despite their `timeout` parameter, causing resource retention and availability failures.
+
+**Proposed fix:** use cancellation-aware socket overloads with a linked timeout token, or race the receive against a delay and dispose the socket on timeout. Validate timeout and hop-count arguments.
+
+**Severity:** Medium.
+
+### 23. ICMP echo request construction and response parsing are incorrect
+For IPv4, `SendEchoRequestAsync` initializes the outgoing packet with `IcmpV4EchoReply` instead of `IcmpV4EchoRequest`. It allocates the receive buffer to exactly the serialized ICMP request length, ignores the actual number of bytes returned by `ReceiveAsync`, and parses the entire zero-padded buffer. Raw IPv4 sockets may also include an IP header.
+
+**Risk:** valid replies may be rejected or truncated, unrelated packets may be misinterpreted, and timing results can be unreliable. The code verifies only payload equality, without a stable identifier/sequence correlation.
+
+**Proposed fix:** send the correct request type; parse only the received byte count; account explicitly for platform-specific IP headers; validate source endpoint, identifier and sequence number; use a monotonic clock for RTT measurement.
+
+**Severity:** Medium.
+
+### 24. Wake-on-LAN assumes a six-byte hardware address without validation
+`CreateMagicPacket` allocates for a six-byte MAC and repeatedly copies the supplied address. A non-six-byte `PhysicalAddress` can produce a malformed packet or throw during copying.
+
+**Proposed fix:** require exactly six address bytes for the classic magic-packet format, validate the destination port and address family, and support cancellation in the send API.
+
+**Severity:** Low.
 
 ## Required regression and security tests
 
@@ -177,8 +229,12 @@ SMTP, POP3 and NNTP handlers generally call authenticator/store methods without 
 - Reuse each server instance with two streams and verify that no authentication, relay, deletion, selected-group or posting state crosses sessions.
 - Reject NTP responses from the wrong endpoint, undersized packets, invalid modes/strata and mismatched originate timestamps; test timeout/cancellation.
 - Reject DNS responses with the wrong endpoint, ID, QR bit or question; test TC-to-TCP fallback.
+- Fuzz `DNSPacketReader` with truncated headers, inflated section counts, invalid RDLENGTH values, reserved label forms, pointer loops and cross-RDATA reads.
+- Verify that every DNS primitive read is bounded by the actual datagram length and current RDATA end offset.
 - Verify that handler/backend exceptions close or recover the session without leaving a dead connection.
 - Verify serialized output when unsolicited and command responses are emitted concurrently.
+- Test ICMP timeout cancellation, correct IPv4 request type, received-length parsing and reply correlation.
+- Reject non-six-byte Wake-on-LAN addresses.
 
 ## Priority roadmap
 
@@ -196,13 +252,19 @@ SMTP, POP3 and NNTP handlers generally call authenticator/store methods without 
 | P1 | DNS responses are not validated against the query |
 | P1 | Handler exceptions can terminate the processing loop |
 | P1 | NNTP posting lacks authorization and limits |
+| P1 | DNS parser ignores actual datagram length |
+| P1 | DNS RDATA boundaries are not enforced |
 | P2 | Weak SMTP envelope validation |
 | P2 | Unsanitized remote data in logs |
 | P2 | Unbounded client response accumulation |
 | P2 | DNS truncation/TCP fallback missing |
 | P2 | Concurrent server writes are not serialized |
 | P2 | Cancellation is not propagated to backend operations |
+| P2 | DNS compression/label validation is incomplete |
+| P2 | ICMP asynchronous timeout is ineffective |
+| P2 | ICMP request/reply parsing is incorrect |
+| P3 | Wake-on-LAN MAC length is not validated |
 
 ## Deployment warning
 
-Until the P0/P1 findings are fixed, do not expose `CommandResponseServer`, `SmtpServer`, `Pop3Server` or `NntpServer` directly to an untrusted network without an external TLS terminator, strict connection and payload limits, rate limiting, timeouts, per-connection server instances and log redaction. Do not use `NtpClient` as a trusted security clock, and do not rely on `DNSLookup` for security-sensitive name resolution until response validation is implemented.
+Until the P0/P1 findings are fixed, do not expose `CommandResponseServer`, `SmtpServer`, `Pop3Server` or `NntpServer` directly to an untrusted network without an external TLS terminator, strict connection and payload limits, rate limiting, timeouts, per-connection server instances and log redaction. Do not use `NtpClient` as a trusted security clock, and do not rely on `DNSLookup` or `DNSPacketReader` for security-sensitive name resolution until response and parser validation are implemented.
