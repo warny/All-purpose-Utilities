@@ -329,3 +329,174 @@ Ces deux corrections ont aussi nécessité de fusionner `origin/master` dans la 
 (`claude/fonts-fix-write-bugs`) après que la PR #431 (doc-only) a été squash-mergée entre-temps —
 conflit add/add sur ce même fichier `TODO.md`, résolu en conservant la version de cette branche (sur-
 ensemble strict de celle de master).
+
+---
+
+# Second audit qualité (2026-07-10, suite)
+
+Deuxième passage, après que tous les items ci-dessus ont été corrigés (PRs #432, #434). Objectif :
+trouver des problèmes **nouveaux**, non identifiés au premier passage, en particulier dans les
+fichiers que celui-ci n'avait pas examinés en détail (`GlyphCompound`, PostScript, `Enums.cs`,
+tables AAT non encore relues ligne à ligne). Aucune proposition ci-dessous n'est encore corrigée.
+Numérotation reprise à 1 (indépendante de la section précédente).
+
+## Bugs fonctionnels (priorité haute)
+
+### 1. `TrueTypeFont.GetSpacingCorrection` — kerning indexé par code caractère au lieu de glyph index
+`Utils.Fonts/TTF/TrueTypeFont.cs:458-468`, `Utils.Fonts/TTF/Tables/KernTable.cs:37-46`.
+La table `kern` stocke des paires **d'index de glyphes**, jamais de codes caractères. Or
+`TrueTypeFont.GetSpacingCorrection(char before, char after)` transmet directement les `char` à
+`KernTable.GetSpacingCorrection`, qui les caste en `ushort` et les utilise tels quels comme clés —
+sans jamais passer par `cmap` pour résoudre le glyph index, contrairement à `GetGlyph(char c)`
+(lignes 433-449) qui le fait correctement via `cmap.CMaps`/`map.Map(c)`. Pour toute police réelle où
+code caractère ≠ glyph index (la quasi-totalité des polices Unicode), le kerning renvoyé sera
+systématiquement faux ou nul. `KernTableTests.RoundTrip_PreservesKerningPairs` masque ce bug car il
+choisit des paires où le code caractère ASCII coïncide par construction avec le glyph index testé.
+**Fix proposé** : `TrueTypeFont.GetSpacingCorrection` doit résoudre `before`/`after` en glyph index
+via `cmap` avant d'appeler `kernTable.GetSpacingCorrection` ; `KernTable.GetSpacingCorrection`
+devrait accepter des `ushort` (glyph index) plutôt que des `char`.
+**Sévérité** : bug fonctionnel (kerning silencieusement incorrect sur toute police réelle non triviale).
+
+### 2. `GlyphCompound.ComputeTransform` — mauvaise paire de coefficients pour `AdjustY`
+`Utils.Fonts/TTF/Tables/Glyf/GlyphCompound.cs:84-97`.
+Selon la spec (Apple TrueType Reference Manual, glyphes composites) : l'ajustement en X compare
+`|a|` vs `|c|` (M11 vs M21), l'ajustement en Y compare `|d|` vs `|b|` (M22 vs M21 — même paire
+"cisaillement", pas M12/M22). Le code calcule correctement `AdjustX`
+(`Math.Abs(M11) - Math.Abs(M12)`)... mais calcule `AdjustY` avec `Math.Abs(M12) - Math.Abs(M22)`,
+soit la paire (M12, M22) plutôt que (M22, M21). Cette paire n'est correcte que par coïncidence
+quand la matrice est une similitude sans cisaillement (M12 == M21, le cas courant/testé
+actuellement). Dès qu'un composant a un cisaillement asymétrique (M12 ≠ M21), le seuil de
+doublement de `AdjustY` (33/65535) se déclenche sur la mauvaise condition.
+**Fix proposé** : `Math.Abs(Math.Abs(M22) - Math.Abs(M21)) < limit` pour la branche `AdjustY`.
+**Sévérité** : bug fonctionnel (portée limitée aux glyphes composites avec cisaillement asymétrique
+— rare mais réel). *À revalider contre la spec primaire avant application, la formule exacte des
+indices matriciels est subtile.*
+
+### 3. `GlyphCompound.Transform` — mise à l'échelle inconditionnelle de l'offset de translation
+`Utils.Fonts/TTF/Tables/Glyf/GlyphCompound.cs:113-118`.
+`TranslateX`/`TranslateY` sont systématiquement multipliés par `AdjustX`/`AdjustY`. Or selon la spec
+OpenType/TrueType, cette mise à l'échelle de l'offset ne doit s'appliquer que si le composant porte
+le flag `SCALED_COMPONENT_OFFSET` (0x0800) ; si `UNSCALED_COMPONENT_OFFSET` (0x1000) est posé, ou si
+aucun des deux n'est présent (cas le plus courant pour les polices produites avec la convention
+Microsoft/FreeType), l'offset doit être utilisé brut. Ces deux flags sont absents de
+`CompoundGlyfFlags` (item 4) et il n'y a aucune branche conditionnelle : le code applique toujours
+le comportement "Apple historique". Pour un composant avec échelle non unitaire et un offset
+`ArgsAreXY`, la position sera visiblement décalée par rapport aux rendus de référence (FreeType,
+navigateurs).
+**Fix proposé** : ajouter les flags à `CompoundGlyfFlags` (item 4), les lire dans `ReadData`, et
+n'appliquer `AdjustX`/`AdjustY` à la translation que si `ScaledComponentOffset` est explicitement
+posé (ne pas les appliquer par défaut, pour matcher le comportement de facto standard).
+**Sévérité** : bug fonctionnel (positionnement incorrect des glyphes composites accentués/composés
+dès qu'une échelle est présente — cas courant pour les caractères accentués Latin).
+
+### 4. `CompoundGlyfFlags` — flags `SCALED_COMPONENT_OFFSET`/`UNSCALED_COMPONENT_OFFSET` manquants
+`Utils.Fonts/Enums.cs:216-267`. Conséquence directe de l'item 3 : l'énumération ne déclare que 10
+des 12 flags du spec glyf composite (il manque les bits 0x0800 et 0x1000).
+**Fix proposé** : ajouter `ScaledComponentOffset = 0x0800` et `UnscaledComponentOffset = 0x1000`.
+**Sévérité** : dette technique (prérequis du fix de l'item 3).
+
+## Dette technique / non-conformité AGENTS.md
+
+### 5. `TtfPlatformSpecificID` — `MAC_ROMAN` et `UNICODE_DEFAULT` partagent la valeur 0
+`Utils.Fonts/Enums.cs:284-292`. Même famille de piège de nommage que celui déjà corrigé pour
+`UNICODE_V2`/PRC (voir item 7 de la première section) : `MAC_ROMAN = 0` (sens Macintosh) et
+`UNICODE_DEFAULT = 0` (sens Microsoft/Unicode) partagent la même valeur numérique dans une énumération
+partagée entre plateformes. Fonctionne aujourd'hui car `TtfEncoderFactory.GetEncoding` ne compare
+`platformSpecificID` à `MAC_ROMAN` que sous la garde `platformID == Macintosh`, mais toute
+comparaison future à `UNICODE_DEFAULT` sans vérifier `platformID` en premier serait un bug latent.
+**Fix proposé** : scinder en deux enums distincts par plateforme (`MacintoshEncodingID`,
+`MicrosoftEncodingID`), ou documenter le piège par un commentaire XML sur chaque valeur partagée.
+**Sévérité** : dette technique / cosmétique (latent, pas encore exploité par un bug réel).
+
+### 6. `GaspTable` — commentaire XML dupliqué sur le constructeur
+`Utils.Fonts/TTF/Tables/GaspTable.cs:46-50` : deux blocs `<summary>Initializes a new instance...`
+consécutifs précèdent le même constructeur — artefact de copier-coller.
+**Fix proposé** : supprimer le premier bloc dupliqué.
+**Sévérité** : cosmétique.
+
+### 7. `DsigTable` — doc XML de classe incohérente avec le code ("12-byte" vs 8 octets réels)
+`Utils.Fonts/TTF/Tables/DsigTable.cs:14-21`. Le résumé de la classe affirme un en-tête de 12 octets
+alors que `ReadData`/`WriteData`/`Length` (`8 + SignatureData.Length`) utilisent bien 8 octets
+(`version` UInt32 + `numSigs` UInt16 + `flags` UInt16), la valeur correcte selon la spec OpenType
+DSIG réelle. Le code est correct ; c'est la documentation qui ment.
+**Fix proposé** : corriger "12-byte" en "8-byte" dans le commentaire XML.
+**Sévérité** : cosmétique (doc trompeuse, AGENTS.md exige une doc XML exacte).
+
+### 8. `PropTable` format 2 — incohérence mineure de convention de sentinel avec `BslnTable`
+`Utils.Fonts/TTF/Tables/PropTable.cs:133` teste `if (firstGlyph == 0xFFFF) break;` alors que
+l'équivalent dans `BslnTable.ReadLookupTable` (case 2) teste `if (lastGlyph == 0xFFFF) break;`. Les
+deux fonctionnent en pratique (l'enregistrement sentinelle a ses deux champs à 0xFFFF), mais
+l'incohérence entre deux implémentations quasi identiques du même format AAT suggère un copier-coller
+partiellement adapté — augmente le risque qu'une future modification n'en corrige qu'une des deux.
+**Fix proposé** : uniformiser sur un seul champ de test, éventuellement en factorisant le lecteur de
+format 2 commun aux tables AAT (même esprit que `AatBinarySearchHeader`).
+**Sévérité** : cosmétique / dette technique mineure (aucun bug actif).
+
+### 9. `CidKeyedFont.GetGlyph(char c)` — limite CID > 0xFFFF non documentée
+`Utils.Fonts/PostScript/CidKeyedFont.cs:18-44`. Le glyph est stocké par CID (`int`, pouvant dépasser
+0xFFFF) mais `IFont.GetGlyph(char c)` ne peut représenter que des CID ≤ 0xFFFF — limitation de
+l'interface `IFont`, pas de cette classe spécifiquement, mais non documentée sur cette méthode.
+**Fix proposé** : étoffer le commentaire `<remarks>` pour documenter explicitement la limite de
+plage (CID > 0xFFFF inatteignables via cette API).
+**Sévérité** : cosmétique / documentation.
+
+## Manque de test
+
+### 10. Aucun test ne couvre `GlyphCompound` (glyphes composites)
+`Utils.Fonts/TTF/Tables/Glyf/GlyphCompound.cs` — contrairement à `GlyphSimple` (fortement testé après
+le premier audit), aucun `GlyphCompoundTests.cs` n'existe. C'est précisément la classe où se cachent
+les bugs 2 et 3 : un test de round-trip (composant mis à l'échelle + cisaillement + offset, position
+rendue vérifiée) les aurait détectés.
+**Fix proposé** : ajouter `GlyphCompoundTests.cs` avec au minimum : (a) composant à échelle uniforme
++ offset non scellé, (b) composant `HasTwoByTwo` avec cisaillement asymétrique (M12 ≠ M21) pour
+l'item 2, (c) test du flag `SCALED_COMPONENT_OFFSET`/`UNSCALED_COMPONENT_OFFSET` une fois l'item 3
+corrigé.
+**Sévérité** : manque de test (racine des bugs 2 et 3).
+
+### 11. Aucun test ne couvre `KernTable.GetSpacingCorrection` avec un glyph index ≠ code caractère
+`UtilsTest.Functional/Fonts/KernTableTests.cs` — le test existant choisit des valeurs où code
+caractère == glyph index par construction, masquant le bug de l'item 1 plutôt que de le détecter.
+**Fix proposé** : ajouter un cas où le glyph index (obtenu via un faux `cmap`) diffère du code
+caractère, pour vérifier que `TrueTypeFont.GetSpacingCorrection` résout bien l'index avant
+d'interroger `KernTable`.
+**Sévérité** : manque de test (aurait révélé le bug 1 immédiatement).
+
+### 12. Aucun test de round-trip bit-exact sur `TrueTypeFont.WriteFont()` complet
+Toujours pas traité malgré la mention explicite dans la section précédente (item 16, "reste : round-
+trip `WriteFont()` complet"). Tous les tests actuels valident chaque table isolément ; aucun ne
+charge une police réelle complète, appelle `WriteFont()`, puis reparse le résultat pour vérifier
+(bit-à-bit ou au moins glyphe-à-glyphe/table-à-table) l'identité avec l'original. C'est le seul type
+de test qui pourrait détecter une interaction entre tables (décalages d'offset `loca`/`glyf`,
+checksum global) qu'aucun test par-table ne peut voir.
+**Fix proposé** : dans `TrueTypeFontTests.cs`, ajouter un test qui charge la police Arial embarquée
+existante, appelle `WriteFont()`, reparse, et compare au minimum les métriques de plusieurs glyphes
+(avance, contours, points) avant/après.
+**Sévérité** : manque de test (déjà signalé au premier passage, toujours pas comblé).
+
+## Résumé priorisé
+
+| # | Sévérité | Fichier | Constat |
+|---|---|---|---|
+| 1 | Bug fonctionnel | `TrueTypeFont.cs` / `KernTable.cs` | Kerning indexé par char au lieu de glyph index — cassé sur toute police réelle |
+| 3 | Bug fonctionnel | `GlyphCompound.cs` (Transform) | Offset de composant toujours mis à l'échelle, jamais conditionné aux flags SCALED/UNSCALED |
+| 2 | Bug fonctionnel (portée limitée) | `GlyphCompound.cs` (ComputeTransform) | Mauvaise paire de coefficients pour AdjustY (cisaillement asymétrique) |
+| 4 | Dette technique | `Enums.cs` | Flags SCALED/UNSCALED_COMPONENT_OFFSET manquants (prérequis de l'item 3) |
+| 10 | Manque de test | `GlyphCompound.cs` | Aucun test — racine des bugs 2 et 3 |
+| 11 | Manque de test | `KernTable.cs` | Test actuel masque le bug 1 par construction |
+| 12 | Manque de test | `TrueTypeFont.cs` | Round-trip `WriteFont()` complet toujours absent |
+| 5 | Dette technique | `Enums.cs` | Collision de valeur `MAC_ROMAN`/`UNICODE_DEFAULT` = 0 |
+| 8 | Cosmétique/dette | `PropTable.cs` | Incohérence de convention de sentinel vs `BslnTable` |
+| 6 | Cosmétique | `GaspTable.cs` | Doc XML dupliquée sur le constructeur |
+| 7 | Cosmétique | `DsigTable.cs` | Doc de classe fausse ("12-byte" vs 8 réels) |
+| 9 | Cosmétique | `CidKeyedFont.cs` | Doc incomplète sur la limite CID > 0xFFFF |
+
+## Points vérifiés sans anomalie trouvée (second passage)
+`Type3Font.cs`, `Type42Font.cs`, `PostScriptFont.cs`, `PostScriptGlyph.cs`, `CMapFormat0.cs`,
+`CMapFormatBase.cs`, `Tag.cs`, `TrueTypeTable.cs`, `TrueTypeGlyph.cs`, `TableTypes.cs`,
+`TTFTableAttribute.cs`, `Records.cs`, `HeadTable.cs`, `Os2Table.cs`, `HmtxTable.cs`, `VmtxTable.cs`,
+`HheaTable.cs`, `VheaTable.cs`, `MaxpTable.cs`, `LocaTable.cs`, `NameTable.cs` (au-delà du fix
+existant), `PostTable.cs` (au-delà du fix existant), `AvarTable.cs`, `FvarTable.cs`, `CvarTable.cs`,
+`DsigTable.cs` (code, hors doc), `LtshTable.cs`, `PcltTable.cs`, `BslnTable.cs`, `LcarTable.cs`,
+`OpbdTable.cs`, `PropTable.cs` (code, hors item 8), `TrakTable.cs`, `FeatTable.cs`, `FdscTable.cs`,
+`FmtxTable.cs`, `HdmxTable.cs`, `CvtTable.cs`, `AcntTable.cs`, `TtfEncoderFactory.cs`,
+`TtfHinting.cs`, `FontSupport.cs`, `IFont.cs`.
