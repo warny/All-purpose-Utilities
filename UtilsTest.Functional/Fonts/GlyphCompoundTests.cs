@@ -49,7 +49,7 @@ public class GlyphCompoundTests
         w.Write<short>(-1); // numberOfContours == -1 => compound glyph
         w.Write<short>(0); w.Write<short>(0); w.Write<short>(0); w.Write<short>(0); // bbox
 
-        var flags = CompoundGlyfFlags.ArgsAreXY | CompoundGlyfFlags.HasTwoByTwo | extraFlags;
+        var flags = CompoundGlyfFlags.ArgsAreWords | CompoundGlyfFlags.ArgsAreXY | CompoundGlyfFlags.HasTwoByTwo | extraFlags;
         w.Write<short>((short)flags);
         w.Write<short>(0); // glyphIndex: references glyph 0
         w.Write<short>(translateX);
@@ -201,5 +201,40 @@ public class GlyphCompoundTests
 
         Assert.AreEqual(glyph.Length, ms.ToArray().Length);
         CollectionAssert.AreEqual(original, ms.ToArray());
+    }
+
+    // Regression test: ReadData/WriteData/Length always assumed component arguments (translation
+    // offset or point-matching indices) were word-sized (2 bytes each), never checking the
+    // ARGS_ARE_WORDS flag (0x0001). Real fonts commonly clear this flag to save space when the
+    // offsets fit in a signed byte -- reading such a component as if it were word-sized desyncs the
+    // byte stream for everything that follows it, corrupting the rest of the glyph (and, in a full
+    // font, every glyph after it once loca offsets are involved). Found while diagnosing a full
+    // WriteFont() round-trip test against a real font (see TrueTypeFontTests), where several real
+    // compound glyphs decoded with a garbage multi-kilobyte instruction blob as a direct symptom.
+    [TestMethod]
+    public void ReadThenWrite_ArgsAreBytes_RoundTripsCorrectly()
+    {
+        using var ms = new MemoryStream();
+        var w = new Writer(ms, BigEndianWriter.WriterDelegates);
+        w.Write<short>(-1); // numberOfContours == -1 => compound glyph
+        w.Write<short>(0); w.Write<short>(0); w.Write<short>(0); w.Write<short>(0); // bbox
+
+        // ArgsAreWords deliberately NOT set: translate offsets are signed bytes, not words.
+        var flags = CompoundGlyfFlags.ArgsAreXY | CompoundGlyfFlags.HasScale;
+        w.Write<short>((short)flags);
+        w.Write<short>(0); // glyphIndex: references glyph 0
+        w.WriteByte(unchecked((byte)(sbyte)-5));  // translateX = -5
+        w.WriteByte(unchecked((byte)(sbyte)10));  // translateY = 10
+        w.Write<short>((short)System.Math.Round(1f * 16384f)); // uniform scale
+
+        byte[] original = ms.ToArray();
+        var glyph = (GlyphCompound)GlyphBase.CreateGlyf(MakeReader(original), null);
+
+        using var outMs = new MemoryStream();
+        var writer = new Writer(outMs, BigEndianWriter.WriterDelegates);
+        glyph.WriteData(writer);
+
+        Assert.AreEqual(glyph.Length, outMs.ToArray().Length);
+        CollectionAssert.AreEqual(original, outMs.ToArray());
     }
 }

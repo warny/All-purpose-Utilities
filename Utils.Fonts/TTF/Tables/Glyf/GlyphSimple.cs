@@ -279,7 +279,20 @@ public class GlyphSimple : GlyphBase
             int length = base.Length;
             length += NumContours * 2;               // Contour endpoint values
             length += 2 + InstructionsCount;         // Instruction length field and instructions
-            length += compactFlags.Count();          // Packed flags
+
+            // Packed flags: mirrors WriteData's repeat-splitting exactly -- a run of 1 point is a
+            // single byte, but a run of N > 1 identical flags is written as (flag|Repeat, count)
+            // pairs, one pair per 255 points (WriteData's `repetition -= 255` loop), not one byte
+            // per distinct run as this used to assume.
+            foreach (var flag in compactFlags)
+            {
+                int repetition = flag.Repetition;
+                while (repetition > 0)
+                {
+                    length += repetition > 1 ? 2 : 1;
+                    repetition -= 255;
+                }
+            }
             for (int i = 0; i < PointsCount; i++)
             {
                 OutlineFlags flag = flags[i];

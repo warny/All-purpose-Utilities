@@ -185,15 +185,18 @@ public class GlyphCompound : GlyphBase
             current = new GlyfComponent();
             current.Flags = (CompoundGlyfFlags)data.Read<Int16>();
             current.GlyphIndex = data.Read<Int16>();
+            bool argsAreWords = current.Flags.HasFlag(CompoundGlyfFlags.ArgsAreWords);
             if (current.Flags.HasFlag(CompoundGlyfFlags.ArgsAreXY))
             {
-                current.TranslateX = data.Read<Int16>();
-                current.TranslateY = data.Read<Int16>();
+                // Offsets are signed: int16 when ARGS_ARE_WORDS, otherwise int8.
+                current.TranslateX = argsAreWords ? data.Read<Int16>() : data.Read<SByte>();
+                current.TranslateY = argsAreWords ? data.Read<Int16>() : data.Read<SByte>();
             }
             else
             {
-                current.CompoundPoint = data.Read<Int16>();
-                current.ComponentPoint = data.Read<Int16>();
+                // Point-matching indices are unsigned: uint16 when ARGS_ARE_WORDS, otherwise uint8.
+                current.CompoundPoint = argsAreWords ? data.Read<UInt16>() : data.Read<Byte>();
+                current.ComponentPoint = argsAreWords ? data.Read<UInt16>() : data.Read<Byte>();
             }
 
             if (current.Flags.HasFlag(CompoundGlyfFlags.HasScale))
@@ -258,7 +261,7 @@ public class GlyphCompound : GlyphBase
             foreach (var component in Components)
             {
                 size += 4; // flags (Int16) + glyphIndex (Int16)
-                size += 4; // translate/point-matching args, always word-sized (2 x Int16)
+                size += component.Flags.HasFlag(CompoundGlyfFlags.ArgsAreWords) ? 4 : 2; // translate/point-matching args
                 size += component.Flags switch
                 {
                     var f when f.HasFlag(CompoundGlyfFlags.HasTwoByTwo) => 8,
@@ -277,11 +280,9 @@ public class GlyphCompound : GlyphBase
 
     /// <inheritdoc/>
     /// <remarks>
-    /// Mirrors the wire format read by <see cref="ReadData"/> exactly, including its limitations:
-    /// point-matching arguments (<see cref="GlyfComponent.CompoundPoint"/>/
-    /// <see cref="GlyfComponent.ComponentPoint"/>) and translation offsets are always written as
-    /// 16-bit words (the <c>ARGS_ARE_WORDS</c> flag is not checked, matching <see cref="ReadData"/>
-    /// not checking it either).
+    /// Mirrors the wire format read by <see cref="ReadData"/> exactly: point-matching arguments
+    /// (<see cref="GlyfComponent.CompoundPoint"/>/<see cref="GlyfComponent.ComponentPoint"/>) and
+    /// translation offsets are written as bytes or words depending on <c>ARGS_ARE_WORDS</c>.
     /// </remarks>
     public override void WriteData(Writer data)
     {
@@ -290,15 +291,32 @@ public class GlyphCompound : GlyphBase
         {
             data.Write<Int16>((short)component.Flags);
             data.Write<Int16>(component.GlyphIndex);
+            bool argsAreWords = component.Flags.HasFlag(CompoundGlyfFlags.ArgsAreWords);
             if (component.Flags.HasFlag(CompoundGlyfFlags.ArgsAreXY))
             {
-                data.Write<Int16>((short)component.TranslateX);
-                data.Write<Int16>((short)component.TranslateY);
+                if (argsAreWords)
+                {
+                    data.Write<Int16>((short)component.TranslateX);
+                    data.Write<Int16>((short)component.TranslateY);
+                }
+                else
+                {
+                    data.Write<SByte>((sbyte)component.TranslateX);
+                    data.Write<SByte>((sbyte)component.TranslateY);
+                }
             }
             else
             {
-                data.Write<Int16>((short)component.CompoundPoint);
-                data.Write<Int16>((short)component.ComponentPoint);
+                if (argsAreWords)
+                {
+                    data.Write<UInt16>((ushort)component.CompoundPoint);
+                    data.Write<UInt16>((ushort)component.ComponentPoint);
+                }
+                else
+                {
+                    data.Write<Byte>((byte)component.CompoundPoint);
+                    data.Write<Byte>((byte)component.ComponentPoint);
+                }
             }
 
             if (component.Flags.HasFlag(CompoundGlyfFlags.HasScale))

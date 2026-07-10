@@ -87,6 +87,7 @@ public class LocaTable : TrueTypeTable, IEnumerable<LocaRecord>
     {
         get
         {
+            RefreshOffsetsFromGlyf();
             // In short format each offset is stored as a 16-bit value; in long format as a 32-bit value.
             return IsLongFormat ? offsets.Length << 2 : offsets.Length << 1;
         }
@@ -98,6 +99,7 @@ public class LocaTable : TrueTypeTable, IEnumerable<LocaRecord>
     /// <param name="data">The writer to which the table data is written.</param>
     public override void WriteData(Writer data)
     {
+        RefreshOffsetsFromGlyf();
         if (IsLongFormat)
         {
             for (int i = 0; i < offsets.Length; i++)
@@ -112,6 +114,36 @@ public class LocaTable : TrueTypeTable, IEnumerable<LocaRecord>
                 data.Write<Int16>((short)(offsets[i] >> 1));
             }
         }
+    }
+
+    /// <summary>
+    /// Recomputes <see cref="offsets"/> from the actual, current lengths of the glyphs in the 'glyf'
+    /// table, rather than the possibly-stale offsets captured at <see cref="ReadData"/> time.
+    /// </summary>
+    /// <remarks>
+    /// Without this, writing a font whose glyph encoding changed size since it was read (e.g. a
+    /// component argument now encoded as a byte instead of a word) would serialize a 'glyf' table
+    /// whose actual layout no longer matches the offsets declared here, corrupting every glyph after
+    /// the first one whose size changed. Not declared as a dependency in this class's
+    /// <see cref="TTFTableAttribute"/> because 'glyf' itself depends on 'loca' to be read -- looking
+    /// the table up on demand here (only needed for writing, long after both tables exist) avoids the
+    /// circular read-time dependency that declaring it would create.
+    /// </remarks>
+    private void RefreshOffsetsFromGlyf()
+    {
+        if (!TrueTypeFont.TryGetTable<GlyfTable>(TableTypes.GLYF, out var glyfTable))
+        {
+            return;
+        }
+        var refreshed = new int[GlyphCount + 1];
+        int offset = 0;
+        for (int i = 0; i < GlyphCount; i++)
+        {
+            refreshed[i] = offset;
+            offset += glyfTable.GetGlyph(i)?.Length ?? 0;
+        }
+        refreshed[GlyphCount] = offset;
+        offsets = refreshed;
     }
 
     /// <summary>

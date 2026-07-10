@@ -149,7 +149,7 @@ public class TrueTypeFont : IFont
     public virtual byte[] WriteFont()
     {
         using var ms = new MemoryStream(Length);
-        var data = new Writer(ms);
+        var data = new Writer(ms, rawWriter.WriterDelegates);
 
         data.Write<Int32>(Type);
         data.Write<Int16>(TablesCount);
@@ -174,13 +174,13 @@ public class TrueTypeFont : IFont
             data.Push();
             data.Seek(currentoffset, SeekOrigin.Begin);
             data.Write<byte[]>(datas);
-            data.Pop();
             currentoffset += dataLength;
             while (currentoffset % TtfAlignment > 0)
             {
-                currentoffset++;
                 data.WriteByte(0);
+                currentoffset++;
             }
+            data.Pop();
         }
         data.Position = 0;
         UpdateChecksumAdj(new ReaderWriter(ms));
