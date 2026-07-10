@@ -4,7 +4,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using Utils.IO.Serialization;
 using Utils.Objects;
-using System.IO;
 
 namespace Utils.Fonts.TTF.Tables;
 
@@ -70,7 +69,7 @@ public class PostTable : TrueTypeTable
             /* 32 */    "equal", "greater", "question", "at", "A", "B", "C", "D",
             /* 40 */    "E", "F", "G", "H", "I", "J", "K", "L",
             /* 48 */    "M", "N", "O", "P", "Q", "R", "S", "T", 
-            /* 56 */    "U", "V", "W", "X", "Y", "Z", "bracketleft", "ackslash",
+            /* 56 */    "U", "V", "W", "X", "Y", "Z", "bracketleft", "backslash",
             /* 64 */    "bracketright", "asciicircum", "underscore", "grave", "a", "b", "c", "d",
             /* 72 */    "e", "f", "g", "h", "i", "j", "k", "l", 
             /* 80 */    "m", "n", "o", "p", "q", "r", "s", "t",
@@ -211,7 +210,6 @@ public class PostTable : TrueTypeTable
             {
                 data.WriteVariableLengthString(glyphNames[i], Encoding.Default, bigEndian: true, sizeLength: 1);
             }
-            data.Seek(0, SeekOrigin.Begin);
         }
 
         /// <summary>
