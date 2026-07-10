@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Numerics;
 using Utils.IO.Serialization;
 
 namespace Utils.Fonts.TTF.Tables
@@ -94,11 +93,7 @@ namespace Utils.Fonts.TTF.Tables
             data.Write<UInt16>(0);              // coverage (assumed horizontal, no cross-stream kerning)
 
             data.Write<UInt16>(nPairs);         // number of pairs
-                                                // For simplicity, compute searchRange, entrySelector, and rangeShift as follows:
-            int    log2         = BitOperations.Log2((uint)nPairs);
-            ushort searchRange  = (ushort)((1 << log2) * KernPairSize);
-            ushort entrySelector = (ushort)log2;
-            ushort rangeShift   = (ushort)(nPairs * KernPairSize - searchRange);
+            var (searchRange, entrySelector, rangeShift) = AatBinarySearchHeader.Compute(nPairs, KernPairSize);
             data.Write<UInt16>(searchRange);
             data.Write<UInt16>(entrySelector);
             data.Write<UInt16>(rangeShift);
