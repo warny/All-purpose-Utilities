@@ -149,7 +149,7 @@ public class TrueTypeFont : IFont
     public virtual byte[] WriteFont()
     {
         using var ms = new MemoryStream(Length);
-        var data = new Writer(ms);
+        var data = new Writer(ms, rawWriter.WriterDelegates);
 
         data.Write<Int32>(Type);
         data.Write<Int16>(TablesCount);
