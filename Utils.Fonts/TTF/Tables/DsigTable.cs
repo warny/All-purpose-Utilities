@@ -9,10 +9,10 @@ namespace Utils.Fonts.TTF.Tables;
 /// The 'DSIG' (Digital Signature) table contains one or more cryptographic signatures that
 /// attest to the authenticity and integrity of a font. Most tools treat this table as an opaque
 /// blob: they preserve it on read and discard or regenerate it on write. This implementation
-/// stores the entire table as raw bytes after the 12-byte outer header.
+/// stores the entire table as raw bytes after the 8-byte outer header.
 /// </summary>
 /// <remarks>
-/// <para>Header structure (12 bytes):</para>
+/// <para>Header structure (8 bytes):</para>
 /// <list type="table">
 ///   <item><term>UInt32 version</term><description>Always 1.</description></item>
 ///   <item><term>UInt16 numSigs</term><description>Number of signature blocks.</description></item>
