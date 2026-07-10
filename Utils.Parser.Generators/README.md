@@ -485,7 +485,18 @@ child returns [int value]
 A : 'a' ;
 ```
 
-List labels use `GetLabeledRuleCallResults(context, "xs")` and `GetLabeledRuleCallReturns(context, "xs", "value")`; absent list labels return empty lists. `TryGetLabeledRuleCallReturn` distinguishes missing returns from present-null values by returning `true` with `value == null` for present-null entries. Required helper calls throw deterministic parser attribute access exceptions for missing labels or return names. Failed alternatives are rolled back, and memoized child results keep child returns while applying the current successful call-site label. `$c.value`, `$x.value`, `$xs.value`, `$child.value`, `$rule.value`, `$c.ctx`, and `$ctx` remain unsupported syntax; a future PR may add `$c.value` only as sugar over these helpers.
+List labels use `GetLabeledRuleCallResults(context, "xs")` and `GetLabeledRuleCallReturns(context, "xs", "value")`; absent list labels return empty lists. `TryGetLabeledRuleCallReturn` distinguishes missing returns from present-null values by returning `true` with `value == null` for present-null entries. Required helper calls throw deterministic parser attribute access exceptions for missing labels or return names. Failed alternatives are rolled back, and memoized child results keep child returns while applying the current successful call-site label. `$c.value`, `$x.value`, and `$xs.value` are supported only as generated-C# opt-in transformer sugar in inline parser actions and `@after`; `$child.value`, `$rule.value`, `$ctx`, `$c.ctx`, `$xs.ctx`, bare labels, token attributes, lexer attributes, typed contexts, public ANTLR-style parser methods, and general ANTLR attribute compatibility remain unsupported syntax.
 
 
 Generated-C# list-label return sugar is intentionally narrow: `$xs.value` is available only in inline parser actions and `@after` when `xs` is a visible parser-rule list label from `xs+=child` and every referenced child rule declares `value`. The transformer rewrites only the `$xs.value` root/projection to `GetLabeledRuleCallReturns(context, "xs", "value")`; any following C# member access, for example `.Count`, is ordinary C#. The projection is read-only, reads only successful child calls, preserves order and present-null values, and follows the same rollback semantics as the explicit helper. It is unavailable in `@init`, semantic predicates, parser/lexer members, headers, footers, and lexer actions. `$child.value`, `$rule.value`, `$xs.ctx`, `$ctx`, typed parser contexts, public ANTLR-style parser methods, label writes, token attributes, and lexer attributes remain unsupported. Conservative `Parse(...)` remains unchanged and `ParserEngine` remains target-language-neutral.
+### Generated-C# parser return convenience boundary
+
+Supported generated-C# opt-in convenience forms are deliberately narrow:
+
+- bare `$value` reads/writes a declared return of the current rule;
+- `$c.value` / `$x.value` read a declared child return through an assignment label such as `c=child`;
+- `$xs.value` reads a list-label projection through `xs+=child` and returns the generated helper list.
+
+The following remain unsupported and must produce deterministic transformer diagnostics rather than new runtime syntax: `$child.value`, `$rule.value`, `$ctx`, `$c.ctx`, `$xs.ctx`, bare `$c` / `$xs` label objects, writes to `$c.value` or `$xs.value`, label-return reads in `@init`, label-return reads in semantic predicates, token attributes such as `$t.text`, lexer attributes, typed parser contexts, public ANTLR-style parser rule methods, and general ANTLR attribute compatibility.
+
+These forms are optional `IParserEmbeddedCodeTransformer` rewrites for generated C# only. The default/no-op transformer leaves `$...` text unchanged, conservative `Parse(...)` remains unchanged, and `ParserEngine` remains target-language-neutral. Parser-managed return and label state follows the existing rollback semantics; no rollback of external side effects is implied.

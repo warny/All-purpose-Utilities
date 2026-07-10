@@ -632,6 +632,32 @@ public class Antlr4GrammarGeneratorDiagnosticsTests
         StringAssert.Contains(diagnostic.GetMessage(), "not the current rule name");
     }
 
+    /// <summary>Verifies unsupported parser attribute boundary forms are surfaced through generator diagnostics.</summary>
+    [DataTestMethod]
+    [DataRow("start @after { Seen = $child.value; } : child ; child returns [int value] @after { $value = 42; } : A ;", "not the current rule name")]
+    [DataRow("start returns [int value] @after { Seen = $start.value; } : A ;", "Use bare '$value' instead")]
+    [DataRow("start @after { Seen = $ctx; } : A ;", "does not resolve")]
+    [DataRow("start @after { Seen = $c.ctx; } : c=child ; child : A ;", "Return 'ctx' is not declared by every parser rule referenced by assignment label 'c'")]
+    [DataRow("start @after { Seen = $xs.ctx; } : xs+=child ; child : A ;", "Return 'ctx' is not declared by every parser rule referenced by list label 'xs'")]
+    [DataRow("start @after { Seen = $c; } : c=child ; child : A ;", "label access")]
+    [DataRow("start @after { Seen = $xs; } : xs+=child ; child : A ;", "label access")]
+    [DataRow("start : c=child { $c.value != null }? ; child returns [int value] : A ;", "Parser attribute read '$c.value' is not supported in semantic predicates")]
+    [DataRow("start : xs+=child { $xs.value.Count > 0 }? ; child returns [int value] : A ;", "Parser attribute read '$xs.value' is not supported in semantic predicates")]
+    [DataRow("start @after { Seen = $t.text; } : t=A ;", "Token label 't' cannot be used as a parser rule-return attribute")]
+    [DataRow("start @after { Seen = $ts.text; } : ts+=A+ ;", "Token/list label 'ts' cannot be used as a parser rule-return attribute")]
+    public void GeneratorDiagnostics_UnsupportedParserAttributeBoundaries_ReportDedicatedError(string ruleText, string expectedMessage)
+    {
+        string grammar = $$"""
+            grammar P;
+            {{ruleText}}
+            A : 'a' ;
+            """;
+
+        Diagnostic diagnostic = RunGenerator(grammar).Single(candidate => candidate.Id == ParserDiagnostics.InvalidEmbeddedParserAttribute.Code);
+
+        StringAssert.Contains(diagnostic.GetMessage(), expectedMessage);
+    }
+
     /// <summary>Verifies invalid list-label returns, lifecycle locations, writes, and ambiguity are diagnosed.</summary>
     [DataTestMethod]
     [DataRow("@after { Seen = $xs.missing; }", "xs+=child", "Return 'missing' is not declared by every parser rule referenced by list label 'xs'")]

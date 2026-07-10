@@ -320,3 +320,14 @@ The assignment-label syntax `$c.value`/`$x.value` rewrites to required helper ac
 
 
 Generated-C# list-label return sugar is intentionally narrow: `$xs.value` is available only in inline parser actions and `@after` when `xs` is a visible parser-rule list label from `xs+=child` and every referenced child rule declares `value`. The transformer rewrites only the `$xs.value` root/projection to `GetLabeledRuleCallReturns(context, "xs", "value")`; any following C# member access, for example `.Count`, is ordinary C#. The projection is read-only, reads only successful child calls, preserves order and present-null values, and follows the same rollback semantics as the explicit helper. It is unavailable in `@init`, semantic predicates, parser/lexer members, headers, footers, and lexer actions. `$child.value`, `$rule.value`, `$xs.ctx`, `$ctx`, typed parser contexts, public ANTLR-style parser methods, label writes, token attributes, and lexer attributes remain unsupported. Conservative `Parse(...)` remains unchanged and `ParserEngine` remains target-language-neutral.
+### Generated-C# parser return convenience boundary
+
+Supported generated-C# opt-in convenience forms are deliberately narrow:
+
+- bare `$value` reads/writes a declared return of the current rule;
+- `$c.value` / `$x.value` read a declared child return through an assignment label such as `c=child`;
+- `$xs.value` reads a list-label projection through `xs+=child` and returns the generated helper list.
+
+The following remain unsupported and must produce deterministic transformer diagnostics rather than new runtime syntax: `$child.value`, `$rule.value`, `$ctx`, `$c.ctx`, `$xs.ctx`, bare `$c` / `$xs` label objects, writes to `$c.value` or `$xs.value`, label-return reads in `@init`, label-return reads in semantic predicates, token attributes such as `$t.text`, lexer attributes, typed parser contexts, public ANTLR-style parser rule methods, and general ANTLR attribute compatibility.
+
+These forms are optional `IParserEmbeddedCodeTransformer` rewrites for generated C# only. The default/no-op transformer leaves `$...` text unchanged, conservative `Parse(...)` remains unchanged, and `ParserEngine` remains target-language-neutral. Parser-managed return and label state follows the existing rollback semantics; no rollback of external side effects is implied.
