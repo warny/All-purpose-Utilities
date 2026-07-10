@@ -320,13 +320,18 @@ déjà acceptée pour ce fichier).
 
 ### Priorité moyenne — qualité de code
 
-#### 29. Pas de validation explicite des interfaces génériques dans `EmitDllMappableClass`
-`CompileMappingType` (`Reflection/Emit/EmitDllMappableClass.cs:93`) utilise `type.FullName`/
-`methodInfo.ReturnType.FullName` tels quels pour générer le C#. Une interface générique ou une méthode
-générique produirait un `FullName` avec la syntaxe de métadonnées CLR (backticks, arity) invalide en C#
-source — l'échec arriverait sous forme de diagnostic Roslyn cryptique plutôt qu'un message clair.
-Proposition : rejeter explicitement (message clair type « generic interfaces are not supported ») en
-amont, comme le fait déjà `CrossProcessMarshaling.EnsureInterfaceIsSupported` pour le chemin isolé.
+#### 29. ~~Pas de validation explicite des interfaces génériques dans `EmitDllMappableClass`~~ — **implémenté**
+`CompileMappingType` utilise `type.FullName`/`methodInfo.ReturnType.FullName` tels quels pour générer le
+C#. Une interface générique ou une méthode générique produirait un `FullName` avec la syntaxe de
+métadonnées CLR (backticks, arity) invalide en C# source — l'échec arrivait sous forme de diagnostic
+Roslyn cryptique plutôt qu'un message clair. **Fix** : nouvelle méthode `EnsureNotGeneric`, appelée dans
+`Emit(Type, CallingConvention)` juste après le contrôle « doit être une interface », qui rejette
+explicitement `type.IsGenericType`/`IsGenericTypeDefinition` ainsi que toute méthode
+`IsGenericMethodDefinition`, avec un message clair expliquant la cause (syntaxe de métadonnées CLR non
+valide en C# source). Couvre à la fois `EmitInProcess<TInterface>` et le chemin isolé (`EmitCore`, appelé
+par `EmitWorkerHost` à l'intérieur du worker) puisque les deux passent par `EmitDllMappableClass.Emit`.
+Tests : `UtilsTest/Reflection/EmitDllMappableClassRobustnessTests.cs`
+(`Emit_GenericInterface_ThrowsNotSupportedException`, `Emit_InterfaceWithGenericMethod_ThrowsNotSupportedException`).
 
 #### 30. Pas de bump de version / changelog pour le breaking change de `Emit<TInterface>`
 Déjà signalé lors de la relecture précédente (« flagged to the user, no version bump made

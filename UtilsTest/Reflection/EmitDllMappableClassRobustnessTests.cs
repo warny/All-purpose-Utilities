@@ -38,6 +38,18 @@ public interface IEmitDllMappableClassConcurrentTarget : IDisposable
     int Ping(int value);
 }
 
+/// <summary>Generic interface used to verify <see cref="EmitDllMappableClass.Emit(Type, CallingConvention)"/> rejects it upfront.</summary>
+public interface IEmitDllMappableClassGenericTarget<T> : IDisposable
+{
+    T Identity(T value);
+}
+
+/// <summary>Interface with a generic method, used to verify it is rejected upfront rather than reaching Roslyn.</summary>
+public interface IEmitDllMappableClassGenericMethodTarget : IDisposable
+{
+    T Identity<T>(T value);
+}
+
 /// <summary>
 /// Robustness tests for <see cref="EmitDllMappableClass"/>: rejecting non-interface types,
 /// generating code for <c>ref</c>/<c>out</c> parameters, and concurrent <c>Emit</c> calls for the
@@ -58,6 +70,28 @@ public class EmitDllMappableClassRobustnessTests
 #pragma warning restore UTILSREFL001
 
         StringAssert.Contains(ex.Message, "interface");
+    }
+
+    [TestMethod]
+    public void Emit_GenericInterface_ThrowsNotSupportedException()
+    {
+#pragma warning disable UTILSREFL001 // Deliberately exercising the in-process codegen path under test.
+        NotSupportedException ex = Assert.ThrowsException<NotSupportedException>(
+            () => EmitDllMappableClass.Emit(typeof(IEmitDllMappableClassGenericTarget<int>), CallingConvention.Cdecl));
+#pragma warning restore UTILSREFL001
+
+        StringAssert.Contains(ex.Message, "generic");
+    }
+
+    [TestMethod]
+    public void Emit_InterfaceWithGenericMethod_ThrowsNotSupportedException()
+    {
+#pragma warning disable UTILSREFL001
+        NotSupportedException ex = Assert.ThrowsException<NotSupportedException>(
+            () => EmitDllMappableClass.Emit(typeof(IEmitDllMappableClassGenericMethodTarget), CallingConvention.Cdecl));
+#pragma warning restore UTILSREFL001
+
+        StringAssert.Contains(ex.Message, "generic");
     }
 
     [TestMethod]

@@ -63,11 +63,17 @@ public static class EmitDllMappableClass
     /// <param name="type">Interface type</param>
     /// <param name="callingConvention">The calling convention of the unmanaged functions.</param>
     /// <returns>An instance of the dynamically generated class</returns>
+    /// <exception cref="NotSupportedException">
+    /// Thrown when <paramref name="type"/> is not an interface, or is a generic interface, or declares a
+    /// generic method.
+    /// </exception>
     [Experimental(LibraryMapper.CodeGenerationExperimentalDiagnosticId)]
     public static object Emit(Type type, CallingConvention callingConvention = CallingConvention.Winapi)
     {
         if (!type.IsInterface)
             throw new NotSupportedException($"{type.Name} is not an interface. Only interfaces are supported.");
+
+        EnsureNotGeneric(type);
 
         Lazy<Type> lazyEmittedType = emittedLibraries.GetOrAdd(
             (type, callingConvention),
@@ -76,6 +82,45 @@ public static class EmitDllMappableClass
                 LazyThreadSafetyMode.ExecutionAndPublication));
 
         return Activator.CreateInstance(lazyEmittedType.Value);
+    }
+
+    /// <summary>
+    /// Rejects generic interfaces and interfaces declaring generic methods before any code generation
+    /// is attempted.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="CompileMappingType"/> writes <see cref="Type.FullName"/>/<see cref="MethodInfo"/>
+    /// signatures directly into generated C# source (see <see cref="WriteFunctionParameters"/>). For a
+    /// generic type/method, those names use CLR metadata syntax (backticks, arity markers like
+    /// <c>`1</c>, open type parameter placeholders) that is not valid C# source — compilation would fail
+    /// with a cryptic Roslyn diagnostic pointing at the generated (invisible to the caller) source file
+    /// instead of a clear message about the actual problem. Checked upfront so the failure is immediate
+    /// and its cause obvious.
+    /// </remarks>
+    /// <param name="type">Interface type to validate.</param>
+    /// <exception cref="NotSupportedException">
+    /// Thrown when <paramref name="type"/> is a generic interface, or declares at least one generic method.
+    /// </exception>
+    private static void EnsureNotGeneric(Type type)
+    {
+        if (type.IsGenericType || type.IsGenericTypeDefinition)
+        {
+            throw new NotSupportedException(
+                $"'{type.FullName}' is a generic interface, which is not supported: generic type " +
+                $"arguments produce CLR metadata names (backticks, arity) that are not valid C# source " +
+                $"identifiers when emitting the mapping class.");
+        }
+
+        foreach (MethodInfo method in type.GetMethods())
+        {
+            if (method.IsGenericMethodDefinition)
+            {
+                throw new NotSupportedException(
+                    $"'{type.FullName}.{method.Name}' is a generic method, which is not supported for " +
+                    $"the same reason generic interfaces are not: its CLR metadata name is not valid C# " +
+                    $"source when emitting the mapping class.");
+            }
+        }
     }
 
     /// <summary>
