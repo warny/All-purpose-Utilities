@@ -66,4 +66,26 @@ public class TtfEncoderFactoryTests
         Assert.AreEqual(Encoding.BigEndianUnicode, englishEncoding);
         Assert.AreEqual(Encoding.BigEndianUnicode, otherLanguageEncoding);
     }
+
+    // Regression test (found in PR review): the Microsoft-platform fix above initially always
+    // returned UTF-16BE, but per the OpenType spec, encoding IDs 2 (ShiftJIS), 3 (PRC), 4 (Big5), 5
+    // (Wansung) and 6 (Johab) are legacy double-byte CJK code pages that predate Microsoft encoding
+    // every 'name' record as UTF-16BE. TtfPlatformSpecificID has no named members for these (only
+    // 0/1/3 are defined, and 3 is misleadingly named UNICODE_V2 -- a different, Unicode-versioning
+    // meaning unrelated to the Microsoft PRC encoding ID that shares the same numeric value), so
+    // this casts the raw values directly.
+    [TestMethod]
+    public void Microsoft_LegacyCjkEncodingIds_ReturnTheirOwnCodePage()
+    {
+        Assert.AreEqual(Encoding.GetEncoding(932), TtfEncoderFactory.GetEncoding(
+            TtfPlatFormId.Microsoft, (TtfPlatformSpecificID)2, TtfLanguageID.MS_English_United_States)); // ShiftJIS
+        Assert.AreEqual(Encoding.GetEncoding(936), TtfEncoderFactory.GetEncoding(
+            TtfPlatFormId.Microsoft, (TtfPlatformSpecificID)3, TtfLanguageID.MS_English_United_States)); // PRC
+        Assert.AreEqual(Encoding.GetEncoding(950), TtfEncoderFactory.GetEncoding(
+            TtfPlatFormId.Microsoft, (TtfPlatformSpecificID)4, TtfLanguageID.MS_English_United_States)); // Big5
+        Assert.AreEqual(Encoding.GetEncoding(949), TtfEncoderFactory.GetEncoding(
+            TtfPlatFormId.Microsoft, (TtfPlatformSpecificID)5, TtfLanguageID.MS_English_United_States)); // Wansung
+        Assert.AreEqual(Encoding.GetEncoding(1361), TtfEncoderFactory.GetEncoding(
+            TtfPlatFormId.Microsoft, (TtfPlatformSpecificID)6, TtfLanguageID.MS_English_United_States)); // Johab
+    }
 }
