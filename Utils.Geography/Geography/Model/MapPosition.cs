@@ -33,11 +33,9 @@ public sealed class MapPosition<T> : IEquatable<MapPosition<T>>, IEqualityOperat
     /// </summary>
     /// <param name="geoPoint">The geographical coordinates of the map center.</param>
     /// <param name="zoomLevel">The zoom level of the map.</param>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="geoPoint"/> is null.</exception>
     /// <exception cref="ArgumentOutOfRangeException">Thrown if <paramref name="zoomLevel"/> is less than or equal to 0.</exception>
     public MapPosition(GeoPoint<T> geoPoint, byte zoomLevel)
     {
-        geoPoint.Arg().MustNotBeNull();
         zoomLevel.ArgMustBeGreaterThan((byte)0);
 
         this.GeoPoint = geoPoint;
@@ -58,13 +56,12 @@ public sealed class MapPosition<T> : IEquatable<MapPosition<T>>, IEqualityOperat
     public bool Equals(MapPosition<T>? other)
     {
         if (other is null) return false;
-        if (this.GeoPoint is null) return other.GeoPoint is null;
 
         return this.GeoPoint.Equals(other.GeoPoint) && this.ZoomLevel == other.ZoomLevel;
     }
 
     /// <inheritdoc />
-    public override int GetHashCode() => ObjectUtils.ComputeHash(this.GeoPoint?.GetHashCode() ?? 0, this.ZoomLevel);
+    public override int GetHashCode() => ObjectUtils.ComputeHash(this.GeoPoint.GetHashCode(), this.ZoomLevel);
 
     /// <summary>
     /// Equality operator for comparing two <see cref="MapPosition{T}"/> instances.

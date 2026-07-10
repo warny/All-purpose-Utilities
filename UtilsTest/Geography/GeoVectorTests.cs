@@ -1,5 +1,4 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
@@ -184,13 +183,6 @@ namespace UtilsTest.Geography
         }
 
         [TestMethod]
-        public void RecenterOnNullThrows()
-        {
-            var vector = new GeoVector<double>(45, 30, 90);
-            Assert.ThrowsException<ArgumentNullException>(() => vector.Recenter(null!));
-        }
-
-        [TestMethod]
         public void RecenterMapsOtherPointToNewLatitudeEqualToAngularDistance()
         {
             var reference = new GeoVector<double>(0, 0, 90);
@@ -198,7 +190,7 @@ namespace UtilsTest.Geography
 
             var recentered = reference.Recenter(other);
 
-            Assert.AreEqual(reference.AngleWith(other), recentered.Latitude, 1e-9);
+            Assert.AreEqual(reference.Point.AngleWith(other.Point), recentered.Latitude, 1e-9);
         }
 
         [TestMethod]

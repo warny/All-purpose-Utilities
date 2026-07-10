@@ -28,34 +28,34 @@ namespace Utils.Geography.Model
 
     /// <summary>
     /// Represents an immutable geographic point with latitude and longitude.
-    /// This class supports parsing, formatting, and mathematical operations between geographic points.
+    /// This type supports parsing, formatting, and mathematical operations between geographic points.
     /// </summary>
     /// <typeparam name="T">
     /// Numeric type implementing IFloatingPointIeee754 (e.g., float, double, decimal).
     /// </typeparam>
-    public class GeoPoint<T> : IEquatable<GeoPoint<T>>, IFormattable, IEqualityOperators<GeoPoint<T>, GeoPoint<T>, bool>
+    public readonly struct GeoPoint<T> : IEquatable<GeoPoint<T>>, IFormattable, IEqualityOperators<GeoPoint<T>, GeoPoint<T>, bool>
         where T : struct, IFloatingPointIeee754<T>, IDivisionOperators<T, T, T>
     {
         // Constants for degrees, minutes, and seconds conversions
         /// <summary>
         /// Number of minutes in a degree.
         /// </summary>
-        protected static readonly T MinutesInDegree = T.CreateChecked(60);
+        private static readonly T MinutesInDegree = T.CreateChecked(60);
 
         /// <summary>
         /// Number of seconds in a degree.
         /// </summary>
-        protected static readonly T SecondsInDegree = T.CreateChecked(3600);
+        private static readonly T SecondsInDegree = T.CreateChecked(3600);
 
         /// <summary>
         /// Number of seconds in a minute.
         /// </summary>
-        protected static readonly T SecondsInMinute = T.CreateChecked(60);
+        private static readonly T SecondsInMinute = T.CreateChecked(60);
 
         /// <summary>
         /// Angle calculator configured to work in degrees.
         /// </summary>
-        protected static readonly IAngleCalculator<T> degree = Trigonometry<T>.Degree;
+        private static readonly IAngleCalculator<T> degree = Trigonometry<T>.Degree;
 
         /// <summary>
         /// Number of decimal places latitude/longitude (and bearing, for <see cref="GeoVector{T}"/>) are
@@ -65,7 +65,7 @@ namespace Utils.Geography.Model
         /// but land on opposite sides of a rounding boundary as unequal. See the remarks on
         /// <see cref="Equals(GeoPoint{T})"/> for the full rationale and a worked example.
         /// </summary>
-        protected const int EqualityPrecision = 5;
+        internal const int EqualityPrecision = 5;
 
         /// <summary>
         /// Floating-point comparer used for tolerance-based domain checks that are not part of the
@@ -73,7 +73,7 @@ namespace Utils.Geography.Model
         /// meridians in <see cref="GeoVector{T}.ComputeBearing"/>, or the default tolerance used by
         /// <see cref="IsApproximately(GeoPoint{T})"/>).
         /// </summary>
-        protected static readonly FloatingPointComparer<T> comparer = new(EqualityPrecision);
+        private static readonly FloatingPointComparer<T> comparer = new(EqualityPrecision);
 
         /// <summary>
         /// Maximum valid latitude in degrees.
@@ -88,22 +88,22 @@ namespace Utils.Geography.Model
         /// <summary>
         /// Modifiers that indicate a positive latitude value.
         /// </summary>
-        protected static readonly IReadOnlyList<string> PositiveLatitude = ["+", "N"];
+        internal static readonly IReadOnlyList<string> PositiveLatitude = ["+", "N"];
 
         /// <summary>
         /// Modifiers that indicate a negative latitude value.
         /// </summary>
-        protected static readonly IReadOnlyList<string> NegativeLatitude = ["-", "S"];
+        internal static readonly IReadOnlyList<string> NegativeLatitude = ["-", "S"];
 
         /// <summary>
         /// Modifiers that indicate a positive longitude value.
         /// </summary>
-        protected static readonly IReadOnlyList<string> PositiveLongitude = ["+", "E"];
+        internal static readonly IReadOnlyList<string> PositiveLongitude = ["+", "E"];
 
         /// <summary>
         /// Modifiers that indicate a negative longitude value.
         /// </summary>
-        protected static readonly IReadOnlyList<string> NegativeLongitude = ["-", "W"];
+        internal static readonly IReadOnlyList<string> NegativeLongitude = ["-", "W"];
 
         /// <summary>
         /// Latitude in degrees (immutable).
@@ -124,11 +124,6 @@ namespace Utils.Geography.Model
         /// Alias for Longitude.
         /// </summary>
         public T λ => Longitude;
-
-        /// <summary>
-        /// Protected default constructor used for inheritance scenarios or reflection.
-        /// </summary>
-        protected GeoPoint() { }
 
         /// <summary>
         /// Copy constructor for creating a new GeoPoint from an existing one.
@@ -217,7 +212,7 @@ namespace Utils.Geography.Model
         /// Attempts to parse the provided latitude and longitude strings using the specified culture and regex.
         /// If successful, lat/lon will be set and <see langword="true"/> will be returned.
         /// </summary>
-        protected bool ParseCoordinates(
+        private bool ParseCoordinates(
             string latitudeString,
             string longitudeString,
             CultureInfo cultureInfo,
@@ -254,7 +249,7 @@ namespace Utils.Geography.Model
         /// <summary>
         /// Parses a single string coordinate value based on its direction (Latitude/Longitude).
         /// </summary>
-        protected static T ParseCoordinate(
+        internal static T ParseCoordinate(
             CoordinateDirection direction,
             string coordinateValue,
             IReadOnlyList<string> positiveModifiers,
@@ -378,10 +373,8 @@ namespace Utils.Geography.Model
         /// handled separately above), so it only needs a plain rounded comparison.
         /// </para>
         /// </remarks>
-        public bool Equals(GeoPoint<T>? other)
+        public bool Equals(GeoPoint<T> other)
         {
-            if (other is null) return false;
-
             T roundedLatitude = T.Round(Latitude, EqualityPrecision);
             T otherRoundedLatitude = T.Round(other.Latitude, EqualityPrecision);
 
@@ -432,8 +425,6 @@ namespace Utils.Geography.Model
         /// </remarks>
         public bool IsApproximately(GeoPoint<T> other, T tolerance)
         {
-            other.Arg().MustNotBeNull();
-
             if (degree.AreEqual(Latitude, MaxLatitude, tolerance) && degree.AreEqual(other.Latitude, MaxLatitude, tolerance)) return true;
             if (degree.AreEqual(Latitude, MinLatitude, tolerance) && degree.AreEqual(other.Latitude, MinLatitude, tolerance)) return true;
 
@@ -465,7 +456,7 @@ namespace Utils.Geography.Model
         /// Returns this geographic point as a string in the specified format and culture.
         /// Supported formats: "0.#####", "d" and "D" (for degree-minute-second).
         /// </summary>
-        public virtual string ToString(string? format, IFormatProvider? formatProvider)
+        public string ToString(string? format, IFormatProvider? formatProvider)
         {
             formatProvider ??= CultureInfo.InvariantCulture;
             format ??= "0.#####";
@@ -533,15 +524,15 @@ namespace Utils.Geography.Model
         /// current culture then the invariant culture.
         /// </summary>
         /// <param name="coordinates">The string to parse.</param>
-        /// <param name="result">The parsed point, or <see langword="null"/> on failure.</param>
+        /// <param name="result">The parsed point, or <c>default</c> on failure.</param>
         /// <returns><see langword="true"/> if parsing succeeded; otherwise <see langword="false"/>.</returns>
-        public static bool TryParse(string coordinates, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out GeoPoint<T>? result)
+        public static bool TryParse(string coordinates, out GeoPoint<T> result)
             => TryParse(coordinates, [], out result);
 
         /// <summary>
         /// Attempts to parse a combined coordinate string using the specified cultures.
         /// </summary>
-        public static bool TryParse(string coordinates, CultureInfo[] cultureInfos, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out GeoPoint<T>? result)
+        public static bool TryParse(string coordinates, CultureInfo[] cultureInfos, out GeoPoint<T> result)
         {
             try
             {
@@ -550,7 +541,7 @@ namespace Utils.Geography.Model
             }
             catch
             {
-                result = null;
+                result = default;
                 return false;
             }
         }
@@ -561,15 +552,15 @@ namespace Utils.Geography.Model
         /// </summary>
         /// <param name="latitudeString">Latitude string (e.g. <c>"N48°51'"</c> or <c>"48.8566"</c>).</param>
         /// <param name="longitudeString">Longitude string (e.g. <c>"E2°21'"</c> or <c>"2.3522"</c>).</param>
-        /// <param name="result">The parsed point, or <see langword="null"/> on failure.</param>
+        /// <param name="result">The parsed point, or <c>default</c> on failure.</param>
         /// <returns><see langword="true"/> if parsing succeeded; otherwise <see langword="false"/>.</returns>
-        public static bool TryParse(string latitudeString, string longitudeString, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out GeoPoint<T>? result)
+        public static bool TryParse(string latitudeString, string longitudeString, out GeoPoint<T> result)
             => TryParse(latitudeString, longitudeString, [], out result);
 
         /// <summary>
         /// Attempts to parse separate latitude and longitude strings using the specified cultures.
         /// </summary>
-        public static bool TryParse(string latitudeString, string longitudeString, CultureInfo[] cultureInfos, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out GeoPoint<T>? result)
+        public static bool TryParse(string latitudeString, string longitudeString, CultureInfo[] cultureInfos, out GeoPoint<T> result)
         {
             try
             {
@@ -578,7 +569,7 @@ namespace Utils.Geography.Model
             }
             catch
             {
-                result = null;
+                result = default;
                 return false;
             }
         }
@@ -590,12 +581,12 @@ namespace Utils.Geography.Model
         /// <summary>
         /// Determines whether two geographic points are equal.
         /// </summary>
-        public static bool operator ==(GeoPoint<T>? left, GeoPoint<T>? right) => left?.Equals(right) ?? right is null;
+        public static bool operator ==(GeoPoint<T> left, GeoPoint<T> right) => left.Equals(right);
 
         /// <summary>
         /// Determines whether two geographic points are not equal.
         /// </summary>
-        public static bool operator !=(GeoPoint<T>? left, GeoPoint<T>? right) => !(left == right);
+        public static bool operator !=(GeoPoint<T> left, GeoPoint<T> right) => !left.Equals(right);
 
         #endregion
 
@@ -607,7 +598,7 @@ namespace Utils.Geography.Model
         /// <summary>
         /// Builds or retrieves from cache the regex used to parse coordinate values from strings.
         /// </summary>
-        protected static Regex BuildRegexCoordinates(CultureInfo culture)
+        internal static Regex BuildRegexCoordinates(CultureInfo culture)
         {
             string nativeDigits = string.Join("", culture.NumberFormat.NativeDigits);
             string decimalSeparator = culture.NumberFormat.NumberDecimalSeparator;

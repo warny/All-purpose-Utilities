@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Globalization;
 using System.Numerics;
 using Utils.Mathematics;
@@ -10,19 +10,60 @@ namespace Utils.Geography.Model;
 /// Represents a vector of displacement on a spherical geodesic with a bearing (heading direction).
 /// </summary>
 /// <typeparam name="T">The numeric type used for calculations, typically a floating point.</typeparam>
-// CA2260 expects IEqualityOperators<TSelf, TOther, TResult> to be implemented via CRTP (GeoPoint<TSelf>),
-// but GeoVector<T> classically inherits GeoPoint<T> (same T) instead of GeoPoint<GeoVector<T>>. The ==/!=
-// operators on both types are correct and tested; adopting the CRTP pattern here would require turning
-// GeoPoint<T> into GeoPoint<TSelf, T>, a breaking API change for every consumer of this package. Suppressed
-// as informational-only.
-#pragma warning disable CA2260
-public sealed class GeoVector<T> : GeoPoint<T>, IEquatable<GeoVector<T>>, IUnaryNegationOperators<GeoVector<T>, GeoVector<T>>, IEqualityOperators<GeoVector<T>, GeoVector<T>, bool>
+/// <remarks>
+/// Wraps a <see cref="GeoPoint{T}"/> (composition) rather than inheriting from it: a vector "has a"
+/// position, it isn't itself a point. Besides being the more accurate model, this also sidesteps a real
+/// bug the previous inheritance-based design had: <see cref="GeoPoint{T}.Equals(object?)"/> matches any
+/// <see cref="GeoPoint{T}"/>-derived instance via <c>obj is GeoPoint&lt;T&gt;</c>, so comparing a bare
+/// <see cref="GeoPoint{T}"/> against a <see cref="GeoVector{T}"/> at the same coordinates used to report
+/// them as equal (silently ignoring the bearing) while their hash codes (one over lat/lon, the other over
+/// lat/lon/bearing) could differ — breaking the <see cref="object.GetHashCode"/> contract for any
+/// <see cref="System.Collections.Generic.Dictionary{TKey,TValue}"/>/<see cref="System.Collections.Generic.HashSet{T}"/>
+/// mixing both types. Composition makes that mismatch impossible: <see cref="GeoVector{T}"/> and
+/// <see cref="GeoPoint{T}"/> are unrelated types and can no longer compare equal to each other.
+/// </remarks>
+public readonly struct GeoVector<T> : IEquatable<GeoVector<T>>, IFormattable, IUnaryNegationOperators<GeoVector<T>, GeoVector<T>>, IEqualityOperators<GeoVector<T>, GeoVector<T>, bool>
     where T : struct, IFloatingPointIeee754<T>, IDivisionOperators<T, T, T>
 {
+    /// <summary>
+    /// Angle calculator configured to work in degrees.
+    /// </summary>
+    private static readonly IAngleCalculator<T> degree = Trigonometry<T>.Degree;
+
+    /// <summary>
+    /// Floating-point comparer used for the default tolerance in <see cref="IsApproximately(GeoVector{T})"/>.
+    /// </summary>
+    private static readonly FloatingPointComparer<T> comparer = new(GeoPoint<T>.EqualityPrecision);
+
+    /// <summary>
+    /// The geographic position this vector originates from. Immutable.
+    /// </summary>
+    public GeoPoint<T> Point { get; }
+
     /// <summary>
     /// Bearing in degrees relative to north, measured clockwise. Immutable.
     /// </summary>
     public T Bearing { get; }
+
+    /// <summary>
+    /// Latitude in degrees (immutable). Alias for <see cref="Point"/>'s latitude.
+    /// </summary>
+    public T Latitude => Point.Latitude;
+
+    /// <summary>
+    /// Longitude in degrees (immutable). Alias for <see cref="Point"/>'s longitude.
+    /// </summary>
+    public T Longitude => Point.Longitude;
+
+    /// <summary>
+    /// Alias for Latitude.
+    /// </summary>
+    public T φ => Point.Latitude;
+
+    /// <summary>
+    /// Alias for Longitude.
+    /// </summary>
+    public T λ => Point.Longitude;
 
     /// <summary>
     /// Bearing in degrees relative to north, measured clockwise.
@@ -49,8 +90,8 @@ public sealed class GeoVector<T> : GeoPoint<T>, IEquatable<GeoVector<T>>, IUnary
     /// </summary>
     /// <param name="parsed">The parsed latitude, longitude, and bearing.</param>
     private GeoVector((T latitude, T longitude, T bearing) parsed)
-        : base(parsed.latitude, parsed.longitude)
     {
+        Point = new GeoPoint<T>(parsed.latitude, parsed.longitude);
         Bearing = parsed.bearing;
     }
 
@@ -69,8 +110,8 @@ public sealed class GeoVector<T> : GeoPoint<T>, IEquatable<GeoVector<T>>, IUnary
     /// <param name="geoPoint">Base geographic point (latitude/longitude).</param>
     /// <param name="bearing">Heading direction in degrees.</param>
     public GeoVector(GeoPoint<T> geoPoint, T bearing)
-        : base(geoPoint.Latitude, geoPoint.Longitude)
     {
+        Point = geoPoint;
         Bearing = degree.Normalize0To2Max(bearing);
     }
 
@@ -80,8 +121,8 @@ public sealed class GeoVector<T> : GeoPoint<T>, IEquatable<GeoVector<T>>, IUnary
     /// <param name="geoPoint">Start point.</param>
     /// <param name="destination">Destination point.</param>
     public GeoVector(GeoPoint<T> geoPoint, GeoPoint<T> destination)
-        : base(geoPoint.Latitude, geoPoint.Longitude)
     {
+        Point = geoPoint;
         Bearing = ComputeBearing(geoPoint, destination);
     }
 
@@ -92,8 +133,8 @@ public sealed class GeoVector<T> : GeoPoint<T>, IEquatable<GeoVector<T>>, IUnary
     /// <param name="longitude">Longitude in degrees.</param>
     /// <param name="bearing">Heading direction in degrees.</param>
     public GeoVector(T latitude, T longitude, T bearing)
-        : base(latitude, longitude)
     {
+        Point = new GeoPoint<T>(latitude, longitude);
         Bearing = degree.Normalize0To2Max(bearing);
     }
 
@@ -105,8 +146,8 @@ public sealed class GeoVector<T> : GeoPoint<T>, IEquatable<GeoVector<T>>, IUnary
     /// <param name="bearing">Bearing direction in degrees.</param>
     /// <param name="cultureInfos">Culture information used to parse the coordinates.</param>
     public GeoVector(string latitudeString, string longitudeString, T bearing, params CultureInfo[] cultureInfos)
-        : base(latitudeString, longitudeString, cultureInfos)
     {
+        Point = new GeoPoint<T>(latitudeString, longitudeString, cultureInfos);
         Bearing = degree.Normalize0To2Max(bearing);
     }
 
@@ -151,25 +192,25 @@ public sealed class GeoVector<T> : GeoPoint<T>, IEquatable<GeoVector<T>>, IUnary
             // Reuse GeoPoint's existing parse approach:
             // We can re-use the static or protected logic from base if it’s accessible,
             // or replicate it here. For simplicity, let's do a quick manual parse:
-            var regex = BuildRegexCoordinates(cultureInfo);
+            var regex = GeoPoint<T>.BuildRegexCoordinates(cultureInfo);
 
             // parse latitude
-            var lat = ParseCoordinate(
+            var lat = GeoPoint<T>.ParseCoordinate(
                 CoordinateDirection.Latitude,
                 parts[0],
-                PositiveLatitude,
-                NegativeLatitude,
+                GeoPoint<T>.PositiveLatitude,
+                GeoPoint<T>.NegativeLatitude,
                 cultureInfo,
                 regex
             );
             if (T.IsNaN(lat)) continue; // failed parse
 
             // parse longitude
-            var lon = ParseCoordinate(
+            var lon = GeoPoint<T>.ParseCoordinate(
                 CoordinateDirection.Longitude,
                 parts[1],
-                PositiveLongitude,
-                NegativeLongitude,
+                GeoPoint<T>.PositiveLongitude,
+                GeoPoint<T>.NegativeLongitude,
                 cultureInfo,
                 regex
             );
@@ -194,8 +235,8 @@ public sealed class GeoVector<T> : GeoPoint<T>, IEquatable<GeoVector<T>>, IUnary
     /// <param name="bearing">Bearing, in degrees.</param>
     public void Deconstruct(out T latitude, out T longitude, out T bearing)
     {
-        latitude = Latitude;
-        longitude = Longitude;
+        latitude = Point.Latitude;
+        longitude = Point.Longitude;
         bearing = Bearing;
     }
 
@@ -240,7 +281,6 @@ public sealed class GeoVector<T> : GeoPoint<T>, IEquatable<GeoVector<T>>, IUnary
     /// <returns>A new <see cref="GeoVector{T}"/> representing the position and bearing after traveling.</returns>
     public GeoVector<T> Travel(T angle)
     {
-        // (Unchanged logic from your snippet—just referencing the new base's immutability.)
         bool negative = T.Sign(angle) == -1;
 
         // Force angle into [0, 360)
@@ -309,7 +349,7 @@ public sealed class GeoVector<T> : GeoPoint<T>, IEquatable<GeoVector<T>>, IUnary
         λ2 = T.Round(λ2, 5);
 
         var arrival = new GeoPoint<T>(φ2, λ2);
-        T newBearing = MathEx.Mod(bearingCorrection + ComputeBearing(arrival, this), degree.Perigon);
+        T newBearing = MathEx.Mod(bearingCorrection + ComputeBearing(arrival, this.Point), degree.Perigon);
 
         return new GeoVector<T>(arrival, newBearing);
     }
@@ -324,28 +364,26 @@ public sealed class GeoVector<T> : GeoPoint<T>, IEquatable<GeoVector<T>>, IUnary
     /// - The new latitude = spherical distance (central angle) from "this" to "other".
     /// - The new longitude = difference in initial bearings, so that "this.Bearing" becomes 0°.
     /// - The new bearing = difference in heading from "this.Bearing".
-    /// 
+    ///
     /// Change the reference so that the current vector is effectively the new origin with heading=0.
     /// </summary>
     /// <returns>The point recentered with the current vector as new reference</returns>
     public GeoVector<T> Recenter(GeoVector<T> other)
     {
-        other.Arg().MustNotBeNull();
-
-        // If "other" IS the same instance as "this," map to (0,0,0).
+        // If "other" IS the same vector as "this," map to (0,0,0).
         if (this == other)
         {
             return new GeoVector<T>(T.Zero, T.Zero, T.Zero);
         }
 
         // 1) New latitude = central angle between "reference" and "other".
-        //    (This uses the sphere-based "AngleWith" method you already have.)
-        T newLat = this.AngleWith(other);
+        //    (This uses the sphere-based "AngleWith" method on GeoPoint.)
+        T newLat = this.Point.AngleWith(other.Point);
 
         // 2) We define "new longitude" by the difference in initial bearings
         //    so that reference.Bearing becomes 0 in the new system.
-        T bearingRefToOther = ComputeBearing(this, other); // from your static "ComputeBearing" method
-                                                           // We want to shift so that reference.Bearing => 0.
+        T bearingRefToOther = ComputeBearing(this.Point, other.Point);
+        // We want to shift so that reference.Bearing => 0.
         T newLon = MathEx.Mod(bearingRefToOther - this.Bearing, degree.Perigon);
 
         // 3) We define the new bearing as the difference from reference.Bearing.
@@ -369,11 +407,9 @@ public sealed class GeoVector<T> : GeoPoint<T>, IEquatable<GeoVector<T>>, IUnary
     /// <returns>An array of 2 intersection points, or an empty array if the circles are identical.</returns>
     public GeoPoint<T>[] Intersections(GeoVector<T> other)
     {
-        // Same logic from your snippet, with minimal changes.
-
         var temp = (
-            a: Travel(this.AngleWith(other)),
-            b: (-this).Travel(this.AngleWith(other))
+            a: Travel(this.Point.AngleWith(other.Point)),
+            b: (-this).Travel(this.Point.AngleWith(other.Point))
         );
 
         if (other.In(temp.a, -temp.a, temp.b, -temp.b))
@@ -481,12 +517,7 @@ public sealed class GeoVector<T> : GeoPoint<T>, IEquatable<GeoVector<T>>, IUnary
     #region Equality & Overrides
 
     /// <inheritdoc />
-    public override bool Equals(object? obj)
-    {
-        if (ReferenceEquals(this, obj)) return true;
-        if (obj is GeoVector<T> vector) return Equals(vector);
-        return base.Equals(obj);
-    }
+    public override bool Equals(object? obj) => obj is GeoVector<T> vector && Equals(vector);
 
     /// <summary>
     /// Determines whether the specified <see cref="GeoVector{T}"/> has the same position and bearing as
@@ -510,22 +541,20 @@ public sealed class GeoVector<T> : GeoPoint<T>, IEquatable<GeoVector<T>>, IUnary
     /// are treated as unequal. See <c>GeoVectorTests.VectorsOnOppositeSidesOfARoundingBoundaryAreNotEqual</c>
     /// for a regression test pinning down this behavior.
     /// </remarks>
-    public bool Equals(GeoVector<T>? other)
-        => other is not null
-           && degree.AreEqualRounded(Bearing, other.Bearing, EqualityPrecision)
-           && base.Equals(other);
+    public bool Equals(GeoVector<T> other)
+        => degree.AreEqualRounded(Bearing, other.Bearing, GeoPoint<T>.EqualityPrecision)
+           && Point.Equals(other.Point);
 
     /// <summary>
-    /// Returns a hash code consistent with <see cref="Equals(GeoVector{T})"/>: latitude is rounded, and
-    /// longitude/bearing are normalized (to handle antimeridian/0-360° wraparound) and rounded, to
-    /// <see cref="GeoPoint{T}.EqualityPrecision"/> decimal places before hashing — the exact same values
-    /// that <see cref="Equals(GeoVector{T})"/> compares on.
+    /// Returns a hash code consistent with <see cref="Equals(GeoVector{T})"/>: it combines <see cref="Point"/>'s
+    /// own hash code (already rounded/normalized, see <see cref="GeoPoint{T}.GetHashCode"/>) with the bearing,
+    /// normalized (to handle 0°/360° wraparound) and rounded to <see cref="GeoPoint{T}.EqualityPrecision"/>
+    /// decimal places — the exact same values that <see cref="Equals(GeoVector{T})"/> compares on.
     /// </summary>
     public override int GetHashCode()
         => ObjectUtils.ComputeHash(
-            T.Round(Latitude, EqualityPrecision),
-            degree.NormalizeRounded(Longitude, EqualityPrecision),
-            degree.NormalizeRounded(Bearing, EqualityPrecision));
+            Point.GetHashCode(),
+            degree.NormalizeRounded(Bearing, GeoPoint<T>.EqualityPrecision));
 
     /// <summary>
     /// Determines whether this vector is within <paramref name="tolerance"/> of <paramref name="other"/>,
@@ -540,15 +569,11 @@ public sealed class GeoVector<T> : GeoPoint<T>, IEquatable<GeoVector<T>>, IUnary
     /// of each other; otherwise <see langword="false"/>.
     /// </returns>
     public bool IsApproximately(GeoVector<T> other, T tolerance)
-    {
-        other.Arg().MustNotBeNull();
-        return degree.AreEqual(Bearing, other.Bearing, tolerance) && base.IsApproximately(other, tolerance);
-    }
+        => degree.AreEqual(Bearing, other.Bearing, tolerance) && Point.IsApproximately(other.Point, tolerance);
 
     /// <summary>
-    /// Determines whether this vector is within the default tolerance (see <see cref="GeoPoint{T}.comparer"/>)
-    /// of <paramref name="other"/>. See <see cref="IsApproximately(GeoVector{T}, T)"/> for the full rationale
-    /// and usage guidance.
+    /// Determines whether this vector is within the default tolerance of <paramref name="other"/>.
+    /// See <see cref="IsApproximately(GeoVector{T}, T)"/> for the full rationale and usage guidance.
     /// </summary>
     /// <param name="other">The vector to compare with this instance.</param>
     /// <returns><see langword="true"/> if both vectors are within the default tolerance; otherwise <see langword="false"/>.</returns>
@@ -573,14 +598,23 @@ public sealed class GeoVector<T> : GeoPoint<T>, IEquatable<GeoVector<T>>, IUnary
     /// <summary>
     /// Determines whether two geographic vectors are equal.
     /// </summary>
-    public static bool operator ==(GeoVector<T>? left, GeoVector<T>? right)
-            => left?.Equals(right) ?? right is null;
+    public static bool operator ==(GeoVector<T> left, GeoVector<T> right) => left.Equals(right);
 
     /// <summary>
     /// Determines whether two geographic vectors are not equal.
     /// </summary>
-    public static bool operator !=(GeoVector<T>? left, GeoVector<T>? right)
-            => !(left?.Equals(right) ?? right is null);
+    public static bool operator !=(GeoVector<T> left, GeoVector<T> right) => !left.Equals(right);
+
+    /// <summary>
+    /// Returns this geographic vector as a string in the format "Latitude, Longitude, Bearing"
+    /// with five decimal places by default.
+    /// </summary>
+    public override string ToString() => ToString("0.#####", CultureInfo.InvariantCulture);
+
+    /// <summary>
+    /// Returns this geographic vector as a string in the specified format and the invariant culture.
+    /// </summary>
+    public string ToString(string format) => ToString(format, null);
 
     /// <summary>
     /// Returns a string representation of the vector using the specified format and provider.
@@ -588,15 +622,14 @@ public sealed class GeoVector<T> : GeoPoint<T>, IEquatable<GeoVector<T>>, IUnary
     /// <param name="format">Format string applied to latitude, longitude, and bearing.</param>
     /// <param name="formatProvider">Culture-specific format provider.</param>
     /// <returns>A formatted string representing the vector.</returns>
-    public override string ToString(string? format, IFormatProvider? formatProvider)
+    public string ToString(string? format, IFormatProvider? formatProvider)
     {
         formatProvider ??= CultureInfo.InvariantCulture;
         var textInfo = formatProvider.GetFormat(typeof(TextInfo)) as TextInfo;
 
         // Example: "Latitude, Longitude, Bearing"
-        return $"{base.ToString(format, formatProvider)}{textInfo?.ListSeparator ?? ","} {Bearing:##0.##}";
+        return $"{Point.ToString(format, formatProvider)}{textInfo?.ListSeparator ?? ","} {Bearing:##0.##}";
     }
 
     #endregion
 }
-#pragma warning restore CA2260

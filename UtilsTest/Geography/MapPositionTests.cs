@@ -8,12 +8,6 @@ namespace UtilsTest.Geography;
 public class MapPositionTests
 {
     [TestMethod]
-    public void ConstructorRejectsNullGeoPoint()
-    {
-        Assert.ThrowsException<ArgumentNullException>(() => new MapPosition<double>(null!, 5));
-    }
-
-    [TestMethod]
     public void ConstructorRejectsZeroZoomLevel()
     {
         var point = new GeoPoint<double>(0, 0);

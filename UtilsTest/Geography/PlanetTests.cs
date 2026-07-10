@@ -88,11 +88,11 @@ public class PlanetTests
 
         var vector1 = new GeoVector<double>(paris, newyork);
         Assert.AreEqual(291.7, vector1.Bearing, 0.1);
-        Assert.AreEqual(newyork, new GeoPoint<double>(earth.Travel(vector1, earth.Distance(paris, newyork))));
+        Assert.AreEqual(newyork, earth.Travel(vector1, earth.Distance(paris, newyork)).Point);
 
         var vector2 = new GeoVector<double>(baghdad, osaka);
         Assert.AreEqual(60.1, vector2.Bearing, 0.1);
-        Assert.AreEqual(osaka, new GeoPoint<double>(earth.Travel(vector2, earth.Distance(baghdad, osaka))));
+        Assert.AreEqual(osaka, earth.Travel(vector2, earth.Distance(baghdad, osaka)).Point);
     }
 
     [TestMethod]
