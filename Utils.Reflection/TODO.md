@@ -223,3 +223,42 @@ même interface.
   (`[attributs] modificateur type nom`).
 - **Chargement concurrent en double** : détaillé à l'item 10 ci-dessus (découvert par le test de
   concurrence de ce point, corrigé par le passage à `Lazy<Type>`).
+
+## Corrections post-revue (PR #428, revue automatisée Codex)
+
+Trois bugs réels signalés par la revue automatisée sur `EmitWorkerProcess.cs`, tous corrigés :
+
+- **Worker isolé injoignable sous `bwrap` (Linux)** : `EmitWorkerProcess.Start` lançait le worker avec
+  `AllowDiskWrite = false`. Sur Linux, `NamedPipeServerStream` est adossé à une socket Unix créée sous le
+  répertoire temporaire de l'OS ; `LinuxBubblewrapContainer` monte `/tmp` en `tmpfs` neuf quand
+  `AllowDiskWrite` est faux, rendant la socket invisible pour l'enfant sandboxé → `Emit<TInterface>`
+  échouait systématiquement après le timeout de connexion de 10s. Même problème sur macOS
+  (`MacOsSandboxExecContainer` refuse `file-write*` par défaut). **Fix** :
+  `EmitWorkerProcess.CreateWorkerPermissions()` positionne désormais `AllowDiskWrite =
+  !OperatingSystem.IsWindows()`. **Piège évité** : mettre `AllowDiskWrite = true` inconditionnellement
+  (y compris sous Windows) aurait désactivé le sandbox Windows tout entier —
+  `ProcessContainerFactory.TryCreate` traite `AllowDiskWrite` comme une demande de permissions élargies
+  et renvoie `null` (pas d'AppContainer) dès que ce flag est vrai. Le flag reste donc `false` sous
+  Windows, où les tubes nommés sont des objets noyau hors du système de fichiers de toute façon.
+- **Perte de données des structs à champs publics lors du marshaling JSON** : `EmitWorkerProcess`/
+  `EmitWorkerHost` appelaient `JsonSerializer.Serialize`/`Deserialize` avec les options par défaut, qui
+  n'incluent que les propriétés. Or `CrossProcessMarshaling.IsSupportedType` accepte les structs en
+  inspectant leurs **champs** (idiome P/Invoke typique, ex. `public int X;` sans propriété) — un tel
+  argument/valeur de retour/valeur by-ref était donc silencieusement sérialisé en `{}`. **Fix** : options
+  partagées `CrossProcessMarshaling.JsonOptions` (`IncludeFields = true`), utilisées à tous les points de
+  sérialisation/désérialisation de données applicatives (arguments, retours, by-ref) des deux côtés du
+  tube ; le protocole d'enveloppe (`WorkerRequest`/`WorkerResponse`, propriétés uniquement) reste
+  inchangé.
+- **Relance impossible sous le muxer `dotnet`** : quand le process hôte est lancé via `dotnet MonApp.dll`
+  (ou un déploiement `UseAppHost=false`), `Environment.ProcessPath` résout vers l'exécutable `dotnet`
+  (le muxer), pas vers l'assembly managée. Le worker relancé recevait alors `dotnet
+  --utils-reflection-emit-worker <pipe>`, que le muxer tente de parser comme sa propre ligne de commande
+  au lieu de la transmettre au `Main` de l'application → échec silencieux (timeout de connexion). **Fix** :
+  `EmitWorkerProcess.BuildWorkerArguments` détecte l'écart entre le nom de fichier de l'exécutable relancé
+  et celui de `Assembly.GetEntryAssembly().Location` ; en cas d'écart, le chemin de l'assembly d'entrée est
+  inséré avant le marqueur (`dotnet MonApp.dll --utils-reflection-emit-worker <pipe>`), reproduisant la
+  syntaxe d'invocation normale de `dotnet` pour un déploiement dépendant du framework.
+
+Tests : `UtilsTest/Reflection/EmitWorkerProcessTests.cs` (permissions/arguments, sans lancer de vrai
+second process), `UtilsTest/Reflection/EmitWorkerProtocolTests.cs` (round-trip JSON d'une struct à champs
+publics, et test documentant explicitement le comportement par défaut cassé de `System.Text.Json`).

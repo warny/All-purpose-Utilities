@@ -122,7 +122,7 @@ internal static class EmitWorkerHost
             Type parameterType = parameters[i].ParameterType;
             Type effectiveType = parameterType.IsByRef ? parameterType.GetElementType()! : parameterType;
             string? argumentJson = i < argumentsJson.Length ? argumentsJson[i] : null;
-            arguments[i] = argumentJson is null ? null : JsonSerializer.Deserialize(argumentJson, effectiveType);
+            arguments[i] = argumentJson is null ? null : JsonSerializer.Deserialize(argumentJson, effectiveType, CrossProcessMarshaling.JsonOptions);
         }
 
         object? result = method.Invoke(nativeInstance, arguments);
@@ -133,7 +133,7 @@ internal static class EmitWorkerHost
             if (parameters[i].ParameterType.IsByRef)
             {
                 Type effectiveType = parameters[i].ParameterType.GetElementType()!;
-                byRefValuesJson[i] = JsonSerializer.Serialize(arguments[i], effectiveType);
+                byRefValuesJson[i] = JsonSerializer.Serialize(arguments[i], effectiveType, CrossProcessMarshaling.JsonOptions);
             }
         }
 
@@ -141,7 +141,7 @@ internal static class EmitWorkerHost
         {
             Id = request.Id,
             Success = true,
-            ReturnValueJson = method.ReturnType == typeof(void) ? null : JsonSerializer.Serialize(result, method.ReturnType),
+            ReturnValueJson = method.ReturnType == typeof(void) ? null : JsonSerializer.Serialize(result, method.ReturnType, CrossProcessMarshaling.JsonOptions),
             ByRefValuesJson = byRefValuesJson,
         };
     }

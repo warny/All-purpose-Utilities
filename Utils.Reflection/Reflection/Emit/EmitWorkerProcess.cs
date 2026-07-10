@@ -70,7 +70,7 @@ internal sealed class EmitWorkerProcess : IDisposable
             ?? throw new InvalidOperationException(
                 "Unable to determine the current process executable path, required to launch an isolated Emit worker.");
 
-        ProcessContainerPermissions permissions = new() { AllowDiskRead = true };
+        ProcessContainerPermissions permissions = CreateWorkerPermissions();
         IProcessContainer? sandbox = ProcessContainerFactory.TryCreate(
             windowsContainerName: "Utils.Reflection.EmitWorker.v1",
             windowsDisplayName: "Utils.Reflection Emit Worker",
@@ -163,7 +163,7 @@ internal sealed class EmitWorkerProcess : IDisposable
             {
                 Type parameterType = parameters[i].ParameterType;
                 Type effectiveType = parameterType.IsByRef ? parameterType.GetElementType()! : parameterType;
-                argumentsJson[i] = JsonSerializer.Serialize(args[i], effectiveType);
+                argumentsJson[i] = JsonSerializer.Serialize(args[i], effectiveType, CrossProcessMarshaling.JsonOptions);
             }
 
             var request = new WorkerRequest
@@ -183,7 +183,7 @@ internal sealed class EmitWorkerProcess : IDisposable
                 {
                     Type effectiveType = parameters[i].ParameterType.GetElementType()!;
                     string? valueJson = response.ByRefValuesJson is { } values && i < values.Length ? values[i] : null;
-                    args[i] = valueJson is null ? null : JsonSerializer.Deserialize(valueJson, effectiveType);
+                    args[i] = valueJson is null ? null : JsonSerializer.Deserialize(valueJson, effectiveType, CrossProcessMarshaling.JsonOptions);
                 }
             }
 
@@ -192,7 +192,7 @@ internal sealed class EmitWorkerProcess : IDisposable
                 return null;
             }
 
-            return JsonSerializer.Deserialize(response.ReturnValueJson, method.ReturnType);
+            return JsonSerializer.Deserialize(response.ReturnValueJson, method.ReturnType, CrossProcessMarshaling.JsonOptions);
         }
         finally
         {
@@ -262,7 +262,7 @@ internal sealed class EmitWorkerProcess : IDisposable
     /// </summary>
     private static Process StartWorkerProcess(string exePath, string pipeName, ref IProcessContainer? sandbox)
     {
-        string[] arguments = [LibraryMapper.WorkerArgumentMarker, pipeName];
+        string[] arguments = BuildWorkerArguments(exePath, pipeName);
 
         if (sandbox is not null)
         {
@@ -290,6 +290,73 @@ internal sealed class EmitWorkerProcess : IDisposable
 
         return Process.Start(psi) ?? throw new InvalidOperationException("Failed to start the isolated Emit worker process.");
     }
+
+    /// <summary>
+    /// Builds the argument list passed to <paramref name="exePath"/> to make it enter
+    /// <see cref="LibraryMapper.RunWorkerIfRequested"/>.
+    /// </summary>
+    /// <remarks>
+    /// When the host process is running under a generic launcher — most commonly the <c>dotnet</c>
+    /// muxer (<c>dotnet MyApp.dll</c>, or an <c>UseAppHost=false</c> deployment) —
+    /// <see cref="Environment.ProcessPath"/> resolves to the launcher executable, not the managed
+    /// entry assembly. Re-launching that path with just <c>[marker, pipeName]</c> makes the launcher
+    /// try to parse the marker as its own first argument (e.g. <c>dotnet
+    /// --utils-reflection-emit-worker</c>) instead of forwarding it to the managed <c>Main</c>, so the
+    /// worker never starts. Detected by comparing the launcher's file name against
+    /// <see cref="Assembly.GetEntryAssembly"/>'s location: when they differ, the managed assembly path
+    /// is inserted before the marker (<c>dotnet MyApp.dll --utils-reflection-emit-worker &lt;pipe&gt;</c>),
+    /// matching how <c>dotnet</c> itself is invoked to run a framework-dependent deployment.
+    /// </remarks>
+    /// <param name="exePath">Executable that will be relaunched (<see cref="Environment.ProcessPath"/>).</param>
+    /// <param name="pipeName">Name of the named pipe the worker should connect back to.</param>
+    /// <returns>The complete, ordered argument list for the relaunched process.</returns>
+    internal static string[] BuildWorkerArguments(string exePath, string pipeName)
+    {
+        string? entryAssemblyLocation = Assembly.GetEntryAssembly()?.Location;
+
+        if (!string.IsNullOrEmpty(entryAssemblyLocation) &&
+            !string.Equals(
+                System.IO.Path.GetFileNameWithoutExtension(exePath),
+                System.IO.Path.GetFileNameWithoutExtension(entryAssemblyLocation),
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return [entryAssemblyLocation, LibraryMapper.WorkerArgumentMarker, pipeName];
+        }
+
+        return [LibraryMapper.WorkerArgumentMarker, pipeName];
+    }
+
+    /// <summary>
+    /// Builds the permission set requested for the isolated Emit worker.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <see cref="ProcessContainerPermissions.AllowDiskWrite"/> is granted on Linux/macOS only, even
+    /// though the worker itself has no legitimate need to write files: on those platforms the
+    /// host/worker named pipe is backed by a Unix domain socket file under the OS temp directory
+    /// (<see cref="System.IO.Pipes.NamedPipeServerStream"/>'s Unix implementation). Without this flag,
+    /// <see cref="ProcessIsolation.LinuxBubblewrapContainer"/> mounts a fresh, empty <c>tmpfs</c> over
+    /// <c>/tmp</c> and <see cref="ProcessIsolation.MacOsSandboxExecContainer"/> denies
+    /// <c>file-write*</c>, so the sandboxed worker can never see or connect to the socket and
+    /// <see cref="Start"/> always fails with a connection timeout. Broader than a single-socket bind
+    /// would be, but scoping the sandbox to that one path would require extending
+    /// <see cref="IProcessContainer"/> beyond what can be validated without a real Linux/macOS
+    /// environment — see the equivalent trade-off already documented for
+    /// <see cref="ProcessIsolation.LinuxBubblewrapContainer"/>'s and
+    /// <see cref="ProcessIsolation.MacOsSandboxExecContainer"/>'s read posture.
+    /// </para>
+    /// <para>
+    /// <b>Must stay <see langword="false"/> on Windows.</b> Windows named pipes are kernel objects
+    /// outside the filesystem, so the flag brings no benefit there — and
+    /// <see cref="ProcessIsolation.ProcessContainerFactory.TryCreate"/> treats
+    /// <see cref="ProcessContainerPermissions.AllowDiskWrite"/> as a request for broader-than-restrictive
+    /// permissions and skips AppContainer creation entirely when it is set, which would silently
+    /// disable sandboxing for the worker instead of merely being a no-op.
+    /// </para>
+    /// </remarks>
+    /// <returns>The permission set to request for the isolated Emit worker.</returns>
+    internal static ProcessContainerPermissions CreateWorkerPermissions() =>
+        new() { AllowDiskRead = true, AllowDiskWrite = !OperatingSystem.IsWindows() };
 
     private static void KillSilently(Process process)
     {

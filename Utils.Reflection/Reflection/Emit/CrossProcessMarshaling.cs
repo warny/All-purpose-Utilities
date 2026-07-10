@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Text.Json;
 
 namespace Utils.Reflection.Reflection.Emit;
 
@@ -17,6 +18,16 @@ namespace Utils.Reflection.Reflection.Emit;
 internal static class CrossProcessMarshaling
 {
     private const int MaxRecursionDepth = 32;
+
+    /// <summary>
+    /// Options shared by every <see cref="JsonSerializer"/> call that marshals interface
+    /// arguments/return values across the worker boundary. <see cref="IsSupportedType"/> inspects a
+    /// struct's <b>fields</b> (public and non-public) rather than its properties, which matches the
+    /// typical shape of P/Invoke interop structs (e.g. <c>public int X;</c> with no property wrapper);
+    /// without <see cref="JsonSerializerOptions.IncludeFields"/>, <see cref="JsonSerializer"/> silently
+    /// serializes such a struct as <c>{}</c>, discarding every field.
+    /// </summary>
+    internal static readonly JsonSerializerOptions JsonOptions = new() { IncludeFields = true };
 
     private static readonly HashSet<Type> SupportedScalars =
     [

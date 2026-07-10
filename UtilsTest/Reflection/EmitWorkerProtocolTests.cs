@@ -14,6 +14,37 @@ namespace UtilsTest.Reflection;
 [TestClass]
 public class EmitWorkerProtocolTests
 {
+    /// <summary>Field-based (no properties) shape typical of a P/Invoke interop struct.</summary>
+    public struct FieldOnlyStruct
+    {
+        public int X;
+        public double Y;
+    }
+
+    [TestMethod]
+    public void JsonOptions_RoundTripsStructWithPublicFields()
+    {
+        var value = new FieldOnlyStruct { X = 7, Y = 3.5 };
+
+        string json = JsonSerializer.Serialize(value, typeof(FieldOnlyStruct), CrossProcessMarshaling.JsonOptions);
+        var roundTripped = (FieldOnlyStruct)JsonSerializer.Deserialize(json, typeof(FieldOnlyStruct), CrossProcessMarshaling.JsonOptions)!;
+
+        Assert.AreEqual(value.X, roundTripped.X);
+        Assert.AreEqual(value.Y, roundTripped.Y);
+    }
+
+    [TestMethod]
+    public void DefaultJsonSerializerOptions_LoseFieldOnlyStructData()
+    {
+        // Documents the exact bug CrossProcessMarshaling.JsonOptions fixes: without
+        // IncludeFields, System.Text.Json silently serializes a field-only struct as "{}".
+        var value = new FieldOnlyStruct { X = 7, Y = 3.5 };
+
+        string json = JsonSerializer.Serialize(value, typeof(FieldOnlyStruct));
+
+        Assert.AreEqual("{}", json);
+    }
+
     [TestMethod]
     public void WorkerRequest_LoadKind_RoundTrips()
     {
