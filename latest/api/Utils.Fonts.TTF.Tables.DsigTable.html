@@ -6,7 +6,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="title" content="Class DsigTable | omy.Utils Documentation ">
       
-      <meta name="description" content="The &#39;DSIG&#39; (Digital Signature) table contains one or more cryptographic signatures that attest to the authenticity and integrity of a font. Most tools treat this table as an opaque blob: they preserve it on read and discard or regenerate it on write. This implementation stores the entire table as raw bytes after the 12-byte outer header.">
+      <meta name="description" content="The &#39;DSIG&#39; (Digital Signature) table contains one or more cryptographic signatures that attest to the authenticity and integrity of a font. Most tools treat this table as an opaque blob: they preserve it on read and discard or regenerate it on write. This implementation stores the entire table as raw bytes after the 8-byte outer header.">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -100,7 +100,7 @@ Class DsigTable  <a class="header-action link-secondary" title="View source" hre
   <div class="markdown summary"><p>The 'DSIG' (Digital Signature) table contains one or more cryptographic signatures that
 attest to the authenticity and integrity of a font. Most tools treat this table as an opaque
 blob: they preserve it on read and discard or regenerate it on write. This implementation
-stores the entire table as raw bytes after the 12-byte outer header.</p>
+stores the entire table as raw bytes after the 8-byte outer header.</p>
 </div>
   <div class="markdown conceptual"></div>
 
@@ -241,7 +241,7 @@ public class DsigTable : TrueTypeTable</code></pre>
 
 
   <h2 id="Utils_Fonts_TTF_Tables_DsigTable_remarks">Remarks</h2>
-  <div class="markdown level0 remarks"><p>Header structure (12 bytes):</p>
+  <div class="markdown level0 remarks"><p>Header structure (8 bytes):</p>
 <table><tbody><tr><td class="term">UInt32 version</td><td class="description">Always 1.</td></tr><tr><td class="term">UInt16 numSigs</td><td class="description">Number of signature blocks.</td></tr><tr><td class="term">UInt16 flags</td><td class="description">Signing flags (usually 1 = cannot be modified).</td></tr></tbody></table>
 <p>Followed by <code>numSigs</code> SignatureRecord structs and then the signature data blobs.</p>
 </div>

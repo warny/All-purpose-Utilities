@@ -278,7 +278,7 @@ public class GlyfTable : TrueTypeTable</code></pre>
 
   <h3 id="Utils_Fonts_TTF_Tables_GlyfTable_Length" data-uid="Utils.Fonts.TTF.Tables.GlyfTable.Length">
   Length
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/GlyfTable.cs/#L56"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/GlyfTable.cs/#L62"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the total length (in bytes) of the glyf table, calculated as the sum of the lengths of all glyph data.</p>
@@ -302,6 +302,12 @@ public class GlyfTable : TrueTypeTable</code></pre>
 
 
 
+  <h4 class="section" id="Utils_Fonts_TTF_Tables_GlyfTable_Length_remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>A glyph index with a zero-length 'loca' entry (e.g. the space character, which has no
+contours) has a null entry in <span class="xref">Utils.Fonts.TTF.Tables.GlyfTable.glyphs</span> rather than an empty <a class="xref" href="Utils.Fonts.TTF.Tables.Glyf.GlyphBase.html">GlyphBase</a>
+instance -- see <a class="xref" href="Utils.Fonts.TTF.Tables.GlyfTable.html#Utils_Fonts_TTF_Tables_GlyfTable_ReadData_Utils_IO_Serialization_Reader_">ReadData(Reader)</a> -- so this must be null-safe, matching
+<a class="xref" href="Utils.Fonts.TTF.Tables.GlyfTable.html#Utils_Fonts_TTF_Tables_GlyfTable_WriteData_Utils_IO_Serialization_Writer_">WriteData(Writer)</a>'s use of <code>glyf?.WriteData(data)</code>.</p>
+</div>
 
 
 
@@ -346,7 +352,7 @@ public class GlyfTable : TrueTypeTable</code></pre>
 
   <h3 id="Utils_Fonts_TTF_Tables_GlyfTable_GetGlyph_System_Int32_" data-uid="Utils.Fonts.TTF.Tables.GlyfTable.GetGlyph(System.Int32)">
   GetGlyph(int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/GlyfTable.cs/#L63"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/GlyfTable.cs/#L69"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Retrieves the glyph data for the glyph at the specified index.</p>
@@ -385,7 +391,7 @@ public class GlyfTable : TrueTypeTable</code></pre>
 
   <h3 id="Utils_Fonts_TTF_Tables_GlyfTable_ReadData_Utils_IO_Serialization_Reader_" data-uid="Utils.Fonts.TTF.Tables.GlyfTable.ReadData(Utils.IO.Serialization.Reader)">
   ReadData(Reader)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/GlyfTable.cs/#L83"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/GlyfTable.cs/#L89"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads the glyf table data from the specified reader.
@@ -420,7 +426,7 @@ creates the appropriate glyph instance.</p>
 
   <h3 id="Utils_Fonts_TTF_Tables_GlyfTable_ToString" data-uid="Utils.Fonts.TTF.Tables.GlyfTable.ToString">
   ToString()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/GlyfTable.cs/#L103"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/GlyfTable.cs/#L109"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns a string representation of the glyf table.</p>
@@ -453,7 +459,7 @@ creates the appropriate glyph instance.</p>
 
   <h3 id="Utils_Fonts_TTF_Tables_GlyfTable_WriteData_Utils_IO_Serialization_Writer_" data-uid="Utils.Fonts.TTF.Tables.GlyfTable.WriteData(Utils.IO.Serialization.Writer)">
   WriteData(Writer)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/GlyfTable.cs/#L69"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/GlyfTable.cs/#L75"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Writes the glyf table data to the specified writer.</p>

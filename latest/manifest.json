@@ -3074,7 +3074,7 @@
       "Uid": null,
       "IsMRef": true,
       "Title": "Utils.Fonts.TTF.Tables.DsigTable",
-      "Summary": "<p sourcefile=\"api/Utils.Fonts.TTF.Tables.DsigTable.yml\" sourcestartlinenumber=\"1\">The 'DSIG' (Digital Signature) table contains one or more cryptographic signatures that\nattest to the authenticity and integrity of a font. Most tools treat this table as an opaque\nblob: they preserve it on read and discard or regenerate it on write. This implementation\nstores the entire table as raw bytes after the 12-byte outer header.</p>\n"
+      "Summary": "<p sourcefile=\"api/Utils.Fonts.TTF.Tables.DsigTable.yml\" sourcestartlinenumber=\"1\">The 'DSIG' (Digital Signature) table contains one or more cryptographic signatures that\nattest to the authenticity and integrity of a font. Most tools treat this table as an opaque\nblob: they preserve it on read and discard or regenerate it on write. This implementation\nstores the entire table as raw bytes after the 8-byte outer header.</p>\n"
     },
     {
       "type": "ManagedReference",

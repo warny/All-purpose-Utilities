@@ -328,7 +328,7 @@ components, each with its own transformation.</p>
 
   <h3 id="Utils_Fonts_TTF_Tables_Glyf_GlyphCompound_Contours" data-uid="Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.Contours">
   Contours
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Glyf/GlyphCompound.cs/#L332"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Glyf/GlyphCompound.cs/#L350"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the contours of the glyph.
@@ -427,7 +427,7 @@ By default, a glyph is not compound.</p>
 
   <h3 id="Utils_Fonts_TTF_Tables_Glyf_GlyphCompound_Length" data-uid="Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.Length">
   Length
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Glyf/GlyphCompound.cs/#L253"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Glyf/GlyphCompound.cs/#L256"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the length (in bytes) of the compound-glyph-specific data (components plus any
@@ -505,7 +505,7 @@ The default implementation does nothing; derived classes may override this.</p>
 
   <h3 id="Utils_Fonts_TTF_Tables_Glyf_GlyphCompound_WriteData_Utils_IO_Serialization_Writer_" data-uid="Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.WriteData(Utils.IO.Serialization.Writer)">
   WriteData(Writer)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Glyf/GlyphCompound.cs/#L286"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/Glyf/GlyphCompound.cs/#L287"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Writes the basic glyph data to the provided writer.</p>
@@ -531,11 +531,9 @@ The default implementation does nothing; derived classes may override this.</p>
 
 
   <h4 class="section" id="Utils_Fonts_TTF_Tables_Glyf_GlyphCompound_WriteData_Utils_IO_Serialization_Writer__remarks">Remarks</h4>
-  <div class="markdown level1 remarks"><p>Mirrors the wire format read by <a class="xref" href="Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.html#Utils_Fonts_TTF_Tables_Glyf_GlyphCompound_ReadData_Utils_IO_Serialization_Reader_">ReadData(Reader)</a> exactly, including its limitations:
-point-matching arguments (<span class="xref">Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.GlyfComponent.CompoundPoint</span>/
-<span class="xref">Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.GlyfComponent.ComponentPoint</span>) and translation offsets are always written as
-16-bit words (the <code>ARGS_ARE_WORDS</code> flag is not checked, matching <a class="xref" href="Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.html#Utils_Fonts_TTF_Tables_Glyf_GlyphCompound_ReadData_Utils_IO_Serialization_Reader_">ReadData(Reader)</a>
-not checking it either).</p>
+  <div class="markdown level1 remarks"><p>Mirrors the wire format read by <a class="xref" href="Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.html#Utils_Fonts_TTF_Tables_Glyf_GlyphCompound_ReadData_Utils_IO_Serialization_Reader_">ReadData(Reader)</a> exactly: point-matching arguments
+(<span class="xref">Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.GlyfComponent.CompoundPoint</span>/<span class="xref">Utils.Fonts.TTF.Tables.Glyf.GlyphCompound.GlyfComponent.ComponentPoint</span>) and
+translation offsets are written as bytes or words depending on <code>ARGS_ARE_WORDS</code>.</p>
 </div>
 
 
