@@ -36,7 +36,12 @@ public class CidKeyedFont : IFont
     }
 
     /// <inheritdoc />
-    /// <remarks>Glyphs are looked up by their character code treated as CID.</remarks>
+    /// <remarks>
+    /// Glyphs are looked up by their character code treated as CID. Glyphs are stored internally by
+    /// CID (<see cref="int"/>, which may exceed <see cref="ushort.MaxValue"/>), but this method takes
+    /// a <see cref="char"/> -- a limitation of the <see cref="IFont"/> interface, not of this class --
+    /// so CIDs above 0xFFFF can never be reached through this API.
+    /// </remarks>
     public IGlyph GetGlyph(char c) => _glyphs.TryGetValue(c, out var g) ? g : null;
 
     /// <inheritdoc />
