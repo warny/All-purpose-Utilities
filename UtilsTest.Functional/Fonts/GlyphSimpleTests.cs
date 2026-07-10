@@ -87,6 +87,67 @@ public class GlyphSimpleTests
         Assert.AreEqual(new TTFPoint(1000, -200, true), contour[2]);
     }
 
+    // Regression test: WriteData used to write each contour's *local* last-point index
+    // (contour.Length - 1) instead of the *cumulative* index (within the glyph's whole flattened
+    // point array) that the endPtsOfContours format actually requires -- correct by coincidence
+    // for a glyph's first contour (whose local and cumulative indices are identical), but wrong for
+    // every subsequent one. A two-contour glyph with lengths [2, 3] must produce endPtsOfContours
+    // [1, 4], not [1, 2].
+    [TestMethod]
+    public void ReadThenWrite_TwoContours_ProducesCumulativeEndPoints()
+    {
+        byte[] original = BuildTwoContourGlyphBytes();
+        var glyph = (GlyphSimple)GlyphBase.CreateGlyf(MakeReader(original), null);
+
+        var contours = glyph.Contours.Select(c => c.ToArray()).ToArray();
+        Assert.AreEqual(2, contours.Length);
+        Assert.AreEqual(2, contours[0].Length);
+        Assert.AreEqual(3, contours[1].Length);
+        Assert.AreEqual(new TTFPoint(0, 0, true), contours[0][0]);
+        Assert.AreEqual(new TTFPoint(50, 0, true), contours[0][1]);
+        Assert.AreEqual(new TTFPoint(50, 50, true), contours[1][0]);
+        Assert.AreEqual(new TTFPoint(100, 50, true), contours[1][1]);
+        Assert.AreEqual(new TTFPoint(100, 100, true), contours[1][2]);
+
+        using var ms = new MemoryStream();
+        var writer = new Writer(ms, BigEndianWriter.WriterDelegates);
+        glyph.WriteData(writer);
+
+        CollectionAssert.AreEqual(original, ms.ToArray());
+    }
+
+    private static byte[] BuildTwoContourGlyphBytes()
+    {
+        using var ms = new MemoryStream();
+        var w = new Writer(ms, BigEndianWriter.WriterDelegates);
+
+        w.Write<short>(2);      // numberOfContours
+        w.Write<short>(0);      // xMin
+        w.Write<short>(0);      // yMin
+        w.Write<short>(100);    // xMax
+        w.Write<short>(100);    // yMax
+
+        // Cumulative (not per-contour) last-point index: contour 0 has 2 points (indices 0-1),
+        // contour 1 has 3 points (indices 2-4).
+        w.Write<short>(1);      // endPtsOfContours[0]
+        w.Write<short>(4);      // endPtsOfContours[1]
+        w.Write<short>(0);      // instructionLength
+
+        var same = OutlineFlags.OnCurve;
+        w.WriteByte((byte)(OutlineFlags.XIsSame | OutlineFlags.YIsSame | same));                    // P0 (0,0)
+        w.WriteByte((byte)(OutlineFlags.XIsByte | OutlineFlags.XIsSame | OutlineFlags.YIsSame | same)); // P1 dx=+50
+        w.WriteByte((byte)(OutlineFlags.XIsSame | OutlineFlags.YIsByte | OutlineFlags.YIsSame | same)); // P2 dy=+50
+        w.WriteByte((byte)(OutlineFlags.XIsByte | OutlineFlags.XIsSame | OutlineFlags.YIsSame | same)); // P3 dx=+50
+        w.WriteByte((byte)(OutlineFlags.XIsSame | OutlineFlags.YIsByte | OutlineFlags.YIsSame | same)); // P4 dy=+50
+
+        w.WriteByte(50); // X delta for P1
+        w.WriteByte(50); // X delta for P3
+        w.WriteByte(50); // Y delta for P2
+        w.WriteByte(50); // Y delta for P4
+
+        return ms.ToArray();
+    }
+
     private static byte[] BuildTriangleGlyphBytesWithLargeDelta()
     {
         using var ms = new MemoryStream();

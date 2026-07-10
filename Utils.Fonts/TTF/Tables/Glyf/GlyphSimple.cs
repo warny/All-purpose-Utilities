@@ -199,11 +199,16 @@ public class GlyphSimple : GlyphBase
         // Write the basic glyph header data.
         base.WriteData(data);
 
-        // Write the end-point index (0-based, i.e. point count - 1) of each contour: ReadData
-        // adds 1 back to recover the point count, per the TrueType endPtsOfContours convention.
+        // Write the end-point index of each contour: per the TrueType endPtsOfContours
+        // convention, each value is the 0-based index, within the glyph's whole flattened point
+        // array, of that contour's last point -- i.e. a running total, not each contour's local
+        // point count minus one. ReadData adds 1 back to each entry to recover cumulative point
+        // counts (contourEndPoints), which it then uses directly as slice boundaries.
+        int cumulativePointIndex = -1;
         for (int i = 0; i < NumContours; i++)
         {
-            data.Write<Int16>((short)(contours[i].Length - 1));
+            cumulativePointIndex += contours[i].Length;
+            data.Write<Int16>((short)cumulativePointIndex);
         }
 
         // Write instruction count and instructions.
