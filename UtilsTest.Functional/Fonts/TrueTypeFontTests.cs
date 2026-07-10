@@ -2,7 +2,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Numerics;
 using System.Text;
+using Utils.Fonts;
 using Utils.Fonts.TTF;
 using Utils.Fonts.TTF.Tables;
 using Utils.Fonts.TTF.Tables.CMap;
@@ -18,6 +21,21 @@ namespace UtilsTest.Fonts
 
         private static Reader MakeReader(byte[] data)
             => new Reader(new MemoryStream(data), BigEndianReader.ReaderDelegates);
+
+        // Records every call made to it as a string, so two glyph outlines can be compared for
+        // equality without depending on a mocking framework's strict call-order verification.
+        private sealed class RecordingGraphicConverter : IGraphicConverter
+        {
+            public List<string> Commands { get; } = [];
+            public void StartAt(float x, float y) => Commands.Add($"StartAt({x:F2},{y:F2})");
+            public void LineTo(float x, float y) => Commands.Add($"LineTo({x:F2},{y:F2})");
+            public void BezierTo(params (float x, float y)[] points)
+                => Commands.Add($"BezierTo({string.Join(";", points.Select(p => $"{p.x:F2},{p.y:F2}"))})");
+            public void ClosePath() => Commands.Add("ClosePath");
+            public void BeginDrawGlyph(float x, float y, Matrix3x2 transform)
+                => Commands.Add($"BeginDrawGlyph({x:F2},{y:F2},{transform})");
+            public void EndDrawGlyph() => Commands.Add("EndDrawGlyph");
+        }
 
         [TestMethod]
         public void LoadFontTest()
@@ -68,6 +86,41 @@ namespace UtilsTest.Fonts
             font.AddTable(TableTypes.KERN, kern);
 
             Assert.AreEqual(-40f, font.GetSpacingCorrection('A', 'B'));
+        }
+
+        // Regression coverage for a gap noted in TODO.md: every existing test validates a single
+        // table in isolation, but nothing exercised a full WriteFont() round trip, which is the only
+        // way to catch interactions between tables (loca/glyf offset drift, checksum, table
+        // directory). Loads the embedded Arial font, writes it back out, reparses the result, and
+        // compares metrics and outlines for a sample of glyphs -- including 'g', a compound glyph on
+        // most fonts (e.g. built from a dotless component) -- between the original and the round
+        // tripped font.
+        [TestMethod]
+        public void WriteFont_RoundTrip_PreservesGlyphMetricsAndOutlines()
+        {
+            var original = TrueTypeFont.ParseFont((byte[])Fonts.ResourceManager.GetObject("Arial"));
+            byte[] rewritten = original.WriteFont();
+            var reparsed = TrueTypeFont.ParseFont(rewritten);
+
+            Assert.AreEqual(original.TablesCount, reparsed.TablesCount);
+
+            foreach (char c in "AaGg1.")
+            {
+                var originalGlyph = original.GetGlyph(c);
+                var reparsedGlyph = reparsed.GetGlyph(c);
+                Assert.IsNotNull(originalGlyph, $"Original font has no glyph for '{c}'");
+                Assert.IsNotNull(reparsedGlyph, $"Round-tripped font has no glyph for '{c}'");
+
+                Assert.AreEqual(originalGlyph.Width, reparsedGlyph.Width, 1e-3f, $"Width mismatch for '{c}'");
+                Assert.AreEqual(originalGlyph.Height, reparsedGlyph.Height, 1e-3f, $"Height mismatch for '{c}'");
+                Assert.AreEqual(originalGlyph.BaseLine, reparsedGlyph.BaseLine, 1e-3f, $"BaseLine mismatch for '{c}'");
+
+                var originalCommands = new RecordingGraphicConverter();
+                originalGlyph.ToGraphic(originalCommands);
+                var reparsedCommands = new RecordingGraphicConverter();
+                reparsedGlyph.ToGraphic(reparsedCommands);
+                CollectionAssert.AreEqual(originalCommands.Commands, reparsedCommands.Commands, $"Outline mismatch for '{c}'");
+            }
         }
     }
 }
