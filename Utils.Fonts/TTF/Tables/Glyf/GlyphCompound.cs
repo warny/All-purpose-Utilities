@@ -81,6 +81,15 @@ public class GlyphCompound : GlyphBase
         /// <summary>
         /// Computes the transformation adjustment factors based on the current matrix values.
         /// </summary>
+        /// <remarks>
+        /// Follows the F2Dot14 compensation algorithm from the TrueType/OpenType glyf composite
+        /// glyph spec. In the spec's own naming, the transform matrix is <c>[a c; b d]</c> with
+        /// <c>a</c>=<see cref="M11"/>, <c>b</c>=<see cref="M21"/>, <c>c</c>=<see cref="M12"/>,
+        /// <c>d</c>=<see cref="M22"/> (matching the read order for a full 2x2 matrix and the point
+        /// transform formula in <see cref="Transform(float, float, bool)"/>): <c>m0 = max(|a|,|b|)</c>,
+        /// doubled when <c>||a|-|c|| &lt;= limit</c>; <c>n0 = max(|c|,|d|)</c>, doubled when
+        /// <c>||b|-|d|| &lt;= limit</c>.
+        /// </remarks>
         public virtual void ComputeTransform()
         {
             const float limit = (33f / 65535f);
@@ -90,7 +99,7 @@ public class GlyphCompound : GlyphBase
                 AdjustX *= 2f;
             }
             AdjustY = Math.Max(Math.Abs(M12), Math.Abs(M22));
-            if (Math.Abs(Math.Abs(M12) - Math.Abs(M22)) < limit)
+            if (Math.Abs(Math.Abs(M21) - Math.Abs(M22)) < limit)
             {
                 AdjustY *= 2f;
             }
@@ -110,12 +119,26 @@ public class GlyphCompound : GlyphBase
         /// <param name="y">The y-coordinate to transform.</param>
         /// <param name="onCurve">Indicates whether the point is on the curve.</param>
         /// <returns>A new <see cref="TTFPoint"/> representing the transformed point.</returns>
+        /// <remarks>
+        /// The translation offset (<see cref="TranslateX"/>/<see cref="TranslateY"/>) is only scaled
+        /// by <see cref="AdjustX"/>/<see cref="AdjustY"/> when the component explicitly declares
+        /// <see cref="CompoundGlyfFlags.ScaledComponentOffset"/>. When neither that flag nor
+        /// <see cref="CompoundGlyfFlags.UnscaledComponentOffset"/> is present -- the common case for
+        /// fonts built with Microsoft-oriented tooling -- the offset is used unscaled, matching the
+        /// de facto convention (also followed by FreeType) rather than the historical Apple default
+        /// of always scaling it.
+        /// </remarks>
         public TTFPoint Transform(float x, float y, bool onCurve)
-            => new TTFPoint(
-                M11 * x + M12 * y + AdjustX * TranslateX,
-                M21 * x + M22 * y + AdjustY * TranslateY,
+        {
+            bool scaleOffset = Flags.HasFlag(CompoundGlyfFlags.ScaledComponentOffset);
+            float offsetScaleX = scaleOffset ? AdjustX : 1f;
+            float offsetScaleY = scaleOffset ? AdjustY : 1f;
+            return new TTFPoint(
+                M11 * x + M12 * y + offsetScaleX * TranslateX,
+                M21 * x + M22 * y + offsetScaleY * TranslateY,
                 onCurve
             );
+        }
     }
 
     /// <inheritdoc/>
@@ -209,6 +232,92 @@ public class GlyphCompound : GlyphBase
             instructions = []; // Using target-typed empty array syntax
         }
         Instructions = instructions;
+    }
+
+    /// <summary>
+    /// Gets the length (in bytes) of the compound-glyph-specific data (components plus any
+    /// trailing instructions), on top of the 10-byte header written by <see cref="GlyphBase"/>.
+    /// </summary>
+    /// <exception cref="NullReferenceException">
+    /// Thrown if this glyph has no components (e.g. constructed without calling
+    /// <see cref="ReadData"/>).
+    /// </exception>
+    public override short Length
+    {
+        get
+        {
+            int size = base.Length;
+            foreach (var component in Components)
+            {
+                size += 4; // flags (Int16) + glyphIndex (Int16)
+                size += 4; // translate/point-matching args, always word-sized (2 x Int16)
+                size += component.Flags switch
+                {
+                    var f when f.HasFlag(CompoundGlyfFlags.HasTwoByTwo) => 8,
+                    var f when f.HasFlag(CompoundGlyfFlags.HasXYScale) => 4,
+                    var f when f.HasFlag(CompoundGlyfFlags.HasScale) => 2,
+                    _ => 0,
+                };
+            }
+            if (Instructions.Length > 0)
+            {
+                size += 2 + Instructions.Length;
+            }
+            return (short)size;
+        }
+    }
+
+    /// <inheritdoc/>
+    /// <remarks>
+    /// Mirrors the wire format read by <see cref="ReadData"/> exactly, including its limitations:
+    /// point-matching arguments (<see cref="GlyfComponent.CompoundPoint"/>/
+    /// <see cref="GlyfComponent.ComponentPoint"/>) and translation offsets are always written as
+    /// 16-bit words (the <c>ARGS_ARE_WORDS</c> flag is not checked, matching <see cref="ReadData"/>
+    /// not checking it either).
+    /// </remarks>
+    public override void WriteData(Writer data)
+    {
+        base.WriteData(data);
+        foreach (var component in Components)
+        {
+            data.Write<Int16>((short)component.Flags);
+            data.Write<Int16>(component.GlyphIndex);
+            if (component.Flags.HasFlag(CompoundGlyfFlags.ArgsAreXY))
+            {
+                data.Write<Int16>((short)component.TranslateX);
+                data.Write<Int16>((short)component.TranslateY);
+            }
+            else
+            {
+                data.Write<Int16>((short)component.CompoundPoint);
+                data.Write<Int16>((short)component.ComponentPoint);
+            }
+
+            if (component.Flags.HasFlag(CompoundGlyfFlags.HasScale))
+            {
+                data.Write<Int16>((short)Math.Round(component.M11 * 16384f));
+            }
+            else if (component.Flags.HasFlag(CompoundGlyfFlags.HasXYScale))
+            {
+                data.Write<Int16>((short)Math.Round(component.M11 * 16384f));
+                data.Write<Int16>((short)Math.Round(component.M22 * 16384f));
+            }
+            else if (component.Flags.HasFlag(CompoundGlyfFlags.HasTwoByTwo))
+            {
+                data.Write<Int16>((short)Math.Round(component.M11 * 16384f));
+                data.Write<Int16>((short)Math.Round(component.M21 * 16384f));
+                data.Write<Int16>((short)Math.Round(component.M12 * 16384f));
+                data.Write<Int16>((short)Math.Round(component.M22 * 16384f));
+            }
+        }
+        if (Instructions.Length > 0)
+        {
+            data.Write<UInt16>((ushort)Instructions.Length);
+            foreach (byte b in Instructions)
+            {
+                data.WriteByte(b);
+            }
+        }
     }
 
     /// <inheritdoc/>
