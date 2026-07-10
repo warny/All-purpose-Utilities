@@ -295,6 +295,15 @@ public enum TtfPlatFormId : short
 /// <summary>
 /// Identifies the platform-specific encodings associated with a <see cref="TtfPlatFormId"/>.
 /// </summary>
+/// <remarks>
+/// This single enum is shared across platforms, but its meaning depends on the accompanying
+/// <see cref="TtfPlatFormId"/>: <see cref="MAC_ROMAN"/> (Macintosh) and <see cref="UNICODE_DEFAULT"/>
+/// (Microsoft/Unicode) both have numeric value 0. Always guard a comparison against one of these two
+/// members with a check on <see cref="TtfPlatFormId"/> first (see
+/// <see cref="Utils.Fonts.TTF.TtfEncoderFactory.GetEncoding"/> for the correct pattern) -- comparing a
+/// platform-specific ID to <see cref="UNICODE_DEFAULT"/> without checking the platform first would
+/// also match a Macintosh Roman-script record.
+/// </remarks>
 public enum TtfPlatformSpecificID : short
 {
 #pragma warning disable CS1591
