@@ -158,10 +158,10 @@ The encoding is determined by the triplet (PlatformId, PlatformSpecificId, Langu
 
   <h3 id="Utils_Fonts_TTF_TtfEncoderFactory_GetEncoding_Utils_Fonts_TtfPlatFormId_Utils_Fonts_TtfPlatformSpecificID_Utils_Fonts_TtfLanguageID_" data-uid="Utils.Fonts.TTF.TtfEncoderFactory.GetEncoding(Utils.Fonts.TtfPlatFormId,Utils.Fonts.TtfPlatformSpecificID,Utils.Fonts.TtfLanguageID)">
   GetEncoding(TtfPlatFormId, TtfPlatformSpecificID, TtfLanguageID)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TtfEncoderFactory.cs/#L23"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TtfEncoderFactory.cs/#L31"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Returns the appropriate <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.text.encoding">Encoding</a> based on the specified platform ID, platform-specific ID, and language ID.</p>
+  <div class="markdown level1 summary"><p>Returns the appropriate <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.text.encoding">Encoding</a> based on the specified platform ID and platform-specific ID.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -178,15 +178,21 @@ The encoding is determined by the triplet (PlatformId, PlatformSpecificId, Langu
     <dd><p>The TrueType platform-specific ID.</p>
 </dd>
     <dt><code>languageID</code> <a class="xref" href="Utils.Fonts.TtfLanguageID.html">TtfLanguageID</a></dt>
-    <dd><p>The TrueType language ID.</p>
+    <dd><p>The TrueType language ID. Per the OpenType 'name' table spec, the byte encoding of a record never
+depends on its language: this parameter only identifies which language the string is written in
+(e.g. English vs. French), not how its bytes are laid out. It is accepted for API symmetry with the
+documented (PlatformID, PlatformSpecificID, LanguageID) triplet but intentionally unused here.</p>
 </dd>
   </dl>
 
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.text.encoding">Encoding</a></dt>
-    <dd><p>The selected <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.text.encoding">Encoding</a>. For Macintosh, this returns MacRoman (code page 10000) if available;
-otherwise, it falls back to ASCII. For other platforms, Big‑Endian Unicode is used.</p>
+    <dd><p>The selected <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.text.encoding">Encoding</a>. For Macintosh with the Roman script, this returns MacRoman
+(code page 10000) if available, otherwise ASCII. For Microsoft, most encoding IDs use
+Big-Endian Unicode (UTF-16BE), except the legacy CJK double-byte encodings (ShiftJIS, PRC,
+Big5, Wansung, Johab), which use their respective single/double-byte code pages. The Unicode
+platform always uses UTF-16BE.</p>
 </dd>
   </dl>
 
