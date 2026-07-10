@@ -195,6 +195,7 @@ var value = GetRequiredRuleParameter<int>(context, "value");
 SetRuleLocal(context, "total", value);
 SetRuleReturn(context, "result", value + 1);
 var childValue = GetRequiredLabeledRuleCallReturn(context, "x", "value");
+// In generated-C# inline parser actions and @after, x=child may also use $x.value sugar.
 var values = GetLabeledRuleCallReturns(context, "xs", "value");
 ```
 
