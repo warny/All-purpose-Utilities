@@ -1,8 +1,10 @@
 # Utils.Reflection — Propositions d'amélioration (relecture 2026-07-09)
 
 Relecture complète du package (`Reflection/`, `Reflection/Emit/`, `ProcessIsolation/`) axée sécurité,
-qualité de code et ergonomie d'interface. Tous les points ont été traités (implémentés, documentés, ou
-sciemment écartés avec justification) et couverts par des tests de non-régression.
+qualité de code et ergonomie d'interface. Tous les points de la relecture du 2026-07-09 (items 1 à 25)
+ont été traités (implémentés, documentés, ou sciemment écartés avec justification) et couverts par des
+tests de non-régression. Voir la section « Nouvelles propositions (relecture 2026-07-10) » en fin de
+fichier pour les points identifiés lors d'une seconde relecture, pas encore traités.
 
 ## Priorité haute — sécurité
 
@@ -262,3 +264,84 @@ Trois bugs réels signalés par la revue automatisée sur `EmitWorkerProcess.cs`
 Tests : `UtilsTest/Reflection/EmitWorkerProcessTests.cs` (permissions/arguments, sans lancer de vrai
 second process), `UtilsTest/Reflection/EmitWorkerProtocolTests.cs` (round-trip JSON d'une struct à champs
 publics, et test documentant explicitement le comportement par défaut cassé de `System.Text.Json`).
+
+## Nouvelles propositions (relecture 2026-07-10)
+
+Seconde relecture du package une fois les items 1-25 et les corrections post-revue de la PR #428 en
+place. Aucun de ces points n'est traité pour l'instant — liste de propositions à discuter/prioriser.
+**Marqués par l'utilisateur comme prioritaires : items 26, 28 et 32.**
+
+### Priorité haute — sécurité
+
+#### 26. [PRIORITAIRE] Le worker Windows (AppContainer) hérite de tout l'environnement du process hôte
+`AppContainerSandbox.StartProcessInternal` (`ProcessIsolation/AppContainerSandbox.cs:229`) appelle
+`CreateProcess` avec `lpEnvironment = IntPtr.Zero`, ce qui fait hériter du bloc d'environnement complet
+du process parent. À l'inverse, `LinuxBubblewrapContainer`/`MacOsSandboxExecContainer` appellent tous
+deux `SandboxedProcessEnvironment.ApplyMinimalEnvironment(psi)` (liste blanche `PATH`/`HOME`/`DOTNET_*`/
+etc., voir item 5 de la relecture précédente) avant de lancer le process. C'est une asymétrie de
+sécurité réelle et non documentée : sur la plateforme la plus utilisée du projet, le worker Emit isolé
+voit toutes les variables d'environnement du process appelant (clés API, chaînes de connexion, etc.)
+alors que l'intention affichée de l'item 5 était justement de les retirer. `CreateProcess` accepte un
+bloc d'environnement custom (`lpEnvironment` pointant vers une chaîne multi-null-terminated) — il
+suffirait de construire ce bloc à partir de la même liste blanche que `SandboxedProcessEnvironment`
+(éventuellement en factorisant une méthode qui produit directement le bloc natif plutôt que de passer
+par `ProcessStartInfo.EnvironmentVariables`).
+
+#### 27. `Platform.NativeULongSize` / `StructPackingSize` sont des setters statiques mutables globaux
+Même famille de problème que `ProcessContainerPermissions.Default` avant sa correction (item 1 de la
+relecture précédente), mais jamais traitée pour `Platform` (`Reflection/Platform.cs:183` et `:220`).
+N'importe quel composant qui fait `Platform.NativeULongSize = 8` change silencieusement le comportement
+pour tous les autres consommateurs du même process — problématique en particulier si plusieurs
+bibliothèques d'interop PKCS#11 cohabitent. À minima, documenter clairement le risque de concurrence ;
+idéalement, remplacer par un mécanisme scindé par appelant (paramètre explicite plutôt qu'état global)
+ou au moins un avertissement XML doc explicite sur la non thread-safety.
+
+### Priorité haute — robustesse
+
+#### 28. [PRIORITAIRE] Aucun timeout sur les échanges Load/Call/Shutdown avec le worker isolé
+Seul le handshake de connexion initial (`EmitWorkerProcess.Start`, `WaitForConnectionAsync`) a un
+`CancellationTokenSource(10s)`. `InvokeMethod`/`Load`/`Dispose` appellent ensuite `SendAndReceive` →
+`reader.ReadLine()` sans aucune limite de temps. Si l'appel natif à l'intérieur du worker se bloque
+(I/O bloquant, deadlock), le thread hôte reste bloqué indéfiniment — y compris dans `Dispose()`, ce qui
+peut geler l'arrêt de l'application appelante. Proposition : timeout configurable sur
+`InvokeMethod`/`Load`, et un timeout court sur le `Shutdown` de `Dispose()` avec repli sur
+`KillSilently` en cas de dépassement.
+
+### Priorité moyenne — qualité de code
+
+#### 29. Pas de validation explicite des interfaces génériques dans `EmitDllMappableClass`
+`CompileMappingType` (`Reflection/Emit/EmitDllMappableClass.cs:93`) utilise `type.FullName`/
+`methodInfo.ReturnType.FullName` tels quels pour générer le C#. Une interface générique ou une méthode
+générique produirait un `FullName` avec la syntaxe de métadonnées CLR (backticks, arity) invalide en C#
+source — l'échec arriverait sous forme de diagnostic Roslyn cryptique plutôt qu'un message clair.
+Proposition : rejeter explicitement (message clair type « generic interfaces are not supported ») en
+amont, comme le fait déjà `CrossProcessMarshaling.EnsureInterfaceIsSupported` pour le chemin isolé.
+
+#### 30. Pas de bump de version / changelog pour le breaking change de `Emit<TInterface>`
+Déjà signalé lors de la relecture précédente (« flagged to the user, no version bump made
+unilaterally ») mais toujours pas actionné — le package est publié sur NuGet
+(`omy.Utils.Reflection` v1.2.1) et `Emit<TInterface>` change de comportement à signature identique. À
+trancher : bump mineur/majeur + entrée de changelog avant la prochaine publication.
+
+#### 31. `EmitWorkerInvocationException` ne transporte pas la stack trace distante
+Seuls `message` et `RemoteExceptionTypeName` (nom de type) sont propagés
+(`Reflection/Emit/EmitWorkerInvocationException.cs`). Ajouter un champ texte pour la stack trace du
+worker (capturée côté `EmitWorkerHost.HandleCall`/`HandleLoad`) faciliterait grandement le diagnostic
+d'un échec côté worker sans tenter de reconstruire une vraie exception cross-process.
+
+### Priorité basse — perf / architecture (plus structurant, à discuter avant d'engager)
+
+#### 32. [PRIORITAIRE] Un process worker complet est relancé par interface mappée
+Chaque appel à `Emit<TInterface>` relance l'exécutable hôte en entier (démarrage CLR complet) ; mapper 5
+interfaces natives distinctes crée 5 processus. Un pool/multiplexage d'un seul worker pour plusieurs
+interfaces réduirait le coût de démarrage, mais c'est un changement architectural plus lourd que les
+autres points de cette liste (protocole `WorkerRequest`/`WorkerResponse` à étendre pour identifier
+l'interface visée par chaque requête, gestion du cycle de vie du pool, etc.) — à cadrer avant de
+l'attaquer.
+
+#### 33. Coût par appel non documenté
+Chaque appel round-trip en JSON + pipe nommé, sérialisé par un seul `SemaphoreSlim` (`callLock`) —
+aucun appel concurrent n'est possible sur un même worker. Ce n'est mentionné nulle part dans le README ;
+pour un usage haute fréquence (boucle serrée), c'est une régression de performance potentiellement
+surprenante par rapport à `EmitInProcess`/P-Invoke direct. Proposition minimale : documenter le
+trade-off dans le README, à côté de la section « Interface emit approach ».
