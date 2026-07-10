@@ -93,8 +93,12 @@ public class CMapFormat4 : CMapFormatBase
         /// <inheritdoc/>
         internal override bool HasMap => true;
 
-        /// <inheritdoc/>
-        internal override int Length => 8 + Map.Count * sizeof(short);
+        /// <summary>
+        /// Gets the length (in bytes) of this segment's <em>additional</em> data, i.e. the
+        /// glyphIdArray entries: the fixed per-segment endCode/startCode/idDelta/idRangeOffset
+        /// fields are already accounted for by <see cref="CMapFormat4.Length"/>.
+        /// </summary>
+        internal override int Length => Map.Count * sizeof(short);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TableMap"/> class.
@@ -138,8 +142,11 @@ public class CMapFormat4 : CMapFormatBase
         /// <inheritdoc/>
         internal override bool HasMap => false;
 
-        /// <inheritdoc/>
-        internal override int Length => 8;
+        /// <summary>
+        /// A delta segment has no additional data beyond the fixed per-segment fields already
+        /// accounted for by <see cref="CMapFormat4.Length"/>.
+        /// </summary>
+        internal override int Length => 0;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DeltaMap"/> class.
@@ -283,11 +290,11 @@ public class CMapFormat4 : CMapFormatBase
     /// <inheritdoc/>
     public override void ReadData(int length, Reader data)
     {
-        int segCount = (short)(data.Read<Int16>() << 1);
-        // Read header fields (length, language, etc.); here we ignore some fields.
-        data.Read<Int16>(); // overall length (unused)
-        data.Read<Int16>(); // language
-        data.Read<Int16>(); // segCountX2 (already used)
+        // segCountX2 stores 2 * segCount; divide by 2 to get the actual segment count.
+        int segCount = data.Read<Int16>() >> 1;
+        data.Read<Int16>(); // searchRange (unused, recomputed from SegmentCount on write)
+        data.Read<Int16>(); // entrySelector (unused, recomputed from SegmentCount on write)
+        data.Read<Int16>(); // rangeShift (unused, recomputed from SegmentCount on write)
 
         short[] endCodes = new short[segCount];
         for (int i = 0; i < segCount; i++)
@@ -333,22 +340,25 @@ public class CMapFormat4 : CMapFormatBase
         data.Write<Int16>(Format);
         data.Write<Int16>(Length);
         data.Write<Int16>(Language);
-        data.Write<Int16>((short)(SegmentCount >> 1));
+        // segCountX2 stores 2 * segCount, not segCount / 2.
+        data.Write<Int16>((short)(SegmentCount << 1));
         data.Write<Int16>(SearchRange);
         data.Write<Int16>(EntrySelector);
         data.Write<Int16>(RangeShift);
 
-        // Write start codes for each segment.
-        foreach (Segment segment in segments)
-        {
-            data.Write<Int16>((short)segment.StartCode);
-        }
-        data.Write<Int16>(0);
-
-        // Write end codes for each segment.
+        // Write end codes for each segment, followed by the reservedPad field, then the start
+        // codes: this order (endCode[], reservedPad, startCode[]) matches both the TrueType spec
+        // and ReadData below; writing startCode[] before endCode[] here used to make every
+        // written CMapFormat4 subtable unreadable by ReadData (or by any other cmap parser).
         foreach (Segment segment in segments)
         {
             data.Write<Int16>((short)segment.EndCode);
+        }
+        data.Write<Int16>(0);
+
+        foreach (Segment segment in segments)
+        {
+            data.Write<Int16>((short)segment.StartCode);
         }
 
         // Write idDeltas or 0 if a mapping table is present.
@@ -375,7 +385,7 @@ public class CMapFormat4 : CMapFormatBase
                 data.Seek(glyphArrayOffset, SeekOrigin.Begin);
                 foreach (var index in tableMap.Map)
                 {
-                    data.Write<Byte>((byte)index);
+                    data.Write<Int16>(index);
                 }
                 data.Pop();
                 glyphArrayOffset += tableMap.Map.Count * 2;
