@@ -208,10 +208,14 @@ testés (`AcntTableTests`, `AvarTableTests`, `BslnTableTests`, `CvarTableTests`,
 `GaspTableTests`, `LtshTableTests`, `Os2TableTests`, `PcltTableTests`, `VheaTableTests`,
 `DsigTableTests`). Vu la cohérence de style avec les tables déjà testées, probablement un oubli
 plutôt qu'un choix — bonne opportunité de compléter la suite existante par symétrie.
+**Corrigé** : les 8 tables ont désormais un fichier de test dédié (`FeatTableTests`, `FdscTableTests`,
+`FmtxTableTests`, `LcarTableTests`, `OpbdTableTests`, `PropTableTests`, `TrakTableTests`,
+`HdmxTableTests`). Aucun bug trouvé.
 
 ### 19. `CvtTable`/`FpgmTable`/`PrepTable` sans test
 Ces trois tables (bytecode brut) sont fonctionnellement triviales et sans bug détecté, mais sans
 aucun test dédié ni indirect. Risque faible vu la simplicité du code.
+**Corrigé** : `CvtTableTests`, `FpgmTableTests`, `PrepTableTests` ajoutés. Aucun bug trouvé.
 
 ### 20. `TtfHinting.cs` (`TtfHintingContext`/`TtfHintingProcessor`) sans aucun test
 **Traité** en corrigeant l'item 8 : `TtfHintingTests.cs` couvre désormais `MovePoint` et
@@ -234,5 +238,12 @@ aucun test dédié ni indirect. Risque faible vu la simplicité du code.
 | 9, 12, 13 | Cosmétique | using inutile, initialiseur de tableau, params | Ouvert |
 | 14, 15 | Dette technique mineure | duplication AAT header, docs incomplètes | Ouvert |
 | 11 | Bug fonctionnel (trouvé via l'item 16) | `NameTable.cs` (position flux + overflow `WriteFixedLengthString`) | Corrigé |
-| 18, 19 | Manque de test | tables AAT restantes, Cvt/Fpgm/Prep | Ouvert |
+| 18, 19 | Manque de test | tables AAT restantes, Cvt/Fpgm/Prep | Corrigé |
 | 20 | Manque de test | TtfHinting | Corrigé (via item 8) |
+
+## Bilan (2026-07-10, fin de session)
+Tous les items de test (16, 17, 18, 19, 20) et tous les bugs fonctionnels (1-8, plus le 11 et le bug
+`NameTable.WriteData`/`WriteFixedLengthString` trouvé en cours de route) sont corrigés, chacun avec
+son propre commit et son test de régression. Restent ouverts, tous de dette technique/cosmétique
+sans impact fonctionnel connu : 9 (using inutile), 10 (code mort `Acnt/`), 12 (style tableau), 13
+(`params IEnumerable<T>`), 14 (duplication AAT header), 15 (docs XML incomplètes).
