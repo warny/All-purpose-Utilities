@@ -263,7 +263,21 @@ public enum CompoundGlyfFlags : short
     /// <summary>
     /// Components overlap.
     /// </summary>
-    OverlapCompound = 0x0400
+    OverlapCompound = 0x0400,
+
+    /// <summary>
+    /// The component's translation offset should be scaled by the same factor as its
+    /// transformation matrix before being applied. Mutually exclusive with
+    /// <see cref="UnscaledComponentOffset"/>; if neither is set, the offset is used unscaled
+    /// (the de facto convention followed by most font tools and rasterizers).
+    /// </summary>
+    ScaledComponentOffset = 0x0800,
+
+    /// <summary>
+    /// The component's translation offset should be used as-is, without scaling. Mutually
+    /// exclusive with <see cref="ScaledComponentOffset"/>.
+    /// </summary>
+    UnscaledComponentOffset = 0x1000
 }
 
 /// <summary>

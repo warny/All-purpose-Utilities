@@ -426,6 +426,25 @@ public class TrueTypeFont : IFont
     }
 
     /// <summary>
+    /// Resolves a character to its glyph index using the font's 'cmap' table.
+    /// </summary>
+    /// <param name="cmap">The font's cmap table.</param>
+    /// <param name="c">The character to resolve.</param>
+    /// <returns>The glyph index for <paramref name="c"/>, or 0 (<c>.notdef</c>) if no subtable maps it.</returns>
+    private static int ResolveGlyphIndex(CmapTable cmap, char c)
+    {
+        foreach (var map in cmap.CMaps)
+        {
+            int index = map.Map(c);
+            if (index > 0)
+            {
+                return index;
+            }
+        }
+        return 0;
+    }
+
+    /// <summary>
     /// Retrieves the glyph corresponding to the specified character.
     /// </summary>
     /// <param name="c">The character for which to retrieve the glyph.</param>
@@ -435,15 +454,12 @@ public class TrueTypeFont : IFont
         var cmap = GetTable<CmapTable>(TableTypes.CMAP);
         var glyf = GetTable<GlyfTable>(TableTypes.GLYF);
         var hmtx = GetTable<HmtxTable>(TableTypes.HMTX);
-        foreach (var map in cmap.CMaps)
+        int index = ResolveGlyphIndex(cmap, c);
+        if (index > 0)
         {
-            int index = map.Map(c);
-            if (index > 0)
-            {
-                var glyphBase = glyf.GetGlyph(index);
-                if (glyphBase != null)
-                    return new TrueTypeGlyph(glyphBase, hmtx.GetAdvance(index));
-            }
+            var glyphBase = glyf.GetGlyph(index);
+            if (glyphBase != null)
+                return new TrueTypeGlyph(glyphBase, hmtx.GetAdvance(index));
         }
         return null;
     }
@@ -455,14 +471,21 @@ public class TrueTypeFont : IFont
     /// <param name="before">The preceding character.</param>
     /// <param name="after">The following character.</param>
     /// <returns>The spacing correction in font units.</returns>
+    /// <remarks>
+    /// The 'kern' table stores kerning pairs by glyph index, never by character code, so
+    /// <paramref name="before"/> and <paramref name="after"/> are resolved through 'cmap' first
+    /// (the same resolution <see cref="GetGlyph"/> performs) before consulting the kern table.
+    /// </remarks>
     public float GetSpacingCorrection(char before, char after)
     {
         // If the font contains a kern table, retrieve it and use it to compute spacing correction.
         if (ContainsTable(TableTypes.KERN))
         {
-            // Assuming a KernTable type with a GetSpacingCorrection method exists.
+            var cmap = GetTable<CmapTable>(TableTypes.CMAP);
+            ushort beforeGlyph = (ushort)ResolveGlyphIndex(cmap, before);
+            ushort afterGlyph = (ushort)ResolveGlyphIndex(cmap, after);
             var kernTable = GetTable<KernTable>(TableTypes.KERN);
-            return kernTable.GetSpacingCorrection(before, after);
+            return kernTable.GetSpacingCorrection(beforeGlyph, afterGlyph);
         }
         return 0f;
     }

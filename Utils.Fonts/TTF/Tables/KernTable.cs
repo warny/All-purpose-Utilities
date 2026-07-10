@@ -29,16 +29,18 @@ namespace Utils.Fonts.TTF.Tables
 
         /// <summary>
         /// Retrieves the spacing correction (kerning value) between two glyphs.
-        /// In this simplified implementation, the input characters are treated as glyph indices.
         /// </summary>
-        /// <param name="before">The glyph index of the preceding character.</param>
-        /// <param name="after">The glyph index of the following character.</param>
+        /// <param name="before">The glyph index of the preceding glyph.</param>
+        /// <param name="after">The glyph index of the following glyph.</param>
         /// <returns>The kerning adjustment in font units, or 0 if no kerning pair is found.</returns>
-        public float GetSpacingCorrection(char before, char after)
+        /// <remarks>
+        /// The 'kern' table stores pairs by glyph index, never by character code: callers must
+        /// resolve character codes to glyph indices (e.g. via a 'cmap' subtable) before calling this
+        /// method. <see cref="TrueTypeFont.GetSpacingCorrection(char, char)"/> does this resolution.
+        /// </remarks>
+        public float GetSpacingCorrection(ushort before, ushort after)
         {
-            ushort left = (ushort)before;
-            ushort right = (ushort)after;
-            if (kerningPairs.TryGetValue((left, right), out short value))
+            if (kerningPairs.TryGetValue((before, after), out short value))
             {
                 return value;
             }
