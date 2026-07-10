@@ -134,6 +134,9 @@ fin des données de chaîne). Ça fonctionne actuellement par accident de l'impl
 `MemoryStream` (qui s'étend correctement via `Seek`+écritures), mais c'est fragile et non documenté.
 **Fix proposé** : documenter l'invariant, ou repositionner explicitement `data.Position` à la fin du
 bloc de chaînes avant de retourner.
+**Corrigé** (en écrivant les tests de l'item 16) : `WriteData` repositionne désormais explicitement
+le flux à la fin de la zone de chaînes avant de retourner. Un second bug, plus grave, a été trouvé au
+passage — voir la note sur l'item 16.
 
 ### 12. Style — tableau non-bracket dans `PostMapFormat0.stdNames`
 `Utils.Fonts/TTF/Tables/PostTable.cs:65` : `protected internal string[] stdNames = { ... }` utilise
@@ -173,6 +176,16 @@ round-trip (`ParseFont` → `WriteFont` → `ParseFont`, comparer les valeurs) s
 multi-glyphes aurait très probablement détecté les bugs 2 et 4.
 **Fix proposé** : ajouter des tests dédiés par table dans `UtilsTest.Functional/Fonts/`, en
 particulier un test d'aller-retour bit-exact sur `TrueTypeFont.WriteFont()`.
+**Corrigé** : les 10 tables listées ont désormais chacune un fichier de test dédié
+(`CmapTableTests`, `CMapFormat4Tests`, `GlyphSimpleTests`, `HmtxTableTests`, `KernTableTests`,
+`NameTableTests`, `LocaTableTests`, `MaxpTableTests`, `HheaTableTests`, `VmtxTableTests`,
+`PostTableTests`). Écrire le test de `NameTable` a révélé un second bug réel (`WriteData` passait un
+nombre de caractères à `WriteFixedLengthString` au lieu du nombre d'octets déjà calculé — invisible
+tant que `TtfEncoderFactory` retombait toujours sur ASCII avant l'item 7, où 1 caractère = 1 octet ;
+exposé dès que l'encodage UTF-16BE correct a été utilisé), corrigé dans le même commit que le fix du
+point 11 ci-dessous (les deux bugs cohabitaient dans `NameTable.WriteData`). Pas encore fait : un
+test d'aller-retour bit-exact sur `TrueTypeFont.WriteFont()` complet (toutes les tables d'une police
+réelle) — les tests ajoutés valident chaque table isolément.
 
 ### 17. Aucun test pour `Type3Font`, `Type42Font`, `CidKeyedFont`
 `Utils.Fonts/PostScript/Type3Font.cs`, `Type42Font.cs`, `CidKeyedFont.cs`
@@ -208,10 +221,11 @@ aucun test dédié ni indirect. Risque faible vu la simplicité du code.
 | 6 | Bug fonctionnel potentiel | `PostTable.cs` (`Seek(0)` parasite) | Corrigé |
 | 5 | Bug fonctionnel mineur | `PostTable.cs` (typo "ackslash") | Corrigé |
 | 8 | Bug fonctionnel (portée limitée) | `TtfHinting.cs` (troncature `short`) | Corrigé |
-| 16 | Manque de test (racine des bugs 1-6) | Cmap/Glyf/Hmtx/Kern/Name/Loca/Maxp/Hhea/Vmtx/Post | Partiel (Cmap/Glyf/Post) |
+| 16 | Manque de test (racine des bugs 1-6) | Cmap/Glyf/Hmtx/Kern/Name/Loca/Maxp/Hhea/Vmtx/Post | Corrigé (tests par table ; reste : round-trip `WriteFont()` complet) |
 | 17 | Manque de test | Type3Font/Type42Font/CidKeyedFont | Ouvert |
 | 10 | Dette technique | `Acnt/` (code mort) | Ouvert |
 | 9, 12, 13 | Cosmétique | using inutile, initialiseur de tableau, params | Ouvert |
-| 11, 14, 15 | Dette technique mineure | position flux NameTable, duplication AAT header, docs incomplètes | Ouvert |
+| 14, 15 | Dette technique mineure | duplication AAT header, docs incomplètes | Ouvert |
+| 11 | Bug fonctionnel (trouvé via l'item 16) | `NameTable.cs` (position flux + overflow `WriteFixedLengthString`) | Corrigé |
 | 18, 19 | Manque de test | tables AAT restantes, Cvt/Fpgm/Prep | Ouvert |
 | 20 | Manque de test | TtfHinting | Corrigé (via item 8) |
