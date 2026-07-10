@@ -139,6 +139,33 @@ appelée par `TrueTypeFont`.
 pourquoi il est conservé.
 **Corrigé.** Dossier `TTF/Tables/Acnt/` supprimé (3 fichiers).
 
+**Relecture PR #434 (Codex + utilisateur)** : Codex a signalé que ces classes étaient `public` dans
+le package NuGet publié `omy.Utils.Fonts` (v1.2.1) et que leur suppression casse la compilation de
+tout consommateur externe qui les référencerait — une préoccupation de compatibilité API, pas
+architecturale. L'utilisateur a soulevé séparément un point légitime : la table `acnt` peut avoir
+plusieurs formats par glyphe (format 0 et format 1), et disposer d'une base polymorphe pour les
+représenter est effectivement indispensable. Vérification faite : **ce besoin est déjà satisfait par
+`AcntTable`**, pas par le code supprimé.
+- `AcntTable.AccentDescription` (classe abstraite) avec `Single` (format 0) et `Multiple` (format 1)
+  est exactement cette base polymorphe, déjà en place, testée, et conforme à la spec Apple
+  (https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6acnt.html).
+- Le code supprimé (`AcntFormatBase.GetActn(Reader)`) n'analysait qu'un seul enregistrement de
+  description isolé (pas l'en-tête de la table, pas la plage de glyphes, pas les sous-tables
+  d'extension/secondaire que `AcntTable` gère) — un premier jet incomplet du même format, abandonné.
+- `AcntFormatBase` n'hérite pas de `TrueTypeTable` : le mécanisme d'enregistrement de
+  `TrueTypeFont` (`TablesType.Add(tag, ...)`, dictionnaire à clé unique par tag) ne scanne que les
+  sous-classes de `TrueTypeTable`, et `AcntTable` possède déjà `[TTFTable(TableTypes.Tags.ACNT)]`.
+  Même restructuré pour s'y greffer, ce code entrerait directement en conflit avec `AcntTable` sur le
+  même tag — il ne peut pas coexister comme implémentation alternative utilisable.
+
+**Décision** : suppression maintenue. La table `acnt` elle-même n'est pas obsolète et reste
+pleinement supportée (par `AcntTable`) ; seuls ces trois fichiers précis, qui dupliquaient
+partiellement et incorrectement la même fonctionnalité sans jamais être branchés, étaient à
+supprimer. Le risque de compatibilité API signalé par Codex est jugé acceptable : ce code n'était de
+toute façon jamais atteignable via le flux normal de parsing de police, et `Utils.Fonts` (comme les
+autres packages `Utils.*`) doit de toute façon migrer vers une version 2.0.0 groupée qui absorbera ce
+type de changement cassant.
+
 ### 11. `NameTable.WriteData` — positionnement du flux non garanti en fin d'écriture
 `Utils.Fonts/TTF/Tables/NameTable.cs:200-225`
 Chaque enregistrement de nom est écrit via `Push()`/`Seek(6+12*Count+offset)`/écriture/`Pop()`, mais
