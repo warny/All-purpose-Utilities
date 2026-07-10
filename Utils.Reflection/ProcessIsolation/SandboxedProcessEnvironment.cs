@@ -18,12 +18,26 @@ internal static class SandboxedProcessEnvironment
     /// Environment variable names copied through verbatim, beyond the <c>DOTNET_</c>/<c>CORECLR_</c>
     /// prefixes handled separately. These are needed for the child process (and, for a self-hosted
     /// Emit worker, the .NET runtime within it) to start up and behave correctly, not to access any
-    /// secret.
+    /// secret. Mixes Unix names (<c>PATH</c>, <c>HOME</c>, <c>USER</c>, ...) and their Windows
+    /// counterparts/Windows-only requirements (<c>TEMP</c>, <c>USERNAME</c>, <c>SystemRoot</c>, ...):
+    /// matching is case-insensitive (see <see cref="IsAllowed"/>), and a name irrelevant to the current
+    /// platform simply never appears in <see cref="Environment.GetEnvironmentVariables"/> there, so
+    /// listing both costs nothing per platform.
     /// </summary>
-    private static readonly string[] AllowedExactNames =
-    [
+    /// <remarks>
+    /// <c>SystemRoot</c>/<c>windir</c>/<c>TEMP</c>/<c>ComSpec</c> are effectively required for a Windows
+    /// process (and the .NET runtime within it) to start up correctly — without them, a sandboxed Emit
+    /// worker can fail before it even reaches the point of connecting back to the host's named pipe.
+    /// Environment variable names are case-insensitive on Windows, and
+    /// <see cref="Environment.GetEnvironmentVariables"/> returns them in their OS-native casing (for
+    /// example <c>"Path"</c>, not <c>"PATH"</c>) — comparing case-sensitively against an all-uppercase,
+    /// Unix-styled list silently dropped every one of these on Windows.
+    /// </remarks>
+    private static readonly HashSet<string> AllowedExactNames = new(StringComparer.OrdinalIgnoreCase)
+    {
         "PATH", "HOME", "TMPDIR", "LANG", "LC_ALL", "USER", "LOGNAME", "TERM",
-    ];
+        "TEMP", "TMP", "USERNAME", "SystemRoot", "windir", "ComSpec",
+    };
 
     /// <summary>
     /// Replaces <paramref name="startInfo"/>'s inherited environment (a full copy of the current
@@ -90,7 +104,7 @@ internal static class SandboxedProcessEnvironment
     }
 
     private static bool IsAllowed(string name) =>
-        Array.IndexOf(AllowedExactNames, name) >= 0 ||
-        name.StartsWith("DOTNET_", StringComparison.Ordinal) ||
-        name.StartsWith("CORECLR_", StringComparison.Ordinal);
+        AllowedExactNames.Contains(name) ||
+        name.StartsWith("DOTNET_", StringComparison.OrdinalIgnoreCase) ||
+        name.StartsWith("CORECLR_", StringComparison.OrdinalIgnoreCase);
 }

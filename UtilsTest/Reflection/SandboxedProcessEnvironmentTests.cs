@@ -100,8 +100,78 @@ public class SandboxedProcessEnvironmentTests
 
         string block = SandboxedProcessEnvironment.BuildWindowsEnvironmentBlock();
 
-        StringAssert.Contains(block, "PATH=");
+        // PATH's actual OS-native casing varies by machine (commonly "Path" on a plain Windows
+        // install, but case-preserving — could be "PATH" depending on how it was originally set), so
+        // this must match case-insensitively rather than assuming the all-uppercase Unix spelling.
+        Assert.IsTrue(block.Contains("PATH=", StringComparison.OrdinalIgnoreCase),
+            "Expected a PATH entry (any casing) in the environment block.");
         Assert.IsTrue(block.EndsWith("\0\0", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public void BuildWindowsEnvironmentBlock_KeepsWindowsRequiredVariables()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            Assert.Inconclusive("CreateProcess environment blocks are Windows-only.");
+            return;
+        }
+
+        // SystemRoot/windir/TEMP/ComSpec are effectively required for a Windows process (and the .NET
+        // runtime within it) to start up correctly; a sandboxed worker missing them can fail before it
+        // even reaches the point of connecting back to the host's named pipe.
+        string block = SandboxedProcessEnvironment.BuildWindowsEnvironmentBlock();
+
+        foreach (string requiredName in new[] { "SystemRoot", "TEMP" })
+        {
+            if (Environment.GetEnvironmentVariable(requiredName) is not null)
+            {
+                Assert.IsTrue(block.Contains(requiredName + "=", StringComparison.OrdinalIgnoreCase),
+                    $"Expected '{requiredName}' (present in the host environment) to survive into the block.");
+            }
+        }
+    }
+
+    [TestMethod]
+    public void IsAllowed_MatchesAllowlistedNamesRegardlessOfCase()
+    {
+        // Windows environment variable names are case-insensitive; the allowlist match must not
+        // silently drop a variable just because the OS happens to have cased it differently than the
+        // hardcoded list (e.g. "Path" instead of "PATH"). Uses a name that does not already exist on a
+        // typical machine (TMPDIR is a Unix convention Windows doesn't set) so this is deterministic
+        // regardless of platform, rather than depending on how a pre-existing real variable happens to
+        // be cased.
+        const string lowerCaseName = "tmpdir";
+        Environment.SetEnvironmentVariable(lowerCaseName, "/tmp/example");
+        try
+        {
+            var psi = new ProcessStartInfo("dummy");
+            SandboxedProcessEnvironment.ApplyMinimalEnvironment(psi);
+
+            Assert.IsTrue(psi.EnvironmentVariables.ContainsKey(lowerCaseName));
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(lowerCaseName, null);
+        }
+    }
+
+    [TestMethod]
+    public void ApplyMinimalEnvironment_KeepsDotNetPrefixedVariables_CaseInsensitively()
+    {
+        const string lowerCasePrefixedName = "dotnet_test_lowercase_prefix";
+        Environment.SetEnvironmentVariable(lowerCasePrefixedName, "1");
+        try
+        {
+            var psi = new ProcessStartInfo("dummy");
+            SandboxedProcessEnvironment.ApplyMinimalEnvironment(psi);
+
+            Assert.IsTrue(psi.EnvironmentVariables.ContainsKey(lowerCasePrefixedName));
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(lowerCasePrefixedName, null);
+        }
     }
 
     [TestMethod]
