@@ -8,7 +8,6 @@ using System.Text;
 using Utils.Fonts.TTF.Tables;
 using Utils.IO.Serialization;
 using Utils.Mathematics;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace Utils.Fonts.TTF;
 

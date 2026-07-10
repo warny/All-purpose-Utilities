@@ -90,19 +90,15 @@ public class OpbdTable : TrueTypeTable
 
         // Write Format 6 lookup where values are offsets to bounds data
         int n = sortedGlyphs.Count + 1;
-        int unitSize     = 4;
-        int searchRange  = 1;
-        int entrySelector = 0;
-        while (searchRange * 2 <= n) { searchRange *= 2; entrySelector++; }
-        int rangeShift = (n - searchRange) * unitSize;
-        searchRange   *= unitSize;
+        int unitSize = 4;
+        var (searchRange, entrySelector, rangeShift) = AatBinarySearchHeader.Compute(n, unitSize);
 
         data.Write<UInt16>(6);
         data.Write<UInt16>((ushort)unitSize);
         data.Write<UInt16>((ushort)n);
-        data.Write<UInt16>((ushort)searchRange);
-        data.Write<UInt16>((ushort)entrySelector);
-        data.Write<UInt16>((ushort)rangeShift);
+        data.Write<UInt16>(searchRange);
+        data.Write<UInt16>(entrySelector);
+        data.Write<UInt16>(rangeShift);
 
         int boundsOffset = boundsDataStart;
         foreach (var (glyph, _) in sortedGlyphs)

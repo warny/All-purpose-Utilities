@@ -18,8 +18,21 @@ namespace Utils.Fonts.TTF.Tables;
 [TTFTable(TableTypes.Tags.LOCA, TableTypes.Tags.HEAD, TableTypes.Tags.MAXP)]
 public class LocaTable : TrueTypeTable, IEnumerable<LocaRecord>
 {
+    /// <summary>
+    /// The font's 'head' table, providing <see cref="HeadTable.IndexToLocFormat"/> to determine
+    /// whether offsets are stored in short or long format.
+    /// </summary>
     private HeadTable headTable;
+
+    /// <summary>
+    /// The font's 'maxp' table, providing the glyph count used to size <see cref="offsets"/>.
+    /// </summary>
     private MaxpTable maxpTable;
+
+    /// <summary>
+    /// The glyph offsets into the 'glyf' table, always normalized to byte offsets regardless of
+    /// whether they were read in short or long format. Has <see cref="GlyphCount"/> + 1 entries.
+    /// </summary>
     private int[] offsets;
 
     /// <summary>

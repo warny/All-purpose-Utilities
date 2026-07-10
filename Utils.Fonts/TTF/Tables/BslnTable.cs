@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Numerics;
 using Utils.IO.Serialization;
 
 namespace Utils.Fonts.TTF.Tables;
@@ -343,11 +342,7 @@ public class BslnTable : TrueTypeTable
         ushort nUnits   = (ushort)(sorted.Length + 1);  // sorted entries + sentinel
         const ushort unitSize = 4;
 
-        // Binary-search header parameters (same formula as KernTable)
-        int    log2          = BitOperations.Log2((uint)nUnits);
-        ushort searchRange   = (ushort)((1 << log2) * unitSize);
-        ushort entrySelector = (ushort)log2;
-        ushort rangeShift    = (ushort)(nUnits * unitSize - searchRange);
+        var (searchRange, entrySelector, rangeShift) = AatBinarySearchHeader.Compute(nUnits, unitSize);
 
         // binSrchHeader (12 bytes)
         data.Write<UInt16>(6);              // lookup format
