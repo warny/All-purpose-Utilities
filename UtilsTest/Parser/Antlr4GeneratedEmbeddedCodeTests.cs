@@ -3532,11 +3532,11 @@ public class Antlr4GeneratedEmbeddedCodeTests
         Assert.AreEqual(-1, ReadInstanceIntField(executionContext, "Seen"));
     }
 
-    /// <summary>Ensures labeled child return access remains unsupported.</summary>
+    /// <summary>Ensures unlabeled child rule-name return access remains unsupported.</summary>
     [TestMethod]
-    public void ParseWithEmbeddedCode_DoesNotSupportLabeledChildReturnAccessYet()
+    public void ParseWithEmbeddedCode_DoesNotSupportUnlabeledChildReturnAccess()
     {
-        AssertTransformerDiagnostic("start : x=child { Seen = $x.value; } ; child returns [int value] @after { $value = 42; } : A ; A : 'a' ;", "Labeled rule-call return attribute '$x.value' is not supported");
+        AssertTransformerDiagnostic("start : child { Seen = $child.value; } ; child returns [int value] @after { $value = 42; } : A ; A : 'a' ;", "Parser attribute root 'child' is not the current rule name or a visible assignment rule-reference label");
     }
 
     /// <summary>Ensures failed alternatives roll back parser-managed current-rule return writes before a later alternative succeeds.</summary>
