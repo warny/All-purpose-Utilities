@@ -640,6 +640,7 @@ public class Antlr4GrammarGeneratorDiagnosticsTests
     [DataRow("start @after { Seen = $c.ctx; } : c=child ; child : A ;", "Return 'ctx' is not declared by every parser rule referenced by assignment label 'c'")]
     [DataRow("start @after { Seen = $xs.ctx; } : xs+=child ; child : A ;", "Return 'ctx' is not declared by every parser rule referenced by list label 'xs'")]
     [DataRow("start @after { Seen = $c; } : c=child ; child : A ;", "label access")]
+    [DataRow("start @init { Seen = $c.value; } : c=child ; child returns [int value] : A ;", "Assignment label 'c' is not available in @init")]
     [DataRow("start @after { Seen = $xs; } : xs+=child ; child : A ;", "label access")]
     [DataRow("start : c=child { $c.value != null }? ; child returns [int value] : A ;", "Parser attribute read '$c.value' is not supported in semantic predicates")]
     [DataRow("start : xs+=child { $xs.value.Count > 0 }? ; child returns [int value] : A ;", "Parser attribute read '$xs.value' is not supported in semantic predicates")]
