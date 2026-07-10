@@ -86,6 +86,7 @@ internal static class EmitWorkerHost
                     Success = false,
                     ErrorMessage = effective.Message,
                     ErrorTypeName = effective.GetType().FullName,
+                    ErrorStackTrace = effective.StackTrace,
                 };
             }
 

@@ -326,7 +326,8 @@ internal sealed class EmitWorkerProcess : IDisposable
             string context = methodName is null ? "the Load request" : $"'{methodName}'";
             throw new EmitWorkerInvocationException(
                 $"The isolated Emit worker reported an error while handling {context}: {response.ErrorMessage}",
-                response.ErrorTypeName);
+                response.ErrorTypeName,
+                response.ErrorStackTrace);
         }
     }
 

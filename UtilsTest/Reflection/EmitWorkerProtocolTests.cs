@@ -118,6 +118,7 @@ public class EmitWorkerProtocolTests
             Success = false,
             ErrorMessage = "Native call failed.",
             ErrorTypeName = "System.InvalidOperationException",
+            ErrorStackTrace = "   at Utils.Reflection.Reflection.Emit.EmitWorkerHost.HandleCall(...)",
         };
 
         string json = JsonSerializer.Serialize(response);
@@ -127,5 +128,6 @@ public class EmitWorkerProtocolTests
         Assert.IsFalse(roundTripped.Success);
         Assert.AreEqual(response.ErrorMessage, roundTripped.ErrorMessage);
         Assert.AreEqual(response.ErrorTypeName, roundTripped.ErrorTypeName);
+        Assert.AreEqual(response.ErrorStackTrace, roundTripped.ErrorStackTrace);
     }
 }

@@ -88,4 +88,12 @@ internal sealed class WorkerResponse
 
     /// <summary>Full type name of the exception that occurred while handling the request.</summary>
     public string? ErrorTypeName { get; set; }
+
+    /// <summary>
+    /// Text of <see cref="Exception.StackTrace"/> captured on the worker side when the exception that
+    /// occurred while handling the request was thrown, when available. Round-tripped as plain text (not
+    /// a real stack trace object, which cannot cross a process boundary) purely so the host side can
+    /// surface it for diagnostics — see <see cref="EmitWorkerInvocationException.RemoteStackTrace"/>.
+    /// </summary>
+    public string? ErrorStackTrace { get; set; }
 }

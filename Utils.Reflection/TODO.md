@@ -347,11 +347,17 @@ comportement à signature identique n'est pas un patch/minor « non-breaking »)
 26-29/32 de cette relecture (timeouts, `EmitWorkerPool`, durcissement `ProcessIsolation`, validation
 interfaces génériques, alias `Platform.IsMacOS`).
 
-#### 31. `EmitWorkerInvocationException` ne transporte pas la stack trace distante
-Seuls `message` et `RemoteExceptionTypeName` (nom de type) sont propagés
-(`Reflection/Emit/EmitWorkerInvocationException.cs`). Ajouter un champ texte pour la stack trace du
-worker (capturée côté `EmitWorkerHost.HandleCall`/`HandleLoad`) faciliterait grandement le diagnostic
-d'un échec côté worker sans tenter de reconstruire une vraie exception cross-process.
+#### 31. ~~`EmitWorkerInvocationException` ne transporte pas la stack trace distante~~ — **implémenté**
+Seuls `message` et `RemoteExceptionTypeName` (nom de type) étaient propagés. **Fix** : `WorkerResponse`
+porte un nouveau champ texte `ErrorStackTrace`, rempli par `EmitWorkerHost.Run` (`effective.StackTrace`)
+dans le `catch` générique qui construit déjà la réponse d'échec ; `EmitWorkerInvocationException` expose
+`RemoteStackTrace` (texte brut — reconstruire une vraie exception cross-process n'a pas de sens, le
+worker et l'hôte ne partagent pas le même tas). `ToString()` surchargé pour ajouter la stack distante
+après la sortie standard de `Exception.ToString()`, étiquetée explicitement pour ne pas la confondre avec
+la stack trace de cette exception elle-même (qui ne montre que l'appel hôte→worker, pas la chaîne
+d'appels côté worker). Tests : `UtilsTest/Reflection/EmitWorkerInvocationExceptionTests.cs` (valeur par
+défaut `null`, `ToString()` avec/sans stack distante), round-trip JSON du nouveau champ dans
+`EmitWorkerProtocolTests.WorkerResponse_Failure_CarriesErrorDetails`.
 
 ### Priorité basse — perf / architecture (plus structurant, à discuter avant d'engager)
 
