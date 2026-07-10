@@ -434,3 +434,36 @@ combiner éventuellement avec un pool (item 32) pour amortir ce coût, mais les 
 indépendants et peuvent être traités séparément : l'item 32 vise à réduire le nombre de process pour
 plusieurs *interfaces différentes*, celui-ci vise à distribuer les appels d'une *même* interface sur
 plusieurs process pour paralléliser.
+
+#### 36. Documentation détaillée, avec exemples, du fonctionnement du système de process/threads
+Le README documente l'usage de haut niveau (`Emit<TInterface>`, `EmitInProcess<TInterface>`,
+`ProcessContainerFactory`) mais pas le *fonctionnement interne* des mécanismes de process/threads eux-
+mêmes — utile pour quiconque doit déboguer, étendre le protocole, ou décider entre les options
+(worker exclusif vs pool vs, une fois implémentés, threads/round-robin). Proposition : une doc dédiée
+(par exemple `Utils.Reflection/docs/process-model.md`, ou une section étoffée du README) couvrant, à
+chaque fois avec un exemple de code concret et éventuellement un schéma texte du flux de messages :
+1. **Comment on émet plusieurs interfaces dans le même process** : `EmitWorkerPool` (item 32) — cycle de
+   vie du worker partagé, allocation de `Handle` par `Load`, routage des `Call` par handle,
+   `Unload`/`Dispose` d'une interface individuelle vs `Dispose` du pool entier. Exemple : deux interfaces
+   mappées sur `pool.Emit<T>()`, avec le détail des requêtes `WorkerRequest`/réponses `WorkerResponse`
+   échangées.
+2. **Comment on charge une DLL dans un process** : différence entre `LibraryMapper.Create<T>` (sous-
+   classe statique, `[External]` sur champs/propriétés) et `EmitDllMappableClass`/`Emit<TInterface>`
+   (génération dynamique d'une classe à partir d'une interface) — avec le détail de
+   `NativeLibrary.Load`/`GetExport`/`GetDelegateForFunctionPointer` sous-jacent aux deux chemins.
+3. **Comment on lance une commande dans un process** : `IProcessContainer.StartProcess` (implémentations
+   `AppContainerSandbox`/`LinuxBubblewrapContainer`/`MacOsSandboxExecContainer`) vs le lancement plus bas
+   niveau du worker Emit lui-même (`EmitWorkerProcess.StartWorkerProcess`, `BuildWorkerArguments`,
+   `CreateWorkerPermissions`) — en clarifiant que ce sont deux mécanismes distincts (sandbox générique
+   réutilisable vs lancement spécifique du worker auto-hébergé).
+4. **Comment on lance une commande dans un thread** : dépend de l'item 34 (parallélisme intra-worker par
+   threads), pas encore implémenté — documenter soit le design cible une fois fait, soit, en attendant,
+   expliquer explicitement l'absence actuelle de parallélisme intra-worker (`callLock`, boucle mono-thread
+   de `EmitWorkerHost.Run`) pour que ce ne soit pas une surprise silencieuse.
+5. **Comment on construit un round-robin de process** et **comment on y lance des commandes** : dépend de
+   l'item 35, pas encore implémenté — documenter le design une fois fait (répartition des appels entre N
+   workers, stratégie de sélection, gestion du cycle de vie de chacun).
+Pour les points 4 et 5, la documentation ne peut être écrite « avec exemples » qu'une fois les items 34/35
+eux-mêmes implémentés (ou, à défaut, présentée explicitement comme un design proposé et non un
+comportement existant) — à séquencer après ces deux items si l'objectif est une doc reflétant un système
+réellement livré.
