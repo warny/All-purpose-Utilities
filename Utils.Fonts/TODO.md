@@ -161,6 +161,18 @@ Ces deux paramètres sont lus séquentiellement sans accès indexé nécessaire 
 préférer `params IEnumerable<T>` dans ce cas. Impact réel très faible (API publique déjà stable),
 signalé pour cohérence avec les changements déjà appliqués ailleurs dans `Utils/`
 (`EnumerableEx`/`Bytes`).
+**Non applicable, les deux après vérification :**
+- `TTFTableAttribute(TableTypes.Tags tableTag, params TableTypes.Tags[] dependsOn)` est le
+  constructeur d'un `Attribute` — le C# restreint les types de paramètres de constructeur
+  d'attribut à un ensemble fixe (types primitifs, `string`, `Type`, enums, et tableaux
+  unidimensionnels de ceux-ci) ; `IEnumerable<T>` n'en fait pas partie. Convertir ce paramètre
+  casserait la compilation de tout usage `[TTFTable(tag, dep1, dep2)]` (CS0181). Conservé en
+  `params T[]`.
+- `IGraphicConverter.BezierTo(params (float x, float y)[] points)` : l'audit affirmait qu'aucun
+  accès indexé n'était nécessaire, mais `BitmapGraphicConverter.BezierTo` (implémentation réelle,
+  `DrawTest/BitmapGraphicConverter.cs`) utilise `points[^1]` pour retrouver le dernier point de
+  contrôle — exactement le cas d'exception documenté pour `ArrayUtils`/`MathEx` (accès indexé natif
+  plus performant qu'`IEnumerable<T>`). Conservé en `params T[]`.
 
 ### 14. Duplication de constantes de recherche binaire AAT (`searchRange`/`entrySelector`/`rangeShift`)
 Répétée quasi identiquement dans `KernTable.WriteData`, `BslnTable.WriteLookupTableFormat6`,
