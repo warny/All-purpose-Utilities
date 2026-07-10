@@ -57,6 +57,54 @@ façon uniforme à tous les arguments, y compris ceux suivis d'un espace.
 **Sévérité** : bug fonctionnel (incohérence de désérialisation selon la position de l'argument dans
 la ligne — pas de test existant pour `StringUtils` du tout).
 
+### 6. `Number` — `default(Number)` represents an invalid `0/0` fraction
+`Utils/Numerics/Number.cs`. `Number` is a `readonly struct` whose constructor rejects a zero
+denominator and normalizes every valid fraction. However, the default value of a struct bypasses the
+constructor, so `default(Number)` contains `_numerator = 0` and `_denominator = 0`.
+
+This state is reachable in normal code through zero-initialized fields, arrays, automatic properties,
+and explicitly through `TryParse`, which assigns `default` to the result when parsing fails.
+Consequences include division by zero in `ToDecimal`, `NaN` through `ToDouble`, invalid arithmetic
+propagation, and a possible textual representation of `0/0`.
+
+**Proposed fix**: make the zero-initialized representation equivalent to zero by introducing an
+effective denominator of `1` whenever `_denominator` is zero, and use that normalized denominator in
+all operations. Alternatively, convert the type to a class, but that would be a much larger breaking
+change. Add a regression test asserting that `default(Number)` behaves exactly like `Number.Zero`.
+
+**Severity**: critical functional invariant violation. A public value type should have a valid and
+well-defined default value.
+
+### 7. `Number.Parse` silently accepts malformed decimal inputs
+`Utils/Numerics/Number.cs:101-123`. Decimal parsing uses
+`text.Split(info.NumberDecimalSeparator)` and then reads only `parts[0]` and `parts[1]`. It never
+verifies that exactly two parts were produced. As a result, an input such as `"1.2.3"` is silently
+parsed as `1.2`, with the trailing `.3` ignored.
+
+Conversely, common decimal forms such as `.5`, `-.5`, or possibly `5.` are rejected because the empty
+or sign-only integer/fractional component is passed directly to `BigInteger.Parse`.
+
+**Proposed fix**: locate the decimal separator explicitly, reject a second occurrence, validate that
+the entire input is consumed, and define/document whether leading- or trailing-separator forms are
+supported. Add tests for multiple separators, `.5`, `-.5`, `5.`, culture-specific separators, and
+thousands separators.
+
+**Severity**: high. Malformed input can be accepted with a value different from the supplied text.
+
+### 8. `ObjectUtils.ComputeHash(Array)` throws on `null` elements
+`Utils/Objects/ObjectUtils.cs:88-113`. The non-generic multidimensional-array overload computes each
+item hash through `array.GetValue(indices).GetHashCode()`. `Array.GetValue` may return `null`, which
+causes a `NullReferenceException`.
+
+This is inconsistent with the `IEnumerable<object>` overload, which explicitly maps `null` to hash
+code `0` using `value?.GetHashCode() ?? 0`.
+
+**Proposed fix**: store the retrieved value in an `object?` local and combine
+`value?.GetHashCode() ?? 0`. Clarify the nullability contract of the generic overload that accepts a
+custom hash delegate.
+
+**Severity**: medium functional bug for reference-type arrays containing null values.
+
 ## Incohérences d'écriture
 
 ### 4. `LRUCache<K,V>` — synchronisation partielle et trompeuse
@@ -81,6 +129,98 @@ crochets (`["-", ".."]`), conformément à la règle du projet (AGENTS.md : "Arr
 syntax").
 **Fix proposé** : remplacer par `["-", ".."]`.
 **Sévérité** : cosmétique.
+
+### 9. `ObjectUtils.DoAsync` is asynchronous in name only
+`Utils/Objects/ObjectUtils.cs:64-80`. Both `DoAsync` overloads accept synchronous delegates and wrap
+them in `Task.Run`. They therefore consume a thread-pool thread without composing real asynchronous
+operations, provide no cancellation support, and may create unnecessary contention in server-side
+or highly concurrent applications.
+
+**Proposed fix**: replace or supplement them with overloads accepting `Func<T, Task<TResult>>` and
+`Func<Task<TResult>>`, or `ValueTask<TResult>` equivalents, and return the selected task directly.
+If the current thread-pool semantics are intentionally retained, rename the methods to make that
+behavior explicit.
+
+**Severity**: medium design and scalability issue rather than an isolated correctness bug.
+
+### 10. `IntRange<T>.SimpleRange.CompareTo(object)` violates the `IComparable` contract
+`Utils/Range/IntRange.cs:101-106`. The non-generic `CompareTo(object?)` implementation throws
+`NotImplementedException` for both `null` and incompatible object types.
+
+The conventional .NET contract is to return a positive value for `null` and throw
+`ArgumentException` for an incompatible type.
+
+**Proposed fix**: return `1` for `null`, delegate to the strongly typed comparison for
+`SimpleRange`, and throw an `ArgumentException` naming the expected type for all other values.
+
+**Severity**: low contract inconsistency. The nested type is private, but the behavior can still be
+observed through non-generic sorting and collection APIs.
+
+### 11. `RandomExtensions.RandomFloat` and `RandomDouble` expose ambiguous semantics
+`Utils/Randomization/RandomExtensions.cs:241-258`. These methods fill the raw bytes of a `float` or
+`double` and reinterpret them through `BitConverter`. They can therefore return `NaN`, positive or
+negative infinity, subnormal values, and arbitrary magnitudes.
+
+That may be useful for binary fuzzing, but the names suggest semantics similar to
+`Random.NextSingle()` and `Random.NextDouble()`, which produce finite values in `[0, 1)`.
+
+**Proposed fix**: use `NextSingle()` and `NextDouble()` for the existing method names, and expose the
+raw-bit behavior under explicit names such as `RandomFloatBits` and `RandomDoubleBits`. If the current
+behavior is intentional and must remain for compatibility, document it prominently and add tests for
+special IEEE-754 values.
+
+**Severity**: medium API-design inconsistency; it becomes a functional bug when callers assume a
+finite normalized value.
+
+### 12. `Ranges<T>.InnerParse` accepts valid fragments inside otherwise invalid input
+`Utils/Range/Ranges.cs:114-129`. The parser uses `Regex.Matches` with an unanchored pattern and yields
+every matching range while ignoring unmatched text before, between, or after the matches. A string
+such as `"invalid [1..5] trailing garbage"` may therefore be partially accepted.
+
+**Proposed fix**: distinguish strict parsing from extraction. A `Parse` API should require that the
+entire input be consumed, while a separately named API such as `ExtractRanges` may intentionally
+search for valid ranges inside larger text.
+
+**Severity**: medium parsing-contract ambiguity and possible silent data acceptance.
+
+### 13. `IntRange.cs` contains an unrelated `System.Formats.Tar` import
+`Utils/Range/IntRange.cs:11` contains `using System.Formats.Tar; // If needed for IAdditionOperators,
+etc.`. The namespace is unrelated to generic-math operator interfaces and appears to be a leftover
+from generated or unfinished code.
+
+**Proposed fix**: remove the unused import and its misleading comment.
+
+**Severity**: cosmetic, but indicative of incomplete cleanup.
+
+## Missing regression coverage
+
+The following scenarios should be covered before or alongside the corresponding fixes:
+
+1. `default(Number)` is equivalent to `Number.Zero`.
+2. `Number.Parse` rejects multiple decimal separators and handles explicitly supported edge forms.
+3. `ObjectUtils.ComputeHash(Array)` supports multidimensional arrays containing `null`.
+4. `RandomFloat` and `RandomDouble` have an explicit, tested finite-value or raw-bit contract.
+5. `IComparable.CompareTo(object?)` follows the standard null and incompatible-type behavior.
+6. Strict range parsing rejects unmatched input instead of silently extracting valid fragments.
+7. `LRUCache<K,V>` is either stress-tested for thread safety or explicitly tested/documented as not
+   thread-safe.
+
+## Suggested priority
+
+| Priority | Finding |
+|---|---|
+| P0 | `default(Number)` produces an invalid `0/0` value |
+| P1 | `Number.Parse` silently accepts malformed decimal text |
+| P1 | `ForwardFusion` produces incomplete many-to-many joins |
+| P1 | `DistributedRandom.NextDouble` truncates all fractional values |
+| P1 | `ParseCommandLine` unescapes arguments inconsistently |
+| P2 | `ComputeHash(Array)` throws for null elements |
+| P2 | `LRUCache` synchronization is partial and misleading |
+| P2 | `DoAsync` wraps synchronous work in `Task.Run` |
+| P2 | `RandomFloat` / `RandomDouble` semantics are ambiguous |
+| P2 | `Ranges<T>.InnerParse` accepts partial invalid input |
+| P3 | `CompareTo(object)` violates the standard .NET contract |
+| P4 | Bracket-array style violation and unrelated `using` directive |
 
 ## Points vérifiés sans anomalie trouvée (rejetés après vérification)
 - `Utils/Collections/EnumerableEx.cs` (`Slice<T>`) — piste initialement suspectée (gestion du dernier
