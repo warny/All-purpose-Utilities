@@ -662,7 +662,7 @@ Class TrueTypeFont  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_Fonts_TTF_TrueTypeFont_GetGlyph_System_Char_" data-uid="Utils.Fonts.TTF.TrueTypeFont.GetGlyph(System.Char)">
   GetGlyph(char)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L433"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L452"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Retrieves the glyph corresponding to the specified character.</p>
@@ -701,7 +701,7 @@ Class TrueTypeFont  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_Fonts_TTF_TrueTypeFont_GetSpacingCorrection_System_Char_System_Char_" data-uid="Utils.Fonts.TTF.TrueTypeFont.GetSpacingCorrection(System.Char,System.Char)">
   GetSpacingCorrection(char, char)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L458"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/TrueTypeFont.cs/#L479"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns the spacing correction (kerning) between two adjacent characters.
@@ -736,6 +736,11 @@ If a kern table is present, its value is returned; otherwise, 0 is returned.</p>
 
 
 
+  <h4 class="section" id="Utils_Fonts_TTF_TrueTypeFont_GetSpacingCorrection_System_Char_System_Char__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>The 'kern' table stores kerning pairs by glyph index, never by character code, so
+<code class="paramref">before</code> and <code class="paramref">after</code> are resolved through 'cmap' first
+(the same resolution <a class="xref" href="Utils.Fonts.TTF.TrueTypeFont.html#Utils_Fonts_TTF_TrueTypeFont_GetGlyph_System_Char_">GetGlyph(char)</a> performs) before consulting the kern table.</p>
+</div>
 
 
 

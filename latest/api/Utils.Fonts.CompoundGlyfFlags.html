@@ -257,6 +257,18 @@ public enum CompoundGlyfFlags : short</code></pre>
   
   <dd><p>Round (x, y) values to grid.</p>
 </dd>
+    <dt id="Utils_Fonts_CompoundGlyfFlags_ScaledComponentOffset"><code>ScaledComponentOffset = 2048</code></dt>
+  
+  <dd><p>The component's translation offset should be scaled by the same factor as its
+transformation matrix before being applied. Mutually exclusive with
+<a class="xref" href="Utils.Fonts.CompoundGlyfFlags.html#Utils_Fonts_CompoundGlyfFlags_UnscaledComponentOffset">UnscaledComponentOffset</a>; if neither is set, the offset is used unscaled
+(the de facto convention followed by most font tools and rasterizers).</p>
+</dd>
+    <dt id="Utils_Fonts_CompoundGlyfFlags_UnscaledComponentOffset"><code>UnscaledComponentOffset = 4096</code></dt>
+  
+  <dd><p>The component's translation offset should be used as-is, without scaling. Mutually
+exclusive with <a class="xref" href="Utils.Fonts.CompoundGlyfFlags.html#Utils_Fonts_CompoundGlyfFlags_ScaledComponentOffset">ScaledComponentOffset</a>.</p>
+</dd>
     <dt id="Utils_Fonts_CompoundGlyfFlags_UseMyMetrics"><code>UseMyMetrics = 512</code></dt>
   
   <dd><p>Use this component's metrics in the compound glyph.</p>

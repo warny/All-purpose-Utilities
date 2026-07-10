@@ -282,7 +282,7 @@ public class KernTable : TrueTypeTable</code></pre>
 
   <h3 id="Utils_Fonts_TTF_Tables_KernTable_Length" data-uid="Utils.Fonts.TTF.Tables.KernTable.Length">
   Length
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/KernTable.cs/#L111"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/KernTable.cs/#L113"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the length, in bytes, of the table data.</p>
@@ -316,27 +316,26 @@ public class KernTable : TrueTypeTable</code></pre>
 
   <a id="Utils_Fonts_TTF_Tables_KernTable_GetSpacingCorrection_" data-uid="Utils.Fonts.TTF.Tables.KernTable.GetSpacingCorrection*"></a>
 
-  <h3 id="Utils_Fonts_TTF_Tables_KernTable_GetSpacingCorrection_System_Char_System_Char_" data-uid="Utils.Fonts.TTF.Tables.KernTable.GetSpacingCorrection(System.Char,System.Char)">
-  GetSpacingCorrection(char, char)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/KernTable.cs/#L37"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_Fonts_TTF_Tables_KernTable_GetSpacingCorrection_System_UInt16_System_UInt16_" data-uid="Utils.Fonts.TTF.Tables.KernTable.GetSpacingCorrection(System.UInt16,System.UInt16)">
+  GetSpacingCorrection(ushort, ushort)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/KernTable.cs/#L41"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Retrieves the spacing correction (kerning value) between two glyphs.
-In this simplified implementation, the input characters are treated as glyph indices.</p>
+  <div class="markdown level1 summary"><p>Retrieves the spacing correction (kerning value) between two glyphs.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public float GetSpacingCorrection(char before, char after)</code></pre>
+    <pre><code class="lang-csharp hljs">public float GetSpacingCorrection(ushort before, ushort after)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
-    <dt><code>before</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.char">char</a></dt>
-    <dd><p>The glyph index of the preceding character.</p>
+    <dt><code>before</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint16">ushort</a></dt>
+    <dd><p>The glyph index of the preceding glyph.</p>
 </dd>
-    <dt><code>after</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.char">char</a></dt>
-    <dd><p>The glyph index of the following character.</p>
+    <dt><code>after</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.uint16">ushort</a></dt>
+    <dd><p>The glyph index of the following glyph.</p>
 </dd>
   </dl>
 
@@ -353,6 +352,11 @@ In this simplified implementation, the input characters are treated as glyph ind
 
 
 
+  <h4 class="section" id="Utils_Fonts_TTF_Tables_KernTable_GetSpacingCorrection_System_UInt16_System_UInt16__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>The 'kern' table stores pairs by glyph index, never by character code: callers must
+resolve character codes to glyph indices (e.g. via a 'cmap' subtable) before calling this
+method. <a class="xref" href="Utils.Fonts.TTF.TrueTypeFont.html#Utils_Fonts_TTF_TrueTypeFont_GetSpacingCorrection_System_Char_System_Char_">GetSpacingCorrection(char, char)</a> does this resolution.</p>
+</div>
 
 
 
@@ -361,7 +365,7 @@ In this simplified implementation, the input characters are treated as glyph ind
 
   <h3 id="Utils_Fonts_TTF_Tables_KernTable_ReadData_Utils_IO_Serialization_Reader_" data-uid="Utils.Fonts.TTF.Tables.KernTable.ReadData(Utils.IO.Serialization.Reader)">
   ReadData(Reader)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/KernTable.cs/#L49"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/KernTable.cs/#L51"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads the table data from the specified reader.</p>
@@ -394,7 +398,7 @@ In this simplified implementation, the input characters are treated as glyph ind
 
   <h3 id="Utils_Fonts_TTF_Tables_KernTable_WriteData_Utils_IO_Serialization_Writer_" data-uid="Utils.Fonts.TTF.Tables.KernTable.WriteData(Utils.IO.Serialization.Writer)">
   WriteData(Writer)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/KernTable.cs/#L80"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Fonts/TTF/Tables/KernTable.cs/#L82"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Writes the table data to the specified writer.</p>
