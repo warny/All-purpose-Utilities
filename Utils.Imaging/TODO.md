@@ -1,225 +1,264 @@
 # Utils.Imaging — Quality and Security Audit (2026-07-11)
 
-Static audit of `Utils.Imaging`, covering unsafe bitmap accessors, image transformations, convolution helpers, color models and drawing abstractions. Security and memory safety are treated as primary concerns. Findings are not fixed unless explicitly stated.
+Static audit of `Utils.Imaging`, covering unsafe bitmap accessors, transformations, convolution, color models and drawing abstractions. Findings are not fixed unless explicitly stated.
 
 ## Critical findings
 
 ### 1. Unsafe bitmap indexers allow out-of-bounds native memory access
-`BitmapAccessor`, `BitmapIndexed8Accessor` and `BitmapArgb64Accessor` calculate pointer offsets directly from caller-provided `x`, `y` and component indexes without checking their ranges. Negative or oversized coordinates and an invalid component index can read or write outside the locked bitmap region.
+`BitmapAccessor`, `BitmapIndexed8Accessor` and `BitmapArgb64Accessor` calculate pointer offsets directly from caller-provided coordinates/components without range checks.
 
-**Risk:** native memory corruption, process crashes, disclosure of adjacent memory and potentially exploitable behavior when coordinates can be influenced by untrusted image metadata or callers.
-
-**Fix:** validate `0 <= x < Width`, `0 <= y < Height` and `0 <= component < ColorDepth` before every pointer access. Keep an explicitly named unchecked internal fast path only for loops that have already proven their bounds. Add disposed-state checks before dereferencing pointers.
+**Fix:** validate coordinates and components before every public access; retain only explicitly named internal unchecked paths after bounds have been proven; check disposed state.
 
 **Priority:** P0.
 
 ### 2. `BitmapArgb64Accessor` ignores bitmap stride
-The 64-bit accessor addresses pixels with `y * bmpdata.Width + x`. GDI+ scanlines are separated by `BitmapData.Stride`, which can contain padding and can be negative for bottom-up images. Width-based addressing therefore accesses the wrong row whenever stride differs from `Width * 8`.
+The accessor addresses pixels with `y * Width + x` instead of deriving each row from `Scan0 + y * Stride`.
 
-**Risk:** cross-row corruption and out-of-bounds access, especially for negative-stride bitmaps or externally supplied bitmap layouts.
-
-**Fix:** calculate each row from `Scan0 + y * Stride`, then index the `ulong` within that row. Define and test the intended logical top-to-bottom orientation for negative strides.
+**Fix:** use stride-aware row addressing and define/test logical orientation for negative strides.
 
 **Priority:** P0.
 
-### 3. Constructor failure can leave a bitmap permanently locked
-`BitmapAccessor` calls `LockBits` before validating the selected pixel format with `GetColorDepth`. If the format is unsupported, `GetColorDepth` throws after the bitmap has been locked, while the partially constructed object cannot be disposed normally.
+### 3. Constructor failure can leave a bitmap locked
+`BitmapAccessor` calls `LockBits` before all post-lock validation is complete. A later exception can leak the lock because construction never completes.
 
-**Risk:** leaked native/GDI resources and subsequent failures when the same bitmap is accessed or disposed.
-
-**Fix:** validate all arguments and supported formats before `LockBits` where possible. Otherwise wrap post-lock initialization in `try/catch` and always call `UnlockBits` on failure. Apply the same transactional construction pattern to every accessor.
+**Fix:** validate first and make post-lock initialization transactional with guaranteed `UnlockBits` on failure.
 
 **Priority:** P0.
 
 ## High-severity findings
 
 ### 4. Accessors remain callable after disposal
-Disposal nulls native pointers and `BitmapData`, but public properties and indexers do not check an explicit disposed flag. Calls after disposal can produce `NullReferenceException` or dereference a null native pointer.
+Public properties/indexers can dereference cleared native state.
 
-**Fix:** maintain `_disposed`, throw `ObjectDisposedException` from all public members, and make disposal idempotent. Avoid relying on nullable fields as the lifecycle model.
-
-**Priority:** P1.
-
-### 5. Locked regions and arithmetic are insufficiently validated
-Constructors accept arbitrary rectangles. Width, height, offset and byte calculations can overflow or rely entirely on downstream GDI+ validation. `totalBytes = Stride * Height` can overflow and is unused.
-
-**Fix:** reject empty/negative/out-of-bitmap regions explicitly; use checked `nint`/`long` arithmetic for row and pixel offsets; remove unused byte counts or use validated absolute stride calculations.
+**Fix:** explicit disposed state, idempotent disposal and `ObjectDisposedException` from all public members.
 
 **Priority:** P1.
 
-### 6. `MatrixImageTransformer` can allocate from unchecked image dimensions
-The transformer allocates `new A[width * height]` using unchecked `int` multiplication. Invalid or very large accessor dimensions can overflow to a smaller/negative length or cause uncontrolled memory pressure.
+### 5. Locked regions and pointer arithmetic are insufficiently validated
+Empty, negative or out-of-image regions and unchecked offset/size arithmetic are accepted or delegated to GDI+.
 
-**Fix:** require non-negative dimensions, use checked multiplication, enforce a configurable maximum pixel count or caller-provided workspace, and consider row/tile buffering for large images.
+**Fix:** validate regions explicitly and use checked `long`/`nint` arithmetic.
+
+**Priority:** P1.
+
+### 6. `MatrixImageTransformer` allocates from unchecked dimensions
+`new A[width * height]` uses unchecked multiplication and an unbounded full-image copy.
+
+**Fix:** validate dimensions, use checked multiplication, enforce a pixel limit or accept caller-provided/tiled workspace.
 
 **Priority:** P1.
 
 ### 7. Mask dimensions are never validated
-When a mask is supplied, the transformer indexes `mask[x, y]` for the full destination size without confirming matching dimensions.
+A mask is indexed over the destination dimensions without requiring a matching size.
 
-**Risk:** exceptions or native memory corruption when the mask is an unsafe accessor smaller than the destination.
-
-**Fix:** require identical dimensions before processing, or define an explicit clipping/resampling policy.
+**Fix:** reject mismatched dimensions before modifying any destination pixel.
 
 **Priority:** P1.
 
-### 8. Transformer inputs allow non-finite or mutable weights
-The constructor retains the caller's mutable `double[,]` and does not reject `NaN` or infinity. The matrix may be modified concurrently while a transformation is running.
+### 8. Transformer weights can be mutable or non-finite
+The caller's `double[,]` is retained directly and `NaN`/infinity are accepted.
 
-**Risk:** nondeterministic results, conversion exceptions and partial image mutation.
-
-**Fix:** validate dimensions and every weight, clone into immutable internal storage, and reject non-finite values.
+**Fix:** clone and validate a non-empty matrix into immutable internal storage.
 
 **Priority:** P1.
 
-### 9. `ColorArgb64` to `ColorArgb` conversion uses the wrong divisor
-The floating-point constructor `ColorArgb(ColorArgb64 color)` divides 16-bit channels by `255.0` instead of `65535.0`. Any channel above 255 yields a value greater than 1 and therefore violates the constructor's own `[0,1]` validation.
+### 9. `ColorArgb64` to `ColorArgb` uses the wrong divisor
+16-bit channels are divided by `255.0` instead of `65535.0`.
 
-**Risk:** almost every non-dark 16-bit color conversion throws or produces unusable values. This breaks implicit conversion paths and can abort image processing midway.
-
-**Fix:** divide all four channels by `ushort.MaxValue`; add exact endpoint and randomized round-trip tests.
+**Fix:** divide by `ushort.MaxValue` and test exact endpoints/random round trips.
 
 **Priority:** P1 functional bug.
 
-### 10. 8-bit to 16-bit color expansion is not range-preserving
-`ColorArgb64(ColorArgb32)` and `ColorArgb64(System.Drawing.Color)` expand channels with `value << 8`. This maps `255` to `65280`, not `65535`, and all intermediate values are biased low. Exact 8-to-16 expansion must replicate the source byte into both bytes of the destination word.
+### 10. 8-bit to 16-bit expansion is not range-preserving
+Current conversions use `value << 8`, mapping 255 to 65280 instead of 65535.
 
-**Risk:** white is no longer full white, opaque alpha is not fully opaque and repeated 8↔16 conversions lose precision systematically.
+**Fix:** centralize exact binary replication:
 
-**Fix:** use the explicit binary expansion `((ushort)value << 8) | value` for every channel. Centralize this operation in a small helper used by all 8→16 conversion paths. Do not replace it with an unchecked narrowing conversion. Add exhaustive tests for all 256 input values and verify exact 8→16→8 round trips.
+```csharp
+static ushort ExpandByte(byte value) =>
+    (ushort)(((ushort)value << 8) | value);
+```
+
+Use it for every 8→16 conversion path.
+
+**Priority:** P1 functional bug.
+
+### 11. Porter-Duff `Over` mixes straight and premultiplied formulas
+The floating, 8-bit and 16-bit implementations use different and incomplete formulas.
+
+**Fix:** choose one documented representation and delegate every type to one tested generic implementation.
 
 **Priority:** P1 functional bug.
 
-### 11. Porter-Duff `Over` implementations mix straight and premultiplied formulas
-`ColorArgb`, `ColorArgb32` and `ColorArgb64` compute output alpha and RGB with inconsistent formulas. The floating and 8-bit versions multiply the foreground by alpha but do not correctly include background alpha or divide by output alpha for straight-color output. The 64-bit implementation computes an `alpha` argument but does not use it in the color formula and also omits background alpha.
+### 12. Convolution semantics normalize only positive weight sums
+Zero-sum and negative-sum kernels are skipped or normalized incorrectly.
 
-**Risk:** semi-transparent compositing produces incorrect colors and halos; the same logical operation yields different results depending on component type.
-
-**Fix:** choose and document one representation: straight alpha or premultiplied alpha. Implement a single generic, numerically stable Porter-Duff formula and have every color type delegate to it. Add reference-vector tests against known compositing results.
+**Fix:** separate convolution from weighted averaging; expose divisor, bias, normalization and border policies explicitly.
 
 **Priority:** P1 functional bug.
+
+### 13. Drawing viewports accept zero, non-finite and otherwise degenerate ranges
+`DrawF` divides image dimensions by `Right - Left` and `Down - Top` without validating zero spans, `NaN` or infinity. This creates infinite/NaN ratios and undefined integer conversions later.
+
+**Fix:** reject non-finite boundaries and zero-width/zero-height viewports; define whether reversed axes are supported and validate consistently.
+
+**Priority:** P1.
+
+### 14. `DrawF` maps the declared right/bottom boundaries outside the image
+The default viewport uses `Right = Width` and `Down = Height`, while mapping uses `Width / (Right - Left)` and truncation. Therefore `x == Right` maps to `Width` and `y == Down` maps to `Height`, both outside valid indexes. The downstream point routine silently drops them.
+
+**Fix:** define a pixel-center or edge-based coordinate contract. For an inclusive endpoint contract, scale to `Width - 1`/`Height - 1`; for a half-open viewport, document and test `[Left, Right)` and `[Top, Down)` explicitly.
+
+**Priority:** P1 functional bug.
+
+### 15. Shape drawing divides by zero for zero-length drawables
+`DrawI.DrawShape` passes `point.Position / drawable.Length` to the brush. Empty or degenerate shapes can have length zero, producing `NaN`/infinity and undefined brush behavior.
+
+**Fix:** handle zero-length shapes explicitly, either drawing a single point with position zero or rejecting them before brush evaluation.
+
+**Priority:** P1.
+
+### 16. Scan-line filling is not clipped before iteration
+`FillShapeCore` derives `yStart`, `yEnd`, `xFrom` and `xTo` from arbitrary geometry and only clips at `DrawPoint`. Shapes far outside the image can therefore trigger enormous loops while producing no pixels.
+
+**Risk:** CPU denial of service from untrusted or accidental extreme coordinates.
+
+**Fix:** intersect scan-line and span ranges with image bounds before looping; reject non-finite coordinates and use checked conversions.
+
+**Priority:** P1.
 
 ## Functional correctness and design findings
 
-### 12. Convolution semantics incorrectly normalize by positive weight sum only
-`MatrixImageTransformer` divides every accumulated component by `sumW` only when `sumW > 0`. Edge-detection, sharpening and other valid kernels commonly have zero or negative sums. Such pixels are silently left unchanged or normalized incorrectly.
+### 17. Pixel-format aliases are treated as concrete layouts
+Flag-like values such as `Alpha`, `PAlpha` and `Canonical` are accepted as if they uniquely described storage.
 
-**Fix:** separate convolution from normalized weighted averaging. Provide explicit policies such as `NoNormalization`, `NormalizeBySum`, divisor/bias and border handling. Do not infer semantics from the sign of the weight sum.
-
-**Priority:** P1 functional bug.
-
-### 13. Pixel-format aliases are treated as concrete storage formats
-`BitmapAccessor.ColorDepths` includes flag-like or alias values such as `PixelFormat.Alpha`, `PAlpha` and `Canonical`. These do not necessarily describe a lockable concrete byte layout by themselves.
-
-**Fix:** support only explicitly tested concrete formats and validate them with `Image.GetPixelFormatSize`; reject flags and aliases that do not uniquely define memory layout.
+**Fix:** support only tested concrete formats and validate with `Image.GetPixelFormatSize`.
 
 **Priority:** P2.
 
-### 14. Premultiplied-alpha formats are exposed as straight ARGB
-`BitmapAccessor` accepts `Format32bppPArgb` and `Format64bppPArgb`, but sprite blending reads and writes components as ordinary straight-alpha colors. Premultiplied data requires different conversion and blending rules.
+### 18. Premultiplied-alpha formats are exposed as straight ARGB
+PArgb formats are read and written with straight-alpha blending rules.
 
-**Risk:** dark fringes, incorrect colors and invalid premultiplied pixels.
-
-**Fix:** either reject premultiplied formats in generic straight-ARGB operations or introduce explicit premultiplied color accessors and blending functions.
+**Fix:** reject them in straight-color operations or introduce explicit premultiplied accessors/types.
 
 **Priority:** P2.
 
-### 15. Duplicate sprite-blending implementations
-Sprite application exists in `BitmapAccessor`, `BitmapArgb64Accessor` and generic `ImageAccessorExtensions`. The specialized implementations duplicate clipping and blend traversal and can diverge in behavior.
+### 19. Sprite traversal is duplicated
+Sprite application exists in generic and specialized implementations.
 
-**Fix:** retain one generic traversal implementation and expose optimized internal pixel primitives where profiling justifies specialization. Test all accessors against the same behavioral contract.
+**Fix:** retain one traversal contract and isolate only measured low-level optimizations.
 
 **Priority:** P2 maintainability.
 
-### 16. Resource ownership is implicit and inconsistent
-Accessors always leave the bitmap alive, but this is not represented through a `leaveOpen`/ownership option. Finalizers call `UnlockBits` through managed `Bitmap` state, making cleanup timing nondeterministic.
+### 20. Resource ownership and finalization are implicit
+Accessors leave bitmaps alive while finalizers call `UnlockBits` through managed objects at nondeterministic times.
 
-**Fix:** document and standardize ownership, prefer deterministic disposal, and consider removing finalizers after ensuring callers use scoped access. If a finalizer remains, keep it minimal and robust against shutdown/disposed bitmap state.
+**Fix:** standardize ownership, prefer deterministic disposal and minimize/remove finalizers where possible.
 
 **Priority:** P2.
 
-### 17. `System.Drawing` platform constraints need to be explicit
-The package is built around `System.Drawing.Bitmap` and GDI+ locking. Modern .NET support is effectively Windows-oriented for `System.Drawing.Common`.
+### 21. `System.Drawing` platform constraints are not explicit
+The package is effectively Windows/GDI+ oriented on modern .NET.
 
-**Fix:** target/document Windows explicitly or isolate the GDI implementation behind abstractions and provide a cross-platform backend. Add platform guards and CI coverage matching supported targets.
+**Fix:** target/document Windows or isolate the backend behind a cross-platform abstraction.
 
 **Priority:** P2 compatibility.
 
-### 18. Packed color layouts are architecture-dependent
-`ColorArgb32` and `ColorArgb64` use explicit field overlays whose byte/component interpretation assumes little-endian memory layout. The public `Value` property is therefore not a portable canonical ARGB integer representation across architectures.
+### 22. Packed color values depend on native endianness
+`ColorArgb32` and `ColorArgb64` overlay component fields and packed integers in host memory order.
 
-**Risk:** serialized packed values and component access can disagree on big-endian platforms or when exchanged with APIs expecting canonical `0xAARRGGBB` ordering.
-
-**Fix:** define `Value` explicitly using shifts/masks independent of host endianness, or document it as native-layout-only and expose separate canonical pack/unpack APIs.
+**Fix:** define canonical values with shifts/masks or clearly separate native-layout and canonical packing APIs.
 
 **Priority:** P2.
 
-### 19. Color conversion naming and generic constructor intent are misleading
-`ColorArgb32(IColorArgb<byte> colorArgb64)` accepts byte components but multiplies each by 255 before casting back to byte, which wraps for most values. The parameter name also claims a 64-bit source although the interface uses `byte`.
+### 23. `ColorArgb32(IColorArgb<byte>)` wraps valid component values
+The constructor multiplies byte components by 255 before casting back to byte.
 
-**Risk:** silent corruption when this constructor is called through the interface.
-
-**Fix:** either copy byte components directly or replace the constructor with correctly typed overloads. Rename parameters to match actual types and add analyzer/tests preventing narrowing/wrapping conversions.
+**Fix:** copy byte values directly or replace it with correctly typed conversion overloads.
 
 **Priority:** P2 functional bug.
 
-### 20. Gradient APIs use inconsistent interpolation semantics and validation
-`ColorArgb.Gradient` clamps the factor and performs square-space interpolation, while `ColorArgb32.LinearGradient` neither clamps nor rejects factors outside `[0,1]` and converts unchecked results to bytes. The naming does not make the color space or gamma behavior explicit.
+### 24. Gradient APIs use inconsistent interpolation and factor validation
+Floating and byte implementations use different spaces and different out-of-range behavior.
 
-**Risk:** out-of-range factors wrap or truncate, and equivalent APIs produce visibly different results.
-
-**Fix:** define explicit interpolation methods (`LinearRgb`, `Srgb`, `Perceptual`) with common factor validation and shared conversion/rounding rules.
+**Fix:** expose explicit interpolation modes with shared factor validation and conversion rules.
 
 **Priority:** P2.
 
-### 21. Numeric conversion policy is inconsistent
-Conversions from floating components to byte/ushort use truncating casts rather than a documented rounding strategy. `MatrixImageTransformer` rounds integral values, while color constructors truncate. `T.CreateChecked` can also throw after partial image mutation.
+### 25. Numeric conversion and rounding policies are inconsistent
+Some paths truncate, some round and some throw after partial image mutation.
 
-**Fix:** centralize clamp/round/convert helpers and validate all output ranges before mutating the destination. Prefer staging a row/tile before commit when a conversion can fail.
+**Fix:** centralize clamp/round/convert helpers and stage results before committing when conversion can fail.
+
+**Priority:** P2.
+
+### 26. Fill topology is changed by a hard-coded 0.5-pixel merge threshold
+`FillShapeCore` merges adjacent scan-line intersections whenever their distance is below `0.5f`. Legitimate narrow features, close contours and small holes can be collapsed or cancelled solely because of scale.
+
+**Fix:** do not use a global geometric-distance heuristic to alter winding topology. Resolve shared vertices from segment identity/rasterization rules, or make tolerance explicit and scale-aware.
+
+**Priority:** P2 functional bug.
+
+### 27. Drawing abstractions do not validate null dependencies
+`BaseDrawing` stores a nullable-at-runtime accessor without checking it, and public drawing methods similarly assume non-null brushes, delegates and drawable collections.
+
+**Fix:** validate constructor and public API dependencies immediately with precise `ArgumentNullException`s.
+
+**Priority:** P2 API quality.
+
+### 28. Blur kernel size arithmetic can overflow before normalization
+`ConvolutionMatrixFactory.Blur` computes `size * size` as `int` and allocates a square array without an upper bound. Large sizes can overflow the divisor or cause uncontrolled allocation.
+
+**Fix:** use checked `long`/`double` arithmetic, enforce a practical maximum kernel area and fail before allocation.
+
+**Priority:** P2.
+
+### 29. HSV hue accepts non-finite values
+`ColorAhsv.Hue` applies modulo directly without rejecting `NaN` or infinity. Such values can survive into sector selection and produce invalid conversions.
+
+**Fix:** reject non-finite hue values before normalization and apply the same policy to all floating color components.
 
 **Priority:** P2.
 
 ## Required regression and security tests
 
-- Fuzz every accessor indexer with negative, boundary and oversized coordinates/components; assert deterministic managed exceptions and no native crash.
-- Test positive and negative stride layouts, row padding and locked subregions for every supported pixel format.
-- Force constructor failures after `LockBits` and verify the bitmap is always unlocked.
-- Verify all public members throw `ObjectDisposedException` after disposal and disposal is idempotent.
-- Test checked dimension arithmetic and configured maximum pixel counts.
-- Reject mismatched mask dimensions before any destination pixel is modified.
-- Reject `NaN`/infinite matrices and verify caller mutation of the original matrix cannot affect a running transformer.
-- Add golden-image tests for blur, sharpen, edge-detection, zero-sum and negative-sum kernels with explicit border/normalization policies.
-- Test straight-alpha and premultiplied-alpha formats separately.
-- Run common sprite behavior tests through generic, 32-bit and 64-bit accessors.
-- Verify `ColorArgb64 → ColorArgb` endpoints: 0 maps to 0 and 65535 maps to 1.
-- Exhaustively test binary 8→16 expansion for every byte value using `((ushort)value << 8) | value`; verify `0 → 0`, `1 → 257`, `128 → 32896`, `255 → 65535`, and exact 8→16→8 round trips.
-- Validate Porter-Duff `Over` against reference vectors for transparent, opaque and partially transparent foreground/background combinations across all color types.
-- Test canonical packed ARGB values independently of native memory layout.
-- Exercise the `IColorArgb<byte>` constructor with every byte value and ensure no wraparound.
-- Test gradient factors below 0, within range and above 1 with explicit interpolation semantics.
+- Fuzz every unsafe accessor with negative/boundary/oversized coordinates and components.
+- Test positive/negative stride, row padding and subregions.
+- Force post-`LockBits` constructor failures and verify unlock.
+- Verify disposed-state behavior and idempotent disposal.
+- Test checked image/kernel dimension arithmetic and configured limits.
+- Reject mismatched masks and invalid/non-finite matrices before mutation.
+- Golden-image tests for blur, sharpen, edge detection, zero/negative-sum kernels and border policies.
+- Separate straight-alpha and premultiplied-alpha tests.
+- Verify `ColorArgb64 → ColorArgb` endpoints.
+- Exhaustively test `((ushort)value << 8) | value` for all 256 byte values, including `0→0`, `1→257`, `128→32896`, `255→65535`, and exact 8→16→8 round trips.
+- Validate Porter-Duff reference vectors across all component types.
+- Test canonical packed values independently of host endianness.
+- Exercise all gradient modes and out-of-range factors.
+- Reject zero/non-finite viewports and test reversed-axis policy.
+- Verify exact mapping of all four viewport boundaries under the chosen inclusive/half-open contract.
+- Test empty and zero-length drawables without non-finite brush positions.
+- Use extreme off-screen geometry and assert work is bounded by image dimensions.
+- Golden tests for sub-pixel-width contours and holes to ensure fill topology is preserved.
+- Reject non-finite HSV components and verify stable ARGB↔HSV round trips.
 
 ## Priority roadmap
 
 | Priority | Finding |
 |---|---|
-| P0 | Unsafe indexers permit native out-of-bounds access |
-| P0 | 64-bit accessor ignores stride |
-| P0 | Constructor exceptions can leak bitmap locks |
-| P1 | Use-after-dispose is not guarded |
-| P1 | Region and pointer arithmetic validation is incomplete |
-| P1 | Transformer allocation and mask dimensions are unchecked |
-| P1 | Weight matrices allow mutable/non-finite data |
-| P1 | 16-bit floating conversion uses an invalid divisor |
-| P1 | 8-bit to 16-bit expansion must replicate bits with shift/OR |
-| P1 | Porter-Duff compositing is inconsistent and incorrect |
-| P1 | Convolution normalization semantics are incorrect |
-| P2 | Pixel-format aliases and premultiplied formats are mishandled |
-| P2 | Sprite traversal is duplicated |
-| P2 | Ownership/finalization and platform support need clarification |
-| P2 | Packed values depend on native endianness |
-| P2 | Generic byte-color constructor wraps values |
-| P2 | Gradient and numeric conversion policies are inconsistent |
+| P0 | Unsafe native indexers, stride errors and leaked bitmap locks |
+| P1 | Disposed-state, region and arithmetic validation |
+| P1 | Transformer allocation, masks and mutable/non-finite weights |
+| P1 | 16-bit conversions and Porter-Duff compositing |
+| P1 | Convolution semantics |
+| P1 | Invalid viewport mapping and zero-length shape handling |
+| P1 | Unclipped scan-line loops permit CPU exhaustion |
+| P2 | Pixel formats, premultiplied alpha and packed endianness |
+| P2 | Duplicated sprite traversal and ownership/platform contracts |
+| P2 | Generic color constructor, gradients and numeric policy |
+| P2 | Fill tolerance changes geometry topology |
+| P2 | Null contracts, kernel limits and non-finite HSV values |
 
 ## Deployment warning
 
-Until the P0 findings are fixed, do not expose bitmap coordinates, regions, formats or dimensions derived from untrusted input to these unsafe accessors. A managed bounds exception is not guaranteed: current code can read or write native memory outside the locked image buffer. Until the P1 color-conversion findings are fixed, avoid relying on implicit 16-bit conversions or semi-transparent compositing for correctness-sensitive image pipelines.
+Until the P0 findings are fixed, do not expose bitmap coordinates, regions, formats or dimensions derived from untrusted input to these unsafe accessors. Until the drawing P1 findings are fixed, do not process untrusted geometry: extreme off-screen coordinates can consume excessive CPU even when no pixels are ultimately written.
