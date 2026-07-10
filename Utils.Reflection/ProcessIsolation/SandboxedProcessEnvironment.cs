@@ -1,6 +1,9 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.Versioning;
+using System.Text;
 
 namespace Utils.Reflection.ProcessIsolation;
 
@@ -32,12 +35,56 @@ internal static class SandboxedProcessEnvironment
     {
         startInfo.EnvironmentVariables.Clear();
 
+        foreach ((string name, string value) in GetAllowedVariables())
+        {
+            startInfo.EnvironmentVariables[name] = value;
+        }
+    }
+
+    /// <summary>
+    /// Builds a native Windows environment block for <c>CreateProcess</c>'s <c>lpEnvironment</c>
+    /// parameter, containing only the same allowlisted variables as
+    /// <see cref="ApplyMinimalEnvironment"/>.
+    /// </summary>
+    /// <remarks>
+    /// Used by <see cref="AppContainerSandbox"/>, which calls <c>CreateProcess</c> directly instead of
+    /// going through <see cref="ProcessStartInfo"/>: without an explicit environment block,
+    /// <c>CreateProcess</c> makes the child inherit the calling process's <em>entire</em> environment
+    /// (passing <see langword="null"/>/<see cref="IntPtr.Zero"/> for <c>lpEnvironment</c>), which would
+    /// silently defeat the point of stripping it down for
+    /// <see cref="LinuxBubblewrapContainer"/>/<see cref="MacOsSandboxExecContainer"/> above. The
+    /// returned block is a sequence of <c>"NAME=VALUE\0"</c> entries terminated by an extra
+    /// <c>'\0'</c>, sorted by name (ordinal, case-insensitive) as recommended for
+    /// <c>CREATE_UNICODE_ENVIRONMENT</c> blocks.
+    /// </remarks>
+    /// <returns>The environment block string, ready to be marshaled with <see cref="System.Runtime.InteropServices.Marshal.StringToHGlobalUni(string?)"/>.</returns>
+    [SupportedOSPlatform("windows")]
+    internal static string BuildWindowsEnvironmentBlock()
+    {
+        var sortedVariables = new SortedDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach ((string name, string value) in GetAllowedVariables())
+        {
+            sortedVariables[name] = value;
+        }
+
+        var block = new StringBuilder();
+        foreach (KeyValuePair<string, string> variable in sortedVariables)
+        {
+            block.Append(variable.Key).Append('=').Append(variable.Value).Append('\0');
+        }
+
+        block.Append('\0');
+        return block.ToString();
+    }
+
+    private static IEnumerable<(string Name, string Value)> GetAllowedVariables()
+    {
         foreach (DictionaryEntry entry in Environment.GetEnvironmentVariables())
         {
             var name = (string)entry.Key;
-            if (IsAllowed(name))
+            if (IsAllowed(name) && entry.Value is string value)
             {
-                startInfo.EnvironmentVariables[name] = (string?)entry.Value;
+                yield return (name, value);
             }
         }
     }

@@ -65,4 +65,61 @@ public class SandboxedProcessEnvironmentTests
             Environment.SetEnvironmentVariable(dotnetVariableName, null);
         }
     }
+
+    [TestMethod]
+    public void BuildWindowsEnvironmentBlock_ExcludesArbitraryVariables()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            Assert.Inconclusive("CreateProcess environment blocks are Windows-only.");
+            return;
+        }
+
+        Environment.SetEnvironmentVariable(SecretVariableName, "super-secret-token");
+        try
+        {
+            string block = SandboxedProcessEnvironment.BuildWindowsEnvironmentBlock();
+
+            StringAssert.DoesNotMatch(block, new System.Text.RegularExpressions.Regex(
+                System.Text.RegularExpressions.Regex.Escape(SecretVariableName)));
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(SecretVariableName, null);
+        }
+    }
+
+    [TestMethod]
+    public void BuildWindowsEnvironmentBlock_ContainsPathAndIsDoubleNullTerminated()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            Assert.Inconclusive("CreateProcess environment blocks are Windows-only.");
+            return;
+        }
+
+        string block = SandboxedProcessEnvironment.BuildWindowsEnvironmentBlock();
+
+        StringAssert.Contains(block, "PATH=");
+        Assert.IsTrue(block.EndsWith("\0\0", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public void BuildWindowsEnvironmentBlock_EntriesAreSortedByName()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            Assert.Inconclusive("CreateProcess environment blocks are Windows-only.");
+            return;
+        }
+
+        string block = SandboxedProcessEnvironment.BuildWindowsEnvironmentBlock();
+        string[] entries = block[..^1].Split('\0', StringSplitOptions.RemoveEmptyEntries);
+        string[] names = System.Array.ConvertAll(entries, entry => entry[..entry.IndexOf('=')]);
+
+        string[] sortedNames = (string[])names.Clone();
+        System.Array.Sort(sortedNames, StringComparer.OrdinalIgnoreCase);
+
+        CollectionAssert.AreEqual(sortedNames, names);
+    }
 }

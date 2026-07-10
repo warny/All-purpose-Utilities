@@ -273,19 +273,18 @@ place. Aucun de ces points n'est traité pour l'instant — liste de proposition
 
 ### Priorité haute — sécurité
 
-#### 26. [PRIORITAIRE] Le worker Windows (AppContainer) hérite de tout l'environnement du process hôte
-`AppContainerSandbox.StartProcessInternal` (`ProcessIsolation/AppContainerSandbox.cs:229`) appelle
-`CreateProcess` avec `lpEnvironment = IntPtr.Zero`, ce qui fait hériter du bloc d'environnement complet
-du process parent. À l'inverse, `LinuxBubblewrapContainer`/`MacOsSandboxExecContainer` appellent tous
-deux `SandboxedProcessEnvironment.ApplyMinimalEnvironment(psi)` (liste blanche `PATH`/`HOME`/`DOTNET_*`/
-etc., voir item 5 de la relecture précédente) avant de lancer le process. C'est une asymétrie de
-sécurité réelle et non documentée : sur la plateforme la plus utilisée du projet, le worker Emit isolé
-voit toutes les variables d'environnement du process appelant (clés API, chaînes de connexion, etc.)
-alors que l'intention affichée de l'item 5 était justement de les retirer. `CreateProcess` accepte un
-bloc d'environnement custom (`lpEnvironment` pointant vers une chaîne multi-null-terminated) — il
-suffirait de construire ce bloc à partir de la même liste blanche que `SandboxedProcessEnvironment`
-(éventuellement en factorisant une méthode qui produit directement le bloc natif plutôt que de passer
-par `ProcessStartInfo.EnvironmentVariables`).
+#### 26. [PRIORITAIRE] ~~Le worker Windows (AppContainer) hérite de tout l'environnement du process hôte~~ — **implémenté**
+`AppContainerSandbox.StartProcessInternal` appelait `CreateProcess` avec `lpEnvironment = IntPtr.Zero`,
+ce qui faisait hériter du bloc d'environnement complet du process parent. À l'inverse,
+`LinuxBubblewrapContainer`/`MacOsSandboxExecContainer` appellent tous deux
+`SandboxedProcessEnvironment.ApplyMinimalEnvironment(psi)` (liste blanche `PATH`/`HOME`/`DOTNET_*`/etc.,
+voir item 5 de la relecture précédente) avant de lancer le process. **Fix** : nouvelle méthode
+`SandboxedProcessEnvironment.BuildWindowsEnvironmentBlock()` qui construit le même filtrage sous forme
+de bloc natif `"NAME=VALUE\0"` trié par nom et terminé par un `\0` supplémentaire ; `AppContainerSandbox.
+StartProcessInternal` le marshale via `Marshal.StringToHGlobalUni` et le passe en `lpEnvironment` avec le
+flag `CREATE_UNICODE_ENVIRONMENT` (nouvelle constante dans `WindowsNativeMethods`), libéré dans le
+`finally` existant. Tests : `UtilsTest/Reflection/SandboxedProcessEnvironmentTests.cs` (exclusion d'une
+variable arbitraire, présence de `PATH`, terminaison double `\0`, tri alphabétique des entrées).
 
 #### 27. `Platform.NativeULongSize` / `StructPackingSize` sont des setters statiques mutables globaux
 Même famille de problème que `ProcessContainerPermissions.Default` avant sa correction (item 1 de la

@@ -125,6 +125,12 @@ internal static class WindowsNativeMethods
     internal const uint CREATE_NO_WINDOW = 0x08000000;
 
     /// <summary>
+    /// Flag for CreateProcess indicating that <c>lpEnvironment</c> points to a Unicode (UTF-16)
+    /// environment block rather than an ANSI one.
+    /// </summary>
+    internal const uint CREATE_UNICODE_ENVIRONMENT = 0x00000400;
+
+    /// <summary>
     /// PROC_THREAD_ATTRIBUTE_SECURITY_CAPABILITIES = ProcThreadAttributeValue(9, FALSE, TRUE, FALSE).
     /// Enables AppContainer sandboxing for the created process.
     /// </summary>
