@@ -338,13 +338,40 @@ d'un échec côté worker sans tenter de reconstruire une vraie exception cross-
 
 ### Priorité basse — perf / architecture (plus structurant, à discuter avant d'engager)
 
-#### 32. [PRIORITAIRE] Un process worker complet est relancé par interface mappée
-Chaque appel à `Emit<TInterface>` relance l'exécutable hôte en entier (démarrage CLR complet) ; mapper 5
-interfaces natives distinctes crée 5 processus. Un pool/multiplexage d'un seul worker pour plusieurs
-interfaces réduirait le coût de démarrage, mais c'est un changement architectural plus lourd que les
-autres points de cette liste (protocole `WorkerRequest`/`WorkerResponse` à étendre pour identifier
-l'interface visée par chaque requête, gestion du cycle de vie du pool, etc.) — à cadrer avant de
-l'attaquer.
+#### 32. [PRIORITAIRE] ~~Un process worker complet est relancé par interface mappée~~ — **implémenté**
+Chaque appel à `Emit<TInterface>` relançait l'exécutable hôte en entier (démarrage CLR complet) ; mapper 5
+interfaces natives distinctes créait 5 processus. **Fix** : nouvelle classe publique
+`EmitWorkerPool` (opt-in, `LibraryMapper.Emit<TInterface>` reste inchangé par défaut — un worker par
+interface, isolation maximale) qui démarre un worker partagé au premier `Emit<TInterface>` et le réutilise
+pour tous les appels suivants sur la même instance de pool.
+- Protocole étendu : `WorkerRequest`/`WorkerResponse` portent désormais un champ `Handle` (int) ; chaque
+  `Load` alloue un nouveau handle (compteur local à `EmitWorkerHost.Run`, jamais persistant entre deux
+  process), retourné dans la réponse, et chaque `Call`/nouveau `Unload` cible ce handle. `EmitWorkerHost`
+  garde une `Dictionary<int, LoadedInterface>` au lieu d'un unique couple `(instance, interfaceType)`.
+  Nouveau `WorkerRequestKind.Unload` : libère (Dispose) l'instance visée sans arrêter le worker — appelé
+  automatiquement quand un proxy issu du pool est disposé, alors que `Emit<TInterface>.Dispose()` continue
+  d'arrêter tout le worker (chemin exclusif, `ownsWorker: true` sur `EmitWorkerProxy`).
+- `EmitWorkerProcess.Start` scindé en `Start(TimeSpan? callTimeout)` (démarre + connecte, sans charger
+  d'interface — utilisé par le pool) et `Start(Type, string, CallingConvention, ..., out int handle)`
+  (démarre + charge une seule interface — chemin historique de `Emit<TInterface>`) ; `LoadInterface`/
+  `UnloadInterface`/`InvokeMethod(handle, ...)` protégés par le `callLock` existant (plusieurs interfaces
+  sur un même worker doivent sérialiser leurs appels sur le même tube, comme un seul appel le faisait déjà).
+- **Trade-off explicitement documenté** (XML doc de `EmitWorkerPool`) : partager un worker réduit
+  l'isolation entre les interfaces qui y sont chargées (un crash/comportement hostile sur l'une peut
+  affecter les autres) — opt-in réservé aux interfaces d'une même frontière de confiance, à ne pas utiliser
+  quand l'isolation mutuelle entre interfaces est requise en plus de l'isolation vis-à-vis du process
+  appelant.
+- Bug évité en cours d'implémentation : la validation `CrossProcessMarshaling.EnsureInterfaceIsSupported`
+  avait été déplacée trop tard (à l'intérieur de `LoadInterface`, donc après le lancement du process pour
+  le chemin `Emit<TInterface>`) — une interface non supportée aurait fait démarrer puis tuer un worker
+  complet avant de lever `NotSupportedException` au lieu d'échouer immédiatement. Revalidée en amont dans
+  l'overload `Start(Type, ...)`.
+
+Tests : `UtilsTest.Functional/Reflection/EmitWorkerHostLoopTests.cs`
+(`Run_RoutesCallsByHandle_WhenTwoInterfacesAreLoadedOnTheSameWorker` — deux interfaces différentes
+chargées sur le même worker simulé, appels routés par handle, `Unload` d'une interface sans perturber
+l'autre, appel sur un handle déchargé rejeté), `UtilsTest/Reflection/EmitWorkerPoolTests.cs` (sémantique
+de disposal du pool sans lancer de vrai process).
 
 #### 33. Coût par appel non documenté
 Chaque appel round-trip en JSON + pipe nommé, sérialisé par un seul `SemaphoreSlim` (`callLock`) —

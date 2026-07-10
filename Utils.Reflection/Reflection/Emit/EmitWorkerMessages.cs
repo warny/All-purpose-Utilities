@@ -7,11 +7,14 @@ namespace Utils.Reflection.Reflection.Emit;
 /// </summary>
 internal enum WorkerRequestKind
 {
-    /// <summary>Loads the native DLL and emits the mapping class for an interface.</summary>
+    /// <summary>Loads the native DLL and emits the mapping class for an interface, allocating a new handle for it.</summary>
     Load,
 
-    /// <summary>Invokes a single interface method on the previously loaded mapping instance.</summary>
+    /// <summary>Invokes a single interface method on a previously loaded mapping instance, identified by <see cref="WorkerRequest.Handle"/>.</summary>
     Call,
+
+    /// <summary>Releases a previously loaded mapping instance (disposing it), identified by <see cref="WorkerRequest.Handle"/>, without shutting down the worker.</summary>
+    Unload,
 
     /// <summary>Requests a graceful shutdown of the worker process.</summary>
     Shutdown,
@@ -45,6 +48,15 @@ internal sealed class WorkerRequest
 
     /// <summary>(Call) JSON payload for each positional argument (including by-ref inputs).</summary>
     public string?[]? ArgumentsJson { get; set; }
+
+    /// <summary>
+    /// (Call, Unload) Handle of the loaded interface instance this request targets, as returned by
+    /// that instance's <see cref="WorkerRequestKind.Load"/> response. Lets a single worker process
+    /// hold several concurrently loaded interfaces (see <see cref="EmitWorkerPool"/>) without their
+    /// calls being misrouted to each other. Unused for Load (a new handle is always allocated) and
+    /// Shutdown requests.
+    /// </summary>
+    public int Handle { get; set; }
 }
 
 /// <summary>
@@ -57,6 +69,13 @@ internal sealed class WorkerResponse
 
     /// <summary><see langword="true"/> when the request completed without error.</summary>
     public bool Success { get; set; }
+
+    /// <summary>
+    /// (Load) Handle allocated for the newly loaded interface instance, to be echoed back on every
+    /// subsequent <see cref="WorkerRequestKind.Call"/>/<see cref="WorkerRequestKind.Unload"/> request
+    /// for it. (Call) Echoes the request's handle back for the caller's convenience; unused otherwise.
+    /// </summary>
+    public int Handle { get; set; }
 
     /// <summary>(Call) JSON payload of the method's return value, or <see langword="null"/> for <see langword="void"/>.</summary>
     public string? ReturnValueJson { get; set; }

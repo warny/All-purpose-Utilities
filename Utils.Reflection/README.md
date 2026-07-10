@@ -148,6 +148,31 @@ using IMathLib lib = LibraryMapper.EmitInProcess<IMathLib>("math.dll", CallingCo
 #pragma warning restore UTILSREFL001
 ```
 
+#### Sharing one worker across several interfaces (`EmitWorkerPool`)
+
+`Emit<TInterface>` re-launches a brand new sandboxed worker process every time it is called — a full CLR
+startup per mapped interface. When mapping several interfaces that come from a common trust boundary (for
+example, several DLLs from the same vendor/build) and the per-call process-spawn cost matters,
+`EmitWorkerPool` starts one shared worker on its first `Emit<TInterface>` call and reuses it for every
+subsequent call on the same pool instance:
+
+```csharp
+using var pool = new EmitWorkerPool();
+
+using IMathLib math = pool.Emit<IMathLib>("math.dll", CallingConvention.Cdecl);
+using IStringLib strings = pool.Emit<IStringLib>("strings.dll", CallingConvention.Cdecl);
+// Both proxies forward calls to the SAME worker process.
+
+math.Add(1, 2);
+strings.ToUpper("hi");
+```
+
+This trades away some isolation between the interfaces mapped through the same pool: a crash or a
+hostile/misbehaving interface loaded on the shared worker can affect every other interface loaded on it,
+where `Emit<TInterface>`'s one-worker-per-interface default keeps failures contained to a single
+interface. Disposing a proxy returned by the pool only releases that interface's resources on the shared
+worker; dispose the pool itself to shut the worker process down.
+
 ## Process isolation examples
 
 `ProcessContainerFactory` wraps OS sandboxing APIs to constrain child processes. It returns `null` gracefully when no sandbox is available.

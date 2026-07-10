@@ -79,11 +79,16 @@ internal sealed class EmitWorkerProcess : IDisposable
     /// <see cref="WorkerRequestKind.Call"/> request, applied by <see cref="InvokeMethod"/>. Defaults to
     /// <see cref="DefaultCallTimeout"/> when <see langword="null"/>.
     /// </param>
+    /// <param name="handle">Handle allocated for <paramref name="interfaceType"/> on the new worker; pass to <see cref="InvokeMethod"/>.</param>
     /// <returns>A connected, loaded worker ready to receive <see cref="WorkerRequestKind.Call"/> requests.</returns>
     internal static EmitWorkerProcess Start(
         Type interfaceType, string dllPath, CallingConvention callingConvention,
-        TimeSpan? loadTimeout = null, TimeSpan? callTimeout = null)
+        TimeSpan? loadTimeout, TimeSpan? callTimeout, out int handle)
     {
+        // Validated again inside LoadInterface (needed there for EmitWorkerPool, which calls it
+        // directly against an already-running shared worker), but checked here too so an unsupported
+        // interface fails immediately instead of paying for a full sandboxed process spawn/teardown
+        // first.
         CrossProcessMarshaling.EnsureInterfaceIsSupported(interfaceType);
 
         if (string.IsNullOrEmpty(interfaceType.Assembly.Location))
@@ -94,6 +99,34 @@ internal sealed class EmitWorkerProcess : IDisposable
                 $"Emit worker. Use LibraryMapper.EmitInProcess<T> instead.");
         }
 
+        EmitWorkerProcess worker = Start(callTimeout);
+        try
+        {
+            handle = worker.LoadInterface(interfaceType, dllPath, callingConvention, loadTimeout ?? DefaultLoadTimeout);
+        }
+        catch
+        {
+            worker.Dispose();
+            throw;
+        }
+
+        return worker;
+    }
+
+    /// <summary>
+    /// Starts the isolated worker process and connects to it, without loading any interface yet. Used
+    /// directly by <see cref="EmitWorkerPool"/> to share one worker across multiple
+    /// <see cref="LoadInterface"/> calls; the single-interface <see cref="Start(Type, string, CallingConvention, TimeSpan?, TimeSpan?, out int)"/>
+    /// overload calls this and then loads its one interface immediately.
+    /// </summary>
+    /// <param name="callTimeout">
+    /// Maximum time to wait for the worker's response to each <see cref="WorkerRequestKind.Call"/>
+    /// request, applied by <see cref="InvokeMethod"/>. Defaults to <see cref="DefaultCallTimeout"/> when
+    /// <see langword="null"/>.
+    /// </param>
+    /// <returns>A connected worker, ready to receive <see cref="WorkerRequestKind.Load"/> requests.</returns>
+    internal static EmitWorkerProcess Start(TimeSpan? callTimeout = null)
+    {
         string exePath = Environment.ProcessPath
             ?? throw new InvalidOperationException(
                 "Unable to determine the current process executable path, required to launch an isolated Emit worker.");
@@ -141,22 +174,32 @@ internal sealed class EmitWorkerProcess : IDisposable
         var reader = new System.IO.StreamReader(serverPipe, leaveOpen: true);
         var writer = new System.IO.StreamWriter(serverPipe, leaveOpen: true) { AutoFlush = true };
 
-        var worker = new EmitWorkerProcess(sandbox, process, serverPipe, reader, writer, callTimeout ?? DefaultCallTimeout);
-        try
-        {
-            worker.Load(interfaceType, dllPath, callingConvention, loadTimeout ?? DefaultLoadTimeout);
-        }
-        catch
-        {
-            worker.Dispose();
-            throw;
-        }
-
-        return worker;
+        return new EmitWorkerProcess(sandbox, process, serverPipe, reader, writer, callTimeout ?? DefaultCallTimeout);
     }
 
-    private void Load(Type interfaceType, string dllPath, CallingConvention callingConvention, TimeSpan timeout)
+    /// <summary>
+    /// Requests that the worker load <paramref name="dllPath"/> and emit the mapping class for
+    /// <paramref name="interfaceType"/>, allocating a new handle for it. A single worker (typically one
+    /// obtained through <see cref="EmitWorkerPool"/>) can hold several independently loaded interfaces
+    /// at once; each gets its own handle and is invoked/unloaded independently of the others.
+    /// </summary>
+    /// <param name="interfaceType">Interface whose members will be mapped to native exports.</param>
+    /// <param name="dllPath">Path to the native DLL to load inside the worker.</param>
+    /// <param name="callingConvention">Calling convention used for the generated delegates.</param>
+    /// <param name="timeout">Maximum time to wait for the worker's response.</param>
+    /// <returns>The handle allocated for this interface on this worker.</returns>
+    internal int LoadInterface(Type interfaceType, string dllPath, CallingConvention callingConvention, TimeSpan timeout)
     {
+        CrossProcessMarshaling.EnsureInterfaceIsSupported(interfaceType);
+
+        if (string.IsNullOrEmpty(interfaceType.Assembly.Location))
+        {
+            throw new NotSupportedException(
+                $"The assembly declaring '{interfaceType.FullName}' has no on-disk location (for example, " +
+                $"a single-file publish or an in-memory assembly), so it cannot be loaded by an isolated " +
+                $"Emit worker. Use LibraryMapper.EmitInProcess<T> instead.");
+        }
+
         var request = new WorkerRequest
         {
             Id = Interlocked.Increment(ref nextId),
@@ -167,18 +210,65 @@ internal sealed class EmitWorkerProcess : IDisposable
             CallingConvention = callingConvention,
         };
 
-        WorkerResponse response = SendAndReceive(request, timeout);
+        callLock.Wait();
+        WorkerResponse response;
+        try
+        {
+            response = SendAndReceive(request, timeout);
+        }
+        finally
+        {
+            callLock.Release();
+        }
+
         ThrowIfFailed(response);
+        return response.Handle;
     }
 
     /// <summary>
-    /// Serializes <paramref name="args"/>, forwards the call to the worker, applies any by-ref/out
-    /// results back into <paramref name="args"/>, and returns the deserialized return value.
+    /// Releases the native mapping instance identified by <paramref name="handle"/> on the worker
+    /// (disposing it, unloading its native DLL), without shutting down the worker process itself — the
+    /// worker may still hold other interfaces loaded through <see cref="EmitWorkerPool"/>. Best-effort:
+    /// swallows failures, since there is nothing more the caller can do with a handle it is done with
+    /// either way.
     /// </summary>
+    /// <param name="handle">Handle previously returned by <see cref="LoadInterface"/>.</param>
+    internal void UnloadInterface(int handle)
+    {
+        if (disposed)
+        {
+            return;
+        }
+
+        var request = new WorkerRequest { Id = Interlocked.Increment(ref nextId), Kind = WorkerRequestKind.Unload, Handle = handle };
+
+        callLock.Wait();
+        try
+        {
+            SendAndReceive(request, callTimeout);
+        }
+        catch
+        {
+            // Best-effort: a failed/timed-out Unload leaves the worker holding a now-unreferenced
+            // instance until the worker itself is eventually disposed; not ideal, but not observable
+            // by the caller, who has already discarded the handle either way.
+        }
+        finally
+        {
+            callLock.Release();
+        }
+    }
+
+    /// <summary>
+    /// Serializes <paramref name="args"/>, forwards the call to the worker for the interface instance
+    /// identified by <paramref name="handle"/>, applies any by-ref/out results back into
+    /// <paramref name="args"/>, and returns the deserialized return value.
+    /// </summary>
+    /// <param name="handle">Handle of the target interface instance, as returned by <see cref="LoadInterface"/>.</param>
     /// <param name="method">Interface method being invoked, resolved by the caller's <see cref="System.Reflection.DispatchProxy"/>.</param>
     /// <param name="args">Argument values, in parameter order; by-ref/out slots are updated in place.</param>
     /// <returns>The method's return value, or <see langword="null"/> for <see langword="void"/> methods.</returns>
-    internal object? InvokeMethod(MethodInfo method, object?[] args)
+    internal object? InvokeMethod(int handle, MethodInfo method, object?[] args)
     {
         ObjectDisposedException.ThrowIf(disposed, this);
 
@@ -198,6 +288,7 @@ internal sealed class EmitWorkerProcess : IDisposable
             {
                 Id = Interlocked.Increment(ref nextId),
                 Kind = WorkerRequestKind.Call,
+                Handle = handle,
                 MethodMetadataToken = method.MetadataToken,
                 ArgumentsJson = argumentsJson,
             };
@@ -244,7 +335,7 @@ internal sealed class EmitWorkerProcess : IDisposable
     /// <paramref name="timeout"/>.
     /// </summary>
     /// <remarks>
-    /// Unlike the initial connect handshake in <see cref="Start"/> (already bounded by a 10s
+    /// Unlike the initial connect handshake in <see cref="Start(TimeSpan?)"/> (already bounded by a 10s
     /// <see cref="CancellationTokenSource"/>), every request after that used to block on
     /// <c>reader.ReadLine()</c> with no time limit: a worker stuck inside a hanging native call (blocking
     /// I/O, a deadlock) would freeze the host thread forever, including inside <see cref="Dispose"/>
@@ -441,7 +532,7 @@ internal sealed class EmitWorkerProcess : IDisposable
     /// <see cref="ProcessIsolation.LinuxBubblewrapContainer"/> mounts a fresh, empty <c>tmpfs</c> over
     /// <c>/tmp</c> and <see cref="ProcessIsolation.MacOsSandboxExecContainer"/> denies
     /// <c>file-write*</c>, so the sandboxed worker can never see or connect to the socket and
-    /// <see cref="Start"/> always fails with a connection timeout. Broader than a single-socket bind
+    /// <see cref="Start(TimeSpan?)"/> always fails with a connection timeout. Broader than a single-socket bind
     /// would be, but scoping the sandbox to that one path would require extending
     /// <see cref="IProcessContainer"/> beyond what can be validated without a real Linux/macOS
     /// environment — see the equivalent trade-off already documented for

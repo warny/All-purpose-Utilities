@@ -99,11 +99,11 @@ namespace Utils.Reflection
             TimeSpan? loadTimeout = null, TimeSpan? callTimeout = null)
             where TInterface : class, IDisposable
         {
-            EmitWorkerProcess worker = EmitWorkerProcess.Start(typeof(TInterface), dllPath, callingConvention, loadTimeout, callTimeout);
+            EmitWorkerProcess worker = EmitWorkerProcess.Start(typeof(TInterface), dllPath, callingConvention, loadTimeout, callTimeout, out int handle);
             try
             {
                 TInterface proxy = DispatchProxy.Create<TInterface, EmitWorkerProxy>();
-                ((EmitWorkerProxy)(object)proxy).AttachWorker(worker);
+                ((EmitWorkerProxy)(object)proxy).AttachWorker(worker, handle, ownsWorker: true);
                 return proxy;
             }
             catch
