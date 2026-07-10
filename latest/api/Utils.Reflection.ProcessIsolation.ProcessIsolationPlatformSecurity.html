@@ -157,7 +157,7 @@ Class ProcessIsolationPlatformSecurity  <a class="header-action link-secondary" 
 
   <h3 id="Utils_Reflection_ProcessIsolation_ProcessIsolationPlatformSecurity_HasValidAuthenticodeSignature_System_String_" data-uid="Utils.Reflection.ProcessIsolation.ProcessIsolationPlatformSecurity.HasValidAuthenticodeSignature(System.String)">
   HasValidAuthenticodeSignature(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/ProcessIsolation/ProcessIsolationPlatformSecurity.cs/#L34"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/ProcessIsolation/ProcessIsolationPlatformSecurity.cs/#L53"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns whether a file carries a valid Authenticode signature.</p>
@@ -188,7 +188,21 @@ Class ProcessIsolationPlatformSecurity  <a class="header-action link-secondary" 
 
 
 
+  <h4 class="section" id="Utils_Reflection_ProcessIsolation_ProcessIsolationPlatformSecurity_HasValidAuthenticodeSignature_System_String__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Authenticode is a Windows-specific signing scheme with no equivalent on other platforms.
+Unlike <a class="xref" href="Utils.Reflection.ProcessIsolation.ProcessIsolationPlatformSecurity.html#Utils_Reflection_ProcessIsolation_ProcessIsolationPlatformSecurity_IsExpectedNamedPipeClient_System_IO_Pipes_NamedPipeServerStream_System_Int32_">IsExpectedNamedPipeClient(NamedPipeServerStream, int)</a>, this method does not silently report
+success on non-Windows platforms — a caller using this as a trust gate (&quot;should I run this
+binary?&quot;) must not receive a false sense of having verified anything. Callers that need a
+cross-platform trust decision should branch on <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.operatingsystem.iswindows">IsWindows()</a>
+themselves and decide what &quot;trusted&quot; means for other platforms.</p>
+</div>
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.platformnotsupportedexception">PlatformNotSupportedException</a></dt>
+    <dd><p>Thrown when called on a non-Windows platform.</p>
+</dd>
+  </dl>
 
 
 
@@ -196,7 +210,7 @@ Class ProcessIsolationPlatformSecurity  <a class="header-action link-secondary" 
 
   <h3 id="Utils_Reflection_ProcessIsolation_ProcessIsolationPlatformSecurity_IsExpectedNamedPipeClient_System_IO_Pipes_NamedPipeServerStream_System_Int32_" data-uid="Utils.Reflection.ProcessIsolation.ProcessIsolationPlatformSecurity.IsExpectedNamedPipeClient(System.IO.Pipes.NamedPipeServerStream,System.Int32)">
   IsExpectedNamedPipeClient(NamedPipeServerStream, int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/ProcessIsolation/ProcessIsolationPlatformSecurity.cs/#L19"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/ProcessIsolation/ProcessIsolationPlatformSecurity.cs/#L29"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Verifies that the process connected to a named pipe is the expected process.</p>
@@ -220,7 +234,7 @@ Class ProcessIsolationPlatformSecurity  <a class="header-action link-secondary" 
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
-    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when the connected process matches; otherwise <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when the connected process matches (Windows), or unconditionally on other platforms; otherwise <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
 </dd>
   </dl>
 
@@ -230,6 +244,16 @@ Class ProcessIsolationPlatformSecurity  <a class="header-action link-secondary" 
 
 
 
+  <h4 class="section" id="Utils_Reflection_ProcessIsolation_ProcessIsolationPlatformSecurity_IsExpectedNamedPipeClient_System_IO_Pipes_NamedPipeServerStream_System_Int32__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p><b>Windows-only verification.</b> There is no built-in .NET API to resolve the peer
+process of a Unix domain socket (the underlying transport for
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.pipes.namedpipeserverstream">NamedPipeServerStream</a> on Linux/macOS) — doing so would require P/Invoking
+<code>getsockopt(SO_PEERCRED)</code> (Linux) or <code>getpeereid</code> (macOS/BSD), which this library
+does not currently implement. On non-Windows platforms this method therefore always
+returns <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> without checking anything: callers on those platforms get
+no IPC identity hardening from this method and must not treat a <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a>
+result there as a verified identity.</p>
+</div>
 
 
 

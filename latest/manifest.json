@@ -12832,7 +12832,7 @@
       "Uid": null,
       "IsMRef": true,
       "Title": "Utils.Reflection.ProcessIsolation.ProcessContainerPermissions",
-      "Summary": "<p sourcefile=\"api/Utils.Reflection.ProcessIsolation.ProcessContainerPermissions.yml\" sourcestartlinenumber=\"1\">Represents coarse-grained permissions for child processes started through a process container.</p>\n"
+      "Summary": "<p sourcefile=\"api/Utils.Reflection.ProcessIsolation.ProcessContainerPermissions.yml\" sourcestartlinenumber=\"1\">Represents coarse-grained permissions for child processes started through a process container.\nInstances are immutable after construction (<code>init</code>-only properties): use an object\ninitializer to customize a permission set, or <code>Default</code> for the restrictive baseline.</p>\n"
     },
     {
       "type": "ManagedReference",
@@ -12889,6 +12889,34 @@
       "IsMRef": true,
       "Title": "Utils.Reflection.Reflection.Emit.EmitDllMappableClass",
       "Summary": "<p sourcefile=\"api/Utils.Reflection.Reflection.Emit.EmitDllMappableClass.yml\" sourcestartlinenumber=\"1\">Utility class for dynamically generating types that map to DLL functions.\nThis class emits new types at runtime, which implement a specified interface.\nThe methods of the interface are mapped to corresponding unmanaged functions\nusing the DllMapper class.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Reflection.Reflection.Emit.EmitWorkerInvocationException.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Reflection.Reflection.Emit.EmitWorkerInvocationException.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Reflection.Reflection.Emit.EmitWorkerInvocationException",
+      "Summary": "<p sourcefile=\"api/Utils.Reflection.Reflection.Emit.EmitWorkerInvocationException.yml\" sourcestartlinenumber=\"1\">Thrown on the host side when an isolated Emit worker reports a failure while loading a native\nDLL or invoking one of its mapped functions.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Reflection.Reflection.Emit.EmitWorkerProxy.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Reflection.Reflection.Emit.EmitWorkerProxy.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Reflection.Reflection.Emit.EmitWorkerProxy",
+      "Summary": "<p sourcefile=\"api/Utils.Reflection.Reflection.Emit.EmitWorkerProxy.yml\" sourcestartlinenumber=\"1\"><xref href=\"System.Reflection.DispatchProxy\" data-throw-if-not-resolved=\"false\"></xref> that forwards every interface call to an isolated\n<xref href=\"Utils.Reflection.Reflection.Emit.EmitWorkerProcess\" data-throw-if-not-resolved=\"false\"></xref>. Instances are produced by <xref href=\"Utils.Reflection.LibraryMapper.Emit%60%601(System.String%2cSystem.Runtime.InteropServices.CallingConvention)\" data-throw-if-not-resolved=\"false\"></xref> via\n<xref href=\"System.Reflection.DispatchProxy.Create%60%602\" data-throw-if-not-resolved=\"false\"></xref>; the generated proxy type never contains\ncaller-controlled source, so it does not carry the code-generation risk documented on\n<xref href=\"Utils.Reflection.Reflection.Emit.EmitDllMappableClass\" data-throw-if-not-resolved=\"false\"></xref>.</p>\n"
     },
     {
       "type": "ManagedReference",

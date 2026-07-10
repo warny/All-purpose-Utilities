@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Reflection_Reflection_Emit_EmitDllMappableClass" data-uid="Utils.Reflection.Reflection.Emit.EmitDllMappableClass" class="text-break">
-Class EmitDllMappableClass  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Emit/EmitDllMappableClass.cs/#L21"><i class="bi bi-code-slash"></i></a>
+Class EmitDllMappableClass  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Emit/EmitDllMappableClass.cs/#L32"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -150,6 +150,14 @@ using the DllMapper class.</p>
 
 
 
+  <h2 id="Utils_Reflection_Reflection_Emit_EmitDllMappableClass_remarks">Remarks</h2>
+  <div class="markdown level0 remarks"><p><b>Security warning:</b> the generated C# source is built by concatenating type, method and
+parameter names obtained through reflection on the target interface. CLR metadata names are far
+less constrained than C# lexical identifiers, so an interface sourced from an untrusted or
+dynamically generated assembly could inject arbitrary C# into the compiled/loaded assembly. Only
+call these methods with interfaces you fully trust. <a class="xref" href="Utils.Reflection.LibraryMapper.html#Utils_Reflection_LibraryMapper_Emit__1_System_String_System_Runtime_InteropServices_CallingConvention_">Emit&lt;TInterface&gt;(string, CallingConvention)</a>
+performs the same generation inside an isolated worker process instead, which contains that risk.</p>
+</div>
 
 
   <h2 class="section" id="methods">Methods
@@ -160,7 +168,7 @@ using the DllMapper class.</p>
 
   <h3 id="Utils_Reflection_Reflection_Emit_EmitDllMappableClass_Emit_System_Type_System_Runtime_InteropServices_CallingConvention_" data-uid="Utils.Reflection.Reflection.Emit.EmitDllMappableClass.Emit(System.Type,System.Runtime.InteropServices.CallingConvention)">
   Emit(Type, CallingConvention)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Emit/EmitDllMappableClass.cs/#L42"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Emit/EmitDllMappableClass.cs/#L66"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Emits a class that implements the specified interface and maps the interface methods to DLL functions.</p>
@@ -168,7 +176,8 @@ using the DllMapper class.</p>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static object Emit(Type type, CallingConvention callingConvention = CallingConvention.Winapi)</code></pre>
+    <pre><code class="lang-csharp hljs">[Experimental(&quot;UTILSREFL001&quot;)]
+public static object Emit(Type type, CallingConvention callingConvention = CallingConvention.Winapi)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
@@ -201,8 +210,8 @@ using the DllMapper class.</p>
   <a id="Utils_Reflection_Reflection_Emit_EmitDllMappableClass_Emit_" data-uid="Utils.Reflection.Reflection.Emit.EmitDllMappableClass.Emit*"></a>
 
   <h3 id="Utils_Reflection_Reflection_Emit_EmitDllMappableClass_Emit__1_System_Runtime_InteropServices_CallingConvention_" data-uid="Utils.Reflection.Reflection.Emit.EmitDllMappableClass.Emit``1(System.Runtime.InteropServices.CallingConvention)">
-  Emit&lt;T&gt;(CallingConvention)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Emit/EmitDllMappableClass.cs/#L33"><i class="bi bi-code-slash"></i></a>
+  Emit&lt;TInterface&gt;(CallingConvention)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Emit/EmitDllMappableClass.cs/#L56"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Emits a class that implements the specified interface and maps the interface methods to DLL functions.
@@ -211,7 +220,8 @@ Each delegate gets an <a class="xref" href="https://learn.microsoft.com/dotnet/a
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static T Emit&lt;T&gt;(CallingConvention callingConvention) where T : class</code></pre>
+    <pre><code class="lang-csharp hljs">[Experimental(&quot;UTILSREFL001&quot;)]
+public static TInterface Emit&lt;TInterface&gt;(CallingConvention callingConvention) where TInterface : class</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
@@ -223,14 +233,14 @@ Each delegate gets an <a class="xref" href="https://learn.microsoft.com/dotnet/a
 
   <h4 class="section">Returns</h4>
   <dl class="parameters">
-    <dt><span class="xref">T</span></dt>
+    <dt><span class="xref">TInterface</span></dt>
     <dd><p>An instance of the dynamically generated class</p>
 </dd>
   </dl>
 
   <h4 class="section">Type Parameters</h4>
   <dl class="parameters">
-    <dt><code>T</code></dt>
+    <dt><code>TInterface</code></dt>
     <dd><p>Interface type</p>
 </dd>
   </dl>
@@ -248,7 +258,7 @@ Each delegate gets an <a class="xref" href="https://learn.microsoft.com/dotnet/a
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Emit/EmitDllMappableClass.cs/#L21" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Emit/EmitDllMappableClass.cs/#L32" class="edit-link">Edit this page</a>
         </div>
 
 

@@ -157,7 +157,7 @@ Class Platform  <a class="header-action link-secondary" title="View source" href
 
   <h3 id="Utils_Reflection_Platform_IsAndroid" data-uid="Utils.Reflection.Platform.IsAndroid">
   IsAndroid
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Platform.cs/#L122"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Platform.cs/#L129"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>True if runtime platform is Android.</p>
@@ -189,7 +189,7 @@ Class Platform  <a class="header-action link-secondary" title="View source" href
 
   <h3 id="Utils_Reflection_Platform_IsArm" data-uid="Utils.Reflection.Platform.IsArm">
   IsArm
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Platform.cs/#L141"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Platform.cs/#L148"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>True if process architecture is Arm (32-bit).</p>
@@ -221,7 +221,7 @@ Class Platform  <a class="header-action link-secondary" title="View source" href
 
   <h3 id="Utils_Reflection_Platform_IsArm64" data-uid="Utils.Reflection.Platform.IsArm64">
   IsArm64
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Platform.cs/#L144"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Platform.cs/#L151"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>True if process architecture is Arm64 (64-bit ARM).</p>
@@ -253,7 +253,7 @@ Class Platform  <a class="header-action link-secondary" title="View source" href
 
   <h3 id="Utils_Reflection_Platform_IsBrowser" data-uid="Utils.Reflection.Platform.IsBrowser">
   IsBrowser
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Platform.cs/#L125"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Platform.cs/#L132"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>True if runtime platform is running on WebAssembly in a browser.</p>
@@ -285,7 +285,7 @@ Class Platform  <a class="header-action link-secondary" title="View source" href
 
   <h3 id="Utils_Reflection_Platform_IsIOS" data-uid="Utils.Reflection.Platform.IsIOS">
   IsIOS
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Platform.cs/#L113"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Platform.cs/#L120"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>True if runtime platform is iOS.</p>
@@ -345,6 +345,40 @@ Class Platform  <a class="header-action link-secondary" title="View source" href
 
 
 
+  <a id="Utils_Reflection_Platform_IsMacOS_" data-uid="Utils.Reflection.Platform.IsMacOS*"></a>
+
+  <h3 id="Utils_Reflection_Platform_IsMacOS" data-uid="Utils.Reflection.Platform.IsMacOS">
+  IsMacOS
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Platform.cs/#L117"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>True if runtime platform is macOS. Alias for <a class="xref" href="Utils.Reflection.Platform.html#Utils_Reflection_Platform_IsMacOsX">IsMacOsX</a> using Apple's current
+platform name (matching <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.operatingsystem.ismacos">IsMacOS()</a>, used internally), kept
+alongside it for source/binary compatibility with existing callers of <a class="xref" href="Utils.Reflection.Platform.html#Utils_Reflection_Platform_IsMacOsX">IsMacOsX</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool IsMacOS { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <a id="Utils_Reflection_Platform_IsMacOsX_" data-uid="Utils.Reflection.Platform.IsMacOsX*"></a>
 
   <h3 id="Utils_Reflection_Platform_IsMacOsX" data-uid="Utils.Reflection.Platform.IsMacOsX">
@@ -381,7 +415,7 @@ Class Platform  <a class="header-action link-secondary" title="View source" href
 
   <h3 id="Utils_Reflection_Platform_IsS390x" data-uid="Utils.Reflection.Platform.IsS390x">
   IsS390x
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Platform.cs/#L150"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Platform.cs/#L157"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>True if process architecture is IBM s390x.</p>
@@ -413,7 +447,7 @@ Class Platform  <a class="header-action link-secondary" title="View source" href
 
   <h3 id="Utils_Reflection_Platform_IsTvOS" data-uid="Utils.Reflection.Platform.IsTvOS">
   IsTvOS
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Platform.cs/#L116"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Platform.cs/#L123"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>True if runtime platform is tvOS.</p>
@@ -445,7 +479,7 @@ Class Platform  <a class="header-action link-secondary" title="View source" href
 
   <h3 id="Utils_Reflection_Platform_IsUnknown" data-uid="Utils.Reflection.Platform.IsUnknown">
   IsUnknown
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Platform.cs/#L128"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Platform.cs/#L135"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>True if runtime platform is unknown or not explicitly handled above.</p>
@@ -477,7 +511,7 @@ Class Platform  <a class="header-action link-secondary" title="View source" href
 
   <h3 id="Utils_Reflection_Platform_IsUnknownArchitecture" data-uid="Utils.Reflection.Platform.IsUnknownArchitecture">
   IsUnknownArchitecture
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Platform.cs/#L155"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Platform.cs/#L162"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>True if process architecture is unknown or not explicitly handled above.</p>
@@ -509,7 +543,7 @@ Class Platform  <a class="header-action link-secondary" title="View source" href
 
   <h3 id="Utils_Reflection_Platform_IsWasm" data-uid="Utils.Reflection.Platform.IsWasm">
   IsWasm
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Platform.cs/#L147"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Platform.cs/#L154"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>True if process architecture is WebAssembly.</p>
@@ -541,7 +575,7 @@ Class Platform  <a class="header-action link-secondary" title="View source" href
 
   <h3 id="Utils_Reflection_Platform_IsWatchOS" data-uid="Utils.Reflection.Platform.IsWatchOS">
   IsWatchOS
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Platform.cs/#L119"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Platform.cs/#L126"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>True if runtime platform is watchOS.</p>
@@ -605,7 +639,7 @@ Class Platform  <a class="header-action link-secondary" title="View source" href
 
   <h3 id="Utils_Reflection_Platform_IsX64" data-uid="Utils.Reflection.Platform.IsX64">
   IsX64
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Platform.cs/#L138"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Platform.cs/#L145"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>True if process architecture is x64 (64-bit Intel/AMD).</p>
@@ -637,7 +671,7 @@ Class Platform  <a class="header-action link-secondary" title="View source" href
 
   <h3 id="Utils_Reflection_Platform_IsX86" data-uid="Utils.Reflection.Platform.IsX86">
   IsX86
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Platform.cs/#L135"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Platform.cs/#L142"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>True if process architecture is x86 (32-bit Intel/AMD).</p>
@@ -669,7 +703,7 @@ Class Platform  <a class="header-action link-secondary" title="View source" href
 
   <h3 id="Utils_Reflection_Platform_NativeULongSize" data-uid="Utils.Reflection.Platform.NativeULongSize">
   NativeULongSize
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Platform.cs/#L176"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Platform.cs/#L183"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Size of native (unmanaged) 'ulong' (e.g., CK_ULONG in PKCS#11).
@@ -683,7 +717,7 @@ This value can be overridden by setter if needed.</li>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static int NativeULongSize { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">public static int NativeULongSize { get; set; }</code></pre>
   </div>
 
 
@@ -707,7 +741,7 @@ This value can be overridden by setter if needed.</li>
 
   <h3 id="Utils_Reflection_Platform_StructPackingSize" data-uid="Utils.Reflection.Platform.StructPackingSize">
   StructPackingSize
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Platform.cs/#L213"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Platform.cs/#L220"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Controls alignment of unmanaged struct fields:</p>
@@ -744,7 +778,7 @@ This can be overridden by setter if needed.</li>
 
   <h3 id="Utils_Reflection_Platform_Uses32BitRuntime" data-uid="Utils.Reflection.Platform.Uses32BitRuntime">
   Uses32BitRuntime
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Platform.cs/#L161"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Platform.cs/#L168"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>True if 32-bit runtime is used (x86, Arm32, etc.).</p>
@@ -776,7 +810,7 @@ This can be overridden by setter if needed.</li>
 
   <h3 id="Utils_Reflection_Platform_Uses64BitRuntime" data-uid="Utils.Reflection.Platform.Uses64BitRuntime">
   Uses64BitRuntime
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Platform.cs/#L158"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Platform.cs/#L165"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>True if 64-bit runtime is used (x64, Arm64, s390x, or other 64-bit).</p>

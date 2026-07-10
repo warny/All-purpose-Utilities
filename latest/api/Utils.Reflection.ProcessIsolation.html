@@ -106,7 +106,9 @@ Classes
     </dl>
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.Reflection.ProcessIsolation.ProcessContainerPermissions.html">ProcessContainerPermissions</a></dt>
-      <dd><p>Represents coarse-grained permissions for child processes started through a process container.</p>
+      <dd><p>Represents coarse-grained permissions for child processes started through a process container.
+Instances are immutable after construction (<code>init</code>-only properties): use an object
+initializer to customize a permission set, or <code>Default</code> for the restrictive baseline.</p>
 </dd>
     </dl>
     <dl class="jumplist">
