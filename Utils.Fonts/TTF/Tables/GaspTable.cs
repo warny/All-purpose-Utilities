@@ -46,7 +46,6 @@ public class GaspTable : TrueTypeTable
     /// <summary>
     /// Initializes a new instance of the <see cref="GaspTable"/> class.
     /// </summary>
-    /// <summary>Initializes a new instance of the <see cref="GaspTable"/> class.</summary>
     public GaspTable() : base(TableTypes.GASP) { }
 
     /// <summary>Gets or sets the table version. 0 = original; 1 = ClearType symmetric flags supported.</summary>
