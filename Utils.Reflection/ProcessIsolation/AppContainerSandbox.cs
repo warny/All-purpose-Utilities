@@ -190,10 +190,17 @@ internal sealed class AppContainerSandbox : IProcessContainer
     {
         IntPtr attrList = IntPtr.Zero;
         IntPtr capPtr = IntPtr.Zero;
+        IntPtr environmentPtr = IntPtr.Zero;
 
         try
         {
             attrList = AllocateAttributeList(attributeCount: 1);
+
+            // CreateProcess inherits the caller's ENTIRE environment when lpEnvironment is
+            // IntPtr.Zero — unlike LinuxBubblewrapContainer/MacOsSandboxExecContainer, which already
+            // strip down to SandboxedProcessEnvironment's allowlist via ProcessStartInfo. Building an
+            // explicit block here closes that gap for the Windows sandbox.
+            environmentPtr = Marshal.StringToHGlobalUni(SandboxedProcessEnvironment.BuildWindowsEnvironmentBlock());
 
             // Marshal SECURITY_CAPABILITIES for the AppContainer.
             var caps = new WindowsNativeMethods.SECURITY_CAPABILITIES
@@ -231,8 +238,9 @@ internal sealed class AppContainerSandbox : IProcessContainer
                 IntPtr.Zero, IntPtr.Zero,
                 bInheritHandles: false,
                 WindowsNativeMethods.EXTENDED_STARTUPINFO_PRESENT |
-                WindowsNativeMethods.CREATE_NO_WINDOW,
-                IntPtr.Zero, null,
+                WindowsNativeMethods.CREATE_NO_WINDOW |
+                WindowsNativeMethods.CREATE_UNICODE_ENVIRONMENT,
+                environmentPtr, null,
                 ref startupInfoEx,
                 out WindowsNativeMethods.PROCESS_INFORMATION procInfo);
 
@@ -284,6 +292,11 @@ internal sealed class AppContainerSandbox : IProcessContainer
             if (capPtr != IntPtr.Zero)
             {
                 Marshal.FreeHGlobal(capPtr);
+            }
+
+            if (environmentPtr != IntPtr.Zero)
+            {
+                Marshal.FreeHGlobal(environmentPtr);
             }
         }
     }

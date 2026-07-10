@@ -125,6 +125,18 @@ process; `IntPtr`/pointers/handles are never supported, because they are meaning
 process that produced them. `Emit<TInterface>` throws `NotSupportedException` immediately (before starting any
 process) when the interface doesn't qualify.
 
+> **Performance note.** Isolation is not free: every call is JSON-serialized, sent over a named pipe to
+> the worker, executed there, and the result serialized back — a real cost compared to a direct P/Invoke
+> or `EmitInProcess<TInterface>` call. Calls from multiple threads on the same worker do run concurrently
+> (each is independently correlated to its response, and the worker dispatches every request to the
+> thread pool instead of handling them one at a time) — but the native library backing the interface must
+> itself be safe to call concurrently for that to be safe; this is entirely the caller's responsibility.
+> For a tight, high-frequency call loop where the per-call IPC overhead matters and the interface is
+> fully trusted, prefer `EmitInProcess<TInterface>` instead. `loadTimeout`/`callTimeout` parameters on
+> `Emit<TInterface>` bound how long a call can block waiting for the worker (30 seconds by default for
+> each) before it times out; unlike a full worker restart, a single call timing out does not affect any
+> other concurrently in-flight call on the same worker.
+
 #### In-process emit (no isolation)
 
 For interfaces that need pointer/handle parameters, or when you fully trust the interface definition
@@ -147,6 +159,52 @@ compile. Suppress the diagnostic explicitly to opt in:
 using IMathLib lib = LibraryMapper.EmitInProcess<IMathLib>("math.dll", CallingConvention.Cdecl);
 #pragma warning restore UTILSREFL001
 ```
+
+#### Sharing one worker across several interfaces (`EmitWorkerPool`)
+
+`Emit<TInterface>` re-launches a brand new sandboxed worker process every time it is called — a full CLR
+startup per mapped interface. When mapping several interfaces that come from a common trust boundary (for
+example, several DLLs from the same vendor/build) and the per-call process-spawn cost matters,
+`EmitWorkerPool` starts one shared worker on its first `Emit<TInterface>` call and reuses it for every
+subsequent call on the same pool instance:
+
+```csharp
+using var pool = new EmitWorkerPool();
+
+using IMathLib math = pool.Emit<IMathLib>("math.dll", CallingConvention.Cdecl);
+using IStringLib strings = pool.Emit<IStringLib>("strings.dll", CallingConvention.Cdecl);
+// Both proxies forward calls to the SAME worker process.
+
+math.Add(1, 2);
+strings.ToUpper("hi");
+```
+
+This trades away some isolation between the interfaces mapped through the same pool: a crash or a
+hostile/misbehaving interface loaded on the shared worker can affect every other interface loaded on it,
+where `Emit<TInterface>`'s one-worker-per-interface default keeps failures contained to a single
+interface. Disposing a proxy returned by the pool only releases that interface's resources on the shared
+worker; dispose the pool itself to shut the worker process down.
+
+#### Spreading calls across several processes (`EmitRoundRobin`)
+
+Calls from multiple threads on a single `Emit<TInterface>` worker already run concurrently (see the
+performance note above) — but they all still execute inside the same worker process, so the native
+library must itself be safe to call concurrently. `LibraryMapper.EmitRoundRobin<TInterface>` sidesteps
+that requirement by starting several independent worker processes up front and picking the next one, in
+round-robin order, for every call — each process has its own separate load of the native DLL, so calls
+can never race inside the same one:
+
+```csharp
+using IMathLib math = LibraryMapper.EmitRoundRobin<IMathLib>("math.dll", CallingConvention.Cdecl, workerCount: 4);
+
+// Each call goes to the next of the 4 worker processes, in turn.
+int a = math.Add(1, 2);
+int b = math.Add(3, 4);
+```
+
+This costs `workerCount` full sandboxed process startups up front, rather than one — pick a worker count
+that matches the parallelism you actually need. The set of workers is fixed for the proxy's lifetime;
+disposing it disposes every worker in the set.
 
 ## Process isolation examples
 
@@ -228,6 +286,11 @@ if (CommandAvailability.Exists("bwrap"))
 if (CommandAvailability.Exists(@"C:\tools\ffmpeg.exe"))
     Console.WriteLine("ffmpeg found");
 ```
+
+## Further reading
+- [Process and Thread Model](../docs/reflection/ProcessAndThreadModel.md) — how DLL loading, process
+  launching, `EmitWorkerPool`, intra-worker call concurrency, and `EmitRoundRobin` actually work
+  underneath, with message-flow examples.
 
 ## Related packages
 - `omy.Utils` – base utilities used by reflection helpers.

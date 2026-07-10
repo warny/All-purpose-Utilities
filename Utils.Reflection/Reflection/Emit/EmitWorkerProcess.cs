@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO.Pipes;
 using System.Reflection;
@@ -8,6 +9,7 @@ using System.Security.AccessControl;
 using System.Security.Principal;
 using System.Text.Json;
 using System.Threading;
+using System.Threading.Tasks;
 
 using Utils.Reflection.ProcessIsolation;
 
@@ -20,15 +22,42 @@ namespace Utils.Reflection.Reflection.Emit;
 /// mapping-class generation described in <see cref="EmitDllMappableClass"/>, contained by whatever
 /// process-container sandbox is available on the current platform.
 /// </summary>
+/// <remarks>
+/// Requests are correlated to responses by <see cref="WorkerRequest.Id"/> (see
+/// <see cref="RunReaderLoop"/>), so several requests can be in flight on the same worker at once — from
+/// several threads calling the same proxy concurrently, or several proxies sharing a worker through
+/// <see cref="EmitWorkerPool"/>. The worker itself dispatches each request it receives to the thread pool
+/// (<see cref="EmitWorkerHost.Run"/>) instead of handling them one at a time, so calls genuinely execute
+/// in parallel on both ends, not just queued. The native library backing a mapped interface must be
+/// thread-safe for concurrent calls to be safe — that is the caller's responsibility, independent of this
+/// class.
+/// </remarks>
 internal sealed class EmitWorkerProcess : IDisposable
 {
+    /// <summary>Default timeout for the initial <see cref="WorkerRequestKind.Load"/> request.</summary>
+    internal static readonly TimeSpan DefaultLoadTimeout = TimeSpan.FromSeconds(30);
+
+    /// <summary>Default timeout for each <see cref="WorkerRequestKind.Call"/> request.</summary>
+    internal static readonly TimeSpan DefaultCallTimeout = TimeSpan.FromSeconds(30);
+
+    /// <summary>
+    /// Timeout for the graceful <see cref="WorkerRequestKind.Shutdown"/> handshake in
+    /// <see cref="Dispose"/>. Short and non-configurable: a slow shutdown response falls back to
+    /// <see cref="KillSilently"/> regardless, so there is nothing to gain from waiting longer.
+    /// </summary>
+    private static readonly TimeSpan ShutdownTimeout = TimeSpan.FromSeconds(5);
+
     private IProcessContainer? sandbox;
     private readonly Process workerProcess;
     private readonly NamedPipeServerStream pipe;
     private readonly System.IO.StreamReader reader;
     private readonly System.IO.StreamWriter writer;
-    private readonly SemaphoreSlim callLock = new(1, 1);
+    private readonly object writeLock = new();
+    private readonly ConcurrentDictionary<int, TaskCompletionSource<WorkerResponse>> pending = new();
+    private readonly Task readerLoop;
+    private readonly TimeSpan callTimeout;
     private int nextId;
+    private volatile Exception? connectionFault;
     private bool disposed;
 
     private EmitWorkerProcess(
@@ -36,13 +65,16 @@ internal sealed class EmitWorkerProcess : IDisposable
         Process workerProcess,
         NamedPipeServerStream pipe,
         System.IO.StreamReader reader,
-        System.IO.StreamWriter writer)
+        System.IO.StreamWriter writer,
+        TimeSpan callTimeout)
     {
         this.sandbox = sandbox;
         this.workerProcess = workerProcess;
         this.pipe = pipe;
         this.reader = reader;
         this.writer = writer;
+        this.callTimeout = callTimeout;
+        readerLoop = Task.Run(RunReaderLoop);
     }
 
     /// <summary>
@@ -53,9 +85,26 @@ internal sealed class EmitWorkerProcess : IDisposable
     /// <param name="interfaceType">Interface whose members will be mapped to native exports.</param>
     /// <param name="dllPath">Path to the native DLL to load inside the worker.</param>
     /// <param name="callingConvention">Calling convention used for the generated delegates.</param>
+    /// <param name="loadTimeout">
+    /// Maximum time to wait for the worker's response to the initial <see cref="WorkerRequestKind.Load"/>
+    /// request (compiling the mapping class and loading the native DLL). Defaults to
+    /// <see cref="DefaultLoadTimeout"/> when <see langword="null"/>.
+    /// </param>
+    /// <param name="callTimeout">
+    /// Maximum time to wait for the worker's response to each subsequent
+    /// <see cref="WorkerRequestKind.Call"/> request, applied by <see cref="InvokeMethod"/>. Defaults to
+    /// <see cref="DefaultCallTimeout"/> when <see langword="null"/>.
+    /// </param>
+    /// <param name="handle">Handle allocated for <paramref name="interfaceType"/> on the new worker; pass to <see cref="InvokeMethod"/>.</param>
     /// <returns>A connected, loaded worker ready to receive <see cref="WorkerRequestKind.Call"/> requests.</returns>
-    internal static EmitWorkerProcess Start(Type interfaceType, string dllPath, CallingConvention callingConvention)
+    internal static EmitWorkerProcess Start(
+        Type interfaceType, string dllPath, CallingConvention callingConvention,
+        TimeSpan? loadTimeout, TimeSpan? callTimeout, out int handle)
     {
+        // Validated again inside LoadInterface (needed there for EmitWorkerPool, which calls it
+        // directly against an already-running shared worker), but checked here too so an unsupported
+        // interface fails immediately instead of paying for a full sandboxed process spawn/teardown
+        // first.
         CrossProcessMarshaling.EnsureInterfaceIsSupported(interfaceType);
 
         if (string.IsNullOrEmpty(interfaceType.Assembly.Location))
@@ -66,6 +115,34 @@ internal sealed class EmitWorkerProcess : IDisposable
                 $"Emit worker. Use LibraryMapper.EmitInProcess<T> instead.");
         }
 
+        EmitWorkerProcess worker = Start(callTimeout);
+        try
+        {
+            handle = worker.LoadInterface(interfaceType, dllPath, callingConvention, loadTimeout ?? DefaultLoadTimeout);
+        }
+        catch
+        {
+            worker.Dispose();
+            throw;
+        }
+
+        return worker;
+    }
+
+    /// <summary>
+    /// Starts the isolated worker process and connects to it, without loading any interface yet. Used
+    /// directly by <see cref="EmitWorkerPool"/> to share one worker across multiple
+    /// <see cref="LoadInterface"/> calls; the single-interface <see cref="Start(Type, string, CallingConvention, TimeSpan?, TimeSpan?, out int)"/>
+    /// overload calls this and then loads its one interface immediately.
+    /// </summary>
+    /// <param name="callTimeout">
+    /// Maximum time to wait for the worker's response to each <see cref="WorkerRequestKind.Call"/>
+    /// request, applied by <see cref="InvokeMethod"/>. Defaults to <see cref="DefaultCallTimeout"/> when
+    /// <see langword="null"/>.
+    /// </param>
+    /// <returns>A connected worker, ready to receive <see cref="WorkerRequestKind.Load"/> requests.</returns>
+    internal static EmitWorkerProcess Start(TimeSpan? callTimeout = null)
+    {
         string exePath = Environment.ProcessPath
             ?? throw new InvalidOperationException(
                 "Unable to determine the current process executable path, required to launch an isolated Emit worker.");
@@ -113,22 +190,32 @@ internal sealed class EmitWorkerProcess : IDisposable
         var reader = new System.IO.StreamReader(serverPipe, leaveOpen: true);
         var writer = new System.IO.StreamWriter(serverPipe, leaveOpen: true) { AutoFlush = true };
 
-        var worker = new EmitWorkerProcess(sandbox, process, serverPipe, reader, writer);
-        try
-        {
-            worker.Load(interfaceType, dllPath, callingConvention);
-        }
-        catch
-        {
-            worker.Dispose();
-            throw;
-        }
-
-        return worker;
+        return new EmitWorkerProcess(sandbox, process, serverPipe, reader, writer, callTimeout ?? DefaultCallTimeout);
     }
 
-    private void Load(Type interfaceType, string dllPath, CallingConvention callingConvention)
+    /// <summary>
+    /// Requests that the worker load <paramref name="dllPath"/> and emit the mapping class for
+    /// <paramref name="interfaceType"/>, allocating a new handle for it. A single worker (typically one
+    /// obtained through <see cref="EmitWorkerPool"/>) can hold several independently loaded interfaces
+    /// at once; each gets its own handle and is invoked/unloaded independently of the others.
+    /// </summary>
+    /// <param name="interfaceType">Interface whose members will be mapped to native exports.</param>
+    /// <param name="dllPath">Path to the native DLL to load inside the worker.</param>
+    /// <param name="callingConvention">Calling convention used for the generated delegates.</param>
+    /// <param name="timeout">Maximum time to wait for the worker's response.</param>
+    /// <returns>The handle allocated for this interface on this worker.</returns>
+    internal int LoadInterface(Type interfaceType, string dllPath, CallingConvention callingConvention, TimeSpan timeout)
     {
+        CrossProcessMarshaling.EnsureInterfaceIsSupported(interfaceType);
+
+        if (string.IsNullOrEmpty(interfaceType.Assembly.Location))
+        {
+            throw new NotSupportedException(
+                $"The assembly declaring '{interfaceType.FullName}' has no on-disk location (for example, " +
+                $"a single-file publish or an in-memory assembly), so it cannot be loaded by an isolated " +
+                $"Emit worker. Use LibraryMapper.EmitInProcess<T> instead.");
+        }
+
         var request = new WorkerRequest
         {
             Id = Interlocked.Increment(ref nextId),
@@ -139,65 +226,99 @@ internal sealed class EmitWorkerProcess : IDisposable
             CallingConvention = callingConvention,
         };
 
-        WorkerResponse response = SendAndReceive(request);
+        WorkerResponse response = SendAndReceive(request, timeout);
         ThrowIfFailed(response);
+        return response.Handle;
     }
 
     /// <summary>
-    /// Serializes <paramref name="args"/>, forwards the call to the worker, applies any by-ref/out
-    /// results back into <paramref name="args"/>, and returns the deserialized return value.
+    /// Releases the native mapping instance identified by <paramref name="handle"/> on the worker
+    /// (disposing it, unloading its native DLL), without shutting down the worker process itself — the
+    /// worker may still hold other interfaces loaded through <see cref="EmitWorkerPool"/>. Best-effort:
+    /// swallows failures, since there is nothing more the caller can do with a handle it is done with
+    /// either way.
     /// </summary>
+    /// <param name="handle">Handle previously returned by <see cref="LoadInterface"/>.</param>
+    internal void UnloadInterface(int handle)
+    {
+        if (disposed)
+        {
+            return;
+        }
+
+        var request = new WorkerRequest { Id = Interlocked.Increment(ref nextId), Kind = WorkerRequestKind.Unload, Handle = handle };
+
+        try
+        {
+            SendAndReceive(request, callTimeout);
+        }
+        catch
+        {
+            // Best-effort: a failed/timed-out Unload leaves the worker holding a now-unreferenced
+            // instance until the worker itself is eventually disposed; not ideal, but not observable
+            // by the caller, who has already discarded the handle either way.
+        }
+    }
+
+    /// <summary>
+    /// Serializes <paramref name="args"/>, forwards the call to the worker for the interface instance
+    /// identified by <paramref name="handle"/>, applies any by-ref/out results back into
+    /// <paramref name="args"/>, and returns the deserialized return value.
+    /// </summary>
+    /// <remarks>
+    /// Safe to call concurrently from multiple threads, including for different <paramref name="handle"/>
+    /// values on a worker shared through <see cref="EmitWorkerPool"/>: each call gets its own
+    /// <see cref="WorkerRequest.Id"/> and is independently correlated to its response by
+    /// <see cref="RunReaderLoop"/>, and the worker dispatches each request it receives to the thread pool
+    /// rather than serializing them (see <see cref="EmitWorkerHost.Run"/>). Concurrent calls that target
+    /// the very same <paramref name="handle"/> race exactly as concurrent calls into the same native
+    /// library would in-process — safe only if that library itself tolerates concurrent calls.
+    /// </remarks>
+    /// <param name="handle">Handle of the target interface instance, as returned by <see cref="LoadInterface"/>.</param>
     /// <param name="method">Interface method being invoked, resolved by the caller's <see cref="System.Reflection.DispatchProxy"/>.</param>
     /// <param name="args">Argument values, in parameter order; by-ref/out slots are updated in place.</param>
     /// <returns>The method's return value, or <see langword="null"/> for <see langword="void"/> methods.</returns>
-    internal object? InvokeMethod(MethodInfo method, object?[] args)
+    internal object? InvokeMethod(int handle, MethodInfo method, object?[] args)
     {
         ObjectDisposedException.ThrowIf(disposed, this);
 
-        callLock.Wait();
-        try
+        ParameterInfo[] parameters = method.GetParameters();
+        string?[] argumentsJson = new string?[parameters.Length];
+        for (int i = 0; i < parameters.Length; i++)
         {
-            ParameterInfo[] parameters = method.GetParameters();
-            string?[] argumentsJson = new string?[parameters.Length];
-            for (int i = 0; i < parameters.Length; i++)
-            {
-                Type parameterType = parameters[i].ParameterType;
-                Type effectiveType = parameterType.IsByRef ? parameterType.GetElementType()! : parameterType;
-                argumentsJson[i] = JsonSerializer.Serialize(args[i], effectiveType, CrossProcessMarshaling.JsonOptions);
-            }
-
-            var request = new WorkerRequest
-            {
-                Id = Interlocked.Increment(ref nextId),
-                Kind = WorkerRequestKind.Call,
-                MethodMetadataToken = method.MetadataToken,
-                ArgumentsJson = argumentsJson,
-            };
-
-            WorkerResponse response = SendAndReceive(request);
-            ThrowIfFailed(response, method.Name);
-
-            for (int i = 0; i < parameters.Length; i++)
-            {
-                if (parameters[i].ParameterType.IsByRef)
-                {
-                    Type effectiveType = parameters[i].ParameterType.GetElementType()!;
-                    string? valueJson = response.ByRefValuesJson is { } values && i < values.Length ? values[i] : null;
-                    args[i] = valueJson is null ? null : JsonSerializer.Deserialize(valueJson, effectiveType, CrossProcessMarshaling.JsonOptions);
-                }
-            }
-
-            if (method.ReturnType == typeof(void) || response.ReturnValueJson is null)
-            {
-                return null;
-            }
-
-            return JsonSerializer.Deserialize(response.ReturnValueJson, method.ReturnType, CrossProcessMarshaling.JsonOptions);
+            Type parameterType = parameters[i].ParameterType;
+            Type effectiveType = parameterType.IsByRef ? parameterType.GetElementType()! : parameterType;
+            argumentsJson[i] = JsonSerializer.Serialize(args[i], effectiveType, CrossProcessMarshaling.JsonOptions);
         }
-        finally
+
+        var request = new WorkerRequest
         {
-            callLock.Release();
+            Id = Interlocked.Increment(ref nextId),
+            Kind = WorkerRequestKind.Call,
+            Handle = handle,
+            MethodMetadataToken = method.MetadataToken,
+            ArgumentsJson = argumentsJson,
+        };
+
+        WorkerResponse response = SendAndReceive(request, callTimeout);
+        ThrowIfFailed(response, method.Name);
+
+        for (int i = 0; i < parameters.Length; i++)
+        {
+            if (parameters[i].ParameterType.IsByRef)
+            {
+                Type effectiveType = parameters[i].ParameterType.GetElementType()!;
+                string? valueJson = response.ByRefValuesJson is { } values && i < values.Length ? values[i] : null;
+                args[i] = valueJson is null ? null : JsonSerializer.Deserialize(valueJson, effectiveType, CrossProcessMarshaling.JsonOptions);
+            }
         }
+
+        if (method.ReturnType == typeof(void) || response.ReturnValueJson is null)
+        {
+            return null;
+        }
+
+        return JsonSerializer.Deserialize(response.ReturnValueJson, method.ReturnType, CrossProcessMarshaling.JsonOptions);
     }
 
     private static void ThrowIfFailed(WorkerResponse response, string? methodName = null)
@@ -207,19 +328,144 @@ internal sealed class EmitWorkerProcess : IDisposable
             string context = methodName is null ? "the Load request" : $"'{methodName}'";
             throw new EmitWorkerInvocationException(
                 $"The isolated Emit worker reported an error while handling {context}: {response.ErrorMessage}",
-                response.ErrorTypeName);
+                response.ErrorTypeName,
+                response.ErrorStackTrace);
         }
     }
 
-    private WorkerResponse SendAndReceive(WorkerRequest request)
+    /// <summary>
+    /// Writes <paramref name="request"/> and waits for its matching response, up to
+    /// <paramref name="timeout"/>, without blocking any other concurrently in-flight request on this
+    /// worker.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Registers a <see cref="TaskCompletionSource{TResult}"/> under <see cref="WorkerRequest.Id"/>
+    /// before writing the request line (guarded by <see cref="writeLock"/> only for the duration of the
+    /// write itself, to avoid interleaving concurrent writers on the shared pipe — never held while
+    /// waiting for the response). <see cref="RunReaderLoop"/> completes it once the matching response
+    /// line arrives.
+    /// </para>
+    /// <para>
+    /// On timeout, only <em>this</em> request's <see cref="TaskCompletionSource{TResult}"/> is
+    /// abandoned; the worker process and every other in-flight request are left untouched. This is safe
+    /// specifically because responses are correlated by id — a late response for the timed-out request
+    /// simply finds no matching pending entry once it eventually arrives and is silently dropped, rather
+    /// than being misread as the response to a different, still-pending request. (Before requests were
+    /// individually correlated, any single timeout had to assume the worst and kill the whole worker; see
+    /// the superseded <c>PoisonAfterTimeout</c> note in <c>Utils.Reflection/TODO.md</c> item 28/34.) The
+    /// worker-side native call behind a timed-out request keeps running to completion on its own
+    /// thread-pool thread inside the worker (see <see cref="EmitWorkerHost.Run"/>) — abandoned, not
+    /// cancelled — until it finishes and its answer is dropped for lack of a listener.
+    /// </para>
+    /// </remarks>
+    /// <param name="request">Request to send.</param>
+    /// <param name="timeout">Maximum time to wait for the response.</param>
+    /// <returns>The deserialized response.</returns>
+    /// <exception cref="TimeoutException">Thrown when the worker does not respond within <paramref name="timeout"/>.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the worker's connection has already failed.</exception>
+    private WorkerResponse SendAndReceive(WorkerRequest request, TimeSpan timeout)
     {
-        writer.WriteLine(JsonSerializer.Serialize(request));
+        if (connectionFault is { } fault)
+        {
+            throw new InvalidOperationException("The isolated Emit worker's connection has already failed.", fault);
+        }
 
-        string? line = reader.ReadLine()
-            ?? throw new InvalidOperationException("The isolated Emit worker closed the connection unexpectedly.");
+        var completion = new TaskCompletionSource<WorkerResponse>(TaskCreationOptions.RunContinuationsAsynchronously);
+        if (!pending.TryAdd(request.Id, completion))
+        {
+            throw new InvalidOperationException($"An in-flight request with id {request.Id} already exists.");
+        }
 
-        return JsonSerializer.Deserialize<WorkerResponse>(line)
-            ?? throw new InvalidOperationException("The isolated Emit worker returned an invalid response.");
+        lock (writeLock)
+        {
+            writer.WriteLine(JsonSerializer.Serialize(request));
+        }
+
+        using var timeoutSource = new CancellationTokenSource(timeout);
+        using CancellationTokenRegistration registration = timeoutSource.Token.Register(() =>
+        {
+            if (pending.TryRemove(request.Id, out TaskCompletionSource<WorkerResponse>? timedOut))
+            {
+                timedOut.TrySetCanceled(timeoutSource.Token);
+            }
+        });
+
+        try
+        {
+            return completion.Task.GetAwaiter().GetResult();
+        }
+        catch (OperationCanceledException)
+        {
+            throw new TimeoutException(
+                $"The isolated Emit worker did not respond to a '{request.Kind}' request within {timeout}.");
+        }
+    }
+
+    /// <summary>
+    /// Continuously reads response lines for the lifetime of the connection and completes the matching
+    /// <see cref="TaskCompletionSource{TResult}"/> registered by <see cref="SendAndReceive"/>, so several
+    /// requests can be in flight at once instead of one at a time.
+    /// </summary>
+    /// <remarks>
+    /// When the loop ends — the worker closed the connection (<c>ReadLine</c> returns <see langword="null"/>)
+    /// or the read faulted (broken pipe, disposed stream) — every still-pending request fails with that
+    /// cause via <see cref="FailAllPending"/>, and, unless this was already a deliberate <see cref="Dispose"/>
+    /// (which handles the worker process itself), the worker process is killed so it cannot linger as an
+    /// unreachable orphan.
+    /// </remarks>
+    private void RunReaderLoop()
+    {
+        Exception fault;
+        try
+        {
+            string? line;
+            while ((line = reader.ReadLine()) is not null)
+            {
+                WorkerResponse? response;
+                try
+                {
+                    response = JsonSerializer.Deserialize<WorkerResponse>(line);
+                }
+                catch (JsonException)
+                {
+                    // A malformed line should never happen with a well-behaved worker; ignore it rather
+                    // than tearing down every in-flight request over a single corrupted message.
+                    continue;
+                }
+
+                if (response is not null && pending.TryRemove(response.Id, out TaskCompletionSource<WorkerResponse>? completion))
+                {
+                    completion.TrySetResult(response);
+                }
+            }
+
+            fault = new InvalidOperationException("The isolated Emit worker closed the connection unexpectedly.");
+        }
+        catch (Exception ex)
+        {
+            fault = ex;
+        }
+
+        connectionFault = fault;
+        FailAllPending(fault);
+
+        if (!disposed)
+        {
+            KillSilently(workerProcess);
+            sandbox?.Dispose();
+        }
+    }
+
+    private void FailAllPending(Exception fault)
+    {
+        foreach (int id in pending.Keys)
+        {
+            if (pending.TryRemove(id, out TaskCompletionSource<WorkerResponse>? completion))
+            {
+                completion.TrySetException(fault);
+            }
+        }
     }
 
     /// <summary>
@@ -338,7 +584,7 @@ internal sealed class EmitWorkerProcess : IDisposable
     /// <see cref="ProcessIsolation.LinuxBubblewrapContainer"/> mounts a fresh, empty <c>tmpfs</c> over
     /// <c>/tmp</c> and <see cref="ProcessIsolation.MacOsSandboxExecContainer"/> denies
     /// <c>file-write*</c>, so the sandboxed worker can never see or connect to the socket and
-    /// <see cref="Start"/> always fails with a connection timeout. Broader than a single-socket bind
+    /// <see cref="Start(TimeSpan?)"/> always fails with a connection timeout. Broader than a single-socket bind
     /// would be, but scoping the sandbox to that one path would require extending
     /// <see cref="IProcessContainer"/> beyond what can be validated without a real Linux/macOS
     /// environment — see the equivalent trade-off already documented for
@@ -394,7 +640,7 @@ internal sealed class EmitWorkerProcess : IDisposable
                 var shutdown = new WorkerRequest { Id = Interlocked.Increment(ref nextId), Kind = WorkerRequestKind.Shutdown };
                 try
                 {
-                    SendAndReceive(shutdown);
+                    SendAndReceive(shutdown, ShutdownTimeout);
                 }
                 catch
                 {
@@ -413,6 +659,17 @@ internal sealed class EmitWorkerProcess : IDisposable
         KillSilently(workerProcess);
 
         sandbox?.Dispose();
-        callLock.Dispose();
+
+        // Best-effort: give the background reader loop a moment to observe the disposed reader and
+        // exit cleanly. Not awaited indefinitely — Dispose must not block on a stuck reader loop.
+        try
+        {
+            readerLoop.Wait(TimeSpan.FromSeconds(1));
+        }
+        catch
+        {
+            // Best-effort; the loop will still exit on its own once the disposed reader faults its
+            // in-flight read, even if this Dispose call doesn't wait around to see it.
+        }
     }
 }

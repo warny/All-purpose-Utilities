@@ -4,6 +4,38 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed — `omy.Utils.Reflection` (BREAKING, v1.2.1 → 2.0.0)
+- **`LibraryMapper.Emit<TInterface>` now runs in an isolated, sandboxed worker process by default**,
+  instead of compiling and loading the generated mapping class directly in the calling process. Same
+  method signature, different runtime behavior and requirements:
+  - Host applications must call `LibraryMapper.RunWorkerIfRequested(args)` as the very first statement
+    of their entry point, before any other startup logic, or `Emit<TInterface>` fails to start the worker.
+  - Only interfaces whose members use JSON-representable types (primitives, `string`, enums, and
+    arrays/structs made of these) can be mapped this way; `Emit<TInterface>` now throws
+    `NotSupportedException` immediately for interfaces using `IntPtr`/pointers/handles or arbitrary
+    reference types, which previously worked (in-process, without isolation).
+  - Every call now round-trips over a named pipe (JSON serialization both ways) instead of a direct
+    in-process delegate call, with a real performance cost per call.
+  - The original unsandboxed behavior is preserved as `LibraryMapper.EmitInProcess<TInterface>` (and
+    `EmitDllMappableClass.Emit`), gated behind `[Experimental("UTILSREFL001")]` — callers must
+    explicitly acknowledge the code-injection risk documented on that method to keep using it.
+- `ProcessContainerPermissions.Default` is now a fresh, immutable instance per access instead of a
+  shared mutable singleton; all properties are `init`-only.
+
+### Added — `omy.Utils.Reflection`
+- `LibraryMapper.Emit<TInterface>` gains optional `loadTimeout`/`callTimeout` parameters; the isolated
+  worker's Load/Call/Shutdown requests are now bounded (30s/30s/5s by default) instead of blocking
+  indefinitely on a hung native call.
+- `EmitWorkerPool`: opt-in sharing of a single isolated worker process across several mapped interfaces,
+  trading some isolation between them for a lower per-interface process-spawn cost.
+  `LibraryMapper.Emit<TInterface>` itself is unchanged (still one worker per interface by default).
+- `ProcessIsolation` hardening: sandboxed child environment allowlisting (`SandboxedProcessEnvironment`,
+  now applied to the Windows AppContainer worker as well as Linux/macOS), `AppContainerSandbox` Job
+  Object failure handling, `PATHEXT`-aware `CommandAvailability.Exists`.
+- `EmitDllMappableClass`/`LibraryMapper.Emit` reject generic interfaces and generic methods upfront with
+  a clear error, instead of failing later with a cryptic Roslyn diagnostic.
+- `Platform.IsMacOS` alias for `Platform.IsMacOsX`.
+
 ### Added — `omy.Utils.NumberToString`
 - **Ordinaux EL** : Grec — word rules pour masculin (défaut) + `OrdinalVariants` gender=θηλυκό et gender=ουδέτερο pour 1-12, dizaines et centaines.
 - **Ordinaux FI** : Finnois — word rules exhaustives pour toutes les formes (unités 1-9, exceptions 11-19, dizaines 20-90, centaines, туhat).

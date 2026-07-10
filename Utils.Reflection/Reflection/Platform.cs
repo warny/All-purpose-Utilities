@@ -180,6 +180,16 @@ namespace Utils.Reflection
         /// - On Windows it is 4 bytes, regardless of x86/x64.
         /// This value can be overridden by setter if needed.
         /// </summary>
+        /// <remarks>
+        /// <b>Not thread-safe.</b> This is process-wide mutable state, not scoped to a caller or a
+        /// single library binding: setting it from one component (for example, one PKCS#11 provider
+        /// with unusual struct layout needs) changes the value observed by every other concurrent
+        /// consumer of <see cref="Platform"/> in the same process, including ones that never touched
+        /// this property themselves. There is no synchronization around reads/writes, so a set racing
+        /// with a get from another thread is also a plain (if usually benign, given <see langword="int"/>
+        /// writes are atomic on supported platforms) data race. Only set this once, as early as
+        /// possible during startup, before any other code that might read it runs concurrently.
+        /// </remarks>
         public static int NativeULongSize
         {
             get => _nativeULongSize;
@@ -217,6 +227,11 @@ namespace Utils.Reflection
         /// - On Unix-like platforms, they are usually packed with default alignment (0).
         /// This can be overridden by setter if needed.
         /// </summary>
+        /// <remarks>
+        /// <b>Not thread-safe</b> — see the identical caveat on <see cref="NativeULongSize"/>: this is
+        /// process-wide mutable state shared by every consumer of <see cref="Platform"/>, with no
+        /// synchronization. Only set this once, as early as possible during startup.
+        /// </remarks>
         public static int StructPackingSize
         {
             get => _structPackingSize;

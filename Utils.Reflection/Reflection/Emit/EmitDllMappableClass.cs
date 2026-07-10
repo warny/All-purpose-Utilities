@@ -63,11 +63,17 @@ public static class EmitDllMappableClass
     /// <param name="type">Interface type</param>
     /// <param name="callingConvention">The calling convention of the unmanaged functions.</param>
     /// <returns>An instance of the dynamically generated class</returns>
+    /// <exception cref="NotSupportedException">
+    /// Thrown when <paramref name="type"/> is not an interface, or is a generic interface, or declares a
+    /// generic method.
+    /// </exception>
     [Experimental(LibraryMapper.CodeGenerationExperimentalDiagnosticId)]
     public static object Emit(Type type, CallingConvention callingConvention = CallingConvention.Winapi)
     {
         if (!type.IsInterface)
             throw new NotSupportedException($"{type.Name} is not an interface. Only interfaces are supported.");
+
+        EnsureNotGeneric(type);
 
         Lazy<Type> lazyEmittedType = emittedLibraries.GetOrAdd(
             (type, callingConvention),
@@ -76,6 +82,45 @@ public static class EmitDllMappableClass
                 LazyThreadSafetyMode.ExecutionAndPublication));
 
         return Activator.CreateInstance(lazyEmittedType.Value);
+    }
+
+    /// <summary>
+    /// Rejects generic interfaces and interfaces declaring generic methods before any code generation
+    /// is attempted.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="CompileMappingType"/> writes <see cref="Type.FullName"/>/<see cref="MethodInfo"/>
+    /// signatures directly into generated C# source (see <see cref="WriteFunctionParameters"/>). For a
+    /// generic type/method, those names use CLR metadata syntax (backticks, arity markers like
+    /// <c>`1</c>, open type parameter placeholders) that is not valid C# source — compilation would fail
+    /// with a cryptic Roslyn diagnostic pointing at the generated (invisible to the caller) source file
+    /// instead of a clear message about the actual problem. Checked upfront so the failure is immediate
+    /// and its cause obvious.
+    /// </remarks>
+    /// <param name="type">Interface type to validate.</param>
+    /// <exception cref="NotSupportedException">
+    /// Thrown when <paramref name="type"/> is a generic interface, or declares at least one generic method.
+    /// </exception>
+    private static void EnsureNotGeneric(Type type)
+    {
+        if (type.IsGenericType || type.IsGenericTypeDefinition)
+        {
+            throw new NotSupportedException(
+                $"'{type.FullName}' is a generic interface, which is not supported: generic type " +
+                $"arguments produce CLR metadata names (backticks, arity) that are not valid C# source " +
+                $"identifiers when emitting the mapping class.");
+        }
+
+        foreach (MethodInfo method in type.GetMethods())
+        {
+            if (method.IsGenericMethodDefinition)
+            {
+                throw new NotSupportedException(
+                    $"'{type.FullName}.{method.Name}' is a generic method, which is not supported for " +
+                    $"the same reason generic interfaces are not: its CLR metadata name is not valid C# " +
+                    $"source when emitting the mapping class.");
+            }
+        }
     }
 
     /// <summary>
@@ -136,12 +181,28 @@ public static class EmitDllMappableClass
         string delegateName = methodInfo.Name + "Delegate";
         // Emit [UnmanagedFunctionPointer] so the P/Invoke marshaller uses the correct calling convention.
         csCode.AppendLine($"\t\t[{typeof(UnmanagedFunctionPointerAttribute).FullName}({typeof(CallingConvention).FullName}.{callingConvention})]");
-        csCode.Append($"\t\tprivate delegate {methodInfo.ReturnType.FullName} {delegateName} ");
+        csCode.Append($"\t\tprivate delegate {GetReturnTypeName(methodInfo.ReturnType)} {delegateName} ");
         csCode.WriteFunctionParameters(methodInfo, true);
         csCode.AppendLine(";");
 
         return delegateName;
     }
+
+    /// <summary>
+    /// Returns the C# source spelling of <paramref name="returnType"/> for use as a delegate/method
+    /// return type in generated code.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="Type.FullName"/> for <see langword="void"/> is the CLR metadata name
+    /// <c>"System.Void"</c>, which is not valid C# source in a return-type position — only the
+    /// <c>void</c> keyword is (<c>System.Void</c> is otherwise a normal, if unusable-by-hand, struct
+    /// type). Every other return type is unaffected: its <see cref="Type.FullName"/> is already valid
+    /// C# source, exactly as used everywhere else in this generator.
+    /// </remarks>
+    /// <param name="returnType">Return type to spell out.</param>
+    /// <returns><c>"void"</c> for <see langword="void"/>; otherwise <paramref name="returnType"/>'s <see cref="Type.FullName"/>.</returns>
+    private static string GetReturnTypeName(Type returnType) =>
+        returnType == typeof(void) ? "void" : returnType.FullName!;
 
     /// <summary>
     /// Writes the function parameters for a method to the provided StringBuilder.
@@ -220,7 +281,7 @@ public static class EmitDllMappableClass
     /// <param name="delegateFieldName">The name of the delegate field</param>
     private static void WriteFunctionCall(this StringBuilder csCode, MethodInfo methodInfo, string delegateFieldName)
     {
-        csCode.Append("public ").Append(methodInfo.ReturnType.FullName).Append(" ").Append(methodInfo.Name);
+        csCode.Append("public ").Append(GetReturnTypeName(methodInfo.ReturnType)).Append(" ").Append(methodInfo.Name);
         csCode.WriteFunctionParameters(methodInfo, true);
         csCode.Append(" => ").Append(delegateFieldName);
         csCode.WriteFunctionParameters(methodInfo, false);

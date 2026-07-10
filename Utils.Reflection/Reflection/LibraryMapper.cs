@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.IO.Pipes;
@@ -75,18 +76,35 @@ namespace Utils.Reflection
         /// <typeparam name="TInterface">The interface that defines the functions to map.</typeparam>
         /// <param name="dllPath">The path to the DLL.</param>
         /// <param name="callingConvention">The calling convention of the functions.</param>
+        /// <param name="loadTimeout">
+        /// Maximum time to wait for the worker to load <paramref name="dllPath"/> and emit the mapping
+        /// class before giving up and killing it. Defaults to 30 seconds when <see langword="null"/>.
+        /// </param>
+        /// <param name="callTimeout">
+        /// Maximum time to wait for the worker's response to each native call forwarded through the
+        /// returned proxy before giving up and killing it. Defaults to 30 seconds when
+        /// <see langword="null"/>. A hung native call inside the worker would otherwise block the
+        /// calling thread indefinitely, with no way to recover.
+        /// </param>
         /// <returns>A proxy implementing <typeparamref name="TInterface"/> that forwards every call to the isolated worker.</returns>
         /// <exception cref="NotSupportedException">
         /// Thrown when <typeparamref name="TInterface"/> uses a type that cannot cross a process boundary.
         /// </exception>
-        public static TInterface Emit<TInterface>(string dllPath, CallingConvention callingConvention)
+        /// <exception cref="TimeoutException">
+        /// Thrown by this method (initial load) or by the returned proxy's members (subsequent calls)
+        /// when the worker does not respond within <paramref name="loadTimeout"/>/<paramref name="callTimeout"/>.
+        /// The worker is killed and the proxy becomes unusable when this happens.
+        /// </exception>
+        public static TInterface Emit<TInterface>(
+            string dllPath, CallingConvention callingConvention,
+            TimeSpan? loadTimeout = null, TimeSpan? callTimeout = null)
             where TInterface : class, IDisposable
         {
-            EmitWorkerProcess worker = EmitWorkerProcess.Start(typeof(TInterface), dllPath, callingConvention);
+            EmitWorkerProcess worker = EmitWorkerProcess.Start(typeof(TInterface), dllPath, callingConvention, loadTimeout, callTimeout, out int handle);
             try
             {
                 TInterface proxy = DispatchProxy.Create<TInterface, EmitWorkerProxy>();
-                ((EmitWorkerProxy)(object)proxy).AttachWorker(worker);
+                ((EmitWorkerProxy)(object)proxy).AttachWorker(worker, handle, ownsWorker: true);
                 return proxy;
             }
             catch
@@ -94,6 +112,77 @@ namespace Utils.Reflection
                 worker.Dispose();
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Like <see cref="Emit{TInterface}"/>, but spreads calls across <paramref name="workerCount"/>
+        /// independent isolated worker processes instead of one, picking the next one in round-robin
+        /// order for every call.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <see cref="Emit{TInterface}"/>'s single worker already accepts several calls in flight at
+        /// once (see <see cref="EmitWorkerProcess.InvokeMethod"/>) — but every one of them still ends up
+        /// executing inside the very same worker process, so the native library backing
+        /// <typeparamref name="TInterface"/> must itself be safe to call concurrently for that to be
+        /// safe. Round-robining across <paramref name="workerCount"/> separate processes instead avoids
+        /// that requirement entirely: each process has its own independent load of the native DLL, so
+        /// concurrent calls can never race inside the same one. The trade-off is cost: this starts
+        /// <paramref name="workerCount"/> full sandboxed worker processes up front (each paying the same
+        /// per-process startup cost as a single <see cref="Emit{TInterface}"/> call), not one.
+        /// </para>
+        /// <para>
+        /// The set of workers is fixed for the lifetime of the returned proxy — there is no dynamic
+        /// scaling, health-checking, or replacement of a worker that dies mid-flight; a dead worker's
+        /// share of subsequent round-robin turns simply starts failing with whatever exception
+        /// <see cref="EmitWorkerProcess.InvokeMethod"/> raises for it (typically an
+        /// <see cref="InvalidOperationException"/> once its connection is detected as broken). Disposing
+        /// the returned proxy disposes every worker in the set.
+        /// </para>
+        /// </remarks>
+        /// <typeparam name="TInterface">The interface that defines the functions to map.</typeparam>
+        /// <param name="dllPath">The path to the DLL.</param>
+        /// <param name="callingConvention">The calling convention of the functions.</param>
+        /// <param name="workerCount">Number of independent worker processes to round-robin across. Must be at least 1.</param>
+        /// <param name="loadTimeout">Maximum time to wait for each worker's response to its load request. Defaults to 30 seconds when <see langword="null"/>.</param>
+        /// <param name="callTimeout">Maximum time to wait for a worker's response to each forwarded call. Defaults to 30 seconds when <see langword="null"/>.</param>
+        /// <returns>A proxy implementing <typeparamref name="TInterface"/> that forwards each call to the next worker in round-robin order.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="workerCount"/> is less than 1.</exception>
+        /// <exception cref="NotSupportedException">
+        /// Thrown when <typeparamref name="TInterface"/> uses a type that cannot cross a process boundary.
+        /// </exception>
+        public static TInterface EmitRoundRobin<TInterface>(
+            string dllPath, CallingConvention callingConvention, int workerCount,
+            TimeSpan? loadTimeout = null, TimeSpan? callTimeout = null)
+            where TInterface : class, IDisposable
+        {
+            if (workerCount < 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(workerCount), workerCount, "At least one round-robin worker is required.");
+            }
+
+            var created = new List<(EmitWorkerProcess Worker, int Handle)>(workerCount);
+            try
+            {
+                for (int i = 0; i < workerCount; i++)
+                {
+                    EmitWorkerProcess worker = EmitWorkerProcess.Start(typeof(TInterface), dllPath, callingConvention, loadTimeout, callTimeout, out int handle);
+                    created.Add((worker, handle));
+                }
+            }
+            catch
+            {
+                foreach ((EmitWorkerProcess worker, _) in created)
+                {
+                    worker.Dispose();
+                }
+
+                throw;
+            }
+
+            TInterface proxy = DispatchProxy.Create<TInterface, EmitWorkerRoundRobinProxy>();
+            ((EmitWorkerRoundRobinProxy)(object)proxy).AttachWorkers([.. created]);
+            return proxy;
         }
 
         /// <summary>
