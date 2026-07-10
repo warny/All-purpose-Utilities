@@ -634,11 +634,11 @@ public class Antlr4GrammarGeneratorDiagnosticsTests
 
     /// <summary>Verifies invalid list-label returns, lifecycle locations, writes, and ambiguity are diagnosed.</summary>
     [DataTestMethod]
-    [DataRow("@after { Seen = $xs.missing; }", "xs+=child", "List-label parser attribute '$xs.missing' is not supported")]
+    [DataRow("@after { Seen = $xs.missing; }", "xs+=child", "Return 'missing' is not declared by every parser rule referenced by list label 'xs'")]
     [DataRow("@after { $xs.value = 1; }", "xs+=child", "writes are not supported")]
-    [DataRow("@init { Seen = $xs.value; }", "xs+=child", "List-label parser attribute '$xs.value' is not supported")]
+    [DataRow("@init { Seen = $xs.value; }", "xs+=child", "List label 'xs' is not available in @init")]
     [DataRow(": { return $xs.value.Count > 0; }? xs+=child", null, "not supported in semantic predicates")]
-    [DataRow("@after { Seen = $x.value; }", "x=child | x+=child", "List-label parser attribute '$x.value' is not supported")]
+    [DataRow("@after { Seen = $x.value; }", "x=child | x+=child", "used as both assignment and list label")]
     public void GeneratorDiagnostics_InvalidListParserAttribute_ReportsDedicatedError(string ruleFragment, string? content, string expectedMessage)
     {
         string grammar = $$"""

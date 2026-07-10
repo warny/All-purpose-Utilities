@@ -141,11 +141,7 @@ internal static class EmbeddedParserAttributeRewriter
             bool isUnambiguousListRoot = labels.TryGetValue(root, out RuleLabelTargets? earlyLabel)
                 && earlyLabel.Assignments.Count == 0
                 && earlyLabel.List.Count > 0;
-            bool continuesWithSupportedListMember = isUnambiguousListRoot
-                && next < code.Length
-                && code[next] == '.'
-                && (IsMemberName(code, next + 1, "Count") || IsMemberName(code, next + 1, "Select"));
-            if (next < code.Length && code[next] == '.' && !continuesWithSupportedListMember)
+            if (next < code.Length && code[next] == '.' && !isUnambiguousListRoot)
             {
                 errors.Add($"Chained parser attribute '{attributeText}' is not supported.");
                 output.Append(code, attributeStart, index - attributeStart);
@@ -200,7 +196,10 @@ internal static class EmbeddedParserAttributeRewriter
                 continue;
             }
 
-            if (!TryRewriteAssignmentLabelReturn(grammar, locationKind, errors, output, root, returnName, attributeText, label))
+            bool rewritten = label.List.Count > 0
+                ? TryRewriteListLabelReturn(grammar, locationKind, errors, output, root, returnName, attributeText, label)
+                : TryRewriteAssignmentLabelReturn(grammar, locationKind, errors, output, root, returnName, attributeText, label);
+            if (!rewritten)
             {
                 output.Append(code, attributeStart, index - attributeStart);
             }
@@ -342,6 +341,80 @@ internal static class EmbeddedParserAttributeRewriter
         return true;
     }
 
+
+    /// <summary>
+    /// Rewrites one supported list-label child return read to the generated helper API.
+    /// </summary>
+    /// <param name="grammar">Grammar that owns the current parser rule.</param>
+    /// <param name="locationKind">Embedded-code lifecycle location.</param>
+    /// <param name="errors">Destination for deterministic diagnostics.</param>
+    /// <param name="output">Destination for rewritten C#.</param>
+    /// <param name="labelName">Visible list label name.</param>
+    /// <param name="returnName">Requested child return name.</param>
+    /// <param name="attributeText">Original attribute text for diagnostics.</param>
+    /// <param name="label">Collected label targets for <paramref name="labelName"/>.</param>
+    /// <returns><c>true</c> when the caller should not copy the original attribute text.</returns>
+    private static bool TryRewriteListLabelReturn(
+        G4Grammar grammar,
+        EmbeddedParserAttributeLocationKind locationKind,
+        List<string> errors,
+        StringBuilder output,
+        string labelName,
+        string returnName,
+        string attributeText,
+        RuleLabelTargets label)
+    {
+        if (label.Assignments.Count > 0)
+        {
+            errors.Add($"Parser attribute root '{labelName}' is ambiguous because it is used as both assignment and list label. Use explicit helper APIs.");
+            return false;
+        }
+
+        if (locationKind == EmbeddedParserAttributeLocationKind.Init)
+        {
+            errors.Add($"List label '{labelName}' is not available in @init. Labeled child rule-call returns can be read only after the child rule call succeeds.");
+            return false;
+        }
+
+        if (label.List.Count == 0)
+        {
+            errors.Add($"Parser attribute root '{labelName}' is not a visible list rule-reference label.");
+            return false;
+        }
+
+        var targetRules = new List<G4Rule>();
+        foreach (RuleLabelTarget listTarget in label.List)
+        {
+            G4Rule? targetRule = grammar.ParserRules.FirstOrDefault(candidate => string.Equals(candidate.Name, listTarget.RuleName, StringComparison.Ordinal));
+            if (targetRule is null)
+            {
+                errors.Add($"Token/list label '{labelName}' cannot be used as a parser rule-return attribute.");
+                return false;
+            }
+
+            targetRules.Add(targetRule);
+        }
+
+        List<string> missingReturnRules = targetRules
+            .Where(targetRule => !ParseTypedDeclarations(targetRule.Returns).ContainsKey(returnName))
+            .Select(targetRule => targetRule.Name)
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+        if (missingReturnRules.Count > 0)
+        {
+            string missingRules = string.Join("', '", missingReturnRules);
+            string ruleText = missingReturnRules.Count == 1 ? $"parser rule '{missingRules}'" : $"parser rules '{missingRules}'";
+            errors.Add($"Return '{returnName}' is not declared by every parser rule referenced by list label '{labelName}'. Missing on {ruleText}.");
+            return false;
+        }
+
+        output.Append("GetLabeledRuleCallReturns(context, \"")
+            .Append(Escape(labelName))
+            .Append("\", \"")
+            .Append(Escape(returnName))
+            .Append("\")");
+        return true;
+    }
 
     /// <summary>
     /// Tries to rewrite a supported current-rule local write at the current parser attribute position.
@@ -1000,13 +1073,6 @@ internal static class EmbeddedParserAttributeRewriter
     private static bool StartsWith(string text, int index, string value)
     {
         return index >= 0 && index + value.Length <= text.Length && string.CompareOrdinal(text, index, value, 0, value.Length) == 0;
-    }
-
-    /// <summary>Tests whether an ordinal member name starts at an index and ends at an identifier boundary.</summary>
-    private static bool IsMemberName(string text, int index, string value)
-    {
-        return StartsWith(text, index, value)
-            && (index + value.Length >= text.Length || !IsIdentifierPart(text[index + value.Length]));
     }
 
     /// <summary>Determines whether a character can start the supported identifier form.</summary>
