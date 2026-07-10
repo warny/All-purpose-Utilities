@@ -200,7 +200,7 @@ internal static class EmbeddedParserAttributeRewriter
                 continue;
             }
 
-            if (!TryRewriteAssignmentLabelReturn(grammar, locationKind, errors, output, root, returnName, attributeText, label, attributeStart, index, code))
+            if (!TryRewriteAssignmentLabelReturn(grammar, locationKind, errors, output, root, returnName, attributeText, label))
             {
                 output.Append(code, attributeStart, index - attributeStart);
             }
@@ -279,9 +279,6 @@ internal static class EmbeddedParserAttributeRewriter
     /// <param name="returnName">Requested child return name.</param>
     /// <param name="attributeText">Original attribute text for diagnostics.</param>
     /// <param name="label">Collected label targets for <paramref name="labelName"/>.</param>
-    /// <param name="attributeStart">Start index of the attribute in <paramref name="code"/>.</param>
-    /// <param name="attributeEnd">End index of the parsed attribute in <paramref name="code"/>.</param>
-    /// <param name="code">Original embedded C# source.</param>
     /// <returns><c>true</c> when the caller should not copy the original attribute text.</returns>
     private static bool TryRewriteAssignmentLabelReturn(
         G4Grammar grammar,
@@ -291,10 +288,7 @@ internal static class EmbeddedParserAttributeRewriter
         string labelName,
         string returnName,
         string attributeText,
-        RuleLabelTargets label,
-        int attributeStart,
-        int attributeEnd,
-        string code)
+        RuleLabelTargets label)
     {
         if (label.List.Count > 0)
         {
