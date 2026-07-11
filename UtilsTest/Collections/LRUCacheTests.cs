@@ -1,6 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Utils.Collections;
 
 namespace UtilsTest.Collections;
@@ -66,5 +67,33 @@ public class LRUCacheTests
         cache.Add("x", 42);
         Assert.IsTrue(cache.Keys.Contains("x"));
         Assert.IsFalse(cache.Keys.Contains("y"));
+    }
+
+    [TestMethod]
+    public void Clear_RemovesAllEntries()
+    {
+        var cache = new LRUCache<int, string>(5);
+        cache.Add(1, "one");
+        cache.Add(2, "two");
+
+        cache.Clear();
+
+        Assert.AreEqual(0, cache.Count);
+        Assert.IsFalse(cache.ContainsKey(1));
+        Assert.IsFalse(cache.ContainsKey(2));
+    }
+
+    [TestMethod]
+    public void PublicMembers_AreNotMarkedSynchronized()
+    {
+        // LRUCache<K,V> is documented as not thread-safe. MethodImplOptions.Synchronized locks on
+        // `this`, which is misleading (and a race risk) when only some members carry it; guard
+        // against it silently creeping back onto a subset of members.
+        var type = typeof(LRUCache<int, string>);
+        foreach (var method in type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+        {
+            bool isSynchronized = (method.MethodImplementationFlags & MethodImplAttributes.Synchronized) != 0;
+            Assert.IsFalse(isSynchronized, $"{method.Name} should not be marked MethodImplOptions.Synchronized.");
+        }
     }
 }

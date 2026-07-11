@@ -1,6 +1,5 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 
 namespace Utils.Collections;
 
@@ -9,6 +8,12 @@ namespace Utils.Collections;
 /// </summary>
 /// <typeparam name="K">The type of keys in the cache.</typeparam>
 /// <typeparam name="V">The type of values in the cache.</typeparam>
+/// <remarks>
+/// This type is <b>not thread-safe</b>. Concurrent reads and writes from multiple threads (including
+/// enumeration via <see cref="GetEnumerator"/>, <see cref="Keys"/>, or <see cref="Values"/> while the
+/// cache is mutated) must be synchronized externally by the caller, for example with a single
+/// <see langword="lock"/> shared by all callers of a given instance.
+/// </remarks>
 public class LRUCache<K, V> : IDictionary<K, V>
     where K : notnull
 {
@@ -58,13 +63,11 @@ public class LRUCache<K, V> : IDictionary<K, V>
     /// <returns>The value associated with the specified key.</returns>
     public V this[K key]
     {
-        [MethodImpl(MethodImplOptions.Synchronized)]
         get
         {
             TryGetValue(key, out V value);
             return value;
         }
-        [MethodImpl(MethodImplOptions.Synchronized)]
         set
         {
             Remove(key);
@@ -97,7 +100,6 @@ public class LRUCache<K, V> : IDictionary<K, V>
     /// </summary>
     /// <param name="key">The key of the element to add.</param>
     /// <param name="value">The value of the element to add.</param>
-    [MethodImpl(MethodImplOptions.Synchronized)]
     public void Add(K key, V value)
     {
         if (cacheMap.Count >= capacity)
@@ -161,11 +163,8 @@ public class LRUCache<K, V> : IDictionary<K, V>
     /// </summary>
     public void Clear()
     {
-        lock (lruList)
-        {
-            lruList.Clear();
-            cacheMap.Clear();
-        }
+        lruList.Clear();
+        cacheMap.Clear();
     }
 
     /// <summary>
