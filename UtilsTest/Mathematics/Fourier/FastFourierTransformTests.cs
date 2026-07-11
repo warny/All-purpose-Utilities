@@ -60,6 +60,53 @@ public class FastFourierTransformTests
         Assert.ThrowsException<ArgumentException>(() => FastFourierTransform.Transform(samples));
     }
 
+    [TestMethod]
+    public void Transform_Null_ThrowsArgumentNullException()
+    {
+        // Regression: previously dereferenced array.Length before any guard ran, producing an
+        // incidental NullReferenceException instead of a documented ArgumentNullException.
+        Assert.ThrowsException<ArgumentNullException>(() => FastFourierTransform.Transform(null!));
+    }
+
+    [TestMethod]
+    public void Transform_ZeroLength_Throws()
+    {
+        // Zero is not a power of two under this library's IsPowerOfTwo (0 > 0 is false), so a
+        // zero-length array is rejected rather than silently treated as a no-op.
+        Assert.ThrowsException<ArgumentException>(() => FastFourierTransform.Transform(System.Array.Empty<Complex>()));
+    }
+
+    [TestMethod]
+    public void Transform_SingleElement_IsUnchanged()
+    {
+        // Length 1 is a power of two (2^0); the transform of a single sample is itself.
+        Complex[] samples = [Complex.Zero + 3];
+        FastFourierTransform.Transform(samples);
+        Assert.AreEqual(3.0, samples[0].Real, Delta);
+        Assert.AreEqual(0.0, samples[0].Imaginary, Delta);
+    }
+
+    [TestMethod]
+    public void Transform_16Samples_RoundTripsThroughInverse()
+    {
+        // Regression coverage for the scratch-buffer reuse fix: exercises more than one recursion
+        // level (16 = 2^4) to ensure every level's Separate call gets a correctly-sized slice of the
+        // single shared buffer rather than reading/writing past what it's entitled to.
+        int n = 16;
+        Complex[] original = new Complex[n];
+        for (int i = 0; i < n; i++) original[i] = new Complex(i, -i);
+        Complex[] samples = (Complex[])original.Clone();
+
+        FastFourierTransform.Transform(samples);
+        FastFourierTransform.InverseTransform(samples);
+
+        for (int i = 0; i < n; i++)
+        {
+            Assert.AreEqual(original[i].Real, samples[i].Real, Delta, $"real[{i}]");
+            Assert.AreEqual(original[i].Imaginary, samples[i].Imaginary, Delta, $"imag[{i}]");
+        }
+    }
+
     // ── Extensions ────────────────────────────────────────────────────────────
 
     [TestMethod]
@@ -168,5 +215,17 @@ public class FastFourierTransformTests
     {
         var spectrum = new Complex[3];
         Assert.ThrowsException<ArgumentException>(() => FastFourierTransform.InverseTransform(spectrum));
+    }
+
+    [TestMethod]
+    public void InverseTransform_Null_ThrowsArgumentNullException()
+    {
+        Assert.ThrowsException<ArgumentNullException>(() => FastFourierTransform.InverseTransform(null!));
+    }
+
+    [TestMethod]
+    public void InverseTransform_ZeroLength_Throws()
+    {
+        Assert.ThrowsException<ArgumentException>(() => FastFourierTransform.InverseTransform(System.Array.Empty<Complex>()));
     }
 }
