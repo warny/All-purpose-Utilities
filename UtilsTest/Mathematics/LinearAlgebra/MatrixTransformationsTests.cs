@@ -29,6 +29,39 @@ public class MatrixTransformationsTests
         Assert.AreEqual(1d, m.Determinant, Delta);
     }
 
+    // ── Diagonal ─────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void Diagonal_WithZeroEntry_IsStillTriangularAndDiagonal()
+    {
+        // A diagonal matrix with a zero entry is still diagonal and triangular by definition; only
+        // its invertibility/determinant is affected.
+        var m = MatrixTransformations.Diagonal<double>(2d, 0d, 3d);
+        Assert.IsTrue(m.IsDiagonal);
+        Assert.IsTrue(m.IsTriangular);
+        Assert.IsFalse(m.IsIdentity);
+        Assert.AreEqual(0d, m.Determinant, Delta);
+    }
+
+    [TestMethod]
+    public void Diagonal_MatchesMatrixDiagonalFactory()
+    {
+        var viaTransformations = MatrixTransformations.Diagonal<double>(2d, 0d, 3d);
+        var viaMatrix = Matrix<double>.Diagonal(2d, 0d, 3d);
+
+        for (int i = 0; i < 3; i++)
+            for (int j = 0; j < 3; j++)
+                Assert.AreEqual(viaMatrix[i, j], viaTransformations[i, j], Delta, $"[{i},{j}]");
+
+        Assert.AreEqual(viaMatrix.IsDiagonal, viaTransformations.IsDiagonal);
+        Assert.AreEqual(viaMatrix.IsTriangular, viaTransformations.IsTriangular);
+        Assert.AreEqual(viaMatrix.IsIdentity, viaTransformations.IsIdentity);
+    }
+
+    [TestMethod]
+    public void Diagonal_NoValues_Throws()
+        => Assert.ThrowsException<ArgumentException>(() => MatrixTransformations.Diagonal<double>());
+
     // ── Scaling ──────────────────────────────────────────────────────────────
 
     [TestMethod]

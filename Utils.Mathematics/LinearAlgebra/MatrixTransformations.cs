@@ -34,34 +34,18 @@ public static class MatrixTransformations
     /// <typeparam name="T">Numeric type of the matrix.</typeparam>
     /// <param name="values">Diagonal values.</param>
     /// <returns>New diagonal matrix.</returns>
+    /// <remarks>
+    /// Delegates to <see cref="Matrix{T}.Diagonal(IEnumerable{T})"/>, which is the single
+    /// implementation of diagonal-matrix construction: an earlier, independent implementation here
+    /// cached <c>isTriangular</c>/<c>isDiagonal</c> as <see langword="false"/> whenever any diagonal
+    /// value was zero, even though a matrix with zero diagonal entries is still diagonal and
+    /// triangular by definition (only its invertibility/determinant changes). Two independently
+    /// maintained factories for the same construction had already drifted into different, incorrect
+    /// behavior; keeping one implementation avoids a repeat.
+    /// </remarks>
     public static Matrix<T> Diagonal<T>(params IEnumerable<T> values)
         where T : struct, IFloatingPoint<T>, IRootFunctions<T>
-    {
-        T[] valuesArray = values.ToArray();
-        int dimension = valuesArray.Length;
-        var array = new T[dimension, dimension];
-        bool allOne = true;
-        bool oneZero = false;
-        T newDeterminant = T.One;
-        for (int i = 0; i < dimension; i++)
-        {
-            if (valuesArray[i] == T.Zero)
-            {
-                oneZero = true;
-                allOne = false;
-            }
-            else if (valuesArray[i] != T.One)
-            {
-                allOne = false;
-            }
-            for (int j = 0; j < dimension; j++)
-            {
-                array[i, j] = i == j ? valuesArray[i] : T.Zero;
-            }
-            newDeterminant *= valuesArray[i];
-        }
-        return new Matrix<T>(array, allOne, !oneZero, !oneZero, newDeterminant);
-    }
+        => Matrix<T>.Diagonal(values);
 
     /// <summary>
     /// Generates a scaling matrix.
