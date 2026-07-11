@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed — `omy.Utils.Mathematics` (BREAKING)
+- **`Matrix<T>.DiagonalizeLU()` now returns a 3-tuple `(L, U, P)` instead of `(L, U)`.** The previous
+  two-factor result was mathematically unable to reconstruct the original matrix whenever partial
+  pivoting swapped rows (the documented `A = L·U` identity only held for inputs that happened not to
+  need a pivot swap; the fix also corrected `L` itself, which previously held the product of the
+  elimination operators rather than the actual multiplier matrix). The new contract is `P * A = L * U`.
+  Existing call sites using a two-element deconstruction (`var (l, u) = matrix.DiagonalizeLU();`) will
+  fail to compile and must be updated to `var (l, u, p) = matrix.DiagonalizeLU();`. No package version
+  bump yet — tracked for the coordinated `omy.Utils.*` 2.0.0 batch release rather than an individual
+  bump.
+- `Solve`/`Invert` singularity checks now use a scale-aware relative pivot tolerance (derived from the
+  scalar type's own machine epsilon) instead of comparing to exact zero; both gained an optional
+  `relativeSingularityTolerance` parameter to override the default. A previously-accepted matrix whose
+  elimination pivot is merely close to zero (relative to the matrix's magnitude) now throws
+  `InvalidOperationException` instead of returning a huge/NaN result.
+
 ### Changed — `omy.Utils.Reflection` (BREAKING, v1.2.1 → 2.0.0)
 - **`LibraryMapper.Emit<TInterface>` now runs in an isolated, sandboxed worker process by default**,
   instead of compiling and loading the generated mapping class directly in the calling process. Same
