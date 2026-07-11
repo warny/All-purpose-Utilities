@@ -17,16 +17,19 @@ public sealed partial class Matrix<T>
     /// Only real symmetric matrices are supported; all eigenvalues of such matrices are guaranteed real.
     /// Eigenvalues are returned in descending order of absolute value.
     /// </remarks>
-    /// <param name="maxIterations">Maximum number of QR iterations before giving up.</param>
+    /// <param name="maxIterations">Maximum number of QR iterations before giving up. Must be greater than zero.</param>
     /// <returns>
     /// A tuple containing an array of eigenvalues (descending by magnitude) and a matrix whose
     /// columns are the corresponding eigenvectors.
     /// </returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="maxIterations"/> is not positive.</exception>
     /// <exception cref="InvalidOperationException">
     /// Thrown when the matrix is not square, not symmetric, or fails to converge.
     /// </exception>
     public (T[] Eigenvalues, Matrix<T> Eigenvectors) ComputeEigenvalues(int maxIterations = 1000)
     {
+        if (maxIterations <= 0)
+            throw new ArgumentOutOfRangeException(nameof(maxIterations), maxIterations, "Must be greater than zero.");
         if (!IsSquare)
             throw new InvalidOperationException("Eigenvalue decomposition requires a square matrix.");
 
@@ -61,11 +64,15 @@ public sealed partial class Matrix<T>
                     newV[i, j] = sum;
                 }
             v = newV;
-
-            if (iter == maxIterations - 1 && OffDiagonalNorm(a, n) > EigenEpsilon)
-                throw new InvalidOperationException(
-                    $"QR iteration did not converge after {maxIterations} iterations.");
         }
+
+        // Check convergence independently of loop-entry/last-iteration conditions, rather than
+        // only inside the loop's final pass: that tied the check to iter == maxIterations - 1,
+        // which never ran at all for maxIterations <= 0 (now rejected above regardless), and made
+        // the check easy to accidentally skip if the loop's control flow changed.
+        if (OffDiagonalNorm(a, n) > EigenEpsilon)
+            throw new InvalidOperationException(
+                $"QR iteration did not converge after {maxIterations} iterations.");
 
         // Extract eigenvalues from the diagonal
         T[] eigenvalues = new T[n];

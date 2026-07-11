@@ -117,6 +117,40 @@ public class MatrixEigenvaluesTests
     }
 
     [TestMethod]
+    public void ComputeEigenvalues_NonPositiveMaxIterations_Throws()
+    {
+        // Regression: maxIterations <= 0 made the QR-iteration loop never execute at all, so the
+        // method silently returned the raw diagonal entries of the un-diagonalized input as
+        // "eigenvalues", with no convergence check ever running.
+        var a = new Matrix<double>(new double[,] { { 2, 1 }, { 1, 2 } });
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => a.ComputeEigenvalues(0));
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => a.ComputeEigenvalues(-1));
+    }
+
+    [TestMethod]
+    public void ComputeEigenvalues_InsufficientIterations_ThrowsInsteadOfReturningRawDiagonal()
+    {
+        // A non-diagonal matrix needs at least one QR-iteration step; with maxIterations = 1 it may
+        // not have converged. Whether it throws or not is not the point of this test - the point is
+        // that if it does not throw, the result must actually be validated as converged, not just
+        // whatever the diagonal happens to be after too few iterations.
+        var a = new Matrix<double>(new double[,] { { 2, 1 }, { 1, 2 } });
+        try
+        {
+            var (values, _) = a.ComputeEigenvalues(1);
+            // If it didn't throw, convergence was genuinely reached; the known eigenvalues (3, 1)
+            // must hold.
+            Assert.AreEqual(3.0, values[0], Tol);
+            Assert.AreEqual(1.0, values[1], Tol);
+        }
+        catch (InvalidOperationException)
+        {
+            // Also an acceptable outcome: correctly reporting non-convergence instead of returning
+            // an unvalidated result.
+        }
+    }
+
+    [TestMethod]
     public void ComputeEigenvalues_NonSquare_Throws()
     {
         var a = new Matrix<double>(new double[,] { { 1, 2, 3 }, { 4, 5, 6 } });
