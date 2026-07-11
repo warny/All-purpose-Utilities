@@ -104,8 +104,115 @@ public class ExpressionEmbeddedCodePreparerTests
         Assert.ThrowsException<ArgumentNullException>(() => ParserEmbeddedCodeTransformationService.TransformOrThrow(
             transformer,
             null!,
-            new ParserEmbeddedCodeTransformationContext { Location = ParserEmbeddedCodeLocation.InlineAction }));
+            new ParserEmbeddedCodeTransformationContext { Location = ParserEmbeddedCodeLocation.InlineAction },
+            new ParserEmbeddedCodeTransformationFailureContext { Location = ParserEmbeddedCodeLocation.InlineAction }));
         Assert.AreEqual(0, transformer.Count);
+    }
+
+
+    [TestMethod]
+    public void ParserEmbeddedCodeTransformationService_WhenTransformerReturnsWarning_AllowsTransformationAndPreservesDiagnostic()
+    {
+        var transformer = new ConfigurableTransformer
+        {
+            Result = new ParserEmbeddedCodeTransformationResult
+            {
+                Code = "transformed",
+                Diagnostics = [new ParserEmbeddedCodeDiagnostic { Severity = ParserEmbeddedCodeDiagnosticSeverity.Warning, Message = "warning" }]
+            }
+        };
+
+        TransformedEmbeddedCode result = ParserEmbeddedCodeTransformationService.TransformOrThrow(
+            transformer,
+            new RawEmbeddedCode("raw"),
+            new ParserEmbeddedCodeTransformationContext { Location = ParserEmbeddedCodeLocation.InlineAction },
+            new ParserEmbeddedCodeTransformationFailureContext { Location = ParserEmbeddedCodeLocation.InlineAction });
+
+        Assert.AreEqual("transformed", result.Text);
+        Assert.AreEqual(1, result.Diagnostics.Count);
+        Assert.AreEqual(ParserEmbeddedCodeDiagnosticSeverity.Warning, result.Diagnostics[0].Severity);
+        Assert.AreEqual(1, transformer.Count);
+    }
+
+    [TestMethod]
+    public void ParserEmbeddedCodeTransformationService_WhenTransformerReturnsNullResult_ThrowsDeterministicException()
+    {
+        var transformer = new ConfigurableTransformer { Result = null };
+
+        var exception = Assert.ThrowsException<Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationException>(() => ParserEmbeddedCodeTransformationService.TransformOrThrow(
+            transformer,
+            new RawEmbeddedCode("raw"),
+            new ParserEmbeddedCodeTransformationContext { Location = ParserEmbeddedCodeLocation.SemanticPredicate },
+            new ParserEmbeddedCodeTransformationFailureContext { Location = ParserEmbeddedCodeLocation.SemanticPredicate }));
+
+        Assert.AreEqual("Embedded-code transformer returned null.", exception.Message);
+        Assert.AreEqual(1, transformer.Count);
+    }
+
+    [TestMethod]
+    public void ParserEmbeddedCodeTransformationService_WhenTransformerReturnsNullCode_ThrowsDeterministicException()
+    {
+        var transformer = new ConfigurableTransformer { Result = new ParserEmbeddedCodeTransformationResult { Code = null! } };
+
+        var exception = Assert.ThrowsException<Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationException>(() => ParserEmbeddedCodeTransformationService.TransformOrThrow(
+            transformer,
+            new RawEmbeddedCode("raw"),
+            new ParserEmbeddedCodeTransformationContext { Location = ParserEmbeddedCodeLocation.SemanticPredicate },
+            new ParserEmbeddedCodeTransformationFailureContext { Location = ParserEmbeddedCodeLocation.SemanticPredicate }));
+
+        Assert.AreEqual("Embedded-code transformer returned null code.", exception.Message);
+    }
+
+    [TestMethod]
+    public void ParserEmbeddedCodeTransformationService_WhenDiagnosticsAreNull_TreatsDiagnosticsAsEmpty()
+    {
+        var transformer = new ConfigurableTransformer { Result = new ParserEmbeddedCodeTransformationResult { Code = "ok", Diagnostics = null! } };
+
+        TransformedEmbeddedCode result = ParserEmbeddedCodeTransformationService.TransformOrThrow(
+            transformer,
+            new RawEmbeddedCode("raw"),
+            new ParserEmbeddedCodeTransformationContext { Location = ParserEmbeddedCodeLocation.SemanticPredicate },
+            new ParserEmbeddedCodeTransformationFailureContext { Location = ParserEmbeddedCodeLocation.SemanticPredicate });
+
+        Assert.AreEqual("ok", result.Text);
+        Assert.AreEqual(0, result.Diagnostics.Count);
+    }
+
+    [TestMethod]
+    public void ParserEmbeddedCodeTransformationService_WhenTransformerThrows_PreservesInnerException()
+    {
+        var inner = new FormatException("boom");
+        var transformer = new ConfigurableTransformer { Exception = inner };
+
+        var exception = Assert.ThrowsException<Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationException>(() => ParserEmbeddedCodeTransformationService.TransformOrThrow(
+            transformer,
+            new RawEmbeddedCode("raw"),
+            new ParserEmbeddedCodeTransformationContext { Location = ParserEmbeddedCodeLocation.InlineAction },
+            new ParserEmbeddedCodeTransformationFailureContext { Location = ParserEmbeddedCodeLocation.InlineAction }));
+
+        Assert.AreSame(inner, exception.InnerException);
+    }
+
+
+    [TestMethod]
+    public void ProductionCode_WhenEmbeddedCodeTransformerIsUsed_DoesNotCallTransformOutsideCentralServiceOrTransformers()
+    {
+        string repositoryRoot = FindRepositoryRoot();
+        string[] productionFiles = Directory.GetFiles(repositoryRoot, "*.cs", SearchOption.AllDirectories)
+            .Where(static file => !file.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+            .Where(static file => !file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+            .Where(static file => !file.Contains($"{Path.DirectorySeparatorChar}UtilsTest{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+            .Where(static file => file.Contains($"{Path.DirectorySeparatorChar}Utils.Parser", StringComparison.Ordinal))
+            .ToArray();
+
+        string[] forbiddenFiles = productionFiles
+            .Where(static file => File.ReadAllText(file).Contains(".Transform(context)", StringComparison.Ordinal))
+            .Where(static file => !file.EndsWith(Path.Combine("Utils.Parser.Diagnostics", "EmbeddedCode", "EmbeddedCodeText.cs"), StringComparison.Ordinal))
+            .Where(static file => !File.ReadAllText(file).Contains(": IParserEmbeddedCodeTransformer", StringComparison.Ordinal))
+            .Select(file => Path.GetRelativePath(repositoryRoot, file))
+            .ToArray();
+
+        CollectionAssert.AreEqual(System.Array.Empty<string>(), forbiddenFiles);
     }
 
     [TestMethod]
@@ -150,7 +257,7 @@ public class ExpressionEmbeddedCodePreparerTests
 
         Assert.AreEqual(EmbeddedCodePreparationStatus.CompilationFailed, result.Status);
         Assert.AreEqual(0, compiler.CompileCount);
-        Assert.IsInstanceOfType(result.Exception, typeof(ParserEmbeddedCodeTransformationException));
+        Assert.IsInstanceOfType(result.Exception, typeof(Utils.Parser.Expressions.ParserEmbeddedCodeTransformationException));
     }
 
     [TestMethod]
@@ -490,6 +597,43 @@ public class ExpressionEmbeddedCodePreparerTests
     /// <summary>
     /// Test transformer that counts invocations for service validation tests.
     /// </summary>
+
+    private static string FindRepositoryRoot()
+    {
+        string? directory = Directory.GetCurrentDirectory();
+        if (!File.Exists(Path.Combine(directory, "Utils.sln")))
+        {
+            directory = AppContext.BaseDirectory;
+        }
+
+        while (directory is not null && !File.Exists(Path.Combine(directory, "Utils.sln")))
+        {
+            directory = Directory.GetParent(directory)?.FullName;
+        }
+
+        return directory ?? throw new DirectoryNotFoundException("Repository root was not found.");
+    }
+
+    private sealed class ConfigurableTransformer : IParserEmbeddedCodeTransformer
+    {
+        public int Count { get; private set; }
+
+        public ParserEmbeddedCodeTransformationResult? Result { get; set; }
+
+        public Exception? Exception { get; set; }
+
+        public ParserEmbeddedCodeTransformationResult Transform(ParserEmbeddedCodeTransformationContext context)
+        {
+            Count++;
+            if (Exception is not null)
+            {
+                throw Exception;
+            }
+
+            return Result!;
+        }
+    }
+
     private sealed class CountingTransformer : IParserEmbeddedCodeTransformer
     {
         /// <summary>Gets the number of transform calls.</summary>

@@ -115,15 +115,35 @@ public sealed class ExpressionEmbeddedCodePreparer : IEmbeddedCodePreparer<Prepa
     /// <returns>Transformed source text to pass to the compiler.</returns>
     private TransformedEmbeddedCode TransformSource(EmbeddedCodeSource source, ParserEmbeddedCodeLocation location)
     {
-        return ParserEmbeddedCodeTransformationService.TransformOrThrow(
-            _transformer,
-            source.RawCode,
-            new ParserEmbeddedCodeTransformationContext
-            {
-                Location = location,
-                RuleName = source.RuleName
-            },
-            static error => new ParserEmbeddedCodeTransformationException(error.Message));
+        try
+        {
+            return ParserEmbeddedCodeTransformationService.TransformOrThrow(
+                _transformer,
+                source.RawCode,
+                new ParserEmbeddedCodeTransformationContext
+                {
+                    Location = location,
+                    RuleName = source.RuleName
+                },
+                new ParserEmbeddedCodeTransformationFailureContext
+                {
+                    Path = ParserEmbeddedCodeTransformationPath.RuntimeCompilation,
+                    Location = location,
+                    RuleName = source.RuleName
+                });
+        }
+        catch (Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationException exception)
+        {
+            throw new ParserEmbeddedCodeTransformationException(
+                exception.Message,
+                exception.DiagnosticCode,
+                exception.DiagnosticMessage,
+                exception.Location,
+                exception.GrammarName,
+                exception.RuleName,
+                exception.Span,
+                exception.InnerException);
+        }
     }
 
     /// <summary>
