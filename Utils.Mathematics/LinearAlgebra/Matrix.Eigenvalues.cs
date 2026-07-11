@@ -15,17 +15,20 @@ public sealed partial class Matrix<T>
     /// Only real symmetric matrices are supported; all eigenvalues of such matrices are guaranteed real.
     /// Eigenvalues are returned in descending order of absolute value.
     /// <para>
-    /// <b>Known limitation - unshifted iteration:</b> this implementation repeatedly applies plain
-    /// <c>A ← R·Q</c> (from <c>A = Q·R</c>) with no spectral shift and no prior reduction to
-    /// tridiagonal form. This is simple and correct, but convergence is only linear and can become
-    /// very slow - potentially exhausting <paramref name="maxIterations"/> - when eigenvalues are
-    /// close in magnitude or clustered (the per-iteration convergence rate is governed by the ratio
-    /// of consecutive eigenvalue magnitudes). A production-grade implementation would use Wilkinson
-    /// shifts and deflation after a symmetric tridiagonal reduction, which converges cubically in the
-    /// typical case; that rewrite is out of scope here. If convergence fails for a matrix with
-    /// closely-spaced eigenvalues, increasing <paramref name="maxIterations"/> and/or relaxing
-    /// <paramref name="convergenceTolerance"/> are the available mitigations with the current
-    /// algorithm.
+    /// Uses the symmetric QR algorithm with a Wilkinson shift and deflation: each step shifts the
+    /// active (not-yet-deflated) leading submatrix by an estimate of the eigenvalue closest to its
+    /// trailing corner before applying <c>A ← R·Q</c>, which - unlike plain unshifted iteration -
+    /// gives locally cubic convergence and remains fast even for closely-spaced (clustered)
+    /// eigenvalues. Once the last row/column of the active submatrix decouples (goes to zero within
+    /// tolerance), that eigenvalue is locked in and the active submatrix shrinks by one, so later
+    /// eigenvalues do not have to pay for the cost of resolving earlier ones.
+    /// </para>
+    /// <para>
+    /// <b>Known limitation:</b> unlike a textbook implementation, this does not first reduce the
+    /// matrix to tridiagonal form, so each QR step still costs <c>O(m³)</c> for the current active
+    /// size <c>m</c> (via <see cref="DecomposeQR(T?)"/>) rather than the <c>O(m)</c> a tridiagonal
+    /// reduction would allow. This affects performance, not correctness or convergence rate: the
+    /// shift is still computed from (and applied to) the true active submatrix at each step.
     /// </para>
     /// </remarks>
     /// <param name="maxIterations">Maximum number of QR iterations before giving up. Must be greater than zero.</param>
@@ -95,35 +98,63 @@ public sealed partial class Matrix<T>
         T[,] v = new T[n, n];
         for (int i = 0; i < n; i++) v[i, i] = T.One;
 
-        for (int iter = 0; iter < maxIterations; iter++)
+        // Active-submatrix size: the leading m x m block of `a` still under iteration. Once the last
+        // row/column of that block decouples (its off-diagonal entries vanish within tolerance), the
+        // corresponding eigenvalue is already correct on the diagonal and the active size shrinks by
+        // one, so later (already-resolved) eigenvalues never have to be revisited.
+        int m = n;
+        int totalIterations = 0;
+        while (m > 1)
         {
-            if (OffDiagonalNorm(a, n) <= effectiveConvergenceTolerance) break;
-
-            // QR decompose the current A
-            var (q, r) = new Matrix<T>(a).DecomposeQR(rankTolerance);
-
-            // A ← R·Q  (this is A_{k+1} = R_k · Q_k)
-            a = (r * q).ToArray();
-
-            // V ← V·Q
-            T[,] newV = new T[n, n];
-            for (int i = 0; i < n; i++)
-                for (int j = 0; j < n; j++)
+            bool deflated = false;
+            for (; totalIterations < maxIterations; totalIterations++)
+            {
+                if (LastRowOffDiagonalNorm(a, m) <= effectiveConvergenceTolerance)
                 {
-                    T sum = T.Zero;
-                    for (int k = 0; k < n; k++) sum += v[i, k] * q[k, j];
-                    newV[i, j] = sum;
+                    deflated = true;
+                    break;
                 }
-            v = newV;
-        }
 
-        // Check convergence independently of loop-entry/last-iteration conditions, rather than
-        // only inside the loop's final pass: that tied the check to iter == maxIterations - 1,
-        // which never ran at all for maxIterations <= 0 (now rejected above regardless), and made
-        // the check easy to accidentally skip if the loop's control flow changed.
-        if (OffDiagonalNorm(a, n) > effectiveConvergenceTolerance)
-            throw new InvalidOperationException(
-                $"QR iteration did not converge after {maxIterations} iterations.");
+                // Wilkinson shift: an estimate of the eigenvalue of the trailing 2x2 block closest to
+                // its bottom-right corner. Shifting by (an estimate of) an eigenvalue makes A - shift*I
+                // nearly singular, which drives Householder QR to decouple the last row/column far
+                // faster than unshifted iteration - typically within a handful of steps per
+                // deflation, instead of a number of steps governed by how close consecutive
+                // eigenvalues are to each other.
+                T shift = WilkinsonShift(a, m);
+
+                for (int i = 0; i < m; i++) a[i, i] -= shift;
+
+                var (q, r) = new Matrix<T>(ExtractLeadingBlock(a, m)).DecomposeQR(rankTolerance);
+                T[,] qArray = q.ToArray();
+
+                // A_active ← R·Q + shift·I  (this is the shifted analogue of A_{k+1} = R_k · Q_k;
+                // adding the shift back preserves the eigenvalues of the *unshifted* active block).
+                WriteLeadingBlock(a, m, (r * q).ToArray());
+                for (int i = 0; i < m; i++) a[i, i] += shift;
+
+                // V[:, 0:m) ← V[:, 0:m) · Q  (columns m..n-1 are untouched: Q is block-diagonal with
+                // an implicit identity outside the active block).
+                T[,] newV = new T[n, n];
+                for (int i = 0; i < n; i++)
+                {
+                    for (int j = 0; j < m; j++)
+                    {
+                        T sum = T.Zero;
+                        for (int k = 0; k < m; k++) sum += v[i, k] * qArray[k, j];
+                        newV[i, j] = sum;
+                    }
+                    for (int j = m; j < n; j++) newV[i, j] = v[i, j];
+                }
+                v = newV;
+            }
+
+            if (!deflated)
+                throw new InvalidOperationException(
+                    $"QR iteration did not converge after {maxIterations} iterations.");
+
+            m--;
+        }
 
         // Extract eigenvalues from the diagonal
         T[] eigenvalues = new T[n];
@@ -180,13 +211,56 @@ public sealed partial class Matrix<T>
         return true;
     }
 
-    /// <summary>Frobenius norm of strictly off-diagonal elements of the working array.</summary>
-    private static T OffDiagonalNorm(T[,] a, int n)
+    /// <summary>
+    /// Norm of the off-diagonal entries of the last row of the leading <paramref name="m"/> x
+    /// <paramref name="m"/> active submatrix (equivalently, by symmetry, its last column). Used as the
+    /// deflation test: once this vanishes within tolerance, the active block's last row/column has
+    /// decoupled from the rest and <c>a[m-1, m-1]</c> is already a converged eigenvalue.
+    /// </summary>
+    private static T LastRowOffDiagonalNorm(T[,] a, int m)
     {
         T sum = T.Zero;
-        for (int i = 0; i < n; i++)
-            for (int j = 0; j < n; j++)
-                if (i != j) sum += a[i, j] * a[i, j];
+        for (int j = 0; j < m - 1; j++) sum += a[m - 1, j] * a[m - 1, j];
         return T.Sqrt(sum);
+    }
+
+    /// <summary>
+    /// Computes the Wilkinson shift for the active <paramref name="m"/> x <paramref name="m"/>
+    /// submatrix: the eigenvalue of its trailing 2x2 block closest to the block's bottom-right entry.
+    /// Shifting by (an estimate of) an eigenvalue of the active block drives that block's QR iteration
+    /// to converge locally cubically instead of only linearly.
+    /// </summary>
+    private static T WilkinsonShift(T[,] a, int m)
+    {
+        if (m < 2) return a[m - 1, m - 1];
+
+        T two = T.One + T.One;
+        T a11 = a[m - 2, m - 2];
+        T a12 = a[m - 2, m - 1];
+        T a22 = a[m - 1, m - 1];
+        T delta = (a11 - a22) / two;
+        T sign = delta >= T.Zero ? T.One : -T.One;
+        T denom = delta + sign * T.Sqrt(delta * delta + a12 * a12);
+        // denom is zero only when delta and a12 are both already zero, i.e. the trailing 2x2 block is
+        // already diagonal (a11 == a22, no coupling) - any shift works then, so fall back to a22.
+        return denom == T.Zero ? a22 : a22 - (a12 * a12) / denom;
+    }
+
+    /// <summary>Copies the leading <paramref name="size"/> x <paramref name="size"/> block of <paramref name="source"/>.</summary>
+    private static T[,] ExtractLeadingBlock(T[,] source, int size)
+    {
+        T[,] block = new T[size, size];
+        for (int i = 0; i < size; i++)
+            for (int j = 0; j < size; j++)
+                block[i, j] = source[i, j];
+        return block;
+    }
+
+    /// <summary>Writes <paramref name="block"/> back into the leading <paramref name="size"/> x <paramref name="size"/> region of <paramref name="destination"/>.</summary>
+    private static void WriteLeadingBlock(T[,] destination, int size, T[,] block)
+    {
+        for (int i = 0; i < size; i++)
+            for (int j = 0; j < size; j++)
+                destination[i, j] = block[i, j];
     }
 }
