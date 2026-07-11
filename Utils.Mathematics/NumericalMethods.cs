@@ -23,12 +23,30 @@ public static class NumericalMethods
     /// Number of sub-intervals. Must be positive and even; an odd value is rounded up by one.
     /// Higher values increase accuracy at the cost of more function evaluations.
     /// </param>
-    /// <returns>The approximate value of ∫f(x)dx from a to b.</returns>
+    /// <returns>
+    /// The approximate value of ∫f(x)dx from a to b. If <paramref name="f"/> returns a non-finite
+    /// value anywhere in the interval, that non-finite value propagates into the result (visible to
+    /// the caller as NaN or an infinity) rather than being silently discarded.
+    /// </returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="f"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when <paramref name="steps"/> is not positive, when <paramref name="steps"/> is the
+    /// odd value <see cref="int.MaxValue"/> (which cannot be rounded up to an even count without
+    /// overflowing), or when <paramref name="a"/>/<paramref name="b"/> is not finite.
+    /// </exception>
     public static T Integrate<T>(Func<T, T> f, T a, T b, int steps = 1000)
         where T : struct, IFloatingPoint<T>
     {
-        if (steps <= 0) throw new ArgumentOutOfRangeException(nameof(steps), "Steps must be positive.");
-        if (steps % 2 != 0) steps++;
+        ArgumentNullException.ThrowIfNull(f);
+        if (steps <= 0) throw new ArgumentOutOfRangeException(nameof(steps), steps, "Steps must be positive.");
+        if (!T.IsFinite(a)) throw new ArgumentOutOfRangeException(nameof(a), a, "Must be finite.");
+        if (!T.IsFinite(b)) throw new ArgumentOutOfRangeException(nameof(b), b, "Must be finite.");
+        if (steps % 2 != 0)
+        {
+            if (steps == int.MaxValue)
+                throw new ArgumentOutOfRangeException(nameof(steps), steps, "An odd step count of int.MaxValue cannot be rounded up to an even value without overflowing.");
+            steps++;
+        }
 
         T n = T.CreateChecked(steps);
         T h = (b - a) / n;

@@ -55,6 +55,30 @@ public class NumericalMethodsTests
         Assert.AreEqual(0.5, result, 1e-8);
     }
 
+    [TestMethod]
+    public void Integrate_OddIntMaxValueSteps_ThrowsInsteadOfOverflowing()
+    {
+        // int.MaxValue is odd; incrementing it to round up to an even count previously overflowed
+        // to int.MinValue instead of being rejected, silently corrupting every subsequent
+        // computation with a negative step count.
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => NumericalMethods.Integrate<double>(x => x, 0.0, 1.0, int.MaxValue));
+    }
+
+    [TestMethod]
+    public void Integrate_NullFunction_Throws()
+        => Assert.ThrowsException<ArgumentNullException>(
+            () => NumericalMethods.Integrate<double>(null!, 0.0, 1.0, 100));
+
+    [TestMethod]
+    public void Integrate_NonFiniteBounds_Throws()
+    {
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => NumericalMethods.Integrate<double>(x => x, double.NaN, 1.0, 100));
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => NumericalMethods.Integrate<double>(x => x, 0.0, double.PositiveInfinity, 100));
+    }
+
     // -------------------------------------------------------------------------
     // Lagrange
     // -------------------------------------------------------------------------
