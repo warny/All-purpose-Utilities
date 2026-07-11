@@ -56,6 +56,29 @@ public class FourierWindowTests
     }
 
     [TestMethod]
+    public void FlatTop_ContainsNegativeValues()
+    {
+        // Regression for documentation accuracy: the class summary previously claimed every window's
+        // coefficients lie in [0, 1], which is false for FlatTop by design (IEC 61672 defines it with
+        // negative edge lobes). Assert a negative value actually occurs, not just that every value
+        // happens to fall within the wide range checked above.
+        double[] w = FourierWindow.FlatTop<double>(64);
+        bool anyNegative = false;
+        foreach (double v in w)
+        {
+            if (v < 0) { anyNegative = true; break; }
+        }
+        Assert.IsTrue(anyNegative, "Expected at least one negative FlatTop coefficient.");
+    }
+
+    [TestMethod]
+    public void Blackman_NeverExceedsOne()
+    {
+        double[] w = FourierWindow.Blackman<double>(64);
+        foreach (double v in w) Assert.IsTrue(v <= 1.0 + 1e-9, $"Out of range: {v}");
+    }
+
+    [TestMethod]
     public void AllWindows_CorrectLength()
     {
         int n = 32;
