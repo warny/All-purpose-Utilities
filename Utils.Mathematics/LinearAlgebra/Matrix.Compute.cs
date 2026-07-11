@@ -8,39 +8,6 @@ namespace Utils.Mathematics.LinearAlgebra;
 public partial class Matrix<T>
 {
     /// <summary>
-    /// Applies a linear transformation to the specified row of an array-based matrix.
-    /// </summary>
-    /// <param name="matrix">Matrix to transform.</param>
-    /// <param name="targetRow">Row index to replace.</param>
-    /// <param name="transformations">Coefficients describing the transformation.</param>
-    private static void ApplyLinearTransformation(T[,] matrix, int targetRow, T[] transformations)
-    {
-        if (transformations[targetRow] == T.Zero)
-        {
-            throw new ArgumentOutOfRangeException(nameof(targetRow), $"The transformation of row {targetRow} cannot nullify its own value.");
-        }
-
-        int rows = matrix.GetLength(0);
-        int cols = matrix.GetLength(1);
-        T[] newRow = new T[cols];
-
-        for (int col = 0; col < cols; col++)
-        {
-            T temp = T.Zero;
-            for (int row = 0; row < rows; row++)
-            {
-                temp += matrix[row, col] * transformations[row];
-            }
-            newRow[col] = temp;
-        }
-
-        for (int col = 0; col < cols; col++)
-        {
-            matrix[targetRow, col] = newRow[col];
-        }
-    }
-
-    /// <summary>
     /// Swaps two rows of an array-based matrix in place.
     /// </summary>
     /// <param name="matrix">Matrix whose rows should be permuted.</param>
@@ -62,16 +29,19 @@ public partial class Matrix<T>
     }
 
     /// <summary>
-    /// Performs LU decomposition of the current square matrix, resulting in a lower triangular matrix L
-    /// and an upper triangular matrix U such that the original matrix equals L multiplied by U.
+    /// Performs a pivoted LU decomposition of the current square matrix: a lower unitriangular
+    /// matrix L, an upper triangular matrix U, and a permutation matrix P such that P * A = L * U,
+    /// where A is the current matrix.
     /// </summary>
     /// <remarks>
-    /// The decomposition uses the same sequence of elementary row operations as the original mutable implementation
-    /// but operates entirely on local array copies to preserve immutability.
+    /// Uses partial pivoting (largest-magnitude pivot in each column) and stores the elimination
+    /// multipliers directly in L, as required for L to be the actual lower-triangular LU factor
+    /// rather than a by-product of applying the elimination row operations to an identity matrix.
+    /// Operates entirely on local array copies to preserve immutability.
     /// </remarks>
-    /// <returns>A tuple containing the lower and upper triangular matrices.</returns>
+    /// <returns>A tuple containing the lower-triangular, upper-triangular, and permutation matrices.</returns>
     /// <exception cref="InvalidOperationException">Thrown when the matrix is not square or is singular.</exception>
-    public (Matrix<T> L, Matrix<T> U) DiagonalizeLU()
+    public (Matrix<T> L, Matrix<T> U, Matrix<T> P) DiagonalizeLU()
     {
         if (!IsSquare)
         {
@@ -81,10 +51,12 @@ public partial class Matrix<T>
         int n = Rows;
         T[,] u = ToArray();
         T[,] l = new T[n, n];
+        int[] permutation = new int[n];
 
         for (int i = 0; i < n; i++)
         {
             l[i, i] = T.One;
+            permutation[i] = i;
         }
 
         for (int k = 0; k < n; k++)
@@ -106,26 +78,33 @@ public partial class Matrix<T>
             if (pivotRow != k)
             {
                 PermuteRows(u, k, pivotRow);
+                // Only the already-computed multiplier columns (0..k-1) need to move with the row;
+                // column k onward is either not yet computed or the identity diagonal being formed.
                 PermuteRows(l, k, pivotRow, k);
+                (permutation[k], permutation[pivotRow]) = (permutation[pivotRow], permutation[k]);
             }
 
-            T[] transformations = new T[n];
             for (int row = k + 1; row < n; row++)
             {
-                transformations[row] = T.One;
-                transformations[k] = -u[row, k] / u[k, k];
-
-                ApplyLinearTransformation(u, row, transformations);
-                ApplyLinearTransformation(l, row, transformations);
-
-                transformations[row] = T.Zero;
-                transformations[k] = T.Zero;
+                T multiplier = u[row, k] / u[k, k];
+                l[row, k] = multiplier;
+                for (int col = k; col < n; col++)
+                {
+                    u[row, col] -= multiplier * u[k, col];
+                }
             }
         }
 
-        Matrix<T> L = new Matrix<T>(l, false, true, false, null);
+        T[,] p = new T[n, n];
+        for (int i = 0; i < n; i++)
+        {
+            p[i, permutation[i]] = T.One;
+        }
+
+        Matrix<T> L = new Matrix<T>(l, false, true, false, T.One);
         Matrix<T> U = new Matrix<T>(u, false, true, false, null);
-        return (L, U);
+        Matrix<T> P = new Matrix<T>(p, false, false, false, null);
+        return (L, U, P);
     }
 
     /// <summary>

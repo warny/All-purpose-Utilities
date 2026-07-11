@@ -25,7 +25,7 @@ namespace UtilsTest.Mathematics.LinearAlgebra
             });
 
             double[,] original = matrix.ToArray();
-            (Matrix<double> L, Matrix<double> U) = matrix.DiagonalizeLU();
+            (Matrix<double> L, Matrix<double> U, Matrix<double> P) = matrix.DiagonalizeLU();
             AssertMatricesAreEqual(new Matrix<double>(original), matrix, 1e-12);
 
             for (int i = 0; i < matrix.Rows; i++)
@@ -36,6 +36,63 @@ namespace UtilsTest.Mathematics.LinearAlgebra
                     Assert.AreEqual(0d, U[i, j], 1e-12, $"Upper matrix contained non-zero value at [{i}, {j}].");
                 }
             }
+
+            AssertMatricesAreEqual(P * matrix, L * U, 1e-12);
+        }
+
+        /// <summary>
+        /// Regression for the previous DiagonalizeLU implementation, which applied elimination row
+        /// operations to an identity matrix instead of storing the elimination multipliers directly
+        /// in L, so L * U did not reconstruct the (possibly permuted) original matrix.
+        /// </summary>
+        [TestMethod]
+        public void DiagonalizeLUSatisfiesPermutedReconstructionIdentity_NoSwapNeeded()
+        {
+            // No pivoting occurs: |2| is already the largest first-column magnitude, so P must be
+            // the identity and L * U must equal the original matrix directly.
+            Matrix<double> matrix = new Matrix<double>(new double[,]
+            {
+                                { 2d, 1d },
+                                { 1d, 3d },
+            });
+
+            (Matrix<double> L, Matrix<double> U, Matrix<double> P) = matrix.DiagonalizeLU();
+
+            AssertMatricesAreEqual(MatrixTransformations.Identity<double>(2), P, 1e-12);
+            AssertMatricesAreEqual(matrix, L * U, 1e-12);
+        }
+
+        [TestMethod]
+        public void DiagonalizeLUSatisfiesPermutedReconstructionIdentity_WithSwap()
+        {
+            // Partial pivoting swaps rows here (|6| > |4|), so L * U reconstructs P * matrix, not
+            // matrix itself.
+            Matrix<double> matrix = new Matrix<double>(new double[,]
+            {
+                                { 4d, 3d },
+                                { 6d, 3d },
+            });
+
+            (Matrix<double> L, Matrix<double> U, Matrix<double> P) = matrix.DiagonalizeLU();
+
+            AssertMatricesAreEqual(P * matrix, L * U, 1e-12);
+            // Sanity check that a swap actually happened, i.e. P is not the identity.
+            Assert.AreNotEqual(1d, P[0, 0], 1e-12);
+        }
+
+        [TestMethod]
+        public void DiagonalizeLU3x3SatisfiesPermutedReconstructionIdentity()
+        {
+            Matrix<double> matrix = new Matrix<double>(new double[,]
+            {
+                                { 2d, -1d, -2d },
+                                { -4d, 6d, 3d },
+                                { -4d, -2d, 8d },
+            });
+
+            (Matrix<double> L, Matrix<double> U, Matrix<double> P) = matrix.DiagonalizeLU();
+
+            AssertMatricesAreEqual(P * matrix, L * U, 1e-9);
         }
 
         /// <summary>

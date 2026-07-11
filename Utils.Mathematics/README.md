@@ -247,8 +247,8 @@ var m = new Matrix<double>(new double[,] {
 double det = m.Determinant;           // 1
 Matrix<double> inv = m.Invert();      // { {3,-1}, {-5,2} }
 
-var (L, U) = m.DiagonalizeLU();
-// L * U == m
+var (L, U, P) = m.DiagonalizeLU();
+// P * m == L * U
 ```
 
 ### Properties
