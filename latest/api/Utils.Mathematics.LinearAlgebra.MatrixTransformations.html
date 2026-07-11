@@ -157,7 +157,7 @@ Class MatrixTransformations  <a class="header-action link-secondary" title="View
 
   <h3 id="Utils_Mathematics_LinearAlgebra_MatrixTransformations_Diagonal__1_System_Collections_Generic_IEnumerable___0__" data-uid="Utils.Mathematics.LinearAlgebra.MatrixTransformations.Diagonal``1(System.Collections.Generic.IEnumerable{``0})">
   Diagonal&lt;T&gt;(params IEnumerable&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/MatrixTransformations.cs/#L37"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/MatrixTransformations.cs/#L46"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Creates a diagonal matrix from the provided values.</p>
@@ -194,6 +194,15 @@ Class MatrixTransformations  <a class="header-action link-secondary" title="View
 
 
 
+  <h4 class="section" id="Utils_Mathematics_LinearAlgebra_MatrixTransformations_Diagonal__1_System_Collections_Generic_IEnumerable___0___remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Delegates to <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html#Utils_Mathematics_LinearAlgebra_Matrix_1_Diagonal_System_Collections_Generic_IEnumerable__0__">Diagonal(params IEnumerable&lt;T&gt;)</a>, which is the single
+implementation of diagonal-matrix construction: an earlier, independent implementation here
+cached <code>isTriangular</code>/<code>isDiagonal</code> as <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> whenever any diagonal
+value was zero, even though a matrix with zero diagonal entries is still diagonal and
+triangular by definition (only its invertibility/determinant changes). Two independently
+maintained factories for the same construction had already drifted into different, incorrect
+behavior; keeping one implementation avoids a repeat.</p>
+</div>
 
 
 
@@ -247,7 +256,7 @@ Class MatrixTransformations  <a class="header-action link-secondary" title="View
 
   <h3 id="Utils_Mathematics_LinearAlgebra_MatrixTransformations_Rotation__1_System_Collections_Generic_IEnumerable___0__" data-uid="Utils.Mathematics.LinearAlgebra.MatrixTransformations.Rotation``1(System.Collections.Generic.IEnumerable{``0})">
   Rotation&lt;T&gt;(params IEnumerable&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/MatrixTransformations.cs/#L157"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/MatrixTransformations.cs/#L141"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Generates a rotation matrix.</p>
@@ -292,7 +301,7 @@ Class MatrixTransformations  <a class="header-action link-secondary" title="View
 
   <h3 id="Utils_Mathematics_LinearAlgebra_MatrixTransformations_Scaling__1_System_Collections_Generic_IEnumerable___0__" data-uid="Utils.Mathematics.LinearAlgebra.MatrixTransformations.Scaling``1(System.Collections.Generic.IEnumerable{``0})">
   Scaling&lt;T&gt;(params IEnumerable&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/MatrixTransformations.cs/#L72"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/MatrixTransformations.cs/#L56"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Generates a scaling matrix.</p>
@@ -337,7 +346,7 @@ Class MatrixTransformations  <a class="header-action link-secondary" title="View
 
   <h3 id="Utils_Mathematics_LinearAlgebra_MatrixTransformations_Skew__1_System_Collections_Generic_IEnumerable___0__" data-uid="Utils.Mathematics.LinearAlgebra.MatrixTransformations.Skew``1(System.Collections.Generic.IEnumerable{``0})">
   Skew&lt;T&gt;(params IEnumerable&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/MatrixTransformations.cs/#L117"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/MatrixTransformations.cs/#L101"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Generates a shear (skew) matrix using the provided angles.</p>
@@ -392,10 +401,10 @@ required, since a full shear has one free coefficient per off-diagonal position.
 
   <h3 id="Utils_Mathematics_LinearAlgebra_MatrixTransformations_Transform__1_System_Collections_Generic_IEnumerable___0__" data-uid="Utils.Mathematics.LinearAlgebra.MatrixTransformations.Transform``1(System.Collections.Generic.IEnumerable{``0})">
   Transform&lt;T&gt;(params IEnumerable&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/MatrixTransformations.cs/#L235"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/MatrixTransformations.cs/#L231"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Generates a transformation matrix.</p>
+  <div class="markdown level1 summary"><p>Generates a general affine transformation matrix.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -406,14 +415,21 @@ required, since a full shear has one free coefficient per off-diagonal position.
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>values</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T&gt;</dt>
-    <dd><p>Transformation coefficients.</p>
+    <dd><p>Coefficients for the upper <code>d × (d+1)</code> affine block, in row-major order: for each of the
+<code>d</code> base-dimension rows, <code>d</code> linear coefficients followed by that row's translation
+coefficient (last column). The base dimension <code>d</code> is inferred from the count:
+<code>d * (d + 1)</code> values are required. For example, a 2D transform needs 6 values
+<code>[a, b, tx, c, d, ty]</code>, producing the matrix rows <code>[a, b, tx]</code>, <code>[c, d, ty]</code>.</p>
 </dd>
   </dl>
 
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;</dt>
-    <dd><p>New transformation matrix.</p>
+    <dd><p>A new <code>(d+1) × (d+1)</code> homogeneous transformation matrix: the supplied coefficients fill
+the upper affine block, and the final row is left as the homogeneous row <code>[0, …, 0, 1]</code>,
+consistent with this library's matrix-times-column-vector multiplication convention (the
+same convention <a class="xref" href="Utils.Mathematics.LinearAlgebra.MatrixTransformations.html#Utils_Mathematics_LinearAlgebra_MatrixTransformations_Translation__1_System_Collections_Generic_IEnumerable___0__">Translation&lt;T&gt;(params IEnumerable&lt;T&gt;)</a> uses for its translation column).</p>
 </dd>
   </dl>
 
@@ -430,6 +446,12 @@ required, since a full shear has one free coefficient per off-diagonal position.
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when the value count does not match <code>d * (d + 1)</code> for any integer <code>d</code>.</p>
+</dd>
+  </dl>
 
 
 
@@ -437,7 +459,7 @@ required, since a full shear has one free coefficient per off-diagonal position.
 
   <h3 id="Utils_Mathematics_LinearAlgebra_MatrixTransformations_Translation__1_System_Collections_Generic_IEnumerable___0__" data-uid="Utils.Mathematics.LinearAlgebra.MatrixTransformations.Translation``1(System.Collections.Generic.IEnumerable{``0})">
   Translation&lt;T&gt;(params IEnumerable&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/MatrixTransformations.cs/#L205"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/MatrixTransformations.cs/#L189"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Generates a translation matrix.</p>
