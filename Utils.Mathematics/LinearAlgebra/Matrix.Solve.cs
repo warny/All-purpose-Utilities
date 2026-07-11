@@ -13,7 +13,7 @@ public sealed partial class Matrix<T>
     /// </summary>
     /// <param name="b">Right-hand-side vector. Its dimension must equal the number of rows.</param>
     /// <param name="relativeSingularityTolerance">
-    /// Overrides the default relative pivot tolerance (see <see cref="SingularityRelativeTolerance"/>)
+    /// Overrides the default relative pivot tolerance (see <see cref="DefaultSingularityRelativeTolerance"/>)
     /// used to reject a numerically near-singular matrix; the effective absolute threshold is this
     /// value multiplied by the matrix's largest entry. Pass a smaller value to accept more
     /// ill-conditioned systems, or a larger value to reject them more aggressively. Must be finite
@@ -37,7 +37,7 @@ public sealed partial class Matrix<T>
         T[] x = new T[n];
         for (int i = 0; i < n; i++) x[i] = b[i];
 
-        T pivotTolerance = MaxAbsoluteEntry(a) * (relativeSingularityTolerance ?? SingularityRelativeTolerance);
+        T pivotTolerance = MaxAbsoluteEntry(a) * (relativeSingularityTolerance ?? DefaultSingularityRelativeTolerance(n));
 
         // Forward elimination with partial pivoting
         for (int col = 0; col < n; col++)

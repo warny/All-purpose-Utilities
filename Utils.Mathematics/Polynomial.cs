@@ -85,7 +85,11 @@ public sealed class Polynomial<T> : IEquatable<Polynomial<T>>
     /// <returns>A new polynomial representing the derivative.</returns>
     public Polynomial<T> Derive()
     {
-        if (Degree == 0) return new Polynomial<T>([T.Zero]);
+        // Route through Canonicalize like every other construction path, even though a single-
+        // element array is trivially already canonical: this keeps every array-producing call site
+        // consistent with the invariant documented on the private constructor, rather than relying
+        // on this specific case happening to need no trimming.
+        if (Degree == 0) return new Polynomial<T>(Canonicalize([T.Zero]));
         T[] d = new T[Degree];
         for (int i = 1; i <= Degree; i++)
             d[i - 1] = T.CreateChecked(i) * _coefficients[i];

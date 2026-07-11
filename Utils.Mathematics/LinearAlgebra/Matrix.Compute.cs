@@ -126,7 +126,7 @@ public partial class Matrix<T>
     /// Inverts the matrix if it is invertible.
     /// </summary>
     /// <param name="relativeSingularityTolerance">
-    /// Overrides the default relative pivot tolerance (see <see cref="SingularityRelativeTolerance"/>)
+    /// Overrides the default relative pivot tolerance (see <see cref="DefaultSingularityRelativeTolerance"/>)
     /// used to reject a numerically near-singular matrix; the effective absolute threshold is this
     /// value multiplied by the matrix's largest entry. Must be finite and non-negative when supplied.
     /// </param>
@@ -150,7 +150,7 @@ public partial class Matrix<T>
         int n = Rows;
         T[,] working = ToArray();
         T[,] inverse = new T[n, n];
-        T pivotTolerance = MaxAbsoluteEntry(working) * (relativeSingularityTolerance ?? SingularityRelativeTolerance);
+        T pivotTolerance = MaxAbsoluteEntry(working) * (relativeSingularityTolerance ?? DefaultSingularityRelativeTolerance(n));
 
         for (int i = 0; i < n; i++)
         {

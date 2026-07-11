@@ -38,15 +38,24 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
     }
 
     /// <summary>
-    /// Relative pivot tolerance used by <see cref="Solve"/> and <see cref="Invert"/> to reject a
-    /// numerically near-singular matrix (magnitude relative to the matrix's largest entry) instead
-    /// of dividing by a pivot that is merely close to zero, which would silently amplify rounding
-    /// error into a huge, infinite, or NaN result while still returning an apparently valid answer.
-    /// Derived from <see cref="MachineEpsilon"/> (scaled by a deliberately generous, not rigorously
-    /// derived, safety factor to absorb elimination round-off) so it stays meaningful - and non-zero -
-    /// across every supported scalar type instead of a single hard-coded absolute constant.
+    /// Computes the default relative pivot tolerance for an <paramref name="dimension"/>-by-
+    /// <paramref name="dimension"/> elimination used by <see cref="Solve"/>, <see cref="Invert"/>,
+    /// and <see cref="Determinant"/> to reject a numerically near-singular matrix (magnitude
+    /// relative to the matrix's largest entry) instead of dividing by a pivot that is merely close
+    /// to zero, which would silently amplify rounding error into a huge, infinite, or NaN result
+    /// while still returning an apparently valid answer.
     /// </summary>
-    private static readonly T SingularityRelativeTolerance = MachineEpsilon * T.CreateChecked(100);
+    /// <remarks>
+    /// Scaled by <paramref name="dimension"/> rather than a flat constant, following the common
+    /// numerical-linear-algebra convention that accumulated round-off across elimination grows
+    /// roughly with problem size (e.g. LAPACK-style rank/near-singularity heuristics use
+    /// <c>n * eps</c> rather than a size-independent multiplier). A flat multiplier large enough to
+    /// be meaningful for bigger systems (an earlier version of this method used a fixed 100x) is far
+    /// too loose for small matrices of a low-precision type: for a 2x2 <see cref="Half"/> matrix, a
+    /// flat 100x its machine epsilon is already about 10% of the matrix's magnitude, misclassifying
+    /// ordinary invertible matrices (e.g. a diagonal with a 20:1 ratio between entries) as singular.
+    /// </remarks>
+    private static T DefaultSingularityRelativeTolerance(int dimension) => MachineEpsilon * T.CreateChecked(dimension);
 
     /// <summary>
     /// Validates that a caller-supplied tolerance is usable as a comparison threshold: finite and
@@ -371,7 +380,7 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
         // Elimination divides by the pivot below, so a pivot that is merely close to zero (not
         // exactly zero) would otherwise amplify rounding error into a huge/infinite/NaN result
         // instead of the mathematically expected near-zero determinant of a near-singular matrix.
-        T pivotTolerance = MaxAbsoluteEntry(u) * SingularityRelativeTolerance;
+        T pivotTolerance = MaxAbsoluteEntry(u) * DefaultSingularityRelativeTolerance(n);
 
         for (int k = 0; k < n; k++)
         {

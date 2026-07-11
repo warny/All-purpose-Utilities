@@ -49,6 +49,62 @@ public class PolynomialTests
     }
 
     [TestMethod]
+    public void Derive_NonZeroConstant_ReturnsCanonicalZeroPolynomial()
+    {
+        // The derivative of any constant (zero or not) is the canonical zero polynomial: degree 0,
+        // exactly equal (and hash-equal) to a directly constructed zero, and 0 everywhere.
+        var p = new Polynomial<double>(5.0);
+        var derivative = p.Derive();
+        var canonicalZero = new Polynomial<double>(0.0);
+
+        Assert.AreEqual(0, derivative.Degree);
+        Assert.AreEqual(0.0, derivative[0], Tol);
+        Assert.IsTrue(derivative.Equals(canonicalZero));
+        Assert.AreEqual(canonicalZero.GetHashCode(), derivative.GetHashCode());
+    }
+
+    [TestMethod]
+    public void Derive_ZeroConstant_ReturnsCanonicalZeroPolynomial()
+    {
+        var p = new Polynomial<double>(0.0);
+        var derivative = p.Derive();
+        var canonicalZero = new Polynomial<double>(0.0);
+
+        Assert.AreEqual(0, derivative.Degree);
+        Assert.IsTrue(derivative.Equals(canonicalZero));
+        Assert.AreEqual(canonicalZero.GetHashCode(), derivative.GetHashCode());
+    }
+
+    [TestMethod]
+    public void Derive_NegativeConstant_ReturnsCanonicalZeroPolynomial()
+    {
+        var p = new Polynomial<double>(-3.5);
+        var derivative = p.Derive();
+        Assert.AreEqual(0, derivative.Degree);
+        Assert.IsTrue(derivative.Equals(new Polynomial<double>(0.0)));
+    }
+
+    [TestMethod]
+    public void Derive_SecondDerivativeOfConstant_IsStillCanonicalZero()
+    {
+        var p = new Polynomial<double>(5.0);
+        var secondDerivative = p.Derive().Derive();
+        Assert.AreEqual(0, secondDerivative.Degree);
+        Assert.IsTrue(secondDerivative.Equals(new Polynomial<double>(0.0)));
+    }
+
+    [TestMethod]
+    public void Derive_LinearCollapsingToConstant_ReturnsCanonicalDegreeZero()
+    {
+        // d/dx (3 + 2x) = 2, a degree-0 constant, not a degree-1 polynomial with a trailing zero.
+        var p = new Polynomial<double>(3.0, 2.0);
+        var derivative = p.Derive();
+        Assert.AreEqual(0, derivative.Degree);
+        Assert.AreEqual(2.0, derivative[0], Tol);
+        Assert.IsTrue(derivative.Equals(new Polynomial<double>(2.0)));
+    }
+
+    [TestMethod]
     public void Integrate_Linear_ReturnsQuadratic()
     {
         // ∫ (2 + 6x) dx = 0 + 2x + 3x² (constant=0)
