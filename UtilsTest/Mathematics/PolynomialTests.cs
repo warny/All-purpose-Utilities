@@ -118,6 +118,57 @@ public class PolynomialTests
     }
 
     [TestMethod]
+    public void Equals_EqualPolynomials_HaveEqualHashCodes()
+    {
+        // Required by the IEquatable/GetHashCode contract: equal objects must hash equal.
+        var p = new Polynomial<double>(1.0, 2.0, 3.0);
+        var q = new Polynomial<double>(1.0, 2.0, 3.0);
+        Assert.IsTrue(p.Equals(q));
+        Assert.AreEqual(p.GetHashCode(), q.GetHashCode());
+    }
+
+    [TestMethod]
+    public void Equals_WithinOldToleranceButNotExact_ReturnsFalse()
+    {
+        // Equality is exact: two polynomials differing by a tiny amount must not compare equal,
+        // since a tolerance-based Equals would be inconsistent with an exact-valued GetHashCode.
+        var p = new Polynomial<double>(1.0, 2.0, 3.0);
+        var q = new Polynomial<double>(1.0 + 1e-11, 2.0, 3.0);
+        Assert.IsFalse(p.Equals(q));
+    }
+
+    [TestMethod]
+    public void ApproximatelyEquals_WithinTolerance_ReturnsTrue()
+    {
+        var p = new Polynomial<double>(1.0, 2.0, 3.0);
+        var q = new Polynomial<double>(1.0 + 1e-11, 2.0, 3.0);
+        Assert.IsTrue(p.ApproximatelyEquals(q, 1e-9));
+        Assert.IsFalse(p.ApproximatelyEquals(q, 1e-15));
+    }
+
+    [TestMethod]
+    public void Subtract_PolynomialFromItself_IsCanonicalZero()
+    {
+        // Regression: internal operators used to bypass canonicalization, so p - p could retain
+        // the original degree with trailing exact-zero coefficients instead of collapsing to the
+        // canonical zero polynomial (degree 0).
+        var p = new Polynomial<double>(1.0, 2.0, 3.0);
+        var zero = p - p;
+        Assert.AreEqual(0, zero.Degree);
+        Assert.AreEqual(0.0, zero[0], Tol);
+        Assert.IsTrue(zero.Equals(new Polynomial<double>(0.0)));
+    }
+
+    [TestMethod]
+    public void ScalarMultiplyByZero_IsCanonicalZero()
+    {
+        var p = new Polynomial<double>(1.0, 2.0, 3.0);
+        var zero = 0.0 * p;
+        Assert.AreEqual(0, zero.Degree);
+        Assert.IsTrue(zero.Equals(new Polynomial<double>(0.0)));
+    }
+
+    [TestMethod]
     public void NoCoefficients_Throws()
         => Assert.ThrowsException<ArgumentException>(() => new Polynomial<double>(System.Array.Empty<double>()));
 }

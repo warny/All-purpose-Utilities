@@ -24,22 +24,39 @@ public sealed class Polynomial<T> : IEquatable<Polynomial<T>>
 
     /// <summary>
     /// Initializes a polynomial from its coefficients in ascending power order.
-    /// Leading zero coefficients are trimmed so the stored degree is minimal.
+    /// Trailing exact-zero coefficients are trimmed so the stored degree is minimal.
     /// </summary>
     /// <param name="coefficients">Coefficients [a₀, a₁, …, aₙ]. At least one value is required.</param>
     /// <exception cref="ArgumentException">Thrown when no coefficients are provided.</exception>
     public Polynomial(params IEnumerable<T> coefficients)
+        : this(Canonicalize(coefficients.ToArray()))
     {
-        T[] arr = coefficients.ToArray();
-        if (arr.Length == 0)
-            throw new ArgumentException("At least one coefficient is required.", nameof(coefficients));
-        // Trim trailing zeroes (leading in degree) to get canonical form
-        int last = arr.Length - 1;
-        while (last > 0 && T.Abs(arr[last]) <= Epsilon) last--;
-        _coefficients = arr[..(last + 1)];
     }
 
-    private Polynomial(T[] coefficients) => _coefficients = coefficients;
+    /// <summary>
+    /// Creates a polynomial directly from an already-canonical coefficient array (no trailing exact
+    /// zero unless the polynomial is the zero polynomial), without copying or re-trimming it. Every
+    /// call site owning a freshly built array must route it through <see cref="Canonicalize"/> first
+    /// so canonical form - and therefore <see cref="Equals(Polynomial{T})"/>/<see cref="GetHashCode"/>
+    /// consistency - holds regardless of which constructor or operator produced the instance.
+    /// </summary>
+    private Polynomial(T[] canonicalCoefficients) => _coefficients = canonicalCoefficients;
+
+    /// <summary>
+    /// Trims trailing exact-zero coefficients so the stored array has minimal length (degree zero
+    /// for the zero polynomial). Uses exact zero rather than a tolerance: an absolute epsilon has no
+    /// scale-independent meaning across arbitrary <typeparamref name="T"/> and coefficient
+    /// magnitudes, and would make canonical form - and therefore equality and hashing - depend on
+    /// where a caller's values happen to fall relative to a fixed constant.
+    /// </summary>
+    private static T[] Canonicalize(T[] coefficients)
+    {
+        if (coefficients.Length == 0)
+            throw new ArgumentException("At least one coefficient is required.", nameof(coefficients));
+        int last = coefficients.Length - 1;
+        while (last > 0 && coefficients[last] == T.Zero) last--;
+        return last == coefficients.Length - 1 ? coefficients : coefficients[..(last + 1)];
+    }
 
     // -------------------------------------------------------------------------
     // Evaluation
@@ -72,7 +89,7 @@ public sealed class Polynomial<T> : IEquatable<Polynomial<T>>
         T[] d = new T[Degree];
         for (int i = 1; i <= Degree; i++)
             d[i - 1] = T.CreateChecked(i) * _coefficients[i];
-        return new Polynomial<T>(d);
+        return new Polynomial<T>(Canonicalize(d));
     }
 
     /// <summary>
@@ -86,7 +103,7 @@ public sealed class Polynomial<T> : IEquatable<Polynomial<T>>
         result[0] = constant;
         for (int i = 0; i <= Degree; i++)
             result[i + 1] = _coefficients[i] / T.CreateChecked(i + 1);
-        return new Polynomial<T>(result);
+        return new Polynomial<T>(Canonicalize(result));
     }
 
     // -------------------------------------------------------------------------
@@ -133,7 +150,7 @@ public sealed class Polynomial<T> : IEquatable<Polynomial<T>>
             T cb = i < b._coefficients.Length ? b._coefficients[i] : T.Zero;
             result[i] = ca + cb;
         }
-        return new Polynomial<T>(result);
+        return new Polynomial<T>(Canonicalize(result));
     }
 
     /// <summary>Returns the difference of two polynomials.</summary>
@@ -147,7 +164,7 @@ public sealed class Polynomial<T> : IEquatable<Polynomial<T>>
             T cb = i < b._coefficients.Length ? b._coefficients[i] : T.Zero;
             result[i] = ca - cb;
         }
-        return new Polynomial<T>(result);
+        return new Polynomial<T>(Canonicalize(result));
     }
 
     /// <summary>Returns the product of two polynomials.</summary>
@@ -157,7 +174,7 @@ public sealed class Polynomial<T> : IEquatable<Polynomial<T>>
         for (int i = 0; i < a._coefficients.Length; i++)
             for (int j = 0; j < b._coefficients.Length; j++)
                 result[i + j] += a._coefficients[i] * b._coefficients[j];
-        return new Polynomial<T>(result);
+        return new Polynomial<T>(Canonicalize(result));
     }
 
     /// <summary>Returns the polynomial scaled by a scalar.</summary>
@@ -165,7 +182,7 @@ public sealed class Polynomial<T> : IEquatable<Polynomial<T>>
     {
         T[] result = new T[p._coefficients.Length];
         for (int i = 0; i < result.Length; i++) result[i] = scalar * p._coefficients[i];
-        return new Polynomial<T>(result);
+        return new Polynomial<T>(Canonicalize(result));
     }
 
     /// <summary>Returns the polynomial scaled by a scalar.</summary>
@@ -175,13 +192,39 @@ public sealed class Polynomial<T> : IEquatable<Polynomial<T>>
     // Equality
     // -------------------------------------------------------------------------
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Determines whether this polynomial is exactly equal to <paramref name="other"/>: same degree
+    /// and identical coefficients. Consistent with <see cref="GetHashCode"/> by construction, unlike
+    /// a tolerance-based comparison would be. Use <see cref="ApproximatelyEquals"/> for a
+    /// tolerance-aware comparison; it must not be used to implement this member or
+    /// <see cref="GetHashCode"/>; doing so would let two polynomials compare equal while hashing
+    /// differently, breaking the contract required by <see cref="Dictionary{TKey, TValue}"/>,
+    /// <see cref="HashSet{T}"/>, and LINQ set operations.
+    /// </summary>
     public bool Equals(Polynomial<T>? other)
     {
         if (other is null) return false;
         if (Degree != other.Degree) return false;
         for (int i = 0; i <= Degree; i++)
-            if (T.Abs(_coefficients[i] - other._coefficients[i]) > Epsilon) return false;
+            if (_coefficients[i] != other._coefficients[i]) return false;
+        return true;
+    }
+
+    /// <summary>
+    /// Determines whether this polynomial is equal to <paramref name="other"/> within
+    /// <paramref name="tolerance"/> on every coefficient. This is a separate, explicitly opt-in
+    /// comparison: it is not used by <see cref="Equals(Polynomial{T})"/> or
+    /// <see cref="GetHashCode"/> and must not be relied upon for hashed-collection membership, since
+    /// approximate equality is not transitive in general and would violate the hash contract.
+    /// </summary>
+    /// <param name="other">The polynomial to compare with.</param>
+    /// <param name="tolerance">Maximum allowed absolute difference per coefficient.</param>
+    public bool ApproximatelyEquals(Polynomial<T>? other, T tolerance)
+    {
+        if (other is null) return false;
+        if (Degree != other.Degree) return false;
+        for (int i = 0; i <= Degree; i++)
+            if (T.Abs(_coefficients[i] - other._coefficients[i]) > tolerance) return false;
         return true;
     }
 
@@ -189,7 +232,14 @@ public sealed class Polynomial<T> : IEquatable<Polynomial<T>>
     public override bool Equals(object? obj) => obj is Polynomial<T> p && Equals(p);
 
     /// <inheritdoc/>
-    public override int GetHashCode() => HashCode.Combine(Degree, _coefficients[0]);
+    public override int GetHashCode()
+    {
+        HashCode hash = new();
+        hash.Add(Degree);
+        foreach (T coefficient in _coefficients)
+            hash.Add(coefficient);
+        return hash.ToHashCode();
+    }
 
     /// <inheritdoc/>
     public override string ToString()
