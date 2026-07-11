@@ -68,7 +68,7 @@ public class DistributedRandom
         min.ArgMustBeLesserThan(max);
 
         double distributedValue = NextDouble();
-        return double.Floor(distributedValue * (max - min)) + min;
+        return distributedValue * (max - min) + min;
     }
 
 
