@@ -55,6 +55,70 @@ public class MatrixTransformationsTests
         Assert.AreEqual(6d, m.Determinant, Delta);
     }
 
+    // ── Skew ─────────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void Skew_2D_ProducesHandCalculatedOffDiagonalCoefficients()
+    {
+        // Base dimension 2 needs d*(d-1) = 2 angles: one per off-diagonal position of the 2x2 block.
+        double a0 = Math.Atan(2d);
+        double a1 = Math.Atan(3d);
+        var m = MatrixTransformations.Skew<double>(a0, a1);
+
+        Assert.AreEqual(3, m.Rows);
+        Assert.AreEqual(3, m.Columns);
+
+        // Row-major order skipping the diagonal: [0,1] gets the first angle, [1,0] the second.
+        Assert.AreEqual(2d, m[0, 1], Delta);
+        Assert.AreEqual(3d, m[1, 0], Delta);
+
+        // Diagonal and homogeneous row/column must remain untouched.
+        Assert.AreEqual(1d, m[0, 0], Delta);
+        Assert.AreEqual(1d, m[1, 1], Delta);
+        Assert.AreEqual(1d, m[2, 2], Delta);
+        Assert.AreEqual(0d, m[0, 2], Delta);
+        Assert.AreEqual(0d, m[1, 2], Delta);
+        Assert.AreEqual(0d, m[2, 0], Delta);
+        Assert.AreEqual(0d, m[2, 1], Delta);
+    }
+
+    [TestMethod]
+    public void Skew_3D_ProducesHandCalculatedOffDiagonalCoefficients()
+    {
+        // Base dimension 3 needs d*(d-1) = 6 angles.
+        double[] tans = { 1d, 2d, 3d, 4d, 5d, 6d };
+        double[] angles = System.Array.ConvertAll(tans, Math.Atan);
+        var m = MatrixTransformations.Skew<double>(angles);
+
+        Assert.AreEqual(4, m.Rows);
+        Assert.AreEqual(4, m.Columns);
+
+        // Row-major order skipping the diagonal for each row:
+        // row 0 -> columns 1,2 ; row 1 -> columns 0,2 ; row 2 -> columns 0,1.
+        Assert.AreEqual(1d, m[0, 1], Delta);
+        Assert.AreEqual(2d, m[0, 2], Delta);
+        Assert.AreEqual(3d, m[1, 0], Delta);
+        Assert.AreEqual(4d, m[1, 2], Delta);
+        Assert.AreEqual(5d, m[2, 0], Delta);
+        Assert.AreEqual(6d, m[2, 1], Delta);
+
+        for (int i = 0; i < 3; i++)
+            Assert.AreEqual(1d, m[i, i], Delta, $"diagonal[{i}]");
+
+        for (int i = 0; i < 4; i++)
+        {
+            Assert.AreEqual(i == 3 ? 1d : 0d, m[3, i], Delta, $"homogeneous row [3,{i}]");
+            Assert.AreEqual(i == 3 ? 1d : 0d, m[i, 3], Delta, $"homogeneous column [{i},3]");
+        }
+    }
+
+    [TestMethod]
+    public void Skew_InvalidAngleCount_Throws()
+    {
+        // 3 is not d*(d-1) for any integer d (0, 2, 6, 12, ...).
+        Assert.ThrowsException<ArgumentException>(() => MatrixTransformations.Skew<double>(1d, 2d, 3d));
+    }
+
     // ── Translation ──────────────────────────────────────────────────────────
 
     [TestMethod]
