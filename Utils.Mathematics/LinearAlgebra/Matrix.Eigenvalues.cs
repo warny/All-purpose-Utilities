@@ -14,6 +14,19 @@ public sealed partial class Matrix<T>
     /// <remarks>
     /// Only real symmetric matrices are supported; all eigenvalues of such matrices are guaranteed real.
     /// Eigenvalues are returned in descending order of absolute value.
+    /// <para>
+    /// <b>Known limitation - unshifted iteration:</b> this implementation repeatedly applies plain
+    /// <c>A ← R·Q</c> (from <c>A = Q·R</c>) with no spectral shift and no prior reduction to
+    /// tridiagonal form. This is simple and correct, but convergence is only linear and can become
+    /// very slow - potentially exhausting <paramref name="maxIterations"/> - when eigenvalues are
+    /// close in magnitude or clustered (the per-iteration convergence rate is governed by the ratio
+    /// of consecutive eigenvalue magnitudes). A production-grade implementation would use Wilkinson
+    /// shifts and deflation after a symmetric tridiagonal reduction, which converges cubically in the
+    /// typical case; that rewrite is out of scope here. If convergence fails for a matrix with
+    /// closely-spaced eigenvalues, increasing <paramref name="maxIterations"/> and/or relaxing
+    /// <paramref name="convergenceTolerance"/> are the available mitigations with the current
+    /// algorithm.
+    /// </para>
     /// </remarks>
     /// <param name="maxIterations">Maximum number of QR iterations before giving up. Must be greater than zero.</param>
     /// <param name="convergenceTolerance">

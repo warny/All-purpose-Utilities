@@ -260,6 +260,38 @@ public class MatrixEigenvaluesTests
     }
 
     [TestMethod]
+    public void ComputeEigenvalues_ClusteredEigenvalues_FailsToConvergeWithinDefaultIterations()
+    {
+        // Regression/documentation test for the documented "unshifted iteration converges slowly for
+        // clustered eigenvalues" known limitation. M = R * diag(1.0, 1.0001) * R^T for a 45-degree
+        // rotation R has eigenvalues 1.0 and 1.0001 (ratio 0.9999...), which unshifted QR iteration
+        // approaches only linearly - convergence at this ratio needs on the order of hundreds of
+        // thousands of iterations, well past the default 1000-iteration budget.
+        var m = new Matrix<double>(new double[,]
+        {
+            { 1.00005, 0.00005 },
+            { 0.00005, 1.00005 },
+        });
+        Assert.ThrowsException<InvalidOperationException>(() => m.ComputeEigenvalues());
+    }
+
+    [TestMethod]
+    public void ComputeEigenvalues_ClusteredEigenvalues_ConvergesGivenEnoughIterations()
+    {
+        // The documented mitigation for the case above: raising maxIterations lets the same
+        // slowly-converging matrix eventually reach the correct eigenvalues with the current
+        // (unshifted) algorithm.
+        var m = new Matrix<double>(new double[,]
+        {
+            { 1.00005, 0.00005 },
+            { 0.00005, 1.00005 },
+        });
+        var (values, _) = m.ComputeEigenvalues(maxIterations: 1_000_000);
+        Assert.AreEqual(1.0001, values[0], 1e-6);
+        Assert.AreEqual(1.0, values[1], 1e-6);
+    }
+
+    [TestMethod]
     public void ComputeEigenvalues_Half_NonDiagonalScaledMatrix_Succeeds()
     {
         // Regression: previous Half coverage only exercised an already-diagonal matrix, which
