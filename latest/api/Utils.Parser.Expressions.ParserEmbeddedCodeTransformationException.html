@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Parser_Expressions_ParserEmbeddedCodeTransformationException" data-uid="Utils.Parser.Expressions.ParserEmbeddedCodeTransformationException" class="text-break">
-Class ParserEmbeddedCodeTransformationException  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Expressions/ParserEmbeddedCodeTransformationException.cs/#L6"><i class="bi bi-code-slash"></i></a>
+Class ParserEmbeddedCodeTransformationException  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Expressions/ParserEmbeddedCodeTransformationException.cs/#L9"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -102,7 +102,7 @@ Class ParserEmbeddedCodeTransformationException  <a class="header-action link-se
   <div class="markdown conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public sealed class ParserEmbeddedCodeTransformationException : Exception, ISerializable</code></pre>
+    <pre><code class="lang-csharp hljs">public sealed class ParserEmbeddedCodeTransformationException : ParserEmbeddedCodeTransformationException, ISerializable</code></pre>
   </div>
 
 
@@ -113,6 +113,7 @@ Class ParserEmbeddedCodeTransformationException  <a class="header-action link-se
     <dd>
       <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
       <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.exception">Exception</a></div>
+      <div><a class="xref" href="Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationException.html">ParserEmbeddedCodeTransformationException</a></div>
       <div><span class="xref">ParserEmbeddedCodeTransformationException</span></div>
     </dd>
   </dl>
@@ -128,6 +129,27 @@ Class ParserEmbeddedCodeTransformationException  <a class="header-action link-se
   <dl class="typelist inheritedMembers">
     <dt>Inherited Members</dt>
     <dd>
+    <div>
+      <a class="xref" href="Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationException.html#Utils_Parser_Diagnostics_EmbeddedCode_ParserEmbeddedCodeTransformationException_DiagnosticCode">ParserEmbeddedCodeTransformationException.DiagnosticCode</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationException.html#Utils_Parser_Diagnostics_EmbeddedCode_ParserEmbeddedCodeTransformationException_DiagnosticMessage">ParserEmbeddedCodeTransformationException.DiagnosticMessage</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationException.html#Utils_Parser_Diagnostics_EmbeddedCode_ParserEmbeddedCodeTransformationException_Path">ParserEmbeddedCodeTransformationException.Path</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationException.html#Utils_Parser_Diagnostics_EmbeddedCode_ParserEmbeddedCodeTransformationException_Location">ParserEmbeddedCodeTransformationException.Location</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationException.html#Utils_Parser_Diagnostics_EmbeddedCode_ParserEmbeddedCodeTransformationException_GrammarName">ParserEmbeddedCodeTransformationException.GrammarName</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationException.html#Utils_Parser_Diagnostics_EmbeddedCode_ParserEmbeddedCodeTransformationException_RuleName">ParserEmbeddedCodeTransformationException.RuleName</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationException.html#Utils_Parser_Diagnostics_EmbeddedCode_ParserEmbeddedCodeTransformationException_Span">ParserEmbeddedCodeTransformationException.Span</a>
+    </div>
     <div>
       <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.exception.getbaseexception">Exception.GetBaseException()</a>
     </div>
@@ -279,7 +301,7 @@ Class ParserEmbeddedCodeTransformationException  <a class="header-action link-se
 
   <h3 id="Utils_Parser_Expressions_ParserEmbeddedCodeTransformationException__ctor_System_String_" data-uid="Utils.Parser.Expressions.ParserEmbeddedCodeTransformationException.#ctor(System.String)">
   ParserEmbeddedCodeTransformationException(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Expressions/ParserEmbeddedCodeTransformationException.cs/#L12"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Expressions/ParserEmbeddedCodeTransformationException.cs/#L15"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new transformation exception.</p>
@@ -308,11 +330,68 @@ Class ParserEmbeddedCodeTransformationException  <a class="header-action link-se
 
 
 
+  <a id="Utils_Parser_Expressions_ParserEmbeddedCodeTransformationException__ctor_" data-uid="Utils.Parser.Expressions.ParserEmbeddedCodeTransformationException.#ctor*"></a>
+
+  <h3 id="Utils_Parser_Expressions_ParserEmbeddedCodeTransformationException__ctor_System_String_System_String_System_String_Utils_Parser_Diagnostics_EmbeddedCode_ParserEmbeddedCodeTransformationPath_Utils_Parser_Diagnostics_EmbeddedCode_ParserEmbeddedCodeLocation_System_String_System_String_Utils_Parser_Source_SourceSpan_System_Exception_" data-uid="Utils.Parser.Expressions.ParserEmbeddedCodeTransformationException.#ctor(System.String,System.String,System.String,Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationPath,Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeLocation,System.String,System.String,Utils.Parser.Source.SourceSpan,System.Exception)">
+  ParserEmbeddedCodeTransformationException(string, string?, string?, ParserEmbeddedCodeTransformationPath, ParserEmbeddedCodeLocation, string?, string?, SourceSpan?, Exception?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Expressions/ParserEmbeddedCodeTransformationException.cs/#L32"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Initializes a new transformation exception from the shared structured transformation failure.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ParserEmbeddedCodeTransformationException(string message, string? diagnosticCode, string? diagnosticMessage, ParserEmbeddedCodeTransformationPath path, ParserEmbeddedCodeLocation location, string? grammarName, string? ruleName, SourceSpan? span, Exception? innerException = null)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>message</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Stable failure message.</p>
+</dd>
+    <dt><code>diagnosticCode</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Diagnostic code when available.</p>
+</dd>
+    <dt><code>diagnosticMessage</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Diagnostic message when available.</p>
+</dd>
+    <dt><code>path</code> <a class="xref" href="Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationPath.html">ParserEmbeddedCodeTransformationPath</a></dt>
+    <dd><p>Transformation path that requested the embedded-code transformation.</p>
+</dd>
+    <dt><code>location</code> <a class="xref" href="Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeLocation.html">ParserEmbeddedCodeLocation</a></dt>
+    <dd><p>Embedded-code location being transformed.</p>
+</dd>
+    <dt><code>grammarName</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Owning grammar name when available.</p>
+</dd>
+    <dt><code>ruleName</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Owning rule name when available.</p>
+</dd>
+    <dt><code>span</code> <a class="xref" href="Utils.Parser.Source.SourceSpan.html">SourceSpan</a></dt>
+    <dd><p>Source span when available.</p>
+</dd>
+    <dt><code>innerException</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.exception">Exception</a></dt>
+    <dd><p>Original transformer exception when available.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
 
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Expressions/ParserEmbeddedCodeTransformationException.cs/#L6" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Expressions/ParserEmbeddedCodeTransformationException.cs/#L9" class="edit-link">Edit this page</a>
         </div>
 
 

@@ -9644,6 +9644,48 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationException.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationException.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationException",
+      "Summary": "<p sourcefile=\"api/Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationException.yml\" sourcestartlinenumber=\"1\">Exception thrown by the central embedded-code transformation service when transformation fails.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationFailureContext.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationFailureContext.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationFailureContext",
+      "Summary": "<p sourcefile=\"api/Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationFailureContext.yml\" sourcestartlinenumber=\"1\">Contains structured failure metadata used by the central transformation service.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationPath.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationPath.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationPath",
+      "Summary": "<p sourcefile=\"api/Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationPath.yml\" sourcestartlinenumber=\"1\">Describes the caller path that requested an embedded-code transformation.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationResult.yml",
       "output": {
         ".html": {

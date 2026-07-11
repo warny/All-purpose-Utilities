@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Parser_Diagnostics_EmbeddedCode_ParserEmbeddedCodeTransformationService" data-uid="Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationService" class="text-break">
-Class ParserEmbeddedCodeTransformationService  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/EmbeddedCode/EmbeddedCodeText.cs/#L51"><i class="bi bi-code-slash"></i></a>
+Class ParserEmbeddedCodeTransformationService  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/EmbeddedCode/EmbeddedCodeText.cs/#L150"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -155,17 +155,17 @@ Class ParserEmbeddedCodeTransformationService  <a class="header-action link-seco
 
   <a id="Utils_Parser_Diagnostics_EmbeddedCode_ParserEmbeddedCodeTransformationService_TransformOrThrow_" data-uid="Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationService.TransformOrThrow*"></a>
 
-  <h3 id="Utils_Parser_Diagnostics_EmbeddedCode_ParserEmbeddedCodeTransformationService_TransformOrThrow_Utils_Parser_Diagnostics_EmbeddedCode_IParserEmbeddedCodeTransformer_Utils_Parser_Diagnostics_EmbeddedCode_RawEmbeddedCode_Utils_Parser_Diagnostics_EmbeddedCode_ParserEmbeddedCodeTransformationContext_System_Func_Utils_Parser_Diagnostics_EmbeddedCode_ParserEmbeddedCodeDiagnostic_System_Exception__" data-uid="Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationService.TransformOrThrow(Utils.Parser.Diagnostics.EmbeddedCode.IParserEmbeddedCodeTransformer,Utils.Parser.Diagnostics.EmbeddedCode.RawEmbeddedCode,Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationContext,System.Func{Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeDiagnostic,System.Exception})">
-  TransformOrThrow(IParserEmbeddedCodeTransformer, RawEmbeddedCode, ParserEmbeddedCodeTransformationContext, Func&lt;ParserEmbeddedCodeDiagnostic, Exception&gt;?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/EmbeddedCode/EmbeddedCodeText.cs/#L61"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_Parser_Diagnostics_EmbeddedCode_ParserEmbeddedCodeTransformationService_TransformOrThrow_Utils_Parser_Diagnostics_EmbeddedCode_IParserEmbeddedCodeTransformer_Utils_Parser_Diagnostics_EmbeddedCode_RawEmbeddedCode_Utils_Parser_Diagnostics_EmbeddedCode_ParserEmbeddedCodeTransformationContext_Utils_Parser_Diagnostics_EmbeddedCode_ParserEmbeddedCodeTransformationFailureContext_" data-uid="Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationService.TransformOrThrow(Utils.Parser.Diagnostics.EmbeddedCode.IParserEmbeddedCodeTransformer,Utils.Parser.Diagnostics.EmbeddedCode.RawEmbeddedCode,Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationContext,Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationFailureContext)">
+  TransformOrThrow(IParserEmbeddedCodeTransformer, RawEmbeddedCode, ParserEmbeddedCodeTransformationContext, ParserEmbeddedCodeTransformationFailureContext)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/EmbeddedCode/EmbeddedCodeText.cs/#L160"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Runs a transformer for one raw embedded-code fragment and returns a typed transformed-code value.</p>
+  <div class="markdown level1 summary"><p>Runs a transformer exactly once for one raw embedded-code fragment and returns a typed transformed-code value.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static TransformedEmbeddedCode TransformOrThrow(IParserEmbeddedCodeTransformer transformer, RawEmbeddedCode rawCode, ParserEmbeddedCodeTransformationContext context, Func&lt;ParserEmbeddedCodeDiagnostic, Exception&gt;? createException = null)</code></pre>
+    <pre><code class="lang-csharp hljs">public static TransformedEmbeddedCode TransformOrThrow(IParserEmbeddedCodeTransformer transformer, RawEmbeddedCode rawCode, ParserEmbeddedCodeTransformationContext context, ParserEmbeddedCodeTransformationFailureContext failureContext)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
@@ -179,8 +179,8 @@ Class ParserEmbeddedCodeTransformationService  <a class="header-action link-seco
     <dt><code>context</code> <a class="xref" href="Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationContext.html">ParserEmbeddedCodeTransformationContext</a></dt>
     <dd><p>Transformation context containing passive grammar metadata.</p>
 </dd>
-    <dt><code>createException</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.func-2">Func</a>&lt;<a class="xref" href="Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeDiagnostic.html">ParserEmbeddedCodeDiagnostic</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.exception">Exception</a>&gt;</dt>
-    <dd><p>Optional exception factory used when the transformer reports an error diagnostic.</p>
+    <dt><code>failureContext</code> <a class="xref" href="Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationFailureContext.html">ParserEmbeddedCodeTransformationFailureContext</a></dt>
+    <dd><p>Structured failure metadata for deterministic errors.</p>
 </dd>
   </dl>
 
@@ -205,7 +205,7 @@ Class ParserEmbeddedCodeTransformationService  <a class="header-action link-seco
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/EmbeddedCode/EmbeddedCodeText.cs/#L51" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Diagnostics/EmbeddedCode/EmbeddedCodeText.cs/#L150" class="edit-link">Edit this page</a>
         </div>
 
 
