@@ -79,6 +79,44 @@ public class MatrixEigenvaluesTests
     }
 
     [TestMethod]
+    public void ComputeEigenvalues_SingularDiagonalMatrix_Succeeds()
+    {
+        // Minimal rank-deficient symmetric example: previously failed because DecomposeQR rejected
+        // the linearly dependent second column during QR iteration.
+        var a = new Matrix<double>(new double[,] { { 1, 0 }, { 0, 0 } });
+        var (values, _) = a.ComputeEigenvalues();
+        Assert.AreEqual(1.0, values[0], Tol);
+        Assert.AreEqual(0.0, values[1], Tol);
+    }
+
+    [TestMethod]
+    public void ComputeEigenvalues_SingularSymmetricMatrix_Succeeds()
+    {
+        // [[1,1],[1,1]] is symmetric and rank-1 (determinant 0); eigenvalues are 2 and 0.
+        var a = new Matrix<double>(new double[,] { { 1, 1 }, { 1, 1 } });
+        var (values, vecs) = a.ComputeEigenvalues();
+        Assert.AreEqual(2.0, values[0], Tol);
+        Assert.AreEqual(0.0, values[1], Tol);
+
+        for (int j = 0; j < 2; j++)
+        {
+            var v = new Vector<double>(vecs[0, j], vecs[1, j]);
+            var av = a * v;
+            Assert.AreEqual(values[j] * v[0], av[0], Tol);
+            Assert.AreEqual(values[j] * v[1], av[1], Tol);
+        }
+    }
+
+    [TestMethod]
+    public void ComputeEigenvalues_ZeroMatrix_Succeeds()
+    {
+        var a = Matrix<double>.Zero(2, 2);
+        var (values, _) = a.ComputeEigenvalues();
+        Assert.AreEqual(0.0, values[0], Tol);
+        Assert.AreEqual(0.0, values[1], Tol);
+    }
+
+    [TestMethod]
     public void ComputeEigenvalues_NonSquare_Throws()
     {
         var a = new Matrix<double>(new double[,] { { 1, 2, 3 }, { 4, 5, 6 } });
