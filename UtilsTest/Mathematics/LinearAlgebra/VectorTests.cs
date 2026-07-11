@@ -298,5 +298,61 @@ public class VectorTests
         var v2 = new Vector<double>(0d, 0d);
         Assert.ThrowsException<InvalidOperationException>(() => v1.AngleWith(v2));
     }
+
+    [TestMethod]
+    public void EqualityOperator_BothNull_ReturnsTrue()
+    {
+        Vector<double> left = null;
+        Vector<double> right = null;
+        Assert.IsTrue(left == right);
+        Assert.IsFalse(left != right);
+    }
+
+    [TestMethod]
+    public void EqualityOperator_LeftNullRightNonNull_ReturnsFalse()
+    {
+        Vector<double> left = null;
+        var right = new Vector<double>(1d, 2d);
+        Assert.IsFalse(left == right);
+        Assert.IsTrue(left != right);
+    }
+
+    [TestMethod]
+    public void EqualityOperator_LeftNonNullRightNull_ReturnsFalse()
+    {
+        // Regression: the previous implementation returned true here (any non-null vector
+        // compared equal to null) because the second `|| vector2 is null` term short-circuited
+        // the whole expression to true regardless of vector1.
+        var left = new Vector<double>(1d, 2d);
+        Vector<double> right = null;
+        Assert.IsFalse(left == right);
+        Assert.IsTrue(left != right);
+    }
+
+    [TestMethod]
+    public void EqualityOperator_SameReference_ReturnsTrue()
+    {
+        var vector = new Vector<double>(1d, 2d);
+        Assert.IsTrue(vector == vector);
+        Assert.IsFalse(vector != vector);
+    }
+
+    [TestMethod]
+    public void EqualityOperator_EqualValues_ReturnsTrue()
+    {
+        var left = new Vector<double>(1d, 2d, 3d);
+        var right = new Vector<double>(1d, 2d, 3d);
+        Assert.IsTrue(left == right);
+        Assert.IsFalse(left != right);
+    }
+
+    [TestMethod]
+    public void EqualityOperator_UnequalValues_ReturnsFalse()
+    {
+        var left = new Vector<double>(1d, 2d, 3d);
+        var right = new Vector<double>(1d, 2d, 4d);
+        Assert.IsFalse(left == right);
+        Assert.IsTrue(left != right);
+    }
 }
 

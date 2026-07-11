@@ -216,7 +216,7 @@ public partial class Vector<T> :
     /// <param name="vector2">Second vector.</param>
     /// <returns>True if vectors are equal; otherwise, false.</returns>
     public static bool operator ==(Vector<T>? vector1, Vector<T>? vector2)
-        => (vector1 is not null && vector1.Equals(vector2)) || vector2 is null;
+        => ReferenceEquals(vector1, vector2) || (vector1 is not null && vector1.Equals(vector2));
 
     /// <summary>
     /// Checks if two vectors are not equal.
