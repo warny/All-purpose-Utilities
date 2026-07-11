@@ -167,5 +167,105 @@ namespace UtilsTest.Objects
 
         }
 
+        [TestMethod]
+        public void FusionManyToManyDuplicateKeysOnBothSidesTest()
+        {
+            int[] list1 = { 1, 1 };
+            int[] list2 = { 1 };
+
+            (int Left, int Right)[] expected = {
+                (1, 1),
+                (1, 1)
+            };
+
+            var fusion = new ForwardFusion<int, int>(list1, list2);
+            var result = fusion.ToArray();
+
+            var comparer = new EnumerableEqualityComparer<(int Left, int Right)>((i1, i2) => i1.Left == i2.Left && i1.Right == i2.Right);
+
+            Assert.AreEqual(expected, result, comparer);
+        }
+
+        [TestMethod]
+        public void FusionManyToManyCartesianProductTest()
+        {
+            int[] list1 = { 1, 1, 1, 2 };
+            int[] list2 = { 1, 1, 2, 2 };
+
+            (int Left, int Right)[] expected = {
+                (1, 1), (1, 1),
+                (1, 1), (1, 1),
+                (1, 1), (1, 1),
+                (2, 2), (2, 2)
+            };
+
+            var fusion = new ForwardFusion<int, int>(list1, list2);
+            var result = fusion.ToArray();
+
+            var comparer = new EnumerableEqualityComparer<(int Left, int Right)>((i1, i2) => i1.Left == i2.Left && i1.Right == i2.Right);
+
+            Assert.AreEqual(expected, result, comparer);
+        }
+
+        [TestMethod]
+        public void FusionManyToManyWithSurroundingKeysTest()
+        {
+            int[] list1 = { 0, 1, 1, 2 };
+            int[] list2 = { 1, 1, 3 };
+
+            (int Left, int Right)[] expected = {
+                (1, 1), (1, 1),
+                (1, 1), (1, 1)
+            };
+
+            var fusion = new ForwardFusion<int, int>(list1, list2);
+            var result = fusion.ToArray();
+
+            var comparer = new EnumerableEqualityComparer<(int Left, int Right)>((i1, i2) => i1.Left == i2.Left && i1.Right == i2.Right);
+
+            Assert.AreEqual(expected, result, comparer);
+        }
+
+        [TestMethod]
+        public void FusionManyToManyFullOuterJoinTest()
+        {
+            int[] list1 = { 1, 1, 2 };
+            int[] list2 = { 1, 1, 3 };
+
+            (int Left, int Right)[] expected = {
+                (1, 1), (1, 1),
+                (1, 1), (1, 1),
+                (2, 0),
+                (0, 3)
+            };
+
+            var fusion = new ForwardFusion<int, int>(list1, list2, JoinType.FullOuterJoin);
+            var result = fusion.ToArray();
+
+            var comparer = new EnumerableEqualityComparer<(int Left, int Right)>((i1, i2) => i1.Left == i2.Left && i1.Right == i2.Right);
+
+            Assert.AreEqual(expected, result, comparer);
+        }
+
+        [TestMethod]
+        public void FusionComparerWithNonUnitMagnitudeTest()
+        {
+            // The comparison delegate follows the standard IComparable contract: only the sign
+            // matters, not the magnitude. This must not rely on the result being exactly -1/0/1.
+            int[] list1 = { 1, 1, 5 };
+            int[] list2 = { 1, 5, 5 };
+
+            (int Left, int Right)[] expected = {
+                (1, 1), (1, 1),
+                (5, 5), (5, 5)
+            };
+
+            var fusion = new ForwardFusion<int, int>(list1, list2, (l, r) => l - r);
+            var result = fusion.ToArray();
+
+            var comparer = new EnumerableEqualityComparer<(int Left, int Right)>((i1, i2) => i1.Left == i2.Left && i1.Right == i2.Right);
+
+            Assert.AreEqual(expected, result, comparer);
+        }
     }
 }
