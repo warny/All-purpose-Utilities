@@ -266,7 +266,8 @@ public class DateTimeRanges : Ranges<DateTime>
             + PatternToRegEx(formatInfo.ShortTimePattern)
             + "))?";
 
-        var separators = new string[] { "-", ".." }.Where(s => !dateSearch.Contains(s)).ToArray();
+        string[] candidateSeparators = ["-", ".."];
+        var separators = candidateSeparators.Where(s => !dateSearch.Contains(s)).ToArray();
 
         // Parse the string into ranges using the constructed pattern.
         return InnerParse(range, dateSearch, separators, s => DateTime.Parse(s, formatInfo));
