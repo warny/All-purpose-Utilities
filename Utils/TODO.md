@@ -141,10 +141,15 @@ clairement que la classe n'est **pas** thread-safe et retirer les attributs `Syn
 sur l'indexeur/`Add`.
 **Sévérité** : incohérence de conception (thread-safety partielle et trompeuse, pas un bug isolé mais
 un risque de course si un appelant se fie à la présence de `[Synchronized]` sur certains membres).
-**Corrigé.** Choix retenu : documenter le type comme non thread-safe et retirer les attributs
-`[Synchronized]` trompeurs (dont `Clear()`, qui verrouillait en réalité un moniteur différent de
-celui de l'indexeur/`Add`, donc sans exclusion mutuelle réelle entre eux). Tests :
-`LRUCacheTests.cs` (`Clear`, garde par réflexion contre la réapparition de `[Synchronized]`).
+**Corrigé (en deux temps).** D'abord documenté comme non thread-safe et les attributs
+`[Synchronized]` trompeurs retirés (dont `Clear()`, qui verrouillait en réalité un moniteur différent
+de celui de l'indexeur/`Add`, donc sans exclusion mutuelle réelle entre eux). Puis, à la demande de
+l'utilisateur (c'est le contexte d'usage le plus probable), rendu réellement thread-safe : un verrou
+interne unique (`syncRoot`) protège désormais tous les membres, y compris `Keys`/`Values` (vues
+« vivantes » mais dont chaque appel prend un instantané sous verrou) et `GetEnumerator` (idem, plutôt
+qu'un curseur vivant sur la `LinkedList` interne, qui aurait levé `InvalidOperationException` en cas
+de mutation concurrente). Tests : `LRUCacheTests.cs` (`ConcurrentAddsWithDistinctKeys_...`,
+`ConcurrentReadWriteEnumerateStress_...`).
 
 ### 5. `Ranges.Specifics.cs` — tableau non-bracket
 `Utils/Range/Ranges.Specifics.cs:269` : `new string[] { "-", ".." }` devrait utiliser la syntaxe
