@@ -108,12 +108,16 @@ public class Ranges<T> : IFormattable, IEquatable<Ranges<T>>,
     /// <param name="itemSearchPattern">The regex pattern to match the elements in the range.</param>
     /// <param name="separators">The separator strings used to delimit the start and end values.</param>
     /// <param name="valueParser">A function to parse the string into type T1.</param>
-    /// <returns>An enumerable collection of parsed Range objects.</returns>
+    /// <returns>
+    /// An enumerable collection of parsed Range objects. An empty or whitespace-only
+    /// <paramref name="range"/> is a legitimate representation of an empty set and yields no ranges
+    /// without throwing.
+    /// </returns>
     /// <exception cref="FormatException">
-    /// Thrown when <paramref name="range"/> contains content that is not part of a recognized range
-    /// expression (only whitespace is allowed between, before, or after matched ranges). This is a
-    /// strict parser: it requires the entire input to be consumed, unlike an extraction API that would
-    /// intentionally skip over surrounding text.
+    /// Thrown when <paramref name="range"/> contains non-whitespace content that is not part of a
+    /// recognized range expression (only whitespace is allowed between, before, or after matched
+    /// ranges). This is a strict parser: it requires the entire input to be consumed, unlike an
+    /// extraction API that would intentionally skip over surrounding text.
     /// </exception>
     protected static IEnumerable<IRange<T1>> InnerParse<T1>(string range, string itemSearchPattern, IEnumerable<string> separators, Func<string, T1> valueParser)
         where T1 : IComparable<T1>

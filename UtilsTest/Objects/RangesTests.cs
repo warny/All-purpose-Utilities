@@ -258,5 +258,22 @@ namespace UtilsTest.Objects
             var range = DoubleRanges.Parse(" [1-5]  [7-9] ", CultureInfo.InvariantCulture);
             Assert.AreEqual("[ 1 - 5 ] ∪ [ 7 - 9 ]", range.ToString(CultureInfo.InvariantCulture));
         }
+
+        [TestMethod]
+        public void DoubleRangesParseEmptyStringProducesEmptySetTest()
+        {
+            // An empty string is a legitimate representation of an empty set, not malformed input:
+            // it must not throw, unlike non-whitespace content that matches no range (see
+            // DoubleRangesParseRejectsContentWithoutAnyMatchTest).
+            var range = DoubleRanges.Parse("", CultureInfo.InvariantCulture);
+            Assert.AreEqual(0, range.Count);
+        }
+
+        [TestMethod]
+        public void DoubleRangesParseWhitespaceOnlyStringProducesEmptySetTest()
+        {
+            var range = DoubleRanges.Parse("   \t  ", CultureInfo.InvariantCulture);
+            Assert.AreEqual(0, range.Count);
+        }
     }
 }

@@ -224,9 +224,13 @@ search for valid ranges inside larger text.
 
 **Severity**: medium parsing-contract ambiguity and possible silent data acceptance.
 **Fixed.** `InnerParse` now requires every character of the input to belong to a matched range or be
-whitespace, throwing `FormatException` otherwise (leading, trailing, in-between garbage, and
-zero-match input are all rejected); the existing concatenated-range syntax keeps working unchanged.
-Tests: `UtilsTest/Objects/RangesTests.cs`.
+whitespace, throwing `FormatException` otherwise (leading, trailing, and in-between garbage are all
+rejected, as is any *non-whitespace* input that matches no range at all — e.g. `"not a range at
+all"`); the existing concatenated-range syntax keeps working unchanged. An empty or whitespace-only
+string is treated as a legitimate representation of an empty set and does **not** throw (matching
+`new Ranges<T>()`'s own empty default). Tests: `UtilsTest/Objects/RangesTests.cs`
+(`DoubleRangesParseEmptyStringProducesEmptySetTest`,
+`DoubleRangesParseWhitespaceOnlyStringProducesEmptySetTest`).
 
 ### 13. `IntRange.cs` contains an unrelated `System.Formats.Tar` import
 `Utils/Range/IntRange.cs:11` contains `using System.Formats.Tar; // If needed for IAdditionOperators,

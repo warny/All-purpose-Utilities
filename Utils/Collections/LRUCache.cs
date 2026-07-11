@@ -10,13 +10,15 @@ namespace Utils.Collections;
 /// <typeparam name="V">The type of values in the cache.</typeparam>
 /// <remarks>
 /// This type is thread-safe: every member, including enumeration and the <see cref="Keys"/>/
-/// <see cref="Values"/> views, is synchronized through a single internal lock. Enumerating the cache
-/// (directly, or through <see cref="Keys"/> or <see cref="Values"/>) takes a point-in-time snapshot
-/// under that lock rather than returning a live cursor, so it never throws because of a concurrent
-/// modification and never observes a torn state — it just won't reflect mutations made after the
-/// snapshot was taken. As with most thread-safe collections, individual members are atomic but
-/// compound operations spanning more than one call (e.g. "add if not already present") are not;
-/// callers needing that must synchronize externally.
+/// <see cref="Values"/> views, is synchronized through a single internal lock (a private object, not
+/// this instance — locking on the cache instance itself from calling code has no effect on it). Enumerating
+/// the cache (directly, or through <see cref="Keys"/> or <see cref="Values"/>) takes a point-in-time
+/// snapshot under that lock rather than returning a live cursor, so it never throws because of a
+/// concurrent modification and never observes a torn state — it just won't reflect mutations made
+/// after the snapshot was taken. As with most thread-safe collections, individual members are atomic
+/// but compound operations spanning more than one call (e.g. "add if not already present", or
+/// "read-modify-write") are <b>not</b> currently supported atomically by this type; there is no public
+/// way to make such a sequence atomic from outside the class.
 /// </remarks>
 public class LRUCache<K, V> : IDictionary<K, V>
     where K : notnull
