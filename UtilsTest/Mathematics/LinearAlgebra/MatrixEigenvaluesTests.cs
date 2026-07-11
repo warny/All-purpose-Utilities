@@ -200,6 +200,54 @@ public class MatrixEigenvaluesTests
     }
 
     [TestMethod]
+    public void ComputeEigenvalues_ExplicitSymmetryTolerance_IsForwardedToInputValidation()
+    {
+        // Regression: ComputeEigenvalues used to call the no-arg IsSymmetric() overload internally,
+        // so its own symmetryTolerance parameter (once added) had no effect - the upfront symmetry
+        // check always used the tight default tolerance regardless of what the caller passed. This
+        // matrix's asymmetry (~1e-7) comfortably exceeds double's tight default tolerance (~1e-15),
+        // so it must still throw with no override, but must be accepted once symmetryTolerance is
+        // loosened. convergenceTolerance is loosened too, purely so QR iteration settles quickly
+        // given the same residual asymmetry - the point under test is the symmetryTolerance forwarding,
+        // not convergence behavior.
+        var a = new Matrix<double>(new double[,] { { 4, 2.0000001 }, { 2.0000002, 3 } });
+        Assert.ThrowsException<InvalidOperationException>(() => a.ComputeEigenvalues());
+
+        var (values, _) = a.ComputeEigenvalues(symmetryTolerance: 1e-6, convergenceTolerance: 1e-6);
+        Assert.AreEqual(2, values.Length);
+        Assert.IsTrue(values[0] > values[1]);
+    }
+
+    [TestMethod]
+    public void ComputeEigenvalues_InvalidSymmetryTolerance_Throws()
+    {
+        var a = new Matrix<double>(new double[,] { { 2, 1 }, { 1, 2 } });
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => a.ComputeEigenvalues(symmetryTolerance: double.NaN));
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => a.ComputeEigenvalues(symmetryTolerance: -1d));
+    }
+
+    [TestMethod]
+    public void ComputeEigenvalues_ExplicitRankTolerance_StillProducesValidResult()
+    {
+        // Regression: ComputeEigenvalues used to call DecomposeQR() with no argument at every QR
+        // iteration, so its own rankTolerance parameter (once added) had no effect on the internal
+        // decomposition. A generous explicit rankTolerance must still let a well-conditioned matrix
+        // converge to the correct eigenvalues.
+        var a = new Matrix<double>(new double[,] { { 2, 1 }, { 1, 2 } });
+        var (values, _) = a.ComputeEigenvalues(rankTolerance: 1e-3);
+        Assert.AreEqual(3.0, values[0], 1e-2);
+        Assert.AreEqual(1.0, values[1], 1e-2);
+    }
+
+    [TestMethod]
+    public void ComputeEigenvalues_InvalidRankTolerance_Throws()
+    {
+        var a = new Matrix<double>(new double[,] { { 2, 1 }, { 1, 2 } });
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => a.ComputeEigenvalues(rankTolerance: double.NaN));
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => a.ComputeEigenvalues(rankTolerance: -1d));
+    }
+
+    [TestMethod]
     public void ComputeEigenvalues_Half_DiagonalMatrix_Succeeds()
     {
         // Regression: a hard-coded 1e-10 absolute tolerance is meaningless for Half; this exercises

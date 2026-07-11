@@ -20,31 +20,51 @@ public sealed partial class Matrix<T>
     /// Overrides the default relative-plus-absolute convergence tolerance (see
     /// <see cref="DefaultTolerance"/>) used to decide when the off-diagonal magnitude is small
     /// enough to stop iterating. When supplied, the effective absolute threshold is this value
-    /// multiplied by the matrix's largest entry. This is a threshold on the QR-iteration's own
-    /// convergence and is independent of <see cref="IsSymmetric()"/>'s (separately configurable)
-    /// input-validation tolerance. Must be finite and non-negative when supplied.
+    /// multiplied by the matrix's largest entry. Independently configurable from
+    /// <paramref name="symmetryTolerance"/> and <paramref name="rankTolerance"/>. Must be finite and
+    /// non-negative when supplied.
+    /// </param>
+    /// <param name="symmetryTolerance">
+    /// Overrides the default tolerance (see <see cref="DefaultTolerance"/>) used by the upfront
+    /// <see cref="IsSymmetric(T?)"/> input-validation check. Forwarded directly to
+    /// <see cref="IsSymmetric(T?)"/>; independently configurable from
+    /// <paramref name="convergenceTolerance"/> and <paramref name="rankTolerance"/>. Must be finite
+    /// and non-negative when supplied.
+    /// </param>
+    /// <param name="rankTolerance">
+    /// Overrides the default tolerance (see <see cref="DefaultTolerance"/>) used by each QR
+    /// iteration's internal <see cref="DecomposeQR(T?)"/> call to decide whether a column is already
+    /// numerically rank-deficient. Forwarded directly to <see cref="DecomposeQR(T?)"/> at every
+    /// iteration; independently configurable from <paramref name="convergenceTolerance"/> and
+    /// <paramref name="symmetryTolerance"/>. Must be finite and non-negative when supplied.
     /// </param>
     /// <returns>
     /// A tuple containing an array of eigenvalues (descending by magnitude) and a matrix whose
     /// columns are the corresponding eigenvectors.
     /// </returns>
     /// <exception cref="ArgumentOutOfRangeException">
-    /// Thrown when <paramref name="maxIterations"/> is not positive, or <paramref name="convergenceTolerance"/> is supplied but not finite or is negative.
+    /// Thrown when <paramref name="maxIterations"/> is not positive, or any of
+    /// <paramref name="convergenceTolerance"/>, <paramref name="symmetryTolerance"/>,
+    /// <paramref name="rankTolerance"/> is supplied but not finite or is negative.
     /// </exception>
     /// <exception cref="InvalidOperationException">
     /// Thrown when the matrix is not square, not symmetric, or fails to converge.
     /// </exception>
-    public (T[] Eigenvalues, Matrix<T> Eigenvectors) ComputeEigenvalues(int maxIterations = 1000, T? convergenceTolerance = null)
+    public (T[] Eigenvalues, Matrix<T> Eigenvectors) ComputeEigenvalues(int maxIterations = 1000, T? convergenceTolerance = null, T? symmetryTolerance = null, T? rankTolerance = null)
     {
         if (maxIterations <= 0)
             throw new ArgumentOutOfRangeException(nameof(maxIterations), maxIterations, "Must be greater than zero.");
         if (convergenceTolerance is { } explicitConvergenceTolerance)
             ValidateTolerance(explicitConvergenceTolerance, nameof(convergenceTolerance));
+        if (symmetryTolerance is { } explicitSymmetryToleranceArg)
+            ValidateTolerance(explicitSymmetryToleranceArg, nameof(symmetryTolerance));
+        if (rankTolerance is { } explicitRankToleranceArg)
+            ValidateTolerance(explicitRankToleranceArg, nameof(rankTolerance));
         if (!IsSquare)
             throw new InvalidOperationException("Eigenvalue decomposition requires a square matrix.");
 
         int n = Rows;
-        if (!IsSymmetric())
+        if (!IsSymmetric(symmetryTolerance))
             throw new InvalidOperationException("This implementation only supports real symmetric matrices.");
 
         // Working copy for QR iteration
@@ -67,7 +87,7 @@ public sealed partial class Matrix<T>
             if (OffDiagonalNorm(a, n) <= effectiveConvergenceTolerance) break;
 
             // QR decompose the current A
-            var (q, r) = new Matrix<T>(a).DecomposeQR();
+            var (q, r) = new Matrix<T>(a).DecomposeQR(rankTolerance);
 
             // A ← R·Q  (this is A_{k+1} = R_k · Q_k)
             a = (r * q).ToArray();
