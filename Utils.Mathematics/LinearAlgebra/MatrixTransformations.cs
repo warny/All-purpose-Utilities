@@ -208,10 +208,10 @@ public static class MatrixTransformations
             }
         }
 
-        int lastRow = dimension - 1;
+        int lastColumn = dimension - 1;
         for (int i = 0; i < valuesArray.Length; i++)
         {
-            array[lastRow, i] = valuesArray[i];
+            array[i, lastColumn] = valuesArray[i];
         }
 
         return new Matrix<T>(array, false, false, false, null);

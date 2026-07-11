@@ -60,29 +60,61 @@ public class MatrixTransformationsTests
     [TestMethod]
     public void Translation_TranslatesHomogeneousPoint()
     {
+        // The library uses standard matrix-times-column-vector multiplication
+        // (Matrix<T> * Vector<T> computes result[row] = sum_col m[row,col] * v[col]), so
+        // translation coefficients must live in the last COLUMN, not the last row.
         var m = MatrixTransformations.Translation<double>(5d, 7d);
         Assert.AreEqual(3, m.Rows);
         Assert.AreEqual(3, m.Columns);
 
-        // Point (1,2,1) in homogeneous coords → (1+tx, 2+ty, 1) after multiply
-        // MatrixTransformations uses row-vector convention: result = m * [1,2,1]ᵀ
+        // Point (1, 2, 1) in homogeneous coordinates must translate to (1+5, 2+7, 1).
         var v = new Vector<double>(1d, 2d, 1d);
         var result = m * v;
 
-        // Translation stored in last row: result[0]=1, result[1]=2, result[2]=1+5+7=15? No.
-        // Let's check: the translation matrix has identity top-left and values in last ROW.
-        // With column-vector convention: (m*v)[i] = sum(m[i,j]*v[j])
-        // m[0,0]=1,m[1,1]=1,m[2,2]=1, m[2,0]=5, m[2,1]=7 (last row)
-        // result[0] = m[0,0]*v[0] + m[0,1]*v[1] + m[0,2]*v[2] = 1*1 + 0*2 + 0*1 = 1
-        // result[1] = 0*1 + 1*2 + 0*1 = 2
-        // result[2] = 5*1 + 7*2 + 1*1 = 5+14+1 = 20 → this is the row-vector convention result
-        // The result in homogeneous form: divide result by w=result[2]... non trivial.
-        // Instead just check that the matrix has the expected structure.
+        Assert.AreEqual(6d, result[0], Delta);
+        Assert.AreEqual(9d, result[1], Delta);
+        Assert.AreEqual(1d, result[2], Delta);
+
         Assert.AreEqual(1d, m[0, 0], Delta);
         Assert.AreEqual(1d, m[1, 1], Delta);
         Assert.AreEqual(1d, m[2, 2], Delta);
-        Assert.AreEqual(5d, m[2, 0], Delta);
-        Assert.AreEqual(7d, m[2, 1], Delta);
+        Assert.AreEqual(5d, m[0, 2], Delta);
+        Assert.AreEqual(7d, m[1, 2], Delta);
+        Assert.AreEqual(0d, m[2, 0], Delta);
+        Assert.AreEqual(0d, m[2, 1], Delta);
+    }
+
+    [TestMethod]
+    public void Translation_3D_TranslatesHomogeneousPoint()
+    {
+        var m = MatrixTransformations.Translation<double>(1d, -2d, 3d);
+        Assert.AreEqual(4, m.Rows);
+        Assert.AreEqual(4, m.Columns);
+
+        var v = new Vector<double>(10d, 10d, 10d, 1d);
+        var result = m * v;
+
+        Assert.AreEqual(11d, result[0], Delta);
+        Assert.AreEqual(8d, result[1], Delta);
+        Assert.AreEqual(13d, result[2], Delta);
+        Assert.AreEqual(1d, result[3], Delta);
+    }
+
+    [TestMethod]
+    public void Translation_ComposedWithItself_AddsOffsets()
+    {
+        // Composition must remain consistent with the column-vector convention: applying two
+        // translations in sequence via matrix multiplication should add their offsets.
+        var m1 = MatrixTransformations.Translation<double>(2d, 0d);
+        var m2 = MatrixTransformations.Translation<double>(0d, 3d);
+        var composed = m1 * m2;
+
+        var v = new Vector<double>(0d, 0d, 1d);
+        var result = composed * v;
+
+        Assert.AreEqual(2d, result[0], Delta);
+        Assert.AreEqual(3d, result[1], Delta);
+        Assert.AreEqual(1d, result[2], Delta);
     }
 
     // ── Rotation ─────────────────────────────────────────────────────────────
