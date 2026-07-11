@@ -419,6 +419,101 @@ namespace UtilsTest.Mathematics.LinearAlgebra
             Assert.ThrowsException<ArgumentException>(() => new Matrix<double>(new Vector<double>(1d, 2d), null!));
         }
 
+        [TestMethod]
+        public void RawConstructor_NonPositiveDimensions_ThrowsClearArgumentException()
+        {
+            // Regression: the raw (rows, columns) constructor previously performed no validation at
+            // all, relying on the CLR's own (undocumented, exception-type-inconsistent) behavior for
+            // non-positive multidimensional array allocation instead of the explicit contract already
+            // enforced by Identity/Zero/Diagonal.
+            Assert.ThrowsException<ArgumentException>(() => new Matrix<double>(0, 3));
+            Assert.ThrowsException<ArgumentException>(() => new Matrix<double>(3, 0));
+            Assert.ThrowsException<ArgumentException>(() => new Matrix<double>(-1, 3));
+        }
+
+        [TestMethod]
+        public void ArrayConstructor_ZeroSizedArray_ThrowsClearArgumentException()
+        {
+            Assert.ThrowsException<ArgumentException>(() => new Matrix<double>(new double[0, 0]));
+            Assert.ThrowsException<ArgumentException>(() => new Matrix<double>(new double[0, 3]));
+        }
+
+        [TestMethod]
+        public void JaggedArrayConstructor_AllRowsEmpty_ThrowsClearArgumentException()
+        {
+            Assert.ThrowsException<ArgumentException>(() => new Matrix<double>(new double[][] { System.Array.Empty<double>() }));
+        }
+
+        [TestMethod]
+        public void Equals_EqualMatrices_ReturnsTrue()
+        {
+            // Regression: Equals(Matrix<T>) used to require GetHashCode() equality before comparing
+            // elements. A correct hash is a pure function of the components so this never produced a
+            // wrong *answer* here, but the precondition was hazardous (and unnecessary) for any future
+            // tolerance-aware equality/hashing change. Elements are compared directly now.
+            var a = new Matrix<double>(new double[,] { { 1, 2 }, { 3, 4 } });
+            var b = new Matrix<double>(new double[,] { { 1, 2 }, { 3, 4 } });
+            Assert.IsTrue(a.Equals(b));
+        }
+
+        [TestMethod]
+        public void Equals_DifferentValues_ReturnsFalse()
+        {
+            var a = new Matrix<double>(new double[,] { { 1, 2 }, { 3, 4 } });
+            var b = new Matrix<double>(new double[,] { { 1, 2 }, { 3, 5 } });
+            Assert.IsFalse(a.Equals(b));
+        }
+
+        [TestMethod]
+        public void Equals_Null_ReturnsFalse()
+        {
+            var a = new Matrix<double>(new double[,] { { 1, 2 }, { 3, 4 } });
+            Assert.IsFalse(a.Equals((Matrix<double>?)null));
+        }
+
+        [TestMethod]
+        public void Equals_SameReference_ReturnsTrue()
+        {
+            var a = new Matrix<double>(new double[,] { { 1, 2 }, { 3, 4 } });
+            Assert.IsTrue(a.Equals(a));
+        }
+
+        [TestMethod]
+        public void ToString_DefaultFormat_DoesNotRoundValues()
+        {
+            // Regression: ToString used to call T.Round(value, culture.NumberDecimalDigits) before
+            // appending, silently discarding precision the caller never asked to lose.
+            var m = new Matrix<double>(new double[,] { { 1.23456789012345 } });
+            string s = m.ToString("", System.Globalization.CultureInfo.InvariantCulture);
+            StringAssert.Contains(s, "1.23456789012345");
+        }
+
+        [TestMethod]
+        public void ToString_NumericFormatAfterColon_IsForwardedToElements()
+        {
+            // The part of the composite format string after ':' is forwarded verbatim to each
+            // element's own IFormattable.ToString, rather than being silently ignored.
+            var m = new Matrix<double>(new double[,] { { 1.23456, 2.5 } });
+            string s = m.ToString("S:F2", System.Globalization.CultureInfo.InvariantCulture);
+            StringAssert.Contains(s, "1.23");
+            StringAssert.Contains(s, "2.50");
+        }
+
+        [TestMethod]
+        public void ToString_LayoutTokenOnly_UsesCorrectRowSeparator()
+        {
+            var m = new Matrix<double>(new double[,] { { 1 }, { 2 } });
+            string s = m.ToString("C", null);
+            Assert.AreEqual("{ { 1 }, { 2 } }", s);
+        }
+
+        [TestMethod]
+        public void ToString_UnrecognizedLayoutToken_ThrowsFormatException()
+        {
+            var m = new Matrix<double>(new double[,] { { 1 } });
+            Assert.ThrowsException<FormatException>(() => m.ToString("bogus", null));
+        }
+
         /// <summary>
         /// Asserts that two matrices contain the same components within the provided tolerance.
         /// </summary>
