@@ -97,7 +97,7 @@ public static class ObjectUtils
         {
             if (rank == array.Rank)
             {
-                hash = hash * HashMultiplier +array.GetValue(indices).GetHashCode();
+                hash = hash * HashMultiplier + (array.GetValue(indices)?.GetHashCode() ?? 0);
             }
             else
             {
