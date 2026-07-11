@@ -83,7 +83,24 @@ public class StatisticsTests
     [TestMethod]
     public void Median_EvenLength_ReturnsLowerMiddle()
     {
+        // Documented contract: for an even-length sequence, return the LOWER of the two middle
+        // values. [1,3,5,7] sorted has middles 3 and 5; the lower one is 3.
         double[] data = [1, 3, 5, 7];
+        Assert.AreEqual(3.0, Statistics.Median<double>(data), Tol);
+    }
+
+    [TestMethod]
+    public void Median_TwoElements_ReturnsLowerMiddle()
+    {
+        double[] data = [10, 4];
+        Assert.AreEqual(4.0, Statistics.Median<double>(data), Tol);
+    }
+
+    [TestMethod]
+    public void Median_SixElements_ReturnsLowerMiddle()
+    {
+        double[] data = [9, 1, 5, 3, 7, 11];
+        // Sorted: 1,3,5,7,9,11 -> middles are 5 and 7, lower is 5.
         Assert.AreEqual(5.0, Statistics.Median<double>(data), Tol);
     }
 

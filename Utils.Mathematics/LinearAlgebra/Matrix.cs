@@ -20,6 +20,57 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
     private int? hashCode;
 
     /// <summary>
+    /// The type's machine epsilon: the smallest positive value such that <c>1 + eps != 1</c> in
+    /// <typeparamref name="T"/>'s own arithmetic. Computed generically by successive halving rather
+    /// than a hard-coded literal such as <c>1e-10</c>, which is meaningless (and, for low-precision
+    /// types such as <see cref="Half"/>, would silently underflow to zero) across arbitrary
+    /// <see cref="IFloatingPoint{TSelf}"/> types with wildly different precision.
+    /// </summary>
+    private static readonly T MachineEpsilon = ComputeMachineEpsilon();
+
+    private static T ComputeMachineEpsilon()
+    {
+        T two = T.One + T.One;
+        T eps = T.One;
+        while (T.One + eps / two != T.One)
+            eps /= two;
+        return eps;
+    }
+
+    /// <summary>
+    /// Computes the default relative pivot tolerance for an <paramref name="dimension"/>-by-
+    /// <paramref name="dimension"/> elimination used by <see cref="Solve"/>, <see cref="Invert"/>,
+    /// and <see cref="Determinant"/> to reject a numerically near-singular matrix (magnitude
+    /// relative to the matrix's largest entry) instead of dividing by a pivot that is merely close
+    /// to zero, which would silently amplify rounding error into a huge, infinite, or NaN result
+    /// while still returning an apparently valid answer.
+    /// </summary>
+    /// <remarks>
+    /// Scaled by <paramref name="dimension"/> rather than a flat constant, following the common
+    /// numerical-linear-algebra convention that accumulated round-off across elimination grows
+    /// roughly with problem size (e.g. LAPACK-style rank/near-singularity heuristics use
+    /// <c>n * eps</c> rather than a size-independent multiplier). A flat multiplier large enough to
+    /// be meaningful for bigger systems (an earlier version of this method used a fixed 100x) is far
+    /// too loose for small matrices of a low-precision type: for a 2x2 <see cref="Half"/> matrix, a
+    /// flat 100x its machine epsilon is already about 10% of the matrix's magnitude, misclassifying
+    /// ordinary invertible matrices (e.g. a diagonal with a 20:1 ratio between entries) as singular.
+    /// </remarks>
+    private static T DefaultSingularityRelativeTolerance(int dimension) => MachineEpsilon * T.CreateChecked(dimension);
+
+    /// <summary>
+    /// Validates that a caller-supplied tolerance is usable as a comparison threshold: finite and
+    /// non-negative. A <see langword="NaN"/> tolerance would make every "is this within tolerance"
+    /// comparison false (vacuously accepting everything as "not equal" or, depending on the
+    /// comparison direction, silently accepting everything as "equal"), and a negative tolerance
+    /// would reject exact matches.
+    /// </summary>
+    private static void ValidateTolerance(T tolerance, string parameterName)
+    {
+        if (!T.IsFinite(tolerance) || tolerance < T.Zero)
+            throw new ArgumentOutOfRangeException(parameterName, tolerance, "Tolerance must be finite and non-negative.");
+    }
+
+    /// <summary>
     /// Gets the number of rows in the matrix.
     /// </summary>
     public int Rows => components.GetLength(0);
@@ -87,6 +138,42 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
     }
 
     /// <summary>
+    /// Computes the triangular/diagonal/identity structure treating any value within
+    /// <paramref name="tolerance"/> of the expected exact value (zero off-diagonal, one on the
+    /// diagonal) as matching. Never caches into <see cref="isTriangular"/>/<see cref="isDiagonal"/>/
+    /// <see cref="isIdentity"/>, which hold the exact-comparison result used by the parameterless
+    /// properties.
+    /// </summary>
+    private (bool Triangular, bool Diagonal, bool Identity) DetermineStructuralFlags(T tolerance)
+    {
+        if (!IsSquare) return (false, false, false);
+
+        int dimension = components.GetLength(0);
+        bool upperTriangular = true;
+        bool lowerTriangular = true;
+        bool identityCheck = true;
+
+        for (int row = 0; row < dimension; row++)
+        {
+            for (int col = 0; col < dimension; col++)
+            {
+                T value = components[row, col];
+                if (row == col && T.Abs(value - T.One) > tolerance)
+                    identityCheck = false;
+
+                if (T.Abs(value) > tolerance)
+                {
+                    if (row > col) upperTriangular = false;
+                    else if (row < col) lowerTriangular = false;
+                }
+            }
+        }
+
+        bool diagonal = upperTriangular && lowerTriangular;
+        return (upperTriangular || lowerTriangular, diagonal, diagonal && identityCheck);
+    }
+
+    /// <summary>
     /// Indicates whether the matrix is triangular (upper or lower).
     /// </summary>
     public bool IsTriangular
@@ -138,6 +225,66 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
             }
             return components[lastRow, lastCol] == T.One;
         }
+    }
+
+    /// <summary>
+    /// Indicates whether the matrix is triangular (upper or lower) within <paramref name="tolerance"/>,
+    /// treating any off-diagonal entry with absolute value at most <paramref name="tolerance"/> as
+    /// zero. Unlike <see cref="IsTriangular"/>, which requires exact zero, this tolerates rounding
+    /// noise left over from prior arithmetic or decomposition; it is a separate, explicitly opt-in
+    /// predicate rather than a silently chosen global tolerance applied to <see cref="IsTriangular"/>.
+    /// </summary>
+    /// <param name="tolerance">Maximum absolute value an off-diagonal entry may have and still be treated as zero. Must be finite and non-negative.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="tolerance"/> is not finite or is negative.</exception>
+    public bool IsTriangularWithin(T tolerance)
+    {
+        ValidateTolerance(tolerance, nameof(tolerance));
+        return DetermineStructuralFlags(tolerance).Triangular;
+    }
+
+    /// <summary>
+    /// Indicates whether the matrix is diagonal within <paramref name="tolerance"/>. See
+    /// <see cref="IsTriangularWithin"/> for the tolerance-vs-exact rationale.
+    /// </summary>
+    /// <param name="tolerance">Maximum absolute value an off-diagonal entry may have and still be treated as zero. Must be finite and non-negative.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="tolerance"/> is not finite or is negative.</exception>
+    public bool IsDiagonalWithin(T tolerance)
+    {
+        ValidateTolerance(tolerance, nameof(tolerance));
+        return DetermineStructuralFlags(tolerance).Diagonal;
+    }
+
+    /// <summary>
+    /// Indicates whether the matrix is the identity matrix within <paramref name="tolerance"/>,
+    /// treating diagonal entries within <paramref name="tolerance"/> of one, and off-diagonal
+    /// entries within <paramref name="tolerance"/> of zero, as matching. See
+    /// <see cref="IsTriangularWithin"/> for the tolerance-vs-exact rationale.
+    /// </summary>
+    /// <param name="tolerance">Maximum allowed absolute deviation from the expected exact value. Must be finite and non-negative.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="tolerance"/> is not finite or is negative.</exception>
+    public bool IsIdentityWithin(T tolerance)
+    {
+        ValidateTolerance(tolerance, nameof(tolerance));
+        return DetermineStructuralFlags(tolerance).Identity;
+    }
+
+    /// <summary>
+    /// Indicates whether the matrix represents a normal space within <paramref name="tolerance"/>.
+    /// See <see cref="IsTriangularWithin"/> for the tolerance-vs-exact rationale.
+    /// </summary>
+    /// <param name="tolerance">Maximum allowed absolute deviation from the expected exact value. Must be finite and non-negative.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="tolerance"/> is not finite or is negative.</exception>
+    public bool IsNormalSpaceWithin(T tolerance)
+    {
+        ValidateTolerance(tolerance, nameof(tolerance));
+        if (!IsSquare) return false;
+        int lastRow = Rows - 1;
+        int lastCol = Columns - 1;
+        for (int col = 0; col < lastCol; col++)
+        {
+            if (T.Abs(components[lastRow, col]) > tolerance) return false;
+        }
+        return T.Abs(components[lastRow, lastCol] - T.One) <= tolerance;
     }
 
     /// <summary>
@@ -230,6 +377,10 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
         int n = Rows;
         T[,] u = ToArray();
         int swaps = 0;
+        // Elimination divides by the pivot below, so a pivot that is merely close to zero (not
+        // exactly zero) would otherwise amplify rounding error into a huge/infinite/NaN result
+        // instead of the mathematically expected near-zero determinant of a near-singular matrix.
+        T pivotTolerance = MaxAbsoluteEntry(u) * DefaultSingularityRelativeTolerance(n);
 
         for (int k = 0; k < n; k++)
         {
@@ -240,7 +391,7 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
                     pivotRow = i;
             }
 
-            if (u[pivotRow, k].Equals(T.Zero))
+            if (T.Abs(u[pivotRow, k]) <= pivotTolerance)
                 return T.Zero;
 
             if (pivotRow != k)

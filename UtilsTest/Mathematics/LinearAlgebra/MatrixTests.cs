@@ -25,7 +25,7 @@ namespace UtilsTest.Mathematics.LinearAlgebra
             });
 
             double[,] original = matrix.ToArray();
-            (Matrix<double> L, Matrix<double> U) = matrix.DiagonalizeLU();
+            (Matrix<double> L, Matrix<double> U, Matrix<double> P) = matrix.DiagonalizeLU();
             AssertMatricesAreEqual(new Matrix<double>(original), matrix, 1e-12);
 
             for (int i = 0; i < matrix.Rows; i++)
@@ -36,6 +36,63 @@ namespace UtilsTest.Mathematics.LinearAlgebra
                     Assert.AreEqual(0d, U[i, j], 1e-12, $"Upper matrix contained non-zero value at [{i}, {j}].");
                 }
             }
+
+            AssertMatricesAreEqual(P * matrix, L * U, 1e-12);
+        }
+
+        /// <summary>
+        /// Regression for the previous DiagonalizeLU implementation, which applied elimination row
+        /// operations to an identity matrix instead of storing the elimination multipliers directly
+        /// in L, so L * U did not reconstruct the (possibly permuted) original matrix.
+        /// </summary>
+        [TestMethod]
+        public void DiagonalizeLUSatisfiesPermutedReconstructionIdentity_NoSwapNeeded()
+        {
+            // No pivoting occurs: |2| is already the largest first-column magnitude, so P must be
+            // the identity and L * U must equal the original matrix directly.
+            Matrix<double> matrix = new Matrix<double>(new double[,]
+            {
+                                { 2d, 1d },
+                                { 1d, 3d },
+            });
+
+            (Matrix<double> L, Matrix<double> U, Matrix<double> P) = matrix.DiagonalizeLU();
+
+            AssertMatricesAreEqual(MatrixTransformations.Identity<double>(2), P, 1e-12);
+            AssertMatricesAreEqual(matrix, L * U, 1e-12);
+        }
+
+        [TestMethod]
+        public void DiagonalizeLUSatisfiesPermutedReconstructionIdentity_WithSwap()
+        {
+            // Partial pivoting swaps rows here (|6| > |4|), so L * U reconstructs P * matrix, not
+            // matrix itself.
+            Matrix<double> matrix = new Matrix<double>(new double[,]
+            {
+                                { 4d, 3d },
+                                { 6d, 3d },
+            });
+
+            (Matrix<double> L, Matrix<double> U, Matrix<double> P) = matrix.DiagonalizeLU();
+
+            AssertMatricesAreEqual(P * matrix, L * U, 1e-12);
+            // Sanity check that a swap actually happened, i.e. P is not the identity.
+            Assert.AreNotEqual(1d, P[0, 0], 1e-12);
+        }
+
+        [TestMethod]
+        public void DiagonalizeLU3x3SatisfiesPermutedReconstructionIdentity()
+        {
+            Matrix<double> matrix = new Matrix<double>(new double[,]
+            {
+                                { 2d, -1d, -2d },
+                                { -4d, 6d, 3d },
+                                { -4d, -2d, 8d },
+            });
+
+            (Matrix<double> L, Matrix<double> U, Matrix<double> P) = matrix.DiagonalizeLU();
+
+            AssertMatricesAreEqual(P * matrix, L * U, 1e-9);
         }
 
         /// <summary>
@@ -66,6 +123,30 @@ namespace UtilsTest.Mathematics.LinearAlgebra
                     Assert.AreEqual(expected, identity[row, col], tolerance, $"Unexpected value at [{row}, {col}]");
                 }
             }
+        }
+
+        [TestMethod]
+        public void Invert_SingularMatrix_Throws()
+        {
+            var matrix = new Matrix<double>(new double[,] { { 1d, 2d }, { 2d, 4d } });
+            Assert.ThrowsException<InvalidOperationException>(() => matrix.Invert());
+        }
+
+        [TestMethod]
+        public void Invert_NearSingularMatrix_ThrowsInsteadOfReturningGarbage()
+        {
+            var matrix = new Matrix<double>(new double[,] { { 1d, 2d }, { 2d + 2e-13, 4d + 4e-13 } });
+            Assert.ThrowsException<InvalidOperationException>(() => matrix.Invert());
+        }
+
+        [TestMethod]
+        public void Determinant_NearSingularMatrix_ReturnsZeroInsteadOfGarbage()
+        {
+            // Previously, dividing by the tiny (but non-zero) pivot left after elimination could
+            // amplify rounding error into a huge/NaN determinant instead of the mathematically
+            // expected near-zero value for a near-singular matrix.
+            var matrix = new Matrix<double>(new double[,] { { 1d, 2d }, { 2d + 2e-13, 4d + 4e-13 } });
+            Assert.AreEqual(0d, matrix.Determinant, 1e-6);
         }
 
         [TestMethod]
@@ -146,6 +227,84 @@ namespace UtilsTest.Mathematics.LinearAlgebra
                 { 3d, 4d },
             });
             Assert.IsFalse(m2.IsTriangular);
+        }
+
+        [TestMethod]
+        public void IsTriangularWithin_RoundingNoise_ReturnsTrueButExactReturnsFalse()
+        {
+            // A value that should be zero but carries rounding noise from prior arithmetic must
+            // fail the exact predicate while passing its explicit tolerance-aware counterpart -
+            // the two are separate, deliberately opt-in predicates, not one silently-tolerant check.
+            var m = new Matrix<double>(new double[,]
+            {
+                { 1d, 2d, 3d },
+                { 1e-13, 4d, 5d },
+                { 0d, 0d, 6d },
+            });
+
+            Assert.IsFalse(m.IsTriangular);
+            Assert.IsTrue(m.IsTriangularWithin(1e-9));
+            Assert.IsFalse(m.IsTriangularWithin(1e-15));
+        }
+
+        [TestMethod]
+        public void IsDiagonalWithin_RoundingNoise_ReturnsTrueButExactReturnsFalse()
+        {
+            var m = new Matrix<double>(new double[,]
+            {
+                { 2d, 1e-13 },
+                { 0d, 3d },
+            });
+
+            Assert.IsFalse(m.IsDiagonal);
+            Assert.IsTrue(m.IsDiagonalWithin(1e-9));
+        }
+
+        [TestMethod]
+        public void IsIdentityWithin_RoundingNoise_ReturnsTrueButExactReturnsFalse()
+        {
+            var m = new Matrix<double>(new double[,]
+            {
+                { 1d + 1e-13, 0d },
+                { 1e-13, 1d },
+            });
+
+            Assert.IsFalse(m.IsIdentity);
+            Assert.IsTrue(m.IsIdentityWithin(1e-9));
+        }
+
+        [TestMethod]
+        public void IsNormalSpaceWithin_RoundingNoise_ReturnsTrueButExactReturnsFalse()
+        {
+            var m = new Matrix<double>(new double[,]
+            {
+                { 1d, 0d, 0d },
+                { 0d, 1d, 0d },
+                { 1e-13, 1e-13, 1d + 1e-13 },
+            });
+
+            Assert.IsFalse(m.IsNormalSpace);
+            Assert.IsTrue(m.IsNormalSpaceWithin(1e-9));
+        }
+
+        [TestMethod]
+        public void ToleranceAwarePredicates_InvalidTolerance_Throw()
+        {
+            // A NaN tolerance would make every ">" comparison false (vacuously "within tolerance"
+            // for everything), and a negative tolerance would reject even an exact match.
+            var m = Matrix<double>.Identity(2);
+
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => m.IsTriangularWithin(double.NaN));
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => m.IsTriangularWithin(-1d));
+
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => m.IsDiagonalWithin(double.NaN));
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => m.IsDiagonalWithin(-1d));
+
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => m.IsIdentityWithin(double.NaN));
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => m.IsIdentityWithin(-1d));
+
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => m.IsNormalSpaceWithin(double.NaN));
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => m.IsNormalSpaceWithin(-1d));
         }
 
         [TestMethod]

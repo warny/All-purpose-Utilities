@@ -100,11 +100,20 @@ public static class MatrixTransformations
     }
 
     /// <summary>
-    /// Generates a shear matrix using the provided angles.
+    /// Generates a shear (skew) matrix using the provided angles.
     /// </summary>
     /// <typeparam name="T">Numeric type of the matrix.</typeparam>
-    /// <param name="angles">Angles of the shear.</param>
-    /// <returns>New shear matrix.</returns>
+    /// <param name="angles">
+    /// One angle per off-diagonal coefficient of the base <c>d × d</c> shear block, in row-major
+    /// order skipping the diagonal (row 0's <c>d-1</c> off-diagonal columns, then row 1's, and so
+    /// on). The base dimension <c>d</c> is inferred from the count: <c>d * (d - 1)</c> angles are
+    /// required, since a full shear has one free coefficient per off-diagonal position.
+    /// </param>
+    /// <returns>
+    /// A new <c>(d+1) × (d+1)</c> homogeneous shear matrix: identity everywhere except the supplied
+    /// <c>tan(angle)</c> values at the base block's off-diagonal positions.
+    /// </returns>
+    /// <exception cref="ArgumentException">Thrown when the angle count does not match <c>d * (d - 1)</c> for any integer <c>d</c>.</exception>
     public static Matrix<T> Skew<T>(params IEnumerable<T> angles)
         where T : struct, IFloatingPoint<T>, ITrigonometricFunctions<T>, IRootFunctions<T>
     {
@@ -128,9 +137,9 @@ public static class MatrixTransformations
         int coefficientIndex = 0;
         for (int x = 0; x < baseDimension; x++)
         {
-            for (int y = 0; y < baseDimension; y++)
+            for (int y = 0; y < baseDimension - 1; y++)
             {
-                int column = y >= x ? y : y + 1;
+                int column = y < x ? y : y + 1;
                 array[x, column] = T.Tan(anglesArray[coefficientIndex]);
                 coefficientIndex++;
             }
@@ -208,10 +217,10 @@ public static class MatrixTransformations
             }
         }
 
-        int lastRow = dimension - 1;
+        int lastColumn = dimension - 1;
         for (int i = 0; i < valuesArray.Length; i++)
         {
-            array[lastRow, i] = valuesArray[i];
+            array[i, lastColumn] = valuesArray[i];
         }
 
         return new Matrix<T>(array, false, false, false, null);

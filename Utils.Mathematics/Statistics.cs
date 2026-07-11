@@ -137,6 +137,6 @@ public static class Statistics
         if (sorted.Length == 0)
             throw new ArgumentException("Sequence must contain at least one element.", nameof(values));
         Array.Sort(sorted);
-        return sorted[sorted.Length / 2];
+        return sorted[(sorted.Length - 1) / 2];
     }
 }

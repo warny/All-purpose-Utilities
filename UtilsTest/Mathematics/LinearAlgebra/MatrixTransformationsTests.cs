@@ -55,34 +55,130 @@ public class MatrixTransformationsTests
         Assert.AreEqual(6d, m.Determinant, Delta);
     }
 
+    // ── Skew ─────────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void Skew_2D_ProducesHandCalculatedOffDiagonalCoefficients()
+    {
+        // Base dimension 2 needs d*(d-1) = 2 angles: one per off-diagonal position of the 2x2 block.
+        double a0 = Math.Atan(2d);
+        double a1 = Math.Atan(3d);
+        var m = MatrixTransformations.Skew<double>(a0, a1);
+
+        Assert.AreEqual(3, m.Rows);
+        Assert.AreEqual(3, m.Columns);
+
+        // Row-major order skipping the diagonal: [0,1] gets the first angle, [1,0] the second.
+        Assert.AreEqual(2d, m[0, 1], Delta);
+        Assert.AreEqual(3d, m[1, 0], Delta);
+
+        // Diagonal and homogeneous row/column must remain untouched.
+        Assert.AreEqual(1d, m[0, 0], Delta);
+        Assert.AreEqual(1d, m[1, 1], Delta);
+        Assert.AreEqual(1d, m[2, 2], Delta);
+        Assert.AreEqual(0d, m[0, 2], Delta);
+        Assert.AreEqual(0d, m[1, 2], Delta);
+        Assert.AreEqual(0d, m[2, 0], Delta);
+        Assert.AreEqual(0d, m[2, 1], Delta);
+    }
+
+    [TestMethod]
+    public void Skew_3D_ProducesHandCalculatedOffDiagonalCoefficients()
+    {
+        // Base dimension 3 needs d*(d-1) = 6 angles.
+        double[] tans = { 1d, 2d, 3d, 4d, 5d, 6d };
+        double[] angles = System.Array.ConvertAll(tans, Math.Atan);
+        var m = MatrixTransformations.Skew<double>(angles);
+
+        Assert.AreEqual(4, m.Rows);
+        Assert.AreEqual(4, m.Columns);
+
+        // Row-major order skipping the diagonal for each row:
+        // row 0 -> columns 1,2 ; row 1 -> columns 0,2 ; row 2 -> columns 0,1.
+        Assert.AreEqual(1d, m[0, 1], Delta);
+        Assert.AreEqual(2d, m[0, 2], Delta);
+        Assert.AreEqual(3d, m[1, 0], Delta);
+        Assert.AreEqual(4d, m[1, 2], Delta);
+        Assert.AreEqual(5d, m[2, 0], Delta);
+        Assert.AreEqual(6d, m[2, 1], Delta);
+
+        for (int i = 0; i < 3; i++)
+            Assert.AreEqual(1d, m[i, i], Delta, $"diagonal[{i}]");
+
+        for (int i = 0; i < 4; i++)
+        {
+            Assert.AreEqual(i == 3 ? 1d : 0d, m[3, i], Delta, $"homogeneous row [3,{i}]");
+            Assert.AreEqual(i == 3 ? 1d : 0d, m[i, 3], Delta, $"homogeneous column [{i},3]");
+        }
+    }
+
+    [TestMethod]
+    public void Skew_InvalidAngleCount_Throws()
+    {
+        // 3 is not d*(d-1) for any integer d (0, 2, 6, 12, ...).
+        Assert.ThrowsException<ArgumentException>(() => MatrixTransformations.Skew<double>(1d, 2d, 3d));
+    }
+
     // ── Translation ──────────────────────────────────────────────────────────
 
     [TestMethod]
     public void Translation_TranslatesHomogeneousPoint()
     {
+        // The library uses standard matrix-times-column-vector multiplication
+        // (Matrix<T> * Vector<T> computes result[row] = sum_col m[row,col] * v[col]), so
+        // translation coefficients must live in the last COLUMN, not the last row.
         var m = MatrixTransformations.Translation<double>(5d, 7d);
         Assert.AreEqual(3, m.Rows);
         Assert.AreEqual(3, m.Columns);
 
-        // Point (1,2,1) in homogeneous coords → (1+tx, 2+ty, 1) after multiply
-        // MatrixTransformations uses row-vector convention: result = m * [1,2,1]ᵀ
+        // Point (1, 2, 1) in homogeneous coordinates must translate to (1+5, 2+7, 1).
         var v = new Vector<double>(1d, 2d, 1d);
         var result = m * v;
 
-        // Translation stored in last row: result[0]=1, result[1]=2, result[2]=1+5+7=15? No.
-        // Let's check: the translation matrix has identity top-left and values in last ROW.
-        // With column-vector convention: (m*v)[i] = sum(m[i,j]*v[j])
-        // m[0,0]=1,m[1,1]=1,m[2,2]=1, m[2,0]=5, m[2,1]=7 (last row)
-        // result[0] = m[0,0]*v[0] + m[0,1]*v[1] + m[0,2]*v[2] = 1*1 + 0*2 + 0*1 = 1
-        // result[1] = 0*1 + 1*2 + 0*1 = 2
-        // result[2] = 5*1 + 7*2 + 1*1 = 5+14+1 = 20 → this is the row-vector convention result
-        // The result in homogeneous form: divide result by w=result[2]... non trivial.
-        // Instead just check that the matrix has the expected structure.
+        Assert.AreEqual(6d, result[0], Delta);
+        Assert.AreEqual(9d, result[1], Delta);
+        Assert.AreEqual(1d, result[2], Delta);
+
         Assert.AreEqual(1d, m[0, 0], Delta);
         Assert.AreEqual(1d, m[1, 1], Delta);
         Assert.AreEqual(1d, m[2, 2], Delta);
-        Assert.AreEqual(5d, m[2, 0], Delta);
-        Assert.AreEqual(7d, m[2, 1], Delta);
+        Assert.AreEqual(5d, m[0, 2], Delta);
+        Assert.AreEqual(7d, m[1, 2], Delta);
+        Assert.AreEqual(0d, m[2, 0], Delta);
+        Assert.AreEqual(0d, m[2, 1], Delta);
+    }
+
+    [TestMethod]
+    public void Translation_3D_TranslatesHomogeneousPoint()
+    {
+        var m = MatrixTransformations.Translation<double>(1d, -2d, 3d);
+        Assert.AreEqual(4, m.Rows);
+        Assert.AreEqual(4, m.Columns);
+
+        var v = new Vector<double>(10d, 10d, 10d, 1d);
+        var result = m * v;
+
+        Assert.AreEqual(11d, result[0], Delta);
+        Assert.AreEqual(8d, result[1], Delta);
+        Assert.AreEqual(13d, result[2], Delta);
+        Assert.AreEqual(1d, result[3], Delta);
+    }
+
+    [TestMethod]
+    public void Translation_ComposedWithItself_AddsOffsets()
+    {
+        // Composition must remain consistent with the column-vector convention: applying two
+        // translations in sequence via matrix multiplication should add their offsets.
+        var m1 = MatrixTransformations.Translation<double>(2d, 0d);
+        var m2 = MatrixTransformations.Translation<double>(0d, 3d);
+        var composed = m1 * m2;
+
+        var v = new Vector<double>(0d, 0d, 1d);
+        var result = composed * v;
+
+        Assert.AreEqual(2d, result[0], Delta);
+        Assert.AreEqual(3d, result[1], Delta);
+        Assert.AreEqual(1d, result[2], Delta);
     }
 
     // ── Rotation ─────────────────────────────────────────────────────────────
