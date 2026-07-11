@@ -46,7 +46,11 @@ Default flow:
 
 ```text
 raw embedded code
+→ RawEmbeddedCode
+→ ParserEmbeddedCodeTransformationService.TransformOrThrow(...)
 → NoOpParserEmbeddedCodeTransformer
+→ diagnostics validation
+→ TransformedEmbeddedCode
 → generated C# emission OR existing dynamic compiler/preparer
 ```
 
@@ -54,7 +58,11 @@ Optional transformer flow:
 
 ```text
 raw embedded code
+→ RawEmbeddedCode
+→ ParserEmbeddedCodeTransformationService.TransformOrThrow(...)
 → custom IParserEmbeddedCodeTransformer
+→ diagnostics validation
+→ TransformedEmbeddedCode
 → generated C# emission OR existing dynamic compiler/preparer
 ```
 
@@ -122,7 +130,7 @@ This boundary is intentionally metadata/preparation-only. It is not wired into `
 
 ## 4.2 Embedded-code transformer boundary
 
-`IParserEmbeddedCodeTransformer` is the only supported transformation boundary for embedded parser code. The transformer receives a `ParserEmbeddedCodeTransformationContext` and returns a `ParserEmbeddedCodeTransformationResult`. The result carries transformed target-language code and optional `ParserEmbeddedCodeDiagnostic` entries with a `ParserEmbeddedCodeDiagnosticSeverity`. The context includes passive/descriptive metadata such as `Code`, `Location`, `GrammarName`, `RuleName`, `Parameters`, `Locals`, `Returns`, and `Labels`; this metadata is available to transformers, but parser/generator core code must not depend on a specific transformer implementation.
+`IParserEmbeddedCodeTransformer` is the only supported transformation boundary for embedded parser code. Runtime preparation and generated emission now materialize this boundary through `ParserEmbeddedCodeTransformationService`, with typed `RawEmbeddedCode` and `TransformedEmbeddedCode` values so injection and expression compilation consume transformed code explicitly rather than ambiguous strings. `TransformedEmbeddedCode` has no public constructor; callers obtain it through the service that invokes the transformer and validates error diagnostics. The transformer receives a `ParserEmbeddedCodeTransformationContext` and returns a `ParserEmbeddedCodeTransformationResult`. The result carries transformed target-language code and optional `ParserEmbeddedCodeDiagnostic` entries with a `ParserEmbeddedCodeDiagnosticSeverity`. The context includes passive/descriptive metadata such as `Code`, `Location`, `GrammarName`, `RuleName`, `Parameters`, `Locals`, `Returns`, and `Labels`; this metadata is available to transformers, but parser/generator core code must not depend on a specific transformer implementation.
 
 `ParserEmbeddedCodeLocation` identifies supported locations, including parser `@header`, parser `@footer`, rule `@init`, rule `@after`, inline parser actions, and semantic predicates where that location exists in the current path. `NoOpParserEmbeddedCodeTransformer` is the default transformer. It returns the embedded code unchanged and is the correct default when grammar actions are already valid target-language code.
 
@@ -205,7 +213,11 @@ Dynamic transformation flow:
 
 ```text
 raw embedded code
+→ RawEmbeddedCode
+→ ParserEmbeddedCodeTransformationService.TransformOrThrow(...)
 → IParserEmbeddedCodeTransformer.Transform(...)
+→ diagnostics validation
+→ TransformedEmbeddedCode
 → existing compiler/preparer passed to the parser
 → prepared predicate/action
 ```

@@ -22,13 +22,13 @@ internal static partial class GrammarEmitter
         {
             if (rule.InitAction is not null)
             {
-                string code = TransformEmbeddedCode(transformer, rule.InitAction.Code, ParserEmbeddedCodeLocation.RuleInit, grammar, rule);
+                TransformedEmbeddedCode code = TransformEmbeddedCode(transformer, new RawEmbeddedCode(rule.InitAction.Code), ParserEmbeddedCodeLocation.RuleInit, grammar, rule);
                 hooks.Add(new LifecycleHook(rule.Name, code, isInit: true, $"__Init_{Sanitize(rule.Name)}"));
             }
 
             if (rule.AfterAction is not null)
             {
-                string code = TransformEmbeddedCode(transformer, rule.AfterAction.Code, ParserEmbeddedCodeLocation.RuleAfter, grammar, rule);
+                TransformedEmbeddedCode code = TransformEmbeddedCode(transformer, new RawEmbeddedCode(rule.AfterAction.Code), ParserEmbeddedCodeLocation.RuleAfter, grammar, rule);
                 hooks.Add(new LifecycleHook(rule.Name, code, isInit: false, $"__After_{Sanitize(rule.Name)}"));
             }
         }
@@ -61,7 +61,7 @@ internal static partial class GrammarEmitter
 
         foreach (var hook in hooks)
         {
-            hook.EmittedCode = TransformEmbeddedCode(transformer, hook.Code, hook.IsPredicate ? ParserEmbeddedCodeLocation.LexerSemanticPredicate : ParserEmbeddedCodeLocation.LexerInlineAction, grammar, new G4Rule { Name = hook.RuleName });
+            hook.EmittedCode = TransformEmbeddedCode(transformer, hook.RawCode, hook.IsPredicate ? ParserEmbeddedCodeLocation.LexerSemanticPredicate : ParserEmbeddedCodeLocation.LexerInlineAction, grammar, new G4Rule { Name = hook.RuleName });
         }
 
         return hooks;
@@ -120,7 +120,7 @@ internal static partial class GrammarEmitter
             for (int index = firstHookIndex; index < hooks.Count; index++)
             {
                 EmbeddedCodeHook hook = hooks[index];
-                hook.EmittedCode = TransformEmbeddedCode(transformer, hook.Code, hook.IsPredicate ? ParserEmbeddedCodeLocation.SemanticPredicate : ParserEmbeddedCodeLocation.InlineAction, grammar, rule);
+                hook.EmittedCode = TransformEmbeddedCode(transformer, hook.RawCode, hook.IsPredicate ? ParserEmbeddedCodeLocation.SemanticPredicate : ParserEmbeddedCodeLocation.InlineAction, grammar, rule);
             }
         }
 
@@ -310,12 +310,12 @@ internal static partial class GrammarEmitter
     /// </summary>
     private sealed class LexerEmbeddedCodeHook
     {
+        private TransformedEmbeddedCode? _emittedCode;
         /// <summary>Initializes lexer embedded-code hook metadata.</summary>
         public LexerEmbeddedCodeHook(string ruleName, string code, bool isPredicate, int alternativeIndex, int elementIndex, string methodName)
         {
             RuleName = ruleName;
-            Code = code;
-            EmittedCode = code;
+            RawCode = new RawEmbeddedCode(code);
             IsPredicate = isPredicate;
             AlternativeIndex = alternativeIndex;
             ElementIndex = elementIndex;
@@ -326,10 +326,14 @@ internal static partial class GrammarEmitter
         public string RuleName { get; }
 
         /// <summary>Gets the raw embedded source code without ANTLR braces.</summary>
-        public string Code { get; }
+        public RawEmbeddedCode RawCode { get; }
 
-        /// <summary>Gets or sets the rewritten C# source emitted into the hook method.</summary>
-        public string EmittedCode { get; set; }
+        /// <summary>Gets the transformed C# source emitted into the hook method.</summary>
+        public TransformedEmbeddedCode EmittedCode
+        {
+            get => _emittedCode ?? throw new InvalidOperationException("Embedded code has not been transformed yet.");
+            set => _emittedCode = value ?? throw new ArgumentNullException(nameof(value));
+        }
 
         /// <summary>Gets whether this hook is a lexer predicate rather than a lexer action.</summary>
         public bool IsPredicate { get; }
@@ -349,6 +353,7 @@ internal static partial class GrammarEmitter
     /// </summary>
     private sealed class EmbeddedCodeHook
     {
+        private TransformedEmbeddedCode? _emittedCode;
         /// <summary>
         /// Initializes embedded-code hook metadata.
         /// </summary>
@@ -361,8 +366,7 @@ internal static partial class GrammarEmitter
         public EmbeddedCodeHook(string ruleName, string code, bool isPredicate, int alternativeIndex, int elementIndex, string methodName)
         {
             RuleName = ruleName;
-            Code = code;
-            EmittedCode = code;
+            RawCode = new RawEmbeddedCode(code);
             IsPredicate = isPredicate;
             AlternativeIndex = alternativeIndex;
             ElementIndex = elementIndex;
@@ -373,10 +377,14 @@ internal static partial class GrammarEmitter
         public string RuleName { get; }
 
         /// <summary>Gets the raw embedded source code without ANTLR braces.</summary>
-        public string Code { get; }
+        public RawEmbeddedCode RawCode { get; }
 
-        /// <summary>Gets or sets the rewritten C# source emitted into the hook method.</summary>
-        public string EmittedCode { get; set; }
+        /// <summary>Gets the transformed C# source emitted into the hook method.</summary>
+        public TransformedEmbeddedCode EmittedCode
+        {
+            get => _emittedCode ?? throw new InvalidOperationException("Embedded code has not been transformed yet.");
+            set => _emittedCode = value ?? throw new ArgumentNullException(nameof(value));
+        }
 
         /// <summary>Gets a value indicating whether the hook is a semantic predicate.</summary>
         public bool IsPredicate { get; }
@@ -400,10 +408,10 @@ internal static partial class GrammarEmitter
         /// Initializes lifecycle hook metadata.
         /// </summary>
         /// <param name="ruleName">Owning parser rule name.</param>
-        /// <param name="code">Raw lifecycle action body without ANTLR braces.</param>
+        /// <param name="code">Transformed lifecycle action body ready for emission.</param>
         /// <param name="isInit"><see langword="true"/> for <c>@init</c>; <see langword="false"/> for <c>@after</c>.</param>
         /// <param name="methodName">Generated C# hook method name.</param>
-        public LifecycleHook(string ruleName, string code, bool isInit, string methodName)
+        public LifecycleHook(string ruleName, TransformedEmbeddedCode code, bool isInit, string methodName)
         {
             RuleName = ruleName;
             Code = code;
@@ -414,8 +422,8 @@ internal static partial class GrammarEmitter
         /// <summary>Gets the owning parser rule name.</summary>
         public string RuleName { get; }
 
-        /// <summary>Gets the raw lifecycle action body without ANTLR braces.</summary>
-        public string Code { get; }
+        /// <summary>Gets the transformed lifecycle action body ready for emission.</summary>
+        public TransformedEmbeddedCode Code { get; }
 
         /// <summary>Gets a value indicating whether this is an <c>@init</c> hook (<see langword="false"/> means <c>@after</c>).</summary>
         public bool IsInit { get; }

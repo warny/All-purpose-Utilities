@@ -1,5 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using Utils.Expressions;
 using Utils.Parser.Diagnostics.EmbeddedCode;
 using Utils.Parser.Diagnostics;
@@ -34,6 +36,76 @@ public class ExpressionEmbeddedCodePreparerTests
         Assert.AreEqual(EmbeddedCodePreparationStatus.Succeeded, result.Status);
         Assert.IsNotNull(result.Artifact);
         Assert.AreEqual(SemanticPredicateEvaluationStatus.Satisfied, result.Artifact.Evaluate(CreatePredicateContext("true")).Status);
+    }
+
+
+    [TestMethod]
+    public void EmbeddedCodeSource_WhenCreated_ExposesTypedRawCode()
+    {
+        var source = CreateSource("true", EmbeddedCodeKind.SemanticPredicate);
+
+        Assert.AreEqual("true", source.RawCode.Text);
+        Assert.IsInstanceOfType(source.RawCode, typeof(RawEmbeddedCode));
+    }
+
+    [TestMethod]
+    public void PrepareSemanticPredicate_WhenTransformerProvided_CompilerReceivesTransformedCode()
+    {
+        var compiler = new FakeExpressionCompiler();
+        var preparer = new ExpressionEmbeddedCodePreparer(compiler, new ReplaceRuntimeCodeTransformer());
+
+        var result = preparer.PrepareSemanticPredicate(
+            CreateSource("__TOKEN_PREDICATE__", EmbeddedCodeKind.SemanticPredicate),
+            CreateContext(EmbeddedCodeTarget.RuntimeInlineExpression));
+
+        Assert.AreEqual(EmbeddedCodePreparationStatus.Succeeded, result.Status);
+        Assert.AreEqual("true", compiler.LastContent);
+        Assert.AreNotEqual("__TOKEN_PREDICATE__", compiler.LastContent);
+    }
+
+    [TestMethod]
+    public void PrepareParserAction_WhenNoOpTransformerUsed_CompilerReceivesTextuallyIdenticalTransformedCode()
+    {
+        var compiler = new FakeExpressionCompiler();
+        var preparer = new ExpressionEmbeddedCodePreparer(compiler, NoOpParserEmbeddedCodeTransformer.Instance);
+
+        var result = preparer.PrepareParserAction(
+            CreateSource("increment", EmbeddedCodeKind.ParserInlineAction),
+            CreateContext(EmbeddedCodeTarget.RuntimeInlineExpression));
+
+        Assert.AreEqual(EmbeddedCodePreparationStatus.Succeeded, result.Status);
+        Assert.AreEqual("increment", compiler.LastContent);
+    }
+
+
+    [TestMethod]
+    public void TransformedEmbeddedCode_DoesNotExposePublicConstructorsOrManualResultConversion()
+    {
+        ConstructorInfo[] constructors = typeof(TransformedEmbeddedCode).GetConstructors();
+        MethodInfo[] conversionMethods = typeof(ParserEmbeddedCodeTransformationService)
+            .Assembly
+            .GetTypes()
+            .Where(static type => type.IsAbstract && type.IsSealed)
+            .SelectMany(static type => type.GetMethods(BindingFlags.Public | BindingFlags.Static))
+            .Where(static method => method.ReturnType == typeof(TransformedEmbeddedCode))
+            .ToArray();
+
+        Assert.AreEqual(0, constructors.Length);
+        CollectionAssert.AreEqual(
+            new[] { nameof(ParserEmbeddedCodeTransformationService.TransformOrThrow) },
+            conversionMethods.Select(static method => method.Name).Distinct().ToArray());
+    }
+
+    [TestMethod]
+    public void ParserEmbeddedCodeTransformationService_WhenRawCodeIsNull_DoesNotInvokeTransformer()
+    {
+        var transformer = new CountingTransformer();
+
+        Assert.ThrowsException<ArgumentNullException>(() => ParserEmbeddedCodeTransformationService.TransformOrThrow(
+            transformer,
+            null!,
+            new ParserEmbeddedCodeTransformationContext { Location = ParserEmbeddedCodeLocation.InlineAction }));
+        Assert.AreEqual(0, transformer.Count);
     }
 
     [TestMethod]
@@ -414,6 +486,23 @@ public class ExpressionEmbeddedCodePreparerTests
         public void RecordPosition(int inputPosition) => RecordedPositions.Add(inputPosition);
     }
 
+
+    /// <summary>
+    /// Test transformer that counts invocations for service validation tests.
+    /// </summary>
+    private sealed class CountingTransformer : IParserEmbeddedCodeTransformer
+    {
+        /// <summary>Gets the number of transform calls.</summary>
+        public int Count { get; private set; }
+
+        /// <inheritdoc />
+        public ParserEmbeddedCodeTransformationResult Transform(ParserEmbeddedCodeTransformationContext context)
+        {
+            Count++;
+            return new ParserEmbeddedCodeTransformationResult { Code = context.Code };
+        }
+    }
+
     /// <summary>
     /// Test transformer that rewrites a sentinel into the fake compiler's action expression.
     /// </summary>
@@ -422,7 +511,7 @@ public class ExpressionEmbeddedCodePreparerTests
         /// <inheritdoc />
         public ParserEmbeddedCodeTransformationResult Transform(ParserEmbeddedCodeTransformationContext context)
         {
-            return new ParserEmbeddedCodeTransformationResult { Code = context.Code.Replace("__TOKEN__", "increment") };
+            return new ParserEmbeddedCodeTransformationResult { Code = context.Code.Replace("__TOKEN__", "increment").Replace("__TOKEN_PREDICATE__", "true") };
         }
     }
 

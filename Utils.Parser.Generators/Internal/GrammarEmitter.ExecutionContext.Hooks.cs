@@ -55,6 +55,16 @@ internal static partial class GrammarEmitter
     /// </summary>
     /// <param name="code">Embedded C# code to split.</param>
     /// <returns>Lines that can be re-emitted into a generated hook body.</returns>
+    private static IEnumerable<string> SplitEmbeddedCodeLines(TransformedEmbeddedCode code)
+    {
+        return SplitEmbeddedCodeLines(code.Text);
+    }
+
+    /// <summary>
+    /// Splits embedded C# text into normalized lines.
+    /// </summary>
+    /// <param name="code">Embedded C# code to split.</param>
+    /// <returns>Lines that can be emitted into generated source.</returns>
     private static IEnumerable<string> SplitEmbeddedCodeLines(string code)
     {
         if (code.Length == 0)
@@ -78,33 +88,31 @@ internal static partial class GrammarEmitter
     /// <param name="grammar">Owning grammar.</param>
     /// <param name="rule">Owning parser rule, or <c>null</c> for grammar-level code.</param>
     /// <returns>Transformed code safe to emit.</returns>
-    private static string TransformEmbeddedCode(
+    private static TransformedEmbeddedCode TransformEmbeddedCode(
         IParserEmbeddedCodeTransformer transformer,
-        string code,
+        RawEmbeddedCode code,
         ParserEmbeddedCodeLocation location,
         G4Grammar grammar,
         G4Rule? rule)
     {
-        ParserEmbeddedCodeTransformationResult result = transformer.Transform(new ParserEmbeddedCodeTransformationContext
-        {
-            Code = code,
-            Location = location,
-            GrammarName = grammar.Name,
-            RuleName = rule?.Name,
-            Parameters = CreateDeclarationDescriptors(rule?.Parameters),
-            Locals = CreateDeclarationDescriptors(rule is null || rule.Locals.Count == 0 ? null : string.Join(", ", rule.Locals)),
-            Returns = CreateDeclarationDescriptors(rule?.Returns),
-            Labels = rule is null ? ParserEmbeddedCodeTransformationContext.EmptyLabels : CreateLabelDescriptors(rule.Content)
-        });
-
-        ParserEmbeddedCodeDiagnostic? error = result.Diagnostics.FirstOrDefault(static diagnostic => diagnostic.Severity == ParserEmbeddedCodeDiagnosticSeverity.Error);
-        if (error is not null)
-        {
-            string codeText = string.IsNullOrWhiteSpace(error.Code) ? "APU embedded-code transformer" : error.Code!;
-            throw new InvalidOperationException($"{codeText}: {error.Message}");
-        }
-
-        return result.Code;
+        return ParserEmbeddedCodeTransformationService.TransformOrThrow(
+            transformer,
+            code,
+            new ParserEmbeddedCodeTransformationContext
+            {
+                Location = location,
+                GrammarName = grammar.Name,
+                RuleName = rule?.Name,
+                Parameters = CreateDeclarationDescriptors(rule?.Parameters),
+                Locals = CreateDeclarationDescriptors(rule is null || rule.Locals.Count == 0 ? null : string.Join(", ", rule.Locals)),
+                Returns = CreateDeclarationDescriptors(rule?.Returns),
+                Labels = rule is null ? ParserEmbeddedCodeTransformationContext.EmptyLabels : CreateLabelDescriptors(rule.Content)
+            },
+            static error =>
+            {
+                string codeText = string.IsNullOrWhiteSpace(error.Code) ? "APU embedded-code transformer" : error.Code!;
+                return new InvalidOperationException($"{codeText}: {error.Message}");
+            });
     }
 
     /// <summary>
@@ -243,9 +251,9 @@ internal static partial class GrammarEmitter
         /// </summary>
         /// <param name="code">Raw embedded predicate code without ANTLR braces.</param>
         /// <returns>A normalized predicate body.</returns>
-        public static GeneratedEmbeddedCodeBody ForPredicate(string code)
+        public static GeneratedEmbeddedCodeBody ForPredicate(TransformedEmbeddedCode code)
         {
-            string trimmedCode = code.Trim();
+            string trimmedCode = code.Text.Trim();
             var kind = ContainsReturnKeyword(trimmedCode)
                 ? GeneratedEmbeddedCodeBodyKind.Block
                 : GeneratedEmbeddedCodeBodyKind.Expression;
@@ -258,9 +266,9 @@ internal static partial class GrammarEmitter
         /// </summary>
         /// <param name="code">Raw embedded action code without ANTLR braces.</param>
         /// <returns>A normalized action body.</returns>
-        public static GeneratedEmbeddedCodeBody ForAction(string code)
+        public static GeneratedEmbeddedCodeBody ForAction(TransformedEmbeddedCode code)
         {
-            return new GeneratedEmbeddedCodeBody(GeneratedEmbeddedCodeBodyKind.Block, code.Trim());
+            return new GeneratedEmbeddedCodeBody(GeneratedEmbeddedCodeBodyKind.Block, code.Text.Trim());
         }
 
         /// <summary>

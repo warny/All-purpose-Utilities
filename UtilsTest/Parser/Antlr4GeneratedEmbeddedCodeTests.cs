@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Runtime.Loader;
 using DiagnosticBag = Utils.Parser.Diagnostics.DiagnosticBag;
 using ParserDiagnostics = Utils.Parser.Diagnostics.ParserDiagnostics;
+using Utils.Parser.Diagnostics.EmbeddedCode;
 using Utils.Parser.EmbeddedCode;
 using Utils.Parser.Generators.Internal;
 using Utils.Parser.Model;
@@ -6051,6 +6052,82 @@ public class Antlr4GeneratedEmbeddedCodeTests
         StringAssert.Contains(exception.Message, expectedMessage);
     }
 
+
+    [TestMethod]
+    public void Emit_WhenTransformerReplacesParserPredicateAndAction_RawCodeDoesNotAppearInGeneratedHookBodies()
+    {
+        const string grammar = """
+            grammar P;
+            start : { RAW_PREDICATE }? A { RAW_ACTION; } ;
+            A : 'a' ;
+            """;
+
+        string source = EmitWithTransformer(grammar, new MarkerEmbeddedCodeTransformer());
+
+        Assert.IsFalse(source.Contains("return RAW_PREDICATE;", StringComparison.Ordinal));
+        Assert.IsFalse(source.Contains("        RAW_ACTION;", StringComparison.Ordinal));
+        StringAssert.Contains(source, "return true;");
+        StringAssert.Contains(source, "int transformedActionMarker = 0;");
+    }
+
+    [TestMethod]
+    public void Emit_WhenTransformerReplacesLexerHook_RawCodeDoesNotAppearInGeneratedHookBodies()
+    {
+        const string grammar = """
+            lexer grammar P;
+            A : { RAW_LEXER_PREDICATE }? 'a' { RAW_LEXER_ACTION; } ;
+            """;
+
+        string source = EmitWithTransformer(grammar, new MarkerEmbeddedCodeTransformer());
+
+        Assert.IsFalse(source.Contains("return RAW_LEXER_PREDICATE;", StringComparison.Ordinal));
+        Assert.IsFalse(source.Contains("        RAW_LEXER_ACTION;", StringComparison.Ordinal));
+        StringAssert.Contains(source, "return true;");
+        StringAssert.Contains(source, "int transformedLexerActionMarker = 0;");
+    }
+
+    [TestMethod]
+    public void EmbeddedCodeHookTypes_UseTypedRawAndTransformedCodeFields()
+    {
+        Type emitterType = typeof(GrammarEmitter);
+        Type hookType = emitterType.GetNestedType("EmbeddedCodeHook", BindingFlags.NonPublic)!;
+        Type lexerHookType = emitterType.GetNestedType("LexerEmbeddedCodeHook", BindingFlags.NonPublic)!;
+
+        Assert.AreEqual(typeof(RawEmbeddedCode), hookType.GetProperty("RawCode", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.PropertyType);
+        Assert.AreEqual(typeof(TransformedEmbeddedCode), hookType.GetProperty("EmittedCode", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.PropertyType);
+        Assert.AreEqual(typeof(RawEmbeddedCode), lexerHookType.GetProperty("RawCode", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.PropertyType);
+        Assert.AreEqual(typeof(TransformedEmbeddedCode), lexerHookType.GetProperty("EmittedCode", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.PropertyType);
+        Assert.IsNull(hookType.GetProperty("Code", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic));
+        Assert.IsNull(lexerHookType.GetProperty("Code", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic));
+    }
+
+
+    [TestMethod]
+    public void EmbeddedCodeHookTypes_WhenEmittedCodeIsReadBeforeTransformation_Throws()
+    {
+        Type hookType = typeof(GrammarEmitter).GetNestedType("EmbeddedCodeHook", BindingFlags.NonPublic)!;
+        object hook = Activator.CreateInstance(
+            hookType,
+            BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public,
+            binder: null,
+            args: ["start", "RAW_ACTION;", false, 0, 0, "__Action_start_0_0_0"],
+            culture: null)!;
+
+        var property = hookType.GetProperty("EmittedCode", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!;
+        try
+        {
+            _ = property.GetValue(hook);
+            Assert.Fail("Reading untransformed emitted code should fail.");
+        }
+        catch (TargetInvocationException exception)
+        {
+            Assert.IsInstanceOfType(exception.InnerException, typeof(InvalidOperationException));
+        }
+        catch (InvalidOperationException)
+        {
+        }
+    }
+
     /// <summary>
     /// Emits generated C# for the supplied grammar using the production grammar emitter.
     /// </summary>
@@ -6060,6 +6137,19 @@ public class Antlr4GeneratedEmbeddedCodeTests
     {
         var grammar = new G4Parser(new G4Tokenizer(grammarText).Tokenize()).Parse();
         return GrammarEmitter.Emit(grammar, "Generated.Tests", "P", "P.g4");
+    }
+
+
+    /// <summary>
+    /// Emits generated C# for the supplied grammar using a test transformer.
+    /// </summary>
+    /// <param name="grammarText">ANTLR4 grammar source.</param>
+    /// <param name="transformer">Transformer to apply before generated emission.</param>
+    /// <returns>Generated C# source.</returns>
+    private static string EmitWithTransformer(string grammarText, IParserEmbeddedCodeTransformer transformer)
+    {
+        var grammar = new G4Parser(new G4Tokenizer(grammarText).Tokenize()).Parse();
+        return GrammarEmitter.Emit(grammar, "Generated.Tests", "P", "P.g4", transformer);
     }
 
     /// <summary>
@@ -6536,4 +6626,26 @@ public class Antlr4GeneratedEmbeddedCodeTests
     /// <param name="AssemblyStream">Emitted assembly stream.</param>
     /// <param name="Diagnostics">Roslyn diagnostics reported during compilation.</param>
     private sealed record CompilationResult(bool Success, MemoryStream AssemblyStream, IReadOnlyList<Diagnostic> Diagnostics);
+
+    /// <summary>
+    /// Test transformer that replaces raw embedded code with deterministic generated C# markers.
+    /// </summary>
+    private sealed class MarkerEmbeddedCodeTransformer : IParserEmbeddedCodeTransformer
+    {
+        /// <inheritdoc />
+        public ParserEmbeddedCodeTransformationResult Transform(ParserEmbeddedCodeTransformationContext context)
+        {
+            string code = context.Location switch
+            {
+                ParserEmbeddedCodeLocation.SemanticPredicate => "true",
+                ParserEmbeddedCodeLocation.InlineAction => "int transformedActionMarker = 0;",
+                ParserEmbeddedCodeLocation.LexerSemanticPredicate => "true",
+                ParserEmbeddedCodeLocation.LexerInlineAction => "int transformedLexerActionMarker = 0;",
+                _ => context.Code
+            };
+
+            return new ParserEmbeddedCodeTransformationResult { Code = code };
+        }
+    }
+
 }
