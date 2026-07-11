@@ -1,4 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Reflection;
 using Utils.Mathematics.LinearAlgebra;
 
 namespace UtilsTest.Mathematics.LinearAlgebra;
@@ -72,5 +73,57 @@ public class MatrixSolveTests
         // like a normal return value instead of a diagnosed failure.
         var a = new Matrix<double>(new double[,] { { 1, 2 }, { 2 + 2e-13, 4 + 4e-13 } });
         Assert.ThrowsException<InvalidOperationException>(() => a.Solve(V(1, 2)));
+    }
+
+    [TestMethod]
+    public void Solve_ExplicitToleranceOverride_AllowsSmallerThreshold()
+    {
+        // The perturbation (1e-14) sits below the default relative tolerance (rejected), but a
+        // caller can opt into a smaller explicit tolerance and accept the system anyway.
+        var a = new Matrix<double>(new double[,] { { 1, 2 }, { 2, 4 + 1e-14 } });
+        Assert.ThrowsException<InvalidOperationException>(() => a.Solve(V(1, 2)));
+
+        var x = a.Solve(V(1, 2), relativeSingularityTolerance: 0d);
+        Assert.IsNotNull(x);
+    }
+
+    [TestMethod]
+    public void Solve_InvalidExplicitTolerance_Throws()
+    {
+        var a = Matrix<double>.Diagonal(1.0, 1.0);
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => a.Solve(V(1, 2), relativeSingularityTolerance: double.NaN));
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => a.Solve(V(1, 2), relativeSingularityTolerance: -1d));
+    }
+
+    [TestMethod]
+    public void SingularityRelativeTolerance_IsNonZeroForHalf()
+    {
+        // Regression: a hard-coded T.CreateChecked(1e-10) underflows to exactly zero for Half
+        // (whose smallest representable positive value is far larger than 1e-10), silently
+        // collapsing the scale-aware singularity check back into an exact-zero-only comparison -
+        // precisely the behavior the fix was meant to eliminate.
+        var field = typeof(Matrix<Half>).GetField("SingularityRelativeTolerance", BindingFlags.NonPublic | BindingFlags.Static);
+        Assert.IsNotNull(field);
+        var tolerance = (Half)field!.GetValue(null)!;
+        Assert.AreNotEqual((Half)0, tolerance);
+    }
+
+    [TestMethod]
+    public void Solve_Half_WellConditionedSystem_Succeeds()
+    {
+        var a = Matrix<Half>.Diagonal((Half)2f, (Half)4f);
+        var x = a.Solve(new Vector<Half>((Half)6f, (Half)8f));
+        Assert.AreEqual((Half)3f, x[0]);
+        Assert.AreEqual((Half)2f, x[1]);
+    }
+
+    [TestMethod]
+    public void Solve_Half_RejectsNonZeroButNegligiblePivot()
+    {
+        // With the old literal-1e-10-derived tolerance (== 0 for Half), only an exactly-zero pivot
+        // was rejected. This pivot (0.001) is non-zero but negligible relative to the matrix's own
+        // scale under Half's own limited precision, and must still be rejected.
+        var a = new Matrix<Half>(new Half[,] { { (Half)1f, (Half)0f }, { (Half)0f, (Half)0.001f } });
+        Assert.ThrowsException<InvalidOperationException>(() => a.Solve(new Vector<Half>((Half)1f, (Half)1f)));
     }
 }

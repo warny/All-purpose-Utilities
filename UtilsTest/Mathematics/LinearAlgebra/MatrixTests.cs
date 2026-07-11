@@ -288,6 +288,26 @@ namespace UtilsTest.Mathematics.LinearAlgebra
         }
 
         [TestMethod]
+        public void ToleranceAwarePredicates_InvalidTolerance_Throw()
+        {
+            // A NaN tolerance would make every ">" comparison false (vacuously "within tolerance"
+            // for everything), and a negative tolerance would reject even an exact match.
+            var m = Matrix<double>.Identity(2);
+
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => m.IsTriangularWithin(double.NaN));
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => m.IsTriangularWithin(-1d));
+
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => m.IsDiagonalWithin(double.NaN));
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => m.IsDiagonalWithin(-1d));
+
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => m.IsIdentityWithin(double.NaN));
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => m.IsIdentityWithin(-1d));
+
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => m.IsNormalSpaceWithin(double.NaN));
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => m.IsNormalSpaceWithin(-1d));
+        }
+
+        [TestMethod]
         public void Determinant_IdentityMatrix_ReturnsOne()
         {
             var m = Matrix<double>.Identity(3);

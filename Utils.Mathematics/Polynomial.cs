@@ -234,9 +234,12 @@ public sealed class Polynomial<T> : IEquatable<Polynomial<T>>
     /// approximate equality is not transitive in general and would violate the hash contract.
     /// </summary>
     /// <param name="other">The polynomial to compare with.</param>
-    /// <param name="tolerance">Maximum allowed absolute difference per coefficient.</param>
+    /// <param name="tolerance">Maximum allowed absolute difference per coefficient. Must be finite and non-negative.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="tolerance"/> is not finite or is negative.</exception>
     public bool ApproximatelyEquals(Polynomial<T>? other, T tolerance)
     {
+        if (!T.IsFinite(tolerance) || tolerance < T.Zero)
+            throw new ArgumentOutOfRangeException(nameof(tolerance), tolerance, "Tolerance must be finite and non-negative.");
         if (other is null) return false;
         if (Degree != other.Degree) return false;
         for (int i = 0; i <= Degree; i++)

@@ -184,6 +184,19 @@ public class PolynomialTests
     }
 
     [TestMethod]
+    public void ApproximatelyEquals_InvalidTolerance_Throws()
+    {
+        // A NaN tolerance would make every "> tolerance" comparison false, so any two
+        // same-degree polynomials would be reported approximately equal. A negative tolerance
+        // would reject even identical coefficients (0 > -1 is true).
+        var p = new Polynomial<double>(1.0, 2.0, 3.0);
+        var q = new Polynomial<double>(1.0, 2.0, 3.0);
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => p.ApproximatelyEquals(q, double.NaN));
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => p.ApproximatelyEquals(q, double.NegativeInfinity));
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => p.ApproximatelyEquals(q, -1.0));
+    }
+
+    [TestMethod]
     public void Subtract_PolynomialFromItself_IsCanonicalZero()
     {
         // Regression: internal operators used to bypass canonicalization, so p - p could retain
