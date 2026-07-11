@@ -95,6 +95,42 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
     }
 
     /// <summary>
+    /// Computes the triangular/diagonal/identity structure treating any value within
+    /// <paramref name="tolerance"/> of the expected exact value (zero off-diagonal, one on the
+    /// diagonal) as matching. Never caches into <see cref="isTriangular"/>/<see cref="isDiagonal"/>/
+    /// <see cref="isIdentity"/>, which hold the exact-comparison result used by the parameterless
+    /// properties.
+    /// </summary>
+    private (bool Triangular, bool Diagonal, bool Identity) DetermineStructuralFlags(T tolerance)
+    {
+        if (!IsSquare) return (false, false, false);
+
+        int dimension = components.GetLength(0);
+        bool upperTriangular = true;
+        bool lowerTriangular = true;
+        bool identityCheck = true;
+
+        for (int row = 0; row < dimension; row++)
+        {
+            for (int col = 0; col < dimension; col++)
+            {
+                T value = components[row, col];
+                if (row == col && T.Abs(value - T.One) > tolerance)
+                    identityCheck = false;
+
+                if (T.Abs(value) > tolerance)
+                {
+                    if (row > col) upperTriangular = false;
+                    else if (row < col) lowerTriangular = false;
+                }
+            }
+        }
+
+        bool diagonal = upperTriangular && lowerTriangular;
+        return (upperTriangular || lowerTriangular, diagonal, diagonal && identityCheck);
+    }
+
+    /// <summary>
     /// Indicates whether the matrix is triangular (upper or lower).
     /// </summary>
     public bool IsTriangular
@@ -146,6 +182,49 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
             }
             return components[lastRow, lastCol] == T.One;
         }
+    }
+
+    /// <summary>
+    /// Indicates whether the matrix is triangular (upper or lower) within <paramref name="tolerance"/>,
+    /// treating any off-diagonal entry with absolute value at most <paramref name="tolerance"/> as
+    /// zero. Unlike <see cref="IsTriangular"/>, which requires exact zero, this tolerates rounding
+    /// noise left over from prior arithmetic or decomposition; it is a separate, explicitly opt-in
+    /// predicate rather than a silently chosen global tolerance applied to <see cref="IsTriangular"/>.
+    /// </summary>
+    /// <param name="tolerance">Maximum absolute value an off-diagonal entry may have and still be treated as zero.</param>
+    public bool IsTriangularWithin(T tolerance) => DetermineStructuralFlags(tolerance).Triangular;
+
+    /// <summary>
+    /// Indicates whether the matrix is diagonal within <paramref name="tolerance"/>. See
+    /// <see cref="IsTriangularWithin"/> for the tolerance-vs-exact rationale.
+    /// </summary>
+    /// <param name="tolerance">Maximum absolute value an off-diagonal entry may have and still be treated as zero.</param>
+    public bool IsDiagonalWithin(T tolerance) => DetermineStructuralFlags(tolerance).Diagonal;
+
+    /// <summary>
+    /// Indicates whether the matrix is the identity matrix within <paramref name="tolerance"/>,
+    /// treating diagonal entries within <paramref name="tolerance"/> of one, and off-diagonal
+    /// entries within <paramref name="tolerance"/> of zero, as matching. See
+    /// <see cref="IsTriangularWithin"/> for the tolerance-vs-exact rationale.
+    /// </summary>
+    /// <param name="tolerance">Maximum allowed absolute deviation from the expected exact value.</param>
+    public bool IsIdentityWithin(T tolerance) => DetermineStructuralFlags(tolerance).Identity;
+
+    /// <summary>
+    /// Indicates whether the matrix represents a normal space within <paramref name="tolerance"/>.
+    /// See <see cref="IsTriangularWithin"/> for the tolerance-vs-exact rationale.
+    /// </summary>
+    /// <param name="tolerance">Maximum allowed absolute deviation from the expected exact value.</param>
+    public bool IsNormalSpaceWithin(T tolerance)
+    {
+        if (!IsSquare) return false;
+        int lastRow = Rows - 1;
+        int lastCol = Columns - 1;
+        for (int col = 0; col < lastCol; col++)
+        {
+            if (T.Abs(components[lastRow, col]) > tolerance) return false;
+        }
+        return T.Abs(components[lastRow, lastCol] - T.One) <= tolerance;
     }
 
     /// <summary>

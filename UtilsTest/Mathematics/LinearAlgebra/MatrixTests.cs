@@ -230,6 +230,64 @@ namespace UtilsTest.Mathematics.LinearAlgebra
         }
 
         [TestMethod]
+        public void IsTriangularWithin_RoundingNoise_ReturnsTrueButExactReturnsFalse()
+        {
+            // A value that should be zero but carries rounding noise from prior arithmetic must
+            // fail the exact predicate while passing its explicit tolerance-aware counterpart -
+            // the two are separate, deliberately opt-in predicates, not one silently-tolerant check.
+            var m = new Matrix<double>(new double[,]
+            {
+                { 1d, 2d, 3d },
+                { 1e-13, 4d, 5d },
+                { 0d, 0d, 6d },
+            });
+
+            Assert.IsFalse(m.IsTriangular);
+            Assert.IsTrue(m.IsTriangularWithin(1e-9));
+            Assert.IsFalse(m.IsTriangularWithin(1e-15));
+        }
+
+        [TestMethod]
+        public void IsDiagonalWithin_RoundingNoise_ReturnsTrueButExactReturnsFalse()
+        {
+            var m = new Matrix<double>(new double[,]
+            {
+                { 2d, 1e-13 },
+                { 0d, 3d },
+            });
+
+            Assert.IsFalse(m.IsDiagonal);
+            Assert.IsTrue(m.IsDiagonalWithin(1e-9));
+        }
+
+        [TestMethod]
+        public void IsIdentityWithin_RoundingNoise_ReturnsTrueButExactReturnsFalse()
+        {
+            var m = new Matrix<double>(new double[,]
+            {
+                { 1d + 1e-13, 0d },
+                { 1e-13, 1d },
+            });
+
+            Assert.IsFalse(m.IsIdentity);
+            Assert.IsTrue(m.IsIdentityWithin(1e-9));
+        }
+
+        [TestMethod]
+        public void IsNormalSpaceWithin_RoundingNoise_ReturnsTrueButExactReturnsFalse()
+        {
+            var m = new Matrix<double>(new double[,]
+            {
+                { 1d, 0d, 0d },
+                { 0d, 1d, 0d },
+                { 1e-13, 1e-13, 1d + 1e-13 },
+            });
+
+            Assert.IsFalse(m.IsNormalSpace);
+            Assert.IsTrue(m.IsNormalSpaceWithin(1e-9));
+        }
+
+        [TestMethod]
         public void Determinant_IdentityMatrix_ReturnsOne()
         {
             var m = Matrix<double>.Identity(3);
