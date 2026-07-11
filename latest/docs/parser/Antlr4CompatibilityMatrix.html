@@ -218,8 +218,8 @@
 <tr>
 <td>Embedded-code transformation</td>
 <td>Not applied by default parsing unless an explicit preparation path is used.</td>
-<td>Supported through <code>IParserEmbeddedCodeTransformer</code> before the existing compiler/preparer is invoked.</td>
-<td>Supported through <code>IParserEmbeddedCodeTransformer</code> before generated emission.</td>
+<td>Supported through <code>RawEmbeddedCode</code> → <code>ParserEmbeddedCodeTransformationService.TransformOrThrow(...)</code> → <code>TransformedEmbeddedCode</code> before the existing compiler/preparer is invoked.</td>
+<td>Supported through <code>RawEmbeddedCode</code> → <code>ParserEmbeddedCodeTransformationService.TransformOrThrow(...)</code> → <code>TransformedEmbeddedCode</code> before generated emission.</td>
 <td>The transformer is not a compiler and must not introduce a parallel compiler abstraction. Error diagnostics stop safe preparation/emission.</td>
 </tr>
 <tr>

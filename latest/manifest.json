@@ -9658,6 +9658,20 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationService.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationService.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationService",
+      "Summary": "<p sourcefile=\"api/Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationService.yml\" sourcestartlinenumber=\"1\">Executes embedded-code transformations and materializes validated transformed-code values.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedRuleDeclarationDescriptor.yml",
       "output": {
         ".html": {
@@ -9683,6 +9697,34 @@
       "IsMRef": true,
       "Title": "Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedRuleLabelDescriptor",
       "Summary": "<p sourcefile=\"api/Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedRuleLabelDescriptor.yml\" sourcestartlinenumber=\"1\">Describes one rule-reference label visible to embedded-code transformers.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Parser.Diagnostics.EmbeddedCode.RawEmbeddedCode.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Parser.Diagnostics.EmbeddedCode.RawEmbeddedCode.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Parser.Diagnostics.EmbeddedCode.RawEmbeddedCode",
+      "Summary": "<p sourcefile=\"api/Utils.Parser.Diagnostics.EmbeddedCode.RawEmbeddedCode.yml\" sourcestartlinenumber=\"1\">Represents raw embedded target-language code exactly as it was read from the grammar.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Parser.Diagnostics.EmbeddedCode.TransformedEmbeddedCode.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Parser.Diagnostics.EmbeddedCode.TransformedEmbeddedCode.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Parser.Diagnostics.EmbeddedCode.TransformedEmbeddedCode",
+      "Summary": "<p sourcefile=\"api/Utils.Parser.Diagnostics.EmbeddedCode.TransformedEmbeddedCode.yml\" sourcestartlinenumber=\"1\">Represents embedded target-language code produced by <xref href=\"Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationService\" data-throw-if-not-resolved=\"false\"></xref>.</p>\n"
     },
     {
       "type": "ManagedReference",
