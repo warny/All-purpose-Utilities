@@ -110,7 +110,7 @@ public static class StringUtils
                         {
                             case ' ':
                                 {
-                                    result.Add(line.Substring(lastindex, i - lastindex).TrimBrackets('\"'));
+                                    result.Add(TrimQuotes(line.Substring(lastindex, i - lastindex)));
                                     lastindex = i + 1;
                                 }
                                 break;
