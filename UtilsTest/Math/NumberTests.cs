@@ -164,4 +164,46 @@ public class NumberTests
         Assert.IsFalse(ok);
         Assert.AreEqual(Number.Zero, result);
     }
+
+    [TestMethod]
+    public void ParseRejectsMultipleDecimalSeparatorsTest()
+    {
+        Assert.ThrowsExactly<FormatException>(() => Number.Parse("1.2.3", CultureInfo.InvariantCulture));
+    }
+
+    [TestMethod]
+    public void ParseLeadingDecimalSeparatorTest()
+    {
+        Assert.AreEqual(Number.Parse("0.5", CultureInfo.InvariantCulture), Number.Parse(".5", CultureInfo.InvariantCulture));
+    }
+
+    [TestMethod]
+    public void ParseNegativeLeadingDecimalSeparatorTest()
+    {
+        Assert.AreEqual(Number.Parse("-0.5", CultureInfo.InvariantCulture), Number.Parse("-.5", CultureInfo.InvariantCulture));
+    }
+
+    [TestMethod]
+    public void ParseTrailingDecimalSeparatorTest()
+    {
+        Assert.AreEqual(Number.Parse("5", CultureInfo.InvariantCulture), Number.Parse("5.", CultureInfo.InvariantCulture));
+    }
+
+    [TestMethod]
+    public void ParseLoneDecimalSeparatorThrowsTest()
+    {
+        Assert.ThrowsExactly<FormatException>(() => Number.Parse(".", CultureInfo.InvariantCulture));
+    }
+
+    [TestMethod]
+    public void ParseRespectsCultureSpecificDecimalSeparatorTest()
+    {
+        Assert.AreEqual(Number.Parse("10.5", CultureInfo.InvariantCulture), Number.Parse("10,5", CultureInfo.GetCultureInfo("fr-FR")));
+    }
+
+    [TestMethod]
+    public void ParseRejectsThousandsSeparatorTest()
+    {
+        Assert.ThrowsExactly<FormatException>(() => Number.Parse("1,234.5", CultureInfo.InvariantCulture));
+    }
 }

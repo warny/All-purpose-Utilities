@@ -113,14 +113,30 @@ public readonly struct Number :
             return new Number(value);
         }
 
-        if (text.Contains(info.NumberDecimalSeparator))
+        string separator = info.NumberDecimalSeparator;
+        int separatorIndex = text.IndexOf(separator, StringComparison.Ordinal);
+        if (separatorIndex >= 0)
         {
-            string[] parts = text.Split(info.NumberDecimalSeparator);
-            BigInteger integerPart = BigInteger.Parse(parts[0], provider);
-            string fractionText = parts[1];
-            BigInteger fractionPart = BigInteger.Parse(fractionText, provider);
+            if (text.IndexOf(separator, separatorIndex + separator.Length, StringComparison.Ordinal) >= 0)
+                throw new FormatException($"The input string '{text}' contains more than one decimal separator.");
+
+            string integerText = text[..separatorIndex];
+            string fractionText = text[(separatorIndex + separator.Length)..];
+
+            bool isNegative = integerText.StartsWith(info.NegativeSign, StringComparison.Ordinal);
+            string integerDigits = isNegative ? integerText[info.NegativeSign.Length..] : integerText;
+
+            // Leading/trailing decimal separator forms (".5", "-.5", "5.") are supported by
+            // treating the missing integer or fractional part as zero.
+            if (integerDigits.Length == 0 && fractionText.Length == 0)
+                throw new FormatException($"The input string '{text}' is not a valid number.");
+
+            BigInteger integerMagnitude = integerDigits.Length == 0 ? BigInteger.Zero : BigInteger.Parse(integerDigits, provider);
+            BigInteger fractionPart = fractionText.Length == 0 ? BigInteger.Zero : BigInteger.Parse(fractionText, provider);
             BigInteger denominator = BigInteger.Pow(10, fractionText.Length);
-            BigInteger numerator = integerPart * denominator + (integerPart.Sign >= 0 ? fractionPart : -fractionPart);
+            BigInteger numerator = integerMagnitude * denominator + fractionPart;
+            if (isNegative)
+                numerator = -numerator;
             return new Number(numerator, denominator);
         }
 
