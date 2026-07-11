@@ -1382,8 +1382,10 @@ public class Antlr4GeneratedEmbeddedCodeTests
             A : { {{predicateCode}} }? 'a' ;
             """;
 
-        InvalidOperationException exception = Assert.ThrowsException<InvalidOperationException>(() => EmitWithAntlrStyleTransformer(grammar));
+        ParserEmbeddedCodeTransformationException exception = Assert.ThrowsException<ParserEmbeddedCodeTransformationException>(() => EmitWithAntlrStyleTransformer(grammar));
 
+        Assert.AreEqual(ParserEmbeddedCodeTransformationPath.GeneratedCodeEmission, exception.Path);
+        Assert.AreEqual(ParserEmbeddedCodeLocation.LexerSemanticPredicate, exception.Location);
         StringAssert.Contains(exception.Message, "APU0105");
         StringAssert.Contains(exception.Message, "not supported in lexer predicates");
     }
@@ -1435,8 +1437,10 @@ public class Antlr4GeneratedEmbeddedCodeTests
             B : 'b' ;
             """;
 
-        InvalidOperationException exception = Assert.ThrowsException<InvalidOperationException>(() => EmitWithAntlrStyleTransformer(grammar));
+        ParserEmbeddedCodeTransformationException exception = Assert.ThrowsException<ParserEmbeddedCodeTransformationException>(() => EmitWithAntlrStyleTransformer(grammar));
 
+        Assert.AreEqual(ParserEmbeddedCodeTransformationPath.GeneratedCodeEmission, exception.Path);
+        Assert.AreEqual(ParserEmbeddedCodeLocation.LexerInlineAction, exception.Location);
         StringAssert.Contains(exception.Message, "APU0105");
     }
 
@@ -1457,8 +1461,10 @@ public class Antlr4GeneratedEmbeddedCodeTests
             A : 'a' { Seen = $foo; } ;
             """;
 
-        InvalidOperationException exception = Assert.ThrowsException<InvalidOperationException>(() => EmitWithAntlrStyleTransformer(grammar));
+        ParserEmbeddedCodeTransformationException exception = Assert.ThrowsException<ParserEmbeddedCodeTransformationException>(() => EmitWithAntlrStyleTransformer(grammar));
 
+        Assert.AreEqual(ParserEmbeddedCodeTransformationPath.GeneratedCodeEmission, exception.Path);
+        Assert.AreEqual(ParserEmbeddedCodeLocation.LexerInlineAction, exception.Location);
         StringAssert.Contains(exception.Message, "APU0105");
         StringAssert.Contains(exception.Message, "Lexer attribute '$foo' is not supported");
     }
@@ -6047,11 +6053,69 @@ public class Antlr4GeneratedEmbeddedCodeTests
     {
         string grammar = "grammar P; " + ruleFragment;
 
-        InvalidOperationException exception = Assert.ThrowsException<InvalidOperationException>(() => EmitWithAntlrStyleTransformer(grammar));
+        ParserEmbeddedCodeTransformationException exception = Assert.ThrowsException<ParserEmbeddedCodeTransformationException>(() => EmitWithAntlrStyleTransformer(grammar));
 
         StringAssert.Contains(exception.Message, expectedMessage);
     }
 
+
+    [TestMethod]
+    public void Emit_WhenTransformerReportsError_DoesNotEmitCSharp()
+    {
+        const string grammar = """
+            grammar P;
+            start : { RAW_PREDICATE }? A ;
+            A : 'a' ;
+            """;
+        var transformer = new BlockingEmbeddedCodeTransformer("APU9999", "blocked by transformer");
+
+        ParserEmbeddedCodeTransformationException exception = Assert.ThrowsException<ParserEmbeddedCodeTransformationException>(() => EmitWithTransformer(grammar, transformer));
+
+        Assert.AreEqual(1, transformer.Count);
+        Assert.AreEqual(ParserEmbeddedCodeTransformationPath.GeneratedCodeEmission, exception.Path);
+        Assert.AreEqual(ParserEmbeddedCodeLocation.SemanticPredicate, exception.Location);
+        Assert.AreEqual("P", exception.GrammarName);
+        Assert.AreEqual("start", exception.RuleName);
+        Assert.AreEqual("APU9999", exception.DiagnosticCode);
+        Assert.AreEqual("blocked by transformer", exception.DiagnosticMessage);
+        StringAssert.Contains(exception.Message, "APU9999: blocked by transformer");
+    }
+
+    [TestMethod]
+    public void TransformOrThrow_WhenGeneratorAndRuntimeReportEquivalentDiagnostic_ExposeCoherentMetadata()
+    {
+        const string grammar = """
+            grammar P;
+            start : { RAW_PREDICATE }? A ;
+            A : 'a' ;
+            """;
+        var generatorTransformer = new BlockingEmbeddedCodeTransformer("APU9999", "blocked by transformer");
+        ParserEmbeddedCodeTransformationException generatorException = Assert.ThrowsException<ParserEmbeddedCodeTransformationException>(() => EmitWithTransformer(grammar, generatorTransformer));
+
+        var runtimeTransformer = new BlockingEmbeddedCodeTransformer("APU9999", "blocked by transformer");
+        ParserEmbeddedCodeTransformationException runtimeException = Assert.ThrowsException<ParserEmbeddedCodeTransformationException>(() => ParserEmbeddedCodeTransformationService.TransformOrThrow(
+            runtimeTransformer,
+            new RawEmbeddedCode("RAW_PREDICATE"),
+            new ParserEmbeddedCodeTransformationContext
+            {
+                Location = ParserEmbeddedCodeLocation.SemanticPredicate,
+                RuleName = "start"
+            },
+            new ParserEmbeddedCodeTransformationFailureContext
+            {
+                Path = ParserEmbeddedCodeTransformationPath.RuntimeCompilation,
+                Location = ParserEmbeddedCodeLocation.SemanticPredicate,
+                RuleName = "start"
+            }));
+
+        Assert.AreEqual(ParserEmbeddedCodeTransformationPath.GeneratedCodeEmission, generatorException.Path);
+        Assert.AreEqual(ParserEmbeddedCodeTransformationPath.RuntimeCompilation, runtimeException.Path);
+        Assert.AreEqual(generatorException.Location, runtimeException.Location);
+        Assert.AreEqual(generatorException.RuleName, runtimeException.RuleName);
+        Assert.AreEqual(generatorException.DiagnosticCode, runtimeException.DiagnosticCode);
+        Assert.AreEqual(generatorException.DiagnosticMessage, runtimeException.DiagnosticMessage);
+        Assert.AreEqual(generatorException.Message, runtimeException.Message);
+    }
 
     [TestMethod]
     public void Emit_WhenTransformerReplacesParserPredicateAndAction_RawCodeDoesNotAppearInGeneratedHookBodies()
@@ -6626,6 +6690,45 @@ public class Antlr4GeneratedEmbeddedCodeTests
     /// <param name="AssemblyStream">Emitted assembly stream.</param>
     /// <param name="Diagnostics">Roslyn diagnostics reported during compilation.</param>
     private sealed record CompilationResult(bool Success, MemoryStream AssemblyStream, IReadOnlyList<Diagnostic> Diagnostics);
+
+    /// <summary>
+    /// Test transformer that rejects every embedded-code fragment with a deterministic error diagnostic.
+    /// </summary>
+    private sealed class BlockingEmbeddedCodeTransformer : IParserEmbeddedCodeTransformer
+    {
+        private readonly string _code;
+        private readonly string _message;
+
+        /// <summary>
+        /// Initializes a blocking transformer for generator/runtime parity tests.
+        /// </summary>
+        /// <param name="code">Diagnostic code to report.</param>
+        /// <param name="message">Diagnostic message to report.</param>
+        public BlockingEmbeddedCodeTransformer(string code, string message)
+        {
+            _code = code;
+            _message = message;
+        }
+
+        /// <summary>Gets the number of transformation calls.</summary>
+        public int Count { get; private set; }
+
+        /// <inheritdoc />
+        public ParserEmbeddedCodeTransformationResult Transform(ParserEmbeddedCodeTransformationContext context)
+        {
+            Count++;
+            return new ParserEmbeddedCodeTransformationResult
+            {
+                Code = context.Code,
+                Diagnostics = [new ParserEmbeddedCodeDiagnostic
+                {
+                    Code = _code,
+                    Message = _message,
+                    Severity = ParserEmbeddedCodeDiagnosticSeverity.Error
+                }]
+            };
+        }
+    }
 
     /// <summary>
     /// Test transformer that replaces raw embedded code with deterministic generated C# markers.

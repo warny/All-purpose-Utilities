@@ -108,10 +108,12 @@ internal static partial class GrammarEmitter
                 Returns = CreateDeclarationDescriptors(rule?.Returns),
                 Labels = rule is null ? ParserEmbeddedCodeTransformationContext.EmptyLabels : CreateLabelDescriptors(rule.Content)
             },
-            static error =>
+            new ParserEmbeddedCodeTransformationFailureContext
             {
-                string codeText = string.IsNullOrWhiteSpace(error.Code) ? "APU embedded-code transformer" : error.Code!;
-                return new InvalidOperationException($"{codeText}: {error.Message}");
+                Path = ParserEmbeddedCodeTransformationPath.GeneratedCodeEmission,
+                Location = location,
+                GrammarName = grammar.Name,
+                RuleName = rule?.Name
             });
     }
 

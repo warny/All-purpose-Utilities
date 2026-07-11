@@ -35,15 +35,38 @@ Tests ajoutés :
 - `Antlr4GeneratedEmbeddedCodeTests.EmbeddedCodeHookTypes_WhenEmittedCodeIsReadBeforeTransformation_Throws`.
 
 ### 2. Centraliser l'appel au transformer et la validation des diagnostics
-`GrammarEmitter.TransformEmbeddedCode` et `ExpressionEmbeddedCodePreparer.TransformSource` réalisent
-la même séquence : construction du contexte, appel à `IParserEmbeddedCodeTransformer`, recherche du
-premier diagnostic d'erreur, conversion en exception, puis récupération du code transformé.
+**Corrigé.** `ParserEmbeddedCodeTransformationService.TransformOrThrow` est désormais la frontière
+unique de transformation : il reçoit le `RawEmbeddedCode`, impose le texte brut dans le
+`ParserEmbeddedCodeTransformationContext`, appelle `IParserEmbeddedCodeTransformer.Transform(...)` une
+seule fois, valide le résultat, traite une liste de diagnostics nulle comme vide, ignore les entrées
+de diagnostic nulles, bloque le premier diagnostic `Error`, vérifie que le code transformé n'est pas
+nul, et retourne uniquement un `TransformedEmbeddedCode` validé.
 
-Les deux chemins utilisent actuellement des types d'exception et des messages différents.
+Les erreurs de génération C# et de compilation runtime passent par le même modèle structuré
+`ParserEmbeddedCodeTransformationException` du package diagnostics. L'exception expose le chemin
+(génération ou compilation runtime), le code et le message du diagnostic, l'emplacement, le nom de
+grammaire, le nom de règle et le span disponible ;
+`Utils.Parser.Expressions` conserve son type public en l'adaptant depuis cette exception commune sans
+perdre l'exception interne du transformer. Les diagnostics `Info` et `Warning` ne bloquent pas la
+transformation et sont conservés sur `TransformedEmbeddedCode.Diagnostics`.
 
-**Fix proposé** : extraire un service commun de transformation, par exemple
-`ParserEmbeddedCodeTransformationService.TransformOrThrow`, dans le périmètre
-`Utils.Parser.Diagnostics.EmbeddedCode`.
+Tests ajoutés ou consolidés :
+
+- appel unique du transformer et transmission du contexte brut/métadonnées existante via les tests de
+  transformation runtime et générateur ;
+- rejet d'un diagnostic `Error` avant compilation runtime ;
+- rejet d'un diagnostic `Error` avant injection générée existante ;
+- conservation des diagnostics `Warning` ;
+- erreurs déterministes pour résultat nul et code nul ;
+- diagnostics nuls traités comme une collection vide ;
+- conservation de l'exception interne quand le transformer lève ;
+- test architectural fonctionnel, basé sur une analyse syntaxique Roslyn légère, scannant les
+  invocations plutôt que les fichiers complets et interdisant les appels directs de production à
+  `IParserEmbeddedCodeTransformer.Transform(...)` hors de l'appel central exact dans
+  `ParserEmbeddedCodeTransformationService.TransformOrThrow(...)`, avec des tests de régression pour les
+  appels multi-lignes et les appels inattendus dans le fichier du service central ;
+- tests générateur vérifiant qu'une erreur du transformer bloque l'émission C# et que les métadonnées
+  d'erreur restent cohérentes entre génération et compilation runtime.
 
 ### 3. Créer une classe dédiée à l'injection du code C#
 `GrammarEmitter` assure aujourd'hui à la fois la collecte des fragments, leur transformation, leur
