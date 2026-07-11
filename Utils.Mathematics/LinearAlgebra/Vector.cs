@@ -152,12 +152,20 @@ public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>, 
     /// Converts a vector usable in normal space to a vector usable in Cartesian space.
     /// </summary>
     /// <returns>The converted vector for Cartesian space.</returns>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the homogeneous coordinate (last component) is zero. A zero homogeneous
+    /// coordinate represents a direction at infinity, not a point, and has no Cartesian equivalent;
+    /// dividing by it would otherwise silently produce NaN/infinity components.
+    /// </exception>
     public Vector<T> FromNormalSpace()
     {
         var temp = this;
-        if (temp[temp.Dimension - 1] != T.One)
+        T w = temp[temp.Dimension - 1];
+        if (w == T.Zero)
+            throw new InvalidOperationException("Cannot convert a homogeneous direction (zero homogeneous coordinate) to a Cartesian point.");
+        if (w != T.One)
         {
-            temp /= temp[temp.Dimension - 1];
+            temp /= w;
         }
         Vector<T> result = new(Dimension - 1);
         Array.Copy(temp.components, result.components, Dimension - 1);

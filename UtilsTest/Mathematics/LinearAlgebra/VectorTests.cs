@@ -197,6 +197,16 @@ public class VectorTests
             Assert.AreEqual(v[i], roundtrip[i], 1e-12);
     }
 
+    [TestMethod]
+    public void FromNormalSpace_ZeroHomogeneousCoordinate_Throws()
+    {
+        // A zero homogeneous coordinate represents a direction at infinity, not a Cartesian point;
+        // the previous implementation divided by it unconditionally, silently producing
+        // NaN/infinity components instead of signaling that no Cartesian equivalent exists.
+        var h = new Vector<double>(1d, 2d, 3d, 0d);
+        Assert.ThrowsException<InvalidOperationException>(() => h.FromNormalSpace());
+    }
+
     // ── ProjectOnto ───────────────────────────────────────────────────────
 
     [TestMethod]
