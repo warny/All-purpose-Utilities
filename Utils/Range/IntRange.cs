@@ -6,7 +6,6 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Numerics;
 using Utils.Mathematics;
-using System.Formats.Tar; // If needed for IAdditionOperators, etc.
 
 namespace Utils.Range
 {
