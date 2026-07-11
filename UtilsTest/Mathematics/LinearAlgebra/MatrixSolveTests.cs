@@ -111,20 +111,33 @@ public class MatrixSolveTests
     }
 
     [TestMethod]
-    public void DefaultSingularityRelativeTolerance_ScalesWithDimensionNotFlatConstant()
+    public void DefaultTolerance_ScalesWithDimensionNotFlatConstant()
     {
         // Regression: an earlier version used a flat 100x-machine-epsilon multiplier regardless of
         // matrix size. For Half specifically that made the default relative tolerance for even a
         // small 2x2 matrix close to 10% of its magnitude, misclassifying ordinary invertible
         // matrices as singular. The default must scale with dimension instead of a fixed multiplier
         // so a small matrix gets a correspondingly small (tight) default tolerance.
-        var method = typeof(Matrix<Half>).GetMethod("DefaultSingularityRelativeTolerance", BindingFlags.NonPublic | BindingFlags.Static);
+        var method = typeof(Matrix<Half>).GetMethod("DefaultTolerance", BindingFlags.NonPublic | BindingFlags.Static);
         Assert.IsNotNull(method);
-        var tolerance2 = (Half)method!.Invoke(null, [2])!;
-        var tolerance10 = (Half)method!.Invoke(null, [10])!;
+        var tolerance2 = (Half)method!.Invoke(null, [(Half)1f, 2])!;
+        var tolerance10 = (Half)method!.Invoke(null, [(Half)1f, 10])!;
 
         Assert.IsTrue(tolerance2 < (Half)0.01f, $"Default tolerance for a 2x2 Half matrix should be well under 1%, was {tolerance2}.");
         Assert.IsTrue(tolerance10 > tolerance2, "The default tolerance should grow with matrix dimension.");
+    }
+
+    [TestMethod]
+    public void DefaultTolerance_HasAbsoluteFloorIndependentOfScale()
+    {
+        // The formula is eps * dimension * (scale + 1): the "+ 1" provides an absolute floor so that
+        // a matrix whose largest entry is exactly zero (or otherwise tiny) still gets a non-zero
+        // tolerance, rather than collapsing the whole check back to an exact-zero comparison.
+        var method = typeof(Matrix<Half>).GetMethod("DefaultTolerance", BindingFlags.NonPublic | BindingFlags.Static);
+        Assert.IsNotNull(method);
+        var toleranceAtZeroScale = (Half)method!.Invoke(null, [(Half)0f, 4])!;
+
+        Assert.AreNotEqual((Half)0, toleranceAtZeroScale);
     }
 
     [TestMethod]

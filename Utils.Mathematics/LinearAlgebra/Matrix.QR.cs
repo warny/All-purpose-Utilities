@@ -18,12 +18,21 @@ public sealed partial class Matrix<T>
     /// rather than requiring the decomposition to be rejected, which is what allows singular square
     /// matrices to reach <see cref="ComputeEigenvalues"/>.
     /// </remarks>
+    /// <param name="rankTolerance">
+    /// Overrides the default relative-plus-absolute tolerance (see <see cref="DefaultTolerance"/>)
+    /// used to decide whether a column's remaining sub-diagonal component is already numerically
+    /// zero (rank-deficient at that step). When supplied, the effective absolute threshold is this
+    /// value multiplied by the matrix's largest entry. Must be finite and non-negative when supplied.
+    /// </param>
     /// <returns>A tuple containing the orthogonal matrix Q and the upper-triangular matrix R.</returns>
     /// <exception cref="InvalidOperationException">Thrown when the matrix has more columns than rows.</exception>
-    public (Matrix<T> Q, Matrix<T> R) DecomposeQR()
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="rankTolerance"/> is supplied but not finite or is negative.</exception>
+    public (Matrix<T> Q, Matrix<T> R) DecomposeQR(T? rankTolerance = null)
     {
         if (Rows < Columns)
             throw new InvalidOperationException("QR decomposition requires Rows ≥ Columns.");
+        if (rankTolerance is { } explicitRankTolerance)
+            ValidateTolerance(explicitRankTolerance, nameof(rankTolerance));
 
         int m = Rows, n = Columns;
         T[,] r = ToArray();
@@ -33,7 +42,9 @@ public sealed partial class Matrix<T>
         // Scale-aware (rather than a hard-coded 1e-12 absolute literal, meaningless across
         // arbitrary IFloatingPoint<T> precision) tolerance for detecting a column that is already
         // numerically zero below the diagonal.
-        T qrTolerance = MaxAbsoluteEntry(r) * MachineEpsilon * T.CreateChecked(m);
+        T qrTolerance = rankTolerance is { } explicitQrTolerance
+            ? MaxAbsoluteEntry(r) * explicitQrTolerance
+            : DefaultTolerance(MaxAbsoluteEntry(r), m);
 
         int steps = Math.Min(m - 1, n);
         for (int k = 0; k < steps; k++)

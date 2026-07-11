@@ -122,4 +122,54 @@ public class MatrixQRTests
             for (int j = 0; j < 2; j++)
                 Assert.AreEqual(0.0, r[i, j], Tol, $"[{i},{j}]");
     }
+
+    [TestMethod]
+    public void DecomposeQR_ExplicitRankTolerance_StillProducesValidFactorization()
+    {
+        // The explicit override replaces the default relative-plus-absolute tolerance with
+        // scale * rankTolerance. A generous tolerance must still yield a valid Q/R factorization for
+        // a well-conditioned matrix.
+        var a = new Matrix<double>(new double[,] { { 1, 2 }, { 3, 4 } });
+        var (q, r) = a.DecomposeQR(rankTolerance: 1e-3);
+        var product = q * r;
+        Assert.AreEqual(a[0, 0], product[0, 0], Tol);
+        Assert.AreEqual(a[0, 1], product[0, 1], Tol);
+        Assert.AreEqual(a[1, 0], product[1, 0], Tol);
+        Assert.AreEqual(a[1, 1], product[1, 1], Tol);
+    }
+
+    [TestMethod]
+    public void DecomposeQR_InvalidRankTolerance_Throws()
+    {
+        var a = new Matrix<double>(new double[,] { { 1, 2 }, { 3, 4 } });
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => a.DecomposeQR(rankTolerance: double.NaN));
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => a.DecomposeQR(rankTolerance: -1d));
+    }
+
+    [TestMethod]
+    public void DecomposeQR_Half_NonDiagonalScaledMatrix_ProducesValidFactorization()
+    {
+        // Regression: previous Half-precision coverage for this area only exercised an
+        // already-diagonal matrix, which trivially satisfies QR/eigen invariants regardless of
+        // whether the tolerance formula's scale term is computed correctly. This uses a symmetric,
+        // non-diagonal matrix with a large-magnitude entry alongside small ones, closer to the
+        // scale-disparity scenario the tolerance formula is meant to handle.
+        var a = new Matrix<Half>(new Half[,]
+        {
+            { (Half)100f, (Half)1f },
+            { (Half)1f, (Half)2f }
+        });
+        var (q, r) = a.DecomposeQR();
+
+        var qtq = q.Transpose() * q;
+        Assert.AreEqual(1.0, (double)qtq[0, 0], 1e-2);
+        Assert.AreEqual(0.0, (double)qtq[0, 1], 1e-2);
+        Assert.AreEqual(1.0, (double)qtq[1, 1], 1e-2);
+
+        var product = q * r;
+        Assert.AreEqual((double)a[0, 0], (double)product[0, 0], 1.0);
+        Assert.AreEqual((double)a[0, 1], (double)product[0, 1], 1e-1);
+        Assert.AreEqual((double)a[1, 0], (double)product[1, 0], 1e-1);
+        Assert.AreEqual((double)a[1, 1], (double)product[1, 1], 1e-1);
+    }
 }
