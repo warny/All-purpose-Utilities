@@ -113,22 +113,38 @@ public sealed class Polynomial<T> : IEquatable<Polynomial<T>>
     /// <summary>
     /// Attempts to find a real root near <paramref name="initialGuess"/> using Newton–Raphson iteration.
     /// </summary>
-    /// <param name="initialGuess">Starting point for the iteration.</param>
-    /// <param name="maxIterations">Maximum number of iterations.</param>
-    /// <param name="tolerance">Convergence tolerance; defaults to 1e-10.</param>
+    /// <param name="initialGuess">Starting point for the iteration. Must be finite.</param>
+    /// <param name="maxIterations">Maximum number of iterations. Must be greater than zero.</param>
+    /// <param name="tolerance">Convergence tolerance; defaults to 1e-10. Must be finite and positive.</param>
     /// <returns>The found root, or <see langword="null"/> if the method did not converge.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when <paramref name="maxIterations"/> is not positive, <paramref name="initialGuess"/>
+    /// is not finite, or <paramref name="tolerance"/> is not finite and positive.
+    /// </exception>
     public T? FindRoot(T initialGuess, int maxIterations = 100, T? tolerance = null)
     {
+        if (maxIterations <= 0)
+            throw new ArgumentOutOfRangeException(nameof(maxIterations), maxIterations, "Must be greater than zero.");
+        if (!T.IsFinite(initialGuess))
+            throw new ArgumentOutOfRangeException(nameof(initialGuess), initialGuess, "Must be a finite value.");
+
         T tol = tolerance ?? Epsilon;
+        if (!T.IsFinite(tol) || tol <= T.Zero)
+            throw new ArgumentOutOfRangeException(nameof(tolerance), tolerance, "Must be a finite, positive value.");
+
         var derivative = Derive();
         T x = initialGuess;
         for (int i = 0; i < maxIterations; i++)
         {
             T fx = Evaluate(x);
             if (T.Abs(fx) <= tol) return x;
+            // A derivative merely close to zero (not just exactly zero) already makes the Newton
+            // step numerically unstable; reuse the convergence tolerance as that threshold rather
+            // than comparing to exact zero.
             T fpx = derivative.Evaluate(x);
-            if (fpx == T.Zero) return null;
+            if (T.Abs(fpx) <= tol) return null;
             T next = x - fx / fpx;
+            if (!T.IsFinite(next)) return null;
             if (T.Abs(next - x) <= tol) return next;
             x = next;
         }

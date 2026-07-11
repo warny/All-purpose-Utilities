@@ -110,6 +110,43 @@ public class PolynomialTests
     }
 
     [TestMethod]
+    public void FindRoot_NonPositiveMaxIterations_Throws()
+    {
+        var p = new Polynomial<double>(-4.0, 0.0, 1.0);
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => p.FindRoot(1.5, maxIterations: 0));
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => p.FindRoot(1.5, maxIterations: -1));
+    }
+
+    [TestMethod]
+    public void FindRoot_NonFiniteInitialGuess_Throws()
+    {
+        var p = new Polynomial<double>(-4.0, 0.0, 1.0);
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => p.FindRoot(double.NaN));
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => p.FindRoot(double.PositiveInfinity));
+    }
+
+    [TestMethod]
+    public void FindRoot_InvalidTolerance_Throws()
+    {
+        var p = new Polynomial<double>(-4.0, 0.0, 1.0);
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => p.FindRoot(1.5, tolerance: -1e-6));
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => p.FindRoot(1.5, tolerance: 0.0));
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => p.FindRoot(1.5, tolerance: double.NaN));
+    }
+
+    [TestMethod]
+    public void FindRoot_NearZeroDerivative_ReturnsNullInsteadOfHugeStep()
+    {
+        // p(x) = x^2 + 1000 never crosses zero. At x = 1e-5 the function value is nowhere near
+        // zero, but the derivative (2x = 2e-5) is already below the tolerance: the previous
+        // implementation only checked for an *exact* zero derivative, so it would take this as a
+        // valid Newton step and divide by a near-zero derivative, producing a wildly unstable jump.
+        var p = new Polynomial<double>(1000.0, 0.0, 1.0);
+        double? root = p.FindRoot(1e-5, tolerance: 1e-4);
+        Assert.IsNull(root);
+    }
+
+    [TestMethod]
     public void Equals_SameCoefficients_ReturnsTrue()
     {
         var p = new Polynomial<double>(1.0, 2.0, 3.0);
