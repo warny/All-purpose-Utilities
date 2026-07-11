@@ -7,8 +7,6 @@ namespace Utils.Mathematics.LinearAlgebra;
 /// </summary>
 public sealed partial class Matrix<T>
 {
-    private static readonly T QrEpsilon = T.CreateChecked(1e-12);
-
     /// <summary>
     /// Performs a QR decomposition of this matrix using Householder reflections.
     /// </summary>
@@ -32,6 +30,11 @@ public sealed partial class Matrix<T>
         T[,] qFull = new T[m, m];
         for (int i = 0; i < m; i++) qFull[i, i] = T.One;
 
+        // Scale-aware (rather than a hard-coded 1e-12 absolute literal, meaningless across
+        // arbitrary IFloatingPoint<T> precision) tolerance for detecting a column that is already
+        // numerically zero below the diagonal.
+        T qrTolerance = MaxAbsoluteEntry(r) * MachineEpsilon * T.CreateChecked(m);
+
         int steps = Math.Min(m - 1, n);
         for (int k = 0; k < steps; k++)
         {
@@ -42,7 +45,7 @@ public sealed partial class Matrix<T>
             // The sub-column below the diagonal is already (numerically) zero: either genuinely
             // rank-deficient at this step, or already aligned with the target axis. Either way,
             // there is nothing to reflect, and R's diagonal entry here is correctly ~zero.
-            if (normX <= QrEpsilon)
+            if (normX <= qrTolerance)
                 continue;
 
             T alpha = r[k, k] >= T.Zero ? -normX : normX;
@@ -55,7 +58,7 @@ public sealed partial class Matrix<T>
             T normV = T.Zero;
             for (int i = 0; i < len; i++) normV += v[i] * v[i];
             normV = T.Sqrt(normV);
-            if (normV <= QrEpsilon)
+            if (normV <= qrTolerance)
                 continue;
             for (int i = 0; i < len; i++) v[i] /= normV;
 

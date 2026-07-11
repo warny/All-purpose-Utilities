@@ -7,8 +7,6 @@ namespace Utils.Mathematics.LinearAlgebra;
 /// </summary>
 public sealed partial class Matrix<T>
 {
-    private static readonly T EigenEpsilon = T.CreateChecked(1e-10);
-
     /// <summary>
     /// Computes the real eigenvalues and corresponding eigenvectors of a symmetric matrix
     /// using the QR iteration algorithm.
@@ -40,13 +38,19 @@ public sealed partial class Matrix<T>
         // Working copy for QR iteration
         T[,] a = ToArray();
 
+        // Scale-aware (rather than a hard-coded 1e-10 absolute literal) convergence tolerance,
+        // fixed at the outset from the original matrix's magnitude: similarity transformations
+        // (A <- Q^T A Q at each step) preserve the Frobenius norm, so the initial scale remains a
+        // valid reference throughout the iteration.
+        T convergenceTolerance = MaxAbsoluteEntry(a) * MachineEpsilon * T.CreateChecked(n);
+
         // Accumulate eigenvectors: V = Q_0 · Q_1 · …
         T[,] v = new T[n, n];
         for (int i = 0; i < n; i++) v[i, i] = T.One;
 
         for (int iter = 0; iter < maxIterations; iter++)
         {
-            if (OffDiagonalNorm(a, n) <= EigenEpsilon) break;
+            if (OffDiagonalNorm(a, n) <= convergenceTolerance) break;
 
             // QR decompose the current A
             var (q, r) = new Matrix<T>(a).DecomposeQR();
@@ -70,7 +74,7 @@ public sealed partial class Matrix<T>
         // only inside the loop's final pass: that tied the check to iter == maxIterations - 1,
         // which never ran at all for maxIterations <= 0 (now rejected above regardless), and made
         // the check easy to accidentally skip if the loop's control flow changed.
-        if (OffDiagonalNorm(a, n) > EigenEpsilon)
+        if (OffDiagonalNorm(a, n) > convergenceTolerance)
             throw new InvalidOperationException(
                 $"QR iteration did not converge after {maxIterations} iterations.");
 
@@ -99,9 +103,11 @@ public sealed partial class Matrix<T>
     public bool IsSymmetric()
     {
         if (!IsSquare) return false;
+        T[,] array = ToArray();
+        T tolerance = MaxAbsoluteEntry(array) * MachineEpsilon * T.CreateChecked(Rows);
         for (int i = 0; i < Rows; i++)
             for (int j = i + 1; j < Columns; j++)
-                if (T.Abs(this[i, j] - this[j, i]) > EigenEpsilon) return false;
+                if (T.Abs(array[i, j] - array[j, i]) > tolerance) return false;
         return true;
     }
 

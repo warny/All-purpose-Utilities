@@ -163,4 +163,16 @@ public class MatrixEigenvaluesTests
         var a = new Matrix<double>(new double[,] { { 1, 2 }, { 3, 4 } });
         Assert.ThrowsException<InvalidOperationException>(() => a.ComputeEigenvalues());
     }
+
+    [TestMethod]
+    public void ComputeEigenvalues_Half_DiagonalMatrix_Succeeds()
+    {
+        // Regression: a hard-coded 1e-10 absolute tolerance is meaningless for Half; this exercises
+        // both IsSymmetric's and the convergence check's tolerance for a type whose own machine
+        // epsilon (~0.001) is far coarser than any fixed double-oriented literal.
+        var a = new Matrix<Half>(new Half[,] { { (Half)5f, (Half)0f }, { (Half)0f, (Half)3f } });
+        var (values, _) = a.ComputeEigenvalues();
+        Assert.AreEqual((Half)5f, values[0]);
+        Assert.AreEqual((Half)3f, values[1]);
+    }
 }
