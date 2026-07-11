@@ -592,7 +592,7 @@ The runtime currently remains conservative and deterministic. Metadata-rich infr
 
 **Status: in progress.**
 
-Parser embedded-code handling is centered on preservation plus an explicit `IParserEmbeddedCodeTransformer` extension point. The default transformer is no-op, `$...` rewriting is no longer a core parser/generator responsibility, and dynamic expression-backed preparation transforms code before using the existing compiler/preparer mechanism. Future target-language transformers must remain isolated from parser runtime authority and must not introduce a second compiler abstraction.
+Parser embedded-code handling is centered on preservation plus an explicit `IParserEmbeddedCodeTransformer` extension point. Embedded grammar text is carried as `RawEmbeddedCode`, transformed through `ParserEmbeddedCodeTransformationService.TransformOrThrow(...)`, and consumed by emitters or expression compilers only as `TransformedEmbeddedCode`. The default transformer is no-op, `$...` rewriting is no longer a core parser/generator responsibility, and dynamic expression-backed preparation transforms code before using the existing compiler/preparer mechanism. Future target-language transformers must remain isolated from parser runtime authority and must not introduce a second compiler abstraction.
 
 ### Optional full embedded-code transformer
 
