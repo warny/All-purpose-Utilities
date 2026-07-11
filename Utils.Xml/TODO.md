@@ -172,13 +172,106 @@ The prefix regex requires an ASCII letter first and then `\w`. Valid NCName pref
 
 **Priority: P2 API quality.**
 
+## Second-pass findings
+
+### 18. A processor instance is not safe for concurrent or overlapping `Read` operations
+
+`Current` is a single mutable instance property shared by all dispatches. Two threads, or two overlapping asynchronous operations using the same processor, can overwrite each other's current node. `NamespaceManager` and derived processor state are likewise exposed without a concurrency contract.
+
+**Risk:** handlers can read values from another document or node, restore an obsolete context, and produce nondeterministic data corruption.
+
+**Fix:** explicitly make processors single-operation and reject concurrent `Read` calls with an operation gate, or move invocation context to an immutable per-read session passed to handlers. Document whether derived state must be synchronized.
+
+**Priority: P1 correctness and thread safety.**
+
+### 19. Recursive redispatch can create unbounded cycles
+
+A handler may call `Apply(".")`, select an ancestor or the document root, or otherwise dispatch a node that matches the same handler again. There is no active-frame tracking, recursion limit, or cycle detection.
+
+**Risk:** accidental XPath cycles can cause stack overflow, repeated side effects, or unbounded CPU consumption even with a small XML document.
+
+**Fix:** track dispatch depth and optionally active `(handler, node)` frames. Provide a configurable maximum depth and fail with a descriptive exception when a direct or indirect cycle is detected.
+
+**Priority: P1 robustness and resource limits.**
+
+### 20. Asynchronous handlers are invoked but never awaited
+
+Handler return values are ignored. A method returning `Task` or `ValueTask` is accepted and invoked through reflection, but processing continues immediately and asynchronous exceptions become detached from the `Read` operation.
+
+**Risk:** `Read` may return before processing is complete, `Current` may be restored while the handler still uses it, and failures can surface as unobserved task exceptions.
+
+**Fix:** either reject every non-`void` handler eagerly, including async methods, or add a separate `XmlDataProcessorAsync` contract whose dispatch pipeline awaits `Task`/`ValueTask` handlers and carries context safely.
+
+**Priority: P1 lifecycle correctness.**
+
+### 21. Caller-provided `XmlReader` security settings are opaque and cannot be enforced
+
+`Read(XmlReader)` wraps whatever reader it receives in `XPathDocument`. The processor cannot determine reliably whether DTD processing, external resolution, document limits, or other relevant settings were hardened by the caller.
+
+**Risk:** an API surface that appears equivalent to `ReadSecure` may process hostile XML under permissive caller settings. Security behavior varies invisibly by construction path.
+
+**Fix:** document `Read(XmlReader)` as a trusted/caller-policy overload, or introduce an API that accepts a source plus explicit processor-owned settings. Do not label processing secure solely because the source is already an `XmlReader`.
+
+**Priority: P1 security contract.**
+
+### 22. URI reads have no acquisition timeout, cancellation, or response-size policy before parsing
+
+`ReadSecure(string)` delegates URI opening to `XmlReader.Create`. The parser has a character limit, but the API exposes no cancellation token, connection/read timeout, redirect policy, or pre-parse transport limit.
+
+**Risk:** slow or stalled remote endpoints can block a thread for an uncontrolled duration. Redirects may cross trust boundaries even when the initial URI was approved.
+
+**Fix:** move network acquisition outside the XML parser, use an explicitly configured HTTP client or caller-supplied stream, and expose cancellation and redirect/timeout policies.
+
+**Priority: P1 availability and SSRF hardening.**
+
+### 23. Inherited private handlers are silently omitted
+
+Trigger discovery uses `GetMethods(Public | NonPublic | Instance)`. Private methods declared on base classes are not returned by this reflection call, despite `MatchAttribute` being marked `Inherited = true` and the framework presenting inheritance as supported.
+
+**Risk:** refactoring a handler into a private base-class helper silently disables it. The attribute remains visible in source but no trigger is registered.
+
+**Fix:** define inheritance semantics explicitly. Either walk the type hierarchy using `DeclaredOnly` and include private base methods intentionally, or reject/document private inherited handlers and remove misleading inheritance metadata.
+
+**Priority: P2 deterministic configuration.**
+
+### 24. Duplicate or conflicting namespace declarations have order-dependent diagnostics
+
+Namespace attributes are read across the inheritance hierarchy and immediately passed to `XmlNamespaceManager.AddNamespace`. There is no normalization or pre-validation of duplicate prefixes, identical redeclarations, conflicting URIs, or reserved mappings.
+
+**Risk:** constructor behavior depends on reflection attribute order, and consumers receive low-level exceptions without identifying the declaring type or conflicting attributes.
+
+**Fix:** collect declarations first, normalize by prefix, allow exact duplicates only by explicit policy, reject conflicts deterministically, and report both declaring types and URIs.
+
+**Priority: P2 configuration quality.**
+
+### 25. `MatchAttribute` accepts null, empty, and whitespace XPath expressions until processor construction
+
+The primary-constructor attribute stores its string without validation. Invalid values fail later in `XPathExpression.Compile`, detached from the attribute declaration and mixed with other constructor work.
+
+**Risk:** poor diagnostics and avoidable late failures when attributes are generated or supplied indirectly.
+
+**Fix:** validate null/empty/whitespace in the attribute constructor and wrap XPath compilation failures with the declaring method and expression. Keep semantic XPath validation in processor construction.
+
+**Priority: P2 diagnostics.**
+
+### 26. Public read and selection methods do not consistently validate null arguments or processor state
+
+`Read(XPathNavigator)`, `Read(Stream)`, `Read(XmlReader)`, `Apply(XPathNavigator, ...)`, and selection helpers rely on downstream `NullReferenceException` or framework exceptions. `Apply`, `GetNodes`, and `ValueOf` also assume an active handler context.
+
+**Risk:** callers receive inconsistent exceptions, and helper use outside a dispatch callback fails without explaining the required lifecycle.
+
+**Fix:** add `ArgumentNullException.ThrowIfNull` at API boundaries and a guarded accessor that throws `InvalidOperationException` when no current dispatch context exists.
+
+**Priority: P2 API contract.**
+
 ## Duplicated intent to reduce
 
 - The two `ReadChildElements` overloads duplicate the complete traversal algorithm. Keep one core iterator with an optional predicate/name filter.
 - Five `Apply`/`GetNodes` variants repeat XPath selection and dispatch. Centralize expression compilation, selection, null checks, and namespace usage.
 - Parser security is currently tied only to `ReadSecure(string)`. Centralize source-independent `XmlReaderSettings` and make all raw-source overloads flow through it.
-- Handler matching, default-argument construction, invocation, exception unwrapping, and context restoration should be one descriptor-level operation rather than split across `ParametersMatch`, `InvokeSingleNode`, and the pseudo-cached delegate.
+- Handler matching, default-argument construction, invocation, exception unwrapping, context restoration, recursion control, and async-policy validation should be one descriptor-level operation rather than split across `ParametersMatch`, `InvokeSingleNode`, and the pseudo-cached delegate.
 - XPath path generation and namespace management should share a single canonical QName strategy.
+- Input acquisition, cancellation, redirect policy, and parser limits should be separated instead of being partially bundled into `ReadSecure(string)`.
 
 ## Required tests
 
@@ -194,6 +287,12 @@ The prefix regex requires an ASCII letter first and then `\w`. Valid NCName pref
 - The first, middle, and last repeated sibling paths must each re-select exactly one original node.
 - Test prefixed namespaces, default namespaces, attributes, text, comments, processing instructions, and detached nodes.
 - Test valid/invalid NCName prefixes, reserved prefixes, duplicate mappings, and null/empty namespace URIs.
+- Run two `Read` calls concurrently on one processor and verify deterministic rejection or isolated contexts.
+- Create direct and indirect redispatch cycles and verify a bounded diagnostic failure rather than stack overflow.
+- Verify that `Task`/`ValueTask` handlers are either rejected or awaited according to the documented API.
+- Test inherited protected/private handlers and overridden methods against the selected inheritance policy.
+- Verify null arguments and helper calls outside an active handler produce explicit contract exceptions.
+- Test remote acquisition cancellation, timeout, redirect rejection, and maximum-response handling outside the parser.
 
 ## Recommended order
 
@@ -203,12 +302,13 @@ The prefix regex requires an ASCII letter first and then `\w`. Valid NCName pref
 | P1 | Define safe reader-state semantics for child enumeration |
 | P1 | Make dispatch deterministic and restore context in `finally` |
 | P1 | Correct null/optional argument binding and validate handlers eagerly |
+| P1 | Prevent concurrent/cyclic dispatch and define the async-handler policy |
 | P1 | Harden all raw XML inputs and separate URI acquisition from parsing |
 | P1 | Define XPath resource/injection policy |
 | P2 | Make generated XPath paths unique and namespace-aware |
-| P2 | Align namespace and nullability validation with actual contracts |
+| P2 | Align namespace, inheritance, lifecycle, and nullability validation with actual contracts |
 | P2 | Remove pseudo-caching and consolidate duplicated traversal/dispatch code |
 
 ## Deployment warning
 
-Until items 1–10 are addressed, do not use `ReadChildElements` for structurally sensitive streaming extraction without additional tests, and do not treat `ReadSecure(string)` as protection against hostile URI selection. `XmlDataProcessor` instances should also be considered single-use/single-threaded because `Current` is mutable shared state and is not safely restored on all failure paths.
+Until items 1–11 and 18–22 are addressed, do not use `ReadChildElements` for structurally sensitive streaming extraction without additional tests, and do not treat `ReadSecure(string)` as protection against hostile URI selection or stalled remote resources. `XmlDataProcessor` instances must be treated as single-use-at-a-time and synchronous: `Current` is mutable shared state, recursive redispatch is unbounded, and asynchronous handlers are not awaited.
