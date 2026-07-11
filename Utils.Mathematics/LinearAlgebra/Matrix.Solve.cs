@@ -27,6 +27,8 @@ public sealed partial class Matrix<T>
         T[] x = new T[n];
         for (int i = 0; i < n; i++) x[i] = b[i];
 
+        T pivotTolerance = MaxAbsoluteEntry(a) * SingularityRelativeTolerance;
+
         // Forward elimination with partial pivoting
         for (int col = 0; col < n; col++)
         {
@@ -35,8 +37,8 @@ public sealed partial class Matrix<T>
                 if (T.Abs(a[row, col]) > T.Abs(a[pivotRow, col]))
                     pivotRow = row;
 
-            if (a[pivotRow, col] == T.Zero)
-                throw new InvalidOperationException("Matrix is singular; the system has no unique solution.");
+            if (T.Abs(a[pivotRow, col]) <= pivotTolerance)
+                throw new InvalidOperationException("Matrix is singular or numerically near-singular; the system has no reliable unique solution.");
 
             if (pivotRow != col)
             {

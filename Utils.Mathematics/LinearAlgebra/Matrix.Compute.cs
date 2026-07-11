@@ -8,6 +8,21 @@ namespace Utils.Mathematics.LinearAlgebra;
 public partial class Matrix<T>
 {
     /// <summary>
+    /// Returns the largest absolute value among an array-based matrix's entries, used to derive a
+    /// scale-aware (rather than absolute) pivot tolerance for singularity checks.
+    /// </summary>
+    private static T MaxAbsoluteEntry(T[,] matrix)
+    {
+        T max = T.Zero;
+        int rows = matrix.GetLength(0);
+        int cols = matrix.GetLength(1);
+        for (int i = 0; i < rows; i++)
+            for (int j = 0; j < cols; j++)
+                max = T.Max(max, T.Abs(matrix[i, j]));
+        return max;
+    }
+
+    /// <summary>
     /// Swaps two rows of an array-based matrix in place.
     /// </summary>
     /// <param name="matrix">Matrix whose rows should be permuted.</param>
@@ -127,6 +142,7 @@ public partial class Matrix<T>
         int n = Rows;
         T[,] working = ToArray();
         T[,] inverse = new T[n, n];
+        T pivotTolerance = MaxAbsoluteEntry(working) * SingularityRelativeTolerance;
 
         for (int i = 0; i < n; i++)
         {
@@ -148,9 +164,9 @@ public partial class Matrix<T>
                 }
             }
 
-            if (working[pivotRow, pivotIndex].Equals(T.Zero))
+            if (pivotMagnitude <= pivotTolerance)
             {
-                throw new InvalidOperationException("The matrix is singular and cannot be inverted.");
+                throw new InvalidOperationException("The matrix is singular or numerically near-singular and cannot be reliably inverted.");
             }
 
             if (pivotRow != pivotIndex)

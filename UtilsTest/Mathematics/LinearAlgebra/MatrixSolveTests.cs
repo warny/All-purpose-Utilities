@@ -62,4 +62,15 @@ public class MatrixSolveTests
         var a = new Matrix<double>(new double[,] { { 1, 2 }, { 2, 4 } });
         Assert.ThrowsException<InvalidOperationException>(() => a.Solve(V(1, 2)));
     }
+
+    [TestMethod]
+    public void Solve_NearSingularMatrix_ThrowsInsteadOfReturningGarbage()
+    {
+        // The second row is the first scaled by (1 + 1e-13): not exactly singular, but the pivot
+        // remaining after elimination is tiny relative to the matrix's own magnitude. Dividing by
+        // it would previously amplify rounding error into a huge/NaN "solution" that still looked
+        // like a normal return value instead of a diagnosed failure.
+        var a = new Matrix<double>(new double[,] { { 1, 2 }, { 2 + 2e-13, 4 + 4e-13 } });
+        Assert.ThrowsException<InvalidOperationException>(() => a.Solve(V(1, 2)));
+    }
 }

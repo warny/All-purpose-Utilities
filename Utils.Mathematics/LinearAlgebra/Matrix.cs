@@ -20,6 +20,14 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
     private int? hashCode;
 
     /// <summary>
+    /// Relative pivot tolerance used by <see cref="Solve"/> and <see cref="Invert"/> to reject a
+    /// numerically near-singular matrix (magnitude relative to the matrix's largest entry) instead
+    /// of dividing by a pivot that is merely close to zero, which would silently amplify rounding
+    /// error into a huge, infinite, or NaN result while still returning an apparently valid answer.
+    /// </summary>
+    private static readonly T SingularityRelativeTolerance = T.CreateChecked(1e-10);
+
+    /// <summary>
     /// Gets the number of rows in the matrix.
     /// </summary>
     public int Rows => components.GetLength(0);
@@ -230,6 +238,10 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
         int n = Rows;
         T[,] u = ToArray();
         int swaps = 0;
+        // Elimination divides by the pivot below, so a pivot that is merely close to zero (not
+        // exactly zero) would otherwise amplify rounding error into a huge/infinite/NaN result
+        // instead of the mathematically expected near-zero determinant of a near-singular matrix.
+        T pivotTolerance = MaxAbsoluteEntry(u) * SingularityRelativeTolerance;
 
         for (int k = 0; k < n; k++)
         {
@@ -240,7 +252,7 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
                     pivotRow = i;
             }
 
-            if (u[pivotRow, k].Equals(T.Zero))
+            if (T.Abs(u[pivotRow, k]) <= pivotTolerance)
                 return T.Zero;
 
             if (pivotRow != k)

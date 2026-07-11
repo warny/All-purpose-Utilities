@@ -126,6 +126,30 @@ namespace UtilsTest.Mathematics.LinearAlgebra
         }
 
         [TestMethod]
+        public void Invert_SingularMatrix_Throws()
+        {
+            var matrix = new Matrix<double>(new double[,] { { 1d, 2d }, { 2d, 4d } });
+            Assert.ThrowsException<InvalidOperationException>(() => matrix.Invert());
+        }
+
+        [TestMethod]
+        public void Invert_NearSingularMatrix_ThrowsInsteadOfReturningGarbage()
+        {
+            var matrix = new Matrix<double>(new double[,] { { 1d, 2d }, { 2d + 2e-13, 4d + 4e-13 } });
+            Assert.ThrowsException<InvalidOperationException>(() => matrix.Invert());
+        }
+
+        [TestMethod]
+        public void Determinant_NearSingularMatrix_ReturnsZeroInsteadOfGarbage()
+        {
+            // Previously, dividing by the tiny (but non-zero) pivot left after elimination could
+            // amplify rounding error into a huge/NaN determinant instead of the mathematically
+            // expected near-zero value for a near-singular matrix.
+            var matrix = new Matrix<double>(new double[,] { { 1d, 2d }, { 2d + 2e-13, 4d + 4e-13 } });
+            Assert.AreEqual(0d, matrix.Determinant, 1e-6);
+        }
+
+        [TestMethod]
         public void Identity_ProducesCorrectDiagonalAndFlags()
         {
             var m = Matrix<double>.Identity(3);
