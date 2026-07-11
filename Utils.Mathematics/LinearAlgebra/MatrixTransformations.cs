@@ -227,19 +227,35 @@ public static class MatrixTransformations
     }
 
     /// <summary>
-    /// Generates a transformation matrix.
+    /// Generates a general affine transformation matrix.
     /// </summary>
     /// <typeparam name="T">Numeric type of the matrix.</typeparam>
-    /// <param name="values">Transformation coefficients.</param>
-    /// <returns>New transformation matrix.</returns>
+    /// <param name="values">
+    /// Coefficients for the upper <c>d × (d+1)</c> affine block, in row-major order: for each of the
+    /// <c>d</c> base-dimension rows, <c>d</c> linear coefficients followed by that row's translation
+    /// coefficient (last column). The base dimension <c>d</c> is inferred from the count:
+    /// <c>d * (d + 1)</c> values are required. For example, a 2D transform needs 6 values
+    /// <c>[a, b, tx, c, d, ty]</c>, producing the matrix rows <c>[a, b, tx]</c>, <c>[c, d, ty]</c>.
+    /// </param>
+    /// <returns>
+    /// A new <c>(d+1) × (d+1)</c> homogeneous transformation matrix: the supplied coefficients fill
+    /// the upper affine block, and the final row is left as the homogeneous row <c>[0, …, 0, 1]</c>,
+    /// consistent with this library's matrix-times-column-vector multiplication convention (the
+    /// same convention <see cref="Translation{T}(IEnumerable{T})"/> uses for its translation column).
+    /// </returns>
+    /// <exception cref="ArgumentException">Thrown when the value count does not match <c>d * (d + 1)</c> for any integer <c>d</c>.</exception>
     public static Matrix<T> Transform<T>(params IEnumerable<T> values)
         where T : struct, IFloatingPoint<T>, IRootFunctions<T>
     {
         T[] valuesArray = values.ToArray();
-        var dimension = (Math.Sqrt(4 * valuesArray.Length + 1) + 1) / 2;
-        if (dimension != Math.Floor(dimension))
-            throw new ArgumentException("Invalid dimension for transformation matrix", nameof(values));
-        int matrixDimension = (int)dimension;
+        // Solve n = d * (d + 1) for the base dimension d, then verify with exact integer
+        // arithmetic (the closed-form root is only used to pick a candidate).
+        double baseDimensionEstimate = (Math.Sqrt(4 * valuesArray.Length + 1) - 1) / 2;
+        int baseDimension = (int)Math.Round(baseDimensionEstimate);
+        if (baseDimension <= 0 || baseDimension * (baseDimension + 1) != valuesArray.Length)
+            throw new ArgumentException("Invalid coefficient count for transformation matrix", nameof(values));
+
+        int matrixDimension = baseDimension + 1;
         var array = new T[matrixDimension, matrixDimension];
 
         for (int row = 0; row < matrixDimension; row++)
@@ -250,12 +266,14 @@ public static class MatrixTransformations
             }
         }
 
+        // Populate the upper d x (d+1) affine block; the final row is left untouched (homogeneous
+        // [0, ..., 0, 1]) rather than overwritten with supplied coefficients.
         int index = 0;
-        for (int x = 0; x < matrixDimension; x++)
+        for (int row = 0; row < baseDimension; row++)
         {
-            for (int y = 0; y < matrixDimension - 1; y++)
+            for (int col = 0; col < matrixDimension; col++)
             {
-                array[x, y] = valuesArray[index];
+                array[row, col] = valuesArray[index];
                 index++;
             }
         }

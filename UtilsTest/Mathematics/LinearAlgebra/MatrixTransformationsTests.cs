@@ -206,4 +206,65 @@ public class MatrixTransformationsTests
             for (int j = 0; j < 3; j++)
                 Assert.AreEqual(i == j ? 1d : 0d, m[i, j], Delta, $"[{i},{j}]");
     }
+
+    // ── Transform ────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void Transform_2D_ProducesHandCalculatedAffineBlockAndHomogeneousLastRow()
+    {
+        // Row-major [a, b, tx, c, d, ty]: row0 = [a,b,tx], row1 = [c,d,ty].
+        var m = MatrixTransformations.Transform<double>(2d, 3d, 5d, 4d, 6d, 7d);
+
+        Assert.AreEqual(3, m.Rows);
+        Assert.AreEqual(3, m.Columns);
+
+        Assert.AreEqual(2d, m[0, 0], Delta);
+        Assert.AreEqual(3d, m[0, 1], Delta);
+        Assert.AreEqual(5d, m[0, 2], Delta);
+        Assert.AreEqual(4d, m[1, 0], Delta);
+        Assert.AreEqual(6d, m[1, 1], Delta);
+        Assert.AreEqual(7d, m[1, 2], Delta);
+
+        // The final row must remain the homogeneous row, not be overwritten with supplied values.
+        Assert.AreEqual(0d, m[2, 0], Delta);
+        Assert.AreEqual(0d, m[2, 1], Delta);
+        Assert.AreEqual(1d, m[2, 2], Delta);
+    }
+
+    [TestMethod]
+    public void Transform_2D_MatchesManualMultiplicationOnHomogeneousPoint()
+    {
+        // Affine map: x' = 2x + 3y + 5, y' = 4x + 6y + 7.
+        var m = MatrixTransformations.Transform<double>(2d, 3d, 5d, 4d, 6d, 7d);
+        var v = new Vector<double>(1d, 1d, 1d);
+        var result = m * v;
+
+        Assert.AreEqual(2d * 1 + 3d * 1 + 5d, result[0], Delta);
+        Assert.AreEqual(4d * 1 + 6d * 1 + 7d, result[1], Delta);
+        Assert.AreEqual(1d, result[2], Delta);
+    }
+
+    [TestMethod]
+    public void Transform_MatchesTranslationForIdentityLinearPart()
+    {
+        // An affine transform with the identity linear part and translation (5, 7) must behave
+        // exactly like MatrixTransformations.Translation(5, 7).
+        var transform = MatrixTransformations.Transform<double>(1d, 0d, 5d, 0d, 1d, 7d);
+        var translation = MatrixTransformations.Translation<double>(5d, 7d);
+
+        var v = new Vector<double>(2d, 3d, 1d);
+        var transformResult = transform * v;
+        var translationResult = translation * v;
+
+        Assert.AreEqual(translationResult[0], transformResult[0], Delta);
+        Assert.AreEqual(translationResult[1], transformResult[1], Delta);
+        Assert.AreEqual(translationResult[2], transformResult[2], Delta);
+    }
+
+    [TestMethod]
+    public void Transform_InvalidValueCount_Throws()
+    {
+        // 5 is not d*(d+1) for any integer d (0, 2, 6, 12, ...).
+        Assert.ThrowsException<ArgumentException>(() => MatrixTransformations.Transform<double>(1d, 2d, 3d, 4d, 5d));
+    }
 }
