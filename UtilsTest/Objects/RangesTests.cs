@@ -227,5 +227,53 @@ namespace UtilsTest.Objects
                 Assert.AreEqual(test.result, range.ToString("d", CultureInfo.GetCultureInfo("fr-FR")), $"{test} => {range} != {test.result}");
             }
         }
+
+        [TestMethod]
+        public void DoubleRangesParseRejectsTrailingGarbageTest()
+        {
+            Assert.ThrowsExactly<FormatException>(() => DoubleRanges.Parse("[1-5] trailing garbage", CultureInfo.InvariantCulture));
+        }
+
+        [TestMethod]
+        public void DoubleRangesParseRejectsLeadingGarbageTest()
+        {
+            Assert.ThrowsExactly<FormatException>(() => DoubleRanges.Parse("invalid [1-5]", CultureInfo.InvariantCulture));
+        }
+
+        [TestMethod]
+        public void DoubleRangesParseRejectsGarbageBetweenRangesTest()
+        {
+            Assert.ThrowsExactly<FormatException>(() => DoubleRanges.Parse("[1-5] and [7-9]", CultureInfo.InvariantCulture));
+        }
+
+        [TestMethod]
+        public void DoubleRangesParseRejectsContentWithoutAnyMatchTest()
+        {
+            Assert.ThrowsExactly<FormatException>(() => DoubleRanges.Parse("not a range at all", CultureInfo.InvariantCulture));
+        }
+
+        [TestMethod]
+        public void DoubleRangesParseAllowsWhitespaceBetweenRangesTest()
+        {
+            var range = DoubleRanges.Parse(" [1-5]  [7-9] ", CultureInfo.InvariantCulture);
+            Assert.AreEqual("[ 1 - 5 ] ∪ [ 7 - 9 ]", range.ToString(CultureInfo.InvariantCulture));
+        }
+
+        [TestMethod]
+        public void DoubleRangesParseEmptyStringProducesEmptySetTest()
+        {
+            // An empty string is a legitimate representation of an empty set, not malformed input:
+            // it must not throw, unlike non-whitespace content that matches no range (see
+            // DoubleRangesParseRejectsContentWithoutAnyMatchTest).
+            var range = DoubleRanges.Parse("", CultureInfo.InvariantCulture);
+            Assert.AreEqual(0, range.Count);
+        }
+
+        [TestMethod]
+        public void DoubleRangesParseWhitespaceOnlyStringProducesEmptySetTest()
+        {
+            var range = DoubleRanges.Parse("   \t  ", CultureInfo.InvariantCulture);
+            Assert.AreEqual(0, range.Count);
+        }
     }
 }

@@ -51,31 +51,83 @@ public static class ObjectUtils
     }
 
     /// <summary>
-    /// Asynchronously executes the specified function if the object is not null; otherwise, executes the fallback function.
+    /// Executes the specified synchronous function on the thread pool if the object is not null; otherwise, executes the synchronous fallback function.
     /// </summary>
     /// <typeparam name="T">The type of the object.</typeparam>
     /// <typeparam name="Result">The type of the result.</typeparam>
     /// <param name="value">The object to check.</param>
-    /// <param name="ifNotNull">The function to execute if the object is not null.</param>
-    /// <param name="ifNull">The function to execute if the object is null.</param>
+    /// <param name="ifNotNull">The synchronous function to execute if the object is not null.</param>
+    /// <param name="ifNull">The synchronous function to execute if the object is null.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
+    /// <remarks>
+    /// <paramref name="ifNotNull"/> and <paramref name="ifNull"/> are synchronous delegates offloaded
+    /// to the thread pool via <see cref="Task.Run(Func{Result})"/>; this consumes a thread-pool thread
+    /// for the duration of the call. For delegates that are already asynchronous, use the
+    /// <see cref="DoAsync{T, Result}(T, Func{T, Task{Result}}, Func{Task{Result}})"/> overload instead,
+    /// which composes the returned tasks directly without occupying an extra thread.
+    /// </remarks>
     public static async Task<Result> DoAsync<T, Result>(this T value, Func<T, Result> ifNotNull, Func<Result> ifNull)
     {
         return await Task.Run(() => value != null ? ifNotNull(value) : ifNull()).ConfigureAwait(false);
     }
 
     /// <summary>
-    /// Asynchronously executes the specified function if the object is not null; otherwise, returns a fallback value.
+    /// Executes the specified synchronous function on the thread pool if the object is not null; otherwise, returns a fallback value.
     /// </summary>
     /// <typeparam name="T">The type of the object.</typeparam>
     /// <typeparam name="Result">The type of the result.</typeparam>
     /// <param name="value">The object to check.</param>
-    /// <param name="ifNotNull">The function to execute if the object is not null.</param>
+    /// <param name="ifNotNull">The synchronous function to execute if the object is not null.</param>
     /// <param name="ifNull">The value to return if the object is null.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
+    /// <remarks>
+    /// <paramref name="ifNotNull"/> is a synchronous delegate offloaded to the thread pool via
+    /// <see cref="Task.Run(Func{Result})"/>; this consumes a thread-pool thread for the duration of the
+    /// call. For a delegate that is already asynchronous, use the
+    /// <see cref="DoAsync{T, Result}(T, Func{T, Task{Result}}, Result)"/> overload instead, which
+    /// composes the returned task directly without occupying an extra thread.
+    /// </remarks>
     public static async Task<Result> DoAsync<T, Result>(this T value, Func<T, Result> ifNotNull, Result ifNull)
     {
         return await Task.Run(() => value != null ? ifNotNull(value) : ifNull).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Asynchronously executes the specified async function if the object is not null; otherwise, executes the async fallback function.
+    /// </summary>
+    /// <typeparam name="T">The type of the object.</typeparam>
+    /// <typeparam name="Result">The type of the result.</typeparam>
+    /// <param name="value">The object to check.</param>
+    /// <param name="ifNotNull">The asynchronous function to execute if the object is not null.</param>
+    /// <param name="ifNull">The asynchronous function to execute if the object is null.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    /// <remarks>
+    /// Unlike the synchronous-delegate overloads, this composes the tasks returned by
+    /// <paramref name="ifNotNull"/> and <paramref name="ifNull"/> directly, without offloading to the
+    /// thread pool via <see cref="Task.Run(Func{Result})"/>.
+    /// </remarks>
+    public static async Task<Result> DoAsync<T, Result>(this T value, Func<T, Task<Result>> ifNotNull, Func<Task<Result>> ifNull)
+    {
+        return value != null ? await ifNotNull(value).ConfigureAwait(false) : await ifNull().ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Asynchronously executes the specified async function if the object is not null; otherwise, returns a fallback value.
+    /// </summary>
+    /// <typeparam name="T">The type of the object.</typeparam>
+    /// <typeparam name="Result">The type of the result.</typeparam>
+    /// <param name="value">The object to check.</param>
+    /// <param name="ifNotNull">The asynchronous function to execute if the object is not null.</param>
+    /// <param name="ifNull">The value to return if the object is null.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    /// <remarks>
+    /// Unlike the synchronous-delegate overload, this composes the task returned by
+    /// <paramref name="ifNotNull"/> directly, without offloading to the thread pool via
+    /// <see cref="Task.Run(Func{Result})"/>.
+    /// </remarks>
+    public static async Task<Result> DoAsync<T, Result>(this T value, Func<T, Task<Result>> ifNotNull, Result ifNull)
+    {
+        return value != null ? await ifNotNull(value).ConfigureAwait(false) : ifNull;
     }
 
     /// <summary>
@@ -97,7 +149,7 @@ public static class ObjectUtils
         {
             if (rank == array.Rank)
             {
-                hash = hash * HashMultiplier +array.GetValue(indices).GetHashCode();
+                hash = hash * HashMultiplier + (array.GetValue(indices)?.GetHashCode() ?? 0);
             }
             else
             {

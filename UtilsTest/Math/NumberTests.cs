@@ -2,6 +2,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Numerics;
 using System;
 using System.Globalization;
+using System.Numerics;
 
 namespace UtilsTest.Numerics;
 
@@ -127,5 +128,82 @@ public class NumberTests
         Number result = Number.Cos(angle);
         string expected = Number.Parse(Math.Cos(0.5).ToString("R", CultureInfo.InvariantCulture)).ToString();
         Assert.AreEqual(expected, result.ToString());
+    }
+
+    [TestMethod]
+    public void DefaultValueEqualsZeroTest()
+    {
+        Number defaultValue = default;
+        Assert.AreEqual(Number.Zero, defaultValue);
+        Assert.IsTrue(defaultValue == Number.Zero);
+        Assert.AreEqual(Number.Zero.GetHashCode(), defaultValue.GetHashCode());
+        Assert.AreEqual(BigInteger.One, defaultValue.Denominator);
+        Assert.AreEqual(BigInteger.Zero, defaultValue.Numerator);
+        Assert.AreEqual(Number.Zero.ToString(null, CultureInfo.InvariantCulture), defaultValue.ToString(null, CultureInfo.InvariantCulture));
+        Assert.AreEqual(0m, defaultValue.ToDecimal());
+    }
+
+    [TestMethod]
+    public void DefaultValueArithmeticDoesNotThrowTest()
+    {
+        Number defaultValue = default;
+        Number one = Number.One;
+
+        Assert.AreEqual(one, defaultValue + one);
+        Assert.AreEqual(-one, defaultValue - one);
+        Assert.AreEqual(Number.Zero, defaultValue * one);
+        Assert.AreEqual(Number.Zero, defaultValue / one);
+        Assert.AreEqual(Number.Zero, -defaultValue);
+        Assert.AreEqual(0, defaultValue.CompareTo(Number.Zero));
+    }
+
+    [TestMethod]
+    public void TryParseFailureResultEqualsZeroTest()
+    {
+        bool ok = Number.TryParse("not_a_number", null, out Number result);
+        Assert.IsFalse(ok);
+        Assert.AreEqual(Number.Zero, result);
+    }
+
+    [TestMethod]
+    public void ParseRejectsMultipleDecimalSeparatorsTest()
+    {
+        Assert.ThrowsExactly<FormatException>(() => Number.Parse("1.2.3", CultureInfo.InvariantCulture));
+    }
+
+    [TestMethod]
+    public void ParseLeadingDecimalSeparatorTest()
+    {
+        Assert.AreEqual(Number.Parse("0.5", CultureInfo.InvariantCulture), Number.Parse(".5", CultureInfo.InvariantCulture));
+    }
+
+    [TestMethod]
+    public void ParseNegativeLeadingDecimalSeparatorTest()
+    {
+        Assert.AreEqual(Number.Parse("-0.5", CultureInfo.InvariantCulture), Number.Parse("-.5", CultureInfo.InvariantCulture));
+    }
+
+    [TestMethod]
+    public void ParseTrailingDecimalSeparatorTest()
+    {
+        Assert.AreEqual(Number.Parse("5", CultureInfo.InvariantCulture), Number.Parse("5.", CultureInfo.InvariantCulture));
+    }
+
+    [TestMethod]
+    public void ParseLoneDecimalSeparatorThrowsTest()
+    {
+        Assert.ThrowsExactly<FormatException>(() => Number.Parse(".", CultureInfo.InvariantCulture));
+    }
+
+    [TestMethod]
+    public void ParseRespectsCultureSpecificDecimalSeparatorTest()
+    {
+        Assert.AreEqual(Number.Parse("10.5", CultureInfo.InvariantCulture), Number.Parse("10,5", CultureInfo.GetCultureInfo("fr-FR")));
+    }
+
+    [TestMethod]
+    public void ParseRejectsThousandsSeparatorTest()
+    {
+        Assert.ThrowsExactly<FormatException>(() => Number.Parse("1,234.5", CultureInfo.InvariantCulture));
     }
 }

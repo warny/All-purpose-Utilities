@@ -6,8 +6,12 @@ Security, Transactions, Files — 136 fichiers). Suit la même méthodologie que
 sur Utils.Geography, Utils.Reflection et Utils.Fonts : chaque proposition ci-dessous a été vérifiée
 manuellement (lecture du code, traçage à la main d'un scénario concret, ou absence de test qui
 l'aurait révélée) avant d'être retenue — plusieurs pistes soulevées lors du balayage initial se sont
-révélées être des faux positifs après vérification (voir section finale). Aucune proposition
-ci-dessous n'est encore corrigée.
+révélées être des faux positifs après vérification (voir section finale).
+
+**État (2026-07-11) :** les 13 propositions ci-dessous sont toutes corrigées, chacune avec un commit
+dédié et un test de régression, en commençant par les bugs fonctionnels (items 1, 2, 3, 6, 7, 8) puis
+les incohérences d'écriture par ordre de priorité (items 4, 9, 11, 12, 10, 5, 13). Branche
+`claude/utils-todo-fixes`.
 
 ## Bugs fonctionnels
 
@@ -26,6 +30,9 @@ assumée d'un "merge join" simplifié), soit implémenter le vrai algorithme de 
 bufferise le run de doublons du côté qui en a besoin pour produire le produit cartésien correct.
 **Sévérité** : bug fonctionnel (résultats de jointure incomplets/faux pour toute clé dupliquée des
 deux côtés — silencieux, aucune exception).
+**Corrigé.** `Enumerate` bufferise désormais les runs de clés dupliquées des deux côtés et émet leur
+produit cartésien complet ; la comparaison à `-1`/`1` littéraux a aussi été remplacée par un test de
+signe. Tests : `ForwardFusionTests.cs` (5 nouveaux cas).
 
 ### 2. `DistributedRandom.NextDouble(double min, double max)` — `Floor()` transforme la sortie en entier
 `Utils/Randomization/DistributedRandom.cs:66-72`. La méthode est documentée "Generates a random
@@ -41,6 +48,8 @@ triviaux sont documentés dans le xml compilé, aucun fichier de test trouvé).
 - min) + min` tel quel) ; `NextInt` peut appliquer son propre floor/cast sur le résultat continu.
 **Sévérité** : bug fonctionnel (API publique inutilisable pour son usage documenté ; non couvert par
 un test).
+**Corrigé.** `Floor()` retiré de `NextDouble(min, max)` ; `NextInt` tronque toujours via son propre
+cast. Tests : `DistributedRandomTests.cs` (nouveau fichier).
 
 ### 3. `StringUtils.ParseCommandLine` — dernier argument dé-échappé différemment des autres
 `Utils/String/StringUtils.cs:113` vs `139`. Pour un argument entre guillemets suivi d'un espace, le
@@ -56,6 +65,8 @@ convention d'échappement.
 façon uniforme à tous les arguments, y compris ceux suivis d'un espace.
 **Sévérité** : bug fonctionnel (incohérence de désérialisation selon la position de l'argument dans
 la ligne — pas de test existant pour `StringUtils` du tout).
+**Corrigé.** `TrimQuotes` appliqué uniformément à tous les arguments. Tests :
+`UtilsTest/String/StringUtilsTests.cs` (nouveau fichier).
 
 ### 6. `Number` — `default(Number)` represents an invalid `0/0` fraction
 `Utils/Numerics/Number.cs`. `Number` is a `readonly struct` whose constructor rejects a zero
@@ -74,6 +85,9 @@ change. Add a regression test asserting that `default(Number)` behaves exactly l
 
 **Severity**: critical functional invariant violation. A public value type should have a valid and
 well-defined default value.
+**Fixed.** Introduced an `EffectiveDenominator` used throughout instead of the raw field, so
+`default(Number)` is fully equivalent to `Number.Zero` (equality, hash code, arithmetic, formatting).
+Tests: `UtilsTest/Math/NumberTests.cs`.
 
 ### 7. `Number.Parse` silently accepts malformed decimal inputs
 `Utils/Numerics/Number.cs:101-123`. Decimal parsing uses
@@ -90,6 +104,9 @@ supported. Add tests for multiple separators, `.5`, `-.5`, `5.`, culture-specifi
 thousands separators.
 
 **Severity**: high. Malformed input can be accepted with a value different from the supplied text.
+**Fixed.** The separator is now located explicitly, a second occurrence throws `FormatException`, and
+a missing integer/fractional part is treated as zero (supporting `.5`, `-.5`, `5.`). Tests:
+`UtilsTest/Math/NumberTests.cs`.
 
 ### 8. `ObjectUtils.ComputeHash(Array)` throws on `null` elements
 `Utils/Objects/ObjectUtils.cs:88-113`. The non-generic multidimensional-array overload computes each
@@ -104,6 +121,8 @@ code `0` using `value?.GetHashCode() ?? 0`.
 custom hash delegate.
 
 **Severity**: medium functional bug for reference-type arrays containing null values.
+**Fixed.** Applies the same `value?.GetHashCode() ?? 0` pattern already used by the
+`IEnumerable<object>` overload. Tests: `UtilsTest/Objects/ObjectUtilsTests.cs` (new file).
 
 ## Incohérences d'écriture
 
@@ -122,6 +141,15 @@ clairement que la classe n'est **pas** thread-safe et retirer les attributs `Syn
 sur l'indexeur/`Add`.
 **Sévérité** : incohérence de conception (thread-safety partielle et trompeuse, pas un bug isolé mais
 un risque de course si un appelant se fie à la présence de `[Synchronized]` sur certains membres).
+**Corrigé (en deux temps).** D'abord documenté comme non thread-safe et les attributs
+`[Synchronized]` trompeurs retirés (dont `Clear()`, qui verrouillait en réalité un moniteur différent
+de celui de l'indexeur/`Add`, donc sans exclusion mutuelle réelle entre eux). Puis, à la demande de
+l'utilisateur (c'est le contexte d'usage le plus probable), rendu réellement thread-safe : un verrou
+interne unique (`syncRoot`) protège désormais tous les membres, y compris `Keys`/`Values` (vues
+« vivantes » mais dont chaque appel prend un instantané sous verrou) et `GetEnumerator` (idem, plutôt
+qu'un curseur vivant sur la `LinkedList` interne, qui aurait levé `InvalidOperationException` en cas
+de mutation concurrente). Tests : `LRUCacheTests.cs` (`ConcurrentAddsWithDistinctKeys_...`,
+`ConcurrentReadWriteEnumerateStress_...`).
 
 ### 5. `Ranges.Specifics.cs` — tableau non-bracket
 `Utils/Range/Ranges.Specifics.cs:269` : `new string[] { "-", ".." }` devrait utiliser la syntaxe
@@ -129,6 +157,7 @@ crochets (`["-", ".."]`), conformément à la règle du projet (AGENTS.md : "Arr
 syntax").
 **Fix proposé** : remplacer par `["-", ".."]`.
 **Sévérité** : cosmétique.
+**Corrigé.**
 
 ### 9. `ObjectUtils.DoAsync` is asynchronous in name only
 `Utils/Objects/ObjectUtils.cs:64-80`. Both `DoAsync` overloads accept synchronous delegates and wrap
@@ -142,6 +171,9 @@ If the current thread-pool semantics are intentionally retained, rename the meth
 behavior explicit.
 
 **Severity**: medium design and scalability issue rather than an isolated correctness bug.
+**Fixed.** Documented the thread-pool offloading on the existing overloads and added
+`Func<T, Task<Result>>`/`Func<Task<Result>>` overloads that compose the returned tasks directly
+without `Task.Run`. Tests: `UtilsTest/Objects/ObjectUtilsTests.cs`.
 
 ### 10. `IntRange<T>.SimpleRange.CompareTo(object)` violates the `IComparable` contract
 `Utils/Range/IntRange.cs:101-106`. The non-generic `CompareTo(object?)` implementation throws
@@ -155,6 +187,8 @@ The conventional .NET contract is to return a positive value for `null` and thro
 
 **Severity**: low contract inconsistency. The nested type is private, but the behavior can still be
 observed through non-generic sorting and collection APIs.
+**Fixed.** Now returns `1` for `null` and throws `ArgumentException` for an incompatible type. Tests:
+`IntRangeTests.cs` (reflection-based, since `SimpleRange` is private).
 
 ### 11. `RandomExtensions.RandomFloat` and `RandomDouble` expose ambiguous semantics
 `Utils/Randomization/RandomExtensions.cs:241-258`. These methods fill the raw bytes of a `float` or
@@ -171,6 +205,13 @@ special IEEE-754 values.
 
 **Severity**: medium API-design inconsistency; it becomes a functional bug when callers assume a
 finite normalized value.
+**Resolved by documentation, not renaming.** `RandomFloat`/`RandomDouble` follow the same
+full-bit-pattern convention as `RandomByte`/`RandomShort`/`RandomInt`/`RandomLong` in the same file,
+and an existing serialization round-trip test in `UtilsTest.Functional` already depends on the
+raw-bit behavior to exercise edge-case values. Renaming would have broken both. Documented the
+behavior prominently (NaN/Infinity/subnormal/out-of-range possible) and pointed to
+`Random.NextSingle()`/`NextDouble()` for finite `[0, 1)` semantics. Tests:
+`RandomExtensionsTests.cs`.
 
 ### 12. `Ranges<T>.InnerParse` accepts valid fragments inside otherwise invalid input
 `Utils/Range/Ranges.cs:114-129`. The parser uses `Regex.Matches` with an unanchored pattern and yields
@@ -182,6 +223,14 @@ entire input be consumed, while a separately named API such as `ExtractRanges` m
 search for valid ranges inside larger text.
 
 **Severity**: medium parsing-contract ambiguity and possible silent data acceptance.
+**Fixed.** `InnerParse` now requires every character of the input to belong to a matched range or be
+whitespace, throwing `FormatException` otherwise (leading, trailing, and in-between garbage are all
+rejected, as is any *non-whitespace* input that matches no range at all — e.g. `"not a range at
+all"`); the existing concatenated-range syntax keeps working unchanged. An empty or whitespace-only
+string is treated as a legitimate representation of an empty set and does **not** throw (matching
+`new Ranges<T>()`'s own empty default). Tests: `UtilsTest/Objects/RangesTests.cs`
+(`DoubleRangesParseEmptyStringProducesEmptySetTest`,
+`DoubleRangesParseWhitespaceOnlyStringProducesEmptySetTest`).
 
 ### 13. `IntRange.cs` contains an unrelated `System.Formats.Tar` import
 `Utils/Range/IntRange.cs:11` contains `using System.Formats.Tar; // If needed for IAdditionOperators,
@@ -191,6 +240,7 @@ from generated or unfinished code.
 **Proposed fix**: remove the unused import and its misleading comment.
 
 **Severity**: cosmetic, but indicative of incomplete cleanup.
+**Fixed.**
 
 ## Missing regression coverage
 

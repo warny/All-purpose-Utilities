@@ -101,27 +101,53 @@ public class ForwardFusion<T1, T2> : IEnumerable<(T1 Left, T2 Right)>, IDisposab
         {
             if (hasLeft && hasRight)
             {
-                // Compare the current elements from both lists
-                switch (compare(leftEnum.Current, rightEnum.Current))
+                // Compare the current elements from both lists. Only the sign of the result is
+                // significant (as with any IComparable/IComparer contract), not its magnitude.
+                int comparison = compare(leftEnum.Current, rightEnum.Current);
+                if (comparison == 0)
                 {
-                    case 0:
-                        yield return (leftEnum.Current, rightEnum.Current); // Emit matched pair
-                        hasRight = rightEnum.MoveNext();
-                        break;
-                    case -1:
-                        if (joinType.HasFlag(JoinType.LeftJoin))
-                        {
-                            yield return (leftEnum.Current, default); // Emit left element with no match
-                        }
+                    // Buffer every consecutive left and right element that share this key so that
+                    // duplicate keys on both sides produce the full cartesian product of matches,
+                    // as a correct sort-merge join requires (not just the 1-to-N case).
+                    var leftGroup = new List<T1> { leftEnum.Current };
+                    hasLeft = leftEnum.MoveNext();
+                    while (hasLeft && compare(leftEnum.Current, rightEnum.Current) == 0)
+                    {
+                        leftGroup.Add(leftEnum.Current);
                         hasLeft = leftEnum.MoveNext();
-                        break;
-                    case 1:
-                        if (joinType.HasFlag(JoinType.RightJoin))
-                        {
-                            yield return (default, rightEnum.Current); // Emit right element with no match
-                        }
+                    }
+
+                    var rightGroup = new List<T2> { rightEnum.Current };
+                    hasRight = rightEnum.MoveNext();
+                    while (hasRight && compare(leftGroup[0], rightEnum.Current) == 0)
+                    {
+                        rightGroup.Add(rightEnum.Current);
                         hasRight = rightEnum.MoveNext();
-                        break;
+                    }
+
+                    foreach (T1 left in leftGroup)
+                    {
+                        foreach (T2 right in rightGroup)
+                        {
+                            yield return (left, right);
+                        }
+                    }
+                }
+                else if (comparison < 0)
+                {
+                    if (joinType.HasFlag(JoinType.LeftJoin))
+                    {
+                        yield return (leftEnum.Current, default); // Emit left element with no match
+                    }
+                    hasLeft = leftEnum.MoveNext();
+                }
+                else
+                {
+                    if (joinType.HasFlag(JoinType.RightJoin))
+                    {
+                        yield return (default, rightEnum.Current); // Emit right element with no match
+                    }
+                    hasRight = rightEnum.MoveNext();
                 }
             }
             else if (hasLeft)

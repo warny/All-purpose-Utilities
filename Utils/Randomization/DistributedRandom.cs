@@ -62,13 +62,13 @@ public class DistributedRandom
     /// </summary>
     /// <param name="min">The inclusive lower bound of the random number.</param>
     /// <param name="max">The exclusive upper bound of the random number.</param>
-    /// <returns>An integer value that follows the specified distribution within the specified range.</returns>
+    /// <returns>A double value that follows the specified distribution within the specified range.</returns>
     public double NextDouble(double min, double max)
     {
         min.ArgMustBeLesserThan(max);
 
         double distributedValue = NextDouble();
-        return double.Floor(distributedValue * (max - min)) + min;
+        return distributedValue * (max - min) + min;
     }
 
 

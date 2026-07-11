@@ -22,6 +22,13 @@ public readonly struct Number :
     private readonly BigInteger _denominator;
 
     /// <summary>
+    /// Gets the denominator used for all computations, treating the zero-initialized
+    /// default value of this struct (whose fields bypass the constructor) as an
+    /// effective denominator of one, equivalent to <see cref="Zero"/>.
+    /// </summary>
+    private BigInteger EffectiveDenominator => _denominator.IsZero ? BigInteger.One : _denominator;
+
+    /// <summary>
     /// Gets the value zero.
     /// </summary>
     public static Number Zero => new(BigInteger.Zero);
@@ -106,14 +113,30 @@ public readonly struct Number :
             return new Number(value);
         }
 
-        if (text.Contains(info.NumberDecimalSeparator))
+        string separator = info.NumberDecimalSeparator;
+        int separatorIndex = text.IndexOf(separator, StringComparison.Ordinal);
+        if (separatorIndex >= 0)
         {
-            string[] parts = text.Split(info.NumberDecimalSeparator);
-            BigInteger integerPart = BigInteger.Parse(parts[0], provider);
-            string fractionText = parts[1];
-            BigInteger fractionPart = BigInteger.Parse(fractionText, provider);
+            if (text.IndexOf(separator, separatorIndex + separator.Length, StringComparison.Ordinal) >= 0)
+                throw new FormatException($"The input string '{text}' contains more than one decimal separator.");
+
+            string integerText = text[..separatorIndex];
+            string fractionText = text[(separatorIndex + separator.Length)..];
+
+            bool isNegative = integerText.StartsWith(info.NegativeSign, StringComparison.Ordinal);
+            string integerDigits = isNegative ? integerText[info.NegativeSign.Length..] : integerText;
+
+            // Leading/trailing decimal separator forms (".5", "-.5", "5.") are supported by
+            // treating the missing integer or fractional part as zero.
+            if (integerDigits.Length == 0 && fractionText.Length == 0)
+                throw new FormatException($"The input string '{text}' is not a valid number.");
+
+            BigInteger integerMagnitude = integerDigits.Length == 0 ? BigInteger.Zero : BigInteger.Parse(integerDigits, provider);
+            BigInteger fractionPart = fractionText.Length == 0 ? BigInteger.Zero : BigInteger.Parse(fractionText, provider);
             BigInteger denominator = BigInteger.Pow(10, fractionText.Length);
-            BigInteger numerator = integerPart * denominator + (integerPart.Sign >= 0 ? fractionPart : -fractionPart);
+            BigInteger numerator = integerMagnitude * denominator + fractionPart;
+            if (isNegative)
+                numerator = -numerator;
             return new Number(numerator, denominator);
         }
 
@@ -178,7 +201,7 @@ public readonly struct Number :
     /// </summary>
     /// <returns>The decimal value.</returns>
     /// <exception cref="OverflowException">Thrown when the value does not fit in a <see cref="decimal"/>.</exception>
-    public decimal ToDecimal() => (decimal)_numerator / (decimal)_denominator;
+    public decimal ToDecimal() => (decimal)_numerator / (decimal)EffectiveDenominator;
 
     /// <inheritdoc/>
     public override string ToString() => ToString(null, CultureInfo.CurrentCulture);
@@ -216,7 +239,7 @@ public readonly struct Number :
 
         if (formatRequiresFraction || !decimalAvailable)
         {
-            fractionText = string.Format(CultureInfo.InvariantCulture, "{0}/{1}", _numerator, _denominator);
+            fractionText = string.Format(CultureInfo.InvariantCulture, "{0}/{1}", _numerator, EffectiveDenominator);
         }
 
         if (formatRequiresFraction)
@@ -252,7 +275,7 @@ public readonly struct Number :
     /// <summary>
     /// Gets the denominator of this number.
     /// </summary>
-    public BigInteger Denominator => _denominator;
+    public BigInteger Denominator => EffectiveDenominator;
 
     /// <summary>
     /// Returns the absolute value of the specified number.
@@ -269,7 +292,7 @@ public readonly struct Number :
     static bool INumberBase<Number>.IsComplexNumber(Number value) => false;
 
     /// <inheritdoc/>
-    static bool INumberBase<Number>.IsEvenInteger(Number value) => value._denominator.IsOne && value._numerator.IsEven;
+    static bool INumberBase<Number>.IsEvenInteger(Number value) => value.EffectiveDenominator.IsOne && value._numerator.IsEven;
 
     /// <inheritdoc/>
     static bool INumberBase<Number>.IsFinite(Number value) => true;
@@ -281,7 +304,7 @@ public readonly struct Number :
     static bool INumberBase<Number>.IsInfinity(Number value) => false;
 
     /// <inheritdoc/>
-    static bool INumberBase<Number>.IsInteger(Number value) => value._denominator.IsOne;
+    static bool INumberBase<Number>.IsInteger(Number value) => value.EffectiveDenominator.IsOne;
 
     /// <inheritdoc/>
     static bool INumberBase<Number>.IsNaN(Number value) => false;
@@ -296,7 +319,7 @@ public readonly struct Number :
     static bool INumberBase<Number>.IsNormal(Number value) => true;
 
     /// <inheritdoc/>
-    static bool INumberBase<Number>.IsOddInteger(Number value) => value._denominator.IsOne && !value._numerator.IsEven;
+    static bool INumberBase<Number>.IsOddInteger(Number value) => value.EffectiveDenominator.IsOne && !value._numerator.IsEven;
 
     /// <inheritdoc/>
     static bool INumberBase<Number>.IsPositive(Number value) => value._numerator.Sign > 0;
@@ -349,17 +372,17 @@ public readonly struct Number :
     public static Number Pow(Number x, Number y)
     {
         // Handle simple integer exponents for exact results
-        if (y._denominator.IsOne && y._numerator >= 0 && y._numerator <= int.MaxValue)
+        if (y.EffectiveDenominator.IsOne && y._numerator >= 0 && y._numerator <= int.MaxValue)
         {
             int exp = (int)y._numerator;
             BigInteger numerator = BigInteger.Pow(x._numerator, exp);
-            BigInteger denominator = BigInteger.Pow(x._denominator, exp);
+            BigInteger denominator = BigInteger.Pow(x.EffectiveDenominator, exp);
             return new Number(numerator, denominator);
         }
-        if (y._denominator.IsOne && y._numerator < 0 && y._numerator >= int.MinValue)
+        if (y.EffectiveDenominator.IsOne && y._numerator < 0 && y._numerator >= int.MinValue)
         {
             int exp = (int)BigInteger.Abs(y._numerator);
-            BigInteger numerator = BigInteger.Pow(x._denominator, exp);
+            BigInteger numerator = BigInteger.Pow(x.EffectiveDenominator, exp);
             BigInteger denominator = BigInteger.Pow(x._numerator, exp);
             return new Number(numerator, denominator);
         }
@@ -375,7 +398,7 @@ public readonly struct Number :
     static Number IPowerFunctions<Number>.Pow(Number x, Number y) => Pow(x, y);
 
     private static double ToDouble(Number value)
-        => (double)value._numerator / (double)value._denominator;
+        => (double)value._numerator / (double)value.EffectiveDenominator;
 
     private static Number FromDouble(double value)
         => Parse(value.ToString("R", CultureInfo.InvariantCulture));
@@ -389,7 +412,7 @@ public readonly struct Number :
     /// <returns>The formatted numeric string or <c>null</c> when no representation could be produced.</returns>
     private string? FormatAsDecimal(string? format, IFormatProvider provider, out bool success)
     {
-        if (_denominator.IsOne)
+        if (EffectiveDenominator.IsOne)
         {
             success = true;
             return _numerator.ToString(format, provider);
@@ -588,8 +611,8 @@ public readonly struct Number :
     /// </summary>
     public static Number operator +(Number left, Number right)
     {
-        BigInteger numerator = left._numerator * right._denominator + right._numerator * left._denominator;
-        BigInteger denominator = left._denominator * right._denominator;
+        BigInteger numerator = left._numerator * right.EffectiveDenominator + right._numerator * left.EffectiveDenominator;
+        BigInteger denominator = left.EffectiveDenominator * right.EffectiveDenominator;
         return new Number(numerator, denominator);
     }
 
@@ -598,8 +621,8 @@ public readonly struct Number :
     /// </summary>
     public static Number operator -(Number left, Number right)
     {
-        BigInteger numerator = left._numerator * right._denominator - right._numerator * left._denominator;
-        BigInteger denominator = left._denominator * right._denominator;
+        BigInteger numerator = left._numerator * right.EffectiveDenominator - right._numerator * left.EffectiveDenominator;
+        BigInteger denominator = left.EffectiveDenominator * right.EffectiveDenominator;
         return new Number(numerator, denominator);
     }
 
@@ -608,7 +631,7 @@ public readonly struct Number :
     /// </summary>
     public static Number operator *(Number left, Number right)
     {
-        return new Number(left._numerator * right._numerator, left._denominator * right._denominator);
+        return new Number(left._numerator * right._numerator, left.EffectiveDenominator * right.EffectiveDenominator);
     }
 
     /// <summary>
@@ -616,7 +639,7 @@ public readonly struct Number :
     /// </summary>
     public static Number operator /(Number left, Number right)
     {
-        return new Number(left._numerator * right._denominator, left._denominator * right._numerator);
+        return new Number(left._numerator * right.EffectiveDenominator, left.EffectiveDenominator * right._numerator);
     }
 
     /// <summary>
@@ -624,10 +647,10 @@ public readonly struct Number :
     /// </summary>
     public static Number operator %(Number left, Number right)
     {
-        BigInteger leftScaled = left._numerator * right._denominator;
-        BigInteger rightScaled = left._denominator * right._numerator;
+        BigInteger leftScaled = left._numerator * right.EffectiveDenominator;
+        BigInteger rightScaled = left.EffectiveDenominator * right._numerator;
         BigInteger remainder = BigInteger.Remainder(leftScaled, rightScaled);
-        return new Number(remainder, left._denominator * right._denominator);
+        return new Number(remainder, left.EffectiveDenominator * right.EffectiveDenominator);
     }
 
     /// <summary>
@@ -638,7 +661,7 @@ public readonly struct Number :
     /// <summary>
     /// Negates the specified number.
     /// </summary>
-    public static Number operator -(Number value) => new Number(BigInteger.Negate(value._numerator), value._denominator);
+    public static Number operator -(Number value) => new Number(BigInteger.Negate(value._numerator), value.EffectiveDenominator);
 
     /// <summary>
     /// Increments the specified value by one.
@@ -671,21 +694,21 @@ public readonly struct Number :
     public static bool operator <=(Number left, Number right) => left.CompareTo(right) <= 0;
 
     /// <inheritdoc/>
-    public bool Equals(Number other) => _numerator.Equals(other._numerator) && _denominator.Equals(other._denominator);
+    public bool Equals(Number other) => _numerator.Equals(other._numerator) && EffectiveDenominator.Equals(other.EffectiveDenominator);
 
     /// <inheritdoc/>
     public override bool Equals(object? obj) => obj is Number other && Equals(other);
 
     /// <inheritdoc/>
-    public override int GetHashCode() => HashCode.Combine(_numerator, _denominator);
+    public override int GetHashCode() => HashCode.Combine(_numerator, EffectiveDenominator);
 
     /// <summary>
     /// Compares two numbers.
     /// </summary>
     public int CompareTo(Number other)
     {
-        BigInteger left = _numerator * other._denominator;
-        BigInteger right = other._numerator * _denominator;
+        BigInteger left = _numerator * other.EffectiveDenominator;
+        BigInteger right = other._numerator * EffectiveDenominator;
         return left.CompareTo(right);
     }
 

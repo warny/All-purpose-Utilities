@@ -6,7 +6,6 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Numerics;
 using Utils.Mathematics;
-using System.Formats.Tar; // If needed for IAdditionOperators, etc.
 
 namespace Utils.Range
 {
@@ -99,8 +98,9 @@ namespace Utils.Range
             public int CompareTo(object? obj)
                 => obj switch
                 {
+                    null => 1, // Non-null > null by .NET convention
                     SimpleRange r => CompareTo(r),
-                    _ => throw new NotImplementedException()
+                    _ => throw new ArgumentException($"Object must be of type {nameof(SimpleRange)}.", nameof(obj))
                 };
 
 

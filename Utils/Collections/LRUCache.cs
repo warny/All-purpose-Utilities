@@ -1,6 +1,5 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 
 namespace Utils.Collections;
 
@@ -9,9 +8,22 @@ namespace Utils.Collections;
 /// </summary>
 /// <typeparam name="K">The type of keys in the cache.</typeparam>
 /// <typeparam name="V">The type of values in the cache.</typeparam>
+/// <remarks>
+/// This type is thread-safe: every member, including enumeration and the <see cref="Keys"/>/
+/// <see cref="Values"/> views, is synchronized through a single internal lock (a private object, not
+/// this instance — locking on the cache instance itself from calling code has no effect on it). Enumerating
+/// the cache (directly, or through <see cref="Keys"/> or <see cref="Values"/>) takes a point-in-time
+/// snapshot under that lock rather than returning a live cursor, so it never throws because of a
+/// concurrent modification and never observes a torn state — it just won't reflect mutations made
+/// after the snapshot was taken. As with most thread-safe collections, individual members are atomic
+/// but compound operations spanning more than one call (e.g. "add if not already present", or
+/// "read-modify-write") are <b>not</b> currently supported atomically by this type; there is no public
+/// way to make such a sequence atomic from outside the class.
+/// </remarks>
 public class LRUCache<K, V> : IDictionary<K, V>
     where K : notnull
 {
+    private readonly object syncRoot = new();
     private readonly int capacity;
     private readonly Dictionary<K, LinkedListNode<KeyValuePair<K, V>>> cacheMap;
     private readonly LinkedList<KeyValuePair<K, V>> lruList;
@@ -27,8 +39,8 @@ public class LRUCache<K, V> : IDictionary<K, V>
         this.capacity = capacity;
         this.cacheMap = new Dictionary<K, LinkedListNode<KeyValuePair<K, V>>>(capacity);
         this.lruList = new LinkedList<KeyValuePair<K, V>>();
-        this._keysView = new KeyCollection(lruList);
-        this._valuesView = new ValueCollection(lruList);
+        this._keysView = new KeyCollection(this);
+        this._valuesView = new ValueCollection(this);
     }
 
     /// <summary>
@@ -44,7 +56,16 @@ public class LRUCache<K, V> : IDictionary<K, V>
     /// <summary>
     /// Gets the number of elements contained in the cache.
     /// </summary>
-    public int Count => lruList.Count;
+    public int Count
+    {
+        get
+        {
+            lock (syncRoot)
+            {
+                return lruList.Count;
+            }
+        }
+    }
 
     /// <summary>
     /// Gets a value indicating whether the cache is read-only.
@@ -58,22 +79,27 @@ public class LRUCache<K, V> : IDictionary<K, V>
     /// <returns>The value associated with the specified key.</returns>
     public V this[K key]
     {
-        [MethodImpl(MethodImplOptions.Synchronized)]
         get
         {
-            TryGetValue(key, out V value);
-            return value;
+            lock (syncRoot)
+            {
+                TryGetValueCore(key, out V value);
+                return value;
+            }
         }
-        [MethodImpl(MethodImplOptions.Synchronized)]
         set
         {
-            Remove(key);
-            Add(key, value);
+            lock (syncRoot)
+            {
+                RemoveCore(key);
+                AddCore(key, value);
+            }
         }
     }
 
     /// <summary>
     /// Removes the first element from the LRU list and the cache when the capacity is exceeded.
+    /// Must be called while holding <see cref="syncRoot"/>.
     /// </summary>
     private void RemoveFirst()
     {
@@ -90,15 +116,31 @@ public class LRUCache<K, V> : IDictionary<K, V>
     /// </summary>
     /// <param name="key">The key to locate in the cache.</param>
     /// <returns><see langword="true"/> if the cache contains an element with the specified key; otherwise, <see langword="false"/>.</returns>
-    public bool ContainsKey(K key) => cacheMap.ContainsKey(key);
+    public bool ContainsKey(K key)
+    {
+        lock (syncRoot)
+        {
+            return cacheMap.ContainsKey(key);
+        }
+    }
 
     /// <summary>
     /// Adds the specified key and value to the cache. If the cache exceeds its capacity, it removes the least recently used item.
     /// </summary>
     /// <param name="key">The key of the element to add.</param>
     /// <param name="value">The value of the element to add.</param>
-    [MethodImpl(MethodImplOptions.Synchronized)]
     public void Add(K key, V value)
+    {
+        lock (syncRoot)
+        {
+            AddCore(key, value);
+        }
+    }
+
+    /// <summary>
+    /// Adds the specified key and value to the cache. Must be called while holding <see cref="syncRoot"/>.
+    /// </summary>
+    private void AddCore(K key, V value)
     {
         if (cacheMap.Count >= capacity)
         {
@@ -118,6 +160,17 @@ public class LRUCache<K, V> : IDictionary<K, V>
     /// <returns><see langword="true"/> if the element is successfully removed; otherwise, <see langword="false"/>.</returns>
     public bool Remove(K key)
     {
+        lock (syncRoot)
+        {
+            return RemoveCore(key);
+        }
+    }
+
+    /// <summary>
+    /// Removes the element with the specified key from the cache. Must be called while holding <see cref="syncRoot"/>.
+    /// </summary>
+    private bool RemoveCore(K key)
+    {
         if (cacheMap.TryGetValue(key, out var node))
         {
             lruList.Remove(node);
@@ -134,6 +187,17 @@ public class LRUCache<K, V> : IDictionary<K, V>
     /// <param name="value">When this method returns, the value associated with the specified key, if the key is found; otherwise, the default value for the type of the value parameter.</param>
     /// <returns><see langword="true"/> if the cache contains an element with the specified key; otherwise, <see langword="false"/>.</returns>
     public bool TryGetValue(K key, out V value)
+    {
+        lock (syncRoot)
+        {
+            return TryGetValueCore(key, out value);
+        }
+    }
+
+    /// <summary>
+    /// Gets the value associated with the specified key. Must be called while holding <see cref="syncRoot"/>.
+    /// </summary>
+    private bool TryGetValueCore(K key, out V value)
     {
         if (cacheMap.TryGetValue(key, out var node))
         {
@@ -161,7 +225,7 @@ public class LRUCache<K, V> : IDictionary<K, V>
     /// </summary>
     public void Clear()
     {
-        lock (lruList)
+        lock (syncRoot)
         {
             lruList.Clear();
             cacheMap.Clear();
@@ -173,7 +237,13 @@ public class LRUCache<K, V> : IDictionary<K, V>
     /// </summary>
     /// <param name="item">The key-value pair to locate in the cache.</param>
     /// <returns><see langword="true"/> if the cache contains the specified key-value pair; otherwise, <see langword="false"/>.</returns>
-    public bool Contains(KeyValuePair<K, V> item) => lruList.Contains(item);
+    public bool Contains(KeyValuePair<K, V> item)
+    {
+        lock (syncRoot)
+        {
+            return lruList.Contains(item);
+        }
+    }
 
     /// <summary>
     /// Copies the elements of the cache to an array, starting at a particular array index.
@@ -182,9 +252,12 @@ public class LRUCache<K, V> : IDictionary<K, V>
     /// <param name="arrayIndex">The zero-based index in the array at which copying begins.</param>
     public void CopyTo(KeyValuePair<K, V>[] array, int arrayIndex)
     {
-        foreach (var item in lruList)
+        lock (syncRoot)
         {
-            array[arrayIndex++] = new KeyValuePair<K, V>(item.Key, item.Value);
+            foreach (var item in lruList)
+            {
+                array[arrayIndex++] = new KeyValuePair<K, V>(item.Key, item.Value);
+            }
         }
     }
 
@@ -196,22 +269,64 @@ public class LRUCache<K, V> : IDictionary<K, V>
     public bool Remove(KeyValuePair<K, V> item) => Remove(item.Key);
 
     /// <summary>
-    /// Returns an enumerator that iterates through the cache.
+    /// Returns an enumerator over a point-in-time snapshot of the cache, taken under the internal lock.
     /// </summary>
     /// <returns>An enumerator for the cache.</returns>
-    public IEnumerator<KeyValuePair<K, V>> GetEnumerator() => lruList.GetEnumerator();
+    public IEnumerator<KeyValuePair<K, V>> GetEnumerator()
+    {
+        List<KeyValuePair<K, V>> snapshot;
+        lock (syncRoot)
+        {
+            snapshot = new List<KeyValuePair<K, V>>(lruList);
+        }
+        return snapshot.GetEnumerator();
+    }
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     private sealed class KeyCollection : ICollection<K>
     {
-        private readonly LinkedList<KeyValuePair<K, V>> _list;
-        internal KeyCollection(LinkedList<KeyValuePair<K, V>> list) => _list = list;
-        public int Count => _list.Count;
+        private readonly LRUCache<K, V> _owner;
+        internal KeyCollection(LRUCache<K, V> owner) => _owner = owner;
+
+        public int Count
+        {
+            get { lock (_owner.syncRoot) { return _owner.lruList.Count; } }
+        }
+
         public bool IsReadOnly => true;
-        public bool Contains(K item) { foreach (var kvp in _list) if (EqualityComparer<K>.Default.Equals(kvp.Key, item)) return true; return false; }
-        public void CopyTo(K[] array, int arrayIndex) { foreach (var kvp in _list) array[arrayIndex++] = kvp.Key; }
-        public IEnumerator<K> GetEnumerator() { foreach (var kvp in _list) yield return kvp.Key; }
+
+        public bool Contains(K item)
+        {
+            lock (_owner.syncRoot)
+            {
+                foreach (var kvp in _owner.lruList)
+                    if (EqualityComparer<K>.Default.Equals(kvp.Key, item)) return true;
+                return false;
+            }
+        }
+
+        public void CopyTo(K[] array, int arrayIndex)
+        {
+            lock (_owner.syncRoot)
+            {
+                foreach (var kvp in _owner.lruList)
+                    array[arrayIndex++] = kvp.Key;
+            }
+        }
+
+        public IEnumerator<K> GetEnumerator()
+        {
+            List<K> snapshot;
+            lock (_owner.syncRoot)
+            {
+                snapshot = new List<K>(_owner.lruList.Count);
+                foreach (var kvp in _owner.lruList)
+                    snapshot.Add(kvp.Key);
+            }
+            return snapshot.GetEnumerator();
+        }
+
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         public void Add(K item) => throw new NotSupportedException();
         public void Clear() => throw new NotSupportedException();
@@ -220,13 +335,47 @@ public class LRUCache<K, V> : IDictionary<K, V>
 
     private sealed class ValueCollection : ICollection<V>
     {
-        private readonly LinkedList<KeyValuePair<K, V>> _list;
-        internal ValueCollection(LinkedList<KeyValuePair<K, V>> list) => _list = list;
-        public int Count => _list.Count;
+        private readonly LRUCache<K, V> _owner;
+        internal ValueCollection(LRUCache<K, V> owner) => _owner = owner;
+
+        public int Count
+        {
+            get { lock (_owner.syncRoot) { return _owner.lruList.Count; } }
+        }
+
         public bool IsReadOnly => true;
-        public bool Contains(V item) { foreach (var kvp in _list) if (EqualityComparer<V>.Default.Equals(kvp.Value, item)) return true; return false; }
-        public void CopyTo(V[] array, int arrayIndex) { foreach (var kvp in _list) array[arrayIndex++] = kvp.Value; }
-        public IEnumerator<V> GetEnumerator() { foreach (var kvp in _list) yield return kvp.Value; }
+
+        public bool Contains(V item)
+        {
+            lock (_owner.syncRoot)
+            {
+                foreach (var kvp in _owner.lruList)
+                    if (EqualityComparer<V>.Default.Equals(kvp.Value, item)) return true;
+                return false;
+            }
+        }
+
+        public void CopyTo(V[] array, int arrayIndex)
+        {
+            lock (_owner.syncRoot)
+            {
+                foreach (var kvp in _owner.lruList)
+                    array[arrayIndex++] = kvp.Value;
+            }
+        }
+
+        public IEnumerator<V> GetEnumerator()
+        {
+            List<V> snapshot;
+            lock (_owner.syncRoot)
+            {
+                snapshot = new List<V>(_owner.lruList.Count);
+                foreach (var kvp in _owner.lruList)
+                    snapshot.Add(kvp.Value);
+            }
+            return snapshot.GetEnumerator();
+        }
+
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         public void Add(V item) => throw new NotSupportedException();
         public void Clear() => throw new NotSupportedException();
