@@ -2,6 +2,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using Utils.Expressions;
 using Utils.Parser.Diagnostics.EmbeddedCode;
 using Utils.Parser.Diagnostics;
@@ -188,9 +189,10 @@ public class ExpressionEmbeddedCodePreparerTests
             transformer,
             new RawEmbeddedCode("raw"),
             new ParserEmbeddedCodeTransformationContext { Location = ParserEmbeddedCodeLocation.InlineAction },
-            new ParserEmbeddedCodeTransformationFailureContext { Location = ParserEmbeddedCodeLocation.InlineAction }));
+            new ParserEmbeddedCodeTransformationFailureContext { Path = ParserEmbeddedCodeTransformationPath.RuntimeCompilation, Location = ParserEmbeddedCodeLocation.InlineAction }));
 
         Assert.AreSame(inner, exception.InnerException);
+        Assert.AreEqual(ParserEmbeddedCodeTransformationPath.RuntimeCompilation, exception.Path);
     }
 
 
@@ -205,8 +207,9 @@ public class ExpressionEmbeddedCodePreparerTests
             .Where(static file => file.Contains($"{Path.DirectorySeparatorChar}Utils.Parser", StringComparison.Ordinal))
             .ToArray();
 
+        Regex directTransformCallPattern = new(@"\.\s*Transform\s*\(", RegexOptions.CultureInvariant);
         string[] forbiddenFiles = productionFiles
-            .Where(static file => File.ReadAllText(file).Contains(".Transform(context)", StringComparison.Ordinal))
+            .Where(file => directTransformCallPattern.IsMatch(File.ReadAllText(file)))
             .Where(static file => !file.EndsWith(Path.Combine("Utils.Parser.Diagnostics", "EmbeddedCode", "EmbeddedCodeText.cs"), StringComparison.Ordinal))
             .Where(static file => !File.ReadAllText(file).Contains(": IParserEmbeddedCodeTransformer", StringComparison.Ordinal))
             .Select(file => Path.GetRelativePath(repositoryRoot, file))

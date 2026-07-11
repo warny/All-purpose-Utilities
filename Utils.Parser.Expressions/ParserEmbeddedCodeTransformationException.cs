@@ -13,7 +13,7 @@ public sealed class ParserEmbeddedCodeTransformationException : Utils.Parser.Dia
     /// </summary>
     /// <param name="message">Transformation diagnostic message.</param>
     public ParserEmbeddedCodeTransformationException(string message)
-        : base(message, null, message, ParserEmbeddedCodeLocation.InlineAction, null, null, null)
+        : base(message, null, message, ParserEmbeddedCodeTransformationPath.RuntimeCompilation, ParserEmbeddedCodeLocation.InlineAction, null, null, null)
     {
     }
 
@@ -23,6 +23,7 @@ public sealed class ParserEmbeddedCodeTransformationException : Utils.Parser.Dia
     /// <param name="message">Stable failure message.</param>
     /// <param name="diagnosticCode">Diagnostic code when available.</param>
     /// <param name="diagnosticMessage">Diagnostic message when available.</param>
+    /// <param name="path">Transformation path that requested the embedded-code transformation.</param>
     /// <param name="location">Embedded-code location being transformed.</param>
     /// <param name="grammarName">Owning grammar name when available.</param>
     /// <param name="ruleName">Owning rule name when available.</param>
@@ -32,12 +33,13 @@ public sealed class ParserEmbeddedCodeTransformationException : Utils.Parser.Dia
         string message,
         string? diagnosticCode,
         string? diagnosticMessage,
+        ParserEmbeddedCodeTransformationPath path,
         ParserEmbeddedCodeLocation location,
         string? grammarName,
         string? ruleName,
         SourceSpan? span,
         Exception? innerException = null)
-        : base(message, diagnosticCode, diagnosticMessage, location, grammarName, ruleName, span, innerException)
+        : base(message, diagnosticCode, diagnosticMessage, path, location, grammarName, ruleName, span, innerException)
     {
     }
 }

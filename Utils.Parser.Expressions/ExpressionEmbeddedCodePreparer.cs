@@ -138,6 +138,7 @@ public sealed class ExpressionEmbeddedCodePreparer : IEmbeddedCodePreparer<Prepa
                 exception.Message,
                 exception.DiagnosticCode,
                 exception.DiagnosticMessage,
+                exception.Path,
                 exception.Location,
                 exception.GrammarName,
                 exception.RuleName,

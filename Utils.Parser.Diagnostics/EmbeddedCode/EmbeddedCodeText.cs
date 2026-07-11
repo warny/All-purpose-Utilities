@@ -95,6 +95,7 @@ public class ParserEmbeddedCodeTransformationException : Exception
     /// <param name="message">Stable failure message.</param>
     /// <param name="diagnosticCode">Diagnostic code when one is available.</param>
     /// <param name="diagnosticMessage">Diagnostic message when one is available.</param>
+    /// <param name="path">Transformation path that requested the embedded-code transformation.</param>
     /// <param name="location">Embedded-code location being transformed.</param>
     /// <param name="grammarName">Owning grammar name when available.</param>
     /// <param name="ruleName">Owning parser rule name when available.</param>
@@ -104,6 +105,7 @@ public class ParserEmbeddedCodeTransformationException : Exception
         string message,
         string? diagnosticCode,
         string? diagnosticMessage,
+        ParserEmbeddedCodeTransformationPath path,
         ParserEmbeddedCodeLocation location,
         string? grammarName,
         string? ruleName,
@@ -113,6 +115,7 @@ public class ParserEmbeddedCodeTransformationException : Exception
     {
         DiagnosticCode = diagnosticCode;
         DiagnosticMessage = diagnosticMessage;
+        Path = path;
         Location = location;
         GrammarName = grammarName;
         RuleName = ruleName;
@@ -124,6 +127,9 @@ public class ParserEmbeddedCodeTransformationException : Exception
 
     /// <summary>Gets the diagnostic message when one is available.</summary>
     public string? DiagnosticMessage { get; }
+
+    /// <summary>Gets the transformation path that requested the embedded-code transformation.</summary>
+    public ParserEmbeddedCodeTransformationPath Path { get; }
 
     /// <summary>Gets the embedded-code location being transformed.</summary>
     public ParserEmbeddedCodeLocation Location { get; }
@@ -254,6 +260,7 @@ public static class ParserEmbeddedCodeTransformationService
             message,
             diagnosticCode,
             diagnosticMessage,
+            failureContext.Path,
             failureContext.Location,
             failureContext.GrammarName,
             failureContext.RuleName,

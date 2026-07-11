@@ -43,8 +43,9 @@ de diagnostic nulles, bloque le premier diagnostic `Error`, vérifie que le code
 nul, et retourne uniquement un `TransformedEmbeddedCode` validé.
 
 Les erreurs de génération C# et de compilation runtime passent par le même modèle structuré
-`ParserEmbeddedCodeTransformationException` du package diagnostics. L'exception expose le code et le
-message du diagnostic, l'emplacement, le nom de grammaire, le nom de règle et le span disponible ;
+`ParserEmbeddedCodeTransformationException` du package diagnostics. L'exception expose le chemin
+(génération ou compilation runtime), le code et le message du diagnostic, l'emplacement, le nom de
+grammaire, le nom de règle et le span disponible ;
 `Utils.Parser.Expressions` conserve son type public en l'adaptant depuis cette exception commune sans
 perdre l'exception interne du transformer. Les diagnostics `Info` et `Warning` ne bloquent pas la
 transformation et sont conservés sur `TransformedEmbeddedCode.Diagnostics`.
@@ -59,9 +60,12 @@ Tests ajoutés ou consolidés :
 - erreurs déterministes pour résultat nul et code nul ;
 - diagnostics nuls traités comme une collection vide ;
 - conservation de l'exception interne quand le transformer lève ;
-- test architectural statique interdisant les appels directs de production à
+- test architectural statique, basé sur une expression régulière indépendante du nom de variable et
+  des espaces, interdisant les appels directs de production à
   `IParserEmbeddedCodeTransformer.Transform(...)` hors service central et implémentations de
-  transformers.
+  transformers ;
+- tests générateur vérifiant qu'une erreur du transformer bloque l'émission C# et que les métadonnées
+  d'erreur restent cohérentes entre génération et compilation runtime.
 
 ### 3. Créer une classe dédiée à l'injection du code C#
 `GrammarEmitter` assure aujourd'hui à la fois la collecte des fragments, leur transformation, leur
