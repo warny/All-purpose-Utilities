@@ -1,6 +1,8 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 using System.Globalization;
 using System.Linq;
+using System.Reflection;
 using Utils.Collections;
 using Utils.Range;
 
@@ -209,6 +211,31 @@ namespace UtilsTest.Objects
                 var result = range.ToArray();
                 Assert.IsTrue(comparer.Equals(test.result, result), $"{{{string.Join(",", result)}}} est différent de {{{string.Join(",", test.result)}}}");
             }
+        }
+
+        [TestMethod]
+        public void SimpleRangeCompareToObjectFollowsIComparableContractTest()
+        {
+            // SimpleRange is a private nested type; reach it via reflection to verify its
+            // non-generic IComparable.CompareTo(object) follows the standard .NET contract
+            // (positive for null, ArgumentException for an incompatible type) instead of
+            // throwing NotImplementedException.
+            var nestedOpen = typeof(IntRange<>).GetNestedType("SimpleRange", BindingFlags.NonPublic);
+            var simpleRangeType = nestedOpen.MakeGenericType(typeof(int));
+            var ctor = simpleRangeType.GetConstructor(new[] { typeof(int?), typeof(int?) });
+            var compareTo = simpleRangeType.GetMethod("CompareTo", new[] { typeof(object) });
+
+            object range = ctor.Invoke(new object[] { 1, 5 });
+
+            int nullResult = (int)compareTo.Invoke(range, new object[] { null });
+            Assert.IsTrue(nullResult > 0, "Comparing to null should return a positive value.");
+
+            var thrown = Assert.ThrowsExactly<TargetInvocationException>(() => compareTo.Invoke(range, new object[] { "not a range" }));
+            Assert.IsInstanceOfType(thrown.InnerException, typeof(ArgumentException));
+
+            object smaller = ctor.Invoke(new object[] { 0, 5 });
+            int sameTypeResult = (int)compareTo.Invoke(range, new object[] { smaller });
+            Assert.IsTrue(sameTypeResult > 0, "Comparing to a smaller SimpleRange should return a positive value.");
         }
     }
 }
