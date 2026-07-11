@@ -1,5 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using Utils.Expressions;
 using Utils.Parser.Diagnostics.EmbeddedCode;
 using Utils.Parser.Diagnostics;
@@ -73,6 +75,37 @@ public class ExpressionEmbeddedCodePreparerTests
 
         Assert.AreEqual(EmbeddedCodePreparationStatus.Succeeded, result.Status);
         Assert.AreEqual("increment", compiler.LastContent);
+    }
+
+
+    [TestMethod]
+    public void TransformedEmbeddedCode_DoesNotExposePublicConstructorsOrManualResultConversion()
+    {
+        ConstructorInfo[] constructors = typeof(TransformedEmbeddedCode).GetConstructors();
+        MethodInfo[] conversionMethods = typeof(ParserEmbeddedCodeTransformationService)
+            .Assembly
+            .GetTypes()
+            .Where(static type => type.IsAbstract && type.IsSealed)
+            .SelectMany(static type => type.GetMethods(BindingFlags.Public | BindingFlags.Static))
+            .Where(static method => method.ReturnType == typeof(TransformedEmbeddedCode))
+            .ToArray();
+
+        Assert.AreEqual(0, constructors.Length);
+        CollectionAssert.AreEqual(
+            new[] { nameof(ParserEmbeddedCodeTransformationService.TransformOrThrow) },
+            conversionMethods.Select(static method => method.Name).Distinct().ToArray());
+    }
+
+    [TestMethod]
+    public void ParserEmbeddedCodeTransformationService_WhenRawCodeIsNull_DoesNotInvokeTransformer()
+    {
+        var transformer = new CountingTransformer();
+
+        Assert.ThrowsException<ArgumentNullException>(() => ParserEmbeddedCodeTransformationService.TransformOrThrow(
+            transformer,
+            null!,
+            new ParserEmbeddedCodeTransformationContext { Location = ParserEmbeddedCodeLocation.InlineAction }));
+        Assert.AreEqual(0, transformer.Count);
     }
 
     [TestMethod]
@@ -451,6 +484,23 @@ public class ExpressionEmbeddedCodePreparerTests
         /// </summary>
         /// <param name="inputPosition">Input position to record.</param>
         public void RecordPosition(int inputPosition) => RecordedPositions.Add(inputPosition);
+    }
+
+
+    /// <summary>
+    /// Test transformer that counts invocations for service validation tests.
+    /// </summary>
+    private sealed class CountingTransformer : IParserEmbeddedCodeTransformer
+    {
+        /// <summary>Gets the number of transform calls.</summary>
+        public int Count { get; private set; }
+
+        /// <inheritdoc />
+        public ParserEmbeddedCodeTransformationResult Transform(ParserEmbeddedCodeTransformationContext context)
+        {
+            Count++;
+            return new ParserEmbeddedCodeTransformationResult { Code = context.Code };
+        }
     }
 
     /// <summary>

@@ -95,26 +95,24 @@ internal static partial class GrammarEmitter
         G4Grammar grammar,
         G4Rule? rule)
     {
-        ParserEmbeddedCodeTransformationResult result = transformer.Transform(new ParserEmbeddedCodeTransformationContext
-        {
-            Code = code.Text,
-            Location = location,
-            GrammarName = grammar.Name,
-            RuleName = rule?.Name,
-            Parameters = CreateDeclarationDescriptors(rule?.Parameters),
-            Locals = CreateDeclarationDescriptors(rule is null || rule.Locals.Count == 0 ? null : string.Join(", ", rule.Locals)),
-            Returns = CreateDeclarationDescriptors(rule?.Returns),
-            Labels = rule is null ? ParserEmbeddedCodeTransformationContext.EmptyLabels : CreateLabelDescriptors(rule.Content)
-        });
-
-        ParserEmbeddedCodeDiagnostic? error = result.Diagnostics.FirstOrDefault(static diagnostic => diagnostic.Severity == ParserEmbeddedCodeDiagnosticSeverity.Error);
-        if (error is not null)
-        {
-            string codeText = string.IsNullOrWhiteSpace(error.Code) ? "APU embedded-code transformer" : error.Code!;
-            throw new InvalidOperationException($"{codeText}: {error.Message}");
-        }
-
-        return result.ToTransformedEmbeddedCode();
+        return ParserEmbeddedCodeTransformationService.TransformOrThrow(
+            transformer,
+            code,
+            new ParserEmbeddedCodeTransformationContext
+            {
+                Location = location,
+                GrammarName = grammar.Name,
+                RuleName = rule?.Name,
+                Parameters = CreateDeclarationDescriptors(rule?.Parameters),
+                Locals = CreateDeclarationDescriptors(rule is null || rule.Locals.Count == 0 ? null : string.Join(", ", rule.Locals)),
+                Returns = CreateDeclarationDescriptors(rule?.Returns),
+                Labels = rule is null ? ParserEmbeddedCodeTransformationContext.EmptyLabels : CreateLabelDescriptors(rule.Content)
+            },
+            static error =>
+            {
+                string codeText = string.IsNullOrWhiteSpace(error.Code) ? "APU embedded-code transformer" : error.Code!;
+                return new InvalidOperationException($"{codeText}: {error.Message}");
+            });
     }
 
     /// <summary>

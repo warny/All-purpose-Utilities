@@ -17,9 +17,10 @@ non traitées, sauf mention contraire.
 `Utils.Parser.Diagnostics.EmbeddedCode`. `EmbeddedCodeSource` expose le texte source sous forme de
 `RawEmbeddedCode`, les hooks générés conservent le code brut dans `RawCode`, et leur `EmittedCode`
 est un `TransformedEmbeddedCode` rempli uniquement après l'appel à `IParserEmbeddedCodeTransformer`.
-`GrammarEmitter.TransformEmbeddedCode` et `ExpressionEmbeddedCodePreparer.TransformSource` retournent
-un code transformé typé, et les chemins d'émission C# ou de compilation via `IExpressionCompiler`
-consomment explicitement ce type avant d'extraire le texte final.
+`GrammarEmitter.TransformEmbeddedCode` et `ExpressionEmbeddedCodePreparer.TransformSource` passent par
+`ParserEmbeddedCodeTransformationService.TransformOrThrow`, qui exécute le transformer, valide les diagnostics
+puis retourne un code transformé typé. Les chemins d'émission C# ou de compilation via
+`IExpressionCompiler` consomment explicitement ce type avant d'extraire le texte final.
 
 Tests ajoutés :
 

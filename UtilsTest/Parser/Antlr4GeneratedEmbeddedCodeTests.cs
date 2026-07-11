@@ -6101,6 +6101,33 @@ public class Antlr4GeneratedEmbeddedCodeTests
         Assert.IsNull(lexerHookType.GetProperty("Code", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic));
     }
 
+
+    [TestMethod]
+    public void EmbeddedCodeHookTypes_WhenEmittedCodeIsReadBeforeTransformation_Throws()
+    {
+        Type hookType = typeof(GrammarEmitter).GetNestedType("EmbeddedCodeHook", BindingFlags.NonPublic)!;
+        object hook = Activator.CreateInstance(
+            hookType,
+            BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public,
+            binder: null,
+            args: ["start", "RAW_ACTION;", false, 0, 0, "__Action_start_0_0_0"],
+            culture: null)!;
+
+        var property = hookType.GetProperty("EmittedCode", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!;
+        try
+        {
+            _ = property.GetValue(hook);
+            Assert.Fail("Reading untransformed emitted code should fail.");
+        }
+        catch (TargetInvocationException exception)
+        {
+            Assert.IsInstanceOfType(exception.InnerException, typeof(InvalidOperationException));
+        }
+        catch (InvalidOperationException)
+        {
+        }
+    }
+
     /// <summary>
     /// Emits generated C# for the supplied grammar using the production grammar emitter.
     /// </summary>

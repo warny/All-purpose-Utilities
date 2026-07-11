@@ -310,6 +310,7 @@ internal static partial class GrammarEmitter
     /// </summary>
     private sealed class LexerEmbeddedCodeHook
     {
+        private TransformedEmbeddedCode? _emittedCode;
         /// <summary>Initializes lexer embedded-code hook metadata.</summary>
         public LexerEmbeddedCodeHook(string ruleName, string code, bool isPredicate, int alternativeIndex, int elementIndex, string methodName)
         {
@@ -328,7 +329,11 @@ internal static partial class GrammarEmitter
         public RawEmbeddedCode RawCode { get; }
 
         /// <summary>Gets the transformed C# source emitted into the hook method.</summary>
-        public TransformedEmbeddedCode EmittedCode { get; set; }
+        public TransformedEmbeddedCode EmittedCode
+        {
+            get => _emittedCode ?? throw new InvalidOperationException("Embedded code has not been transformed yet.");
+            set => _emittedCode = value ?? throw new ArgumentNullException(nameof(value));
+        }
 
         /// <summary>Gets whether this hook is a lexer predicate rather than a lexer action.</summary>
         public bool IsPredicate { get; }
@@ -348,6 +353,7 @@ internal static partial class GrammarEmitter
     /// </summary>
     private sealed class EmbeddedCodeHook
     {
+        private TransformedEmbeddedCode? _emittedCode;
         /// <summary>
         /// Initializes embedded-code hook metadata.
         /// </summary>
@@ -374,7 +380,11 @@ internal static partial class GrammarEmitter
         public RawEmbeddedCode RawCode { get; }
 
         /// <summary>Gets the transformed C# source emitted into the hook method.</summary>
-        public TransformedEmbeddedCode EmittedCode { get; set; }
+        public TransformedEmbeddedCode EmittedCode
+        {
+            get => _emittedCode ?? throw new InvalidOperationException("Embedded code has not been transformed yet.");
+            set => _emittedCode = value ?? throw new ArgumentNullException(nameof(value));
+        }
 
         /// <summary>Gets a value indicating whether the hook is a semantic predicate.</summary>
         public bool IsPredicate { get; }
