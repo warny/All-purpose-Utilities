@@ -91,6 +91,16 @@ public class VectorTests
     }
 
     [TestMethod]
+    public void Normalize_ZeroVector_Throws()
+    {
+        // Regression: Normalize() used to divide by Norm unconditionally (this / Norm), producing
+        // NaN/infinity components for the zero vector instead of the explicit failure ProjectOnto
+        // already uses for its own zero-vector case.
+        var vector = new Vector<double>(0d, 0d, 0d);
+        Assert.ThrowsException<InvalidOperationException>(() => vector.Normalize());
+    }
+
+    [TestMethod]
     public void Zero_ReturnsAllZeroComponents()
     {
         var v = Vector<double>.Zero(3);

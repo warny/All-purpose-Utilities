@@ -89,7 +89,14 @@ public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>, 
     /// Returns a normalized version of the vector.
     /// </summary>
     /// <returns>The normalized vector.</returns>
-    public Vector<T> Normalize() => this / Norm;
+    /// <exception cref="InvalidOperationException">Thrown when this is the zero vector.</exception>
+    public Vector<T> Normalize()
+    {
+        T norm = Norm;
+        if (norm == T.Zero)
+            throw new InvalidOperationException("Cannot normalize the zero vector.");
+        return this / norm;
+    }
 
     /// <inheritdoc/>
     public override bool Equals(object? obj) => obj switch
