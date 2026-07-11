@@ -71,25 +71,32 @@ The generic constraint is only a compile-time annotation for reference types. Pu
 
 **Priority: P1 dictionary correctness.**
 
-### 6. Duplicate semantics of `SkipList<T>` are undocumented and interact ambiguously with lookup/removal
+### 6. `SkipList<T>` currently accepts comparer-equal duplicate values although the intended contract requires unique keys
 
-`Add` inserts another node when the comparer reports equality. `Contains`/`TryGet` return one comparer-equal stored instance, and `Remove` removes one matching node per call. The README refers to a sorted collection/data set but does not state whether this is a multiset.
+`Add` inserts another node even when the comparer reports equality. The intended collection semantics are set-like: the comparer defines the logical key, and two values for which `Compare(existing, item) == 0` represent the same key and must not coexist.
 
-**Risk:** callers may assume set semantics from the skip-list description, while duplicates are retained. With a comparer that ignores part of an object's state, `TryGet` and `Remove` do not define which equivalent instance is selected.
+**Risk:** duplicate logical keys make `Count`, `TryGet`, `Contains`, `Remove`, upper-level promotion, and dictionary reuse ambiguous. The collection may return or remove an arbitrary comparer-equal instance, and the adaptive index can promote different physical duplicates over time.
 
-**Fix:** choose and document one contract: set (`Add` rejects/ignores comparer duplicates), multiset (define stable duplicate ordering and one/all removal), or expose separate types/options.
+**Fix:** make insertion atomic with duplicate detection. During the same traversal used to locate the insertion point:
 
-**Priority: P1 semantic correctness.**
+- if an equal item is found, do not insert a node;
+- do not change `Count` or the bottom-level sequence;
+- return an explicit result indicating that the key already exists;
+- keep the existing stored instance unchanged unless a separate replace/update API is explicitly called.
+
+Because `ICollection<T>.Add` returns `void`, choose and document one public behavior: throw `ArgumentException` on a duplicate, or keep `Add` idempotent and add a `bool TryAdd(T item)` API. A `TryAdd`-style primitive is also useful internally for `SkipListDictionary.Add`, avoiding a second lookup.
+
+**Priority: P1 uniqueness and semantic correctness.**
 
 ### 7. Mutable keys can invalidate ordering permanently
 
 `SkipList<T>` stores the original item and relies on the comparer every time it searches. `SkipListDictionary` protects `Entry.Key` from assignment, but reference-type keys and general skip-list values may mutate fields used by the comparer after insertion.
 
-**Risk:** the linked order and upper-level search structure no longer match comparer order, causing missed lookups, incorrect insertion positions, and failed removals.
+This is the standard restriction of sorted and hashed collections rather than a defect specific to this implementation.
 
-**Fix:** document immutable-key requirements prominently, optionally accept a stable key selector and snapshot the key, or provide validation/rebuild mechanisms. Tests should cover mutation of comparer-relevant state.
+**Fix:** document that comparer-relevant state must remain stable while an item belongs to the collection. A key selector/snapshot API may be added when mutable values must be supported safely.
 
-**Priority: P1 data-structure invariant safety.**
+**Priority: P2 documented collection constraint.**
 
 ## Medium-priority findings
 
@@ -129,7 +136,7 @@ Large tests instantiate `new Random()` and generate thousands of values. A rare 
 
 Existing tests primarily verify sorted enumeration, positive membership, and removal of unique integer values. Missing coverage includes:
 
-- duplicate and comparer-equivalent values;
+- rejecting duplicate and comparer-equivalent values;
 - failed and successful queries that trigger promotion;
 - proof that lookup promotion preserves the bottom-level value chain;
 - promotion behavior under repeated hot-key and scan workloads;
@@ -143,7 +150,7 @@ Existing tests primarily verify sorted enumeration, positive membership, and rem
 - mutable comparer keys;
 - concurrent readers/writers or an explicit non-thread-safe contract.
 
-**Fix:** add model-based tests against `List<T>`/`SortedDictionary<K,V>` under the chosen duplicate semantics, plus invariant checks for every horizontal/vertical link after adaptive query and mutation sequences.
+**Fix:** add model-based tests against `SortedSet<T>`/`SortedDictionary<K,V>` using comparer-based uniqueness, plus invariant checks for every horizontal/vertical link after adaptive query and mutation sequences.
 
 **Priority: P2 test completeness.**
 
@@ -167,39 +174,41 @@ The project description and README present only `SkipList<T>`, despite the packa
 
 ## Duplications of intent to reduce
 
-- Search and index enrichment are currently fused. This is intentional, but the implementation should expose one well-defined adaptive-search primitive and optionally a pure-search primitive for diagnostics, snapshots, or concurrent-read scenarios.
+- Search, duplicate detection, insertion-position discovery, and insertion should share one adaptive traversal result.
 - `CopyTo` validation is duplicated across the list, dictionary, key view, and value view.
 - Enumerator/version semantics should be implemented once and reused by entry/key/value projections.
 - Key validation is repeated implicitly through `Entry.Probe`; use one explicit public-boundary guard.
 - Adaptive-index ordering/invariant logic should have a debug/test invariant checker shared by lookup promotion, insertion, removal, and model tests.
-- Package documentation, XML comments, exceptions, and benchmarks should use one precise definition of threshold, promotion, and complexity.
+- Package documentation, XML comments, exceptions, and benchmarks should use one precise definition of threshold, promotion, uniqueness, and complexity.
 
 ## Required tests
 
+- Insert the same value twice and assert the second insertion is rejected or reported without changing `Count`, enumeration, or index invariants.
+- Insert distinct objects that compare equal and verify that the first stored instance remains retrievable through `TryGet`.
+- Verify duplicate rejection at the first item, last item, interior positions, and after lookup-driven promotions.
+- Verify that `SkipListDictionary.Add` rejects a duplicate key through the same single traversal and that indexer assignment remains the explicit replacement path.
 - Verify that successful and failed lookups trigger promotion exactly according to the threshold policy.
-- Assert that lookup-driven promotion preserves sorted bottom-level values, `Count`, duplicate order, and all horizontal/vertical backlinks.
-- Benchmark cold lookup, repeated hot-key lookup, sequential scans, random lookup, ascending/descending insertion, and mixed read/write workloads before and after adaptation.
+- Assert that lookup-driven promotion preserves sorted bottom-level values, `Count`, uniqueness, and all horizontal/vertical backlinks.
 - Mutate through add/remove/clear/value replacement during entry, key, and value enumeration and verify the documented fail-fast/snapshot policy.
 - Enumerate while lookups cause upper-index promotion and verify the documented safe/invalidating behavior.
 - Exhaustively test `CopyTo` null/index/capacity errors and confirm destinations remain untouched on failure.
 - Pass runtime null keys through every dictionary API under default and custom comparers.
-- Define duplicate semantics and test insertion order, `TryGet`, one/all removal, count, and enumeration stability.
-- Mutate comparer-relevant fields after insertion and verify rejection, documented undefined behavior, or rebuild support.
-- Model-test random operations against a reference collection using fixed/reported seeds.
-- Validate all horizontal/vertical backlinks, boundary pointers, bottom-level count, and sorted order after every mutation and adaptive promotion.
+- Mutate comparer-relevant fields after insertion and verify the documented unsupported behavior or key-snapshot support.
+- Model-test random operations against `SortedSet<T>` and `SortedDictionary<K,V>` using fixed/reported seeds.
+- Validate all horizontal/vertical backlinks, boundary pointers, bottom-level count, sorted order, and absence of comparer-equal adjacent nodes after every mutation and adaptive promotion.
 - Compile and execute every README example.
 
 ## Recommended order
 
 | Priority | Action |
 |---|---|
+| P1 | Enforce comparer-based key uniqueness through a single traversal/TryAdd primitive |
 | P1 | Document and formalize deterministic adaptive lookup/promotion semantics |
-| P1 | Define versioned enumeration behavior for writes and lookup promotion |
-| P1 | Substantiate complexity and performance claims with adversarial and representative benchmarks |
-| P1 | Correct `CopyTo`, null-key, duplicate, and mutable-key contracts |
+| P1 | Define versioned enumeration behavior for content mutations |
+| P1 | Correct `CopyTo` and runtime null-key contracts |
 | P2 | Add invariant/model/property tests with reproducible seeds |
 | P2 | Correct diagnostics, package settings, and dictionary documentation |
 
 ## Deployment warning
 
-Until items 1–7 are addressed, treat `SkipList<T>` and `SkipListDictionary<K,V>` as single-threaded adaptive structures: reads may intentionally rewrite upper index links, and enumeration/mutation interaction is not formally defined. Do not assume concurrent readers are safe without synchronization, do not mutate during enumeration, and rely on measured behavior rather than conventional randomized skip-list guarantees.
+Until uniqueness is enforced, `SkipList<T>` can contain multiple values representing the same comparer key, making retrieval and removal ambiguous. Treat both collection types as single-threaded adaptive structures: reads may intentionally rewrite upper index links, and enumeration/content-mutation interaction is not formally defined.
