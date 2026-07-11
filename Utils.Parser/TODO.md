@@ -63,7 +63,8 @@ Tests ajoutés ou consolidés :
 - test architectural fonctionnel, basé sur une analyse syntaxique Roslyn légère, scannant les
   invocations plutôt que les fichiers complets et interdisant les appels directs de production à
   `IParserEmbeddedCodeTransformer.Transform(...)` hors de l'appel central exact dans
-  `ParserEmbeddedCodeTransformationService.TransformOrThrow(...)` ;
+  `ParserEmbeddedCodeTransformationService.TransformOrThrow(...)`, avec des tests de régression pour les
+  appels multi-lignes et les appels inattendus dans le fichier du service central ;
 - tests générateur vérifiant qu'une erreur du transformer bloque l'émission C# et que les métadonnées
   d'erreur restent cohérentes entre génération et compilation runtime.
 

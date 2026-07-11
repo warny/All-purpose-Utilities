@@ -11,6 +11,8 @@ namespace UtilsTest.Parser;
 [TestClass]
 public sealed class EmbeddedCodeTransformerArchitectureTests
 {
+    private static readonly string CentralServiceRelativePath = Path.Combine("Utils.Parser.Diagnostics", "EmbeddedCode", "EmbeddedCodeText.cs");
+
     /// <summary>
     /// Ensures production parser code does not bypass the central embedded-code transformation service.
     /// </summary>
@@ -21,12 +23,70 @@ public sealed class EmbeddedCodeTransformerArchitectureTests
 
         string[] violations = Directory.GetFiles(repositoryRoot, "*.cs", SearchOption.AllDirectories)
             .Where(IsProductionParserSource)
-            .SelectMany(file => FindDirectTransformCalls(repositoryRoot, file))
-            .Where(static occurrence => !IsCentralServiceOccurrence(occurrence))
+            .SelectMany(file => FindForbiddenDirectTransformCallsInFile(repositoryRoot, file))
             .Select(static occurrence => occurrence.ToString())
             .ToArray();
 
         CollectionAssert.AreEqual(Array.Empty<string>(), violations);
+    }
+
+    /// <summary>
+    /// Ensures the syntax scan catches a direct transform invocation split across multiple lines.
+    /// </summary>
+    [TestMethod]
+    public void DirectTransformScan_WhenInvocationIsSplitAcrossLines_ReportsViolation()
+    {
+        const string source = """
+            namespace Sample;
+
+            internal sealed class Caller
+            {
+                public void Execute(IParserEmbeddedCodeTransformer transformer, ParserEmbeddedCodeTransformationContext context)
+                {
+                    transformer.
+                        Transform(context);
+                }
+            }
+            """;
+
+        string[] violations = FindForbiddenDirectTransformCalls("Utils.Parser.Generators/Internal/Caller.cs", source)
+            .Select(static occurrence => occurrence.ToString())
+            .ToArray();
+
+        Assert.AreEqual(1, violations.Length);
+        StringAssert.StartsWith(violations[0], "Utils.Parser.Generators/Internal/Caller.cs:7: transformer.");
+        StringAssert.Contains(violations[0], "\\n");
+        StringAssert.Contains(violations[0], "Transform(context)");
+    }
+
+    /// <summary>
+    /// Ensures the syntax scan does not allow arbitrary transform calls in the central service file.
+    /// </summary>
+    [TestMethod]
+    public void DirectTransformScan_WhenCentralFileContainsUnexpectedTransformInvocation_ReportsViolation()
+    {
+        const string source = """
+            namespace Utils.Parser.Diagnostics.EmbeddedCode;
+
+            public static class ParserEmbeddedCodeTransformationService
+            {
+                public static void TransformOrThrow(IParserEmbeddedCodeTransformer transformer, ParserEmbeddedCodeTransformationContext context)
+                {
+                    transformer.Transform(context);
+                }
+
+                public static void Bypass(IParserEmbeddedCodeTransformer transformer, ParserEmbeddedCodeTransformationContext context)
+                {
+                    transformer.Transform(context);
+                }
+            }
+            """;
+
+        string[] violations = FindForbiddenDirectTransformCalls(CentralServiceRelativePath, source)
+            .Select(static occurrence => occurrence.ToString())
+            .ToArray();
+
+        CollectionAssert.AreEqual(new[] { $"{CentralServiceRelativePath}:12: transformer.Transform(context)" }, violations);
     }
 
     /// <summary>
@@ -60,16 +120,40 @@ public sealed class EmbeddedCodeTransformerArchitectureTests
     }
 
     /// <summary>
-    /// Finds direct <c>.Transform(...)</c> invocation expressions in a source file.
+    /// Finds forbidden direct <c>.Transform(...)</c> invocation expressions in a source file.
     /// </summary>
     /// <param name="repositoryRoot">Absolute repository root path.</param>
     /// <param name="file">Absolute source file path.</param>
-    /// <returns>Direct transform invocation occurrences found in the file.</returns>
-    private static IEnumerable<SourceOccurrence> FindDirectTransformCalls(string repositoryRoot, string file)
+    /// <returns>Forbidden direct transform invocation occurrences found in the file.</returns>
+    private static IEnumerable<SourceOccurrence> FindForbiddenDirectTransformCallsInFile(string repositoryRoot, string file)
     {
         string relativePath = Path.GetRelativePath(repositoryRoot, file);
         string source = File.ReadAllText(file);
-        SyntaxTree tree = CSharpSyntaxTree.ParseText(source, path: file);
+
+        return FindForbiddenDirectTransformCalls(relativePath, source);
+    }
+
+    /// <summary>
+    /// Finds forbidden direct <c>.Transform(...)</c> invocation expressions in source text.
+    /// </summary>
+    /// <param name="relativePath">Source file path relative to the repository root.</param>
+    /// <param name="source">Source text to parse.</param>
+    /// <returns>Forbidden direct transform invocation occurrences found in the source text.</returns>
+    private static IEnumerable<SourceOccurrence> FindForbiddenDirectTransformCalls(string relativePath, string source)
+    {
+        return FindDirectTransformCalls(relativePath, source)
+            .Where(static occurrence => !IsCentralServiceOccurrence(occurrence));
+    }
+
+    /// <summary>
+    /// Finds direct <c>.Transform(...)</c> invocation expressions in source text.
+    /// </summary>
+    /// <param name="relativePath">Source file path relative to the repository root.</param>
+    /// <param name="source">Source text to parse.</param>
+    /// <returns>Direct transform invocation occurrences found in the source text.</returns>
+    private static IEnumerable<SourceOccurrence> FindDirectTransformCalls(string relativePath, string source)
+    {
+        SyntaxTree tree = CSharpSyntaxTree.ParseText(source);
         CompilationUnitSyntax root = tree.GetCompilationUnitRoot();
 
         foreach (InvocationExpressionSyntax invocation in root.DescendantNodes().OfType<InvocationExpressionSyntax>())
@@ -96,7 +180,7 @@ public sealed class EmbeddedCodeTransformerArchitectureTests
     /// <returns><see langword="true" /> when the occurrence is allowed.</returns>
     private static bool IsCentralServiceOccurrence(SourceOccurrence occurrence)
     {
-        return occurrence.RelativePath == Path.Combine("Utils.Parser.Diagnostics", "EmbeddedCode", "EmbeddedCodeText.cs")
+        return occurrence.RelativePath == CentralServiceRelativePath
             && occurrence.EnclosingTypeName == "ParserEmbeddedCodeTransformationService"
             && occurrence.EnclosingMethodName == "TransformOrThrow"
             && occurrence.ReceiverExpression == "transformer";
@@ -154,6 +238,6 @@ public sealed class EmbeddedCodeTransformerArchitectureTests
         /// Formats the occurrence for assertion messages.
         /// </summary>
         /// <returns>A readable source occurrence.</returns>
-        public override string ToString() => $"{RelativePath}:{LineNumber}: {SourceText}";
+        public override string ToString() => $"{RelativePath}:{LineNumber}: {SourceText.Replace("\r\n", "\\n").Replace("\n", "\\n")}";
     }
 }
