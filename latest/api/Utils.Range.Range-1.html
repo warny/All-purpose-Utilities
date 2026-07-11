@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Range_Range_1" data-uid="Utils.Range.Range`1" class="text-break">
-Struct Range&lt;T&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L682"><i class="bi bi-code-slash"></i></a>
+Struct Range&lt;T&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L702"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -192,6 +192,12 @@ Stored as a struct for efficient copying.</p>
       <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_System_Boolean_System_Boolean_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T, bool, bool)</a>
   </div>
   <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0_System_Threading_Tasks_Task___1___System_Func_System_Threading_Tasks_Task___1___">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Task&lt;Result&gt;&gt;, Func&lt;Task&lt;Result&gt;&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0_System_Threading_Tasks_Task___1_____1_">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Task&lt;Result&gt;&gt;, Result)</a>
+  </div>
+  <div>
       <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
   </div>
   <div>
@@ -235,7 +241,7 @@ Stored as a struct for efficient copying.</p>
 
   <h3 id="Utils_Range_Range_1__ctor__0_" data-uid="Utils.Range.Range`1.#ctor(`0)">
   Range(T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L731"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L751"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Constructs a degenerate range that represents a single value [value..value].</p>
@@ -268,7 +274,7 @@ Stored as a struct for efficient copying.</p>
 
   <h3 id="Utils_Range_Range_1__ctor__0__0_System_Boolean_System_Boolean_" data-uid="Utils.Range.Range`1.#ctor(`0,`0,System.Boolean,System.Boolean)">
   Range(T, T, bool, bool)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L712"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L732"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new <a class="xref" href="Utils.Range.Range-1.html">Range&lt;T&gt;</a> with the specified boundaries and inclusiveness flags.</p>
@@ -314,7 +320,7 @@ Stored as a struct for efficient copying.</p>
 
   <h3 id="Utils_Range_Range_1_ContainsEnd" data-uid="Utils.Range.Range`1.ContainsEnd">
   ContainsEnd
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L703"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L723"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a value indicating whether <a class="xref" href="Utils.Range.Range-1.html#Utils_Range_Range_1_End">End</a> is included in the range.</p>
@@ -346,7 +352,7 @@ Stored as a struct for efficient copying.</p>
 
   <h3 id="Utils_Range_Range_1_ContainsStart" data-uid="Utils.Range.Range`1.ContainsStart">
   ContainsStart
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L698"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L718"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a value indicating whether <a class="xref" href="Utils.Range.Range-1.html#Utils_Range_Range_1_Start">Start</a> is included in the range.</p>
@@ -378,7 +384,7 @@ Stored as a struct for efficient copying.</p>
 
   <h3 id="Utils_Range_Range_1_End" data-uid="Utils.Range.Range`1.End">
   End
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L693"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L713"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the inclusive or exclusive ending boundary of the range.</p>
@@ -410,7 +416,7 @@ Stored as a struct for efficient copying.</p>
 
   <h3 id="Utils_Range_Range_1_Start" data-uid="Utils.Range.Range`1.Start">
   Start
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L688"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L708"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the inclusive or exclusive starting boundary of the range.</p>
@@ -446,7 +452,7 @@ Stored as a struct for efficient copying.</p>
 
   <h3 id="Utils_Range_Range_1_Contains_Utils_Range_IRange__0__" data-uid="Utils.Range.Range`1.Contains(Utils.Range.IRange{`0})">
   Contains(IRange&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L760"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L780"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether this range completely contains another range.</p>
@@ -485,7 +491,7 @@ Stored as a struct for efficient copying.</p>
 
   <h3 id="Utils_Range_Range_1_Contains__0_" data-uid="Utils.Range.Range`1.Contains(`0)">
   Contains(T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L742"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L762"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether the supplied value lies within the range boundaries.</p>
@@ -524,7 +530,7 @@ Stored as a struct for efficient copying.</p>
 
   <h3 id="Utils_Range_Range_1_Equals_System_Nullable_Utils_Range_Range__0___" data-uid="Utils.Range.Range`1.Equals(System.Nullable{Utils.Range.Range{`0}})">
   Equals(Range&lt;T&gt;?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L899"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L919"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether another range has the same boundaries and inclusiveness flags.</p>
@@ -563,7 +569,7 @@ Stored as a struct for efficient copying.</p>
 
   <h3 id="Utils_Range_Range_1_Equals_System_Object_" data-uid="Utils.Range.Range`1.Equals(System.Object)">
   Equals(object?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L889"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L909"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Indicates whether this instance and a specified object are equal.</p>
@@ -602,7 +608,7 @@ Stored as a struct for efficient copying.</p>
 
   <h3 id="Utils_Range_Range_1_GetHashCode" data-uid="Utils.Range.Range`1.GetHashCode">
   GetHashCode()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L909"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L929"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns the hash code for this instance.</p>
@@ -635,7 +641,7 @@ Stored as a struct for efficient copying.</p>
 
   <h3 id="Utils_Range_Range_1_Intersect_Utils_Range_IRange__0__" data-uid="Utils.Range.Range`1.Intersect(Utils.Range.IRange{`0})">
   Intersect(IRange&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L805"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L825"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Computes the intersection of this range with another one if possible.</p>
@@ -674,7 +680,7 @@ Stored as a struct for efficient copying.</p>
 
   <h3 id="Utils_Range_Range_1_IsCompatibleWith_Utils_Range_IRange__0__" data-uid="Utils.Range.Range`1.IsCompatibleWith(Utils.Range.IRange{`0})">
   IsCompatibleWith(IRange&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L825"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L845"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether the current range model is compatible with another range for aggregation in the same collection.</p>
@@ -713,7 +719,7 @@ Stored as a struct for efficient copying.</p>
 
   <h3 id="Utils_Range_Range_1_Overlap_Utils_Range_IRange__0__" data-uid="Utils.Range.Range`1.Overlap(Utils.Range.IRange{`0})">
   Overlap(IRange&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L779"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L799"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether this range overlaps with another range.</p>
@@ -752,7 +758,7 @@ Stored as a struct for efficient copying.</p>
 
   <h3 id="Utils_Range_Range_1_Overlap_Utils_Range_IRange__0__Utils_Range_IRange__0__" data-uid="Utils.Range.Range`1.Overlap(Utils.Range.IRange{`0},Utils.Range.IRange{`0})">
   Overlap(IRange&lt;T&gt;, IRange&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L787"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L807"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether two ranges overlap.</p>
@@ -794,7 +800,7 @@ Stored as a struct for efficient copying.</p>
 
   <h3 id="Utils_Range_Range_1_ToString" data-uid="Utils.Range.Range`1.ToString">
   ToString()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L835"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L855"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts this range to a string using default formatting.</p>
@@ -827,7 +833,7 @@ Stored as a struct for efficient copying.</p>
 
   <h3 id="Utils_Range_Range_1_ToString_System_IFormatProvider_" data-uid="Utils.Range.Range`1.ToString(System.IFormatProvider)">
   ToString(IFormatProvider?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L849"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L869"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts this range to a string using the supplied format provider.</p>
@@ -866,7 +872,7 @@ Stored as a struct for efficient copying.</p>
 
   <h3 id="Utils_Range_Range_1_ToString_System_String_" data-uid="Utils.Range.Range`1.ToString(System.String)">
   ToString(string?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L842"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L862"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts this range to a string using the supplied format string.</p>
@@ -905,7 +911,7 @@ Stored as a struct for efficient copying.</p>
 
   <h3 id="Utils_Range_Range_1_ToString_System_String_System_IFormatProvider_" data-uid="Utils.Range.Range`1.ToString(System.String,System.IFormatProvider)">
   ToString(string?, IFormatProvider?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L857"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L877"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts this range to a string using the supplied format string and provider.</p>
@@ -947,7 +953,7 @@ Stored as a struct for efficient copying.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L682" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L702" class="edit-link">Edit this page</a>
         </div>
 
 

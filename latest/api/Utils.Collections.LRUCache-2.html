@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Collections_LRUCache_2" data-uid="Utils.Collections.LRUCache`2" class="text-break">
-Class LRUCache&lt;K, V&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L12"><i class="bi bi-code-slash"></i></a>
+Class LRUCache&lt;K, V&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L23"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -256,6 +256,12 @@ Class LRUCache&lt;K, V&gt;  <a class="header-action link-secondary" title="View 
       <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_System_Boolean_System_Boolean_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T, bool, bool)</a>
   </div>
   <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0_System_Threading_Tasks_Task___1___System_Func_System_Threading_Tasks_Task___1___">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Task&lt;Result&gt;&gt;, Func&lt;Task&lt;Result&gt;&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0_System_Threading_Tasks_Task___1_____1_">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Task&lt;Result&gt;&gt;, Result)</a>
+  </div>
+  <div>
       <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
   </div>
   <div>
@@ -292,6 +298,18 @@ Class LRUCache&lt;K, V&gt;  <a class="header-action link-secondary" title="View 
 
 
 
+  <h2 id="Utils_Collections_LRUCache_2_remarks">Remarks</h2>
+  <div class="markdown level0 remarks"><p>This type is thread-safe: every member, including enumeration and the <a class="xref" href="Utils.Collections.LRUCache-2.html#Utils_Collections_LRUCache_2_Keys">Keys</a>/
+<a class="xref" href="Utils.Collections.LRUCache-2.html#Utils_Collections_LRUCache_2_Values">Values</a> views, is synchronized through a single internal lock (a private object, not
+this instance — locking on the cache instance itself from calling code has no effect on it). Enumerating
+the cache (directly, or through <a class="xref" href="Utils.Collections.LRUCache-2.html#Utils_Collections_LRUCache_2_Keys">Keys</a> or <a class="xref" href="Utils.Collections.LRUCache-2.html#Utils_Collections_LRUCache_2_Values">Values</a>) takes a point-in-time
+snapshot under that lock rather than returning a live cursor, so it never throws because of a
+concurrent modification and never observes a torn state — it just won't reflect mutations made
+after the snapshot was taken. As with most thread-safe collections, individual members are atomic
+but compound operations spanning more than one call (e.g. &quot;add if not already present&quot;, or
+&quot;read-modify-write&quot;) are <b>not</b> currently supported atomically by this type; there is no public
+way to make such a sequence atomic from outside the class.</p>
+</div>
 
 
   <h2 class="section" id="constructors">Constructors
@@ -302,7 +320,7 @@ Class LRUCache&lt;K, V&gt;  <a class="header-action link-secondary" title="View 
 
   <h3 id="Utils_Collections_LRUCache_2__ctor_System_Int32_" data-uid="Utils.Collections.LRUCache`2.#ctor(System.Int32)">
   LRUCache(int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L25"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L37"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Collections.LRUCache-2.html">LRUCache&lt;K, V&gt;</a> class with the specified capacity.</p>
@@ -339,7 +357,7 @@ Class LRUCache&lt;K, V&gt;  <a class="header-action link-secondary" title="View 
 
   <h3 id="Utils_Collections_LRUCache_2_Count" data-uid="Utils.Collections.LRUCache`2.Count">
   Count
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L47"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L59"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the number of elements contained in the cache.</p>
@@ -371,7 +389,7 @@ Class LRUCache&lt;K, V&gt;  <a class="header-action link-secondary" title="View 
 
   <h3 id="Utils_Collections_LRUCache_2_IsReadOnly" data-uid="Utils.Collections.LRUCache`2.IsReadOnly">
   IsReadOnly
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L52"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L73"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a value indicating whether the cache is read-only.</p>
@@ -403,7 +421,7 @@ Class LRUCache&lt;K, V&gt;  <a class="header-action link-secondary" title="View 
 
   <h3 id="Utils_Collections_LRUCache_2_Item__0_" data-uid="Utils.Collections.LRUCache`2.Item(`0)">
   this[K]
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L59"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L80"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the value associated with the specified key.</p>
@@ -442,7 +460,7 @@ Class LRUCache&lt;K, V&gt;  <a class="header-action link-secondary" title="View 
 
   <h3 id="Utils_Collections_LRUCache_2_Keys" data-uid="Utils.Collections.LRUCache`2.Keys">
   Keys
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L37"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L49"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the keys of the cache as a live read-only view — no allocation on each access.</p>
@@ -474,7 +492,7 @@ Class LRUCache&lt;K, V&gt;  <a class="header-action link-secondary" title="View 
 
   <h3 id="Utils_Collections_LRUCache_2_Values" data-uid="Utils.Collections.LRUCache`2.Values">
   Values
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L42"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L54"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the values of the cache as a live read-only view — no allocation on each access.</p>
@@ -510,7 +528,7 @@ Class LRUCache&lt;K, V&gt;  <a class="header-action link-secondary" title="View 
 
   <h3 id="Utils_Collections_LRUCache_2_Add_System_Collections_Generic_KeyValuePair__0__1__" data-uid="Utils.Collections.LRUCache`2.Add(System.Collections.Generic.KeyValuePair{`0,`1})">
   Add(KeyValuePair&lt;K, V&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L154"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L218"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Adds the specified key-value pair to the cache.</p>
@@ -543,7 +561,7 @@ Class LRUCache&lt;K, V&gt;  <a class="header-action link-secondary" title="View 
 
   <h3 id="Utils_Collections_LRUCache_2_Add__0__1_" data-uid="Utils.Collections.LRUCache`2.Add(`0,`1)">
   Add(K, V)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L100"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L132"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Adds the specified key and value to the cache. If the cache exceeds its capacity, it removes the least recently used item.</p>
@@ -579,7 +597,7 @@ Class LRUCache&lt;K, V&gt;  <a class="header-action link-secondary" title="View 
 
   <h3 id="Utils_Collections_LRUCache_2_Clear" data-uid="Utils.Collections.LRUCache`2.Clear">
   Clear()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L162"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L226"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Removes all elements from the cache.</p>
@@ -606,7 +624,7 @@ Class LRUCache&lt;K, V&gt;  <a class="header-action link-secondary" title="View 
 
   <h3 id="Utils_Collections_LRUCache_2_Contains_System_Collections_Generic_KeyValuePair__0__1__" data-uid="Utils.Collections.LRUCache`2.Contains(System.Collections.Generic.KeyValuePair{`0,`1})">
   Contains(KeyValuePair&lt;K, V&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L176"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L240"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether the cache contains a specific key-value pair.</p>
@@ -645,7 +663,7 @@ Class LRUCache&lt;K, V&gt;  <a class="header-action link-secondary" title="View 
 
   <h3 id="Utils_Collections_LRUCache_2_ContainsKey__0_" data-uid="Utils.Collections.LRUCache`2.ContainsKey(`0)">
   ContainsKey(K)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L93"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L119"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether the cache contains the specified key.</p>
@@ -684,7 +702,7 @@ Class LRUCache&lt;K, V&gt;  <a class="header-action link-secondary" title="View 
 
   <h3 id="Utils_Collections_LRUCache_2_CopyTo_System_Collections_Generic_KeyValuePair__0__1____System_Int32_" data-uid="Utils.Collections.LRUCache`2.CopyTo(System.Collections.Generic.KeyValuePair{`0,`1}[],System.Int32)">
   CopyTo(KeyValuePair&lt;K, V&gt;[], int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L183"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L253"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Copies the elements of the cache to an array, starting at a particular array index.</p>
@@ -720,10 +738,10 @@ Class LRUCache&lt;K, V&gt;  <a class="header-action link-secondary" title="View 
 
   <h3 id="Utils_Collections_LRUCache_2_GetEnumerator" data-uid="Utils.Collections.LRUCache`2.GetEnumerator">
   GetEnumerator()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L202"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L275"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Returns an enumerator that iterates through the cache.</p>
+  <div class="markdown level1 summary"><p>Returns an enumerator over a point-in-time snapshot of the cache, taken under the internal lock.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -753,7 +771,7 @@ Class LRUCache&lt;K, V&gt;  <a class="header-action link-secondary" title="View 
 
   <h3 id="Utils_Collections_LRUCache_2_Remove_System_Collections_Generic_KeyValuePair__0__1__" data-uid="Utils.Collections.LRUCache`2.Remove(System.Collections.Generic.KeyValuePair{`0,`1})">
   Remove(KeyValuePair&lt;K, V&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L196"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L269"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Removes the first occurrence of a specific key-value pair from the cache.</p>
@@ -792,7 +810,7 @@ Class LRUCache&lt;K, V&gt;  <a class="header-action link-secondary" title="View 
 
   <h3 id="Utils_Collections_LRUCache_2_Remove__0_" data-uid="Utils.Collections.LRUCache`2.Remove(`0)">
   Remove(K)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L119"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L161"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Removes the element with the specified key from the cache.</p>
@@ -831,7 +849,7 @@ Class LRUCache&lt;K, V&gt;  <a class="header-action link-secondary" title="View 
 
   <h3 id="Utils_Collections_LRUCache_2_TryGetValue__0__1__" data-uid="Utils.Collections.LRUCache`2.TryGetValue(`0,`1@)">
   TryGetValue(K, out V)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L136"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L189"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the value associated with the specified key.</p>
@@ -873,7 +891,7 @@ Class LRUCache&lt;K, V&gt;  <a class="header-action link-secondary" title="View 
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L12" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L23" class="edit-link">Edit this page</a>
         </div>
 
 

@@ -388,10 +388,12 @@ Class RandomExtensions  <a class="header-action link-secondary" title="View sour
 
   <h3 id="Utils_Randomization_RandomExtensions_RandomDouble_System_Random_" data-uid="Utils.Randomization.RandomExtensions.RandomDouble(System.Random)">
   RandomDouble(Random)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Randomization/RandomExtensions.cs/#L251"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Randomization/RandomExtensions.cs/#L267"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Generates a random <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a> value from random bytes.</p>
+  <div class="markdown level1 summary"><p>Generates a random <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a> value by reinterpreting raw random bytes, consistent
+with <a class="xref" href="Utils.Randomization.RandomExtensions.html#Utils_Randomization_RandomExtensions_RandomByte_System_Random_">RandomByte(Random)</a>/<a class="xref" href="Utils.Randomization.RandomExtensions.html#Utils_Randomization_RandomExtensions_RandomShort_System_Random_">RandomShort(Random)</a>/<a class="xref" href="Utils.Randomization.RandomExtensions.html#Utils_Randomization_RandomExtensions_RandomInt_System_Random_">RandomInt(Random)</a>/<a class="xref" href="Utils.Randomization.RandomExtensions.html#Utils_Randomization_RandomExtensions_RandomLong_System_Random_">RandomLong(Random)</a>,
+which likewise fill the full bit pattern of their return type rather than a normalized range.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -409,7 +411,11 @@ Class RandomExtensions  <a class="header-action link-secondary" title="View sour
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a></dt>
-    <dd><p>A random double-precision floating-point value.</p>
+    <dd><p>A random double-precision floating-point value spanning the full <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a> bit
+pattern space. Unlike <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.random.nextdouble">NextDouble()</a>, this can return <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double.nan">NaN</a>,
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double.positiveinfinity">PositiveInfinity</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double.negativeinfinity">NegativeInfinity</a>, subnormal values,
+and values outside <code>[0, 1)</code>. Useful for binary fuzzing/round-trip testing; use
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.random.nextdouble">NextDouble()</a> when a finite value in <code>[0, 1)</code> is required instead.</p>
 </dd>
   </dl>
 
@@ -427,10 +433,12 @@ Class RandomExtensions  <a class="header-action link-secondary" title="View sour
 
   <h3 id="Utils_Randomization_RandomExtensions_RandomFloat_System_Random_" data-uid="Utils.Randomization.RandomExtensions.RandomFloat(System.Random)">
   RandomFloat(Random)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Randomization/RandomExtensions.cs/#L239"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Randomization/RandomExtensions.cs/#L247"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Generates a random <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a> value from random bytes.</p>
+  <div class="markdown level1 summary"><p>Generates a random <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a> value by reinterpreting raw random bytes, consistent
+with <a class="xref" href="Utils.Randomization.RandomExtensions.html#Utils_Randomization_RandomExtensions_RandomByte_System_Random_">RandomByte(Random)</a>/<a class="xref" href="Utils.Randomization.RandomExtensions.html#Utils_Randomization_RandomExtensions_RandomShort_System_Random_">RandomShort(Random)</a>/<a class="xref" href="Utils.Randomization.RandomExtensions.html#Utils_Randomization_RandomExtensions_RandomInt_System_Random_">RandomInt(Random)</a>/<a class="xref" href="Utils.Randomization.RandomExtensions.html#Utils_Randomization_RandomExtensions_RandomLong_System_Random_">RandomLong(Random)</a>,
+which likewise fill the full bit pattern of their return type rather than a normalized range.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -448,7 +456,11 @@ Class RandomExtensions  <a class="header-action link-secondary" title="View sour
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
-    <dd><p>A random single-precision floating-point value.</p>
+    <dd><p>A random single-precision floating-point value spanning the full <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a> bit
+pattern space. Unlike <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.random.nextsingle">NextSingle()</a>, this can return <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single.nan">NaN</a>,
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single.positiveinfinity">PositiveInfinity</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single.negativeinfinity">NegativeInfinity</a>, subnormal values,
+and values outside <code>[0, 1)</code>. Useful for binary fuzzing/round-trip testing; use
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.random.nextsingle">NextSingle()</a> when a finite value in <code>[0, 1)</code> is required instead.</p>
 </dd>
   </dl>
 
@@ -466,7 +478,7 @@ Class RandomExtensions  <a class="header-action link-secondary" title="View sour
 
   <h3 id="Utils_Randomization_RandomExtensions_RandomFrom__1_System_Random_System_Collections_Generic_IReadOnlyList___0__" data-uid="Utils.Randomization.RandomExtensions.RandomFrom``1(System.Random,System.Collections.Generic.IReadOnlyList{``0})">
   RandomFrom&lt;T&gt;(Random, IReadOnlyList&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Randomization/RandomExtensions.cs/#L285"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Randomization/RandomExtensions.cs/#L301"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Selects a random element from the provided read-only list.</p>
@@ -514,7 +526,7 @@ Class RandomExtensions  <a class="header-action link-secondary" title="View sour
 
   <h3 id="Utils_Randomization_RandomExtensions_RandomFrom__1_System_Random_System_Span___0__" data-uid="Utils.Randomization.RandomExtensions.RandomFrom``1(System.Random,System.Span{``0})">
   RandomFrom&lt;T&gt;(Random, Span&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Randomization/RandomExtensions.cs/#L275"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Randomization/RandomExtensions.cs/#L291"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Selects a random element from the provided span.</p>
@@ -562,7 +574,7 @@ Class RandomExtensions  <a class="header-action link-secondary" title="View sour
 
   <h3 id="Utils_Randomization_RandomExtensions_RandomFrom__1_System_Random___0___" data-uid="Utils.Randomization.RandomExtensions.RandomFrom``1(System.Random,``0[])">
   RandomFrom&lt;T&gt;(Random, params T[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Randomization/RandomExtensions.cs/#L265"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Randomization/RandomExtensions.cs/#L281"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Selects a random element from the provided parameter array.</p>

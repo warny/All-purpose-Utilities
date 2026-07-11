@@ -221,6 +221,12 @@ via bitwise operators:
       <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_System_Boolean_System_Boolean_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T, bool, bool)</a>
   </div>
   <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0_System_Threading_Tasks_Task___1___System_Func_System_Threading_Tasks_Task___1___">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Task&lt;Result&gt;&gt;, Func&lt;Task&lt;Result&gt;&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0_System_Threading_Tasks_Task___1_____1_">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Task&lt;Result&gt;&gt;, Result)</a>
+  </div>
+  <div>
       <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
   </div>
   <div>
@@ -530,7 +536,7 @@ Overlapping intervals are merged into disjoint intervals.</p>
 
   <h3 id="Utils_Range_Ranges_1_Add_Utils_Range_IRange__0__" data-uid="Utils.Range.Ranges`1.Add(Utils.Range.IRange{`0})">
   Add(IRange&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L203"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L223"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Adds a single interval, merging with existing intervals if they overlap or touch.</p>
@@ -562,7 +568,7 @@ Overlapping intervals are merged into disjoint intervals.</p>
 
   <h3 id="Utils_Range_Ranges_1_Add__0_" data-uid="Utils.Range.Ranges`1.Add(`0)">
   Add(T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L191"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L211"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Adds a single interval, merging with existing intervals if they overlap or touch.</p>
@@ -594,7 +600,7 @@ Overlapping intervals are merged into disjoint intervals.</p>
 
   <h3 id="Utils_Range_Ranges_1_Add__0__0_System_Boolean_System_Boolean_" data-uid="Utils.Range.Ranges`1.Add(`0,`0,System.Boolean,System.Boolean)">
   Add(T, T, bool, bool)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L197"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L217"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Adds a single interval, merging with existing intervals if they overlap or touch.</p>
@@ -632,7 +638,7 @@ Overlapping intervals are merged into disjoint intervals.</p>
 
   <h3 id="Utils_Range_Ranges_1_AddAll_System_Collections_Generic_IEnumerable_Utils_Range_IRange__0___" data-uid="Utils.Range.Ranges`1.AddAll(System.Collections.Generic.IEnumerable{Utils.Range.IRange{`0}})">
   AddAll(IEnumerable&lt;IRange&lt;T&gt;&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L179"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L199"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Adds multiple intervals, merging overlaps.</p>
@@ -664,7 +670,7 @@ Overlapping intervals are merged into disjoint intervals.</p>
 
   <h3 id="Utils_Range_Ranges_1_Clear" data-uid="Utils.Range.Ranges`1.Clear">
   Clear()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L135"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L155"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Removes all intervals, resulting in an empty set.</p>
@@ -691,7 +697,7 @@ Overlapping intervals are merged into disjoint intervals.</p>
 
   <h3 id="Utils_Range_Ranges_1_Complement_Utils_Range_Ranges__0__" data-uid="Utils.Range.Ranges`1.Complement(Utils.Range.Ranges{`0})">
   Complement(Ranges&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L483"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L503"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns the complement with respect to the entire domain (-∞..+∞).</p>
@@ -730,7 +736,7 @@ If you want actual intervals that store ±∞, you must design a specialized <a 
 
   <h3 id="Utils_Range_Ranges_1_Contains_Utils_Range_IRange__0__" data-uid="Utils.Range.Ranges`1.Contains(Utils.Range.IRange{`0})">
   Contains(IRange&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L162"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L182"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Checks if the entire <code class="paramref">range</code> is contained in this set.</p>
@@ -767,7 +773,7 @@ If you want actual intervals that store ±∞, you must design a specialized <a 
 
   <h3 id="Utils_Range_Ranges_1_Contains__0_" data-uid="Utils.Range.Ranges`1.Contains(`0)">
   Contains(T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L141"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L161"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Checks if the specified value <code class="paramref">value</code> is contained
@@ -805,7 +811,7 @@ in any of the intervals of this set.</p>
 
   <h3 id="Utils_Range_Ranges_1_Equals_System_Object_" data-uid="Utils.Range.Ranges`1.Equals(System.Object)">
   Equals(object?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L586"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L606"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether the specified object is equal to the current object.</p>
@@ -844,7 +850,7 @@ in any of the intervals of this set.</p>
 
   <h3 id="Utils_Range_Ranges_1_Equals_Utils_Range_Ranges__0__" data-uid="Utils.Range.Ranges`1.Equals(Utils.Range.Ranges{`0})">
   Equals(Ranges&lt;T&gt;?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L596"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L616"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether the specified <a class="xref" href="Utils.Range.Ranges-1.html">Ranges&lt;T&gt;</a> represents the same set of intervals.</p>
@@ -883,7 +889,7 @@ in any of the intervals of this set.</p>
 
   <h3 id="Utils_Range_Ranges_1_Except_Utils_Range_Ranges__0__Utils_Range_Ranges__0__" data-uid="Utils.Range.Ranges`1.Except(Utils.Range.Ranges{`0},Utils.Range.Ranges{`0})">
   Except(Ranges&lt;T&gt;, Ranges&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L452"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L472"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns a new set representing all intervals in <code class="paramref">left</code> that are not in <code class="paramref">right</code>.
@@ -923,7 +929,7 @@ in any of the intervals of this set.</p>
 
   <h3 id="Utils_Range_Ranges_1_GetHashCode" data-uid="Utils.Range.Ranges`1.GetHashCode">
   GetHashCode()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L603"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L623"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Serves as the default hash function.</p>
@@ -956,7 +962,7 @@ in any of the intervals of this set.</p>
 
   <h3 id="Utils_Range_Ranges_1_InnerParse__1_System_String_System_String_System_Collections_Generic_IEnumerable_System_String__System_Func_System_String___0__" data-uid="Utils.Range.Ranges`1.InnerParse``1(System.String,System.String,System.Collections.Generic.IEnumerable{System.String},System.Func{System.String,``0})">
   InnerParse&lt;T1&gt;(string, string, IEnumerable&lt;string&gt;, Func&lt;string, T1&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L112"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L122"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"></div>
@@ -985,7 +991,9 @@ in any of the intervals of this set.</p>
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<a class="xref" href="Utils.Range.IRange-1.html">IRange</a>&lt;T1&gt;&gt;</dt>
-    <dd><p>An enumerable collection of parsed Range objects.</p>
+    <dd><p>An enumerable collection of parsed Range objects. An empty or whitespace-only
+<code class="paramref">range</code> is a legitimate representation of an empty set and yields no ranges
+without throwing.</p>
 </dd>
   </dl>
 
@@ -1002,6 +1010,15 @@ in any of the intervals of this set.</p>
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.formatexception">FormatException</a></dt>
+    <dd><p>Thrown when <code class="paramref">range</code> contains non-whitespace content that is not part of a
+recognized range expression (only whitespace is allowed between, before, or after matched
+ranges). This is a strict parser: it requires the entire input to be consumed, unlike an
+extraction API that would intentionally skip over surrounding text.</p>
+</dd>
+  </dl>
 
 
 
@@ -1009,7 +1026,7 @@ in any of the intervals of this set.</p>
 
   <h3 id="Utils_Range_Ranges_1_Intersect_Utils_Range_Ranges__0__Utils_Range_Ranges__0__" data-uid="Utils.Range.Ranges`1.Intersect(Utils.Range.Ranges{`0},Utils.Range.Ranges{`0})">
   Intersect(Ranges&lt;T&gt;, Ranges&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L428"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L448"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns a new set representing the intersection of <code class="paramref">left</code> and <code class="paramref">right</code>.</p>
@@ -1048,7 +1065,7 @@ in any of the intervals of this set.</p>
 
   <h3 id="Utils_Range_Ranges_1_Remove_Utils_Range_IRange__0__" data-uid="Utils.Range.Ranges`1.Remove(Utils.Range.IRange{`0})">
   Remove(IRange&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L362"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L382"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Removes a single interval from this set, splitting or trimming intervals.</p>
@@ -1080,7 +1097,7 @@ in any of the intervals of this set.</p>
 
   <h3 id="Utils_Range_Ranges_1_Remove__0_" data-uid="Utils.Range.Ranges`1.Remove(`0)">
   Remove(T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L350"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L370"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Removes a single interval from this set, splitting or trimming intervals.</p>
@@ -1112,7 +1129,7 @@ in any of the intervals of this set.</p>
 
   <h3 id="Utils_Range_Ranges_1_Remove__0__0_System_Boolean_System_Boolean_" data-uid="Utils.Range.Ranges`1.Remove(`0,`0,System.Boolean,System.Boolean)">
   Remove(T, T, bool, bool)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L356"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L376"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Removes a single interval from this set, splitting or trimming intervals.</p>
@@ -1150,7 +1167,7 @@ in any of the intervals of this set.</p>
 
   <h3 id="Utils_Range_Ranges_1_RemoveAll_System_Collections_Generic_IEnumerable_Utils_Range_IRange__0___" data-uid="Utils.Range.Ranges`1.RemoveAll(System.Collections.Generic.IEnumerable{Utils.Range.IRange{`0}})">
   RemoveAll(IEnumerable&lt;IRange&lt;T&gt;&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L339"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L359"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Removes multiple intervals from this set.</p>
@@ -1182,7 +1199,7 @@ in any of the intervals of this set.</p>
 
   <h3 id="Utils_Range_Ranges_1_SymmetricDifference_Utils_Range_Ranges__0__Utils_Range_Ranges__0__" data-uid="Utils.Range.Ranges`1.SymmetricDifference(Utils.Range.Ranges{`0},Utils.Range.Ranges{`0})">
   SymmetricDifference(Ranges&lt;T&gt;, Ranges&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L469"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L489"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns a new set representing the symmetric difference of <code class="paramref">left</code> and <code class="paramref">right</code>.
@@ -1222,7 +1239,7 @@ in any of the intervals of this set.</p>
 
   <h3 id="Utils_Range_Ranges_1_ToString" data-uid="Utils.Range.Ranges`1.ToString">
   ToString()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L538"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L558"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts the current <a class="xref" href="Utils.Range.Ranges-1.html">Ranges&lt;T&gt;</a> to its string representation using default formatting.</p>
@@ -1255,7 +1272,7 @@ in any of the intervals of this set.</p>
 
   <h3 id="Utils_Range_Ranges_1_ToString_System_IFormatProvider_" data-uid="Utils.Range.Ranges`1.ToString(System.IFormatProvider)">
   ToString(IFormatProvider?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L552"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L572"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts the current <a class="xref" href="Utils.Range.Ranges-1.html">Ranges&lt;T&gt;</a> to its string representation using the provided format provider.</p>
@@ -1294,7 +1311,7 @@ in any of the intervals of this set.</p>
 
   <h3 id="Utils_Range_Ranges_1_ToString_System_String_" data-uid="Utils.Range.Ranges`1.ToString(System.String)">
   ToString(string?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L545"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L565"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts the current <a class="xref" href="Utils.Range.Ranges-1.html">Ranges&lt;T&gt;</a> to its string representation using the provided format string.</p>
@@ -1333,7 +1350,7 @@ in any of the intervals of this set.</p>
 
   <h3 id="Utils_Range_Ranges_1_ToString_System_String_System_IFormatProvider_" data-uid="Utils.Range.Ranges`1.ToString(System.String,System.IFormatProvider)">
   ToString(string?, IFormatProvider?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L558"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L578"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts all stored intervals to string, joined by a union symbol &quot; ∪ &quot;.
@@ -1373,7 +1390,7 @@ E.g. &quot;[1..2] ∪ (3..5)&quot;</p>
 
   <h3 id="Utils_Range_Ranges_1_Union_Utils_Range_Ranges__0__Utils_Range_Ranges__0__" data-uid="Utils.Range.Ranges`1.Union(Utils.Range.Ranges{`0},Utils.Range.Ranges{`0})">
   Union(Ranges&lt;T&gt;, Ranges&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L415"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L435"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns a new set representing the union of <code class="paramref">left</code> and <code class="paramref">right</code>.</p>
@@ -1416,7 +1433,7 @@ E.g. &quot;[1..2] ∪ (3..5)&quot;</p>
 
   <h3 id="Utils_Range_Ranges_1_op_BitwiseAnd_Utils_Range_Ranges__0__Utils_Range_Ranges__0__" data-uid="Utils.Range.Ranges`1.op_BitwiseAnd(Utils.Range.Ranges{`0},Utils.Range.Ranges{`0})">
   operator &amp;(Ranges&lt;T&gt;, Ranges&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L500"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L520"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Intersection =&gt; bitwise AND operator.</p>
@@ -1455,7 +1472,7 @@ E.g. &quot;[1..2] ∪ (3..5)&quot;</p>
 
   <h3 id="Utils_Range_Ranges_1_op_BitwiseOr_Utils_Range_Ranges__0__Utils_Range_Ranges__0__" data-uid="Utils.Range.Ranges`1.op_BitwiseOr(Utils.Range.Ranges{`0},Utils.Range.Ranges{`0})">
   operator |(Ranges&lt;T&gt;, Ranges&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L496"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L516"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Union =&gt; bitwise OR operator.</p>
@@ -1494,7 +1511,7 @@ E.g. &quot;[1..2] ∪ (3..5)&quot;</p>
 
   <h3 id="Utils_Range_Ranges_1_op_Equality_Utils_Range_Ranges__0__Utils_Range_Ranges__0__" data-uid="Utils.Range.Ranges`1.op_Equality(Utils.Range.Ranges{`0},Utils.Range.Ranges{`0})">
   operator ==(Ranges&lt;T&gt;?, Ranges&lt;T&gt;?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L521"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L541"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether two <a class="xref" href="Utils.Range.Ranges-1.html">Ranges&lt;T&gt;</a> instances are equal.</p>
@@ -1536,7 +1553,7 @@ E.g. &quot;[1..2] ∪ (3..5)&quot;</p>
 
   <h3 id="Utils_Range_Ranges_1_op_ExclusiveOr_Utils_Range_Ranges__0__Utils_Range_Ranges__0__" data-uid="Utils.Range.Ranges`1.op_ExclusiveOr(Utils.Range.Ranges{`0},Utils.Range.Ranges{`0})">
   operator ^(Ranges&lt;T&gt;, Ranges&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L504"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L524"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Symmetric Difference =&gt; bitwise XOR operator.</p>
@@ -1575,7 +1592,7 @@ E.g. &quot;[1..2] ∪ (3..5)&quot;</p>
 
   <h3 id="Utils_Range_Ranges_1_op_Inequality_Utils_Range_Ranges__0__Utils_Range_Ranges__0__" data-uid="Utils.Range.Ranges`1.op_Inequality(Utils.Range.Ranges{`0},Utils.Range.Ranges{`0})">
   operator !=(Ranges&lt;T&gt;?, Ranges&lt;T&gt;?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L528"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L548"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether two <a class="xref" href="Utils.Range.Ranges-1.html">Ranges&lt;T&gt;</a> instances are not equal.</p>
@@ -1617,7 +1634,7 @@ E.g. &quot;[1..2] ∪ (3..5)&quot;</p>
 
   <h3 id="Utils_Range_Ranges_1_op_OnesComplement_Utils_Range_Ranges__0__" data-uid="Utils.Range.Ranges`1.op_OnesComplement(Utils.Range.Ranges{`0})">
   operator ~(Ranges&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L508"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L528"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Complement =&gt; bitwise NOT operator.</p>
@@ -1654,7 +1671,7 @@ E.g. &quot;[1..2] ∪ (3..5)&quot;</p>
 
   <h3 id="Utils_Range_Ranges_1_op_Subtraction_Utils_Range_Ranges__0__Utils_Range_Ranges__0__" data-uid="Utils.Range.Ranges`1.op_Subtraction(Utils.Range.Ranges{`0},Utils.Range.Ranges{`0})">
   operator -(Ranges&lt;T&gt;, Ranges&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L512"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/Ranges.cs/#L532"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Difference =&gt; set except operator.</p>
