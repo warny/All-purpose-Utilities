@@ -253,7 +253,7 @@ Coefficients are stored as <code>[a₀, a₁, …, aₙ]</code> representing <co
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a polynomial from its coefficients in ascending power order.
-Leading zero coefficients are trimmed so the stored degree is minimal.</p>
+Trailing exact-zero coefficients are trimmed so the stored degree is minimal.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -363,11 +363,62 @@ Leading zero coefficients are trimmed so the stored degree is minimal.</p>
 </h2>
 
 
+  <a id="Utils_Mathematics_Polynomial_1_ApproximatelyEquals_" data-uid="Utils.Mathematics.Polynomial`1.ApproximatelyEquals*"></a>
+
+  <h3 id="Utils_Mathematics_Polynomial_1_ApproximatelyEquals_Utils_Mathematics_Polynomial__0___0_" data-uid="Utils.Mathematics.Polynomial`1.ApproximatelyEquals(Utils.Mathematics.Polynomial{`0},`0)">
+  ApproximatelyEquals(Polynomial&lt;T&gt;?, T)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Polynomial.cs/#L243"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether this polynomial is equal to <code class="paramref">other</code> within
+<code class="paramref">tolerance</code> on every coefficient. This is a separate, explicitly opt-in
+comparison: it is not used by <a class="xref" href="Utils.Mathematics.Polynomial-1.html#Utils_Mathematics_Polynomial_1_Equals_Utils_Mathematics_Polynomial__0__">Equals(Polynomial&lt;T&gt;?)</a> or
+<a class="xref" href="Utils.Mathematics.Polynomial-1.html#Utils_Mathematics_Polynomial_1_GetHashCode">GetHashCode()</a> and must not be relied upon for hashed-collection membership, since
+approximate equality is not transitive in general and would violate the hash contract.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool ApproximatelyEquals(Polynomial&lt;T&gt;? other, T tolerance)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>other</code> <a class="xref" href="Utils.Mathematics.Polynomial-1.html">Polynomial</a>&lt;T&gt;</dt>
+    <dd><p>The polynomial to compare with.</p>
+</dd>
+    <dt><code>tolerance</code> <span class="xref">T</span></dt>
+    <dd><p>Maximum allowed absolute difference per coefficient. Must be finite and non-negative.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when <code class="paramref">tolerance</code> is not finite or is negative.</p>
+</dd>
+  </dl>
+
+
+
   <a id="Utils_Mathematics_Polynomial_1_Derive_" data-uid="Utils.Mathematics.Polynomial`1.Derive*"></a>
 
   <h3 id="Utils_Mathematics_Polynomial_1_Derive" data-uid="Utils.Mathematics.Polynomial`1.Derive">
   Derive()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Polynomial.cs/#L69"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Polynomial.cs/#L86"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns the formal derivative of this polynomial.</p>
@@ -400,7 +451,7 @@ Leading zero coefficients are trimmed so the stored degree is minimal.</p>
 
   <h3 id="Utils_Mathematics_Polynomial_1_Equals_System_Object_" data-uid="Utils.Mathematics.Polynomial`1.Equals(System.Object)">
   Equals(object?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Polynomial.cs/#L189"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Polynomial.cs/#L255"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether the specified object is equal to the current object.</p>
@@ -439,10 +490,16 @@ Leading zero coefficients are trimmed so the stored degree is minimal.</p>
 
   <h3 id="Utils_Mathematics_Polynomial_1_Equals_Utils_Mathematics_Polynomial__0__" data-uid="Utils.Mathematics.Polynomial`1.Equals(Utils.Mathematics.Polynomial{`0})">
   Equals(Polynomial&lt;T&gt;?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Polynomial.cs/#L179"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Polynomial.cs/#L224"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Indicates whether the current object is equal to another object of the same type.</p>
+  <div class="markdown level1 summary"><p>Determines whether this polynomial is exactly equal to <code class="paramref">other</code>: same degree
+and identical coefficients. Consistent with <a class="xref" href="Utils.Mathematics.Polynomial-1.html#Utils_Mathematics_Polynomial_1_GetHashCode">GetHashCode()</a> by construction, unlike
+a tolerance-based comparison would be. Use <a class="xref" href="Utils.Mathematics.Polynomial-1.html#Utils_Mathematics_Polynomial_1_ApproximatelyEquals_Utils_Mathematics_Polynomial__0___0_">ApproximatelyEquals(Polynomial&lt;T&gt;?, T)</a> for a
+tolerance-aware comparison; it must not be used to implement this member or
+<a class="xref" href="Utils.Mathematics.Polynomial-1.html#Utils_Mathematics_Polynomial_1_GetHashCode">GetHashCode()</a>; doing so would let two polynomials compare equal while hashing
+differently, breaking the contract required by <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.dictionary-2">Dictionary&lt;TKey, TValue&gt;</a>,
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet&lt;T&gt;</a>, and LINQ set operations.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -453,15 +510,13 @@ Leading zero coefficients are trimmed so the stored degree is minimal.</p>
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>other</code> <a class="xref" href="Utils.Mathematics.Polynomial-1.html">Polynomial</a>&lt;T&gt;</dt>
-    <dd><p>An object to compare with this object.</p>
-</dd>
+    <dd></dd>
   </dl>
 
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
-    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if the current object is equal to the <code class="paramref">other</code> parameter; otherwise, <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
-</dd>
+    <dd></dd>
   </dl>
 
 
@@ -478,7 +533,7 @@ Leading zero coefficients are trimmed so the stored degree is minimal.</p>
 
   <h3 id="Utils_Mathematics_Polynomial_1_Evaluate__0_" data-uid="Utils.Mathematics.Polynomial`1.Evaluate(`0)">
   Evaluate(T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Polynomial.cs/#L53"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Polynomial.cs/#L70"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Evaluates the polynomial at <code class="paramref">x</code> using Horner's method.</p>
@@ -517,7 +572,7 @@ Leading zero coefficients are trimmed so the stored degree is minimal.</p>
 
   <h3 id="Utils_Mathematics_Polynomial_1_FindRoot__0_System_Int32_System_Nullable__0__" data-uid="Utils.Mathematics.Polynomial`1.FindRoot(`0,System.Int32,System.Nullable{`0})">
   FindRoot(T, int, T?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Polynomial.cs/#L103"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Polynomial.cs/#L128"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Attempts to find a real root near <code class="paramref">initialGuess</code> using Newton–Raphson iteration.</p>
@@ -531,13 +586,13 @@ Leading zero coefficients are trimmed so the stored degree is minimal.</p>
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>initialGuess</code> <span class="xref">T</span></dt>
-    <dd><p>Starting point for the iteration.</p>
+    <dd><p>Starting point for the iteration. Must be finite.</p>
 </dd>
     <dt><code>maxIterations</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
-    <dd><p>Maximum number of iterations.</p>
+    <dd><p>Maximum number of iterations. Must be greater than zero.</p>
 </dd>
     <dt><code>tolerance</code> T?</dt>
-    <dd><p>Convergence tolerance; defaults to 1e-10.</p>
+    <dd><p>Convergence tolerance; defaults to 1e-10. Must be finite and positive.</p>
 </dd>
   </dl>
 
@@ -555,6 +610,13 @@ Leading zero coefficients are trimmed so the stored degree is minimal.</p>
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when <code class="paramref">maxIterations</code> is not positive, <code class="paramref">initialGuess</code>
+is not finite, or <code class="paramref">tolerance</code> is not finite and positive.</p>
+</dd>
+  </dl>
 
 
 
@@ -562,7 +624,7 @@ Leading zero coefficients are trimmed so the stored degree is minimal.</p>
 
   <h3 id="Utils_Mathematics_Polynomial_1_GetHashCode" data-uid="Utils.Mathematics.Polynomial`1.GetHashCode">
   GetHashCode()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Polynomial.cs/#L192"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Polynomial.cs/#L258"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Serves as the default hash function.</p>
@@ -595,7 +657,7 @@ Leading zero coefficients are trimmed so the stored degree is minimal.</p>
 
   <h3 id="Utils_Mathematics_Polynomial_1_Integrate__0_" data-uid="Utils.Mathematics.Polynomial`1.Integrate(`0)">
   Integrate(T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Polynomial.cs/#L83"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Polynomial.cs/#L104"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns an antiderivative of this polynomial with the given integration constant.</p>
@@ -634,7 +696,7 @@ Leading zero coefficients are trimmed so the stored degree is minimal.</p>
 
   <h3 id="Utils_Mathematics_Polynomial_1_ToString" data-uid="Utils.Mathematics.Polynomial`1.ToString">
   ToString()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Polynomial.cs/#L195"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Polynomial.cs/#L268"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns a string that represents the current object.</p>
@@ -671,7 +733,7 @@ Leading zero coefficients are trimmed so the stored degree is minimal.</p>
 
   <h3 id="Utils_Mathematics_Polynomial_1_op_Addition_Utils_Mathematics_Polynomial__0__Utils_Mathematics_Polynomial__0__" data-uid="Utils.Mathematics.Polynomial`1.op_Addition(Utils.Mathematics.Polynomial{`0},Utils.Mathematics.Polynomial{`0})">
   operator +(Polynomial&lt;T&gt;, Polynomial&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Polynomial.cs/#L126"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Polynomial.cs/#L163"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns the sum of two polynomials.</p>
@@ -710,7 +772,7 @@ Leading zero coefficients are trimmed so the stored degree is minimal.</p>
 
   <h3 id="Utils_Mathematics_Polynomial_1_op_Multiply_Utils_Mathematics_Polynomial__0__Utils_Mathematics_Polynomial__0__" data-uid="Utils.Mathematics.Polynomial`1.op_Multiply(Utils.Mathematics.Polynomial{`0},Utils.Mathematics.Polynomial{`0})">
   operator *(Polynomial&lt;T&gt;, Polynomial&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Polynomial.cs/#L154"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Polynomial.cs/#L191"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns the product of two polynomials.</p>
@@ -749,7 +811,7 @@ Leading zero coefficients are trimmed so the stored degree is minimal.</p>
 
   <h3 id="Utils_Mathematics_Polynomial_1_op_Multiply_Utils_Mathematics_Polynomial__0___0_" data-uid="Utils.Mathematics.Polynomial`1.op_Multiply(Utils.Mathematics.Polynomial{`0},`0)">
   operator *(Polynomial&lt;T&gt;, T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Polynomial.cs/#L172"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Polynomial.cs/#L209"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns the polynomial scaled by a scalar.</p>
@@ -788,7 +850,7 @@ Leading zero coefficients are trimmed so the stored degree is minimal.</p>
 
   <h3 id="Utils_Mathematics_Polynomial_1_op_Multiply__0_Utils_Mathematics_Polynomial__0__" data-uid="Utils.Mathematics.Polynomial`1.op_Multiply(`0,Utils.Mathematics.Polynomial{`0})">
   operator *(T, Polynomial&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Polynomial.cs/#L164"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Polynomial.cs/#L201"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns the polynomial scaled by a scalar.</p>
@@ -827,7 +889,7 @@ Leading zero coefficients are trimmed so the stored degree is minimal.</p>
 
   <h3 id="Utils_Mathematics_Polynomial_1_op_Subtraction_Utils_Mathematics_Polynomial__0__Utils_Mathematics_Polynomial__0__" data-uid="Utils.Mathematics.Polynomial`1.op_Subtraction(Utils.Mathematics.Polynomial{`0},Utils.Mathematics.Polynomial{`0})">
   operator -(Polynomial&lt;T&gt;, Polynomial&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Polynomial.cs/#L140"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Polynomial.cs/#L177"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns the difference of two polynomials.</p>

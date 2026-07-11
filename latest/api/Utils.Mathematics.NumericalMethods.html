@@ -157,7 +157,7 @@ Class NumericalMethods  <a class="header-action link-secondary" title="View sour
 
   <h3 id="Utils_Mathematics_NumericalMethods_Integrate__1_System_Func___0___0____0___0_System_Int32_" data-uid="Utils.Mathematics.NumericalMethods.Integrate``1(System.Func{``0,``0},``0,``0,System.Int32)">
   Integrate&lt;T&gt;(Func&lt;T, T&gt;, T, T, int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/NumericalMethods.cs/#L27"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/NumericalMethods.cs/#L37"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Numerically integrates <code class="paramref">f</code> over [<code class="paramref">a</code>, <code class="paramref">b</code>]
@@ -189,7 +189,9 @@ Higher values increase accuracy at the cost of more function evaluations.</p>
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><span class="xref">T</span></dt>
-    <dd><p>The approximate value of ∫f(x)dx from a to b.</p>
+    <dd><p>The approximate value of ∫f(x)dx from a to b. If <code class="paramref">f</code> returns a non-finite
+value anywhere in the interval, that non-finite value propagates into the result (visible to
+the caller as NaN or an infinity) rather than being silently discarded.</p>
 </dd>
   </dl>
 
@@ -206,6 +208,17 @@ Higher values increase accuracy at the cost of more function evaluations.</p>
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">f</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when <code class="paramref">steps</code> is not positive, when <code class="paramref">steps</code> is the
+odd value <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32.maxvalue">MaxValue</a> (which cannot be rounded up to an even count without
+overflowing), or when <code class="paramref">a</code>/<code class="paramref">b</code> is not finite.</p>
+</dd>
+  </dl>
 
 
 
@@ -213,7 +226,7 @@ Higher values increase accuracy at the cost of more function evaluations.</p>
 
   <h3 id="Utils_Mathematics_NumericalMethods_Lagrange__1_System_Collections_Generic_IEnumerable_System_ValueTuple___0___0_____0_" data-uid="Utils.Mathematics.NumericalMethods.Lagrange``1(System.Collections.Generic.IEnumerable{System.ValueTuple{``0,``0}},``0)">
   Lagrange&lt;T&gt;(IEnumerable&lt;(T x, T y)&gt;, T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/NumericalMethods.cs/#L64"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/NumericalMethods.cs/#L85"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Evaluates the Lagrange interpolating polynomial at <code class="paramref">at</code>,
@@ -228,10 +241,10 @@ given a set of data points.</p>
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>points</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;(T <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple---0,--0-.x">x</a>, T <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple---0,--0-.y">y</a>)&gt;</dt>
-    <dd><p>Sequence of (x, y) data points. All x values must be distinct.</p>
+    <dd><p>Sequence of (x, y) data points. All x values must be distinct and every coordinate finite.</p>
 </dd>
     <dt><code>at</code> <span class="xref">T</span></dt>
-    <dd><p>The point at which to evaluate the interpolating polynomial.</p>
+    <dd><p>The point at which to evaluate the interpolating polynomial. Must be finite.</p>
 </dd>
   </dl>
 
@@ -263,7 +276,10 @@ Runge's phenomenon near the boundaries.</p>
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
-    <dd><p>Thrown when no points are provided or x values are not distinct.</p>
+    <dd><p>Thrown when no points are provided, a coordinate is not finite, or x values are not distinct.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when <code class="paramref">at</code> is not finite.</p>
 </dd>
   </dl>
 

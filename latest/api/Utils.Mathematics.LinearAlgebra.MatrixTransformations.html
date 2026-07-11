@@ -247,7 +247,7 @@ Class MatrixTransformations  <a class="header-action link-secondary" title="View
 
   <h3 id="Utils_Mathematics_LinearAlgebra_MatrixTransformations_Rotation__1_System_Collections_Generic_IEnumerable___0__" data-uid="Utils.Mathematics.LinearAlgebra.MatrixTransformations.Rotation``1(System.Collections.Generic.IEnumerable{``0})">
   Rotation&lt;T&gt;(params IEnumerable&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/MatrixTransformations.cs/#L148"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/MatrixTransformations.cs/#L157"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Generates a rotation matrix.</p>
@@ -337,10 +337,10 @@ Class MatrixTransformations  <a class="header-action link-secondary" title="View
 
   <h3 id="Utils_Mathematics_LinearAlgebra_MatrixTransformations_Skew__1_System_Collections_Generic_IEnumerable___0__" data-uid="Utils.Mathematics.LinearAlgebra.MatrixTransformations.Skew``1(System.Collections.Generic.IEnumerable{``0})">
   Skew&lt;T&gt;(params IEnumerable&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/MatrixTransformations.cs/#L108"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/MatrixTransformations.cs/#L117"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Generates a shear matrix using the provided angles.</p>
+  <div class="markdown level1 summary"><p>Generates a shear (skew) matrix using the provided angles.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -351,14 +351,18 @@ Class MatrixTransformations  <a class="header-action link-secondary" title="View
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>angles</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T&gt;</dt>
-    <dd><p>Angles of the shear.</p>
+    <dd><p>One angle per off-diagonal coefficient of the base <code>d × d</code> shear block, in row-major
+order skipping the diagonal (row 0's <code>d-1</code> off-diagonal columns, then row 1's, and so
+on). The base dimension <code>d</code> is inferred from the count: <code>d * (d - 1)</code> angles are
+required, since a full shear has one free coefficient per off-diagonal position.</p>
 </dd>
   </dl>
 
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html">Matrix</a>&lt;T&gt;</dt>
-    <dd><p>New shear matrix.</p>
+    <dd><p>A new <code>(d+1) × (d+1)</code> homogeneous shear matrix: identity everywhere except the supplied
+<code>tan(angle)</code> values at the base block's off-diagonal positions.</p>
 </dd>
   </dl>
 
@@ -375,6 +379,12 @@ Class MatrixTransformations  <a class="header-action link-secondary" title="View
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when the angle count does not match <code>d * (d - 1)</code> for any integer <code>d</code>.</p>
+</dd>
+  </dl>
 
 
 
@@ -382,7 +392,7 @@ Class MatrixTransformations  <a class="header-action link-secondary" title="View
 
   <h3 id="Utils_Mathematics_LinearAlgebra_MatrixTransformations_Transform__1_System_Collections_Generic_IEnumerable___0__" data-uid="Utils.Mathematics.LinearAlgebra.MatrixTransformations.Transform``1(System.Collections.Generic.IEnumerable{``0})">
   Transform&lt;T&gt;(params IEnumerable&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/MatrixTransformations.cs/#L226"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/MatrixTransformations.cs/#L235"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Generates a transformation matrix.</p>
@@ -427,7 +437,7 @@ Class MatrixTransformations  <a class="header-action link-secondary" title="View
 
   <h3 id="Utils_Mathematics_LinearAlgebra_MatrixTransformations_Translation__1_System_Collections_Generic_IEnumerable___0__" data-uid="Utils.Mathematics.LinearAlgebra.MatrixTransformations.Translation``1(System.Collections.Generic.IEnumerable{``0})">
   Translation&lt;T&gt;(params IEnumerable&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/MatrixTransformations.cs/#L196"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/MatrixTransformations.cs/#L205"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Generates a translation matrix.</p>
