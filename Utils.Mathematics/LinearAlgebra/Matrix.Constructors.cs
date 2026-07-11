@@ -10,10 +10,19 @@ public sealed partial class Matrix<T>
     /// <summary>
     /// Initializes a matrix with the specified dimensions.
     /// </summary>
-    /// <param name="dimensionX">Number of rows.</param>
-    /// <param name="dimensionY">Number of columns.</param>
+    /// <param name="dimensionX">Number of rows. Must be positive.</param>
+    /// <param name="dimensionY">Number of columns. Must be positive.</param>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="dimensionX"/> or <paramref name="dimensionY"/> is not positive.
+    /// 0×0 (and other zero/negative-dimensioned) matrices are not a supported construction, matching
+    /// the same policy already enforced by <see cref="Identity(int)"/>, <see cref="Zero(int, int)"/>,
+    /// and <see cref="Diagonal(IEnumerable{T})"/>, rather than relying on the CLR's own
+    /// exception-type-inconsistent behavior for invalid multidimensional array allocation.
+    /// </exception>
     public Matrix(int dimensionX, int dimensionY)
     {
+        if (dimensionX <= 0) throw new ArgumentException("Row count must be positive", nameof(dimensionX));
+        if (dimensionY <= 0) throw new ArgumentException("Column count must be positive", nameof(dimensionY));
         components = new T[dimensionX, dimensionY];
     }
 
@@ -38,10 +47,13 @@ public sealed partial class Matrix<T>
     /// <summary>
     /// Initializes a matrix from a 2D array.
     /// </summary>
-    /// <param name="array">Array containing the matrix values.</param>
+    /// <param name="array">Array containing the matrix values. Must have at least one row and one column.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="array"/> has zero rows or zero columns.</exception>
     public Matrix(T[,] array)
     {
         array.Arg().MustNotBeNull();
+        if (array.GetLength(0) == 0 || array.GetLength(1) == 0)
+            throw new ArgumentException("The array must have at least one row and one column.", nameof(array));
         components = new T[array.GetLength(0), array.GetLength(1)];
         Array.Copy(array, this.components, array.Length);
         var isSquare = IsSquare;
@@ -54,8 +66,8 @@ public sealed partial class Matrix<T>
     /// <summary>
     /// Initializes a matrix from a jagged array.
     /// </summary>
-    /// <param name="array">Jagged array containing the matrix values. Must be non-empty, with no null rows.</param>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="array"/> has no rows, or contains a null row.</exception>
+    /// <param name="array">Jagged array containing the matrix values. Must be non-empty, with no null rows, and at least one row must be non-empty.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="array"/> has no rows, contains a null row, or every row is empty.</exception>
     public Matrix(T[][] array)
     {
         array.Arg().MustNotBeNull();
@@ -68,6 +80,8 @@ public sealed partial class Matrix<T>
         }
 
         int maxYLength = array.Select(a => a.Length).Max();
+        if (maxYLength == 0)
+            throw new ArgumentException("At least one row must be non-empty.", nameof(array));
         components = new T[array.Length, maxYLength];
 
         for (int i = 0; i < array.Length; i++)

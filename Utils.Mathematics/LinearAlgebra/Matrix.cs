@@ -458,27 +458,49 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
     /// <summary>
     /// Returns a formatted string representation of the matrix using the specified format provider.
     /// </summary>
+    /// <param name="format">
+    /// A composite format string: an optional layout token (<c>""</c>, <c>"S"</c>, <c>"C"</c>, or
+    /// <c>"SC"</c>, selecting the row separator) optionally followed by <c>:</c> and a standard
+    /// numeric format string (e.g. <c>"S:F2"</c>) forwarded verbatim to each element's own
+    /// <see cref="IFormattable.ToString(string?, IFormatProvider?)"/>. When no numeric format is
+    /// given, elements are formatted with their own default (<see langword="null"/>) format rather
+    /// than being rounded to a culture-dependent number of decimals first: unlike the previous
+    /// behavior, this never silently discards precision the caller did not ask to lose.
+    /// </param>
+    /// <param name="formatProvider">
+    /// Culture or number-format info controlling the row/column separators and forwarded to each
+    /// element's own formatter alongside the numeric format.
+    /// </param>
+    /// <exception cref="FormatException">Thrown when the layout token is not one of the recognized values.</exception>
     public string ToString(string? format, IFormatProvider? formatProvider)
     {
         format ??= "";
+        string layoutToken = format;
+        string? numericFormat = null;
+        int colonIndex = format.IndexOf(':');
+        if (colonIndex >= 0)
+        {
+            layoutToken = format[..colonIndex];
+            numericFormat = format[(colonIndex + 1)..];
+        }
+
         StringBuilder sb = new StringBuilder();
         string componentsSeparator = ", ";
         string lineSeparator = Environment.NewLine;
-        int decimals = 2;
 
         if (formatProvider is CultureInfo culture)
         {
             componentsSeparator = culture.TextInfo.ListSeparator;
-            decimals = culture.NumberFormat.NumberDecimalDigits;
         }
         else if (formatProvider is NumberFormatInfo numberFormat)
         {
             componentsSeparator = numberFormat.CurrencyDecimalSeparator == "," ? ";" : componentsSeparator;
-            decimals = numberFormat.NumberDecimalDigits;
         }
 
-        switch (format.ToUpper())
+        switch (layoutToken.ToUpperInvariant())
         {
+            case "":
+                break;
             case "S":
                 lineSeparator = " ";
                 break;
@@ -488,6 +510,8 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
             case "SC":
                 lineSeparator = " ; ";
                 break;
+            default:
+                throw new FormatException($"Unrecognized matrix layout token '{layoutToken}'. Expected \"\", \"S\", \"C\", or \"SC\", optionally followed by \":<numeric format>\".");
         }
 
         sb.Append("{ ");
@@ -498,7 +522,7 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
             for (int col = 0; col < Columns; col++)
             {
                 if (col > 0) sb.Append(componentsSeparator);
-                sb.Append(T.Round(components[row, col], decimals));
+                sb.Append(components[row, col].ToString(numericFormat, formatProvider));
             }
             sb.Append(" }");
         }
@@ -521,11 +545,18 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
     /// <summary>
     /// Checks if this matrix is equal to another matrix.
     /// </summary>
+    /// <remarks>
+    /// Compares dimensions and elements directly rather than gating on cached hash-code equality
+    /// first. A correct hash implementation guarantees equal values hash equally, so a hash
+    /// precondition here adds no correctness value; it only makes it hazardous to later introduce a
+    /// tolerance-aware equality or hashing policy where two "equal" matrices might legitimately hash
+    /// differently.
+    /// </remarks>
     public bool Equals(Matrix<T>? other)
     {
         if (other is null) return false;
         if (ReferenceEquals(this, other)) return true;
-        return GetHashCode() == other.GetHashCode() && Equals(other.components);
+        return Equals(other.components);
     }
 
     /// <summary>

@@ -21,6 +21,14 @@ public class StatisticsTests
         => Assert.ThrowsException<ArgumentException>(() => Statistics.Mean<double>([]));
 
     [TestMethod]
+    public void Mean_ContainsNaN_Throws()
+        => Assert.ThrowsException<ArgumentException>(() => Statistics.Mean<double>([1, double.NaN, 3]));
+
+    [TestMethod]
+    public void Mean_ContainsInfinity_Throws()
+        => Assert.ThrowsException<ArgumentException>(() => Statistics.Mean<double>([1, double.PositiveInfinity, 3]));
+
+    [TestMethod]
     public void Variance_KnownSample()
     {
         // [2,4,4,4,5,5,7,9]: mean=5, Σ(xᵢ-x̄)²=32 → sample variance = 32/7
@@ -35,6 +43,10 @@ public class StatisticsTests
     [TestMethod]
     public void Variance_SingleElement_Throws()
         => Assert.ThrowsException<ArgumentException>(() => Statistics.Variance<double>([1.0]));
+
+    [TestMethod]
+    public void Variance_ContainsNaN_Throws()
+        => Assert.ThrowsException<ArgumentException>(() => Statistics.Variance<double>([1, double.NaN, 3]));
 
     [TestMethod]
     public void StdDev_IsSquareRootOfVariance()
@@ -58,6 +70,11 @@ public class StatisticsTests
             () => Statistics.Covariance<double>([1, 2, 3], [1, 2]));
 
     [TestMethod]
+    public void Covariance_ContainsNaN_Throws()
+        => Assert.ThrowsException<ArgumentException>(
+            () => Statistics.Covariance<double>([1, double.NaN, 3], [1, 2, 3]));
+
+    [TestMethod]
     public void Correlation_PerfectlyCorrelated_IsOne()
     {
         double[] x = [1, 2, 3, 4, 5];
@@ -72,6 +89,42 @@ public class StatisticsTests
         double[] y = [-1, -2, -3, -4, -5];
         Assert.AreEqual(-1.0, Statistics.Correlation<double>(x, y), Tol);
     }
+
+    [TestMethod]
+    public void Correlation_PartiallyCorrelated_MatchesManualPearsonComputation()
+    {
+        // Regression coverage for the rewrite from three separate passes (Covariance + two StdDev
+        // calls, each re-enumerating and independently recomputing a mean) to a single combined
+        // online pass: verified against a hand-computed Pearson coefficient rather than just the
+        // trivial +/-1 cases, which a broken cross-term could still satisfy by accident.
+        // x=[1,2,3,4,5] (mean 3), y=[2,1,4,3,5] (mean 3)
+        // cov = sum((x-3)(y-3))/(n-1) = (2+2+0+0+4)/4 = 2
+        // varX = sum((x-3)^2)/(n-1) = 10/4 = 2.5 ; varY = sum((y-3)^2)/(n-1) = 10/4 = 2.5
+        // r = 2 / sqrt(2.5*2.5) = 0.8
+        double[] x = [1, 2, 3, 4, 5];
+        double[] y = [2, 1, 4, 3, 5];
+        Assert.AreEqual(0.8, Statistics.Correlation<double>(x, y), Tol);
+    }
+
+    [TestMethod]
+    public void Correlation_DifferentLengths_Throws()
+        => Assert.ThrowsException<ArgumentException>(
+            () => Statistics.Correlation<double>([1, 2, 3], [1, 2]));
+
+    [TestMethod]
+    public void Correlation_FewerThanTwoElements_Throws()
+        => Assert.ThrowsException<ArgumentException>(
+            () => Statistics.Correlation<double>([1], [1]));
+
+    [TestMethod]
+    public void Correlation_ZeroVarianceSequence_Throws()
+        => Assert.ThrowsException<InvalidOperationException>(
+            () => Statistics.Correlation<double>([1, 1, 1], [1, 2, 3]));
+
+    [TestMethod]
+    public void Correlation_ContainsInfinity_Throws()
+        => Assert.ThrowsException<ArgumentException>(
+            () => Statistics.Correlation<double>([1, 2, 3], [1, double.PositiveInfinity, 3]));
 
     [TestMethod]
     public void Median_OddLength_ReturnsMiddle()

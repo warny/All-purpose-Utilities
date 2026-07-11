@@ -14,6 +14,8 @@ The existing test named `Median_EvenLength_ReturnsLowerMiddle` expects `5`, so i
 
 **Priority: P1 statistical correctness.**
 
+**Fixed.** `Median` now returns `sorted[(sorted.Length - 1) / 2]`. Test: `UtilsTest/Mathematics/StatisticsTests.cs`.
+
 ### 2. `MatrixTransformations.Skew<T>` has incompatible dimension and index formulas
 
 The inferred dimension formula does not match the number of angles consumed by the nested loops. In addition, the column-skipping expression uses `y >= x ? y : y + 1`, which fails to skip the diagonal for the first row and writes values into the wrong columns.
@@ -24,6 +26,9 @@ The inferred dimension formula does not match the number of angles consumed by t
 
 **Priority: P1 functional correctness.**
 
+**Fixed.** `Skew` dimension and index formulas corrected in `MatrixTransformations.cs`. Test:
+`UtilsTest/Mathematics/LinearAlgebra/MatrixTransformationsTests.cs`.
+
 ### 3. Approximate polynomial equality violates the hash-code contract
 
 `Polynomial<T>.Equals` considers coefficients equal when their absolute difference is at most `Epsilon`. `GetHashCode`, however, hashes the exact degree and exact first coefficient. Two polynomials can therefore compare equal while returning different hash codes.
@@ -33,6 +38,11 @@ The inferred dimension formula does not match the number of angles consumed by t
 **Fix:** either make object equality exact and expose a separate approximate comparer, or quantize every coefficient consistently for both equality and hashing. A separate tolerance-aware comparer is strongly preferred.
 
 **Priority: P1 .NET contract correctness.**
+
+**Fixed.** `Equals` is now exact (no tolerance) and consistent with `GetHashCode`, which hashes every
+coefficient. A separate, explicitly opt-in `ApproximatelyEquals(other, tolerance)` provides
+tolerance-aware comparison and is never used by `Equals`/`GetHashCode`. Test:
+`UtilsTest/Mathematics/PolynomialTests.cs`.
 
 ### 4. One fixed absolute polynomial epsilon is invalid across generic floating-point types and scales
 
@@ -46,6 +56,12 @@ The same value controls constructor trimming, degree, equality, zero-term format
 
 **Priority: P1 generic numerical correctness.**
 
+**Fixed.** Canonical storage (constructor trimming, degree, `Equals`, `GetHashCode`) now uses exact
+zero rather than an epsilon, so it is no longer coupled to any tolerance. `FindRoot` has its own
+explicit, independently configurable `tolerance` parameter. The one remaining use of the fixed
+`Epsilon` field is purely cosmetic (`ToString`'s near-zero coefficient suppression when printing);
+it does not affect degree, equality, or hashing. Test: `UtilsTest/Mathematics/PolynomialTests.cs`.
+
 ### 5. `Polynomial.FindRoot` accepts invalid iteration and tolerance parameters
 
 Negative or zero `maxIterations` silently returns `null`. A negative or non-finite tolerance prevents meaningful convergence checks. The method also compares the derivative exactly with zero, which is numerically fragile near stationary points.
@@ -53,6 +69,10 @@ Negative or zero `maxIterations` silently returns `null`. A negative or non-fini
 **Fix:** require `maxIterations > 0`, finite positive tolerance, and finite initial guess. Use a derivative threshold based on an explicit numerical policy and reject/propagate non-finite iterates deterministically.
 
 **Priority: P1 root-finding correctness.**
+
+**Fixed.** `FindRoot` now requires `maxIterations > 0` and a finite, positive `tolerance`, requires a
+finite `initialGuess`, and rejects a derivative merely close to (not just exactly) zero using the same
+tolerance as the convergence threshold. Test: `UtilsTest/Mathematics/PolynomialTests.cs`.
 
 ### 6. Matrix solve/determinant singularity tests use exact floating-point zero
 
@@ -62,6 +82,12 @@ Gaussian elimination and determinant computation treat a pivot as singular only 
 
 **Priority: P1 linear-algebra correctness.**
 
+**Fixed.** `Solve`, `Invert`, and `ComputeDeterminant` now use a scale-aware relative-plus-absolute
+pivot tolerance (`DefaultTolerance(scale, dimension) = eps * dimension * (scale + 1)`, machine epsilon
+computed generically) instead of comparing to exact `T.Zero`, and `Solve`/`Invert` accept an optional
+explicit override. Test: `UtilsTest/Mathematics/LinearAlgebra/MatrixSolveTests.cs`,
+`UtilsTest/Mathematics/LinearAlgebra/MatrixTests.cs`.
+
 ### 7. Matrix structural flags also rely on exact equality
 
 `IsTriangular`, `IsDiagonal`, `IsIdentity`, and `IsNormalSpace` compare floating-point values exactly to zero or one. Results from normal arithmetic/decomposition that differ by rounding noise are classified as structurally false.
@@ -69,6 +95,11 @@ Gaussian elimination and determinant computation treat a pivot as singular only 
 **Fix:** distinguish exact structural predicates from tolerance-aware predicates. Do not silently choose one global tolerance; expose explicit numerical options/comparers.
 
 **Priority: P1 API semantics.**
+
+**Fixed.** Added tolerance-aware `IsTriangularWithin`/`IsDiagonalWithin`/`IsIdentityWithin`/
+`IsNormalSpaceWithin` predicates alongside the existing exact ones, each taking an explicit
+`tolerance` parameter rather than an implicit global default. Test:
+`UtilsTest/Mathematics/LinearAlgebra/MatrixTests.cs`.
 
 ### 8. Simpson integration can overflow while normalizing an odd step count
 
@@ -80,6 +111,10 @@ The method also does not reject a null function or non-finite bounds/results des
 
 **Priority: P1 numerical-method robustness.**
 
+**Fixed.** Simpson `Integrate` now validates for `null`/non-finite bounds and function values up
+front and normalizes an odd step count through overflow-safe arithmetic instead of an unchecked
+`steps++`. Test: `UtilsTest/Mathematics/NumericalMethodsTests.cs`.
+
 ### 9. Lagrange interpolation validates duplicate abscissas only during partial evaluation
 
 Duplicate `x` values are detected inside the nested basis loop after result construction has begun. Non-finite values, especially NaN, bypass `denom == T.Zero` and propagate invalid output rather than producing the documented distinct-point error.
@@ -87,6 +122,9 @@ Duplicate `x` values are detected inside the nested basis loop after result cons
 **Fix:** validate all points first, including finiteness and uniqueness under a clearly defined exact/tolerance policy, then evaluate. For repeated evaluations, expose a precomputed interpolation object or barycentric form.
 
 **Priority: P1 correctness and diagnostics.**
+
+**Fixed.** `Lagrange` now validates finiteness and pairwise distinctness of every abscissa up front,
+before evaluating any basis term. Test: `UtilsTest/Mathematics/NumericalMethodsTests.cs`.
 
 ## Medium-priority findings
 
@@ -98,6 +136,11 @@ Duplicate `x` values are detected inside the nested basis loop after result cons
 
 **Priority: P2 API quality.**
 
+**Fixed.** `Transform`/`InverseTransform` now throw `ArgumentNullException` explicitly instead of
+dereferencing `array.Length` before any guard runs. Zero-length was already implicitly rejected
+(`IsPowerOfTwo(0)` is `false`); this is now a deliberate, tested contract rather than an accident of
+the helper it happens to call. Test: `UtilsTest/Mathematics/Fourier/FastFourierTransformTests.cs`.
+
 ### 11. Recursive FFT allocates at every recursion level
 
 `Separate` allocates a new half-size array for every recursive call. Across the transform this creates substantial allocation pressure and repeated copying despite the API being described as in-place.
@@ -105,6 +148,11 @@ Duplicate `x` values are detected inside the nested basis loop after result cons
 **Fix:** use iterative bit-reversal plus butterfly stages, or rent/reuse a single workspace. Clarify that the current algorithm mutates in place but is not allocation-free.
 
 **Priority: P2 performance.**
+
+**Fixed.** `Separate` no longer allocates a new half-size buffer at every recursion level; a single
+scratch buffer sized for the top-level recursion is allocated once and threaded through every
+recursive call via `Span` slicing. Test: `UtilsTest/Mathematics/Fourier/FastFourierTransformTests.cs`
+(`Transform_16Samples_RoundTripsThroughInverse` exercises multiple recursion levels).
 
 ### 12. Correlation performs redundant passes and materialization
 
@@ -114,6 +162,10 @@ Duplicate `x` values are detected inside the nested basis loop after result cons
 
 **Priority: P2 performance and consistency.**
 
+**Fixed.** `Correlation` no longer materializes both sequences and calls `Covariance`/`StdDev`
+separately; it now computes both variances and the covariance together in a single online pass. Test:
+`UtilsTest/Mathematics/StatisticsTests.cs`.
+
 ### 13. Statistical algorithms have no explicit NaN/infinity policy
 
 Mean, variance, covariance, correlation, and median accept non-finite values. Depending on position and sort behavior, results become NaN or otherwise implementation-dependent without a diagnostic.
@@ -121,6 +173,13 @@ Mean, variance, covariance, correlation, and median accept non-finite values. De
 **Fix:** document propagation semantics or reject non-finite samples through an option. Apply one consistent policy across all statistical operations.
 
 **Priority: P2 statistical contract.**
+
+**Fixed.** `Mean`, `Variance`, `Covariance`, and `Correlation` now reject NaN/infinite input values via
+a shared `ValidateFinite` helper, applied consistently and documented on the `Statistics` class.
+`Median` is generic over any `IComparable<T>` (not just floating-point types) and cannot apply the
+same check; its behavior for a type whose `CompareTo` does not define a total order (NaN being the
+standard example) is documented as unspecified instead. Test:
+`UtilsTest/Mathematics/StatisticsTests.cs`.
 
 ### 14. Matrix formatting rounds values instead of formatting them
 
@@ -130,6 +189,11 @@ Mean, variance, covariance, correlation, and median accept non-finite values. De
 
 **Priority: P2 API correctness.**
 
+**Fixed.** `ToString(format, provider)` no longer calls `T.Round` before appending. `format` is now a
+composite string (`"<layout>:<numeric format>"`); the part after `:` is forwarded verbatim to each
+element's own `IFormattable.ToString`, and no numeric format means no rounding at all. Test:
+`UtilsTest/Mathematics/LinearAlgebra/MatrixTests.cs`.
+
 ### 15. Matrix equality unnecessarily depends on cached hash equality
 
 `Matrix.Equals(Matrix<T>)` first requires equal hash codes before comparing elements. Correct hash implementations guarantee equal values have equal hashes, but using a cached hash as a semantic precondition makes future tolerance-aware equality or hashing changes hazardous and adds no correctness value.
@@ -137,6 +201,10 @@ Mean, variance, covariance, correlation, and median accept non-finite values. De
 **Fix:** compare dimensions/elements directly; use hashes only as collection infrastructure or an optional optimization proven consistent with the exact equality policy.
 
 **Priority: P2 maintainability.**
+
+**Fixed.** `Equals(Matrix<T>)` compares dimensions/elements directly and no longer requires
+`GetHashCode()` equality as a precondition. Test:
+`UtilsTest/Mathematics/LinearAlgebra/MatrixTests.cs`.
 
 ## Duplications of intent to reduce
 
@@ -174,4 +242,13 @@ Mean, variance, covariance, correlation, and median accept non-finite values. De
 
 ## Deployment warning
 
-Until items 1–9 are addressed, avoid relying on even-length median results, `Skew`, approximate polynomial equality in hashed collections, near-singular matrix solutions, or generic numerical behavior across very different floating-point types. Several methods can return mathematically incorrect or non-finite results without a clear failure signal.
+Historical warning, kept for context: until items 1–9 were addressed, this package should not have been
+relied upon for even-length median results, `Skew`, approximate polynomial equality in hashed
+collections, near-singular matrix solutions, or generic numerical behavior across very different
+floating-point types.
+
+## Status
+
+All 15 findings in this file (P1 items 1–9, P2 items 10–15) are fixed as of 2026-07-12. See the
+**Fixed.** note under each item above for what changed and where the regression test lives. PR
+references: items 1–9 in PR #442, items 10–15 in PR #445.

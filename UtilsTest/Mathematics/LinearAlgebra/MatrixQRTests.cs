@@ -147,6 +147,35 @@ public class MatrixQRTests
     }
 
     [TestMethod]
+    public void DecomposeQR_IllConditionedColumns_QRemainsOrthogonalToMachinePrecision()
+    {
+        // Classic Trefethen & Bau example demonstrating that (unlike modified Gram-Schmidt, which
+        // loses orthogonality substantially for nearly-parallel columns) Householder reflections
+        // remain accurate to machine precision without needing a re-orthogonalization pass: three
+        // columns that agree in their first row and differ only by a tiny epsilon in three otherwise
+        // orthogonal directions.
+        const double eps = 1e-8;
+        var a = new Matrix<double>(new double[,]
+        {
+            { 1, 1, 1 },
+            { eps, 0, 0 },
+            { 0, eps, 0 },
+            { 0, 0, eps },
+        });
+        var (q, r) = a.DecomposeQR();
+
+        var qtq = q.Transpose() * q;
+        for (int i = 0; i < 3; i++)
+            for (int j = 0; j < 3; j++)
+                Assert.AreEqual(i == j ? 1.0 : 0.0, qtq[i, j], 1e-12, $"Q^T Q [{i},{j}] lost orthogonality");
+
+        var product = q * r;
+        for (int i = 0; i < 4; i++)
+            for (int j = 0; j < 3; j++)
+                Assert.AreEqual(a[i, j], product[i, j], 1e-12, $"QR - A [{i},{j}]");
+    }
+
+    [TestMethod]
     public void DecomposeQR_Half_NonDiagonalScaledMatrix_ProducesValidFactorization()
     {
         // Regression: previous Half-precision coverage for this area only exercised an
