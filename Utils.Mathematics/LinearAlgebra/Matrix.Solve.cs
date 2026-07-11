@@ -13,11 +13,11 @@ public sealed partial class Matrix<T>
     /// </summary>
     /// <param name="b">Right-hand-side vector. Its dimension must equal the number of rows.</param>
     /// <param name="relativeSingularityTolerance">
-    /// Overrides the default relative pivot tolerance (see <see cref="DefaultSingularityRelativeTolerance"/>)
-    /// used to reject a numerically near-singular matrix; the effective absolute threshold is this
-    /// value multiplied by the matrix's largest entry. Pass a smaller value to accept more
-    /// ill-conditioned systems, or a larger value to reject them more aggressively. Must be finite
-    /// and non-negative when supplied.
+    /// Overrides the default relative-plus-absolute pivot tolerance (see <see cref="DefaultTolerance"/>)
+    /// used to reject a numerically near-singular matrix. When supplied, the effective absolute
+    /// threshold is this value multiplied by the matrix's largest entry (no absolute floor is added,
+    /// unlike the default); pass a smaller value to accept more ill-conditioned systems, or a larger
+    /// value to reject them more aggressively. Must be finite and non-negative when supplied.
     /// </param>
     /// <returns>The solution vector <c>x</c>.</returns>
     /// <exception cref="InvalidOperationException">Thrown when the matrix is not square or is singular.</exception>
@@ -37,7 +37,9 @@ public sealed partial class Matrix<T>
         T[] x = new T[n];
         for (int i = 0; i < n; i++) x[i] = b[i];
 
-        T pivotTolerance = MaxAbsoluteEntry(a) * (relativeSingularityTolerance ?? DefaultSingularityRelativeTolerance(n));
+        T pivotTolerance = relativeSingularityTolerance is { } explicitSolveTolerance
+            ? MaxAbsoluteEntry(a) * explicitSolveTolerance
+            : DefaultTolerance(MaxAbsoluteEntry(a), n);
 
         // Forward elimination with partial pivoting
         for (int col = 0; col < n; col++)

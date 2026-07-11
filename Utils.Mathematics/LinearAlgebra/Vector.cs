@@ -26,6 +26,46 @@ public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>, 
     private T? norm;
 
     /// <summary>
+    /// Smallest positive value such that <c>1 + MachineEpsilon != 1</c> for <typeparamref name="T"/>,
+    /// used to derive scale-aware default tolerances (see <see cref="DefaultNormTolerance"/>).
+    /// </summary>
+    private static readonly T MachineEpsilon = NumericPrecision.MachineEpsilon<T>();
+
+    /// <summary>
+    /// Validates that a caller-supplied tolerance is usable (finite and non-negative).
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="tolerance"/> is not finite or is negative.</exception>
+    private static void ValidateTolerance(T tolerance, string parameterName)
+    {
+        if (!T.IsFinite(tolerance) || tolerance < T.Zero)
+            throw new ArgumentOutOfRangeException(parameterName, tolerance, "Tolerance must be finite and non-negative.");
+    }
+
+    /// <summary>
+    /// Returns the largest absolute value among a component array, used as the scale reference for
+    /// <see cref="DefaultNormTolerance"/>.
+    /// </summary>
+    private static T MaxAbsoluteComponent(T[] components)
+    {
+        T max = T.Zero;
+        for (int i = 0; i < components.Length; i++)
+            max = T.Max(max, T.Abs(components[i]));
+        return max;
+    }
+
+    /// <summary>
+    /// Default relative-plus-absolute tolerance below which a norm or homogeneous coordinate is
+    /// treated as numerically zero, when the caller does not supply an explicit override. The
+    /// relative component (<see cref="MachineEpsilon"/> scaled by dimension and the components'
+    /// magnitude) rejects negligible-but-nonzero values proportionally to the vector's own scale; the
+    /// "+ 1" absolute floor keeps the tolerance non-zero even when every component is already close
+    /// to zero, so a vector like <c>(1e-300, 1e-300, 1e-300)</c> is still correctly rejected instead
+    /// of producing a technically-nonzero-but-meaningless normalized result.
+    /// </summary>
+    private static T DefaultNormTolerance(T[] components)
+        => MachineEpsilon * T.CreateChecked(components.Length) * (MaxAbsoluteComponent(components) + T.One);
+
+    /// <summary>
     /// Initializes a vector with the given dimension.
     /// </summary>
     /// <param name="dimensions">Number of dimensions.</param>
@@ -88,8 +128,28 @@ public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>, 
     /// <summary>
     /// Returns a normalized version of the vector.
     /// </summary>
+    /// <param name="tolerance">
+    /// Overrides the default relative-plus-absolute tolerance (see <see cref="DefaultNormTolerance"/>)
+    /// below which the norm is treated as zero. Pass <c>T.Zero</c> to reject only an exactly-zero
+    /// norm. Must be finite and non-negative when supplied.
+    /// </param>
     /// <returns>The normalized vector.</returns>
-    public Vector<T> Normalize() => this / Norm;
+    /// <exception cref="InvalidOperationException">Thrown when the vector's norm is zero or, absent an
+    /// explicit <paramref name="tolerance"/>, numerically negligible relative to its components'
+    /// magnitude (e.g. a component like <c>1e-300</c> that underflows to zero once squared, which
+    /// would otherwise silently normalize to a wildly disproportionate result).</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="tolerance"/> is supplied but not finite or is negative.</exception>
+    public Vector<T> Normalize(T? tolerance = null)
+    {
+        if (tolerance is { } explicitTolerance)
+            ValidateTolerance(explicitTolerance, nameof(tolerance));
+
+        T norm = Norm;
+        T effectiveTolerance = tolerance ?? DefaultNormTolerance(components);
+        if (norm <= effectiveTolerance)
+            throw new InvalidOperationException("Cannot normalize a vector whose norm is zero or numerically negligible.");
+        return this / norm;
+    }
 
     /// <inheritdoc/>
     public override bool Equals(object? obj) => obj switch
@@ -144,13 +204,34 @@ public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>, 
     /// <summary>
     /// Converts a vector usable in normal space to a vector usable in Cartesian space.
     /// </summary>
+    /// <param name="tolerance">
+    /// Overrides the default relative-plus-absolute tolerance (see <see cref="DefaultNormTolerance"/>)
+    /// below which the homogeneous coordinate is treated as zero. Pass <c>T.Zero</c> to reject only
+    /// an exactly-zero coordinate. Must be finite and non-negative when supplied.
+    /// </param>
     /// <returns>The converted vector for Cartesian space.</returns>
-    public Vector<T> FromNormalSpace()
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the homogeneous coordinate (last component) is zero or, absent an explicit
+    /// <paramref name="tolerance"/>, numerically negligible relative to the vector's components
+    /// (e.g. <c>w = 1e-300</c>, which would otherwise silently divide the other components up to an
+    /// astronomically large, meaningless magnitude instead of being recognized as a direction at
+    /// infinity). A near-zero homogeneous coordinate represents a direction at infinity, not a point,
+    /// and has no meaningful Cartesian equivalent.
+    /// </exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="tolerance"/> is supplied but not finite or is negative.</exception>
+    public Vector<T> FromNormalSpace(T? tolerance = null)
     {
+        if (tolerance is { } explicitTolerance)
+            ValidateTolerance(explicitTolerance, nameof(tolerance));
+
         var temp = this;
-        if (temp[temp.Dimension - 1] != T.One)
+        T w = temp[temp.Dimension - 1];
+        T effectiveTolerance = tolerance ?? DefaultNormTolerance(temp.components);
+        if (T.Abs(w) <= effectiveTolerance)
+            throw new InvalidOperationException("Cannot convert a homogeneous direction (zero or numerically negligible homogeneous coordinate) to a Cartesian point.");
+        if (w != T.One)
         {
-            temp /= temp[temp.Dimension - 1];
+            temp /= w;
         }
         Vector<T> result = new(Dimension - 1);
         Array.Copy(temp.components, result.components, Dimension - 1);

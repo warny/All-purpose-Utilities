@@ -21,41 +21,50 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
 
     /// <summary>
     /// The type's machine epsilon: the smallest positive value such that <c>1 + eps != 1</c> in
-    /// <typeparamref name="T"/>'s own arithmetic. Computed generically by successive halving rather
-    /// than a hard-coded literal such as <c>1e-10</c>, which is meaningless (and, for low-precision
-    /// types such as <see cref="Half"/>, would silently underflow to zero) across arbitrary
+    /// <typeparamref name="T"/>'s own arithmetic. Computed generically rather than a hard-coded
+    /// literal such as <c>1e-10</c>, which is meaningless (and, for low-precision types such as
+    /// <see cref="Half"/>, would silently underflow to zero) across arbitrary
     /// <see cref="IFloatingPoint{TSelf}"/> types with wildly different precision.
     /// </summary>
-    private static readonly T MachineEpsilon = ComputeMachineEpsilon();
-
-    private static T ComputeMachineEpsilon()
-    {
-        T two = T.One + T.One;
-        T eps = T.One;
-        while (T.One + eps / two != T.One)
-            eps /= two;
-        return eps;
-    }
+    private static readonly T MachineEpsilon = NumericPrecision.MachineEpsilon<T>();
 
     /// <summary>
-    /// Computes the default relative pivot tolerance for an <paramref name="dimension"/>-by-
-    /// <paramref name="dimension"/> elimination used by <see cref="Solve"/>, <see cref="Invert"/>,
-    /// and <see cref="Determinant"/> to reject a numerically near-singular matrix (magnitude
-    /// relative to the matrix's largest entry) instead of dividing by a pivot that is merely close
-    /// to zero, which would silently amplify rounding error into a huge, infinite, or NaN result
-    /// while still returning an apparently valid answer.
+    /// Computes a default relative-plus-absolute tolerance for an operation over a problem of the
+    /// given <paramref name="dimension"/> whose values have a maximum magnitude of
+    /// <paramref name="scale"/>. Used as the shared default for the pivot/rank tolerance in
+    /// <see cref="Solve"/>/<see cref="Invert"/>/<see cref="Determinant"/>, <see cref="DecomposeQR"/>'s
+    /// rank-deficiency threshold, <see cref="IsSymmetric()"/>'s comparison tolerance, and
+    /// <see cref="ComputeEigenvalues"/>'s convergence threshold - each of those members also accepts
+    /// its own explicit override for callers who need a different threshold for that specific concern.
     /// </summary>
     /// <remarks>
-    /// Scaled by <paramref name="dimension"/> rather than a flat constant, following the common
-    /// numerical-linear-algebra convention that accumulated round-off across elimination grows
-    /// roughly with problem size (e.g. LAPACK-style rank/near-singularity heuristics use
-    /// <c>n * eps</c> rather than a size-independent multiplier). A flat multiplier large enough to
-    /// be meaningful for bigger systems (an earlier version of this method used a fixed 100x) is far
-    /// too loose for small matrices of a low-precision type: for a 2x2 <see cref="Half"/> matrix, a
-    /// flat 100x its machine epsilon is already about 10% of the matrix's magnitude, misclassifying
-    /// ordinary invertible matrices (e.g. a diagonal with a 20:1 ratio between entries) as singular.
+    /// <para>
+    /// The relative term (<c>scale * dimension * eps</c>) follows the common numerical-linear-algebra
+    /// convention that accumulated round-off grows roughly with problem size (e.g. LAPACK-style
+    /// rank/near-singularity heuristics use <c>n * eps</c>). A flat multiplier large enough to be
+    /// meaningful for bigger systems (an earlier version of this method used a fixed 100x with no
+    /// dimension scaling) is far too loose for small matrices of a low-precision type: for a 2x2
+    /// <see cref="Half"/> matrix, a flat 100x its machine epsilon is already about 10% of the
+    /// matrix's magnitude, misclassifying ordinary invertible matrices as singular.
+    /// </para>
+    /// <para>
+    /// The additive <c>+ 1</c> is a fixed absolute floor: without it, an all-zero or near-zero-scale
+    /// matrix would compute a tolerance of exactly (or near) zero, collapsing the check back to exact
+    /// equality precisely for the inputs where that is least appropriate.
+    /// </para>
+    /// <para>
+    /// <b>Known limitation:</b> this uses a single scalar <paramref name="scale"/> (typically the
+    /// largest entry across the whole matrix) for the entire problem. For a matrix whose entries span
+    /// very different magnitudes (e.g. one huge diagonal entry alongside a small but numerically
+    /// significant off-diagonal block), a single global scale can make the effective tolerance too
+    /// loose for the smaller sub-problem, potentially treating it as already converged, singular, or
+    /// symmetric relative to the whole matrix's scale when it is not relative to its own. Properly
+    /// addressing that requires per-row/column equilibration or block-aware scaling, which this
+    /// method does not attempt.
+    /// </para>
     /// </remarks>
-    private static T DefaultSingularityRelativeTolerance(int dimension) => MachineEpsilon * T.CreateChecked(dimension);
+    private static T DefaultTolerance(T scale, int dimension)
+        => MachineEpsilon * T.CreateChecked(dimension) * (scale + T.One);
 
     /// <summary>
     /// Validates that a caller-supplied tolerance is usable as a comparison threshold: finite and
@@ -380,7 +389,7 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
         // Elimination divides by the pivot below, so a pivot that is merely close to zero (not
         // exactly zero) would otherwise amplify rounding error into a huge/infinite/NaN result
         // instead of the mathematically expected near-zero determinant of a near-singular matrix.
-        T pivotTolerance = MaxAbsoluteEntry(u) * DefaultSingularityRelativeTolerance(n);
+        T pivotTolerance = DefaultTolerance(MaxAbsoluteEntry(u), n);
 
         for (int k = 0; k < n; k++)
         {

@@ -54,10 +54,19 @@ public sealed partial class Matrix<T>
     /// <summary>
     /// Initializes a matrix from a jagged array.
     /// </summary>
-    /// <param name="array">Jagged array containing the matrix values.</param>
+    /// <param name="array">Jagged array containing the matrix values. Must be non-empty, with no null rows.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="array"/> has no rows, or contains a null row.</exception>
     public Matrix(T[][] array)
     {
         array.Arg().MustNotBeNull();
+        if (array.Length == 0)
+            throw new ArgumentException("At least one row is required.", nameof(array));
+        for (int i = 0; i < array.Length; i++)
+        {
+            if (array[i] is null)
+                throw new ArgumentException($"Row {i} is null.", nameof(array));
+        }
+
         int maxYLength = array.Select(a => a.Length).Max();
         components = new T[array.Length, maxYLength];
 
@@ -77,11 +86,20 @@ public sealed partial class Matrix<T>
     /// <summary>
     /// Initializes a matrix from column vectors.
     /// </summary>
-    /// <param name="vectors">Column vectors.</param>
-    /// <exception cref="ArgumentException">Thrown when vectors do not share the same dimension.</exception>
+    /// <param name="vectors">Column vectors. At least one is required, and none may be null.</param>
+    /// <exception cref="ArgumentException">
+    /// Thrown when no vectors are provided, a vector is null, or vectors do not share the same dimension.
+    /// </exception>
     public Matrix(params Vector<T>[] vectors)
     {
         vectors.Arg().MustNotBeNull();
+        if (vectors.Length == 0)
+            throw new ArgumentException("At least one vector is required.", nameof(vectors));
+        for (int i = 0; i < vectors.Length; i++)
+        {
+            if (vectors[i] is null)
+                throw new ArgumentException($"Vector {i} is null.", nameof(vectors));
+        }
         if (vectors.Any(v => v.Dimension != vectors[0].Dimension))
             throw new ArgumentException("All vectors must have the same dimension", nameof(vectors));
         components = new T[vectors[0].Dimension, vectors.Length];

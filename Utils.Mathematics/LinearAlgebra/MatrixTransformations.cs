@@ -34,34 +34,18 @@ public static class MatrixTransformations
     /// <typeparam name="T">Numeric type of the matrix.</typeparam>
     /// <param name="values">Diagonal values.</param>
     /// <returns>New diagonal matrix.</returns>
+    /// <remarks>
+    /// Delegates to <see cref="Matrix{T}.Diagonal(IEnumerable{T})"/>, which is the single
+    /// implementation of diagonal-matrix construction: an earlier, independent implementation here
+    /// cached <c>isTriangular</c>/<c>isDiagonal</c> as <see langword="false"/> whenever any diagonal
+    /// value was zero, even though a matrix with zero diagonal entries is still diagonal and
+    /// triangular by definition (only its invertibility/determinant changes). Two independently
+    /// maintained factories for the same construction had already drifted into different, incorrect
+    /// behavior; keeping one implementation avoids a repeat.
+    /// </remarks>
     public static Matrix<T> Diagonal<T>(params IEnumerable<T> values)
         where T : struct, IFloatingPoint<T>, IRootFunctions<T>
-    {
-        T[] valuesArray = values.ToArray();
-        int dimension = valuesArray.Length;
-        var array = new T[dimension, dimension];
-        bool allOne = true;
-        bool oneZero = false;
-        T newDeterminant = T.One;
-        for (int i = 0; i < dimension; i++)
-        {
-            if (valuesArray[i] == T.Zero)
-            {
-                oneZero = true;
-                allOne = false;
-            }
-            else if (valuesArray[i] != T.One)
-            {
-                allOne = false;
-            }
-            for (int j = 0; j < dimension; j++)
-            {
-                array[i, j] = i == j ? valuesArray[i] : T.Zero;
-            }
-            newDeterminant *= valuesArray[i];
-        }
-        return new Matrix<T>(array, allOne, !oneZero, !oneZero, newDeterminant);
-    }
+        => Matrix<T>.Diagonal(values);
 
     /// <summary>
     /// Generates a scaling matrix.
@@ -227,19 +211,35 @@ public static class MatrixTransformations
     }
 
     /// <summary>
-    /// Generates a transformation matrix.
+    /// Generates a general affine transformation matrix.
     /// </summary>
     /// <typeparam name="T">Numeric type of the matrix.</typeparam>
-    /// <param name="values">Transformation coefficients.</param>
-    /// <returns>New transformation matrix.</returns>
+    /// <param name="values">
+    /// Coefficients for the upper <c>d × (d+1)</c> affine block, in row-major order: for each of the
+    /// <c>d</c> base-dimension rows, <c>d</c> linear coefficients followed by that row's translation
+    /// coefficient (last column). The base dimension <c>d</c> is inferred from the count:
+    /// <c>d * (d + 1)</c> values are required. For example, a 2D transform needs 6 values
+    /// <c>[a, b, tx, c, d, ty]</c>, producing the matrix rows <c>[a, b, tx]</c>, <c>[c, d, ty]</c>.
+    /// </param>
+    /// <returns>
+    /// A new <c>(d+1) × (d+1)</c> homogeneous transformation matrix: the supplied coefficients fill
+    /// the upper affine block, and the final row is left as the homogeneous row <c>[0, …, 0, 1]</c>,
+    /// consistent with this library's matrix-times-column-vector multiplication convention (the
+    /// same convention <see cref="Translation{T}(IEnumerable{T})"/> uses for its translation column).
+    /// </returns>
+    /// <exception cref="ArgumentException">Thrown when the value count does not match <c>d * (d + 1)</c> for any integer <c>d</c>.</exception>
     public static Matrix<T> Transform<T>(params IEnumerable<T> values)
         where T : struct, IFloatingPoint<T>, IRootFunctions<T>
     {
         T[] valuesArray = values.ToArray();
-        var dimension = (Math.Sqrt(4 * valuesArray.Length + 1) + 1) / 2;
-        if (dimension != Math.Floor(dimension))
-            throw new ArgumentException("Invalid dimension for transformation matrix", nameof(values));
-        int matrixDimension = (int)dimension;
+        // Solve n = d * (d + 1) for the base dimension d, then verify with exact integer
+        // arithmetic (the closed-form root is only used to pick a candidate).
+        double baseDimensionEstimate = (Math.Sqrt(4 * valuesArray.Length + 1) - 1) / 2;
+        int baseDimension = (int)Math.Round(baseDimensionEstimate);
+        if (baseDimension <= 0 || baseDimension * (baseDimension + 1) != valuesArray.Length)
+            throw new ArgumentException("Invalid coefficient count for transformation matrix", nameof(values));
+
+        int matrixDimension = baseDimension + 1;
         var array = new T[matrixDimension, matrixDimension];
 
         for (int row = 0; row < matrixDimension; row++)
@@ -250,12 +250,14 @@ public static class MatrixTransformations
             }
         }
 
+        // Populate the upper d x (d+1) affine block; the final row is left untouched (homogeneous
+        // [0, ..., 0, 1]) rather than overwritten with supplied coefficients.
         int index = 0;
-        for (int x = 0; x < matrixDimension; x++)
+        for (int row = 0; row < baseDimension; row++)
         {
-            for (int y = 0; y < matrixDimension - 1; y++)
+            for (int col = 0; col < matrixDimension; col++)
             {
-                array[x, y] = valuesArray[index];
+                array[row, col] = valuesArray[index];
                 index++;
             }
         }

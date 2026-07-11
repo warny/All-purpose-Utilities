@@ -385,6 +385,40 @@ namespace UtilsTest.Mathematics.LinearAlgebra
             Assert.AreEqual(6d, col[1], 1e-12);
         }
 
+        // ── Empty/null input validation (jagged array and vector constructors) ─────
+
+        [TestMethod]
+        public void JaggedArrayConstructor_EmptyArray_ThrowsClearArgumentException()
+        {
+            // Regression: previously threw an incidental InvalidOperationException from
+            // Enumerable.Max() on an empty sequence instead of a clear, documented rejection.
+            Assert.ThrowsException<ArgumentException>(() => new Matrix<double>(System.Array.Empty<double[]>()));
+        }
+
+        [TestMethod]
+        public void JaggedArrayConstructor_NullRow_ThrowsClearArgumentException()
+        {
+            // Regression: previously threw an incidental NullReferenceException when computing the
+            // null row's length.
+            Assert.ThrowsException<ArgumentException>(() => new Matrix<double>(new double[][] { new[] { 1d, 2d }, null! }));
+        }
+
+        [TestMethod]
+        public void VectorConstructor_NoVectors_ThrowsClearArgumentException()
+        {
+            // Regression: previously threw an incidental IndexOutOfRangeException from accessing
+            // vectors[0] unconditionally.
+            Assert.ThrowsException<ArgumentException>(() => new Matrix<double>(System.Array.Empty<Vector<double>>()));
+        }
+
+        [TestMethod]
+        public void VectorConstructor_NullVector_ThrowsClearArgumentException()
+        {
+            // Regression: previously threw an incidental NullReferenceException when reading the
+            // null vector's Dimension.
+            Assert.ThrowsException<ArgumentException>(() => new Matrix<double>(new Vector<double>(1d, 2d), null!));
+        }
+
         /// <summary>
         /// Asserts that two matrices contain the same components within the provided tolerance.
         /// </summary>
