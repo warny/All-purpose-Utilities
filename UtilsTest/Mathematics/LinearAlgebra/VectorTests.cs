@@ -101,6 +101,34 @@ public class VectorTests
     }
 
     [TestMethod]
+    public void Normalize_NearZeroButNonzeroNorm_ThrowsByDefault()
+    {
+        // Regression: an earlier fix only rejected an exactly-zero norm. A vector whose norm is
+        // technically nonzero but negligible relative to its own components' scale (e.g. every
+        // component around 1e-150) must be rejected too, rather than producing a "normalized" result
+        // that is only an artifact of floating-point noise.
+        var vector = new Vector<double>(1e-150, 1e-150, 1e-150);
+        Assert.ThrowsException<InvalidOperationException>(() => vector.Normalize());
+    }
+
+    [TestMethod]
+    public void Normalize_ExplicitZeroTolerance_AcceptsNearZeroButNonzeroNorm()
+    {
+        // The explicit tolerance override lets a caller opt back into the old exact-zero-only check.
+        var vector = new Vector<double>(1e-150, 1e-150, 1e-150);
+        Vector<double> normalized = vector.Normalize(tolerance: 0d);
+        Assert.AreEqual(1d, normalized.Norm, 1e-9);
+    }
+
+    [TestMethod]
+    public void Normalize_InvalidTolerance_Throws()
+    {
+        var vector = new Vector<double>(1d, 0d, 0d);
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => vector.Normalize(tolerance: double.NaN));
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => vector.Normalize(tolerance: -1d));
+    }
+
+    [TestMethod]
     public void Zero_ReturnsAllZeroComponents()
     {
         var v = Vector<double>.Zero(3);
@@ -205,6 +233,34 @@ public class VectorTests
         // NaN/infinity components instead of signaling that no Cartesian equivalent exists.
         var h = new Vector<double>(1d, 2d, 3d, 0d);
         Assert.ThrowsException<InvalidOperationException>(() => h.FromNormalSpace());
+    }
+
+    [TestMethod]
+    public void FromNormalSpace_NearZeroButNonzeroHomogeneousCoordinate_ThrowsByDefault()
+    {
+        // Regression: an earlier fix only rejected an exactly-zero homogeneous coordinate. A
+        // technically-nonzero-but-negligible w (e.g. 1e-300) still produced coordinates of an
+        // astronomically large, meaningless magnitude instead of being recognized as a direction at
+        // infinity.
+        var h = new Vector<double>(1d, 2d, 3d, 1e-300);
+        Assert.ThrowsException<InvalidOperationException>(() => h.FromNormalSpace());
+    }
+
+    [TestMethod]
+    public void FromNormalSpace_ExplicitZeroTolerance_AcceptsNearZeroButNonzeroCoordinate()
+    {
+        // The explicit tolerance override lets a caller opt back into the old exact-zero-only check.
+        var h = new Vector<double>(1d, 2d, 3d, 1e-300);
+        Vector<double> v = h.FromNormalSpace(tolerance: 0d);
+        Assert.AreEqual(3, v.Dimension);
+    }
+
+    [TestMethod]
+    public void FromNormalSpace_InvalidTolerance_Throws()
+    {
+        var h = new Vector<double>(1d, 2d, 3d, 1d);
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => h.FromNormalSpace(tolerance: double.NaN));
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => h.FromNormalSpace(tolerance: -1d));
     }
 
     // ── ProjectOnto ───────────────────────────────────────────────────────
