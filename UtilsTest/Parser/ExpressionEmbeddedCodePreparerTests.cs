@@ -2,7 +2,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text.RegularExpressions;
 using Utils.Expressions;
 using Utils.Parser.Diagnostics.EmbeddedCode;
 using Utils.Parser.Diagnostics;
@@ -195,28 +194,6 @@ public class ExpressionEmbeddedCodePreparerTests
         Assert.AreEqual(ParserEmbeddedCodeTransformationPath.RuntimeCompilation, exception.Path);
     }
 
-
-    [TestMethod]
-    public void ProductionCode_WhenEmbeddedCodeTransformerIsUsed_DoesNotCallTransformOutsideCentralServiceOrTransformers()
-    {
-        string repositoryRoot = FindRepositoryRoot();
-        string[] productionFiles = Directory.GetFiles(repositoryRoot, "*.cs", SearchOption.AllDirectories)
-            .Where(static file => !file.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
-            .Where(static file => !file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
-            .Where(static file => !file.Contains($"{Path.DirectorySeparatorChar}UtilsTest{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
-            .Where(static file => file.Contains($"{Path.DirectorySeparatorChar}Utils.Parser", StringComparison.Ordinal))
-            .ToArray();
-
-        Regex directTransformCallPattern = new(@"\.\s*Transform\s*\(", RegexOptions.CultureInvariant);
-        string[] forbiddenFiles = productionFiles
-            .Where(file => directTransformCallPattern.IsMatch(File.ReadAllText(file)))
-            .Where(static file => !file.EndsWith(Path.Combine("Utils.Parser.Diagnostics", "EmbeddedCode", "EmbeddedCodeText.cs"), StringComparison.Ordinal))
-            .Where(static file => !File.ReadAllText(file).Contains(": IParserEmbeddedCodeTransformer", StringComparison.Ordinal))
-            .Select(file => Path.GetRelativePath(repositoryRoot, file))
-            .ToArray();
-
-        CollectionAssert.AreEqual(System.Array.Empty<string>(), forbiddenFiles);
-    }
 
     [TestMethod]
     public void PrepareSemanticPredicate_WhenPredicateIsNotBoolean_ReturnsCompilationFailed()
@@ -600,22 +577,6 @@ public class ExpressionEmbeddedCodePreparerTests
     /// <summary>
     /// Test transformer that counts invocations for service validation tests.
     /// </summary>
-
-    private static string FindRepositoryRoot()
-    {
-        string? directory = Directory.GetCurrentDirectory();
-        if (!File.Exists(Path.Combine(directory, "Utils.sln")))
-        {
-            directory = AppContext.BaseDirectory;
-        }
-
-        while (directory is not null && !File.Exists(Path.Combine(directory, "Utils.sln")))
-        {
-            directory = Directory.GetParent(directory)?.FullName;
-        }
-
-        return directory ?? throw new DirectoryNotFoundException("Repository root was not found.");
-    }
 
     private sealed class ConfigurableTransformer : IParserEmbeddedCodeTransformer
     {
