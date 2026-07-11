@@ -232,10 +232,18 @@ namespace Utils.Randomization
         }
 
         /// <summary>
-        /// Generates a random <see cref="float"/> value from random bytes.
+        /// Generates a random <see cref="float"/> value by reinterpreting raw random bytes, consistent
+        /// with <see cref="RandomByte"/>/<see cref="RandomShort"/>/<see cref="RandomInt"/>/<see cref="RandomLong"/>,
+        /// which likewise fill the full bit pattern of their return type rather than a normalized range.
         /// </summary>
         /// <param name="r">The random generator.</param>
-        /// <returns>A random single-precision floating-point value.</returns>
+        /// <returns>
+        /// A random single-precision floating-point value spanning the full <see cref="float"/> bit
+        /// pattern space. Unlike <see cref="Random.NextSingle"/>, this can return <see cref="float.NaN"/>,
+        /// <see cref="float.PositiveInfinity"/>, <see cref="float.NegativeInfinity"/>, subnormal values,
+        /// and values outside <c>[0, 1)</c>. Useful for binary fuzzing/round-trip testing; use
+        /// <see cref="Random.NextSingle"/> when a finite value in <c>[0, 1)</c> is required instead.
+        /// </returns>
         public static float RandomFloat(this Random r)
         {
             byte[] result = new byte[sizeof(float)];
@@ -244,10 +252,18 @@ namespace Utils.Randomization
         }
 
         /// <summary>
-        /// Generates a random <see cref="double"/> value from random bytes.
+        /// Generates a random <see cref="double"/> value by reinterpreting raw random bytes, consistent
+        /// with <see cref="RandomByte"/>/<see cref="RandomShort"/>/<see cref="RandomInt"/>/<see cref="RandomLong"/>,
+        /// which likewise fill the full bit pattern of their return type rather than a normalized range.
         /// </summary>
         /// <param name="r">The random generator.</param>
-        /// <returns>A random double-precision floating-point value.</returns>
+        /// <returns>
+        /// A random double-precision floating-point value spanning the full <see cref="double"/> bit
+        /// pattern space. Unlike <see cref="Random.NextDouble"/>, this can return <see cref="double.NaN"/>,
+        /// <see cref="double.PositiveInfinity"/>, <see cref="double.NegativeInfinity"/>, subnormal values,
+        /// and values outside <c>[0, 1)</c>. Useful for binary fuzzing/round-trip testing; use
+        /// <see cref="Random.NextDouble"/> when a finite value in <c>[0, 1)</c> is required instead.
+        /// </returns>
         public static double RandomDouble(this Random r)
         {
             byte[] result = new byte[sizeof(double)];
