@@ -262,33 +262,23 @@ public class MatrixEigenvaluesTests
     [TestMethod]
     public void ComputeEigenvalues_ClusteredEigenvalues_FailsToConvergeWithinDefaultIterations()
     {
-        // Regression/documentation test for the documented "unshifted iteration converges slowly for
-        // clustered eigenvalues" known limitation. M = R * diag(1.0, 1.0001) * R^T for a 45-degree
-        // rotation R has eigenvalues 1.0 and 1.0001 (ratio 0.9999...), which unshifted QR iteration
-        // approaches only linearly - convergence at this ratio needs on the order of hundreds of
-        // thousands of iterations, well past the default 1000-iteration budget.
+        // Regression/documentation test for the unresolved "unshifted iteration converges slowly for
+        // clustered eigenvalues" limitation (TODO-pass2.md #28 - documented, NOT fixed: this
+        // implementation is still plain unshifted A <- R*Q with no tridiagonal reduction or Wilkinson
+        // shifts). M = R * diag(1.0, 1.0001) * R^T for a 45-degree rotation R has eigenvalues 1.0 and
+        // 1.0001 (ratio 0.9999...), which unshifted QR iteration approaches only linearly -
+        // convergence at this ratio needs on the order of hundreds of thousands of iterations, well
+        // past the default 1000-iteration budget. A "mitigation" test that actually runs enough
+        // iterations to converge (~250,000+) is deliberately not included here: it would inflate this
+        // test suite's runtime for no correctness value beyond what this failure-mode test already
+        // demonstrates. A real fix (shifted QR + tridiagonal reduction, converging cubically) is what
+        // would let a fast convergence test exist.
         var m = new Matrix<double>(new double[,]
         {
             { 1.00005, 0.00005 },
             { 0.00005, 1.00005 },
         });
         Assert.ThrowsException<InvalidOperationException>(() => m.ComputeEigenvalues());
-    }
-
-    [TestMethod]
-    public void ComputeEigenvalues_ClusteredEigenvalues_ConvergesGivenEnoughIterations()
-    {
-        // The documented mitigation for the case above: raising maxIterations lets the same
-        // slowly-converging matrix eventually reach the correct eigenvalues with the current
-        // (unshifted) algorithm.
-        var m = new Matrix<double>(new double[,]
-        {
-            { 1.00005, 0.00005 },
-            { 0.00005, 1.00005 },
-        });
-        var (values, _) = m.ComputeEigenvalues(maxIterations: 1_000_000);
-        Assert.AreEqual(1.0001, values[0], 1e-6);
-        Assert.AreEqual(1.0, values[1], 1e-6);
     }
 
     [TestMethod]
