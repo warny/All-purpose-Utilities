@@ -75,16 +75,36 @@ public static class NumericalMethods
     /// Runge's phenomenon near the boundaries.
     /// </remarks>
     /// <typeparam name="T">Floating-point scalar type.</typeparam>
-    /// <param name="points">Sequence of (x, y) data points. All x values must be distinct.</param>
-    /// <param name="at">The point at which to evaluate the interpolating polynomial.</param>
+    /// <param name="points">Sequence of (x, y) data points. All x values must be distinct and every coordinate finite.</param>
+    /// <param name="at">The point at which to evaluate the interpolating polynomial. Must be finite.</param>
     /// <returns>The interpolated value at <paramref name="at"/>.</returns>
-    /// <exception cref="ArgumentException">Thrown when no points are provided or x values are not distinct.</exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when no points are provided, a coordinate is not finite, or x values are not distinct.
+    /// </exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="at"/> is not finite.</exception>
     public static T Lagrange<T>(IEnumerable<(T x, T y)> points, T at)
         where T : struct, IFloatingPoint<T>
     {
         (T x, T y)[] pts = points.ToArray();
         if (pts.Length == 0)
             throw new ArgumentException("At least one data point is required.", nameof(points));
+        if (!T.IsFinite(at))
+            throw new ArgumentOutOfRangeException(nameof(at), at, "Must be finite.");
+
+        // Validate every point - including finiteness and pairwise distinctness of x - before
+        // evaluating anything. A NaN x value bypasses an equality-based distinctness check (NaN is
+        // never equal to anything, including another NaN), so finiteness must be checked
+        // separately rather than relying on the distinctness comparison alone.
+        for (int i = 0; i < pts.Length; i++)
+        {
+            if (!T.IsFinite(pts[i].x) || !T.IsFinite(pts[i].y))
+                throw new ArgumentException("All data point coordinates must be finite.", nameof(points));
+            for (int j = i + 1; j < pts.Length; j++)
+            {
+                if (pts[i].x == pts[j].x)
+                    throw new ArgumentException("All x values must be distinct.", nameof(points));
+            }
+        }
 
         T result = T.Zero;
         for (int i = 0; i < pts.Length; i++)
@@ -93,10 +113,7 @@ public static class NumericalMethods
             for (int j = 0; j < pts.Length; j++)
             {
                 if (j == i) continue;
-                T denom = pts[i].x - pts[j].x;
-                if (denom == T.Zero)
-                    throw new ArgumentException("All x values must be distinct.", nameof(points));
-                basis *= (at - pts[j].x) / denom;
+                basis *= (at - pts[j].x) / (pts[i].x - pts[j].x);
             }
             result += pts[i].y * basis;
         }

@@ -117,4 +117,34 @@ public class NumericalMethodsTests
     public void Lagrange_DuplicateX_Throws()
         => Assert.ThrowsException<ArgumentException>(
             () => NumericalMethods.Lagrange<double>([(0, 0), (0, 1)], 0.5));
+
+    [TestMethod]
+    public void Lagrange_NaNAbscissa_Throws()
+    {
+        // Regression: a NaN x value bypassed the old denom == T.Zero distinctness check (NaN is
+        // never equal to anything) and propagated NaN through the whole result instead of
+        // producing the documented distinct-point error.
+        Assert.ThrowsException<ArgumentException>(
+            () => NumericalMethods.Lagrange<double>([(0, 0), (double.NaN, 1)], 0.5));
+    }
+
+    [TestMethod]
+    public void Lagrange_InfiniteCoordinate_Throws()
+        => Assert.ThrowsException<ArgumentException>(
+            () => NumericalMethods.Lagrange<double>([(0, 0), (double.PositiveInfinity, 1)], 0.5));
+
+    [TestMethod]
+    public void Lagrange_NonFiniteEvaluationPoint_Throws()
+        => Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => NumericalMethods.Lagrange<double>([(0, 0), (1, 1)], double.NaN));
+
+    [TestMethod]
+    public void Lagrange_DuplicateXNotAdjacent_ThrowsBeforeEvaluating()
+    {
+        // The duplicate is between the first and last point (not caught by an inner-loop check
+        // that only compares against the immediately preceding index) - validation must scan all
+        // pairs up front rather than discovering it partway through result construction.
+        Assert.ThrowsException<ArgumentException>(
+            () => NumericalMethods.Lagrange<double>([(0, 0), (1, 1), (2, 2), (0, 5)], 0.5));
+    }
 }
