@@ -1,4 +1,6 @@
-using System.Text.RegularExpressions;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace UtilsTest.Parser;
@@ -16,11 +18,10 @@ public sealed class EmbeddedCodeTransformerArchitectureTests
     public void ProductionParserCode_WhenEmbeddedCodeTransformerIsUsed_DoesNotCallTransformOutsideCentralService()
     {
         string repositoryRoot = FindRepositoryRoot();
-        Regex directTransformCallPattern = new(@"\.\s*Transform\s*\(", RegexOptions.CultureInvariant);
 
         string[] violations = Directory.GetFiles(repositoryRoot, "*.cs", SearchOption.AllDirectories)
             .Where(IsProductionParserSource)
-            .SelectMany(file => FindDirectTransformCalls(repositoryRoot, file, directTransformCallPattern))
+            .SelectMany(file => FindDirectTransformCalls(repositoryRoot, file))
             .Where(static occurrence => !IsCentralServiceOccurrence(occurrence))
             .Select(static occurrence => occurrence.ToString())
             .ToArray();
@@ -59,22 +60,31 @@ public sealed class EmbeddedCodeTransformerArchitectureTests
     }
 
     /// <summary>
-    /// Finds direct <c>.Transform(...)</c> call occurrences in a source file.
+    /// Finds direct <c>.Transform(...)</c> invocation expressions in a source file.
     /// </summary>
     /// <param name="repositoryRoot">Absolute repository root path.</param>
     /// <param name="file">Absolute source file path.</param>
-    /// <param name="directTransformCallPattern">Pattern used to identify direct transform calls.</param>
-    /// <returns>Direct transform call occurrences found in the file.</returns>
-    private static IEnumerable<SourceOccurrence> FindDirectTransformCalls(string repositoryRoot, string file, Regex directTransformCallPattern)
+    /// <returns>Direct transform invocation occurrences found in the file.</returns>
+    private static IEnumerable<SourceOccurrence> FindDirectTransformCalls(string repositoryRoot, string file)
     {
         string relativePath = Path.GetRelativePath(repositoryRoot, file);
-        string[] lines = File.ReadAllLines(file);
+        string source = File.ReadAllText(file);
+        SyntaxTree tree = CSharpSyntaxTree.ParseText(source, path: file);
+        CompilationUnitSyntax root = tree.GetCompilationUnitRoot();
 
-        for (int index = 0; index < lines.Length; index++)
+        foreach (InvocationExpressionSyntax invocation in root.DescendantNodes().OfType<InvocationExpressionSyntax>())
         {
-            if (directTransformCallPattern.IsMatch(lines[index]))
+            if (invocation.Expression is MemberAccessExpressionSyntax memberAccess
+                && memberAccess.Name.Identifier.ValueText == "Transform")
             {
-                yield return new SourceOccurrence(relativePath, index + 1, lines[index].Trim());
+                FileLinePositionSpan lineSpan = invocation.SyntaxTree.GetLineSpan(invocation.Span);
+                yield return new SourceOccurrence(
+                    relativePath,
+                    lineSpan.StartLinePosition.Line + 1,
+                    invocation.ToString(),
+                    GetEnclosingMethodName(invocation),
+                    GetEnclosingTypeName(invocation),
+                    memberAccess.Expression.ToString());
             }
         }
     }
@@ -87,7 +97,29 @@ public sealed class EmbeddedCodeTransformerArchitectureTests
     private static bool IsCentralServiceOccurrence(SourceOccurrence occurrence)
     {
         return occurrence.RelativePath == Path.Combine("Utils.Parser.Diagnostics", "EmbeddedCode", "EmbeddedCodeText.cs")
-            && occurrence.SourceLine.Contains(".Transform(", StringComparison.Ordinal);
+            && occurrence.EnclosingTypeName == "ParserEmbeddedCodeTransformationService"
+            && occurrence.EnclosingMethodName == "TransformOrThrow"
+            && occurrence.ReceiverExpression == "transformer";
+    }
+
+    /// <summary>
+    /// Gets the nearest enclosing method name for a syntax node.
+    /// </summary>
+    /// <param name="node">Syntax node to inspect.</param>
+    /// <returns>The enclosing method name, or <c>null</c> when none exists.</returns>
+    private static string? GetEnclosingMethodName(SyntaxNode node)
+    {
+        return node.Ancestors().OfType<MethodDeclarationSyntax>().FirstOrDefault()?.Identifier.ValueText;
+    }
+
+    /// <summary>
+    /// Gets the nearest enclosing type name for a syntax node.
+    /// </summary>
+    /// <param name="node">Syntax node to inspect.</param>
+    /// <returns>The enclosing type name, or <c>null</c> when none exists.</returns>
+    private static string? GetEnclosingTypeName(SyntaxNode node)
+    {
+        return node.Ancestors().OfType<TypeDeclarationSyntax>().FirstOrDefault()?.Identifier.ValueText;
     }
 
     /// <summary>
@@ -106,13 +138,22 @@ public sealed class EmbeddedCodeTransformerArchitectureTests
     /// </summary>
     /// <param name="RelativePath">Source file path relative to the repository root.</param>
     /// <param name="LineNumber">One-based source line number.</param>
-    /// <param name="SourceLine">Trimmed source line text.</param>
-    private sealed record SourceOccurrence(string RelativePath, int LineNumber, string SourceLine)
+    /// <param name="SourceText">Invocation expression source text.</param>
+    /// <param name="EnclosingMethodName">Nearest enclosing method name.</param>
+    /// <param name="EnclosingTypeName">Nearest enclosing type name.</param>
+    /// <param name="ReceiverExpression">Invocation receiver expression.</param>
+    private sealed record SourceOccurrence(
+        string RelativePath,
+        int LineNumber,
+        string SourceText,
+        string? EnclosingMethodName,
+        string? EnclosingTypeName,
+        string ReceiverExpression)
     {
         /// <summary>
         /// Formats the occurrence for assertion messages.
         /// </summary>
         /// <returns>A readable source occurrence.</returns>
-        public override string ToString() => $"{RelativePath}:{LineNumber}: {SourceLine}";
+        public override string ToString() => $"{RelativePath}:{LineNumber}: {SourceText}";
     }
 }

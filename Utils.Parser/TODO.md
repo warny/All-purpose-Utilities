@@ -60,9 +60,10 @@ Tests ajoutés ou consolidés :
 - erreurs déterministes pour résultat nul et code nul ;
 - diagnostics nuls traités comme une collection vide ;
 - conservation de l'exception interne quand le transformer lève ;
-- test architectural fonctionnel, basé sur une expression régulière indépendante du nom de variable et
-  des espaces, scannant les occurrences plutôt que les fichiers complets et interdisant les appels
-  directs de production à `IParserEmbeddedCodeTransformer.Transform(...)` hors service central ;
+- test architectural fonctionnel, basé sur une analyse syntaxique Roslyn légère, scannant les
+  invocations plutôt que les fichiers complets et interdisant les appels directs de production à
+  `IParserEmbeddedCodeTransformer.Transform(...)` hors de l'appel central exact dans
+  `ParserEmbeddedCodeTransformationService.TransformOrThrow(...)` ;
 - tests générateur vérifiant qu'une erreur du transformer bloque l'émission C# et que les métadonnées
   d'erreur restent cohérentes entre génération et compilation runtime.
 
