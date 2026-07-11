@@ -149,6 +149,15 @@ public sealed partial class Matrix<T>
                 v = newV;
             }
 
+            // The deflation check above runs BEFORE each step, not after the last permitted one, so
+            // a matrix that first reaches convergence exactly on the maxIterations-th step would
+            // otherwise exit the loop (budget exhausted) without ever re-checking that final state.
+            // Re-check independently here rather than trusting `deflated`'s value from inside the
+            // loop, matching the same "final check independent of loop-exit reason" fix already
+            // applied for the non-shifted algorithm this replaced.
+            if (!deflated && LastRowOffDiagonalNorm(a, m) <= effectiveConvergenceTolerance)
+                deflated = true;
+
             if (!deflated)
                 throw new InvalidOperationException(
                     $"QR iteration did not converge after {maxIterations} iterations.");
