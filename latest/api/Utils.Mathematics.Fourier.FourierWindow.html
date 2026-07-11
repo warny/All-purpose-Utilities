@@ -6,7 +6,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="title" content="Class FourierWindow | omy.Utils Documentation ">
       
-      <meta name="description" content="Provides standard spectral windowing functions for FFT preprocessing. Each method returns an array of weights in [0, 1].">
+      <meta name="description" content="Provides standard spectral windowing functions for FFT preprocessing.">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Mathematics_Fourier_FourierWindow" data-uid="Utils.Mathematics.Fourier.FourierWindow" class="text-break">
-Class FourierWindow  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Fourier/FourierWindow.cs/#L9"><i class="bi bi-code-slash"></i></a>
+Class FourierWindow  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Fourier/FourierWindow.cs/#L28"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -97,8 +97,7 @@ Class FourierWindow  <a class="header-action link-secondary" title="View source"
   <dl><dt>Assembly</dt><dd>Utils.Mathematics.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Provides standard spectral windowing functions for FFT preprocessing.
-Each method returns an array of weights in [0, 1].</p>
+  <div class="markdown summary"><p>Provides standard spectral windowing functions for FFT preprocessing.</p>
 </div>
   <div class="markdown conceptual"></div>
 
@@ -148,6 +147,26 @@ Each method returns an array of weights in [0, 1].</p>
 
 
 
+  <h2 id="Utils_Mathematics_Fourier_FourierWindow_remarks">Remarks</h2>
+  <div class="markdown level0 remarks"><p>
+<b>Coefficient range:</b> not every window is bounded to [0, 1]. Hann, Hamming, and Blackman are
+(modulo floating-point rounding noise of at most a few ulps right at the edges, where the ideal
+mathematical value is exactly zero) non-negative and never exceed 1. <a class="xref" href="Utils.Mathematics.Fourier.FourierWindow.html#Utils_Mathematics_Fourier_FourierWindow_FlatTop__1_System_Int32_">FlatTop&lt;T&gt;(int)</a>,
+however, is defined by IEC 61672 with coefficients that are negative by design near its edges;
+callers must not assume a shared [0, 1] range across every window in this class.
+</p>
+<p>
+<b>Precision:</b> every window is computed using <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a>-precision trigonometry
+(<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.math.cos">Cos(double)</a>) regardless of the requested output type <code>T</code>, then converted
+with <code>T.CreateChecked</code>. This is a deliberate choice, not an accidental precision leak: it
+gives every output type (including <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.decimal">decimal</a>, which has no
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.itrigonometricfunctions-1">ITrigonometricFunctions&lt;TSelf&gt;</a> implementation and could not use a generic-precision
+cosine anyway) the same double-precision-accurate standard window coefficients, rather than
+constraining <code>T</code> to <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.itrigonometricfunctions-1">ITrigonometricFunctions&lt;TSelf&gt;</a> and losing accuracy (and
+decimal support) for low-precision output types whose own trigonometric implementation would be
+no more accurate than double's in the first place.
+</p>
+</div>
 
 
   <h2 class="section" id="methods">Methods
@@ -158,11 +177,13 @@ Each method returns an array of weights in [0, 1].</p>
 
   <h3 id="Utils_Mathematics_Fourier_FourierWindow_Blackman__1_System_Int32_" data-uid="Utils.Mathematics.Fourier.FourierWindow.Blackman``1(System.Int32)">
   Blackman&lt;T&gt;(int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Fourier/FourierWindow.cs/#L42"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Fourier/FourierWindow.cs/#L65"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Computes the Blackman window: w[n] = 0.42 − 0.5·cos(2πn/(N−1)) + 0.08·cos(4πn/(N−1)).
-Very low side-lobes (−58 dB); wider main lobe than Hann.</p>
+Very low side-lobes (−58 dB); wider main lobe than Hann.
+Coefficients lie in [0, 1] (touching 0 at both edges) in exact arithmetic; floating-point
+rounding can produce a coefficient a few ulps below zero right at the edges.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -204,13 +225,15 @@ Very low side-lobes (−58 dB); wider main lobe than Hann.</p>
 
   <h3 id="Utils_Mathematics_Fourier_FourierWindow_FlatTop__1_System_Int32_" data-uid="Utils.Mathematics.Fourier.FourierWindow.FlatTop``1(System.Int32)">
   FlatTop&lt;T&gt;(int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Fourier/FourierWindow.cs/#L57"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Fourier/FourierWindow.cs/#L82"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Computes the Flat Top window (IEC 61672 coefficients):
 w[n] = 0.21557895 − 0.41663158·cos(2πn/N) + 0.277263158·cos(4πn/N)
 − 0.083578947·cos(6πn/N) + 0.006947368·cos(8πn/N).
-Excellent amplitude accuracy; broadest main lobe.</p>
+Excellent amplitude accuracy; broadest main lobe.
+Unlike the other windows in this class, coefficients are <b>not</b> confined to [0, 1]: the
+flat-top shape is negative by design near its edges (down to roughly −0.2).</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -252,11 +275,12 @@ Excellent amplitude accuracy; broadest main lobe.</p>
 
   <h3 id="Utils_Mathematics_Fourier_FourierWindow_Hamming__1_System_Int32_" data-uid="Utils.Mathematics.Fourier.FourierWindow.Hamming``1(System.Int32)">
   Hamming&lt;T&gt;(int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Fourier/FourierWindow.cs/#L32"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Fourier/FourierWindow.cs/#L53"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Computes the Hamming window: w[n] = 0.54 − 0.46 · cos(2πn/(N−1)).
-Reduced side-lobe leakage compared to Hann; does not go to zero at the edges.</p>
+Reduced side-lobe leakage compared to Hann; does not go to zero at the edges.
+Coefficients lie in [0.08, 1].</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -298,11 +322,12 @@ Reduced side-lobe leakage compared to Hann; does not go to zero at the edges.</p
 
   <h3 id="Utils_Mathematics_Fourier_FourierWindow_Hann__1_System_Int32_" data-uid="Utils.Mathematics.Fourier.FourierWindow.Hann``1(System.Int32)">
   Hann&lt;T&gt;(int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Fourier/FourierWindow.cs/#L22"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Fourier/FourierWindow.cs/#L42"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Computes the Hann (Hanning) window: w[n] = 0.5 · (1 − cos(2πn/(N−1))).
-Good general-purpose window with −18 dB/octave roll-off.</p>
+Good general-purpose window with −18 dB/octave roll-off.
+Coefficients lie in [0, 1] (touching 0 at both edges), modulo floating-point rounding noise.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -344,7 +369,7 @@ Good general-purpose window with −18 dB/octave roll-off.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Fourier/FourierWindow.cs/#L9" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Fourier/FourierWindow.cs/#L28" class="edit-link">Edit this page</a>
         </div>
 
 

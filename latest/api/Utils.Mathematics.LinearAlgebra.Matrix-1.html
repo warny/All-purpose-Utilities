@@ -262,7 +262,7 @@ Class Matrix&lt;T&gt;  <a class="header-action link-secondary" title="View sourc
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1__ctor_System_Int32_System_Int32_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.#ctor(System.Int32,System.Int32)">
   Matrix(int, int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Constructors.cs/#L15"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Constructors.cs/#L22"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a matrix with the specified dimensions.</p>
@@ -276,10 +276,10 @@ Class Matrix&lt;T&gt;  <a class="header-action link-secondary" title="View sourc
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>dimensionX</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
-    <dd><p>Number of rows.</p>
+    <dd><p>Number of rows. Must be positive.</p>
 </dd>
     <dt><code>dimensionY</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
-    <dd><p>Number of columns.</p>
+    <dd><p>Number of columns. Must be positive.</p>
 </dd>
   </dl>
 
@@ -291,6 +291,16 @@ Class Matrix&lt;T&gt;  <a class="header-action link-secondary" title="View sourc
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when <code class="paramref">dimensionX</code> or <code class="paramref">dimensionY</code> is not positive.
+0×0 (and other zero/negative-dimensioned) matrices are not a supported construction, matching
+the same policy already enforced by <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html#Utils_Mathematics_LinearAlgebra_Matrix_1_Identity_System_Int32_">Identity(int)</a>, <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html#Utils_Mathematics_LinearAlgebra_Matrix_1_Zero_System_Int32_System_Int32_">Zero(int, int)</a>,
+and <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html#Utils_Mathematics_LinearAlgebra_Matrix_1_Diagonal_System_Collections_Generic_IEnumerable__0__">Diagonal(params IEnumerable&lt;T&gt;)</a>, rather than relying on the CLR's own
+exception-type-inconsistent behavior for invalid multidimensional array allocation.</p>
+</dd>
+  </dl>
 
 
 
@@ -298,7 +308,7 @@ Class Matrix&lt;T&gt;  <a class="header-action link-secondary" title="View sourc
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1__ctor_Utils_Mathematics_LinearAlgebra_Matrix__0__" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.#ctor(Utils.Mathematics.LinearAlgebra.Matrix{`0})">
   Matrix(Matrix&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Constructors.cs/#L123"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Constructors.cs/#L137"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Creates a copy of an existing matrix.</p>
@@ -331,7 +341,7 @@ Class Matrix&lt;T&gt;  <a class="header-action link-secondary" title="View sourc
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1__ctor_Utils_Mathematics_LinearAlgebra_Vector__0____" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.#ctor(Utils.Mathematics.LinearAlgebra.Vector{`0}[])">
   Matrix(params Vector&lt;T&gt;[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Constructors.cs/#L93"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Constructors.cs/#L107"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a matrix from column vectors.</p>
@@ -370,7 +380,7 @@ Class Matrix&lt;T&gt;  <a class="header-action link-secondary" title="View sourc
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1__ctor__0_0__0___" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.#ctor(`0[0:,0:])">
   Matrix(T[,])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Constructors.cs/#L42"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Constructors.cs/#L52"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a matrix from a 2D array.</p>
@@ -384,40 +394,7 @@ Class Matrix&lt;T&gt;  <a class="header-action link-secondary" title="View sourc
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>array</code> T[,]</dt>
-    <dd><p>Array containing the matrix values.</p>
-</dd>
-  </dl>
-
-
-
-
-
-
-
-
-
-
-
-
-  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1__ctor_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.#ctor*"></a>
-
-  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1__ctor__0_____" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.#ctor(`0[][])">
-  Matrix(T[][])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Constructors.cs/#L59"><i class="bi bi-code-slash"></i></a>
-  </h3>
-
-  <div class="markdown level1 summary"><p>Initializes a matrix from a jagged array.</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public Matrix(T[][] array)</code></pre>
-  </div>
-
-  <h4 class="section">Parameters</h4>
-  <dl class="parameters">
-    <dt><code>array</code> T[][]</dt>
-    <dd><p>Jagged array containing the matrix values. Must be non-empty, with no null rows.</p>
+    <dd><p>Array containing the matrix values. Must have at least one row and one column.</p>
 </dd>
   </dl>
 
@@ -432,7 +409,46 @@ Class Matrix&lt;T&gt;  <a class="header-action link-secondary" title="View sourc
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
-    <dd><p>Thrown when <code class="paramref">array</code> has no rows, or contains a null row.</p>
+    <dd><p>Thrown when <code class="paramref">array</code> has zero rows or zero columns.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Matrix_1__ctor_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.#ctor*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1__ctor__0_____" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.#ctor(`0[][])">
+  Matrix(T[][])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Constructors.cs/#L71"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Initializes a matrix from a jagged array.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Matrix(T[][] array)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>array</code> T[][]</dt>
+    <dd><p>Jagged array containing the matrix values. Must be non-empty, with no null rows, and at least one row must be non-empty.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when <code class="paramref">array</code> has no rows, contains a null row, or every row is empty.</p>
 </dd>
   </dl>
 
@@ -748,7 +764,7 @@ Class Matrix&lt;T&gt;  <a class="header-action link-secondary" title="View sourc
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_Clone" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.Clone">
   Clone()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.cs/#L598"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.cs/#L629"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Creates a copy of the matrix.</p>
@@ -780,7 +796,7 @@ Class Matrix&lt;T&gt;  <a class="header-action link-secondary" title="View sourc
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_ComputeEigenvalues_System_Int32_System_Nullable__0__System_Nullable__0__System_Nullable__0__" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.ComputeEigenvalues(System.Int32,System.Nullable{`0},System.Nullable{`0},System.Nullable{`0})">
   ComputeEigenvalues(int, T?, T?, T?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Eigenvalues.cs/#L53"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Eigenvalues.cs/#L66"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Computes the real eigenvalues and corresponding eigenvectors of a symmetric matrix
@@ -838,6 +854,19 @@ columns are the corresponding eigenvectors.</p>
   <h4 class="section" id="Utils_Mathematics_LinearAlgebra_Matrix_1_ComputeEigenvalues_System_Int32_System_Nullable__0__System_Nullable__0__System_Nullable__0___remarks">Remarks</h4>
   <div class="markdown level1 remarks"><p>Only real symmetric matrices are supported; all eigenvalues of such matrices are guaranteed real.
 Eigenvalues are returned in descending order of absolute value.</p>
+<p>
+<b>Known limitation - unshifted iteration:</b> this implementation repeatedly applies plain
+<code>A ← R·Q</code> (from <code>A = Q·R</code>) with no spectral shift and no prior reduction to
+tridiagonal form. This is simple and correct, but convergence is only linear and can become
+very slow - potentially exhausting <code class="paramref">maxIterations</code> - when eigenvalues are
+close in magnitude or clustered (the per-iteration convergence rate is governed by the ratio
+of consecutive eigenvalue magnitudes). A production-grade implementation would use Wilkinson
+shifts and deflation after a symmetric tridiagonal reduction, which converges cubically in the
+typical case; that rewrite is out of scope here. If convergence fails for a matrix with
+closely-spaced eigenvalues, increasing <code class="paramref">maxIterations</code> and/or relaxing
+<code class="paramref">convergenceTolerance</code> are the available mitigations with the current
+algorithm.
+</p>
 </div>
 
   <h4 class="section">Exceptions</h4>
@@ -1002,7 +1031,7 @@ Operates entirely on local array copies to preserve immutability.</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_Equals_System_Object_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.Equals(System.Object)">
   Equals(object?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.cs/#L512"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.cs/#L536"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Checks if this matrix is equal to another object.</p>
@@ -1039,7 +1068,7 @@ Operates entirely on local array copies to preserve immutability.</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_Equals_Utils_Mathematics_LinearAlgebra_Matrix__0__" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.Equals(Utils.Mathematics.LinearAlgebra.Matrix{`0})">
   Equals(Matrix&lt;T&gt;?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.cs/#L524"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.cs/#L555"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Checks if this matrix is equal to another matrix.</p>
@@ -1068,6 +1097,13 @@ Operates entirely on local array copies to preserve immutability.</p>
 
 
 
+  <h4 class="section" id="Utils_Mathematics_LinearAlgebra_Matrix_1_Equals_Utils_Mathematics_LinearAlgebra_Matrix__0___remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Compares dimensions and elements directly rather than gating on cached hash-code equality
+first. A correct hash implementation guarantees equal values hash equally, so a hash
+precondition here adds no correctness value; it only makes it hazardous to later introduce a
+tolerance-aware equality or hashing policy where two &quot;equal&quot; matrices might legitimately hash
+differently.</p>
+</div>
 
 
 
@@ -1076,7 +1112,7 @@ Operates entirely on local array copies to preserve immutability.</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_Equals_Utils_Mathematics_LinearAlgebra_Vector__0____" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.Equals(Utils.Mathematics.LinearAlgebra.Vector{`0}[])">
   Equals(params Vector&lt;T&gt;[]?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.cs/#L569"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.cs/#L600"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Checks if this matrix is equal to an array of vectors.</p>
@@ -1113,7 +1149,7 @@ Operates entirely on local array copies to preserve immutability.</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_Equals__0_0__0___" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.Equals(`0[0:,0:])">
   Equals(T[,]?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.cs/#L534"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.cs/#L565"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Checks if this matrix is equal to a 2D array.</p>
@@ -1150,7 +1186,7 @@ Operates entirely on local array copies to preserve immutability.</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_Equals__0_____" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.Equals(`0[][])">
   Equals(T[][]?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.cs/#L551"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.cs/#L582"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Checks if this matrix is equal to a jagged array.</p>
@@ -1232,7 +1268,7 @@ Operates entirely on local array copies to preserve immutability.</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_GetHashCode" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.GetHashCode">
   GetHashCode()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.cs/#L588"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.cs/#L619"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the hash code for the matrix.</p>
@@ -1535,7 +1571,7 @@ See <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html#Utils_Ma
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_IsSymmetric" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.IsSymmetric">
   IsSymmetric()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Eigenvalues.cs/#L140"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Eigenvalues.cs/#L153"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when this square matrix is symmetric (A[i,j] == A[j,i]) within
@@ -1568,7 +1604,7 @@ the default relative-plus-absolute tolerance (see <a class="xref" href="https://
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_IsSymmetric_System_Nullable__0__" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.IsSymmetric(System.Nullable{`0})">
   IsSymmetric(T?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Eigenvalues.cs/#L154"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Eigenvalues.cs/#L167"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when this square matrix is symmetric (A[i,j] == A[j,i]) within
@@ -1766,7 +1802,7 @@ value to reject them more aggressively. Must be finite and non-negative when sup
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_ToArray" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.ToArray">
   ToArray()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.cs/#L593"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.cs/#L624"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts the matrix to a 2D array.</p>
@@ -1867,7 +1903,7 @@ value to reject them more aggressively. Must be finite and non-negative when sup
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_ToString_System_String_System_IFormatProvider_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.ToString(System.String,System.IFormatProvider)">
   ToString(string?, IFormatProvider?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.cs/#L461"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.cs/#L475"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns a formatted string representation of the matrix using the specified format provider.</p>
@@ -1881,9 +1917,18 @@ value to reject them more aggressively. Must be finite and non-negative when sup
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>format</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd></dd>
+    <dd><p>A composite format string: an optional layout token (<code>&quot;&quot;</code>, <code>&quot;S&quot;</code>, <code>&quot;C&quot;</code>, or
+<code>&quot;SC&quot;</code>, selecting the row separator) optionally followed by <code>:</code> and a standard
+numeric format string (e.g. <code>&quot;S:F2&quot;</code>) forwarded verbatim to each element's own
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.iformattable.tostring">ToString(string, IFormatProvider)</a>. When no numeric format is
+given, elements are formatted with their own default (<a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>) format rather
+than being rounded to a culture-dependent number of decimals first: unlike the previous
+behavior, this never silently discards precision the caller did not ask to lose.</p>
+</dd>
     <dt><code>formatProvider</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.iformatprovider">IFormatProvider</a></dt>
-    <dd></dd>
+    <dd><p>Culture or number-format info controlling the row/column separators and forwarded to each
+element's own formatter alongside the numeric format.</p>
+</dd>
   </dl>
 
   <h4 class="section">Returns</h4>
@@ -1899,6 +1944,12 @@ value to reject them more aggressively. Must be finite and non-negative when sup
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.formatexception">FormatException</a></dt>
+    <dd><p>Thrown when the layout token is not one of the recognized values.</p>
+</dd>
+  </dl>
 
 
 

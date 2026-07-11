@@ -157,7 +157,7 @@ Class FastFourierTransform  <a class="header-action link-secondary" title="View 
 
   <h3 id="Utils_Mathematics_Fourier_FastFourierTransform_InverseTransform_System_Numerics_Complex___" data-uid="Utils.Mathematics.Fourier.FastFourierTransform.InverseTransform(System.Numerics.Complex[])">
   InverseTransform(Complex[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Fourier/FastFourierTransform.cs/#L31"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Fourier/FastFourierTransform.cs/#L34"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Performs an in-place inverse FFT on the provided sample array.</p>
@@ -171,7 +171,7 @@ Class FastFourierTransform  <a class="header-action link-secondary" title="View 
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>array</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.complex">Complex</a>[]</dt>
-    <dd><p>Frequency-domain array to transform back to the time domain. Its length must be a power of two.</p>
+    <dd><p>Frequency-domain array to transform back to the time domain. Its length must be a power of two (a zero-length array is rejected, not treated as a no-op).</p>
 </dd>
   </dl>
 
@@ -185,8 +185,11 @@ Class FastFourierTransform  <a class="header-action link-secondary" title="View 
 
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">array</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
-    <dd><p>Thrown when <code class="paramref">array</code> length is not a power of two.</p>
+    <dd><p>Thrown when <code class="paramref">array</code> length is not a power of two (this includes length zero).</p>
 </dd>
   </dl>
 
@@ -196,7 +199,7 @@ Class FastFourierTransform  <a class="header-action link-secondary" title="View 
 
   <h3 id="Utils_Mathematics_Fourier_FastFourierTransform_Transform_System_Numerics_Complex___" data-uid="Utils.Mathematics.Fourier.FastFourierTransform.Transform(System.Numerics.Complex[])">
   Transform(Complex[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Fourier/FastFourierTransform.cs/#L17"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Fourier/FastFourierTransform.cs/#L18"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Performs an in-place FFT on the provided sample array.</p>
@@ -210,7 +213,7 @@ Class FastFourierTransform  <a class="header-action link-secondary" title="View 
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>array</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.complex">Complex</a>[]</dt>
-    <dd><p>Sample array to transform in place. Its length must be a power of two.</p>
+    <dd><p>Sample array to transform in place. Its length must be a power of two (a zero-length array is rejected, not treated as a no-op).</p>
 </dd>
   </dl>
 
@@ -224,8 +227,11 @@ Class FastFourierTransform  <a class="header-action link-secondary" title="View 
 
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">array</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
-    <dd><p>Thrown when <code class="paramref">array</code> length is not a power of two.</p>
+    <dd><p>Thrown when <code class="paramref">array</code> length is not a power of two (this includes length zero).</p>
 </dd>
   </dl>
 

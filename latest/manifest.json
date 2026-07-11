@@ -5188,7 +5188,7 @@
       "Uid": null,
       "IsMRef": true,
       "Title": "Utils.Mathematics.Fourier.FourierWindow",
-      "Summary": "<p sourcefile=\"api/Utils.Mathematics.Fourier.FourierWindow.yml\" sourcestartlinenumber=\"1\">Provides standard spectral windowing functions for FFT preprocessing.\nEach method returns an array of weights in [0, 1].</p>\n"
+      "Summary": "<p sourcefile=\"api/Utils.Mathematics.Fourier.FourierWindow.yml\" sourcestartlinenumber=\"1\">Provides standard spectral windowing functions for FFT preprocessing.</p>\n"
     },
     {
       "type": "ManagedReference",

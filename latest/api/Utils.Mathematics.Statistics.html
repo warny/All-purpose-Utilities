@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Mathematics_Statistics" data-uid="Utils.Mathematics.Statistics" class="text-break">
-Class Statistics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Statistics.cs/#L8"><i class="bi bi-code-slash"></i></a>
+Class Statistics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Statistics.cs/#L27"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -147,6 +147,25 @@ Class Statistics  <a class="header-action link-secondary" title="View source" hr
 
 
 
+  <h2 id="Utils_Mathematics_Statistics_remarks">Remarks</h2>
+  <div class="markdown level0 remarks"><p>
+<b>Non-finite value policy:</b> every operation here that constrains <code>T</code> to
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.ifloatingpoint-1">IFloatingPoint&lt;TSelf&gt;</a> validates each input value with <code>T.IsFinite(value)</code>
+as it is enumerated and rejects the sequence with an <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a> on the first
+NaN or infinite value found, rather than letting it propagate into a NaN/infinite (and
+implementation-dependent, since propagation depends on where the value falls relative to sort
+order or accumulation order) result. This is a single consistent policy applied uniformly across
+<a class="xref" href="Utils.Mathematics.Statistics.html#Utils_Mathematics_Statistics_Mean__1_System_Collections_Generic_IEnumerable___0__">Mean&lt;T&gt;(IEnumerable&lt;T&gt;)</a>, <a class="xref" href="Utils.Mathematics.Statistics.html#Utils_Mathematics_Statistics_Variance__1_System_Collections_Generic_IEnumerable___0__">Variance&lt;T&gt;(IEnumerable&lt;T&gt;)</a>, <a class="xref" href="Utils.Mathematics.Statistics.html#Utils_Mathematics_Statistics_Covariance__1_System_Collections_Generic_IEnumerable___0__System_Collections_Generic_IEnumerable___0__">Covariance&lt;T&gt;(IEnumerable&lt;T&gt;, IEnumerable&lt;T&gt;)</a>, and
+<a class="xref" href="Utils.Mathematics.Statistics.html#Utils_Mathematics_Statistics_Correlation__1_System_Collections_Generic_IEnumerable___0__System_Collections_Generic_IEnumerable___0__">Correlation&lt;T&gt;(IEnumerable&lt;T&gt;, IEnumerable&lt;T&gt;)</a>.
+</p>
+<p>
+<a class="xref" href="Utils.Mathematics.Statistics.html#Utils_Mathematics_Statistics_Median__1_System_Collections_Generic_IEnumerable___0__">Median&lt;T&gt;(IEnumerable&lt;T&gt;)</a> is generic over any <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.icomparable-1">IComparable&lt;T&gt;</a>, not just floating-point
+types, so it cannot apply the same finiteness check; its behavior for a type whose
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.icomparable-1.compareto">CompareTo(T)</a> does not define a total order (floating-point NaN under the
+default comparer being the standard example) is therefore whatever <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.array.sort#system-array-sort-1(-0())">Sort&lt;T&gt;(T[])</a>
+does with such values, which is unspecified. Validate finiteness before calling if that matters.
+</p>
+</div>
 
 
   <h2 class="section" id="methods">Methods
@@ -157,7 +176,7 @@ Class Statistics  <a class="header-action link-secondary" title="View source" hr
 
   <h3 id="Utils_Mathematics_Statistics_Correlation__1_System_Collections_Generic_IEnumerable___0__System_Collections_Generic_IEnumerable___0__" data-uid="Utils.Mathematics.Statistics.Correlation``1(System.Collections.Generic.IEnumerable{``0},System.Collections.Generic.IEnumerable{``0})">
   Correlation&lt;T&gt;(IEnumerable&lt;T&gt;, IEnumerable&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Statistics.cs/#L111"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Statistics.cs/#L151"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns the Pearson correlation coefficient between two sequences of equal length.</p>
@@ -171,10 +190,10 @@ Class Statistics  <a class="header-action link-secondary" title="View source" hr
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>x</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T&gt;</dt>
-    <dd><p>First sequence.</p>
+    <dd><p>First sequence, all values finite.</p>
 </dd>
     <dt><code>y</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T&gt;</dt>
-    <dd><p>Second sequence.</p>
+    <dd><p>Second sequence, all values finite.</p>
 </dd>
   </dl>
 
@@ -197,9 +216,17 @@ Class Statistics  <a class="header-action link-secondary" title="View source" hr
 
 
 
+  <h4 class="section" id="Utils_Mathematics_Statistics_Correlation__1_System_Collections_Generic_IEnumerable___0__System_Collections_Generic_IEnumerable___0___remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Computes both variances and the covariance in a single online pass (rather than materializing
+both sequences and separately calling <a class="xref" href="Utils.Mathematics.Statistics.html#Utils_Mathematics_Statistics_Covariance__1_System_Collections_Generic_IEnumerable___0__System_Collections_Generic_IEnumerable___0__">Covariance&lt;T&gt;(IEnumerable&lt;T&gt;, IEnumerable&lt;T&gt;)</a> and <a class="xref" href="Utils.Mathematics.Statistics.html#Utils_Mathematics_Statistics_StdDev__1_System_Collections_Generic_IEnumerable___0__">StdDev&lt;T&gt;(IEnumerable&lt;T&gt;)</a>,
+each of which would re-enumerate and independently recompute its own mean).</p>
+</div>
 
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when the sequences have different lengths, fewer than two elements, or a value is non-finite.</p>
+</dd>
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a></dt>
     <dd><p>Thrown when either sequence has zero variance.</p>
 </dd>
@@ -211,7 +238,7 @@ Class Statistics  <a class="header-action link-secondary" title="View source" hr
 
   <h3 id="Utils_Mathematics_Statistics_Covariance__1_System_Collections_Generic_IEnumerable___0__System_Collections_Generic_IEnumerable___0__" data-uid="Utils.Mathematics.Statistics.Covariance``1(System.Collections.Generic.IEnumerable{``0},System.Collections.Generic.IEnumerable{``0})">
   Covariance&lt;T&gt;(IEnumerable&lt;T&gt;, IEnumerable&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Statistics.cs/#L77"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Statistics.cs/#L109"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns the sample covariance between two sequences of equal length.</p>
@@ -225,10 +252,10 @@ Class Statistics  <a class="header-action link-secondary" title="View source" hr
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>x</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T&gt;</dt>
-    <dd><p>First sequence.</p>
+    <dd><p>First sequence, all values finite.</p>
 </dd>
     <dt><code>y</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T&gt;</dt>
-    <dd><p>Second sequence.</p>
+    <dd><p>Second sequence, all values finite.</p>
 </dd>
   </dl>
 
@@ -255,7 +282,7 @@ Class Statistics  <a class="header-action link-secondary" title="View source" hr
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
-    <dd><p>Thrown when sequences have different lengths or fewer than two elements.</p>
+    <dd><p>Thrown when sequences have different lengths, fewer than two elements, or a value is non-finite.</p>
 </dd>
   </dl>
 
@@ -265,7 +292,7 @@ Class Statistics  <a class="header-action link-secondary" title="View source" hr
 
   <h3 id="Utils_Mathematics_Statistics_Mean__1_System_Collections_Generic_IEnumerable___0__" data-uid="Utils.Mathematics.Statistics.Mean``1(System.Collections.Generic.IEnumerable{``0})">
   Mean&lt;T&gt;(IEnumerable&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Statistics.cs/#L18"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Statistics.cs/#L48"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns the arithmetic mean of the sequence.
@@ -280,7 +307,7 @@ Uses Welford's online algorithm for numerical stability.</p>
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>values</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T&gt;</dt>
-    <dd><p>Input sequence. Must contain at least one element.</p>
+    <dd><p>Input sequence. Must contain at least one element, all finite.</p>
 </dd>
   </dl>
 
@@ -307,7 +334,7 @@ Uses Welford's online algorithm for numerical stability.</p>
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
-    <dd><p>Thrown when <code class="paramref">values</code> is empty.</p>
+    <dd><p>Thrown when <code class="paramref">values</code> is empty or contains a non-finite value.</p>
 </dd>
   </dl>
 
@@ -317,7 +344,7 @@ Uses Welford's online algorithm for numerical stability.</p>
 
   <h3 id="Utils_Mathematics_Statistics_Median__1_System_Collections_Generic_IEnumerable___0__" data-uid="Utils.Mathematics.Statistics.Median``1(System.Collections.Generic.IEnumerable{``0})">
   Median&lt;T&gt;(IEnumerable&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Statistics.cs/#L133"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Statistics.cs/#L195"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns the median of the sequence.
@@ -369,7 +396,7 @@ For an even number of elements, returns the lower of the two middle values.</p>
 
   <h3 id="Utils_Mathematics_Statistics_StdDev__1_System_Collections_Generic_IEnumerable___0__" data-uid="Utils.Mathematics.Statistics.StdDev``1(System.Collections.Generic.IEnumerable{``0})">
   StdDev&lt;T&gt;(IEnumerable&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Statistics.cs/#L65"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Statistics.cs/#L97"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns the sample standard deviation of the sequence.</p>
@@ -414,7 +441,7 @@ For an even number of elements, returns the lower of the two middle values.</p>
 
   <h3 id="Utils_Mathematics_Statistics_Variance__1_System_Collections_Generic_IEnumerable___0__" data-uid="Utils.Mathematics.Statistics.Variance``1(System.Collections.Generic.IEnumerable{``0})">
   Variance&lt;T&gt;(IEnumerable&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Statistics.cs/#L41"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Statistics.cs/#L72"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns the sample variance (divided by n−1) of the sequence.
@@ -429,7 +456,7 @@ Uses Welford's online algorithm for numerical stability.</p>
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>values</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T&gt;</dt>
-    <dd><p>Input sequence. Must contain at least two elements.</p>
+    <dd><p>Input sequence. Must contain at least two elements, all finite.</p>
 </dd>
   </dl>
 
@@ -456,7 +483,7 @@ Uses Welford's online algorithm for numerical stability.</p>
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
-    <dd><p>Thrown when fewer than two elements are provided.</p>
+    <dd><p>Thrown when fewer than two elements are provided, or a value is non-finite.</p>
 </dd>
   </dl>
 
@@ -466,7 +493,7 @@ Uses Welford's online algorithm for numerical stability.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Statistics.cs/#L8" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Statistics.cs/#L27" class="edit-link">Edit this page</a>
         </div>
 
 
