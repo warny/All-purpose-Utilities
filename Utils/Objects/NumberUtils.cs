@@ -79,9 +79,13 @@ public static class NumberUtils
     /// <summary>
     /// Checks whether an implicit (widening) numeric conversion exists from <paramref name="from"/> to
     /// <paramref name="to"/>. Unlike checking <see cref="IsNativeNumericType(Type)"/> on both endpoints,
-    /// this rejects conversions that change value or lose precision even between two native numeric
-    /// types, such as <see cref="double"/> to <see cref="float"/>, <see cref="double"/> to <see cref="int"/>,
-    /// or <see cref="long"/> to <see cref="short"/>.
+    /// this rejects conversions that reduce range or truncate, such as <see cref="double"/> to
+    /// <see cref="float"/>, <see cref="double"/> to <see cref="int"/>, or <see cref="long"/> to
+    /// <see cref="short"/>. It does not guarantee the conversion is lossless: some accepted entries —
+    /// matching C#'s own implicit numeric conversions (e.g. <see cref="long"/> to <see cref="float"/>) as
+    /// well as the deliberate <see cref="decimal"/>-to-floating-point extension noted on
+    /// <see cref="WideningNumericConversions"/> — can still lose precision for values near the source
+    /// type's upper range or significant-digit limit.
     /// </summary>
     /// <param name="from">Source CLR numeric type.</param>
     /// <param name="to">Destination CLR numeric type.</param>
