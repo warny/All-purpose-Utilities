@@ -45,6 +45,18 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
     private static ConstantExpression NumericConstant(double value) => ExpressionEx.CreateConstant(T.CreateChecked(value));
 
     /// <summary>
+    /// Builds <c>Log(Abs(operand))</c> rather than a bare <c>Log(operand)</c>. Unlike the source
+    /// expressions these antiderivatives replace (e.g. <c>1/x</c> or <c>tan(x) = sin(x)/cos(x)</c>,
+    /// both well-defined for negative arguments), a raw <c>Log</c> is only real-valued for a positive
+    /// argument and would return NaN on exactly the negative-domain inputs the original expression
+    /// supported. <c>Abs</c> is always available (it is part of <see cref="INumberBase{TSelf}"/>, which
+    /// every <see cref="IFloatingPoint{TSelf}"/> implements), so this never needs a capability check.
+    /// </summary>
+    private static Expression LogAbs(Expression operand) =>
+        Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Log)),
+            Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Abs)), operand));
+
+    /// <summary>
     /// Integrates a lambda expression with respect to the configured parameter.
     /// </summary>
     /// <param name="e">The lambda expression to integrate.</param>
@@ -332,10 +344,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
 )
     {
         if (!IsTargetParameter(right)) return null;
-        return Expression.Multiply(
-                left,
-                Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Log)), right)
-            );
+        return Expression.Multiply(left, LogAbs(right));
     }
 
     /// <summary>
@@ -358,10 +367,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         if (left.Operand is not ConstantExpression constant || !NumberUtils.IsNumeric(constant.Value)) return null;
 
         ConstantExpression numericLeft = NumericConstant(System.Convert.ToDouble(constant.Value));
-        return Expression.Multiply(
-            numericLeft,
-            Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Log)), right)
-        );
+        return Expression.Multiply(numericLeft, LogAbs(right));
     }
 
     /// <summary>
@@ -398,10 +404,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         double n = System.Convert.ToDouble(expo.Value);
         if (double.Abs(n - 1.0) < 1e-10)
         {
-            return Expression.Multiply(
-                left,
-                Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Log)), p)
-            );
+            return Expression.Multiply(left, LogAbs(p));
         }
 
         double newExpo = 1.0 - n;
@@ -478,10 +481,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
             double n = System.Convert.ToDouble(exponent.Value);
             if (double.Abs(n - 1.0) < 1e-10)
             {
-                return Expression.Multiply(
-                    left,
-                    Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Log)), pPow)
-                );
+                return Expression.Multiply(left, LogAbs(pPow));
             }
 
             double newExpo = 1.0 - n;
@@ -576,7 +576,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         double n = System.Convert.ToDouble(expo.Value);
         if (double.Abs(n + 1.0) < 1e-10)
         {
-            return Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Log)), p);
+            return LogAbs(p);
         }
         ConstantExpression shiftedExpo = NumericConstant(n + 1.0);
         return Expression.Divide(
@@ -629,7 +629,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         if (!IsTargetParameter(p)) return null;
         double n = System.Convert.ToDouble(expo.Value);
         if (double.Abs(n + 1.0) < 1e-10)
-            return Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Log)), p);
+            return LogAbs(p);
         ConstantExpression shiftedExpo = NumericConstant(n + 1.0);
         return Expression.Divide(
             Expression.Call(MathMethodResolver.ResolveBinary<T>(nameof(double.Pow)), p, shiftedExpo),
@@ -795,10 +795,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
     {
         if (!IsTargetParameter(op)) return null;
 
-        return Expression.Negate(
-                Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Log)),
-                    Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Cos)), op))
-            );
+        return Expression.Negate(LogAbs(Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Cos)), op)));
     }
 
     /// <summary>
@@ -820,8 +817,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
             return null;
         }
         return Expression.Divide(
-                Expression.Negate(Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Log)),
-                    Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Cos)), be))),
+                Expression.Negate(LogAbs(Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Cos)), be))),
                 c
             );
     }

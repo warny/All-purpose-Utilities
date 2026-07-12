@@ -321,6 +321,16 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
     /// <param name="left">Base expression.</param>
     /// <param name="right">Exponent expression.</param>
     /// <returns>The derivative computed through logarithmic differentiation.</returns>
+    /// <remarks>
+    /// Logarithmic differentiation of <c>f(x)^g(x)</c> requires <c>f(x) &gt; 0</c>: this is not an
+    /// artificial narrowing introduced by using <c>Log(f)</c> here, since the original expression itself
+    /// is already only real-valued (rather than <see cref="double.NaN"/>) for a negative base when the
+    /// exponent is non-integer, and the exponent is a general (non-constant) expression here. Unlike the
+    /// integration rules for <c>1/x</c> or <c>tan(x)</c> (which use <c>Log(Abs(x))</c> because the
+    /// original expressions they replace remain well-defined for negative inputs), replacing
+    /// <c>Log(f)</c> with <c>Log(Abs(f))</c> here would not extend the domain of a valid symbolic
+    /// derivative — it would just produce a different, unrelated formula.
+    /// </remarks>
     [ExpressionSignature(ExpressionType.Power)]
     protected Expression Power(
         BinaryExpression e,

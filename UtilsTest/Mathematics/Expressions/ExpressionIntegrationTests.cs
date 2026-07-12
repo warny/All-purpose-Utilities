@@ -25,7 +25,7 @@ public class ExpressionIntegrationTests
 
         var tests = new (string function, string integral)[]
         {
-            ("1/x", "Log(x)"),
+            ("1/x", "Log(Abs(x))"),
             ("1/(x**2)", "-(1.0/x)"),
             ("1/Sqrt(x)", "2.0*Sqrt(x)"),
             ("Sinh(x)", "Cosh(x)"),
@@ -444,6 +444,48 @@ public class ExpressionIntegrationTests
 
         foreach (float xv in new[] { 0.5f, 1f, 2f, 4f })
             Assert.AreEqual(6f * MathF.Sqrt(xv), integral(xv), 0.05f, $"∫3/√x dx (float) at x={xv}");
+    }
+
+    // ── Domain restrictions (item 35) ─────────────────────────────────────────
+
+    /// <summary>
+    /// ∫1/x dx = ln|x|, which (unlike a bare <c>Log(x)</c>) is defined for negative <c>x</c> too, just
+    /// like the original <c>1/x</c> it replaces.
+    /// </summary>
+    [TestMethod]
+    public void Integrate_ReciprocalX_IsValidOnNegativeDomain()
+    {
+        var x = Expression.Parameter(typeof(double), "x");
+        var body = Expression.Divide(Expression.Constant(1.0), x);
+        var f = Expression.Lambda<Func<double, double>>(body, x);
+        var result = (Expression<Func<double, double>>)integration.Integrate(f);
+        var compiled = result.Compile();
+
+        foreach (double xv in new[] { -5.0, -1.0, -0.25 })
+        {
+            double actual = compiled(xv);
+            Assert.IsFalse(double.IsNaN(actual), $"∫1/x dx at x={xv} should not be NaN");
+            Assert.AreEqual(Math.Log(Math.Abs(xv)), actual, 1e-9, $"∫1/x dx at x={xv}");
+        }
+    }
+
+    /// <summary>
+    /// ∫tan(x) dx = -ln|cos(x)|. At <c>x = 2.0</c>, <c>cos(x)</c> is negative
+    /// (<c>cos(2.0) ≈ -0.416</c>), so a bare <c>Log(Cos(x))</c> would return NaN even though
+    /// <c>tan(x)</c> itself is perfectly well-defined there.
+    /// </summary>
+    [TestMethod]
+    public void Integrate_Tan_IsValidWhenCosineIsNegative()
+    {
+        Expression<Func<double, double>> f = x => double.Tan(x);
+        var result = (Expression<Func<double, double>>)integration.Integrate(f);
+        var compiled = result.Compile();
+
+        const double xv = 2.0;
+        Assert.IsTrue(Math.Cos(xv) < 0, "Test premise: cos(2.0) must be negative.");
+        double actual = compiled(xv);
+        Assert.IsFalse(double.IsNaN(actual), $"∫tan(x) dx at x={xv} should not be NaN");
+        Assert.AreEqual(-Math.Log(Math.Abs(Math.Cos(xv))), actual, 1e-9, $"∫tan(x) dx at x={xv}");
     }
 
 }
