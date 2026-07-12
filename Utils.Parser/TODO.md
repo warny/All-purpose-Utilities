@@ -102,25 +102,44 @@ Tests ajoutés :
   classification non injectants explicitement justifiés.
 
 ### 4. Ajouter des tests d'invariant pour tous les emplacements de code embarqué
-Les tests doivent couvrir au minimum :
+**Corrigé.** La couverture d'invariant est portée par `UtilsTest/Parser/EmbeddedCodeTransformationInvariantTests.cs` avec le transformer espion déterministe `RecordingEmbeddedCodeTransformer`.
 
-- parser header, members et footer ;
-- lexer header, members et footer ;
-- action parser et prédicat parser ;
-- action lexer et prédicat lexer ;
-- hooks `@init` et `@after` ;
-- compilation runtime des actions et prédicats sous forme d'expressions.
+Emplacements génération C# couverts :
 
-**Fix proposé** : utiliser un transformer espion qui remplace chaque fragment par un marqueur unique
-et vérifier que :
+- parser `@header`, `@members` et `@footer` (`ParserHeader`, `ParserMembers`, `ParserFooter`) ;
+- lexer `@header`, `@members` et `@footer` (`LexerHeader`, `LexerMembers`, `LexerFooter`) ;
+- prédicat sémantique parser inline (`SemanticPredicate`) ;
+- action parser inline (`InlineAction`) ;
+- hooks de cycle de vie `@init` et `@after` (`RuleInit`, `RuleAfter`) ;
+- prédicat lexer inline (`LexerSemanticPredicate`) ;
+- action lexer inline (`LexerInlineAction`).
 
-- chaque fragment produit exactement un appel au transformer ;
-- le bon `ParserEmbeddedCodeLocation` est transmis ;
-- le texte brut n'apparaît jamais dans la sortie générée ou dans l'entrée du compilateur ;
-- le texte transformé est injecté ou compilé exactement une fois.
+Emplacements runtime couverts :
 
-Après introduction de `CSharpEmbeddedCodeInjector`, ajouter également un injecteur espion pour
-vérifier que tout code C# transformé passe par cette classe.
+- prédicat parser préparé par `ExpressionEmbeddedCodePreparer` puis compilé par `IExpressionCompiler` ;
+- action parser préparée par `ExpressionEmbeddedCodePreparer` puis compilée par `IExpressionCompiler`.
+
+Les invariants vérifiés sont les suivants :
+
+- chaque fragment brut attendu produit exactement un appel à `IParserEmbeddedCodeTransformer.Transform(...)` ;
+- l'appel contient le `ParserEmbeddedCodeLocation`, le nom de grammaire, le nom de règle et les métadonnées passives disponibles ;
+- les paramètres, retours, locaux et labels parser exposés par l'architecture actuelle sont transmis aux fragments de règle ;
+- les fragments parser ne sont pas classés comme fragments lexer, et inversement ;
+- les marqueurs transformés sont uniques, valides pour leur cible C#, et apparaissent exactement une fois au point d'injection ou de compilation attendu ;
+- le texte brut ne réapparaît pas dans les corps exécutables générés ni dans l'entrée du compilateur runtime ;
+- les prédicats générés couvrent la forme expression et la forme bloc avec `return` ;
+- `@init` et `@after` sur la même règle restent deux appels distincts, ordonnés et non confondus ;
+- un diagnostic `Error` ou une exception du transformer bloque l'injection générée ;
+- un diagnostic `Error` bloque la compilation runtime ;
+- un diagnostic `Warning` runtime conserve un traitement simple : transformation unique et compilation unique.
+
+Les garde-fous architecturaux existants restent consolidés par :
+
+- `EmbeddedCodeTransformerArchitectureTests`, qui limite les appels directs à `Transform(...)` au service central ;
+- `CSharpEmbeddedCodeInjectorArchitectureTests`, qui vérifie que les méthodes d'émission ciblées utilisent `CSharpEmbeddedCodeInjector` et que les lectures de `TransformedEmbeddedCode.Text` hors injecteur restent limitées aux classifications non injectantes autorisées ;
+- `CSharpEmbeddedCodeInjectorTests`, qui verrouille l'API d'injection sur `TransformedEmbeddedCode` et interdit les paramètres `RawEmbeddedCode` ou chaînes brutes.
+
+Aucun injecteur espion de production n'a été ajouté : la frontière `CSharpEmbeddedCodeInjector` est vérifiée par les tests architecturaux Roslyn et par les marqueurs générés.
 
 ## Duplications de code (priorité moyenne)
 
