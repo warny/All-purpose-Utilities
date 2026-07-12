@@ -25,7 +25,9 @@ public sealed partial class Matrix<T>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="relativeSingularityTolerance"/> is supplied but not finite or is negative.</exception>
     /// <remarks>
     /// Delegates to the pivoted elimination shared with <see cref="DiagonalizeLU"/>,
-    /// <see cref="Determinant"/>, and <see cref="Invert"/> (see TODO-2026-07-11-pass5.md item #69):
+    /// <see cref="Determinant"/>, and <see cref="Invert"/> (see TODO-2026-07-11-pass5.md item #69),
+    /// using the same scale-aware tolerance as <see cref="DiagonalizeLU"/>/<see cref="Invert"/> (not
+    /// <see cref="Determinant"/>'s exact-zero check - see <c>TryDecomposePivoted</c>'s remarks):
     /// <c>A·x = b</c> becomes <c>L·U·x = P·b</c> (since <c>P·A = L·U</c>), solved by forward
     /// substitution for <c>y</c> in <c>L·y = P·b</c> followed by back substitution for <c>x</c> in
     /// <c>U·x = y</c>.
@@ -39,7 +41,8 @@ public sealed partial class Matrix<T>
         if (relativeSingularityTolerance is { } explicitTolerance)
             ValidateTolerance(explicitTolerance, nameof(relativeSingularityTolerance));
 
-        if (!TryDecomposePivoted(relativeSingularityTolerance, out PivotedElimination decomposition))
+        T pivotTolerance = ResolveDecompositionTolerance(ToArray(), relativeSingularityTolerance);
+        if (!TryDecomposePivoted(pivotTolerance, out PivotedElimination decomposition))
         {
             throw new InvalidOperationException("Matrix is singular or numerically near-singular; the system has no reliable unique solution.");
         }

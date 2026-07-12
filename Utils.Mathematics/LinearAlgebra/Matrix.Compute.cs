@@ -61,28 +61,34 @@ public partial class Matrix<T>
     /// <summary>
     /// Performs the pivoted Gauss elimination shared by <see cref="DiagonalizeLU"/>,
     /// <see cref="ComputeDeterminant"/>, <see cref="Solve"/>, and <see cref="Invert"/>, so pivot
-    /// selection, tolerance policy, and numerical behavior cannot silently drift between these four
+    /// selection and the elimination arithmetic itself cannot silently drift between these four
     /// operations the way four independent reimplementations previously could (see
     /// TODO-2026-07-11-pass5.md item #69). Uses partial pivoting (largest-magnitude pivot in each
     /// column) and stores the elimination multipliers directly in <c>L</c>, rather than as a
-    /// by-product of applying the elimination row operations to an identity matrix. Operates entirely
-    /// on local array copies to preserve immutability.
+    /// by-product of applying the elimination row operations to an identity matrix.
     /// </summary>
-    /// <param name="relativeSingularityTolerance">
-    /// Overrides the default relative-plus-absolute pivot tolerance (see <see cref="DefaultTolerance"/>)
-    /// used to reject a numerically near-singular matrix. When supplied, the effective absolute
-    /// threshold is this value multiplied by the matrix's largest entry (no absolute floor is added,
-    /// unlike the default).
+    /// <param name="pivotTolerance">
+    /// The absolute pivot-rejection threshold: a pivot column whose largest available magnitude does
+    /// not exceed this value is treated as singular. Deliberately <b>not</b> resolved internally from a
+    /// single shared policy - <see cref="ComputeDeterminant"/> needs a fundamentally different notion of
+    /// "singular" than <see cref="DiagonalizeLU"/>/<see cref="Solve"/>/<see cref="Invert"/> do (see
+    /// TODO-2026-07-11-pass5.md item #69 PR review): a determinant is the exact product of the pivots
+    /// and is well-defined (and can be legitimately tiny) for any well-conditioned matrix whose entries
+    /// merely happen to be small in absolute value, so it must reject only an exactly-zero pivot
+    /// (pass <c>T.Zero</c>). Solving/inverting, by contrast, divide by the pivot
+    /// to propagate a numerically reliable result, so they need the scale-aware
+    /// relative-plus-absolute-floor policy computed by <see cref="DefaultTolerance"/> (or an explicit
+    /// override) to reject a pivot that is technically nonzero but too small to trust.
     /// </param>
     /// <param name="decomposition">The computed decomposition, or <c>default</c> when this method returns <see langword="false"/>.</param>
     /// <returns>
     /// <see langword="true"/> when the matrix could be decomposed; <see langword="false"/> when a pivot
-    /// column's largest available magnitude does not exceed the singularity tolerance (the matrix is
-    /// singular or numerically near-singular). Returning a sentinel rather than throwing lets
-    /// <see cref="ComputeDeterminant"/> report the mathematically well-defined zero determinant for a
-    /// singular matrix without using an exception for ordinary control flow.
+    /// column's largest available magnitude does not exceed <paramref name="pivotTolerance"/>. Returning
+    /// a sentinel rather than throwing lets <see cref="ComputeDeterminant"/> report the mathematically
+    /// well-defined zero determinant for an exactly singular matrix without using an exception for
+    /// ordinary control flow.
     /// </returns>
-    private bool TryDecomposePivoted(T? relativeSingularityTolerance, out PivotedElimination decomposition)
+    private bool TryDecomposePivoted(T pivotTolerance, out PivotedElimination decomposition)
     {
         int n = Rows;
         T[,] u = ToArray();
@@ -94,10 +100,6 @@ public partial class Matrix<T>
             l[i, i] = T.One;
             permutation[i] = i;
         }
-
-        T pivotTolerance = relativeSingularityTolerance is { } explicitTolerance
-            ? MaxAbsoluteEntry(u) * explicitTolerance
-            : DefaultTolerance(MaxAbsoluteEntry(u), n);
 
         int swaps = 0;
         for (int k = 0; k < n; k++)
@@ -143,6 +145,21 @@ public partial class Matrix<T>
     }
 
     /// <summary>
+    /// Resolves the scale-aware relative-plus-absolute-floor pivot tolerance shared by
+    /// <see cref="DiagonalizeLU"/>, <see cref="Solve"/>, and <see cref="Invert"/> (never
+    /// <see cref="ComputeDeterminant"/>, which needs an exact-zero check instead - see
+    /// <see cref="TryDecomposePivoted"/>): either the default (see <see cref="DefaultTolerance"/>) or,
+    /// when supplied, <paramref name="relativeSingularityTolerance"/> multiplied by the matrix's largest
+    /// entry (no absolute floor is added in that case, unlike the default).
+    /// </summary>
+    private T ResolveDecompositionTolerance(T[,] matrix, T? relativeSingularityTolerance)
+    {
+        return relativeSingularityTolerance is { } explicitTolerance
+            ? MaxAbsoluteEntry(matrix) * explicitTolerance
+            : DefaultTolerance(MaxAbsoluteEntry(matrix), matrix.GetLength(0));
+    }
+
+    /// <summary>
     /// Solves <c>L·y = P·b</c> by forward substitution (<c>L</c> has a unit diagonal, so no division is
     /// needed on the diagonal step) followed by <c>U·x = y</c> by back substitution, reusing an already
     /// computed <see cref="PivotedElimination"/>. Shared by <see cref="Solve"/> and <see cref="Invert"/>
@@ -185,12 +202,15 @@ public partial class Matrix<T>
     /// </summary>
     /// <param name="relativeSingularityTolerance">
     /// Overrides the default relative-plus-absolute pivot tolerance (see <see cref="DefaultTolerance"/>)
-    /// used to reject a numerically near-singular matrix; see <see cref="TryDecomposePivoted"/>. Must be
-    /// finite and non-negative when supplied.
+    /// used to reject a numerically near-singular matrix; see <see cref="ResolveDecompositionTolerance"/>.
+    /// Must be finite and non-negative when supplied.
     /// </param>
     /// <remarks>
     /// Delegates to the pivoted elimination shared with <see cref="ComputeDeterminant"/>,
-    /// <see cref="Solve"/>, and <see cref="Invert"/> (see TODO-2026-07-11-pass5.md item #69).
+    /// <see cref="Solve"/>, and <see cref="Invert"/> (see TODO-2026-07-11-pass5.md item #69). Unlike
+    /// <see cref="ComputeDeterminant"/>, this uses the scale-aware relative-plus-absolute-floor
+    /// tolerance (see <see cref="TryDecomposePivoted"/>'s remarks), since <c>L</c>/<c>U</c> are meant to
+    /// be used for further numerically reliable computation, not just an exact product of pivots.
     /// Structural metadata on the returned matrices reflects only what is mathematically guaranteed for
     /// every input: <c>L</c>'s unit diagonal makes it always triangular with determinant one, and
     /// <c>U</c> is always triangular; whether <c>L</c>, <c>U</c>, or <c>P</c> also happen to be diagonal
@@ -211,7 +231,8 @@ public partial class Matrix<T>
         if (relativeSingularityTolerance is { } explicitTolerance)
             ValidateTolerance(explicitTolerance, nameof(relativeSingularityTolerance));
 
-        if (!TryDecomposePivoted(relativeSingularityTolerance, out PivotedElimination decomposition))
+        T pivotTolerance = ResolveDecompositionTolerance(ToArray(), relativeSingularityTolerance);
+        if (!TryDecomposePivoted(pivotTolerance, out PivotedElimination decomposition))
         {
             throw new InvalidOperationException("The matrix is singular and cannot be decomposed.");
         }
@@ -232,17 +253,20 @@ public partial class Matrix<T>
 
     /// <summary>
     /// Computes the determinant using the shared pivoted elimination (see
-    /// <see cref="TryDecomposePivoted"/> and TODO-2026-07-11-pass5.md item #69), returning the
-    /// mathematically well-defined zero determinant for a singular or numerically near-singular matrix
-    /// instead of throwing - determinant is defined for every square matrix, unlike decomposition/solve/
-    /// inversion, which genuinely have no answer to give in that case.
+    /// <see cref="TryDecomposePivoted"/> and TODO-2026-07-11-pass5.md item #69), rejecting only an
+    /// exactly-zero pivot rather than the scale-aware near-singularity tolerance that
+    /// <see cref="DiagonalizeLU"/>/<see cref="Solve"/>/<see cref="Invert"/> use. A determinant is the
+    /// exact product of the pivots (up to sign) and is well-defined - and can be legitimately tiny -
+    /// for any well-conditioned matrix whose entries merely happen to be small in absolute value (e.g.
+    /// <c>diag(1e-20, 2e-20)</c> has an exact, nonzero determinant of <c>2e-40</c>); reusing the other
+    /// three operations' "too small to trust for further arithmetic" tolerance here would incorrectly
+    /// collapse such a determinant to zero (see TODO-2026-07-11-pass5.md item #69 PR review). Only an
+    /// exactly-zero pivot reflects genuine rank deficiency, which is the only case where the
+    /// determinant is actually zero.
     /// </summary>
     private T ComputeDeterminant()
     {
-        // A pivot merely close to zero (not exactly zero) would otherwise amplify rounding error into a
-        // huge/infinite/NaN result instead of the mathematically expected near-zero determinant of a
-        // near-singular matrix - see the tolerance rationale on TryDecomposePivoted/DefaultTolerance.
-        if (!TryDecomposePivoted(relativeSingularityTolerance: null, out PivotedElimination decomposition))
+        if (!TryDecomposePivoted(T.Zero, out PivotedElimination decomposition))
         {
             return T.Zero;
         }
@@ -268,9 +292,11 @@ public partial class Matrix<T>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="relativeSingularityTolerance"/> is supplied but not finite or is negative.</exception>
     /// <remarks>
     /// Delegates to the pivoted elimination shared with <see cref="DiagonalizeLU"/>,
-    /// <see cref="ComputeDeterminant"/>, and <see cref="Solve"/> (see TODO-2026-07-11-pass5.md item #69):
-    /// column <c>j</c> of the inverse is the solution of <c>A·x = e_j</c> for the <c>j</c>-th standard
-    /// basis vector, computed via the same forward/back substitution as <see cref="Solve"/>.
+    /// <see cref="ComputeDeterminant"/>, and <see cref="Solve"/> (see TODO-2026-07-11-pass5.md item #69),
+    /// using the same scale-aware tolerance as <see cref="DiagonalizeLU"/>/<see cref="Solve"/> (not
+    /// <see cref="ComputeDeterminant"/>'s exact-zero check - see <see cref="TryDecomposePivoted"/>'s
+    /// remarks): column <c>j</c> of the inverse is the solution of <c>A·x = e_j</c> for the <c>j</c>-th
+    /// standard basis vector, computed via the same forward/back substitution as <see cref="Solve"/>.
     /// </remarks>
     public Matrix<T> Invert(T? relativeSingularityTolerance = null)
     {
@@ -286,7 +312,9 @@ public partial class Matrix<T>
             return new Matrix<T>(this);
         }
 
-        if (!TryDecomposePivoted(relativeSingularityTolerance, out PivotedElimination decomposition))
+        T[,] working = ToArray();
+        T pivotTolerance = ResolveDecompositionTolerance(working, relativeSingularityTolerance);
+        if (!TryDecomposePivoted(pivotTolerance, out PivotedElimination decomposition))
         {
             throw new InvalidOperationException("The matrix is singular or numerically near-singular and cannot be reliably inverted.");
         }

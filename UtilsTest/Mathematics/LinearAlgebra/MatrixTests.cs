@@ -493,6 +493,32 @@ namespace UtilsTest.Mathematics.LinearAlgebra
             Assert.AreEqual(4d, m.Determinant, 1e-10);
         }
 
+        // ── Determinant vs. Solve/Invert singularity policy (PR 452 review) ────────
+
+        /// <summary>
+        /// Before this fix, <see cref="Matrix{T}.Determinant"/> reused the same scale-aware
+        /// relative-plus-absolute-floor tolerance as <see cref="Matrix{T}.Solve"/>/<see cref="Matrix{T}.Invert"/>
+        /// to decide "singular." That tolerance includes a fixed absolute floor (see
+        /// <c>DefaultTolerance</c>'s <c>+ 1</c> term) that is appropriate when dividing by the pivot to
+        /// propagate a numerically reliable solution, but wrong for a determinant: a well-conditioned
+        /// matrix whose entries are merely small in absolute value (here <c>1e-20</c>) has an exact,
+        /// legitimately tiny nonzero determinant, which the shared tolerance previously collapsed to zero.
+        /// </summary>
+        [TestMethod]
+        public void Determinant_SmallWellConditionedMatrix_DoesNotReturnZero()
+        {
+            var matrix = new Matrix<double>(new double[,] { { 1e-20 } });
+            Assert.AreEqual(1e-20, matrix.Determinant, 1e-35);
+        }
+
+        /// <summary>Same as <see cref="Determinant_SmallWellConditionedMatrix_DoesNotReturnZero"/>, for a multi-entry diagonal matrix.</summary>
+        [TestMethod]
+        public void Determinant_ScaledIdentity_PreservesScale()
+        {
+            var matrix = Matrix<double>.Diagonal(1e-20, 2e-20);
+            Assert.AreEqual(2e-40, matrix.Determinant, 1e-54);
+        }
+
         [TestMethod]
         public void Transpose_NonSquare_SwapsRowsAndColumns()
         {
