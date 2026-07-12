@@ -110,17 +110,42 @@ public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>, 
     /// <summary>
     /// Gets the length of the vector.
     /// </summary>
+    /// <remarks>
+    /// Computed via a scaled sum-of-squares accumulation (the same running-scale technique as BLAS
+    /// <c>nrm2</c>/<c>hypot</c>), rather than summing <c>component * component</c> directly. A direct sum
+    /// can overflow to infinity for large-but-representable components (whose square individually
+    /// overflows even though the true norm does not), or underflow to zero for small-but-representable
+    /// components (whose square underflows to zero even though it contributes to a representable norm).
+    /// Tracking the largest component seen so far as a running scale and accumulating only the *ratio*
+    /// of each component to that scale keeps every intermediate value within a representable range.
+    /// </remarks>
     public T Norm
     {
         get
         {
             if (norm is not null) return norm.Value;
-            T temp = T.Zero;
+
+            T scale = T.Zero;
+            T sumOfSquaredRatios = T.One;
             for (int i = 0; i < this.components.Length; i++)
             {
-                temp += this.components[i] * this.components[i];
+                T absValue = T.Abs(this.components[i]);
+                if (absValue == T.Zero) continue;
+
+                if (scale < absValue)
+                {
+                    T ratio = scale / absValue;
+                    sumOfSquaredRatios = T.One + sumOfSquaredRatios * ratio * ratio;
+                    scale = absValue;
+                }
+                else
+                {
+                    T ratio = absValue / scale;
+                    sumOfSquaredRatios += ratio * ratio;
+                }
             }
-            norm = T.Sqrt(temp);
+
+            norm = scale == T.Zero ? T.Zero : scale * T.Sqrt(sumOfSquaredRatios);
             return norm.Value;
         }
     }
