@@ -22,13 +22,34 @@ public sealed class CSharpEmbeddedCodeInjectorArchitectureTests
         string repositoryRoot = FindRepositoryRoot();
         string generatorRoot = Path.Combine(repositoryRoot, "Utils.Parser.Generators");
 
-        string[] violations = Directory.GetFiles(generatorRoot, "*.cs", SearchOption.AllDirectories)
-            .Where(static file => !ContainsDirectory(file, "bin") && !ContainsDirectory(file, "obj"))
-            .SelectMany(file => FindForbiddenAppendUsages(repositoryRoot, file))
-            .Concat(FindTransformedTextUsages(repositoryRoot, generatorRoot))
-            .ToArray();
+        string[] violations = FindForbiddenEmbeddedCodeWrites(CreateProductionGeneratorScans(repositoryRoot, generatorRoot));
 
         Assert.AreEqual(0, violations.Length, string.Join(Environment.NewLine, violations));
+    }
+
+    /// <summary>Ensures transformed text cannot be hidden in an innocently named local before appending.</summary>
+    [TestMethod]
+    public void EmbeddedCodeWriteGuard_WhenTransformedTextIsStoredInLocalWithoutCodeName_FlagsAppendLine()
+    {
+        const string Source = """
+            using System.Text;
+            using Utils.Parser.Diagnostics.EmbeddedCode;
+
+            internal sealed class Sample
+            {
+                private static void Emit(StringBuilder builder, TransformedEmbeddedCode transformed)
+                {
+                    string text = transformed.Text;
+                    builder.AppendLine(text);
+                }
+            }
+            """;
+
+        string[] violations = FindForbiddenEmbeddedCodeWrites("Sample.cs", Source);
+
+        Assert.IsTrue(
+            violations.Any(static violation => violation.Contains("Transformed embedded-code text reaches AppendLine", StringComparison.Ordinal)),
+            string.Join(Environment.NewLine, violations));
     }
 
     /// <summary>
@@ -69,17 +90,92 @@ public sealed class CSharpEmbeddedCodeInjectorArchitectureTests
         Assert.AreEqual(0, missing.Length, string.Join(Environment.NewLine, missing));
     }
 
-    /// <summary>Finds forbidden Append/AppendLine calls using raw embedded-code source properties.</summary>
-    private static IEnumerable<string> FindForbiddenAppendUsages(string repositoryRoot, string file)
+    /// <summary>Creates semantic scans for all production generator source files.</summary>
+    private static IReadOnlyList<SourceScan> CreateProductionGeneratorScans(string repositoryRoot, string generatorRoot)
     {
-        string relativePath = NormalizePath(Path.GetRelativePath(repositoryRoot, file));
-        if (string.Equals(relativePath, InjectorPath, StringComparison.Ordinal))
+        SyntaxTree[] trees = Directory.GetFiles(generatorRoot, "*.cs", SearchOption.AllDirectories)
+            .Where(static file => !ContainsDirectory(file, "bin") && !ContainsDirectory(file, "obj"))
+            .Select(file => CSharpSyntaxTree.ParseText(File.ReadAllText(file), path: NormalizePath(Path.GetRelativePath(repositoryRoot, file))))
+            .ToArray();
+
+        CSharpCompilation compilation = CSharpCompilation.Create(
+            "Utils.Parser.Generators.ArchitectureScan",
+            trees,
+            CreateRuntimeReferences().Concat([MetadataReference.CreateFromFile(FindParserDiagnosticsAssembly(repositoryRoot))]),
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+        return trees.Select(tree => new SourceScan(tree.FilePath, tree, compilation.GetSemanticModel(tree))).ToArray();
+    }
+
+    /// <summary>Finds forbidden embedded-code writes in a single source sample.</summary>
+    private static string[] FindForbiddenEmbeddedCodeWrites(string relativePath, string source)
+    {
+        SyntaxTree sourceTree = CSharpSyntaxTree.ParseText(source, path: relativePath);
+        SyntaxTree embeddedCodeStubTree = CSharpSyntaxTree.ParseText(
+            """
+            namespace Utils.Parser.Diagnostics.EmbeddedCode
+            {
+                public sealed class TransformedEmbeddedCode
+                {
+                    public string Text { get; } = string.Empty;
+                }
+
+                public sealed class RawEmbeddedCode
+                {
+                    public string Text { get; } = string.Empty;
+                }
+            }
+            """,
+            path: "EmbeddedCodeStubs.cs");
+
+        CSharpCompilation compilation = CSharpCompilation.Create(
+            "EmbeddedCodeArchitectureSample",
+            [sourceTree, embeddedCodeStubTree],
+            CreateRuntimeReferences(),
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+        return FindForbiddenEmbeddedCodeWrites([new SourceScan(relativePath, sourceTree, compilation.GetSemanticModel(sourceTree))]);
+    }
+
+    /// <summary>Finds forbidden embedded-code writes in generator source scans.</summary>
+    private static string[] FindForbiddenEmbeddedCodeWrites(IReadOnlyList<SourceScan> scans)
+    {
+        return scans.SelectMany(FindForbiddenEmbeddedCodeWrites).ToArray();
+    }
+
+    /// <summary>Finds forbidden embedded-code writes in one source scan.</summary>
+    private static IEnumerable<string> FindForbiddenEmbeddedCodeWrites(SourceScan scan)
+    {
+        if (string.Equals(scan.RelativePath, InjectorPath, StringComparison.Ordinal))
         {
             yield break;
         }
 
-        SyntaxTree tree = CSharpSyntaxTree.ParseText(File.ReadAllText(file));
-        foreach (InvocationExpressionSyntax invocation in tree.GetRoot().DescendantNodes().OfType<InvocationExpressionSyntax>())
+        CompilationUnitSyntax root = scan.Tree.GetCompilationUnitRoot();
+        Dictionary<ISymbol, EmbeddedCodeTextKind> taintedLocals = new(SymbolEqualityComparer.Default);
+        foreach (VariableDeclaratorSyntax variable in root.DescendantNodes().OfType<VariableDeclaratorSyntax>())
+        {
+            if (variable.Initializer is not null
+                && TryGetEmbeddedCodeTextKind(scan, variable.Initializer.Value, out EmbeddedCodeTextKind kind)
+                && !IsAllowedEmbeddedCodeTextRead(scan.RelativePath, variable.Initializer.Value)
+                && scan.SemanticModel.GetDeclaredSymbol(variable) is ILocalSymbol local)
+            {
+                taintedLocals[local] = kind;
+            }
+        }
+
+        foreach (AssignmentExpressionSyntax assignment in root.DescendantNodes().OfType<AssignmentExpressionSyntax>())
+        {
+            if (assignment.IsKind(SyntaxKind.SimpleAssignmentExpression)
+                && TryGetEmbeddedCodeTextKind(scan, assignment.Right, out EmbeddedCodeTextKind kind)
+                && !IsAllowedEmbeddedCodeTextRead(scan.RelativePath, assignment.Right)
+                && scan.SemanticModel.GetSymbolInfo(assignment.Left).Symbol is ILocalSymbol local)
+            {
+                taintedLocals[local] = kind;
+            }
+        }
+
+        foreach (InvocationExpressionSyntax invocation in root.DescendantNodes().OfType<InvocationExpressionSyntax>())
         {
             string? methodName = GetInvokedMethodName(invocation);
             if (methodName is not "Append" and not "AppendLine")
@@ -89,49 +185,127 @@ public sealed class CSharpEmbeddedCodeInjectorArchitectureTests
 
             foreach (ArgumentSyntax argument in invocation.ArgumentList.Arguments)
             {
-                string expression = argument.Expression.ToString();
-                if (expression.Contains("RawCode.Text", StringComparison.Ordinal)
-                    || expression.Contains("RawCode", StringComparison.Ordinal)
-                    || expression.Contains("SourceText", StringComparison.Ordinal))
+                EmbeddedCodeTextKind? directKind = FindDirectEmbeddedCodeTextRead(scan, argument.Expression);
+                if (directKind is not null)
                 {
-                    yield return $"{relativePath}:{GetLine(invocation)}: {invocation}";
+                    yield return $"{scan.RelativePath}:{GetLine(invocation)}: {directKind.Value} embedded-code text reaches {methodName}: {invocation}";
+                    continue;
+                }
+
+                EmbeddedCodeTextKind? taintedKind = FindTaintedLocalRead(scan, argument.Expression, taintedLocals);
+                if (taintedKind is not null)
+                {
+                    yield return $"{scan.RelativePath}:{GetLine(invocation)}: {taintedKind.Value} embedded-code text reaches {methodName}: {invocation}";
                 }
             }
         }
-    }
 
-    /// <summary>Finds transformed-code text reads outside the injector.</summary>
-    private static IEnumerable<string> FindTransformedTextUsages(string repositoryRoot, string generatorRoot)
-    {
-        foreach (string file in Directory.GetFiles(generatorRoot, "*.cs", SearchOption.AllDirectories))
+        foreach (MemberAccessExpressionSyntax access in root.DescendantNodes().OfType<MemberAccessExpressionSyntax>())
         {
-            string relativePath = NormalizePath(Path.GetRelativePath(repositoryRoot, file));
-            if (string.Equals(relativePath, InjectorPath, StringComparison.Ordinal))
+            if (TryGetEmbeddedCodeTextKind(scan, access, out EmbeddedCodeTextKind kind)
+                && kind == EmbeddedCodeTextKind.Transformed
+                && !IsAllowedEmbeddedCodeTextRead(scan.RelativePath, access))
             {
-                continue;
-            }
-
-            SyntaxTree tree = CSharpSyntaxTree.ParseText(File.ReadAllText(file));
-            foreach (MemberAccessExpressionSyntax access in tree.GetRoot().DescendantNodes().OfType<MemberAccessExpressionSyntax>())
-            {
-                if (access.Name.Identifier.ValueText == "Text"
-                    && access.Expression.ToString().Contains("code", StringComparison.OrdinalIgnoreCase)
-                    && !IsAllowedTransformedTextRead(relativePath, access))
-                {
-                    yield return $"{relativePath}:{GetLine(access)}: {access}";
-                }
+                yield return $"{scan.RelativePath}:{GetLine(access)}: {kind} embedded-code text read outside CSharpEmbeddedCodeInjector: {access}";
             }
         }
     }
 
-    /// <summary>Determines whether a transformed-code text read is classification-only rather than generated-source injection.</summary>
-    private static bool IsAllowedTransformedTextRead(string relativePath, MemberAccessExpressionSyntax access)
+    /// <summary>Finds a direct embedded-code text read inside an append argument.</summary>
+    private static EmbeddedCodeTextKind? FindDirectEmbeddedCodeTextRead(SourceScan scan, ExpressionSyntax expression)
     {
-        MethodDeclarationSyntax? method = access.Ancestors().OfType<MethodDeclarationSyntax>().FirstOrDefault();
-        return (string.Equals(relativePath, NormalizePath(Path.Combine("Utils.Parser.Generators", "Internal", "GrammarEmitter.ExecutionContext.Hooks.cs")), StringComparison.Ordinal)
-                && string.Equals(method?.Identifier.ValueText, "ForPredicate", StringComparison.Ordinal))
-            || (string.Equals(relativePath, NormalizePath(Path.Combine("Utils.Parser.Generators", "Internal", "GrammarEmitter.ExecutionContext.Policy.cs")), StringComparison.Ordinal)
-                && string.Equals(method?.Identifier.ValueText, "GetRawEmbeddedCodeText", StringComparison.Ordinal));
+        foreach (MemberAccessExpressionSyntax access in expression.DescendantNodesAndSelf().OfType<MemberAccessExpressionSyntax>())
+        {
+            if (TryGetEmbeddedCodeTextKind(scan, access, out EmbeddedCodeTextKind kind)
+                && !IsAllowedEmbeddedCodeTextRead(scan.RelativePath, access))
+            {
+                return kind;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>Finds a local whose value originated from embedded-code text inside an append argument.</summary>
+    private static EmbeddedCodeTextKind? FindTaintedLocalRead(SourceScan scan, ExpressionSyntax expression, IReadOnlyDictionary<ISymbol, EmbeddedCodeTextKind> taintedLocals)
+    {
+        foreach (IdentifierNameSyntax identifier in expression.DescendantNodesAndSelf().OfType<IdentifierNameSyntax>())
+        {
+            if (scan.SemanticModel.GetSymbolInfo(identifier).Symbol is ISymbol symbol
+                && taintedLocals.TryGetValue(symbol, out EmbeddedCodeTextKind kind))
+            {
+                return kind;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>Determines whether an expression reads embedded-code text that must not be appended directly.</summary>
+    private static bool TryGetEmbeddedCodeTextKind(SourceScan scan, ExpressionSyntax expression, out EmbeddedCodeTextKind kind)
+    {
+        kind = default;
+        if (expression is not MemberAccessExpressionSyntax access)
+        {
+            return false;
+        }
+
+        string memberName = access.Name.Identifier.ValueText;
+        if (memberName == "SourceText")
+        {
+            kind = EmbeddedCodeTextKind.Source;
+            return true;
+        }
+
+        if (memberName != "Text")
+        {
+            return false;
+        }
+
+        ITypeSymbol? receiverType = scan.SemanticModel.GetTypeInfo(access.Expression).Type;
+        string receiverTypeName = receiverType?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat).Replace("global::", string.Empty, StringComparison.Ordinal) ?? string.Empty;
+        if (receiverTypeName == "Utils.Parser.Diagnostics.EmbeddedCode.TransformedEmbeddedCode")
+        {
+            kind = EmbeddedCodeTextKind.Transformed;
+            return true;
+        }
+
+        if (receiverTypeName == "Utils.Parser.Diagnostics.EmbeddedCode.RawEmbeddedCode")
+        {
+            kind = EmbeddedCodeTextKind.Raw;
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>Determines whether an embedded-code text read is classification-only rather than generated-source injection.</summary>
+    private static bool IsAllowedEmbeddedCodeTextRead(string relativePath, SyntaxNode node)
+    {
+        MethodDeclarationSyntax? method = node.Ancestors().OfType<MethodDeclarationSyntax>().FirstOrDefault();
+        return string.Equals(relativePath, NormalizePath(Path.Combine("Utils.Parser.Generators", "Internal", "GrammarEmitter.ExecutionContext.Hooks.cs")), StringComparison.Ordinal)
+            && string.Equals(method?.Identifier.ValueText, "ForPredicate", StringComparison.Ordinal);
+    }
+
+    /// <summary>Creates metadata references for syntax-only architecture compilations.</summary>
+    private static IEnumerable<MetadataReference> CreateRuntimeReferences()
+    {
+        string? trustedPlatformAssemblies = AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") as string;
+        if (trustedPlatformAssemblies is null)
+        {
+            yield return MetadataReference.CreateFromFile(typeof(object).Assembly.Location);
+            yield return MetadataReference.CreateFromFile(typeof(Enumerable).Assembly.Location);
+            yield break;
+        }
+
+        HashSet<string> emitted = new(StringComparer.Ordinal);
+        foreach (string path in trustedPlatformAssemblies.Split(Path.PathSeparator))
+        {
+            if (emitted.Add(path))
+            {
+                yield return MetadataReference.CreateFromFile(path);
+            }
+        }
     }
 
     /// <summary>Gets an invoked member name from an invocation expression.</summary>
@@ -166,6 +340,34 @@ public sealed class CSharpEmbeddedCodeInjectorArchitectureTests
         return file.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar).Contains(directoryName, StringComparer.Ordinal);
     }
 
+    /// <summary>Finds the built parser diagnostics assembly required for semantic type checks.</summary>
+    private static string FindParserDiagnosticsAssembly(string repositoryRoot)
+    {
+        string diagnosticsRoot = Path.Combine(repositoryRoot, "Utils.Parser.Diagnostics", "bin");
+        string? assembly = Directory.Exists(diagnosticsRoot)
+            ? Directory.GetFiles(diagnosticsRoot, "Utils.Parser.Diagnostics.dll", SearchOption.AllDirectories)
+                .FirstOrDefault(static file => !ContainsDirectory(file, "ref") && !ContainsDirectory(file, "refint"))
+            : null;
+
+        return assembly ?? throw new FileNotFoundException("Utils.Parser.Diagnostics.dll was not found. Build Utils.Parser.Diagnostics before running the architecture test.");
+    }
+
     /// <summary>Normalizes paths to slash-separated relative paths.</summary>
     private static string NormalizePath(string path) => path.Replace(Path.DirectorySeparatorChar, '/');
+
+    /// <summary>Represents one source file with the semantic model used by the architecture guard.</summary>
+    private sealed record SourceScan(string RelativePath, SyntaxTree Tree, SemanticModel SemanticModel);
+
+    /// <summary>Identifies the embedded-code text source that reached generated-source writing.</summary>
+    private enum EmbeddedCodeTextKind
+    {
+        /// <summary>Transformed embedded C# text.</summary>
+        Transformed,
+
+        /// <summary>Raw grammar embedded-code text.</summary>
+        Raw,
+
+        /// <summary>Raw source text carried by grammar model nodes.</summary>
+        Source
+    }
 }
