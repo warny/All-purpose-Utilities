@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Numerics;
 
 namespace Utils.Mathematics.LinearAlgebra;
@@ -155,10 +156,20 @@ public class Line<T> : IFormattable, IEquatable<Line<T>>, ICloneable
     /// <summary>
     /// Returns a string representation of the line.
     /// </summary>
-    /// <param name="format">Format string.</param>
-    /// <param name="formatProvider">Format provider.</param>
+    /// <param name="format">
+    /// Numeric format string forwarded to each coordinate's own <see cref="IFormattable.ToString(string?, IFormatProvider?)"/>
+    /// (e.g. <c>"F2"</c>), or <see langword="null"/> for the default numeric format.
+    /// </param>
+    /// <param name="formatProvider">Format provider forwarded to each coordinate.</param>
     /// <returns>A string representation of the line.</returns>
     public string ToString(string? format, IFormatProvider? formatProvider)
-        => $"Point: {Point}, Direction: {Direction}";
+        => $"Point: {FormatVector(Point, format, formatProvider)}, Direction: {FormatVector(Direction, format, formatProvider)}";
+
+    /// <summary>
+    /// Formats a vector's components individually with <paramref name="format"/>/<paramref name="formatProvider"/>,
+    /// since <see cref="Vector{T}"/> itself does not implement <see cref="IFormattable"/>.
+    /// </summary>
+    private static string FormatVector(Vector<T> vector, string? format, IFormatProvider? formatProvider)
+        => "(" + string.Join(", ", vector.Select(component => component.ToString(format, formatProvider))) + ")";
 }
 

@@ -133,4 +133,30 @@ public class LineTests
 
         Assert.ThrowsException<ArgumentOutOfRangeException>(() => a.IsGeometricallyEquivalentTo(b, -1.0));
     }
+
+    // ── ToString format/provider propagation (item 39) ────────────────────────
+
+    [TestMethod]
+    public void ToString_WithFormat_AppliesFormatToCoordinates()
+    {
+        var line = new Line<double>(new Vector<double>(1.23456, 2.5), new Vector<double>(1d, 0d));
+
+        string formatted = line.ToString("F2", System.Globalization.CultureInfo.InvariantCulture);
+
+        StringAssert.Contains(formatted, "1.23");
+        StringAssert.Contains(formatted, "2.50");
+        StringAssert.Contains(formatted, "1.00");
+        StringAssert.Contains(formatted, "0.00");
+    }
+
+    [TestMethod]
+    public void ToString_WithCulture_AppliesFormatProviderToCoordinates()
+    {
+        var line = new Line<double>(new Vector<double>(1.5, 0d), new Vector<double>(1d, 0d));
+        var culture = System.Globalization.CultureInfo.GetCultureInfo("fr-FR");
+
+        string formatted = line.ToString("F1", culture);
+
+        StringAssert.Contains(formatted, "1,5");
+    }
 }
