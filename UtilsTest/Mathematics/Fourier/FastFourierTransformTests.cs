@@ -326,6 +326,39 @@ public class FastFourierTransformTests
             Assert.AreEqual(0.0, amplitudes[k], Delta, $"bin {k}");
     }
 
+    // ── GetMagnitudes (TODO-pass4 item #55) ─────────────────────────────────────
+
+    /// <summary>
+    /// <see cref="FourierExtensions.GetMagnitudes"/> is an identically-behaving, more accurately-named
+    /// alias for <see cref="FourierExtensions.GetAmplitudes"/> ("amplitude" implies a physically
+    /// normalized value; this is the raw FFT bin magnitude).
+    /// </summary>
+    [TestMethod]
+    public void GetMagnitudes_MatchesGetAmplitudes()
+    {
+        Complex[] samples = [1, 1, 1, 1];
+        FastFourierTransform.Transform(samples);
+
+        CollectionAssert.AreEqual(samples.GetAmplitudes(), samples.GetMagnitudes());
+    }
+
+    [TestMethod]
+    public void GetMagnitudes_ConstantSignal_DcBinIsN()
+    {
+        Complex[] samples = [1, 1, 1, 1];
+        FastFourierTransform.Transform(samples);
+
+        double[] magnitudes = samples.GetMagnitudes();
+        Assert.AreEqual(4.0, magnitudes[0], Delta);
+    }
+
+    [TestMethod]
+    public void GetMagnitudes_NullTransform_Throws()
+    {
+        Complex[] transform = null!;
+        Assert.ThrowsException<ArgumentNullException>(() => transform.GetMagnitudes());
+    }
+
     // ── InverseTransform ──────────────────────────────────────────────────────
 
     [TestMethod]
