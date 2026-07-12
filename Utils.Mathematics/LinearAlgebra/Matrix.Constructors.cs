@@ -30,11 +30,25 @@ public sealed partial class Matrix<T>
     /// Initializes a matrix with a backing array and structural metadata.
     /// </summary>
     /// <param name="array">Backing array containing matrix values.</param>
-    /// <param name="isIdentity">Indicates whether the matrix is an identity matrix.</param>
-    /// <param name="isTriangular">Indicates whether the matrix is triangular (upper or lower).</param>
-    /// <param name="isDiagonal">Indicates whether the matrix is diagonal (all off-diagonal elements are zero).</param>
+    /// <param name="isIdentity">
+    /// Indicates whether the matrix is an identity matrix, or <see langword="null"/> when the caller
+    /// does not have a mathematically guaranteed answer. Unlike <see langword="false"/> - which
+    /// permanently caches a (possibly wrong) negative answer and disables the lazy recomputation
+    /// performed by <see cref="DetermineStructuralFlags"/> - <see langword="null"/> defers the
+    /// determination to the first access of <see cref="IsIdentity"/>, computed from the actual values
+    /// in <paramref name="array"/> (see TODO-2026-07-11-pass5.md item #61).
+    /// </param>
+    /// <param name="isTriangular">
+    /// Indicates whether the matrix is triangular (upper or lower), or <see langword="null"/> per the
+    /// same "unknown defers to lazy recomputation" rule as <paramref name="isIdentity"/>.
+    /// </param>
+    /// <param name="isDiagonal">
+    /// Indicates whether the matrix is diagonal (all off-diagonal elements are zero), or
+    /// <see langword="null"/> per the same "unknown defers to lazy recomputation" rule as
+    /// <paramref name="isIdentity"/>.
+    /// </param>
     /// <param name="determinant">Precomputed determinant, if available.</param>
-    internal Matrix(T[,] array, bool isIdentity, bool isTriangular, bool isDiagonal, T? determinant)
+    internal Matrix(T[,] array, bool? isIdentity, bool? isTriangular, bool? isDiagonal, T? determinant)
     {
         array.Arg().MustNotBeNull();
         this.components = array;

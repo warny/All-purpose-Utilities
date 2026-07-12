@@ -297,13 +297,27 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
     }
 
     /// <summary>
-    /// Pads the matrix to the specified new dimensions.
+    /// Resizes the matrix to the specified new dimensions, copying the overlapping top-left prefix and
+    /// zero-filling any newly added rows/columns.
     /// </summary>
-    /// <param name="newRows">The new number of rows.</param>
-    /// <param name="newColumns">The new number of columns.</param>
-    /// <returns>A new matrix with the padded dimensions.</returns>
+    /// <param name="newRows">The new number of rows. Must be positive.</param>
+    /// <param name="newColumns">The new number of columns. Must be positive.</param>
+    /// <returns>A new matrix with the requested dimensions.</returns>
+    /// <remarks>
+    /// Despite its name, this is a resize, not a pure enlargement: whenever <paramref name="newRows"/>
+    /// and/or <paramref name="newColumns"/> is smaller than the corresponding current dimension, the
+    /// returned matrix crops that dimension down (see TODO-2026-07-11-pass5.md item #67) instead of
+    /// throwing or requiring the new dimensions to be at least the current ones. Only the overlapping
+    /// <c>min(current, new)</c> prefix of rows/columns is preserved either way.
+    /// </remarks>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="newRows"/> or <paramref name="newColumns"/> is not positive.
+    /// </exception>
     public Matrix<T> Pad(int newRows, int newColumns)
     {
+        if (newRows <= 0) throw new ArgumentException("Row count must be positive", nameof(newRows));
+        if (newColumns <= 0) throw new ArgumentException("Column count must be positive", nameof(newColumns));
+
         T[,] paddedMatrix = new T[newRows, newColumns];
         int rowCount = MathEx.Min(newRows, Rows);
         int colCount = MathEx.Min(newColumns, Columns);
@@ -380,51 +394,6 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
             return determinant.Value;
         }
     }
-
-    private T ComputeDeterminant()
-    {
-        int n = Rows;
-        T[,] u = ToArray();
-        int swaps = 0;
-        // Elimination divides by the pivot below, so a pivot that is merely close to zero (not
-        // exactly zero) would otherwise amplify rounding error into a huge/infinite/NaN result
-        // instead of the mathematically expected near-zero determinant of a near-singular matrix.
-        T pivotTolerance = DefaultTolerance(MaxAbsoluteEntry(u), n);
-
-        for (int k = 0; k < n; k++)
-        {
-            int pivotRow = k;
-            for (int i = k + 1; i < n; i++)
-            {
-                if (T.Abs(u[i, k]) > T.Abs(u[pivotRow, k]))
-                    pivotRow = i;
-            }
-
-            if (T.Abs(u[pivotRow, k]) <= pivotTolerance)
-                return T.Zero;
-
-            if (pivotRow != k)
-            {
-                PermuteRows(u, k, pivotRow);
-                swaps++;
-            }
-
-            for (int row = k + 1; row < n; row++)
-            {
-                T factor = u[row, k] / u[k, k];
-                for (int col = k; col < n; col++)
-                    u[row, col] -= factor * u[k, col];
-            }
-        }
-
-        // Each row swap inverts the sign of the determinant.
-        T det = (swaps % 2 == 0) ? T.One : -T.One;
-        for (int i = 0; i < n; i++)
-            det *= u[i, i];
-        return det;
-    }
-
-
 
     /// <summary>
     /// Converts the matrix to an array of vectors.

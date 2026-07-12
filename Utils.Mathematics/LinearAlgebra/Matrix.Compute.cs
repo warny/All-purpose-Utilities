@@ -44,25 +44,52 @@ public partial class Matrix<T>
     }
 
     /// <summary>
-    /// Performs a pivoted LU decomposition of the current square matrix: a lower unitriangular
-    /// matrix L, an upper triangular matrix U, and a permutation matrix P such that P * A = L * U,
-    /// where A is the current matrix.
+    /// Result of <see cref="TryDecomposePivoted"/>: a pivoted Gauss elimination of a square matrix
+    /// <c>A</c> such that <c>P·A = L·U</c>, where <c>P</c> is the permutation matrix implied by
+    /// <see cref="Permutation"/> (row <c>i</c> of <c>P·A</c> is row <see cref="Permutation"/><c>[i]</c>
+    /// of <c>A</c>).
     /// </summary>
-    /// <remarks>
-    /// Uses partial pivoting (largest-magnitude pivot in each column) and stores the elimination
-    /// multipliers directly in L, as required for L to be the actual lower-triangular LU factor
-    /// rather than a by-product of applying the elimination row operations to an identity matrix.
-    /// Operates entirely on local array copies to preserve immutability.
-    /// </remarks>
-    /// <returns>A tuple containing the lower-triangular, upper-triangular, and permutation matrices.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when the matrix is not square or is singular.</exception>
-    public (Matrix<T> L, Matrix<T> U, Matrix<T> P) DiagonalizeLU()
-    {
-        if (!IsSquare)
-        {
-            throw new InvalidOperationException("The matrix must be square for LU decomposition.");
-        }
+    /// <param name="L">Lower unitriangular factor (unit diagonal, elimination multipliers below it).</param>
+    /// <param name="U">Upper triangular factor.</param>
+    /// <param name="Permutation">Row permutation applied to <c>A</c> before elimination.</param>
+    /// <param name="Swaps">
+    /// Number of row transpositions actually performed; <c>(-1)^Swaps</c> is the determinant of the
+    /// implied permutation matrix <c>P</c>.
+    /// </param>
+    private readonly record struct PivotedElimination(T[,] L, T[,] U, int[] Permutation, int Swaps);
 
+    /// <summary>
+    /// Performs the pivoted Gauss elimination shared by <see cref="DiagonalizeLU"/>,
+    /// <see cref="ComputeDeterminant"/>, <see cref="Solve"/>, and <see cref="Invert"/>, so pivot
+    /// selection and the elimination arithmetic itself cannot silently drift between these four
+    /// operations the way four independent reimplementations previously could (see
+    /// TODO-2026-07-11-pass5.md item #69). Uses partial pivoting (largest-magnitude pivot in each
+    /// column) and stores the elimination multipliers directly in <c>L</c>, rather than as a
+    /// by-product of applying the elimination row operations to an identity matrix.
+    /// </summary>
+    /// <param name="pivotTolerance">
+    /// The absolute pivot-rejection threshold: a pivot column whose largest available magnitude does
+    /// not exceed this value is treated as singular. Deliberately <b>not</b> resolved internally from a
+    /// single shared policy - <see cref="ComputeDeterminant"/> needs a fundamentally different notion of
+    /// "singular" than <see cref="DiagonalizeLU"/>/<see cref="Solve"/>/<see cref="Invert"/> do (see
+    /// TODO-2026-07-11-pass5.md item #69 PR review): a determinant is the exact product of the pivots
+    /// and is well-defined (and can be legitimately tiny) for any well-conditioned matrix whose entries
+    /// merely happen to be small in absolute value, so it must reject only an exactly-zero pivot
+    /// (pass <c>T.Zero</c>). Solving/inverting, by contrast, divide by the pivot
+    /// to propagate a numerically reliable result, so they need the scale-aware
+    /// relative-plus-absolute-floor policy computed by <see cref="DefaultTolerance"/> (or an explicit
+    /// override) to reject a pivot that is technically nonzero but too small to trust.
+    /// </param>
+    /// <param name="decomposition">The computed decomposition, or <c>default</c> when this method returns <see langword="false"/>.</param>
+    /// <returns>
+    /// <see langword="true"/> when the matrix could be decomposed; <see langword="false"/> when a pivot
+    /// column's largest available magnitude does not exceed <paramref name="pivotTolerance"/>. Returning
+    /// a sentinel rather than throwing lets <see cref="ComputeDeterminant"/> report the mathematically
+    /// well-defined zero determinant for an exactly singular matrix without using an exception for
+    /// ordinary control flow.
+    /// </returns>
+    private bool TryDecomposePivoted(T pivotTolerance, out PivotedElimination decomposition)
+    {
         int n = Rows;
         T[,] u = ToArray();
         T[,] l = new T[n, n];
@@ -74,6 +101,7 @@ public partial class Matrix<T>
             permutation[i] = i;
         }
 
+        int swaps = 0;
         for (int k = 0; k < n; k++)
         {
             int pivotRow = k;
@@ -85,9 +113,10 @@ public partial class Matrix<T>
                 }
             }
 
-            if (u[pivotRow, k].Equals(T.Zero))
+            if (T.Abs(u[pivotRow, k]) <= pivotTolerance)
             {
-                throw new InvalidOperationException("The matrix is singular and cannot be decomposed.");
+                decomposition = default;
+                return false;
             }
 
             if (pivotRow != k)
@@ -97,6 +126,7 @@ public partial class Matrix<T>
                 // column k onward is either not yet computed or the identity diagonal being formed.
                 PermuteRows(l, k, pivotRow, k);
                 (permutation[k], permutation[pivotRow]) = (permutation[pivotRow], permutation[k]);
+                swaps++;
             }
 
             for (int row = k + 1; row < n; row++)
@@ -110,16 +140,142 @@ public partial class Matrix<T>
             }
         }
 
+        decomposition = new PivotedElimination(l, u, permutation, swaps);
+        return true;
+    }
+
+    /// <summary>
+    /// Resolves the scale-aware relative-plus-absolute-floor pivot tolerance shared by
+    /// <see cref="DiagonalizeLU"/>, <see cref="Solve"/>, and <see cref="Invert"/> (never
+    /// <see cref="ComputeDeterminant"/>, which needs an exact-zero check instead - see
+    /// <see cref="TryDecomposePivoted"/>): either the default (see <see cref="DefaultTolerance"/>) or,
+    /// when supplied, <paramref name="relativeSingularityTolerance"/> multiplied by the matrix's largest
+    /// entry (no absolute floor is added in that case, unlike the default).
+    /// </summary>
+    private T ResolveDecompositionTolerance(T[,] matrix, T? relativeSingularityTolerance)
+    {
+        return relativeSingularityTolerance is { } explicitTolerance
+            ? MaxAbsoluteEntry(matrix) * explicitTolerance
+            : DefaultTolerance(MaxAbsoluteEntry(matrix), matrix.GetLength(0));
+    }
+
+    /// <summary>
+    /// Solves <c>L·y = P·b</c> by forward substitution (<c>L</c> has a unit diagonal, so no division is
+    /// needed on the diagonal step) followed by <c>U·x = y</c> by back substitution, reusing an already
+    /// computed <see cref="PivotedElimination"/>. Shared by <see cref="Solve"/> and <see cref="Invert"/>
+    /// (which calls this once per column of the identity matrix).
+    /// </summary>
+    /// <param name="decomposition">A decomposition of the current matrix from <see cref="TryDecomposePivoted"/>.</param>
+    /// <param name="permutedRightHandSide">
+    /// The right-hand side already permuted according to <see cref="PivotedElimination.Permutation"/>,
+    /// i.e. <c>P·b</c> (index <c>i</c> holds <c>b[Permutation[i]]</c>).
+    /// </param>
+    /// <returns>The solution <c>x</c> of <c>A·x = b</c>.</returns>
+    private static T[] SolvePermuted(PivotedElimination decomposition, T[] permutedRightHandSide)
+    {
+        int n = permutedRightHandSide.Length;
+        T[] y = new T[n];
+        for (int i = 0; i < n; i++)
+        {
+            T sum = permutedRightHandSide[i];
+            for (int j = 0; j < i; j++)
+                sum -= decomposition.L[i, j] * y[j];
+            y[i] = sum;
+        }
+
+        T[] x = new T[n];
+        for (int i = n - 1; i >= 0; i--)
+        {
+            T sum = y[i];
+            for (int j = i + 1; j < n; j++)
+                sum -= decomposition.U[i, j] * x[j];
+            x[i] = sum / decomposition.U[i, i];
+        }
+
+        return x;
+    }
+
+    /// <summary>
+    /// Performs a pivoted LU decomposition of the current square matrix: a lower unitriangular
+    /// matrix L, an upper triangular matrix U, and a permutation matrix P such that P * A = L * U,
+    /// where A is the current matrix.
+    /// </summary>
+    /// <param name="relativeSingularityTolerance">
+    /// Overrides the default relative-plus-absolute pivot tolerance (see <see cref="DefaultTolerance"/>)
+    /// used to reject a numerically near-singular matrix; see <see cref="ResolveDecompositionTolerance"/>.
+    /// Must be finite and non-negative when supplied.
+    /// </param>
+    /// <remarks>
+    /// Delegates to the pivoted elimination shared with <see cref="ComputeDeterminant"/>,
+    /// <see cref="Solve"/>, and <see cref="Invert"/> (see TODO-2026-07-11-pass5.md item #69). Unlike
+    /// <see cref="ComputeDeterminant"/>, this uses the scale-aware relative-plus-absolute-floor
+    /// tolerance (see <see cref="TryDecomposePivoted"/>'s remarks), since <c>L</c>/<c>U</c> are meant to
+    /// be used for further numerically reliable computation, not just an exact product of pivots.
+    /// Structural metadata on the returned matrices reflects only what is mathematically guaranteed for
+    /// every input: <c>L</c>'s unit diagonal makes it always triangular with determinant one, and
+    /// <c>U</c> is always triangular; whether <c>L</c>, <c>U</c>, or <c>P</c> also happen to be diagonal
+    /// or the identity (e.g. when no pivoting was needed, or the source was already triangular) is left
+    /// to lazy recomputation rather than hardcoded as false (see item #61/#68). <c>P</c>'s determinant
+    /// (the sign of the permutation) is known directly from the elimination's swap count, so it is
+    /// supplied rather than left for recomputation.
+    /// </remarks>
+    /// <returns>A tuple containing the lower-triangular, upper-triangular, and permutation matrices.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the matrix is not square or is singular.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="relativeSingularityTolerance"/> is supplied but not finite or is negative.</exception>
+    public (Matrix<T> L, Matrix<T> U, Matrix<T> P) DiagonalizeLU(T? relativeSingularityTolerance = null)
+    {
+        if (!IsSquare)
+        {
+            throw new InvalidOperationException("The matrix must be square for LU decomposition.");
+        }
+        if (relativeSingularityTolerance is { } explicitTolerance)
+            ValidateTolerance(explicitTolerance, nameof(relativeSingularityTolerance));
+
+        T pivotTolerance = ResolveDecompositionTolerance(ToArray(), relativeSingularityTolerance);
+        if (!TryDecomposePivoted(pivotTolerance, out PivotedElimination decomposition))
+        {
+            throw new InvalidOperationException("The matrix is singular and cannot be decomposed.");
+        }
+
+        int n = Rows;
         T[,] p = new T[n, n];
         for (int i = 0; i < n; i++)
         {
-            p[i, permutation[i]] = T.One;
+            p[i, decomposition.Permutation[i]] = T.One;
         }
 
-        Matrix<T> L = new Matrix<T>(l, false, true, false, T.One);
-        Matrix<T> U = new Matrix<T>(u, false, true, false, null);
-        Matrix<T> P = new Matrix<T>(p, false, false, false, null);
+        T permutationDeterminant = decomposition.Swaps % 2 == 0 ? T.One : -T.One;
+        Matrix<T> L = new Matrix<T>(decomposition.L, null, true, null, T.One);
+        Matrix<T> U = new Matrix<T>(decomposition.U, null, true, null, null);
+        Matrix<T> P = new Matrix<T>(p, null, null, null, permutationDeterminant);
         return (L, U, P);
+    }
+
+    /// <summary>
+    /// Computes the determinant using the shared pivoted elimination (see
+    /// <see cref="TryDecomposePivoted"/> and TODO-2026-07-11-pass5.md item #69), rejecting only an
+    /// exactly-zero pivot rather than the scale-aware near-singularity tolerance that
+    /// <see cref="DiagonalizeLU"/>/<see cref="Solve"/>/<see cref="Invert"/> use. A determinant is the
+    /// exact product of the pivots (up to sign) and is well-defined - and can be legitimately tiny -
+    /// for any well-conditioned matrix whose entries merely happen to be small in absolute value (e.g.
+    /// <c>diag(1e-20, 2e-20)</c> has an exact, nonzero determinant of <c>2e-40</c>); reusing the other
+    /// three operations' "too small to trust for further arithmetic" tolerance here would incorrectly
+    /// collapse such a determinant to zero (see TODO-2026-07-11-pass5.md item #69 PR review). Only an
+    /// exactly-zero pivot reflects genuine rank deficiency, which is the only case where the
+    /// determinant is actually zero.
+    /// </summary>
+    private T ComputeDeterminant()
+    {
+        if (!TryDecomposePivoted(T.Zero, out PivotedElimination decomposition))
+        {
+            return T.Zero;
+        }
+
+        T det = decomposition.Swaps % 2 == 0 ? T.One : -T.One;
+        int n = Rows;
+        for (int i = 0; i < n; i++)
+            det *= decomposition.U[i, i];
+        return det;
     }
 
     /// <summary>
@@ -134,6 +290,14 @@ public partial class Matrix<T>
     /// <returns>A new matrix representing the inverse of the current matrix.</returns>
     /// <exception cref="InvalidOperationException">Thrown when the matrix is not square.</exception>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="relativeSingularityTolerance"/> is supplied but not finite or is negative.</exception>
+    /// <remarks>
+    /// Delegates to the pivoted elimination shared with <see cref="DiagonalizeLU"/>,
+    /// <see cref="ComputeDeterminant"/>, and <see cref="Solve"/> (see TODO-2026-07-11-pass5.md item #69),
+    /// using the same scale-aware tolerance as <see cref="DiagonalizeLU"/>/<see cref="Solve"/> (not
+    /// <see cref="ComputeDeterminant"/>'s exact-zero check - see <see cref="TryDecomposePivoted"/>'s
+    /// remarks): column <c>j</c> of the inverse is the solution of <c>A·x = e_j</c> for the <c>j</c>-th
+    /// standard basis vector, computed via the same forward/back substitution as <see cref="Solve"/>.
+    /// </remarks>
     public Matrix<T> Invert(T? relativeSingularityTolerance = null)
     {
         if (!IsSquare)
@@ -148,64 +312,31 @@ public partial class Matrix<T>
             return new Matrix<T>(this);
         }
 
-        int n = Rows;
         T[,] working = ToArray();
+        T pivotTolerance = ResolveDecompositionTolerance(working, relativeSingularityTolerance);
+        if (!TryDecomposePivoted(pivotTolerance, out PivotedElimination decomposition))
+        {
+            throw new InvalidOperationException("The matrix is singular or numerically near-singular and cannot be reliably inverted.");
+        }
+
+        int n = Rows;
         T[,] inverse = new T[n, n];
-        T pivotTolerance = relativeSingularityTolerance is { } explicitInvertTolerance
-            ? MaxAbsoluteEntry(working) * explicitInvertTolerance
-            : DefaultTolerance(MaxAbsoluteEntry(working), n);
-
-        for (int i = 0; i < n; i++)
+        T[] permutedColumn = new T[n];
+        for (int col = 0; col < n; col++)
         {
-            inverse[i, i] = T.One;
-        }
+            for (int i = 0; i < n; i++)
+                permutedColumn[i] = decomposition.Permutation[i] == col ? T.One : T.Zero;
 
-        for (int pivotIndex = 0; pivotIndex < n; pivotIndex++)
-        {
-            int pivotRow = pivotIndex;
-            T pivotMagnitude = T.Abs(working[pivotRow, pivotIndex]);
-
-            for (int row = pivotIndex + 1; row < n; row++)
-            {
-                T candidate = T.Abs(working[row, pivotIndex]);
-                if (candidate > pivotMagnitude)
-                {
-                    pivotMagnitude = candidate;
-                    pivotRow = row;
-                }
-            }
-
-            if (pivotMagnitude <= pivotTolerance)
-            {
-                throw new InvalidOperationException("The matrix is singular or numerically near-singular and cannot be reliably inverted.");
-            }
-
-            if (pivotRow != pivotIndex)
-            {
-                PermuteRows(working, pivotIndex, pivotRow);
-                PermuteRows(inverse, pivotIndex, pivotRow);
-            }
-
-            T pivot = working[pivotIndex, pivotIndex];
-            for (int col = 0; col < n; col++)
-            {
-                working[pivotIndex, col] /= pivot;
-                inverse[pivotIndex, col] /= pivot;
-            }
-
+            T[] x = SolvePermuted(decomposition, permutedColumn);
             for (int row = 0; row < n; row++)
-            {
-                if (row == pivotIndex) continue;
-
-                T factor = working[row, pivotIndex];
-                for (int col = 0; col < n; col++)
-                {
-                    working[row, col] -= factor * working[pivotIndex, col];
-                    inverse[row, col] -= factor * inverse[pivotIndex, col];
-                }
-            }
+                inverse[row, col] = x[row];
         }
 
-        return new Matrix<T>(inverse, false, false, false, null);
+        // Unlike false (a permanently cached, potentially wrong negative answer that disables lazy
+        // recomputation - see TODO-2026-07-11-pass5.md item #61), null defers isIdentity/isTriangular/
+        // isDiagonal to the first access of the corresponding property, which recomputes them from the
+        // actual computed inverse array. This correctly reports e.g. the inverse of a diagonal matrix
+        // as still diagonal, instead of always false regardless of the source's actual structure.
+        return new Matrix<T>(inverse, null, null, null, null);
     }
 }

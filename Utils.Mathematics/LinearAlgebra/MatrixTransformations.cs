@@ -12,21 +12,22 @@ public static class MatrixTransformations
     /// Creates an identity matrix of the specified dimension.
     /// </summary>
     /// <typeparam name="T">Numeric type of the matrix.</typeparam>
-    /// <param name="dimension">Matrix dimension.</param>
+    /// <param name="dimension">Matrix dimension. Must be positive.</param>
     /// <returns>New identity matrix.</returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="dimension"/> is not positive.</exception>
+    /// <remarks>
+    /// Delegates to <see cref="Matrix{T}.Identity(int)"/>, which is the single implementation of
+    /// identity-matrix construction: an earlier, independent implementation here performed no
+    /// validation at all, so a zero dimension silently built a 0×0 matrix and a negative dimension
+    /// failed through raw array allocation instead of a clean, documented exception — disagreeing
+    /// with <see cref="Matrix{T}.Identity(int)"/>'s domain and exception behavior for the same
+    /// operation (see TODO-2026-07-11-pass5.md item #62). Two independently maintained factories for
+    /// the same construction had already drifted once for <see cref="Diagonal{T}(IEnumerable{T})"/>;
+    /// keeping one implementation avoids a repeat.
+    /// </remarks>
     public static Matrix<T> Identity<T>(int dimension)
         where T : struct, IFloatingPoint<T>, IRootFunctions<T>
-    {
-        var array = new T[dimension, dimension];
-        for (int i = 0; i < dimension; i++)
-        {
-            for (int j = 0; j < dimension; j++)
-            {
-                array[i, j] = i == j ? T.One : T.Zero;
-            }
-        }
-        return new Matrix<T>(array, true, true, true, T.One);
-    }
+        => Matrix<T>.Identity(dimension);
 
     /// <summary>
     /// Creates a diagonal matrix from the provided values.
@@ -129,19 +130,45 @@ public static class MatrixTransformations
             }
         }
 
-        return new Matrix<T>(array, false, false, false, null);
+        // Unlike hardcoded false, null defers isIdentity/isTriangular/isDiagonal to lazy recomputation
+        // (see TODO-2026-07-11-pass5.md item #68): with the degenerate zero-angle/base-dimension-1 input
+        // (no coefficients to place), the loop above leaves the array exactly the identity, which
+        // hardcoded false could never report correctly. For any non-degenerate input, at least one
+        // off-diagonal coefficient is filled on both sides of the diagonal (the loop covers every
+        // off-diagonal base-block position), so recomputation still correctly resolves to false there.
+        return new Matrix<T>(array, null, null, null, null);
     }
 
     /// <summary>
     /// Generates a rotation matrix.
     /// </summary>
     /// <typeparam name="T">Numeric type of the matrix.</typeparam>
-    /// <param name="angles">Angles of rotation.</param>
+    /// <param name="angles">
+    /// Angles of rotation, one per axis pair of the base <c>d × d</c> rotation block: <c>d * (d - 1) / 2</c>
+    /// angles are required for a given base dimension <c>d</c>. Must not be empty: with zero angles, the
+    /// <c>d * (d - 1) / 2 = n</c> formula solves to the degenerate <c>d = 1</c> (a meaningless "1×1
+    /// rotation", since rotation requires at least two axes to rotate between) rather than identifying
+    /// which ambient dimension's identity rotation the caller intended (see
+    /// TODO-2026-07-11-pass5.md item #66). To build an identity matrix of a specific dimension, call
+    /// <see cref="Identity{T}(int)"/> directly instead.
+    /// </param>
     /// <returns>New rotation matrix.</returns>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="angles"/> is empty, or its count does not match <c>d * (d - 1) / 2</c>
+    /// for any integer <c>d</c>.
+    /// </exception>
     public static Matrix<T> Rotation<T>(params IEnumerable<T> angles)
         where T : struct, IFloatingPoint<T>, ITrigonometricFunctions<T>, IRootFunctions<T>
     {
         T[] anglesArray = angles.ToArray();
+        if (anglesArray.Length == 0)
+        {
+            throw new ArgumentException(
+                "At least one angle is required: an empty angle list is ambiguous about the intended " +
+                $"ambient dimension (it would always resolve to a degenerate 1x1 base rotation). Use " +
+                $"{nameof(Identity)}<T>(int) to build an identity matrix of a specific dimension instead.",
+                nameof(angles));
+        }
         double baseComputeDimension = (1 + Math.Sqrt(8 * anglesArray.Length + 1)) / 2;
         int dimension = (int)Math.Floor(baseComputeDimension);
         if (baseComputeDimension != dimension)
@@ -172,7 +199,12 @@ public static class MatrixTransformations
                 rotationArray[dim1, dim2] = -sin;
                 rotationArray[dim2, dim1] = sin;
 
-                Matrix<T> rotation = new Matrix<T>(rotationArray, false, false, false, null);
+                // isIdentity/isTriangular/isDiagonal depend on the specific angle (e.g. angle = 0 makes
+                // this elementary rotation the identity, which hardcoded false could never report - see
+                // TODO-2026-07-11-pass5.md item #68), so null defers to lazy recomputation. The
+                // determinant of any plane rotation is always cos^2 + sin^2 = 1, regardless of angle, so
+                // it is supplied directly instead of left for recomputation.
+                Matrix<T> rotation = new Matrix<T>(rotationArray, null, null, null, T.One);
                 result *= rotation;
                 angleIndex++;
             }
@@ -202,12 +234,20 @@ public static class MatrixTransformations
         }
 
         int lastColumn = dimension - 1;
+        bool allZero = true;
         for (int i = 0; i < valuesArray.Length; i++)
         {
             array[i, lastColumn] = valuesArray[i];
+            if (valuesArray[i] != T.Zero) allZero = false;
         }
 
-        return new Matrix<T>(array, false, false, false, null);
+        // Every flag below is mathematically guaranteed, not just a lazy default (see
+        // TODO-2026-07-11-pass5.md item #68): the translation entries only ever occupy strictly-upper
+        // positions (row i < lastColumn for every i in range), so the matrix is always upper triangular
+        // regardless of the supplied values; it is diagonal/the identity exactly when every translation
+        // value is zero; and its determinant is always 1 (an upper-triangular matrix with an all-ones
+        // diagonal).
+        return new Matrix<T>(array, isIdentity: allZero, isTriangular: true, isDiagonal: allZero, determinant: T.One);
     }
 
     /// <summary>
@@ -262,6 +302,10 @@ public static class MatrixTransformations
             }
         }
 
-        return new Matrix<T>(array, false, false, false, null);
+        // The linear block is arbitrary caller-supplied data, so none of these flags are provable at
+        // construction time in general (e.g. the caller could still supply exactly the identity
+        // coefficients); null defers to lazy recomputation instead of hardcoding false (see
+        // TODO-2026-07-11-pass5.md item #68).
+        return new Matrix<T>(array, null, null, null, null);
     }
 }

@@ -264,17 +264,34 @@ public sealed class Polynomial<T> : IEquatable<Polynomial<T>>
         return hash.ToHashCode();
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Renders the polynomial as e.g. <c>"3x^2 - 2x + 1"</c>: each term's sign is applied as a separator
+    /// between terms (<c>" + "</c>/<c>" - "</c> or a leading <c>"-"</c> for the first term) rather than
+    /// baked into the coefficient's own <see cref="object.ToString"/>, which previously produced
+    /// double-signed sequences such as <c>"2x + -3"</c> whenever a non-leading term was negative. A unit
+    /// coefficient (<c>±1</c>) on a non-constant term omits the redundant magnitude (<c>"x"</c>/<c>"-x"</c>
+    /// rather than <c>"1x"</c>/<c>"-1x"</c>).
+    /// </summary>
     public override string ToString()
     {
         if (Degree == 0) return _coefficients[0].ToString() ?? "0";
         var parts = new List<string>();
         for (int i = Degree; i >= 0; i--)
         {
-            if (T.Abs(_coefficients[i]) <= Epsilon) continue;
-            string coef = _coefficients[i].ToString() ?? "0";
-            parts.Add(i == 0 ? coef : i == 1 ? $"{coef}x" : $"{coef}x^{i}");
+            T coefficient = _coefficients[i];
+            if (T.Abs(coefficient) <= Epsilon) continue;
+
+            bool negative = coefficient < T.Zero;
+            T magnitude = T.Abs(coefficient);
+            bool omitMagnitude = i != 0 && magnitude == T.One;
+            string magnitudeText = omitMagnitude ? string.Empty : magnitude.ToString() ?? "0";
+            string variableText = i == 0 ? string.Empty : i == 1 ? "x" : $"x^{i}";
+            string term = magnitudeText + variableText;
+
+            parts.Add(parts.Count == 0
+                ? (negative ? $"-{term}" : term)
+                : (negative ? $"- {term}" : $"+ {term}"));
         }
-        return parts.Count == 0 ? "0" : string.Join(" + ", parts);
+        return parts.Count == 0 ? "0" : string.Join(" ", parts);
     }
 }

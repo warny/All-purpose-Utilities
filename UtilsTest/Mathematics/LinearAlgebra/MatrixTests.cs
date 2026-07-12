@@ -95,6 +95,98 @@ namespace UtilsTest.Mathematics.LinearAlgebra
             AssertMatricesAreEqual(P * matrix, L * U, 1e-9);
         }
 
+        // ── Shared pivoted decomposition (TODO-pass5 item #69) ─────────────────────
+
+        /// <summary>
+        /// Before item #69, <see cref="Matrix{T}.DiagonalizeLU"/> rejected only an exactly-zero pivot,
+        /// unlike <see cref="Matrix{T}.Invert"/>/<see cref="Matrix{T}.Solve"/>/<see cref="Matrix{T}.Determinant"/>,
+        /// which all use the shared scale-aware tolerance. Now that all four share one decomposition,
+        /// a near-singular (but not exactly singular) matrix is rejected consistently everywhere.
+        /// </summary>
+        [TestMethod]
+        public void DiagonalizeLU_NearSingularMatrix_ThrowsInsteadOfReturningGarbage()
+        {
+            var matrix = new Matrix<double>(new double[,] { { 1d, 2d }, { 2d + 2e-13, 4d + 4e-13 } });
+            Assert.ThrowsException<InvalidOperationException>(() => matrix.DiagonalizeLU());
+        }
+
+        /// <summary>
+        /// Before item #69, the permutation matrix returned by <see cref="Matrix{T}.DiagonalizeLU"/> was
+        /// always constructed with hardcoded <c>isIdentity: false</c>, even when zero row swaps occurred
+        /// and <c>P</c> is therefore actually the identity matrix.
+        /// </summary>
+        [TestMethod]
+        public void DiagonalizeLU_NoSwapNeeded_PermutationReportsIdentity()
+        {
+            // |2| is already the largest first-column magnitude, so no pivot swap occurs and P is
+            // literally the identity matrix.
+            Matrix<double> matrix = new Matrix<double>(new double[,]
+            {
+                                { 2d, 1d },
+                                { 1d, 3d },
+            });
+
+            (_, _, Matrix<double> P) = matrix.DiagonalizeLU();
+
+            Assert.IsTrue(P.IsIdentity);
+            Assert.IsTrue(P.IsDiagonal);
+            Assert.IsTrue(P.IsTriangular);
+            Assert.AreEqual(1d, P.Determinant, 1e-12);
+        }
+
+        /// <summary>
+        /// Same as <see cref="DiagonalizeLU_NoSwapNeeded_PermutationReportsIdentity"/>, but for a case
+        /// where a swap does occur: <c>P</c> must report a determinant of <c>-1</c> (an odd number of
+        /// transpositions) and must not be the identity.
+        /// </summary>
+        [TestMethod]
+        public void DiagonalizeLU_WithSwap_PermutationDeterminantReflectsSwapParity()
+        {
+            Matrix<double> matrix = new Matrix<double>(new double[,]
+            {
+                                { 4d, 3d },
+                                { 6d, 3d },
+            });
+
+            (_, _, Matrix<double> P) = matrix.DiagonalizeLU();
+
+            Assert.AreEqual(-1d, P.Determinant, 1e-12);
+            Assert.IsFalse(P.IsIdentity);
+        }
+
+        /// <summary>
+        /// Before item #69, <c>U</c> was always constructed with hardcoded <c>isDiagonal: false</c>, even
+        /// when decomposing an already-diagonal matrix (which needs no elimination and leaves <c>U</c>
+        /// genuinely diagonal).
+        /// </summary>
+        [TestMethod]
+        public void DiagonalizeLU_AlreadyDiagonalMatrix_UReportsDiagonal()
+        {
+            Matrix<double> matrix = Matrix<double>.Diagonal(2d, 3d, 4d);
+
+            (Matrix<double> L, Matrix<double> U, _) = matrix.DiagonalizeLU();
+
+            Assert.IsTrue(U.IsDiagonal);
+            Assert.IsTrue(L.IsIdentity);
+        }
+
+        /// <summary>
+        /// <see cref="Matrix{T}.DiagonalizeLU"/>, <see cref="Matrix{T}.Determinant"/>,
+        /// <see cref="Matrix{T}.Solve"/>, and <see cref="Matrix{T}.Invert"/> now share one pivoted
+        /// elimination, so they must agree on which matrices are singular. A rank-deficient matrix is
+        /// rejected/zeroed by all four instead of only some of them.
+        /// </summary>
+        [TestMethod]
+        public void SingularMatrix_RejectedConsistentlyAcrossDecompositionConsumers()
+        {
+            var matrix = new Matrix<double>(new double[,] { { 1d, 2d }, { 2d, 4d } });
+
+            Assert.AreEqual(0d, matrix.Determinant, 1e-12);
+            Assert.ThrowsException<InvalidOperationException>(() => matrix.DiagonalizeLU());
+            Assert.ThrowsException<InvalidOperationException>(() => matrix.Invert());
+            Assert.ThrowsException<InvalidOperationException>(() => matrix.Solve(new Vector<double>(1d, 1d)));
+        }
+
         /// <summary>
         /// Verifies that inverting a matrix leaves the original unchanged and produces an identity when multiplied.
         /// </summary>
@@ -137,6 +229,66 @@ namespace UtilsTest.Mathematics.LinearAlgebra
         {
             var matrix = new Matrix<double>(new double[,] { { 1d, 2d }, { 2d + 2e-13, 4d + 4e-13 } });
             Assert.ThrowsException<InvalidOperationException>(() => matrix.Invert());
+        }
+
+        // ── Structural metadata on the inverse (TODO-pass5 item #61) ───────────────
+
+        /// <summary>
+        /// Before the fix, <see cref="Matrix{T}.Invert"/> always hardcoded <c>isDiagonal: false</c> on the
+        /// returned matrix regardless of its actual structure, permanently disabling lazy recomputation.
+        /// The inverse of a diagonal matrix is itself diagonal (and therefore triangular).
+        /// </summary>
+        [TestMethod]
+        public void Invert_DiagonalMatrix_ResultReportsDiagonalAndTriangular()
+        {
+            Matrix<double> diagonal = Matrix<double>.Diagonal(2d, 4d, 5d);
+            Matrix<double> inverse = diagonal.Invert();
+
+            Assert.IsTrue(inverse.IsDiagonal);
+            Assert.IsTrue(inverse.IsTriangular);
+            Assert.IsFalse(inverse.IsIdentity);
+            AssertMatricesAreEqual(Matrix<double>.Diagonal(0.5d, 0.25d, 0.2d), inverse, 1e-9);
+        }
+
+        /// <summary>
+        /// Same as <see cref="Invert_DiagonalMatrix_ResultReportsDiagonalAndTriangular"/>, but for a
+        /// non-diagonal upper-triangular source: the inverse of an upper-triangular matrix is itself
+        /// upper-triangular, so the recomputed metadata should report it as such.
+        /// </summary>
+        [TestMethod]
+        public void Invert_TriangularMatrix_ResultReportsTriangular()
+        {
+            Matrix<double> upperTriangular = new Matrix<double>(new double[,]
+            {
+                { 2d, 3d },
+                { 0d, 4d },
+            });
+
+            Matrix<double> inverse = upperTriangular.Invert();
+
+            Assert.IsTrue(inverse.IsTriangular);
+            Assert.IsFalse(inverse.IsDiagonal);
+        }
+
+        /// <summary>
+        /// A general (non-triangular, non-diagonal) matrix's inverse is itself generally neither
+        /// triangular nor diagonal; the recomputed metadata (rather than a hardcoded value) must still
+        /// correctly report that.
+        /// </summary>
+        [TestMethod]
+        public void Invert_GeneralMatrix_ResultReportsNotTriangularNotDiagonal()
+        {
+            Matrix<double> matrix = new Matrix<double>(new double[,]
+            {
+                { 4d, 7d },
+                { 2d, 6d },
+            });
+
+            Matrix<double> inverse = matrix.Invert();
+
+            Assert.IsFalse(inverse.IsTriangular);
+            Assert.IsFalse(inverse.IsDiagonal);
+            Assert.IsFalse(inverse.IsIdentity);
         }
 
         [TestMethod]
@@ -341,6 +493,32 @@ namespace UtilsTest.Mathematics.LinearAlgebra
             Assert.AreEqual(4d, m.Determinant, 1e-10);
         }
 
+        // ── Determinant vs. Solve/Invert singularity policy (PR 452 review) ────────
+
+        /// <summary>
+        /// Before this fix, <see cref="Matrix{T}.Determinant"/> reused the same scale-aware
+        /// relative-plus-absolute-floor tolerance as <see cref="Matrix{T}.Solve"/>/<see cref="Matrix{T}.Invert"/>
+        /// to decide "singular." That tolerance includes a fixed absolute floor (see
+        /// <c>DefaultTolerance</c>'s <c>+ 1</c> term) that is appropriate when dividing by the pivot to
+        /// propagate a numerically reliable solution, but wrong for a determinant: a well-conditioned
+        /// matrix whose entries are merely small in absolute value (here <c>1e-20</c>) has an exact,
+        /// legitimately tiny nonzero determinant, which the shared tolerance previously collapsed to zero.
+        /// </summary>
+        [TestMethod]
+        public void Determinant_SmallWellConditionedMatrix_DoesNotReturnZero()
+        {
+            var matrix = new Matrix<double>(new double[,] { { 1e-20 } });
+            Assert.AreEqual(1e-20, matrix.Determinant, 1e-35);
+        }
+
+        /// <summary>Same as <see cref="Determinant_SmallWellConditionedMatrix_DoesNotReturnZero"/>, for a multi-entry diagonal matrix.</summary>
+        [TestMethod]
+        public void Determinant_ScaledIdentity_PreservesScale()
+        {
+            var matrix = Matrix<double>.Diagonal(1e-20, 2e-20);
+            Assert.AreEqual(2e-40, matrix.Determinant, 1e-54);
+        }
+
         [TestMethod]
         public void Transpose_NonSquare_SwapsRowsAndColumns()
         {
@@ -512,6 +690,62 @@ namespace UtilsTest.Mathematics.LinearAlgebra
         {
             var m = new Matrix<double>(new double[,] { { 1 } });
             Assert.ThrowsException<FormatException>(() => m.ToString("bogus", null));
+        }
+
+        // ── Pad (TODO-pass5 item #67) ───────────────────────────────────────────────
+
+        [TestMethod]
+        public void Pad_LargerDimensions_CopiesPrefixAndZeroFillsRest()
+        {
+            var m = new Matrix<double>(new double[,] { { 1d, 2d }, { 3d, 4d } });
+            Matrix<double> padded = m.Pad(3, 3);
+
+            Assert.AreEqual(3, padded.Rows);
+            Assert.AreEqual(3, padded.Columns);
+            Assert.AreEqual(1d, padded[0, 0]);
+            Assert.AreEqual(2d, padded[0, 1]);
+            Assert.AreEqual(3d, padded[1, 0]);
+            Assert.AreEqual(4d, padded[1, 1]);
+            Assert.AreEqual(0d, padded[2, 2]);
+            Assert.AreEqual(0d, padded[0, 2]);
+        }
+
+        [TestMethod]
+        public void Pad_EqualDimensions_ReturnsEquivalentCopy()
+        {
+            var m = new Matrix<double>(new double[,] { { 1d, 2d }, { 3d, 4d } });
+            Matrix<double> padded = m.Pad(2, 2);
+            AssertMatricesAreEqual(m, padded, 1e-12);
+        }
+
+        /// <summary>
+        /// Despite its name, <see cref="Matrix{T}.Pad"/> also crops when the requested dimensions are
+        /// smaller than the current ones (see TODO-pass5 item #67): it keeps only the overlapping
+        /// top-left prefix instead of throwing or requiring the new dimensions to be at least as large.
+        /// </summary>
+        [TestMethod]
+        public void Pad_SmallerDimensions_CropsToOverlappingPrefix()
+        {
+            var m = new Matrix<double>(new double[,] { { 1d, 2d, 3d }, { 4d, 5d, 6d }, { 7d, 8d, 9d } });
+            Matrix<double> cropped = m.Pad(2, 2);
+
+            Assert.AreEqual(2, cropped.Rows);
+            Assert.AreEqual(2, cropped.Columns);
+            AssertMatricesAreEqual(new Matrix<double>(new double[,] { { 1d, 2d }, { 4d, 5d } }), cropped, 1e-12);
+        }
+
+        [TestMethod]
+        public void Pad_ZeroRows_Throws()
+        {
+            var m = new Matrix<double>(new double[,] { { 1d } });
+            Assert.ThrowsException<ArgumentException>(() => m.Pad(0, 2));
+        }
+
+        [TestMethod]
+        public void Pad_NegativeColumns_Throws()
+        {
+            var m = new Matrix<double>(new double[,] { { 1d } });
+            Assert.ThrowsException<ArgumentException>(() => m.Pad(2, -1));
         }
 
         /// <summary>

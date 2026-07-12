@@ -23,6 +23,15 @@ public sealed partial class Matrix<T>
     /// <exception cref="InvalidOperationException">Thrown when the matrix is not square or is singular.</exception>
     /// <exception cref="ArgumentException">Thrown when <paramref name="b"/> has the wrong dimension.</exception>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="relativeSingularityTolerance"/> is supplied but not finite or is negative.</exception>
+    /// <remarks>
+    /// Delegates to the pivoted elimination shared with <see cref="DiagonalizeLU"/>,
+    /// <see cref="Determinant"/>, and <see cref="Invert"/> (see TODO-2026-07-11-pass5.md item #69),
+    /// using the same scale-aware tolerance as <see cref="DiagonalizeLU"/>/<see cref="Invert"/> (not
+    /// <see cref="Determinant"/>'s exact-zero check - see <c>TryDecomposePivoted</c>'s remarks):
+    /// <c>A·x = b</c> becomes <c>L·U·x = P·b</c> (since <c>P·A = L·U</c>), solved by forward
+    /// substitution for <c>y</c> in <c>L·y = P·b</c> followed by back substitution for <c>x</c> in
+    /// <c>U·x = y</c>.
+    /// </remarks>
     public Vector<T> Solve(Vector<T> b, T? relativeSingularityTolerance = null)
     {
         if (!IsSquare)
@@ -32,49 +41,17 @@ public sealed partial class Matrix<T>
         if (relativeSingularityTolerance is { } explicitTolerance)
             ValidateTolerance(explicitTolerance, nameof(relativeSingularityTolerance));
 
+        T pivotTolerance = ResolveDecompositionTolerance(ToArray(), relativeSingularityTolerance);
+        if (!TryDecomposePivoted(pivotTolerance, out PivotedElimination decomposition))
+        {
+            throw new InvalidOperationException("Matrix is singular or numerically near-singular; the system has no reliable unique solution.");
+        }
+
         int n = Rows;
-        T[,] a = ToArray();
-        T[] x = new T[n];
-        for (int i = 0; i < n; i++) x[i] = b[i];
+        T[] permutedRightHandSide = new T[n];
+        for (int i = 0; i < n; i++)
+            permutedRightHandSide[i] = b[decomposition.Permutation[i]];
 
-        T pivotTolerance = relativeSingularityTolerance is { } explicitSolveTolerance
-            ? MaxAbsoluteEntry(a) * explicitSolveTolerance
-            : DefaultTolerance(MaxAbsoluteEntry(a), n);
-
-        // Forward elimination with partial pivoting
-        for (int col = 0; col < n; col++)
-        {
-            int pivotRow = col;
-            for (int row = col + 1; row < n; row++)
-                if (T.Abs(a[row, col]) > T.Abs(a[pivotRow, col]))
-                    pivotRow = row;
-
-            if (T.Abs(a[pivotRow, col]) <= pivotTolerance)
-                throw new InvalidOperationException("Matrix is singular or numerically near-singular; the system has no reliable unique solution.");
-
-            if (pivotRow != col)
-            {
-                for (int j = 0; j < n; j++) (a[col, j], a[pivotRow, j]) = (a[pivotRow, j], a[col, j]);
-                (x[col], x[pivotRow]) = (x[pivotRow], x[col]);
-            }
-
-            for (int row = col + 1; row < n; row++)
-            {
-                T factor = a[row, col] / a[col, col];
-                x[row] -= factor * x[col];
-                for (int j = col; j < n; j++)
-                    a[row, j] -= factor * a[col, j];
-            }
-        }
-
-        // Back substitution
-        for (int i = n - 1; i >= 0; i--)
-        {
-            for (int j = i + 1; j < n; j++)
-                x[i] -= a[i, j] * x[j];
-            x[i] /= a[i, i];
-        }
-
-        return new Vector<T>(x);
+        return new Vector<T>(SolvePermuted(decomposition, permutedRightHandSide));
     }
 }
