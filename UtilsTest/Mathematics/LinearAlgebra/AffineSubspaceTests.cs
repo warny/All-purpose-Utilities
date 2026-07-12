@@ -186,6 +186,40 @@ public class AffineSubspaceTests
         Assert.IsFalse(plane.Contains(V(0, 0, 0.1), 1e-9));
     }
 
+    // ── Contains tolerance validation (TODO-pass4 item #48) ─────────────────────
+
+    [TestMethod]
+    public void Contains_NegativeTolerance_Throws()
+    {
+        var plane = AffineSubspace<double>.FromNormals(V(0, 0, 0), V(0, 0, 1));
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => plane.Contains(V(3, 4, 0), -1e-9));
+    }
+
+    [TestMethod]
+    public void Contains_NaNTolerance_Throws()
+    {
+        var plane = AffineSubspace<double>.FromNormals(V(0, 0, 0), V(0, 0, 1));
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => plane.Contains(V(3, 4, 0), double.NaN));
+    }
+
+    /// <summary>
+    /// Before this fix, positive infinity silently made every finite-distance point a "member" of the
+    /// subspace instead of being rejected like the rest of this library's tolerance parameters.
+    /// </summary>
+    [TestMethod]
+    public void Contains_PositiveInfinityTolerance_Throws()
+    {
+        var plane = AffineSubspace<double>.FromNormals(V(0, 0, 0), V(0, 0, 1));
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => plane.Contains(V(3, 4, 100), double.PositiveInfinity));
+    }
+
+    [TestMethod]
+    public void Contains_ZeroToleranceExactMember_ReturnsTrue()
+    {
+        var plane = AffineSubspace<double>.FromNormals(V(0, 0, 0), V(0, 0, 1));
+        Assert.IsTrue(plane.Contains(V(3, 4, 0), 0d));
+    }
+
     // -------------------------------------------------------------------------
     // IntersectWith(Line<T>)
     // -------------------------------------------------------------------------

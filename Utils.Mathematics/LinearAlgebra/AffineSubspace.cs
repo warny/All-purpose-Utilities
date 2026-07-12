@@ -131,10 +131,19 @@ public sealed class AffineSubspace<T> : IEquatable<AffineSubspace<T>>, ICloneabl
     /// Determines whether <paramref name="point"/> lies on this subspace within the given tolerance.
     /// </summary>
     /// <param name="point">Point to test.</param>
-    /// <param name="tolerance">Maximum allowable perpendicular distance.</param>
+    /// <param name="tolerance">Maximum allowable perpendicular distance. Must be finite and non-negative.</param>
     /// <returns><see langword="true"/> if the point is within <paramref name="tolerance"/> of the subspace.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when <paramref name="tolerance"/> is not finite or is negative: an unchecked negative
+    /// tolerance would reject even an exact member, <see langword="NaN"/> would make every comparison
+    /// false, and positive infinity would silently accept every finite-distance point as a member (see
+    /// TODO-2026-07-11-pass4.md item #48).
+    /// </exception>
     public bool Contains(Vector<T> point, T tolerance)
-        => DistanceTo(point) <= tolerance;
+    {
+        ValidateTolerance(tolerance, nameof(tolerance));
+        return DistanceTo(point) <= tolerance;
+    }
 
     /// <summary>
     /// Computes the intersection of this subspace with a line.
@@ -326,6 +335,19 @@ public sealed class AffineSubspace<T> : IEquatable<AffineSubspace<T>>, ICloneabl
         if (point.Dimension != AmbientDimension)
             throw new ArgumentException(
                 "The point must have the same ambient dimension as the subspace.", nameof(point));
+    }
+
+    /// <summary>
+    /// Validates that a caller-supplied tolerance is usable as a comparison threshold: finite and
+    /// non-negative, mirroring the same policy used elsewhere in this library (e.g.
+    /// <see cref="Vector{T}.Normalize"/>, <see cref="Matrix{T}.Invert"/>) rather than accepting a raw,
+    /// unchecked scalar (see TODO-2026-07-11-pass4.md item #48).
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="tolerance"/> is not finite or is negative.</exception>
+    private static void ValidateTolerance(T tolerance, string parameterName)
+    {
+        if (!T.IsFinite(tolerance) || tolerance < T.Zero)
+            throw new ArgumentOutOfRangeException(parameterName, tolerance, "Tolerance must be finite and non-negative.");
     }
 
     /// <summary>Dot product of a raw array against a <see cref="Vector{T}"/>.</summary>
