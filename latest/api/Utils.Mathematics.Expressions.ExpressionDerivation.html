@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Mathematics_Expressions_ExpressionDerivation" data-uid="Utils.Mathematics.Expressions.ExpressionDerivation" class="text-break">
-Class ExpressionDerivation  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L446"><i class="bi bi-code-slash"></i></a>
+Class ExpressionDerivation  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L671"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -127,7 +127,13 @@ Class ExpressionDerivation  <a class="header-action link-secondary" title="View 
       <a class="xref" href="Utils.Mathematics.Expressions.ExpressionDerivation-1.html#Utils_Mathematics_Expressions_ExpressionDerivation_1_ParameterName">ExpressionDerivation&lt;double&gt;.ParameterName</a>
     </div>
     <div>
+      <a class="xref" href="Utils.Mathematics.Expressions.ExpressionDerivation-1.html#Utils_Mathematics_Expressions_ExpressionDerivation_1_AllowNumericalFallback">ExpressionDerivation&lt;double&gt;.AllowNumericalFallback</a>
+    </div>
+    <div>
       <a class="xref" href="Utils.Mathematics.Expressions.ExpressionDerivation-1.html#Utils_Mathematics_Expressions_ExpressionDerivation_1_Derivate_System_Linq_Expressions_LambdaExpression_">ExpressionDerivation&lt;double&gt;.Derivate(LambdaExpression)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Mathematics.Expressions.ExpressionDerivation-1.html#Utils_Mathematics_Expressions_ExpressionDerivation_1_Derivate_System_Linq_Expressions_LambdaExpression_System_Boolean__">ExpressionDerivation&lt;double&gt;.Derivate(LambdaExpression, out bool)</a>
     </div>
     <div>
       <a class="xref" href="Utils.Mathematics.Expressions.ExpressionDerivation-1.html#Utils_Mathematics_Expressions_ExpressionDerivation_1_Constant_System_Linq_Expressions_ConstantExpression_System_Object_">ExpressionDerivation&lt;double&gt;.Constant(ConstantExpression, object)</a>
@@ -320,9 +326,9 @@ Class ExpressionDerivation  <a class="header-action link-secondary" title="View 
 
   <a id="Utils_Mathematics_Expressions_ExpressionDerivation__ctor_" data-uid="Utils.Mathematics.Expressions.ExpressionDerivation.#ctor*"></a>
 
-  <h3 id="Utils_Mathematics_Expressions_ExpressionDerivation__ctor_System_String_" data-uid="Utils.Mathematics.Expressions.ExpressionDerivation.#ctor(System.String)">
-  ExpressionDerivation(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L452"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_Mathematics_Expressions_ExpressionDerivation__ctor_System_String_System_Boolean_" data-uid="Utils.Mathematics.Expressions.ExpressionDerivation.#ctor(System.String,System.Boolean)">
+  ExpressionDerivation(string, bool)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L678"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Mathematics.Expressions.ExpressionDerivation.html">ExpressionDerivation</a> class.</p>
@@ -330,13 +336,16 @@ Class ExpressionDerivation  <a class="header-action link-secondary" title="View 
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public ExpressionDerivation(string parameterName)</code></pre>
+    <pre><code class="lang-csharp hljs">public ExpressionDerivation(string parameterName, bool allowNumericalFallback = false)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>parameterName</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
     <dd><p>Name of the variable with respect to which derivatives are computed.</p>
+</dd>
+    <dt><code>allowNumericalFallback</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p>See <a class="xref" href="Utils.Mathematics.Expressions.ExpressionDerivation-1.html#Utils_Mathematics_Expressions_ExpressionDerivation_1_AllowNumericalFallback">AllowNumericalFallback</a>.</p>
 </dd>
   </dl>
 
@@ -355,7 +364,7 @@ Class ExpressionDerivation  <a class="header-action link-secondary" title="View 
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L446" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L671" class="edit-link">Edit this page</a>
         </div>
 
 

@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Mathematics_LinearAlgebra_Line_1" data-uid="Utils.Mathematics.LinearAlgebra.Line`1" class="text-break">
-Class Line&lt;T&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Line.cs/#L10"><i class="bi bi-code-slash"></i></a>
+Class Line&lt;T&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Line.cs/#L11"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -256,7 +256,7 @@ Class Line&lt;T&gt;  <a class="header-action link-secondary" title="View source"
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Line_1__ctor_Utils_Mathematics_LinearAlgebra_Vector__0__Utils_Mathematics_LinearAlgebra_Vector__0__" data-uid="Utils.Mathematics.LinearAlgebra.Line`1.#ctor(Utils.Mathematics.LinearAlgebra.Vector{`0},Utils.Mathematics.LinearAlgebra.Vector{`0})">
   Line(Vector&lt;T&gt;, Vector&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Line.cs/#L34"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Line.cs/#L39"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Mathematics.LinearAlgebra.Line-1.html">Line&lt;T&gt;</a> class.</p>
@@ -288,7 +288,9 @@ Class Line&lt;T&gt;  <a class="header-action link-secondary" title="View source"
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
-    <dd><p>Thrown when vectors do not share the same dimension.</p>
+    <dd><p>Thrown when vectors do not share the same dimension, or when <code class="paramref">direction</code> is zero
+or numerically negligible (a line has no well-defined direction in that case, and
+<a class="xref" href="Utils.Mathematics.LinearAlgebra.Line-1.html#Utils_Mathematics_LinearAlgebra_Line_1_DistanceTo_Utils_Mathematics_LinearAlgebra_Vector__0__">DistanceTo(Vector&lt;T&gt;)</a> would divide by zero).</p>
 </dd>
   </dl>
 
@@ -302,7 +304,7 @@ Class Line&lt;T&gt;  <a class="header-action link-secondary" title="View source"
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Line_1_Dimension" data-uid="Utils.Mathematics.LinearAlgebra.Line`1.Dimension">
   Dimension
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Line.cs/#L26"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Line.cs/#L27"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the dimension of the line.</p>
@@ -334,7 +336,7 @@ Class Line&lt;T&gt;  <a class="header-action link-secondary" title="View source"
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Line_1_Direction" data-uid="Utils.Mathematics.LinearAlgebra.Line`1.Direction">
   Direction
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Line.cs/#L21"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Line.cs/#L22"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Direction vector of the line.</p>
@@ -366,7 +368,7 @@ Class Line&lt;T&gt;  <a class="header-action link-secondary" title="View source"
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Line_1_Point" data-uid="Utils.Mathematics.LinearAlgebra.Line`1.Point">
   Point
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Line.cs/#L16"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Line.cs/#L17"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>A point on the line.</p>
@@ -402,7 +404,7 @@ Class Line&lt;T&gt;  <a class="header-action link-secondary" title="View source"
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Line_1_Clone" data-uid="Utils.Mathematics.LinearAlgebra.Line`1.Clone">
   Clone()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Line.cs/#L73"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Line.cs/#L91"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Creates a copy of the line.</p>
@@ -435,7 +437,7 @@ Class Line&lt;T&gt;  <a class="header-action link-secondary" title="View source"
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Line_1_DistanceTo_Utils_Mathematics_LinearAlgebra_Vector__0__" data-uid="Utils.Mathematics.LinearAlgebra.Line`1.DistanceTo(Utils.Mathematics.LinearAlgebra.Vector{`0})">
   DistanceTo(Vector&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Line.cs/#L49"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Line.cs/#L67"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Computes the distance from the line to the specified point.</p>
@@ -480,7 +482,7 @@ Class Line&lt;T&gt;  <a class="header-action link-secondary" title="View source"
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Line_1_Equals_System_Object_" data-uid="Utils.Mathematics.LinearAlgebra.Line`1.Equals(System.Object)">
   Equals(object?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Line.cs/#L84"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Line.cs/#L109"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether the specified object is equal to the current object.</p>
@@ -518,7 +520,7 @@ Class Line&lt;T&gt;  <a class="header-action link-secondary" title="View source"
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Line_1_Equals_Utils_Mathematics_LinearAlgebra_Line__0__" data-uid="Utils.Mathematics.LinearAlgebra.Line`1.Equals(Utils.Mathematics.LinearAlgebra.Line{`0})">
   Equals(Line&lt;T&gt;?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Line.cs/#L80"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Line.cs/#L105"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether the specified line is equal to the current line.</p>
@@ -549,6 +551,13 @@ Class Line&lt;T&gt;  <a class="header-action link-secondary" title="View source"
 
 
 
+  <h4 class="section" id="Utils_Mathematics_LinearAlgebra_Line_1_Equals_Utils_Mathematics_LinearAlgebra_Line__0___remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>This compares the exact stored representation (<a class="xref" href="Utils.Mathematics.LinearAlgebra.Line-1.html#Utils_Mathematics_LinearAlgebra_Line_1_Point">Point</a> and <a class="xref" href="Utils.Mathematics.LinearAlgebra.Line-1.html#Utils_Mathematics_LinearAlgebra_Line_1_Direction">Direction</a>),
+not geometric equivalence: two lines that describe the same infinite line but were built from a
+different anchor point, or a direction scaled by a nonzero factor (including a negative one),
+compare unequal here. Use <a class="xref" href="Utils.Mathematics.LinearAlgebra.Line-1.html#Utils_Mathematics_LinearAlgebra_Line_1_IsGeometricallyEquivalentTo_Utils_Mathematics_LinearAlgebra_Line__0___0_">IsGeometricallyEquivalentTo(Line&lt;T&gt;, T)</a> for a tolerance-aware
+comparison of the geometric object instead.</p>
+</div>
 
 
 
@@ -557,7 +566,7 @@ Class Line&lt;T&gt;  <a class="header-action link-secondary" title="View source"
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Line_1_GetHashCode" data-uid="Utils.Mathematics.LinearAlgebra.Line`1.GetHashCode">
   GetHashCode()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Line.cs/#L92"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Line.cs/#L118"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Serves as the default hash function.</p>
@@ -582,7 +591,67 @@ Class Line&lt;T&gt;  <a class="header-action link-secondary" title="View source"
 
 
 
+  <h4 class="section" id="Utils_Mathematics_LinearAlgebra_Line_1_GetHashCode_remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Consistent with the exact representation equality of <a class="xref" href="Utils.Mathematics.LinearAlgebra.Line-1.html#Utils_Mathematics_LinearAlgebra_Line_1_Equals_Utils_Mathematics_LinearAlgebra_Line__0__">Equals(Line&lt;T&gt;?)</a>.</p>
+</div>
 
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_Line_1_IsGeometricallyEquivalentTo_" data-uid="Utils.Mathematics.LinearAlgebra.Line`1.IsGeometricallyEquivalentTo*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_Line_1_IsGeometricallyEquivalentTo_Utils_Mathematics_LinearAlgebra_Line__0___0_" data-uid="Utils.Mathematics.LinearAlgebra.Line`1.IsGeometricallyEquivalentTo(Utils.Mathematics.LinearAlgebra.Line{`0},`0)">
+  IsGeometricallyEquivalentTo(Line&lt;T&gt;, T)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Line.cs/#L138"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether this line and <code class="paramref">other</code> describe the same geometric line,
+independently of which point was used as the anchor or how the direction vector was scaled
+(including a negative scale, i.e. the opposite direction).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool IsGeometricallyEquivalentTo(Line&lt;T&gt; other, T tolerance)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>other</code> <a class="xref" href="Utils.Mathematics.LinearAlgebra.Line-1.html">Line</a>&lt;T&gt;</dt>
+    <dd><p>Line to compare against.</p>
+</dd>
+    <dt><code>tolerance</code> <span class="xref">T</span></dt>
+    <dd><p>Tolerance applied to both the direction-parallelism check and the point-on-line distance check.
+Must be finite and non-negative; there is no implicit default, since an appropriate tolerance
+depends on the caller's own scale and precision requirements.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when both lines have the same dimension, parallel directions (within
+<code class="paramref">tolerance</code>), and <code class="paramref">other</code>'s anchor point lies on this line
+(within <code class="paramref">tolerance</code>); otherwise, <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">other</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when <code class="paramref">tolerance</code> is not finite or is negative.</p>
+</dd>
+  </dl>
 
 
 
@@ -590,7 +659,7 @@ Class Line&lt;T&gt;  <a class="header-action link-secondary" title="View source"
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Line_1_ToString_System_String_System_IFormatProvider_" data-uid="Utils.Mathematics.LinearAlgebra.Line`1.ToString(System.String,System.IFormatProvider)">
   ToString(string?, IFormatProvider?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Line.cs/#L100"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Line.cs/#L165"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns a string representation of the line.</p>
@@ -604,10 +673,11 @@ Class Line&lt;T&gt;  <a class="header-action link-secondary" title="View source"
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>format</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>Format string.</p>
+    <dd><p>Numeric format string forwarded to each coordinate's own <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.iformattable.tostring">ToString(string, IFormatProvider)</a>
+(e.g. <code>&quot;F2&quot;</code>), or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> for the default numeric format.</p>
 </dd>
     <dt><code>formatProvider</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.iformatprovider">IFormatProvider</a></dt>
-    <dd><p>Format provider.</p>
+    <dd><p>Format provider forwarded to each coordinate.</p>
 </dd>
   </dl>
 
@@ -632,7 +702,7 @@ Class Line&lt;T&gt;  <a class="header-action link-secondary" title="View source"
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Line.cs/#L10" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Line.cs/#L11" class="edit-link">Edit this page</a>
         </div>
 
 

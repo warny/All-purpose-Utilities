@@ -447,7 +447,7 @@ Class Vector&lt;T&gt;  <a class="header-action link-secondary" title="View sourc
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Vector_1_Norm" data-uid="Utils.Mathematics.LinearAlgebra.Vector`1.Norm">
   Norm
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.cs/#L113"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.cs/#L122"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the length of the vector.</p>
@@ -471,6 +471,15 @@ Class Vector&lt;T&gt;  <a class="header-action link-secondary" title="View sourc
 
 
 
+  <h4 class="section" id="Utils_Mathematics_LinearAlgebra_Vector_1_Norm_remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Computed via a scaled sum-of-squares accumulation (the same running-scale technique as BLAS
+<code>nrm2</code>/<code>hypot</code>), rather than summing <code>component * component</code> directly. A direct sum
+can overflow to infinity for large-but-representable components (whose square individually
+overflows even though the true norm does not), or underflow to zero for small-but-representable
+components (whose square underflows to zero even though it contributes to a representable norm).
+Tracking the largest component seen so far as a running scale and accumulating only the <em>ratio</em>
+of each component to that scale keeps every intermediate value within a representable range.</p>
+</div>
 
 
 
@@ -483,7 +492,7 @@ Class Vector&lt;T&gt;  <a class="header-action link-secondary" title="View sourc
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Vector_1_Clone" data-uid="Utils.Mathematics.LinearAlgebra.Vector`1.Clone">
   Clone()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.cs/#L341"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.cs/#L366"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Creates a copy of the vector.</p>
@@ -774,7 +783,7 @@ Class Vector&lt;T&gt;  <a class="header-action link-secondary" title="View sourc
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Vector_1_CrossProduct_Utils_Mathematics_LinearAlgebra_Vector__0____" data-uid="Utils.Mathematics.LinearAlgebra.Vector`1.CrossProduct(Utils.Mathematics.LinearAlgebra.Vector{`0}[])">
   CrossProduct(params Vector&lt;T&gt;[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.cs/#L247"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.cs/#L280"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns the cross product of (n-1) vectors of dimension n.</p>
@@ -805,6 +814,14 @@ Class Vector&lt;T&gt;  <a class="header-action link-secondary" title="View sourc
 
 
 
+  <h4 class="section" id="Utils_Mathematics_LinearAlgebra_Vector_1_CrossProduct_Utils_Mathematics_LinearAlgebra_Vector__0_____remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Each component <code>result[i]</code> is <code>(-1)^i</code> times the determinant of the <code>(n-1)x(n-1)</code>
+minor formed by the input vectors' components, excluding column <code>i</code> (the standard Laplace
+expansion of the cross product along a virtual first row of basis vectors). Each minor's
+determinant is computed via <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html#Utils_Mathematics_LinearAlgebra_Matrix_1_Determinant">Determinant</a>, which uses Gaussian elimination
+(<code>O(n^3)</code>), rather than the previous direct recursive cofactor expansion (<code>O(n!)</code>) that
+also re-filtered the remaining-columns sequence at every recursion level.</p>
+</div>
 
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
@@ -819,7 +836,7 @@ Class Vector&lt;T&gt;  <a class="header-action link-secondary" title="View sourc
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Vector_1_Equals_System_Object_" data-uid="Utils.Mathematics.LinearAlgebra.Vector`1.Equals(System.Object)">
   Equals(object?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.cs/#L155"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.cs/#L180"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether the specified object is equal to the current object.</p>
@@ -858,7 +875,7 @@ Class Vector&lt;T&gt;  <a class="header-action link-secondary" title="View sourc
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Vector_1_Equals_Utils_Mathematics_LinearAlgebra_Vector__0__" data-uid="Utils.Mathematics.LinearAlgebra.Vector`1.Equals(Utils.Mathematics.LinearAlgebra.Vector{`0})">
   Equals(Vector&lt;T&gt;?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.cs/#L167"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.cs/#L192"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether the current vector is equal to another vector.</p>
@@ -897,7 +914,7 @@ Class Vector&lt;T&gt;  <a class="header-action link-secondary" title="View sourc
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Vector_1_Equals__0___" data-uid="Utils.Mathematics.LinearAlgebra.Vector`1.Equals(`0[])">
   Equals(T[]?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.cs/#L179"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.cs/#L204"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether the current vector is equal to the specified component array.</p>
@@ -936,7 +953,7 @@ Class Vector&lt;T&gt;  <a class="header-action link-secondary" title="View sourc
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Vector_1_FromNormalSpace_System_Nullable__0__" data-uid="Utils.Mathematics.LinearAlgebra.Vector`1.FromNormalSpace(System.Nullable{`0})">
   FromNormalSpace(T?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.cs/#L222"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.cs/#L247"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts a vector usable in normal space to a vector usable in Cartesian space.</p>
@@ -991,7 +1008,7 @@ and has no meaningful Cartesian equivalent.</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Vector_1_GetEnumerator" data-uid="Utils.Mathematics.LinearAlgebra.Vector`1.GetEnumerator">
   GetEnumerator()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.cs/#L344"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.cs/#L369"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns an enumerator that iterates through the collection.</p>
@@ -1024,7 +1041,7 @@ and has no meaningful Cartesian equivalent.</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Vector_1_GetHashCode" data-uid="Utils.Mathematics.LinearAlgebra.Vector`1.GetHashCode">
   GetHashCode()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.cs/#L324"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.cs/#L349"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns a hash code for the vector.</p>
@@ -1056,7 +1073,7 @@ and has no meaningful Cartesian equivalent.</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Vector_1_Normalize_System_Nullable__0__" data-uid="Utils.Mathematics.LinearAlgebra.Vector`1.Normalize(System.Nullable{`0})">
   Normalize(T?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.cs/#L142"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.cs/#L167"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns a normalized version of the vector.</p>
@@ -1109,7 +1126,7 @@ would otherwise silently normalize to a wildly disproportionate result).</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Vector_1_Product_Utils_Mathematics_LinearAlgebra_Vector__0____" data-uid="Utils.Mathematics.LinearAlgebra.Vector`1.Product(Utils.Mathematics.LinearAlgebra.Vector{`0}[])">
   Product(params Vector&lt;T&gt;[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.cs/#L272"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.cs/#L303"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns the cross product of (n-1) vectors of dimension n.</p>
@@ -1140,6 +1157,14 @@ would otherwise silently normalize to a wildly disproportionate result).</p>
 
 
 
+  <h4 class="section" id="Utils_Mathematics_LinearAlgebra_Vector_1_Product_Utils_Mathematics_LinearAlgebra_Vector__0_____remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Each component <code>result[i]</code> is <code>(-1)^i</code> times the determinant of the <code>(n-1)x(n-1)</code>
+minor formed by the input vectors' components, excluding column <code>i</code> (the standard Laplace
+expansion of the cross product along a virtual first row of basis vectors). Each minor's
+determinant is computed via <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html#Utils_Mathematics_LinearAlgebra_Matrix_1_Determinant">Determinant</a>, which uses Gaussian elimination
+(<code>O(n^3)</code>), rather than the previous direct recursive cofactor expansion (<code>O(n!)</code>) that
+also re-filtered the remaining-columns sequence at every recursion level.</p>
+</div>
 
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
@@ -1154,7 +1179,7 @@ would otherwise silently normalize to a wildly disproportionate result).</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Vector_1_ProjectOnto_Utils_Mathematics_LinearAlgebra_Vector__0__" data-uid="Utils.Mathematics.LinearAlgebra.Vector`1.ProjectOnto(Utils.Mathematics.LinearAlgebra.Vector{`0})">
   ProjectOnto(Vector&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.cs/#L311"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.cs/#L336"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Projects this vector onto <code class="paramref">other</code>.</p>
@@ -1202,7 +1227,7 @@ would otherwise silently normalize to a wildly disproportionate result).</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Vector_1_ToNormalSpace" data-uid="Utils.Mathematics.LinearAlgebra.Vector`1.ToNormalSpace">
   ToNormalSpace()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.cs/#L196"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.cs/#L221"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts a vector for use in a normal space.</p>
@@ -1235,7 +1260,7 @@ would otherwise silently normalize to a wildly disproportionate result).</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Vector_1_ToString" data-uid="Utils.Mathematics.LinearAlgebra.Vector`1.ToString">
   ToString()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.cs/#L189"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.cs/#L214"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns a string that represents the current vector.</p>
