@@ -92,4 +92,45 @@ public class LineTests
         Assert.ThrowsException<ArgumentException>(() =>
             new Line<double>(new Vector<double>(0d, 0d), new Vector<double>(1e-300, 1e-300)));
     }
+
+    // ── Geometric equality (item 38) ──────────────────────────────────────────
+
+    [TestMethod]
+    public void IsGeometricallyEquivalentTo_SameLine_DifferentAnchorAndScale_ReturnsTrue()
+    {
+        // Same line (the x-axis), described from a different anchor point and with a scaled,
+        // opposite-sense direction vector — Equals() would say these differ.
+        var a = new Line<double>(new Vector<double>(0d, 0d), new Vector<double>(1d, 0d));
+        var b = new Line<double>(new Vector<double>(5d, 0d), new Vector<double>(-2d, 0d));
+
+        Assert.IsFalse(a.Equals(b));
+        Assert.IsTrue(a.IsGeometricallyEquivalentTo(b, 1e-9));
+    }
+
+    [TestMethod]
+    public void IsGeometricallyEquivalentTo_ParallelButOffsetLine_ReturnsFalse()
+    {
+        var a = new Line<double>(new Vector<double>(0d, 0d), new Vector<double>(1d, 0d));
+        var b = new Line<double>(new Vector<double>(0d, 1d), new Vector<double>(1d, 0d));
+
+        Assert.IsFalse(a.IsGeometricallyEquivalentTo(b, 1e-9));
+    }
+
+    [TestMethod]
+    public void IsGeometricallyEquivalentTo_NonParallelLine_ReturnsFalse()
+    {
+        var a = new Line<double>(new Vector<double>(0d, 0d), new Vector<double>(1d, 0d));
+        var b = new Line<double>(new Vector<double>(0d, 0d), new Vector<double>(0d, 1d));
+
+        Assert.IsFalse(a.IsGeometricallyEquivalentTo(b, 1e-9));
+    }
+
+    [TestMethod]
+    public void IsGeometricallyEquivalentTo_InvalidTolerance_Throws()
+    {
+        var a = new Line<double>(new Vector<double>(0d, 0d), new Vector<double>(1d, 0d));
+        var b = new Line<double>(new Vector<double>(0d, 0d), new Vector<double>(1d, 0d));
+
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => a.IsGeometricallyEquivalentTo(b, -1.0));
+    }
 }
