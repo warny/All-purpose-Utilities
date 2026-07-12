@@ -457,4 +457,51 @@ public class ExpressionDerivationTests
         Assert.IsInstanceOfType(invocationException.InnerException, typeof(NotSupportedException));
     }
 
+    // ── Exactness reporting (item 42) ─────────────────────────────────────────
+
+    /// <summary>
+    /// A purely symbolic derivative (no finite-difference fallback involved) must report
+    /// <c>isExact = true</c>.
+    /// </summary>
+    [TestMethod]
+    public void Derivate_ExactRule_ReportsIsExactTrue()
+    {
+        Expression<Func<double, double>> f = x => x * x;
+        derivation.Derivate(f, out bool isExact);
+
+        Assert.IsTrue(isExact);
+    }
+
+    /// <summary>
+    /// When the finite-difference fallback (opted into via <see cref="ExpressionDerivation{T}.AllowNumericalFallback"/>)
+    /// is actually used for an unknown method, the result must report <c>isExact = false</c> so a caller
+    /// can distinguish an exact symbolic derivative from a numerical approximation.
+    /// </summary>
+    [TestMethod]
+    public void Derivate_FiniteDifferenceFallback_ReportsIsExactFalse()
+    {
+        Expression<Func<double, double>> function = x => CustomUnknown(x);
+        derivationWithFallback.Derivate(function, out bool isExact);
+
+        Assert.IsFalse(isExact);
+    }
+
+    /// <summary>
+    /// Even with the fallback enabled, an unknown method call whose argument does not depend on the
+    /// differentiation variable is resolved exactly (its derivative is trivially zero) without invoking
+    /// the numerical approximation at all.
+    /// </summary>
+    [TestMethod]
+    public void Derivate_FiniteDifferenceFallback_ConstantArgument_StillReportsIsExactTrue()
+    {
+        var x = Expression.Parameter(typeof(double), "x");
+        var y = Expression.Parameter(typeof(double), "y");
+        var body = Expression.Call(typeof(ExpressionDerivationTests).GetMethod(nameof(CustomUnknown), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!, y);
+        var f = Expression.Lambda<Func<double, double, double>>(body, x, y);
+
+        derivationWithFallback.Derivate(f, out bool isExact);
+
+        Assert.IsTrue(isExact);
+    }
+
 }

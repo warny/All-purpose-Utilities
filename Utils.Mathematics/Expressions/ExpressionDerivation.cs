@@ -58,14 +58,23 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
     public bool AllowNumericalFallback { get; }
 
     /// <summary>
-    /// The specific <see cref="ParameterExpression"/> instance, resolved once per <see cref="Derivate"/>
+    /// The specific <see cref="ParameterExpression"/> instance, resolved once per <see cref="Derivate(LambdaExpression)"/>
     /// call, that identifies the differentiation variable by reference rather than by name. Two distinct
     /// <see cref="ParameterExpression"/> objects may legally share the same <see cref="ParameterName"/>
     /// (e.g. an unrelated captured variable); comparing by reference instead of by name avoids treating
     /// such a foreign parameter as the differentiation variable. Set once, in the private constructor, on
-    /// a fresh per-call worker instance (see <see cref="Derivate"/>).
+    /// a fresh per-call worker instance (see <see cref="Derivate(LambdaExpression)"/>).
     /// </summary>
     private readonly ParameterExpression targetParameter;
+
+    /// <summary>
+    /// Set when <see cref="DeriveUnknownMethodCall"/> actually builds a finite-difference approximation
+    /// for at least one sub-expression during this worker's single <see cref="Derivate(LambdaExpression)"/>
+    /// call, so that call can report <c>isExact = false</c> (see item #42). Safe as plain mutable state:
+    /// each call uses its own freshly-constructed worker instance (see items #31/#32), never shared or
+    /// reused across calls.
+    /// </summary>
+    private bool usedNumericalFallback;
 
     /// <summary>
     /// Determines whether <paramref name="candidate"/> is the specific parameter instance resolved as
@@ -92,7 +101,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
     /// <param name="parameterName">Name of the variable with respect to which derivatives are computed.</param>
     /// <param name="targetParameter">
     /// The specific resolved <see cref="ParameterExpression"/> instance, or <see langword="null"/> for
-    /// the publicly-constructed instance that has not yet performed a <see cref="Derivate"/> call.
+    /// the publicly-constructed instance that has not yet performed a <see cref="Derivate(LambdaExpression)"/> call.
     /// </param>
     /// <param name="allowNumericalFallback">See <see cref="AllowNumericalFallback"/>.</param>
     private ExpressionDerivation(string parameterName, ParameterExpression targetParameter, bool allowNumericalFallback)
@@ -112,7 +121,27 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
     /// when more than one distinct parameter shares that name (an ambiguous match that cannot be
     /// resolved by name alone).
     /// </exception>
-    public Expression Derivate(LambdaExpression e)
+    public Expression Derivate(LambdaExpression e) => Derivate(e, out _);
+
+    /// <summary>
+    /// Builds the derivative of the provided lambda expression with respect to the configured parameter,
+    /// additionally reporting whether the result is an exact symbolic derivative or includes at least one
+    /// finite-difference approximation.
+    /// </summary>
+    /// <param name="e">Lambda expression to differentiate.</param>
+    /// <param name="isExact">
+    /// <see langword="true"/> when every part of the result was produced by an exact symbolic rule;
+    /// <see langword="false"/> when at least one sub-expression fell back to the numerical
+    /// finite-difference approximation (only possible when <see cref="AllowNumericalFallback"/> is
+    /// <see langword="true"/>, since otherwise an unknown method throws instead of approximating).
+    /// </param>
+    /// <returns>The simplified derivative expression.</returns>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when no parameter named <see cref="ParameterName"/> is found in <paramref name="e"/>, or
+    /// when more than one distinct parameter shares that name (an ambiguous match that cannot be
+    /// resolved by name alone).
+    /// </exception>
+    public Expression Derivate(LambdaExpression e, out bool isExact)
     {
         ArgumentNullException.ThrowIfNull(e);
 
@@ -130,9 +159,12 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
 
         // A fresh worker instance isolates the resolved target parameter for this call: concurrent or
         // re-entrant calls on the same public ExpressionDerivation<T> instance no longer share mutable
-        // state (see TODO-2026-07-11-pass3.md items #31 and #32).
+        // state (see TODO-2026-07-11-pass3.md items #31 and #32). usedNumericalFallback is likewise
+        // scoped to this single worker instance, never shared across calls (see item #42).
         var worker = new ExpressionDerivation<T>(ParameterName, candidates[0], AllowNumericalFallback);
-        return Expression.Lambda(worker.Transform(e.Body.Simplify()).Simplify(), e.Parameters);
+        var result = Expression.Lambda(worker.Transform(e.Body.Simplify()).Simplify(), e.Parameters);
+        isExact = !worker.usedNumericalFallback;
+        return result;
     }
 
     /// <summary>
@@ -567,6 +599,8 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
         {
             return ExpressionEx.CreateConstant(T.CreateChecked(0d));
         }
+
+        usedNumericalFallback = true;
 
         // Scale-aware step: FiniteDifferenceStepBase (~MachineEpsilon^(1/3)) scaled by the operand's own
         // magnitude at evaluation time, so the step neither underflows relative to a large operand nor
