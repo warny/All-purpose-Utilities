@@ -696,10 +696,15 @@ is not finite, or <code class="paramref">tolerance</code> is not finite and posi
 
   <h3 id="Utils_Mathematics_Polynomial_1_ToString" data-uid="Utils.Mathematics.Polynomial`1.ToString">
   ToString()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Polynomial.cs/#L268"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Polynomial.cs/#L275"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Returns a string that represents the current object.</p>
+  <div class="markdown level1 summary"><p>Renders the polynomial as e.g. <code>&quot;3x^2 - 2x + 1&quot;</code>: each term's sign is applied as a separator
+between terms (<code>&quot; + &quot;</code>/<code>&quot; - &quot;</code> or a leading <code>&quot;-&quot;</code> for the first term) rather than
+baked into the coefficient's own <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.tostring">ToString()</a>, which previously produced
+double-signed sequences such as <code>&quot;2x + -3&quot;</code> whenever a non-leading term was negative. A unit
+coefficient (<code>±1</code>) on a non-constant term omits the redundant magnitude (<code>&quot;x&quot;</code>/<code>&quot;-x&quot;</code>
+rather than <code>&quot;1x&quot;</code>/<code>&quot;-1x&quot;</code>).</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -711,8 +716,7 @@ is not finite, or <code class="paramref">tolerance</code> is not finite and posi
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>A string that represents the current object.</p>
-</dd>
+    <dd></dd>
   </dl>
 
 

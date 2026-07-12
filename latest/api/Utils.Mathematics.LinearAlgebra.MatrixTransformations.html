@@ -157,7 +157,7 @@ Class MatrixTransformations  <a class="header-action link-secondary" title="View
 
   <h3 id="Utils_Mathematics_LinearAlgebra_MatrixTransformations_Diagonal__1_System_Collections_Generic_IEnumerable___0__" data-uid="Utils.Mathematics.LinearAlgebra.MatrixTransformations.Diagonal``1(System.Collections.Generic.IEnumerable{``0})">
   Diagonal&lt;T&gt;(params IEnumerable&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/MatrixTransformations.cs/#L46"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/MatrixTransformations.cs/#L47"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Creates a diagonal matrix from the provided values.</p>
@@ -211,7 +211,7 @@ behavior; keeping one implementation avoids a repeat.</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_MatrixTransformations_Identity__1_System_Int32_" data-uid="Utils.Mathematics.LinearAlgebra.MatrixTransformations.Identity``1(System.Int32)">
   Identity&lt;T&gt;(int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/MatrixTransformations.cs/#L17"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/MatrixTransformations.cs/#L28"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Creates an identity matrix of the specified dimension.</p>
@@ -225,7 +225,7 @@ behavior; keeping one implementation avoids a repeat.</p>
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>dimension</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
-    <dd><p>Matrix dimension.</p>
+    <dd><p>Matrix dimension. Must be positive.</p>
 </dd>
   </dl>
 
@@ -248,7 +248,23 @@ behavior; keeping one implementation avoids a repeat.</p>
 
 
 
+  <h4 class="section" id="Utils_Mathematics_LinearAlgebra_MatrixTransformations_Identity__1_System_Int32__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Delegates to <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html#Utils_Mathematics_LinearAlgebra_Matrix_1_Identity_System_Int32_">Identity(int)</a>, which is the single implementation of
+identity-matrix construction: an earlier, independent implementation here performed no
+validation at all, so a zero dimension silently built a 0×0 matrix and a negative dimension
+failed through raw array allocation instead of a clean, documented exception — disagreeing
+with <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html#Utils_Mathematics_LinearAlgebra_Matrix_1_Identity_System_Int32_">Identity(int)</a>'s domain and exception behavior for the same
+operation (see TODO-2026-07-11-pass5.md item #62). Two independently maintained factories for
+the same construction had already drifted once for <a class="xref" href="Utils.Mathematics.LinearAlgebra.MatrixTransformations.html#Utils_Mathematics_LinearAlgebra_MatrixTransformations_Diagonal__1_System_Collections_Generic_IEnumerable___0__">Diagonal&lt;T&gt;(params IEnumerable&lt;T&gt;)</a>;
+keeping one implementation avoids a repeat.</p>
+</div>
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when <code class="paramref">dimension</code> is not positive.</p>
+</dd>
+  </dl>
 
 
 
@@ -256,7 +272,7 @@ behavior; keeping one implementation avoids a repeat.</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_MatrixTransformations_Rotation__1_System_Collections_Generic_IEnumerable___0__" data-uid="Utils.Mathematics.LinearAlgebra.MatrixTransformations.Rotation``1(System.Collections.Generic.IEnumerable{``0})">
   Rotation&lt;T&gt;(params IEnumerable&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/MatrixTransformations.cs/#L141"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/MatrixTransformations.cs/#L160"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Generates a rotation matrix.</p>
@@ -270,7 +286,13 @@ behavior; keeping one implementation avoids a repeat.</p>
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>angles</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;T&gt;</dt>
-    <dd><p>Angles of rotation.</p>
+    <dd><p>Angles of rotation, one per axis pair of the base <code>d × d</code> rotation block: <code>d * (d - 1) / 2</code>
+angles are required for a given base dimension <code>d</code>. Must not be empty: with zero angles, the
+<code>d * (d - 1) / 2 = n</code> formula solves to the degenerate <code>d = 1</code> (a meaningless &quot;1×1
+rotation&quot;, since rotation requires at least two axes to rotate between) rather than identifying
+which ambient dimension's identity rotation the caller intended (see
+TODO-2026-07-11-pass5.md item #66). To build an identity matrix of a specific dimension, call
+<a class="xref" href="Utils.Mathematics.LinearAlgebra.MatrixTransformations.html#Utils_Mathematics_LinearAlgebra_MatrixTransformations_Identity__1_System_Int32_">Identity&lt;T&gt;(int)</a> directly instead.</p>
 </dd>
   </dl>
 
@@ -294,6 +316,13 @@ behavior; keeping one implementation avoids a repeat.</p>
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when <code class="paramref">angles</code> is empty, or its count does not match <code>d * (d - 1) / 2</code>
+for any integer <code>d</code>.</p>
+</dd>
+  </dl>
 
 
 
@@ -301,7 +330,7 @@ behavior; keeping one implementation avoids a repeat.</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_MatrixTransformations_Scaling__1_System_Collections_Generic_IEnumerable___0__" data-uid="Utils.Mathematics.LinearAlgebra.MatrixTransformations.Scaling``1(System.Collections.Generic.IEnumerable{``0})">
   Scaling&lt;T&gt;(params IEnumerable&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/MatrixTransformations.cs/#L56"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/MatrixTransformations.cs/#L57"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Generates a scaling matrix.</p>
@@ -346,7 +375,7 @@ behavior; keeping one implementation avoids a repeat.</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_MatrixTransformations_Skew__1_System_Collections_Generic_IEnumerable___0__" data-uid="Utils.Mathematics.LinearAlgebra.MatrixTransformations.Skew``1(System.Collections.Generic.IEnumerable{``0})">
   Skew&lt;T&gt;(params IEnumerable&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/MatrixTransformations.cs/#L101"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/MatrixTransformations.cs/#L102"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Generates a shear (skew) matrix using the provided angles.</p>
@@ -401,7 +430,7 @@ required, since a full shear has one free coefficient per off-diagonal position.
 
   <h3 id="Utils_Mathematics_LinearAlgebra_MatrixTransformations_Transform__1_System_Collections_Generic_IEnumerable___0__" data-uid="Utils.Mathematics.LinearAlgebra.MatrixTransformations.Transform``1(System.Collections.Generic.IEnumerable{``0})">
   Transform&lt;T&gt;(params IEnumerable&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/MatrixTransformations.cs/#L231"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/MatrixTransformations.cs/#L271"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Generates a general affine transformation matrix.</p>
@@ -459,7 +488,7 @@ same convention <a class="xref" href="Utils.Mathematics.LinearAlgebra.MatrixTran
 
   <h3 id="Utils_Mathematics_LinearAlgebra_MatrixTransformations_Translation__1_System_Collections_Generic_IEnumerable___0__" data-uid="Utils.Mathematics.LinearAlgebra.MatrixTransformations.Translation``1(System.Collections.Generic.IEnumerable{``0})">
   Translation&lt;T&gt;(params IEnumerable&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/MatrixTransformations.cs/#L189"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/MatrixTransformations.cs/#L221"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Generates a translation matrix.</p>
