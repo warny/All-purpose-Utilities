@@ -7,10 +7,22 @@ namespace Utils.Mathematics.LinearAlgebra;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Construct via <see cref="FromSpan"/> (k spanning vectors → dimension k) or
-/// <see cref="FromNormals"/> (k normal vectors → dimension d − k).
-/// The internal representation is an orthonormal basis computed by Gram–Schmidt, so all
-/// geometric operations are numerically stable.
+/// Construct via <see cref="FromSpan(Vector{T}, Vector{T}[])"/> (k spanning vectors → dimension k) or
+/// <see cref="FromNormals(Vector{T}, Vector{T}[])"/> (k normal vectors → dimension d − k). The internal
+/// representation is an orthonormal basis computed by Gram–Schmidt.
+/// </para>
+/// <para>
+/// <b>Numerical stability is limited, not unconditional</b> (see TODO-2026-07-11-pass4.md item #50):
+/// rank/independence decisions during construction, and the tolerance-based comparisons in
+/// <see cref="IntersectWith(AffineSubspace{T})"/>/<see cref="IntersectWith(Line{T})"/>/<see cref="Equals(AffineSubspace{T})"/>,
+/// use a fixed absolute epsilon (<c>1e-10</c>) rather than a scale-aware relative tolerance, and there is
+/// no re-orthogonalization pass or conditioning/residual diagnostic. This is adequate for
+/// moderate-magnitude coordinates and clearly independent inputs, but nearly dependent directions/normals
+/// or large coordinate scales can silently produce an incorrect rank or a looser-than-expected membership
+/// test. <see cref="FromSpan(Vector{T}, T?, Vector{T}[])"/>/<see cref="FromNormals(Vector{T}, T?, Vector{T}[])"/>
+/// accept an optional <c>rankTolerance</c> override for callers who need to tune this threshold for their
+/// own scale; a fully scale-aware/SVD-based construction was not implemented (see the item's "Fixed" note
+/// for why).
 /// </para>
 /// <para>
 /// Special cases: dimension 0 is a single point; dimension d is the full ambient space.
@@ -51,8 +63,9 @@ public sealed class AffineSubspace<T> : IEquatable<AffineSubspace<T>>, ICloneabl
     // -------------------------------------------------------------------------
 
     /// <summary>
-    /// Creates an affine subspace of dimension <c>k</c> spanned by <c>k</c> direction vectors.
-    /// Linearly dependent inputs are silently discarded; the resulting dimension equals the rank.
+    /// Creates an affine subspace of dimension <c>k</c> spanned by <c>k</c> direction vectors, using the
+    /// default rank tolerance. See <see cref="FromSpan(Vector{T}, T?, Vector{T}[])"/> for an overload
+    /// accepting an explicit tolerance override.
     /// </summary>
     /// <param name="anchor">A point on the subspace.</param>
     /// <param name="directions">Spanning directions. At least one must be non-zero.</param>
@@ -66,16 +79,42 @@ public sealed class AffineSubspace<T> : IEquatable<AffineSubspace<T>>, ICloneabl
     /// or all directions are zero / mutually collinear.
     /// </exception>
     public static AffineSubspace<T> FromSpan(Vector<T> anchor, params Vector<T>[] directions)
+        => FromSpan(anchor, rankTolerance: null, directions);
+
+    /// <summary>
+    /// Creates an affine subspace of dimension <c>k</c> spanned by <c>k</c> direction vectors.
+    /// Linearly dependent inputs are silently discarded; the resulting dimension equals the rank.
+    /// </summary>
+    /// <param name="anchor">A point on the subspace.</param>
+    /// <param name="rankTolerance">
+    /// Overrides the default fixed absolute epsilon (<c>1e-10</c>) used to decide whether a direction is
+    /// linearly independent of those already accepted (see this type's remarks on numerical stability,
+    /// TODO-2026-07-11-pass4.md item #50). Must be finite and non-negative when supplied.
+    /// </param>
+    /// <param name="directions">Spanning directions. At least one must be non-zero.</param>
+    /// <returns>The affine subspace through <paramref name="anchor"/> in the given directions.</returns>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="anchor"/>, <paramref name="directions"/>, or any element of
+    /// <paramref name="directions"/> is <see langword="null"/>.
+    /// </exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when no directions are supplied, a direction has the wrong ambient dimension,
+    /// or all directions are zero / mutually collinear.
+    /// </exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="rankTolerance"/> is supplied but not finite or is negative.</exception>
+    public static AffineSubspace<T> FromSpan(Vector<T> anchor, T? rankTolerance, params Vector<T>[] directions)
     {
         ArgumentNullException.ThrowIfNull(anchor);
         ArgumentNullException.ThrowIfNull(directions);
+        if (rankTolerance is { } explicitRankTolerance)
+            ValidateTolerance(explicitRankTolerance, nameof(rankTolerance));
         if (directions.Length == 0)
             throw new ArgumentException("At least one direction vector is required.", nameof(directions));
         for (int i = 0; i < directions.Length; i++)
             if (directions[i] is null)
                 throw new ArgumentNullException(nameof(directions), $"Direction vector at index {i} is null.");
 
-        var basis = GramSchmidt(anchor.Dimension, directions);
+        var basis = GramSchmidt(anchor.Dimension, directions, rankTolerance ?? Epsilon);
         if (basis.Length == 0)
             throw new ArgumentException("All direction vectors are linearly dependent (zero span).", nameof(directions));
 
@@ -83,10 +122,9 @@ public sealed class AffineSubspace<T> : IEquatable<AffineSubspace<T>>, ICloneabl
     }
 
     /// <summary>
-    /// Creates an affine subspace of dimension <c>d − k</c> defined by <c>k</c> normal vectors.
-    /// The subspace is the set of points whose displacement from <paramref name="anchor"/>
-    /// is orthogonal to every supplied normal.
-    /// Linearly dependent normals are silently discarded.
+    /// Creates an affine subspace of dimension <c>d − k</c> defined by <c>k</c> normal vectors, using
+    /// the default rank tolerance. See <see cref="FromNormals(Vector{T}, T?, Vector{T}[])"/> for an
+    /// overload accepting an explicit tolerance override.
     /// </summary>
     /// <param name="anchor">A point on the subspace.</param>
     /// <param name="normals">Normal vectors. Each independent normal reduces the dimension by one.</param>
@@ -99,17 +137,46 @@ public sealed class AffineSubspace<T> : IEquatable<AffineSubspace<T>>, ICloneabl
     /// Thrown when no normals are supplied or a normal has the wrong ambient dimension.
     /// </exception>
     public static AffineSubspace<T> FromNormals(Vector<T> anchor, params Vector<T>[] normals)
+        => FromNormals(anchor, rankTolerance: null, normals);
+
+    /// <summary>
+    /// Creates an affine subspace of dimension <c>d − k</c> defined by <c>k</c> normal vectors.
+    /// The subspace is the set of points whose displacement from <paramref name="anchor"/>
+    /// is orthogonal to every supplied normal.
+    /// Linearly dependent normals are silently discarded.
+    /// </summary>
+    /// <param name="anchor">A point on the subspace.</param>
+    /// <param name="rankTolerance">
+    /// Overrides the default fixed absolute epsilon (<c>1e-10</c>) used to decide whether a normal is
+    /// linearly independent of those already accepted, and to decide when a candidate complement
+    /// direction has collapsed to zero (see this type's remarks on numerical stability,
+    /// TODO-2026-07-11-pass4.md item #50). Must be finite and non-negative when supplied.
+    /// </param>
+    /// <param name="normals">Normal vectors. Each independent normal reduces the dimension by one.</param>
+    /// <returns>The affine subspace through <paramref name="anchor"/> orthogonal to the given normals.</returns>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="anchor"/>, <paramref name="normals"/>, or any element of
+    /// <paramref name="normals"/> is <see langword="null"/>.
+    /// </exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when no normals are supplied or a normal has the wrong ambient dimension.
+    /// </exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="rankTolerance"/> is supplied but not finite or is negative.</exception>
+    public static AffineSubspace<T> FromNormals(Vector<T> anchor, T? rankTolerance, params Vector<T>[] normals)
     {
         ArgumentNullException.ThrowIfNull(anchor);
         ArgumentNullException.ThrowIfNull(normals);
+        if (rankTolerance is { } explicitRankTolerance)
+            ValidateTolerance(explicitRankTolerance, nameof(rankTolerance));
         if (normals.Length == 0)
             throw new ArgumentException("At least one normal vector is required.", nameof(normals));
         for (int i = 0; i < normals.Length; i++)
             if (normals[i] is null)
                 throw new ArgumentNullException(nameof(normals), $"Normal vector at index {i} is null.");
 
-        var orthonormals = GramSchmidt(anchor.Dimension, normals);
-        var basis = ComputeComplement(anchor.Dimension, orthonormals);
+        T effectiveTolerance = rankTolerance ?? Epsilon;
+        var orthonormals = GramSchmidt(anchor.Dimension, normals, effectiveTolerance);
+        var basis = ComputeComplement(anchor.Dimension, orthonormals, effectiveTolerance);
         return new AffineSubspace<T>(anchor, basis);
     }
 
@@ -288,7 +355,7 @@ public sealed class AffineSubspace<T> : IEquatable<AffineSubspace<T>>, ICloneabl
         }
 
         var intersectionAnchor = new Vector<T>(anchorComponents);
-        var intersectionBasis = ComputeComplement(d, [.. combinedNormals]);
+        var intersectionBasis = ComputeComplement(d, [.. combinedNormals], Epsilon);
         return new AffineSubspace<T>(intersectionAnchor, intersectionBasis);
     }
 
@@ -353,7 +420,7 @@ public sealed class AffineSubspace<T> : IEquatable<AffineSubspace<T>>, ICloneabl
 
     /// <summary>Returns the cached orthonormal normals, computing them on first access.</summary>
     private Vector<T>[] GetOrComputeNormals()
-        => _normals ??= ComputeComplement(AmbientDimension, _basis);
+        => _normals ??= ComputeComplement(AmbientDimension, _basis, Epsilon);
 
     private void ValidateDimension(Vector<T> point)
     {
@@ -398,9 +465,14 @@ public sealed class AffineSubspace<T> : IEquatable<AffineSubspace<T>>, ICloneabl
     /// </summary>
     /// <param name="ambientDimension">Expected dimension of each vector.</param>
     /// <param name="vectors">Input vectors to orthonormalize.</param>
+    /// <param name="rankTolerance">
+    /// Threshold below which a candidate's residual norm (after projecting out the directions already
+    /// accepted) is treated as zero - i.e. linearly dependent on them (see
+    /// TODO-2026-07-11-pass4.md item #50).
+    /// </param>
     /// <returns>An array of mutually orthonormal vectors spanning the same subspace.</returns>
     /// <exception cref="ArgumentException">Thrown when a vector has the wrong ambient dimension.</exception>
-    private static Vector<T>[] GramSchmidt(int ambientDimension, Vector<T>[] vectors)
+    private static Vector<T>[] GramSchmidt(int ambientDimension, Vector<T>[] vectors, T rankTolerance)
     {
         var result = new List<Vector<T>>(vectors.Length);
         foreach (var v in vectors)
@@ -418,7 +490,7 @@ public sealed class AffineSubspace<T> : IEquatable<AffineSubspace<T>>, ICloneabl
             }
 
             T norm = Norm(u);
-            if (norm <= Epsilon) continue;
+            if (norm <= rankTolerance) continue;
 
             for (int i = 0; i < ambientDimension; i++) u[i] /= norm;
             result.Add(new Vector<T>(u));
@@ -432,8 +504,13 @@ public sealed class AffineSubspace<T> : IEquatable<AffineSubspace<T>>, ICloneabl
     /// </summary>
     /// <param name="d">Ambient space dimension.</param>
     /// <param name="orthonormals">Already-orthonormal vectors whose complement is sought.</param>
+    /// <param name="rankTolerance">
+    /// Threshold below which a candidate complement direction's residual norm is treated as zero - i.e.
+    /// already spanned by <paramref name="orthonormals"/> plus the complement directions already accepted
+    /// (see TODO-2026-07-11-pass4.md item #50).
+    /// </param>
     /// <returns>An orthonormal basis of the complement subspace.</returns>
-    private static Vector<T>[] ComputeComplement(int d, Vector<T>[] orthonormals)
+    private static Vector<T>[] ComputeComplement(int d, Vector<T>[] orthonormals, T rankTolerance)
     {
         // Project each standard basis vector out of the given orthonormal directions.
         T[][] candidates = new T[d][];
@@ -458,7 +535,7 @@ public sealed class AffineSubspace<T> : IEquatable<AffineSubspace<T>>, ICloneabl
                 for (int k = 0; k < d; k++) u[k] -= dot * e[k];
             }
             T norm = Norm(u);
-            if (norm <= Epsilon) continue;
+            if (norm <= rankTolerance) continue;
             for (int k = 0; k < d; k++) u[k] /= norm;
             result.Add(new Vector<T>(u));
         }

@@ -480,4 +480,41 @@ public class AffineSubspaceTests
         var plane = AffineSubspace<double>.FromNormals(V(0, 0, 0), V(0, 0, 1));
         Assert.ThrowsException<ArgumentNullException>(() => plane.IntersectWith((AffineSubspace<double>)null!));
     }
+
+    // -------------------------------------------------------------------------
+    // Explicit rank tolerance (TODO-pass4 item #50)
+    // -------------------------------------------------------------------------
+
+    [TestMethod]
+    public void FromSpan_ExplicitRankTolerance_StillProducesCorrectSubspace()
+    {
+        var s = AffineSubspace<double>.FromSpan(V(0, 0, 0), 1e-6, V(1, 0, 0), V(0, 1, 0));
+        Assert.AreEqual(2, s.Dimension);
+    }
+
+    [TestMethod]
+    public void FromSpan_LooseRankTolerance_TreatsNearDependentDirectionAsDependent()
+    {
+        // A direction that is only slightly off collinear with the first one is treated as dependent
+        // when the caller supplies a looser tolerance than the tiny default epsilon.
+        var s = AffineSubspace<double>.FromSpan(V(0, 0, 0), 1e-3, V(1, 0, 0), V(1, 1e-6, 0));
+        Assert.AreEqual(1, s.Dimension);
+    }
+
+    [TestMethod]
+    public void FromSpan_NegativeRankTolerance_Throws()
+        => Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => AffineSubspace<double>.FromSpan(V(0, 0, 0), -1e-9, V(1, 0, 0)));
+
+    [TestMethod]
+    public void FromNormals_ExplicitRankTolerance_StillProducesCorrectSubspace()
+    {
+        var s = AffineSubspace<double>.FromNormals(V(0, 0, 0), 1e-6, V(0, 0, 1));
+        Assert.AreEqual(2, s.Dimension);
+    }
+
+    [TestMethod]
+    public void FromNormals_NegativeRankTolerance_Throws()
+        => Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => AffineSubspace<double>.FromNormals(V(0, 0, 0), -1e-9, V(0, 0, 1)));
 }
