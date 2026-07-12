@@ -395,51 +395,6 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
         }
     }
 
-    private T ComputeDeterminant()
-    {
-        int n = Rows;
-        T[,] u = ToArray();
-        int swaps = 0;
-        // Elimination divides by the pivot below, so a pivot that is merely close to zero (not
-        // exactly zero) would otherwise amplify rounding error into a huge/infinite/NaN result
-        // instead of the mathematically expected near-zero determinant of a near-singular matrix.
-        T pivotTolerance = DefaultTolerance(MaxAbsoluteEntry(u), n);
-
-        for (int k = 0; k < n; k++)
-        {
-            int pivotRow = k;
-            for (int i = k + 1; i < n; i++)
-            {
-                if (T.Abs(u[i, k]) > T.Abs(u[pivotRow, k]))
-                    pivotRow = i;
-            }
-
-            if (T.Abs(u[pivotRow, k]) <= pivotTolerance)
-                return T.Zero;
-
-            if (pivotRow != k)
-            {
-                PermuteRows(u, k, pivotRow);
-                swaps++;
-            }
-
-            for (int row = k + 1; row < n; row++)
-            {
-                T factor = u[row, k] / u[k, k];
-                for (int col = k; col < n; col++)
-                    u[row, col] -= factor * u[k, col];
-            }
-        }
-
-        // Each row swap inverts the sign of the determinant.
-        T det = (swaps % 2 == 0) ? T.One : -T.One;
-        for (int i = 0; i < n; i++)
-            det *= u[i, i];
-        return det;
-    }
-
-
-
     /// <summary>
     /// Converts the matrix to an array of vectors.
     /// </summary>

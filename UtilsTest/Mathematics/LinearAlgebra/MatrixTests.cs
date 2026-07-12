@@ -95,6 +95,98 @@ namespace UtilsTest.Mathematics.LinearAlgebra
             AssertMatricesAreEqual(P * matrix, L * U, 1e-9);
         }
 
+        // ── Shared pivoted decomposition (TODO-pass5 item #69) ─────────────────────
+
+        /// <summary>
+        /// Before item #69, <see cref="Matrix{T}.DiagonalizeLU"/> rejected only an exactly-zero pivot,
+        /// unlike <see cref="Matrix{T}.Invert"/>/<see cref="Matrix{T}.Solve"/>/<see cref="Matrix{T}.Determinant"/>,
+        /// which all use the shared scale-aware tolerance. Now that all four share one decomposition,
+        /// a near-singular (but not exactly singular) matrix is rejected consistently everywhere.
+        /// </summary>
+        [TestMethod]
+        public void DiagonalizeLU_NearSingularMatrix_ThrowsInsteadOfReturningGarbage()
+        {
+            var matrix = new Matrix<double>(new double[,] { { 1d, 2d }, { 2d + 2e-13, 4d + 4e-13 } });
+            Assert.ThrowsException<InvalidOperationException>(() => matrix.DiagonalizeLU());
+        }
+
+        /// <summary>
+        /// Before item #69, the permutation matrix returned by <see cref="Matrix{T}.DiagonalizeLU"/> was
+        /// always constructed with hardcoded <c>isIdentity: false</c>, even when zero row swaps occurred
+        /// and <c>P</c> is therefore actually the identity matrix.
+        /// </summary>
+        [TestMethod]
+        public void DiagonalizeLU_NoSwapNeeded_PermutationReportsIdentity()
+        {
+            // |2| is already the largest first-column magnitude, so no pivot swap occurs and P is
+            // literally the identity matrix.
+            Matrix<double> matrix = new Matrix<double>(new double[,]
+            {
+                                { 2d, 1d },
+                                { 1d, 3d },
+            });
+
+            (_, _, Matrix<double> P) = matrix.DiagonalizeLU();
+
+            Assert.IsTrue(P.IsIdentity);
+            Assert.IsTrue(P.IsDiagonal);
+            Assert.IsTrue(P.IsTriangular);
+            Assert.AreEqual(1d, P.Determinant, 1e-12);
+        }
+
+        /// <summary>
+        /// Same as <see cref="DiagonalizeLU_NoSwapNeeded_PermutationReportsIdentity"/>, but for a case
+        /// where a swap does occur: <c>P</c> must report a determinant of <c>-1</c> (an odd number of
+        /// transpositions) and must not be the identity.
+        /// </summary>
+        [TestMethod]
+        public void DiagonalizeLU_WithSwap_PermutationDeterminantReflectsSwapParity()
+        {
+            Matrix<double> matrix = new Matrix<double>(new double[,]
+            {
+                                { 4d, 3d },
+                                { 6d, 3d },
+            });
+
+            (_, _, Matrix<double> P) = matrix.DiagonalizeLU();
+
+            Assert.AreEqual(-1d, P.Determinant, 1e-12);
+            Assert.IsFalse(P.IsIdentity);
+        }
+
+        /// <summary>
+        /// Before item #69, <c>U</c> was always constructed with hardcoded <c>isDiagonal: false</c>, even
+        /// when decomposing an already-diagonal matrix (which needs no elimination and leaves <c>U</c>
+        /// genuinely diagonal).
+        /// </summary>
+        [TestMethod]
+        public void DiagonalizeLU_AlreadyDiagonalMatrix_UReportsDiagonal()
+        {
+            Matrix<double> matrix = Matrix<double>.Diagonal(2d, 3d, 4d);
+
+            (Matrix<double> L, Matrix<double> U, _) = matrix.DiagonalizeLU();
+
+            Assert.IsTrue(U.IsDiagonal);
+            Assert.IsTrue(L.IsIdentity);
+        }
+
+        /// <summary>
+        /// <see cref="Matrix{T}.DiagonalizeLU"/>, <see cref="Matrix{T}.Determinant"/>,
+        /// <see cref="Matrix{T}.Solve"/>, and <see cref="Matrix{T}.Invert"/> now share one pivoted
+        /// elimination, so they must agree on which matrices are singular. A rank-deficient matrix is
+        /// rejected/zeroed by all four instead of only some of them.
+        /// </summary>
+        [TestMethod]
+        public void SingularMatrix_RejectedConsistentlyAcrossDecompositionConsumers()
+        {
+            var matrix = new Matrix<double>(new double[,] { { 1d, 2d }, { 2d, 4d } });
+
+            Assert.AreEqual(0d, matrix.Determinant, 1e-12);
+            Assert.ThrowsException<InvalidOperationException>(() => matrix.DiagonalizeLU());
+            Assert.ThrowsException<InvalidOperationException>(() => matrix.Invert());
+            Assert.ThrowsException<InvalidOperationException>(() => matrix.Solve(new Vector<double>(1d, 1d)));
+        }
+
         /// <summary>
         /// Verifies that inverting a matrix leaves the original unchanged and produces an identity when multiplied.
         /// </summary>
