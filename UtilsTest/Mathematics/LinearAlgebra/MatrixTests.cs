@@ -748,6 +748,24 @@ namespace UtilsTest.Mathematics.LinearAlgebra
             Assert.ThrowsException<ArgumentException>(() => m.Pad(2, -1));
         }
 
+        // ── Raw scalar division operator (TODO-pass4 item #56) ─────────────────────
+
+        /// <summary>
+        /// The raw <c>/</c> operator is documented as unchecked IEEE division (see its XML doc): a zero
+        /// scalar propagates infinity/NaN per entry instead of throwing. Callers needing a validated
+        /// division use a higher-level member such as <see cref="Matrix{T}.Invert"/>/<see cref="Matrix{T}.Solve"/> instead.
+        /// </summary>
+        [TestMethod]
+        public void DivisionOperator_ByZero_ProducesInfinityInsteadOfThrowing()
+        {
+            var m = new Matrix<double>(new double[,] { { 1d, -1d }, { 0d, 2d } });
+            var result = m / 0d;
+            Assert.AreEqual(double.PositiveInfinity, result[0, 0]);
+            Assert.AreEqual(double.NegativeInfinity, result[0, 1]);
+            Assert.IsTrue(double.IsNaN(result[1, 0]));
+            Assert.AreEqual(double.PositiveInfinity, result[1, 1]);
+        }
+
         /// <summary>
         /// Asserts that two matrices contain the same components within the provided tolerance.
         /// </summary>

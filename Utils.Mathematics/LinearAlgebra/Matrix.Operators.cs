@@ -96,7 +96,13 @@ public partial class Matrix<T> :
     public static Matrix<T> operator *(Matrix<T> matrix, T scalar) => scalar * matrix;
 
     /// <summary>
-    /// Divides a matrix by a scalar.
+    /// Divides a matrix by a scalar. Not validated: this raw operator performs plain component-wise IEEE
+    /// division, so a zero, near-zero, <see langword="NaN"/>, or infinite <paramref name="scalar"/>
+    /// propagates the corresponding infinity/NaN entries per <typeparamref name="T"/>'s own IEEE
+    /// semantics rather than throwing (see TODO-2026-07-11-pass4.md item #56). Higher-level members that
+    /// need a numerically reliable result validate their own denominator before reaching this operator -
+    /// e.g. <see cref="Invert"/>/<see cref="Solve"/> reject a numerically near-singular pivot - rather
+    /// than this primitive operator growing an arbitrary, undocumented "near-zero" threshold of its own.
     /// </summary>
     public static Matrix<T> operator /(Matrix<T> matrix, T scalar)
     {

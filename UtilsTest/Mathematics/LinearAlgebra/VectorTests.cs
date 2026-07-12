@@ -618,5 +618,23 @@ public class VectorTests
         Assert.AreEqual(5.0, new Vector<double>(3d, 4d).Norm, 1e-12);
         Assert.AreEqual(5.0, new Vector<double>(4d, 3d).Norm, 1e-12);
     }
+
+    // ── Raw scalar division operator (TODO-pass4 item #56) ──────────────────────
+
+    /// <summary>
+    /// The raw <c>/</c> operator is documented as unchecked IEEE division (see its XML doc): a zero
+    /// divisor propagates <see cref="double.PositiveInfinity"/>/<see cref="double.NegativeInfinity"/> per
+    /// component instead of throwing. Callers needing a validated division use a higher-level member such
+    /// as <see cref="Vector{T}.Normalize"/> instead.
+    /// </summary>
+    [TestMethod]
+    public void DivisionOperator_ByZero_ProducesInfinityInsteadOfThrowing()
+    {
+        var v = new Vector<double>(1d, -1d, 0d);
+        var result = v / 0d;
+        Assert.AreEqual(double.PositiveInfinity, result[0]);
+        Assert.AreEqual(double.NegativeInfinity, result[1]);
+        Assert.IsTrue(double.IsNaN(result[2]));
+    }
 }
 
