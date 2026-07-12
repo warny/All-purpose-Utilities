@@ -277,4 +277,49 @@ public class PolynomialTests
     [TestMethod]
     public void NoCoefficients_Throws()
         => Assert.ThrowsException<ArgumentException>(() => new Polynomial<double>(System.Array.Empty<double>()));
+
+    // ── ToString sign rendering (TODO-pass5 item #65) ───────────────────────────
+
+    /// <summary>
+    /// Before the fix, a negative non-leading term rendered as a double-signed sequence such as
+    /// <c>"2x + -3"</c> because each coefficient's own sign was baked into its <see cref="object.ToString"/>
+    /// and every term was joined with a literal <c>" + "</c>.
+    /// </summary>
+    [TestMethod]
+    public void ToString_NegativeTrailingTerm_UsesSignAwareSeparator()
+    {
+        // 2x - 3
+        var p = new Polynomial<double>(-3.0, 2.0);
+        Assert.AreEqual("2x - 3", p.ToString());
+    }
+
+    [TestMethod]
+    public void ToString_NegativeLeadingTerm_StartsWithMinusNoPlus()
+    {
+        // 1 - 2x
+        var p = new Polynomial<double>(1.0, -2.0);
+        Assert.AreEqual("-2x + 1", p.ToString());
+    }
+
+    /// <summary>A unit coefficient on a non-constant term omits the redundant "1"/"-1" magnitude.</summary>
+    [TestMethod]
+    public void ToString_UnitCoefficient_OmitsMagnitude()
+    {
+        Assert.AreEqual("x", new Polynomial<double>(0.0, 1.0).ToString());
+        Assert.AreEqual("-x", new Polynomial<double>(0.0, -1.0).ToString());
+        Assert.AreEqual("x^2 + x", new Polynomial<double>(0.0, 1.0, 1.0).ToString());
+    }
+
+    /// <summary>The constant term's own coefficient of 1 must not be omitted (it is not a variable term).</summary>
+    [TestMethod]
+    public void ToString_ConstantTermOfOne_KeepsMagnitude()
+        => Assert.AreEqual("1", new Polynomial<double>(1.0).ToString());
+
+    [TestMethod]
+    public void ToString_MultipleNegativeTerms_EachUsesMinusSeparator()
+    {
+        // -3x^2 - 2x - 1
+        var p = new Polynomial<double>(-1.0, -2.0, -3.0);
+        Assert.AreEqual("-3x^2 - 2x - 1", p.ToString());
+    }
 }
