@@ -796,7 +796,7 @@ exception-type-inconsistent behavior for invalid multidimensional array allocati
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_ComputeEigenvalues_System_Int32_System_Nullable__0__System_Nullable__0__System_Nullable__0__" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.ComputeEigenvalues(System.Int32,System.Nullable{`0},System.Nullable{`0},System.Nullable{`0})">
   ComputeEigenvalues(int, T?, T?, T?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Eigenvalues.cs/#L66"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Eigenvalues.cs/#L69"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Computes the real eigenvalues and corresponding eigenvectors of a symmetric matrix
@@ -855,17 +855,20 @@ columns are the corresponding eigenvectors.</p>
   <div class="markdown level1 remarks"><p>Only real symmetric matrices are supported; all eigenvalues of such matrices are guaranteed real.
 Eigenvalues are returned in descending order of absolute value.</p>
 <p>
-<b>Known limitation - unshifted iteration:</b> this implementation repeatedly applies plain
-<code>A ← R·Q</code> (from <code>A = Q·R</code>) with no spectral shift and no prior reduction to
-tridiagonal form. This is simple and correct, but convergence is only linear and can become
-very slow - potentially exhausting <code class="paramref">maxIterations</code> - when eigenvalues are
-close in magnitude or clustered (the per-iteration convergence rate is governed by the ratio
-of consecutive eigenvalue magnitudes). A production-grade implementation would use Wilkinson
-shifts and deflation after a symmetric tridiagonal reduction, which converges cubically in the
-typical case; that rewrite is out of scope here. If convergence fails for a matrix with
-closely-spaced eigenvalues, increasing <code class="paramref">maxIterations</code> and/or relaxing
-<code class="paramref">convergenceTolerance</code> are the available mitigations with the current
-algorithm.
+Uses the symmetric QR algorithm with a Wilkinson shift and deflation: each step shifts the
+active (not-yet-deflated) leading submatrix by an estimate of the eigenvalue closest to its
+trailing corner before applying <code>A ← R·Q</code>, which - unlike plain unshifted iteration -
+gives locally cubic convergence and remains fast even for closely-spaced (clustered)
+eigenvalues. Once the last row/column of the active submatrix decouples (goes to zero within
+tolerance), that eigenvalue is locked in and the active submatrix shrinks by one, so later
+eigenvalues do not have to pay for the cost of resolving earlier ones.
+</p>
+<p>
+<b>Known limitation:</b> unlike a textbook implementation, this does not first reduce the
+matrix to tridiagonal form, so each QR step still costs <code>O(m³)</code> for the current active
+size <code>m</code> (via <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html#Utils_Mathematics_LinearAlgebra_Matrix_1_DecomposeQR_System_Nullable__0__">DecomposeQR(T?)</a>) rather than the <code>O(m)</code> a tridiagonal
+reduction would allow. This affects performance, not correctness or convergence rate: the
+shift is still computed from (and applied to) the true active submatrix at each step.
 </p>
 </div>
 
@@ -1571,7 +1574,7 @@ See <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html#Utils_Ma
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_IsSymmetric" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.IsSymmetric">
   IsSymmetric()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Eigenvalues.cs/#L153"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Eigenvalues.cs/#L203"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when this square matrix is symmetric (A[i,j] == A[j,i]) within
@@ -1604,7 +1607,7 @@ the default relative-plus-absolute tolerance (see <a class="xref" href="https://
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_IsSymmetric_System_Nullable__0__" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.IsSymmetric(System.Nullable{`0})">
   IsSymmetric(T?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Eigenvalues.cs/#L167"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Eigenvalues.cs/#L217"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when this square matrix is symmetric (A[i,j] == A[j,i]) within
