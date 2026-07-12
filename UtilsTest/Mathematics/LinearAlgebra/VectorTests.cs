@@ -187,6 +187,29 @@ public class VectorTests
         Assert.ThrowsException<ArgumentException>(() => Vector<double>.CrossProduct(v1, v2));
     }
 
+    /// <summary>
+    /// Item 41: the generalized cross product must remain correct (perpendicular to every input) in
+    /// dimensions higher than 3, where the reimplementation via <see cref="Matrix{T}.Determinant"/>
+    /// cofactors is exercised beyond the trivial 2x2 minors of the 3D case.
+    /// </summary>
+    [TestMethod]
+    public void CrossProduct_4D_IsPerpendicularToAllThreeInputs()
+    {
+        var a = new Vector<double>(1d, 0d, 0d, 0d);
+        var b = new Vector<double>(0d, 1d, 0d, 0d);
+        var c = new Vector<double>(0d, 0d, 1d, 0d);
+
+        var result = Vector<double>.CrossProduct(a, b, c);
+
+        Assert.AreEqual(4, result.Dimension);
+        Assert.AreEqual(0d, a * result, 1e-9, "Result should be perpendicular to a");
+        Assert.AreEqual(0d, b * result, 1e-9, "Result should be perpendicular to b");
+        Assert.AreEqual(0d, c * result, 1e-9, "Result should be perpendicular to c");
+        // The three orthonormal basis inputs span the first three axes, so the result must be
+        // the fourth standard basis vector, up to sign.
+        Assert.AreEqual(1d, Math.Abs(result[3]), 1e-9);
+    }
+
     // ── ToNormalSpace / FromNormalSpace ────────────────────────────────────
 
     [TestMethod]
