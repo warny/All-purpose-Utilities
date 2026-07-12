@@ -132,6 +132,66 @@ public class FastFourierTransformTests
         Assert.ThrowsException<ArgumentOutOfRangeException>(() => samples.GetFrequencies(0));
     }
 
+    // ── Null/empty/non-finite validation (TODO-pass4 item #53) ─────────────────
+
+    [TestMethod]
+    public void GetFrequencies_NaNSampleRate_Throws()
+    {
+        // Previously only "sampleRate <= 0" was checked, silently accepting NaN (NaN <= 0 is false).
+        Complex[] samples = [1, 1, 1, 1];
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => samples.GetFrequencies(double.NaN));
+    }
+
+    [TestMethod]
+    public void GetFrequencies_PositiveInfinitySampleRate_Throws()
+    {
+        Complex[] samples = [1, 1, 1, 1];
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => samples.GetFrequencies(double.PositiveInfinity));
+    }
+
+    [TestMethod]
+    public void GetFrequencies_NullTransform_Throws()
+    {
+        Complex[] transform = null!;
+        Assert.ThrowsException<ArgumentNullException>(() => transform.GetFrequencies(8));
+    }
+
+    [TestMethod]
+    public void GetFrequencies_EmptyTransform_Throws()
+    {
+        // Previously computed sampleRate / 0 (an unused infinity) and silently returned an empty array.
+        Complex[] transform = [];
+        Assert.ThrowsException<ArgumentException>(() => transform.GetFrequencies(8));
+    }
+
+    [TestMethod]
+    public void GetAmplitudes_NullTransform_Throws()
+    {
+        Complex[] transform = null!;
+        Assert.ThrowsException<ArgumentNullException>(() => transform.GetAmplitudes());
+    }
+
+    [TestMethod]
+    public void GetAmplitudes_EmptyTransform_Throws()
+    {
+        Complex[] transform = [];
+        Assert.ThrowsException<ArgumentException>(() => transform.GetAmplitudes());
+    }
+
+    [TestMethod]
+    public void GetPhases_NullTransform_Throws()
+    {
+        Complex[] transform = null!;
+        Assert.ThrowsException<ArgumentNullException>(() => transform.GetPhases());
+    }
+
+    [TestMethod]
+    public void GetPhases_EmptyTransform_Throws()
+    {
+        Complex[] transform = [];
+        Assert.ThrowsException<ArgumentException>(() => transform.GetPhases());
+    }
+
     [TestMethod]
     public void GetAmplitudes_ConstantSignal_DcBinIsN()
     {
