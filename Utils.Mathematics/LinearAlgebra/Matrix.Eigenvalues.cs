@@ -162,6 +162,16 @@ public sealed partial class Matrix<T>
                 throw new InvalidOperationException(
                     $"QR iteration did not converge after {maxIterations} iterations.");
 
+            // The deflation criterion only guarantees row/column m-1's off-diagonal coupling is within
+            // tolerance, not exactly zero, and this row/column is never read again: every later
+            // ExtractLeadingBlock/WriteLeadingBlock/WilkinsonShift/LastRowOffDiagonalNorm call is
+            // bounded to indices strictly less than the (now smaller) active size, and the returned
+            // eigenvalues/eigenvectors are built solely from `a`'s diagonal and from `v` (itself
+            // updated only from the active block's own Q, never from `a`'s frozen entries) - so this
+            // leftover residual cannot affect any later computation or the final output. Explicitly
+            // zeroing it here would therefore be inert busywork, not a correctness fix: verified
+            // empirically that doing so produces bit-identical Eigenvalues/Eigenvectors, including
+            // under a deliberately loosened convergenceTolerance and across multiple deflation stages.
             m--;
         }
 
