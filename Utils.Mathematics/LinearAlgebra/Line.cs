@@ -30,11 +30,28 @@ public class Line<T> : IFormattable, IEquatable<Line<T>>, ICloneable
     /// </summary>
     /// <param name="point">A point on the line.</param>
     /// <param name="direction">Direction vector of the line.</param>
-    /// <exception cref="ArgumentException">Thrown when vectors do not share the same dimension.</exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when vectors do not share the same dimension, or when <paramref name="direction"/> is zero
+    /// or numerically negligible (a line has no well-defined direction in that case, and
+    /// <see cref="DistanceTo"/> would divide by zero).
+    /// </exception>
     public Line(Vector<T> point, Vector<T> direction)
     {
         if (point.Dimension != direction.Dimension)
             throw new ArgumentException("Point and direction must be of the same dimension.");
+
+        // Reuses Vector<T>.Normalize's scale-aware zero/near-zero tolerance policy (see its
+        // DefaultNormTolerance) instead of an independent threshold, per the "same numerical policy"
+        // guidance in TODO-2026-07-11-pass3.md. The normalized copy itself is discarded: Direction keeps
+        // its original (non-unit) scale, only used here to validate it is non-negligible.
+        try
+        {
+            direction.Normalize();
+        }
+        catch (InvalidOperationException ex)
+        {
+            throw new ArgumentException("Line direction cannot be zero or numerically negligible.", nameof(direction), ex);
+        }
 
         Point = point;
         Direction = direction;

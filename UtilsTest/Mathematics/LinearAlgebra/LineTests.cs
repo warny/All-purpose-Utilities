@@ -76,4 +76,20 @@ public class LineTests
         var b = new Line<double>(new Vector<double>(1d, 0d), new Vector<double>(1d, 0d));
         Assert.IsFalse(a.Equals(b));
     }
+
+    // ── Zero-direction rejection (item 37) ────────────────────────────────────
+
+    [TestMethod]
+    public void Constructor_ZeroDirection_Throws()
+    {
+        Assert.ThrowsException<ArgumentException>(() =>
+            new Line<double>(new Vector<double>(0d, 0d), new Vector<double>(0d, 0d)));
+    }
+
+    [TestMethod]
+    public void Constructor_NearZeroDirection_Throws()
+    {
+        Assert.ThrowsException<ArgumentException>(() =>
+            new Line<double>(new Vector<double>(0d, 0d), new Vector<double>(1e-300, 1e-300)));
+    }
 }
