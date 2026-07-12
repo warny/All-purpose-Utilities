@@ -297,13 +297,27 @@ public sealed partial class Matrix<T> : IFormattable, IEquatable<Matrix<T>>, IEq
     }
 
     /// <summary>
-    /// Pads the matrix to the specified new dimensions.
+    /// Resizes the matrix to the specified new dimensions, copying the overlapping top-left prefix and
+    /// zero-filling any newly added rows/columns.
     /// </summary>
-    /// <param name="newRows">The new number of rows.</param>
-    /// <param name="newColumns">The new number of columns.</param>
-    /// <returns>A new matrix with the padded dimensions.</returns>
+    /// <param name="newRows">The new number of rows. Must be positive.</param>
+    /// <param name="newColumns">The new number of columns. Must be positive.</param>
+    /// <returns>A new matrix with the requested dimensions.</returns>
+    /// <remarks>
+    /// Despite its name, this is a resize, not a pure enlargement: whenever <paramref name="newRows"/>
+    /// and/or <paramref name="newColumns"/> is smaller than the corresponding current dimension, the
+    /// returned matrix crops that dimension down (see TODO-2026-07-11-pass5.md item #67) instead of
+    /// throwing or requiring the new dimensions to be at least the current ones. Only the overlapping
+    /// <c>min(current, new)</c> prefix of rows/columns is preserved either way.
+    /// </remarks>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="newRows"/> or <paramref name="newColumns"/> is not positive.
+    /// </exception>
     public Matrix<T> Pad(int newRows, int newColumns)
     {
+        if (newRows <= 0) throw new ArgumentException("Row count must be positive", nameof(newRows));
+        if (newColumns <= 0) throw new ArgumentException("Column count must be positive", nameof(newColumns));
+
         T[,] paddedMatrix = new T[newRows, newColumns];
         int rowCount = MathEx.Min(newRows, Rows);
         int colCount = MathEx.Min(newColumns, Columns);

@@ -574,6 +574,62 @@ namespace UtilsTest.Mathematics.LinearAlgebra
             Assert.ThrowsException<FormatException>(() => m.ToString("bogus", null));
         }
 
+        // ── Pad (TODO-pass5 item #67) ───────────────────────────────────────────────
+
+        [TestMethod]
+        public void Pad_LargerDimensions_CopiesPrefixAndZeroFillsRest()
+        {
+            var m = new Matrix<double>(new double[,] { { 1d, 2d }, { 3d, 4d } });
+            Matrix<double> padded = m.Pad(3, 3);
+
+            Assert.AreEqual(3, padded.Rows);
+            Assert.AreEqual(3, padded.Columns);
+            Assert.AreEqual(1d, padded[0, 0]);
+            Assert.AreEqual(2d, padded[0, 1]);
+            Assert.AreEqual(3d, padded[1, 0]);
+            Assert.AreEqual(4d, padded[1, 1]);
+            Assert.AreEqual(0d, padded[2, 2]);
+            Assert.AreEqual(0d, padded[0, 2]);
+        }
+
+        [TestMethod]
+        public void Pad_EqualDimensions_ReturnsEquivalentCopy()
+        {
+            var m = new Matrix<double>(new double[,] { { 1d, 2d }, { 3d, 4d } });
+            Matrix<double> padded = m.Pad(2, 2);
+            AssertMatricesAreEqual(m, padded, 1e-12);
+        }
+
+        /// <summary>
+        /// Despite its name, <see cref="Matrix{T}.Pad"/> also crops when the requested dimensions are
+        /// smaller than the current ones (see TODO-pass5 item #67): it keeps only the overlapping
+        /// top-left prefix instead of throwing or requiring the new dimensions to be at least as large.
+        /// </summary>
+        [TestMethod]
+        public void Pad_SmallerDimensions_CropsToOverlappingPrefix()
+        {
+            var m = new Matrix<double>(new double[,] { { 1d, 2d, 3d }, { 4d, 5d, 6d }, { 7d, 8d, 9d } });
+            Matrix<double> cropped = m.Pad(2, 2);
+
+            Assert.AreEqual(2, cropped.Rows);
+            Assert.AreEqual(2, cropped.Columns);
+            AssertMatricesAreEqual(new Matrix<double>(new double[,] { { 1d, 2d }, { 4d, 5d } }), cropped, 1e-12);
+        }
+
+        [TestMethod]
+        public void Pad_ZeroRows_Throws()
+        {
+            var m = new Matrix<double>(new double[,] { { 1d } });
+            Assert.ThrowsException<ArgumentException>(() => m.Pad(0, 2));
+        }
+
+        [TestMethod]
+        public void Pad_NegativeColumns_Throws()
+        {
+            var m = new Matrix<double>(new double[,] { { 1d } });
+            Assert.ThrowsException<ArgumentException>(() => m.Pad(2, -1));
+        }
+
         /// <summary>
         /// Asserts that two matrices contain the same components within the provided tolerance.
         /// </summary>
