@@ -67,17 +67,34 @@ public partial class Vector<T> :
     /// <param name="getVector">Function to extract the vector from the point.</param>
     /// <param name="weightedPoints">Collection of weighted points.</param>
     /// <returns>The total weight and the barycenter vector.</returns>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="getWeight"/>, <paramref name="getVector"/>, or
+    /// <paramref name="weightedPoints"/> is <see langword="null"/>.
+    /// </exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="weightedPoints"/> is empty, when <paramref name="getVector"/> selects a
+    /// <see langword="null"/> vector for some element, when selected vectors do not all share the same
+    /// dimension, when a weight is not finite (<see cref="double.NaN"/> or infinite), or when the total
+    /// weight is exactly zero — the latter two make the normalizing division undefined. A total weight
+    /// that is merely small (e.g. through near-cancelling positive/negative weights) is still divided by
+    /// as ordinary IEEE arithmetic; only the exactly-undefined cases are rejected here.
+    /// </exception>
     public static (T weight, Vector<T> point) ComputeBarycenter<TW>(Func<TW, T> getWeight, Func<TW, Vector<T>> getVector, IEnumerable<TW> weightedPoints)
     {
+        ArgumentNullException.ThrowIfNull(getWeight);
+        ArgumentNullException.ThrowIfNull(getVector);
+        ArgumentNullException.ThrowIfNull(weightedPoints);
+
         using var enumerator = weightedPoints.GetEnumerator();
         if (!enumerator.MoveNext()) throw new ArgumentException("At least one point is required", nameof(weightedPoints));
 
         TW first = enumerator.Current;
-        Vector<T> firstPoint = getVector(first);
+        Vector<T> firstPoint = getVector(first) ?? throw new ArgumentException("A selected vector must not be null.", nameof(getVector));
         int dimension = firstPoint.Dimension;
         T[] temp = new T[dimension];
 
         T weight = getWeight(first);
+        if (!T.IsFinite(weight)) throw new ArgumentException($"Weight must be finite; got '{weight}'.", nameof(weightedPoints));
         T totalWeight = weight;
         for (int i = 0; i < dimension; i++)
         {
@@ -88,13 +105,21 @@ public partial class Vector<T> :
         {
             var weightedPoint = enumerator.Current;
             weight = getWeight(weightedPoint);
+            if (!T.IsFinite(weight)) throw new ArgumentException($"Weight must be finite; got '{weight}'.", nameof(weightedPoints));
             totalWeight += weight;
-            Vector<T> point = getVector(weightedPoint);
-            if (dimension != point.Dimension) throw new InvalidOperationException("All points must have the same dimension.");
+            Vector<T> point = getVector(weightedPoint) ?? throw new ArgumentException("A selected vector must not be null.", nameof(getVector));
+            if (dimension != point.Dimension) throw new ArgumentException("All selected vectors must have the same dimension.", nameof(weightedPoints));
             for (int i = 0; i < dimension; i++)
             {
                 temp[i] += point[i] * weight;
             }
+        }
+
+        if (!T.IsFinite(totalWeight) || totalWeight == T.Zero)
+        {
+            throw new ArgumentException(
+                $"The total weight must be finite and non-zero to compute a barycenter; got '{totalWeight}'.",
+                nameof(weightedPoints));
         }
 
         for (int i = 0; i < dimension; i++)

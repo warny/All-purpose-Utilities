@@ -541,4 +541,41 @@ public class ExpressionIntegrationTests
         Assert.AreEqual(-Math.Log(Math.Abs(Math.Cos(xv))), actual, 1e-9, $"∫tan(x) dx at x={xv}");
     }
 
+    // ── Parameter-instance resolution (TODO-pass4 item #47) ────────────────────
+
+    /// <summary>
+    /// Two parameters sharing the same declared name (including <see langword="null"/> for unnamed
+    /// parameters) previously made name-based resolution ambiguous even when only one of them was
+    /// intended. Targeting the exact instance sidesteps the name entirely.
+    /// </summary>
+    [TestMethod]
+    public void Integrate_ByParameterInstance_UnnamedParameter_Works()
+    {
+        var x = Expression.Parameter(typeof(double));
+        var body = Expression.Multiply(Expression.Constant(2.0), x);
+        var f = Expression.Lambda<Func<double, double>>(body, x);
+
+        ExpressionIntegration<double> integrationByX = new(x);
+        var result = (Expression<Func<double, double>>)integrationByX.Integrate(f);
+
+        // integral of 2x dx = x^2; at x=4 -> 16
+        Assert.AreEqual(16.0, result.Compile()(4.0), 1e-9);
+    }
+
+    /// <summary>
+    /// A parameter instance that does not belong to the lambda being integrated must fail with a
+    /// contextual diagnostic instead of silently matching nothing or the wrong variable.
+    /// </summary>
+    [TestMethod]
+    public void Integrate_ByParameterInstance_ParameterNotInLambda_Throws()
+    {
+        var x = Expression.Parameter(typeof(double), "x");
+        var foreign = Expression.Parameter(typeof(double), "x");
+        var f = Expression.Lambda<Func<double, double>>(x, x);
+
+        ExpressionIntegration<double> integrationByForeign = new(foreign);
+
+        Assert.ThrowsExactly<InvalidOperationException>(() => integrationByForeign.Integrate(f));
+    }
+
 }
