@@ -396,7 +396,22 @@ public sealed class AffineSubspace<T> : IEquatable<AffineSubspace<T>>, ICloneabl
     /// <inheritdoc/>
     public override bool Equals(object? obj) => obj is AffineSubspace<T> s && Equals(s);
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Combines only <see cref="Dimension"/> and <see cref="AmbientDimension"/>. This is a deliberately
+    /// coarse hash, not an oversight (see TODO-2026-07-11-pass4.md item #51): <see cref="Equals(AffineSubspace{T})"/>
+    /// is a tolerance-based geometric comparison (same point set, not same anchor/basis representation),
+    /// so a hash that is actually consistent with it would need to derive a value invariant across every
+    /// representation of the same subspace - and stable across the boundary where two subspaces stop
+    /// being "close enough" to compare equal - which the fixed-epsilon geometric equality this type uses
+    /// cannot support without also risking hash/equals inconsistency (two subspaces that compare equal
+    /// hashing differently because their real-valued invariants fall in different quantization buckets).
+    /// This satisfies the required equal-implies-same-hash contract, but every subspace of the same
+    /// dimension/ambient dimension collides: this makes hash-based collections (<see cref="HashSet{T}"/>,
+    /// dictionary keys) degrade to near-linear lookup for a collection containing many subspaces. Callers
+    /// needing better distribution should key such collections by an application-specific canonical
+    /// representation (e.g. a snapped/rounded anchor plus basis) via a dedicated <see cref="IEqualityComparer{T}"/>
+    /// instead of relying on this type's own hash.
+    /// </summary>
     public override int GetHashCode() => HashCode.Combine(Dimension, AmbientDimension);
 
     /// <inheritdoc/>

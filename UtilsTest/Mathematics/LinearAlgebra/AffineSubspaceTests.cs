@@ -399,6 +399,23 @@ public class AffineSubspaceTests
         Assert.IsTrue(fromSpan.Equals(fromNormals));
     }
 
+    // ── GetHashCode consistency (TODO-pass4 item #51) ───────────────────────────
+
+    /// <summary>
+    /// The required equal-implies-same-hash contract must hold even though <see cref="AffineSubspace{T}.GetHashCode"/>
+    /// is deliberately coarser than <see cref="AffineSubspace{T}.Equals(AffineSubspace{T})"/> (see this
+    /// type's XML doc on <c>GetHashCode</c>): two geometrically identical subspaces built from different
+    /// anchors/normal scales must still hash identically.
+    /// </summary>
+    [TestMethod]
+    public void GetHashCode_EqualSubspacesWithDifferentAnchorAndNormalScale_HaveSameHash()
+    {
+        var a = AffineSubspace<double>.FromNormals(V(0, 0, 0), V(0, 0, 1));
+        var b = AffineSubspace<double>.FromNormals(V(5, -3, 0), V(0, 0, 2));
+        Assert.IsTrue(a.Equals(b));
+        Assert.AreEqual(a.GetHashCode(), b.GetHashCode());
+    }
+
     // -------------------------------------------------------------------------
     // Clone
     // -------------------------------------------------------------------------
