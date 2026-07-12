@@ -411,4 +411,73 @@ public class AffineSubspaceTests
         Assert.IsTrue(original.Equals(clone));
         Assert.IsFalse(ReferenceEquals(original, clone));
     }
+
+    // -------------------------------------------------------------------------
+    // Null-member validation (TODO-pass4 item #49)
+    // -------------------------------------------------------------------------
+
+    [TestMethod]
+    public void FromSpan_NullAnchor_Throws()
+        => Assert.ThrowsException<ArgumentNullException>(
+            () => AffineSubspace<double>.FromSpan(null!, V(1, 0, 0)));
+
+    [TestMethod]
+    public void FromSpan_NullDirectionsArray_Throws()
+        => Assert.ThrowsException<ArgumentNullException>(
+            () => AffineSubspace<double>.FromSpan(V(0, 0, 0), (Vector<double>[])null!));
+
+    [TestMethod]
+    public void FromSpan_NullDirectionElement_Throws()
+        => Assert.ThrowsException<ArgumentNullException>(
+            () => AffineSubspace<double>.FromSpan(V(0, 0, 0), V(1, 0, 0), null!));
+
+    [TestMethod]
+    public void FromNormals_NullAnchor_Throws()
+        => Assert.ThrowsException<ArgumentNullException>(
+            () => AffineSubspace<double>.FromNormals(null!, V(0, 0, 1)));
+
+    [TestMethod]
+    public void FromNormals_NullNormalsArray_Throws()
+        => Assert.ThrowsException<ArgumentNullException>(
+            () => AffineSubspace<double>.FromNormals(V(0, 0, 0), (Vector<double>[])null!));
+
+    [TestMethod]
+    public void FromNormals_NullNormalElement_Throws()
+        => Assert.ThrowsException<ArgumentNullException>(
+            () => AffineSubspace<double>.FromNormals(V(0, 0, 0), V(0, 0, 1), null!));
+
+    [TestMethod]
+    public void Project_NullPoint_Throws()
+    {
+        var plane = AffineSubspace<double>.FromNormals(V(0, 0, 0), V(0, 0, 1));
+        Assert.ThrowsException<ArgumentNullException>(() => plane.Project(null!));
+    }
+
+    [TestMethod]
+    public void DistanceTo_NullPoint_Throws()
+    {
+        var plane = AffineSubspace<double>.FromNormals(V(0, 0, 0), V(0, 0, 1));
+        Assert.ThrowsException<ArgumentNullException>(() => plane.DistanceTo(null!));
+    }
+
+    [TestMethod]
+    public void Contains_NullPoint_Throws()
+    {
+        var plane = AffineSubspace<double>.FromNormals(V(0, 0, 0), V(0, 0, 1));
+        Assert.ThrowsException<ArgumentNullException>(() => plane.Contains(null!, 1e-9));
+    }
+
+    [TestMethod]
+    public void IntersectWith_NullLine_Throws()
+    {
+        var plane = AffineSubspace<double>.FromNormals(V(0, 0, 0), V(0, 0, 1));
+        Assert.ThrowsException<ArgumentNullException>(() => plane.IntersectWith((Line<double>)null!));
+    }
+
+    [TestMethod]
+    public void IntersectWith_NullAffineSubspace_Throws()
+    {
+        var plane = AffineSubspace<double>.FromNormals(V(0, 0, 0), V(0, 0, 1));
+        Assert.ThrowsException<ArgumentNullException>(() => plane.IntersectWith((AffineSubspace<double>)null!));
+    }
 }

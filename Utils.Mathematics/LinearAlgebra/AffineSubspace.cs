@@ -57,14 +57,23 @@ public sealed class AffineSubspace<T> : IEquatable<AffineSubspace<T>>, ICloneabl
     /// <param name="anchor">A point on the subspace.</param>
     /// <param name="directions">Spanning directions. At least one must be non-zero.</param>
     /// <returns>The affine subspace through <paramref name="anchor"/> in the given directions.</returns>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="anchor"/>, <paramref name="directions"/>, or any element of
+    /// <paramref name="directions"/> is <see langword="null"/>.
+    /// </exception>
     /// <exception cref="ArgumentException">
     /// Thrown when no directions are supplied, a direction has the wrong ambient dimension,
     /// or all directions are zero / mutually collinear.
     /// </exception>
     public static AffineSubspace<T> FromSpan(Vector<T> anchor, params Vector<T>[] directions)
     {
+        ArgumentNullException.ThrowIfNull(anchor);
+        ArgumentNullException.ThrowIfNull(directions);
         if (directions.Length == 0)
             throw new ArgumentException("At least one direction vector is required.", nameof(directions));
+        for (int i = 0; i < directions.Length; i++)
+            if (directions[i] is null)
+                throw new ArgumentNullException(nameof(directions), $"Direction vector at index {i} is null.");
 
         var basis = GramSchmidt(anchor.Dimension, directions);
         if (basis.Length == 0)
@@ -82,13 +91,22 @@ public sealed class AffineSubspace<T> : IEquatable<AffineSubspace<T>>, ICloneabl
     /// <param name="anchor">A point on the subspace.</param>
     /// <param name="normals">Normal vectors. Each independent normal reduces the dimension by one.</param>
     /// <returns>The affine subspace through <paramref name="anchor"/> orthogonal to the given normals.</returns>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="anchor"/>, <paramref name="normals"/>, or any element of
+    /// <paramref name="normals"/> is <see langword="null"/>.
+    /// </exception>
     /// <exception cref="ArgumentException">
     /// Thrown when no normals are supplied or a normal has the wrong ambient dimension.
     /// </exception>
     public static AffineSubspace<T> FromNormals(Vector<T> anchor, params Vector<T>[] normals)
     {
+        ArgumentNullException.ThrowIfNull(anchor);
+        ArgumentNullException.ThrowIfNull(normals);
         if (normals.Length == 0)
             throw new ArgumentException("At least one normal vector is required.", nameof(normals));
+        for (int i = 0; i < normals.Length; i++)
+            if (normals[i] is null)
+                throw new ArgumentNullException(nameof(normals), $"Normal vector at index {i} is null.");
 
         var orthonormals = GramSchmidt(anchor.Dimension, normals);
         var basis = ComputeComplement(anchor.Dimension, orthonormals);
@@ -104,6 +122,7 @@ public sealed class AffineSubspace<T> : IEquatable<AffineSubspace<T>>, ICloneabl
     /// </summary>
     /// <param name="point">Point to project. Must have the same ambient dimension.</param>
     /// <returns>The closest point on this subspace to <paramref name="point"/>.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="point"/> is <see langword="null"/>.</exception>
     /// <exception cref="ArgumentException">Thrown when the point has a different ambient dimension.</exception>
     public Vector<T> Project(Vector<T> point)
     {
@@ -120,6 +139,7 @@ public sealed class AffineSubspace<T> : IEquatable<AffineSubspace<T>>, ICloneabl
     /// </summary>
     /// <param name="point">Point to measure from. Must have the same ambient dimension.</param>
     /// <returns>The perpendicular distance.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="point"/> is <see langword="null"/>.</exception>
     /// <exception cref="ArgumentException">Thrown when the point has a different ambient dimension.</exception>
     public T DistanceTo(Vector<T> point)
     {
@@ -133,6 +153,7 @@ public sealed class AffineSubspace<T> : IEquatable<AffineSubspace<T>>, ICloneabl
     /// <param name="point">Point to test.</param>
     /// <param name="tolerance">Maximum allowable perpendicular distance. Must be finite and non-negative.</param>
     /// <returns><see langword="true"/> if the point is within <paramref name="tolerance"/> of the subspace.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="point"/> is <see langword="null"/>.</exception>
     /// <exception cref="ArgumentOutOfRangeException">
     /// Thrown when <paramref name="tolerance"/> is not finite or is negative: an unchecked negative
     /// tolerance would reject even an exact member, <see langword="NaN"/> would make every comparison
@@ -157,9 +178,11 @@ public sealed class AffineSubspace<T> : IEquatable<AffineSubspace<T>>, ICloneabl
     /// The unique intersection point, or <see langword="null"/> when the line is parallel to
     /// (or embedded in) the subspace.
     /// </returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="line"/> is <see langword="null"/>.</exception>
     /// <exception cref="ArgumentException">Thrown when the line has a different ambient dimension.</exception>
     public Vector<T>? IntersectWith(Line<T> line)
     {
+        ArgumentNullException.ThrowIfNull(line);
         if (line.Dimension != AmbientDimension)
             throw new ArgumentException("The line must have the same ambient dimension as the subspace.", nameof(line));
 
@@ -203,9 +226,11 @@ public sealed class AffineSubspace<T> : IEquatable<AffineSubspace<T>>, ICloneabl
     /// The intersection as a new <see cref="AffineSubspace{T}"/>, or <see langword="null"/>
     /// when the two subspaces are parallel and disjoint.
     /// </returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="other"/> is <see langword="null"/>.</exception>
     /// <exception cref="ArgumentException">Thrown when <paramref name="other"/> has a different ambient dimension.</exception>
     public AffineSubspace<T>? IntersectWith(AffineSubspace<T> other)
     {
+        ArgumentNullException.ThrowIfNull(other);
         if (other.AmbientDimension != AmbientDimension)
             throw new ArgumentException("Both subspaces must have the same ambient dimension.", nameof(other));
 
@@ -332,6 +357,7 @@ public sealed class AffineSubspace<T> : IEquatable<AffineSubspace<T>>, ICloneabl
 
     private void ValidateDimension(Vector<T> point)
     {
+        ArgumentNullException.ThrowIfNull(point);
         if (point.Dimension != AmbientDimension)
             throw new ArgumentException(
                 "The point must have the same ambient dimension as the subspace.", nameof(point));
