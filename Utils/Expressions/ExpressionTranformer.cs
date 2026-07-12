@@ -29,19 +29,27 @@ public abstract class ExpressionTransformer
     private readonly IReadOnlyList<(MethodInfo Method, ExpressionSignatureAttribute Attribute, ParameterInfo[] Parameters)> _transformMethods;
 
     /// <summary>
+    /// Caches the reflection scan of <see cref="ExpressionSignatureAttribute"/>-annotated methods per
+    /// concrete transformer type, since that scan only depends on the type and never on instance state.
+    /// This lets subclasses cheaply construct a fresh instance per operation (e.g. to isolate per-call
+    /// state instead of mutating a shared field) without repeating <see cref="Type.GetMethods(BindingFlags)"/>
+    /// reflection on every construction.
+    /// </summary>
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<Type, IReadOnlyList<(MethodInfo Method, ExpressionSignatureAttribute Attribute, ParameterInfo[] Parameters)>> _transformMethodsCache = new();
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="ExpressionTransformer"/> class.
     /// During construction, it gathers all methods marked with <see cref="ExpressionSignatureAttribute"/>
     /// from the derived type.
     /// </summary>
     protected ExpressionTransformer()
     {
-        Type t = GetType();
-        _transformMethods =
+        _transformMethods = _transformMethodsCache.GetOrAdd(GetType(), static t =>
             t.GetMethods(Public | NonPublic | InvokeMethod | Instance)
              .Select(m => (Method: m, Attr: m.GetCustomAttributes<ExpressionSignatureAttribute>().FirstOrDefault()))
              .Where(ma => ma.Attr != null)
              .Select(ma => (ma.Method, ma.Attr, ma.Method.GetParameters()))
-             .ToImmutableList();
+             .ToImmutableList());
     }
 
     /// <summary>

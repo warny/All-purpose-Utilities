@@ -110,17 +110,42 @@ public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>, 
     /// <summary>
     /// Gets the length of the vector.
     /// </summary>
+    /// <remarks>
+    /// Computed via a scaled sum-of-squares accumulation (the same running-scale technique as BLAS
+    /// <c>nrm2</c>/<c>hypot</c>), rather than summing <c>component * component</c> directly. A direct sum
+    /// can overflow to infinity for large-but-representable components (whose square individually
+    /// overflows even though the true norm does not), or underflow to zero for small-but-representable
+    /// components (whose square underflows to zero even though it contributes to a representable norm).
+    /// Tracking the largest component seen so far as a running scale and accumulating only the *ratio*
+    /// of each component to that scale keeps every intermediate value within a representable range.
+    /// </remarks>
     public T Norm
     {
         get
         {
             if (norm is not null) return norm.Value;
-            T temp = T.Zero;
+
+            T scale = T.Zero;
+            T sumOfSquaredRatios = T.One;
             for (int i = 0; i < this.components.Length; i++)
             {
-                temp += this.components[i] * this.components[i];
+                T absValue = T.Abs(this.components[i]);
+                if (absValue == T.Zero) continue;
+
+                if (scale < absValue)
+                {
+                    T ratio = scale / absValue;
+                    sumOfSquaredRatios = T.One + sumOfSquaredRatios * ratio * ratio;
+                    scale = absValue;
+                }
+                else
+                {
+                    T ratio = absValue / scale;
+                    sumOfSquaredRatios += ratio * ratio;
+                }
             }
-            norm = T.Sqrt(temp);
+
+            norm = scale == T.Zero ? T.Zero : scale * T.Sqrt(sumOfSquaredRatios);
             return norm.Value;
         }
     }
@@ -244,6 +269,14 @@ public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>, 
     /// <param name="vectors">Vectors of dimension n.</param>
     /// <returns>A vector perpendicular to all input vectors.</returns>
     /// <exception cref="ArgumentException">Thrown if vectors are not all of dimension n.</exception>
+    /// <remarks>
+    /// Each component <c>result[i]</c> is <c>(-1)^i</c> times the determinant of the <c>(n-1)x(n-1)</c>
+    /// minor formed by the input vectors' components, excluding column <c>i</c> (the standard Laplace
+    /// expansion of the cross product along a virtual first row of basis vectors). Each minor's
+    /// determinant is computed via <see cref="Matrix{T}.Determinant"/>, which uses Gaussian elimination
+    /// (<c>O(n^3)</c>), rather than the previous direct recursive cofactor expansion (<c>O(n!)</c>) that
+    /// also re-filtered the remaining-columns sequence at every recursion level.
+    /// </remarks>
     public static Vector<T> CrossProduct(params Vector<T>[] vectors)
     {
         int dimensions = vectors.Length + 1;
@@ -256,12 +289,10 @@ public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>, 
         }
 
         T[] result = new T[dimensions];
-        var columns = Enumerable.Range(0, dimensions);
         T sign = T.One;
-        foreach (var column in columns)
+        for (int excludedColumn = 0; excludedColumn < dimensions; excludedColumn++)
         {
-            var nextColumns = columns.Where(c => c != column);
-            result[column] = sign * ComputeProduct(1, nextColumns, vectors);
+            result[excludedColumn] = sign * MinorDeterminant(vectors, excludedColumn);
             sign = -sign;
         }
 
@@ -272,33 +303,27 @@ public sealed partial class Vector<T> : IEquatable<Vector<T>>, IEquatable<T[]>, 
     public static Vector<T> Product(params Vector<T>[] vectors) => CrossProduct(vectors);
 
     /// <summary>
-    /// Recursive computation of the cross product of n-1 vectors in an n-dimensional space.
+    /// Computes the determinant of the square matrix formed by using each of <paramref name="vectors"/>
+    /// as a row, dropping the component at <paramref name="excludedColumn"/> from every row.
     /// </summary>
-    /// <param name="recurrence">The current recursion step.</param>
-    /// <param name="columns">The columns to process for computation.</param>
-    /// <param name="vectors">The vectors to compute the product.</param>
-    /// <returns>The computed product.</returns>
-    private static T ComputeProduct(int recurrence, IEnumerable<int> columns, Vector<T>[] vectors)
+    /// <param name="vectors">The <c>n-1</c> input vectors of dimension <c>n</c>.</param>
+    /// <param name="excludedColumn">Index of the component to drop from every row.</param>
+    /// <returns>The determinant of the resulting <c>(n-1)x(n-1)</c> minor.</returns>
+    private static T MinorDeterminant(Vector<T>[] vectors, int excludedColumn)
     {
-        T result = T.Zero;
-        T sign = T.One;
-        foreach (int column in columns)
+        int n = vectors.Length;
+        T[,] minor = new T[n, n];
+        for (int row = 0; row < n; row++)
         {
-            T temp = sign;
-            if (recurrence > 0)
+            int col = 0;
+            for (int component = 0; component < n + 1; component++)
             {
-                temp *= vectors[recurrence - 1].components[column];
-
-                var nextColumns = columns.Where(c => c != column);
-                if (temp != T.Zero && nextColumns.Any())
-                {
-                    temp *= ComputeProduct(recurrence + 1, nextColumns, vectors);
-                }
+                if (component == excludedColumn) continue;
+                minor[row, col] = vectors[row].components[component];
+                col++;
             }
-            result += temp;
-            sign = -sign;
         }
-        return result;
+        return new Matrix<T>(minor).Determinant;
     }
 
     /// <summary>

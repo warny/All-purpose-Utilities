@@ -56,6 +56,51 @@ public static class NumberUtils
     }
 
     /// <summary>
+    /// Table of C#'s implicit (widening) numeric conversions (ECMA-334 §10.2.1), keyed by source type,
+    /// extended with <see cref="decimal"/> as a source for <see cref="float"/>/<see cref="double"/> so
+    /// that treating <c>decimal</c> as embeddable into a floating-point type (a deliberate choice of this
+    /// library, even though C# itself only allows that conversion explicitly) stays centralized here
+    /// rather than re-decided at each call site.
+    /// </summary>
+    private static readonly Dictionary<Type, Type[]> WideningNumericConversions = new()
+    {
+        [typeof(sbyte)] = [typeof(short), typeof(int), typeof(long), typeof(float), typeof(double), typeof(decimal)],
+        [typeof(byte)] = [typeof(short), typeof(ushort), typeof(int), typeof(uint), typeof(long), typeof(ulong), typeof(float), typeof(double), typeof(decimal)],
+        [typeof(short)] = [typeof(int), typeof(long), typeof(float), typeof(double), typeof(decimal)],
+        [typeof(ushort)] = [typeof(int), typeof(uint), typeof(long), typeof(ulong), typeof(float), typeof(double), typeof(decimal)],
+        [typeof(int)] = [typeof(long), typeof(float), typeof(double), typeof(decimal)],
+        [typeof(uint)] = [typeof(long), typeof(ulong), typeof(float), typeof(double), typeof(decimal)],
+        [typeof(long)] = [typeof(float), typeof(double), typeof(decimal)],
+        [typeof(ulong)] = [typeof(float), typeof(double), typeof(decimal)],
+        [typeof(float)] = [typeof(double)],
+        [typeof(decimal)] = [typeof(float), typeof(double)],
+    };
+
+    /// <summary>
+    /// Checks whether an implicit (widening) numeric conversion exists from <paramref name="from"/> to
+    /// <paramref name="to"/>. Unlike checking <see cref="IsNativeNumericType(Type)"/> on both endpoints,
+    /// this rejects conversions that reduce range or truncate, such as <see cref="double"/> to
+    /// <see cref="float"/>, <see cref="double"/> to <see cref="int"/>, or <see cref="long"/> to
+    /// <see cref="short"/>. It does not guarantee the conversion is lossless: some accepted entries —
+    /// matching C#'s own implicit numeric conversions (e.g. <see cref="long"/> to <see cref="float"/>) as
+    /// well as the deliberate <see cref="decimal"/>-to-floating-point extension noted on
+    /// <see cref="WideningNumericConversions"/> — can still lose precision for values near the source
+    /// type's upper range or significant-digit limit.
+    /// </summary>
+    /// <param name="from">Source CLR numeric type.</param>
+    /// <param name="to">Destination CLR numeric type.</param>
+    /// <returns><c>true</c> when the conversion is the identity or a recognized widening; otherwise <c>false</c>.</returns>
+    public static bool IsWideningNumericConversion(Type from, Type to)
+    {
+        Type effectiveFrom = Nullable.GetUnderlyingType(from) ?? from;
+        Type effectiveTo = Nullable.GetUnderlyingType(to) ?? to;
+
+        if (effectiveFrom == effectiveTo) return true;
+
+        return WideningNumericConversions.TryGetValue(effectiveFrom, out var targets) && Array.IndexOf(targets, effectiveTo) >= 0;
+    }
+
+    /// <summary>
     /// Checks whether the given CLR <paramref name="type"/> is one of the native integral primitives.
     /// This helper intentionally targets built-in integer types and is distinct from
     /// generic math interface checks such as <see cref="IBinaryInteger{TSelf}"/>.

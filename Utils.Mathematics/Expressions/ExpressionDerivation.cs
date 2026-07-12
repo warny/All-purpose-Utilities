@@ -3,6 +3,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Numerics;
 using Utils.Expressions;
+using Utils.Objects;
 
 namespace Utils.Mathematics.Expressions;
 #pragma warning disable CS8604
@@ -11,7 +12,34 @@ namespace Utils.Mathematics.Expressions;
 /// </summary>
 public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloatingPoint<T>
 {
-    private static readonly double FiniteDifferenceEpsilon = typeof(T) == typeof(float) ? 1e-4 : 1e-7;
+    /// <summary>
+    /// Smallest positive value such that <c>1 + MachineEpsilon != 1</c> for <typeparamref name="T"/>,
+    /// computed generically (rather than hard-coded per type) so the finite-difference fallback step
+    /// (see <see cref="FiniteDifferenceStepBase"/>) scales correctly with <typeparamref name="T"/>'s own
+    /// precision instead of only special-casing <see cref="float"/>.
+    /// </summary>
+    private static readonly T MachineEpsilon = ComputeMachineEpsilon();
+
+    /// <summary>
+    /// Base step size for the centered finite-difference fallback (see <see cref="DeriveUnknownMethodCall"/>),
+    /// equal to <c>MachineEpsilon^(1/3)</c> — the standard step that balances truncation error (which
+    /// grows with the step) against floating-point rounding error (which grows as the step shrinks) for
+    /// a centered difference. The actual per-call step additionally scales with the operand's own
+    /// magnitude at evaluation time (see <see cref="DeriveUnknownMethodCall"/>).
+    /// </summary>
+    private static readonly T FiniteDifferenceStepBase =
+        T.CreateChecked(Math.Pow(System.Convert.ToDouble(MachineEpsilon), 1.0 / 3.0));
+
+    private static T ComputeMachineEpsilon()
+    {
+        T two = T.One + T.One;
+        T eps = T.One;
+        while (T.One + eps / two != T.One)
+        {
+            eps /= two;
+        }
+        return eps;
+    }
 
     /// <summary>
     /// Gets the name of the parameter that will be considered the differentiation variable.
@@ -19,12 +47,68 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
     public string ParameterName { get; }
 
     /// <summary>
+    /// Gets whether unknown single-argument methods (with no registered symbolic derivative rule) may be
+    /// differentiated through a centered finite-difference approximation (see
+    /// <see cref="DeriveUnknownMethodCall"/>) instead of failing with <see cref="NotSupportedException"/>.
+    /// This is opt-in and defaults to <see langword="false"/>, since the fallback turns an exact symbolic
+    /// derivation into a numerical runtime approximation that evaluates the source method twice per
+    /// derivative evaluation — only enable it for methods known to be pure (no side effects) and
+    /// reasonably smooth near the evaluation point.
+    /// </summary>
+    public bool AllowNumericalFallback { get; }
+
+    /// <summary>
+    /// The specific <see cref="ParameterExpression"/> instance, resolved once per <see cref="Derivate(LambdaExpression)"/>
+    /// call, that identifies the differentiation variable by reference rather than by name. Two distinct
+    /// <see cref="ParameterExpression"/> objects may legally share the same <see cref="ParameterName"/>
+    /// (e.g. an unrelated captured variable); comparing by reference instead of by name avoids treating
+    /// such a foreign parameter as the differentiation variable. Set once, in the private constructor, on
+    /// a fresh per-call worker instance (see <see cref="Derivate(LambdaExpression)"/>).
+    /// </summary>
+    private readonly ParameterExpression targetParameter;
+
+    /// <summary>
+    /// Set when <see cref="DeriveUnknownMethodCall"/> actually builds a finite-difference approximation
+    /// for at least one sub-expression during this worker's single <see cref="Derivate(LambdaExpression)"/>
+    /// call, so that call can report <c>isExact = false</c> (see item #42). Safe as plain mutable state:
+    /// each call uses its own freshly-constructed worker instance (see items #31/#32), never shared or
+    /// reused across calls.
+    /// </summary>
+    private bool usedNumericalFallback;
+
+    /// <summary>
+    /// Determines whether <paramref name="candidate"/> is the specific parameter instance resolved as
+    /// the differentiation variable for the current call.
+    /// </summary>
+    private bool IsTargetParameter(ParameterExpression candidate) => ReferenceEquals(candidate, targetParameter);
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="ExpressionDerivation{T}"/> class for the specified parameter.
     /// </summary>
     /// <param name="parameterName">Name of the variable with respect to which derivatives are computed.</param>
-    public ExpressionDerivation(string parameterName)
+    /// <param name="allowNumericalFallback">
+    /// See <see cref="AllowNumericalFallback"/>. Defaults to <see langword="false"/>: unknown methods
+    /// fail explicitly instead of silently falling back to a numerical approximation.
+    /// </param>
+    public ExpressionDerivation(string parameterName, bool allowNumericalFallback = false)
+        : this(parameterName, null!, allowNumericalFallback)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a per-call worker instance with its target parameter already resolved.
+    /// </summary>
+    /// <param name="parameterName">Name of the variable with respect to which derivatives are computed.</param>
+    /// <param name="targetParameter">
+    /// The specific resolved <see cref="ParameterExpression"/> instance, or <see langword="null"/> for
+    /// the publicly-constructed instance that has not yet performed a <see cref="Derivate(LambdaExpression)"/> call.
+    /// </param>
+    /// <param name="allowNumericalFallback">See <see cref="AllowNumericalFallback"/>.</param>
+    private ExpressionDerivation(string parameterName, ParameterExpression targetParameter, bool allowNumericalFallback)
     {
         this.ParameterName = parameterName;
+        this.targetParameter = targetParameter;
+        this.AllowNumericalFallback = allowNumericalFallback;
     }
 
     /// <summary>
@@ -32,10 +116,55 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
     /// </summary>
     /// <param name="e">Lambda expression to differentiate.</param>
     /// <returns>The simplified derivative expression.</returns>
-    public Expression Derivate(LambdaExpression e)
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when no parameter named <see cref="ParameterName"/> is found in <paramref name="e"/>, or
+    /// when more than one distinct parameter shares that name (an ambiguous match that cannot be
+    /// resolved by name alone).
+    /// </exception>
+    public Expression Derivate(LambdaExpression e) => Derivate(e, out _);
+
+    /// <summary>
+    /// Builds the derivative of the provided lambda expression with respect to the configured parameter,
+    /// additionally reporting whether the result is an exact symbolic derivative or includes at least one
+    /// finite-difference approximation.
+    /// </summary>
+    /// <param name="e">Lambda expression to differentiate.</param>
+    /// <param name="isExact">
+    /// <see langword="true"/> when every part of the result was produced by an exact symbolic rule;
+    /// <see langword="false"/> when at least one sub-expression fell back to the numerical
+    /// finite-difference approximation (only possible when <see cref="AllowNumericalFallback"/> is
+    /// <see langword="true"/>, since otherwise an unknown method throws instead of approximating).
+    /// </param>
+    /// <returns>The simplified derivative expression.</returns>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when no parameter named <see cref="ParameterName"/> is found in <paramref name="e"/>, or
+    /// when more than one distinct parameter shares that name (an ambiguous match that cannot be
+    /// resolved by name alone).
+    /// </exception>
+    public Expression Derivate(LambdaExpression e, out bool isExact)
     {
         ArgumentNullException.ThrowIfNull(e);
-        return Expression.Lambda(Transform(e.Body.Simplify()).Simplify(), e.Parameters);
+
+        var candidates = e.Parameters.Where(p => p.Name == ParameterName).ToList();
+        if (candidates.Count == 0)
+        {
+            throw new InvalidOperationException($"The parameter '{ParameterName}' was not found in the lambda expression.");
+        }
+        if (candidates.Count > 1)
+        {
+            throw new InvalidOperationException(
+                $"The lambda expression declares {candidates.Count} distinct parameters named '{ParameterName}'; " +
+                "the differentiation variable is ambiguous. Use distinct parameter names.");
+        }
+
+        // A fresh worker instance isolates the resolved target parameter for this call: concurrent or
+        // re-entrant calls on the same public ExpressionDerivation<T> instance no longer share mutable
+        // state (see TODO-2026-07-11-pass3.md items #31 and #32). usedNumericalFallback is likewise
+        // scoped to this single worker instance, never shared across calls (see item #42).
+        var worker = new ExpressionDerivation<T>(ParameterName, candidates[0], AllowNumericalFallback);
+        var result = Expression.Lambda(worker.Transform(e.Body.Simplify()).Simplify(), e.Parameters);
+        isExact = !worker.usedNumericalFallback;
+        return result;
     }
 
     /// <summary>
@@ -63,7 +192,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
         ParameterExpression e
     )
     {
-        if (e.Name == ParameterName)
+        if (IsTargetParameter(e))
         {
             return ExpressionEx.CreateConstant(T.CreateChecked(1d));
         }
@@ -89,33 +218,73 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
     }
 
     /// <summary>
-    /// Ignores conversion wrappers by differentiating the wrapped operand directly.
+    /// Differentiates the wrapped operand and re-applies the conversion's declared result type when the
+    /// derivative's type does not already match it, so the derivative expression stays type-consistent
+    /// with the original conversion node.
     /// </summary>
     /// <param name="e">Conversion expression to transform.</param>
     /// <param name="operand">Wrapped expression operand.</param>
-    /// <returns>The derivative of the wrapped operand.</returns>
+    /// <returns>The derivative of the wrapped operand, converted back to <c>e.Type</c> if needed.</returns>
     [ExpressionSignature(ExpressionType.Convert)]
     protected Expression Convert(
         UnaryExpression e,
         Expression operand
     )
     {
-        return Transform(operand);
+        return PreserveConversion(e, Transform(operand), isChecked: false);
     }
 
     /// <summary>
-    /// Ignores checked conversion wrappers by differentiating the wrapped operand directly.
+    /// Differentiates the wrapped operand through a checked conversion. Checked conversions exist
+    /// specifically to guard against narrowing/overflow, which has no well-defined symbolic derivative;
+    /// only a trivial same-type checked conversion is passed through, anything else is rejected instead
+    /// of silently stripped.
     /// </summary>
     /// <param name="e">Checked conversion expression to transform.</param>
     /// <param name="operand">Wrapped expression operand.</param>
-    /// <returns>The derivative of the wrapped operand.</returns>
+    /// <returns>The derivative of the wrapped operand when the checked conversion is a same-type no-op.</returns>
+    /// <exception cref="NotSupportedException">
+    /// Thrown when the checked conversion actually changes the type (a narrowing or otherwise
+    /// non-trivial conversion), since differentiating through it is not well-defined.
+    /// </exception>
     [ExpressionSignature(ExpressionType.ConvertChecked)]
     protected Expression ConvertChecked(
         UnaryExpression e,
         Expression operand
     )
     {
-        return Transform(operand);
+        return PreserveConversion(e, Transform(operand), isChecked: true);
+    }
+
+    /// <summary>
+    /// Reconciles the type of a transformed derivative with the declared result type of the original
+    /// conversion node it replaces.
+    /// </summary>
+    /// <param name="original">The original <c>Convert</c>/<c>ConvertChecked</c> expression being replaced.</param>
+    /// <param name="transformedOperand">The already-differentiated operand.</param>
+    /// <param name="isChecked"><see langword="true"/> for <c>ConvertChecked</c>; <see langword="false"/> for <c>Convert</c>.</param>
+    /// <returns><paramref name="transformedOperand"/>, converted back to <c>original.Type</c> if needed.</returns>
+    /// <exception cref="NotSupportedException">
+    /// Thrown when the types differ and the conversion is either checked (narrowing/overflow-prone) or
+    /// not a recognized numeric widening (see <see cref="NumberUtils.IsWideningNumericConversion"/>) —
+    /// this notably rejects reducing conversions such as <c>double</c> to <c>float</c> or <c>double</c>
+    /// to <c>int</c>, which have no well-defined symbolic derivative.
+    /// </exception>
+    private static Expression PreserveConversion(UnaryExpression original, Expression transformedOperand, bool isChecked)
+    {
+        if (transformedOperand.Type == original.Type)
+        {
+            return transformedOperand;
+        }
+
+        if (!isChecked && NumberUtils.IsWideningNumericConversion(transformedOperand.Type, original.Type))
+        {
+            return Expression.Convert(transformedOperand, original.Type);
+        }
+
+        throw new NotSupportedException(
+            $"Cannot preserve the {(isChecked ? "checked " : string.Empty)}conversion from '{transformedOperand.Type}' " +
+            $"to '{original.Type}': only same-type conversions and unchecked numeric widenings are supported.");
     }
 
     /// <summary>
@@ -229,6 +398,16 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
     /// <param name="left">Base expression.</param>
     /// <param name="right">Exponent expression.</param>
     /// <returns>The derivative computed through logarithmic differentiation.</returns>
+    /// <remarks>
+    /// Logarithmic differentiation of <c>f(x)^g(x)</c> requires <c>f(x) &gt; 0</c>: this is not an
+    /// artificial narrowing introduced by using <c>Log(f)</c> here, since the original expression itself
+    /// is already only real-valued (rather than <see cref="double.NaN"/>) for a negative base when the
+    /// exponent is non-integer, and the exponent is a general (non-constant) expression here. Unlike the
+    /// integration rules for <c>1/x</c> or <c>tan(x)</c> (which use <c>Log(Abs(x))</c> because the
+    /// original expressions they replace remain well-defined for negative inputs), replacing
+    /// <c>Log(f)</c> with <c>Log(Abs(f))</c> here would not extend the domain of a valid symbolic
+    /// derivative — it would just produce a different, unrelated formula.
+    /// </remarks>
     [ExpressionSignature(ExpressionType.Power)]
     protected Expression Power(
         BinaryExpression e,
@@ -246,7 +425,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
                     Expression.Multiply(
                         left,
                         Expression.Multiply(
-                            Expression.Call(typeof(T).GetMethod(nameof(double.Log), [typeof(T)]), left),
+                            Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Log)), left),
                             Transform(right)
                         )
                     )
@@ -269,7 +448,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
         return
             Expression.Multiply(
                 Transform(operand),
-                Expression.Call(typeof(T).GetMethod(nameof(double.Exp), [typeof(T)]), operand)
+                Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Exp)), operand)
             );
     }
 
@@ -323,7 +502,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
     {
         return Expression.Multiply(
             Transform(operand),
-            Expression.Call(typeof(T).GetMethod(nameof(double.Cos), [typeof(T)]), operand));
+            Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Cos)), operand));
     }
 
     /// <summary>
@@ -340,7 +519,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
         return Expression.Negate(
             Expression.Multiply(
             Transform(operand),
-            Expression.Call(typeof(T).GetMethod(nameof(double.Sin), [typeof(T)]), operand)));
+            Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Sin)), operand)));
     }
 
     /// <summary>
@@ -359,7 +538,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
         return Expression.Divide(
             Transform(operand),
             Expression.Power(
-                Expression.Call(typeof(T).GetMethod(nameof(double.Cos), [typeof(T)]), operand),
+                Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Cos)), operand),
                 ExpressionEx.CreateConstant(T.CreateChecked(2d))
             )
         );
@@ -392,6 +571,11 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
     /// <param name="methodCallExpression">Method call to derive.</param>
     /// <param name="parameters">Prepared arguments for the call.</param>
     /// <returns>The derivative expression using centered finite difference.</returns>
+    /// <exception cref="NotSupportedException">
+    /// Thrown when no symbolic derivative rule matches <paramref name="methodCallExpression"/>'s method,
+    /// and either its signature does not match the required single-argument <typeparamref name="T"/>
+    /// shape, or <see cref="AllowNumericalFallback"/> is <see langword="false"/> (the default).
+    /// </exception>
     private Expression DeriveUnknownMethodCall(MethodCallExpression methodCallExpression, Expression[] parameters)
     {
         if (methodCallExpression.Method.ReturnType != typeof(T)
@@ -401,14 +585,32 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
             throw new NotSupportedException($"No derivative rule is registered for '{methodCallExpression.Method}'.");
         }
 
+        if (!AllowNumericalFallback)
+        {
+            throw new NotSupportedException(
+                $"No symbolic derivative rule is registered for '{methodCallExpression.Method}'. " +
+                $"A centered finite-difference approximation is available but must be explicitly enabled " +
+                $"via '{nameof(AllowNumericalFallback)}' (only do so for a pure, reasonably smooth method, " +
+                "since it will be evaluated twice per derivative evaluation).");
+        }
+
         Expression operand = parameters[0];
         if (!ContainsParameter(operand))
         {
             return ExpressionEx.CreateConstant(T.CreateChecked(0d));
         }
 
-        var epsilon = ExpressionEx.CreateConstant(T.CreateChecked(FiniteDifferenceEpsilon));
-        var twoEpsilon = ExpressionEx.CreateConstant(T.CreateChecked(2.0 * FiniteDifferenceEpsilon));
+        usedNumericalFallback = true;
+
+        // Scale-aware step: FiniteDifferenceStepBase (~MachineEpsilon^(1/3)) scaled by the operand's own
+        // magnitude at evaluation time, so the step neither underflows relative to a large operand nor
+        // overshoots relative to a small one.
+        var stepBase = ExpressionEx.CreateConstant(FiniteDifferenceStepBase);
+        var operandMagnitude = Expression.Call(MathMethodResolver.ResolveBinary<T>(nameof(double.Max)),
+            Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Abs)), operand),
+            ExpressionEx.CreateConstant(T.One));
+        var epsilon = Expression.Multiply(stepBase, operandMagnitude);
+        var twoEpsilon = Expression.Multiply(ExpressionEx.CreateConstant(T.CreateChecked(2d)), epsilon);
         var operandDerivative = Transform(operand);
 
         var plus = Expression.Call(methodCallExpression.Method, Expression.Add(operand, epsilon));
@@ -420,20 +622,43 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
 
     /// <summary>
     /// Determines whether an expression depends on the configured differentiation parameter.
+    /// Walks the entire expression tree (via <see cref="ParameterUsageVisitor"/>) rather than a
+    /// hand-picked subset of node kinds, so dependencies hidden inside e.g. a conditional, a member
+    /// access, a <c>new</c> expression, or an indexer are not mistaken for a constant.
     /// </summary>
     /// <param name="expression">Expression to inspect.</param>
     /// <returns><see langword="true"/> when the expression depends on the target parameter; otherwise <see langword="false"/>.</returns>
     private bool ContainsParameter(Expression expression)
     {
-        return expression switch
+        var visitor = new ParameterUsageVisitor(targetParameter);
+        visitor.Visit(expression);
+        return visitor.Found;
+    }
+
+    /// <summary>
+    /// Visits every node of an expression tree looking for a specific <see cref="ParameterExpression"/>
+    /// instance, matched by reference identity (see <see cref="IsTargetParameter"/>) rather than by name.
+    /// </summary>
+    /// <param name="target">The parameter instance to search for.</param>
+    private sealed class ParameterUsageVisitor(ParameterExpression target) : ExpressionVisitor
+    {
+        /// <summary>
+        /// Gets whether the target parameter was found during the last <see cref="Visit(Expression?)"/> call.
+        /// </summary>
+        public bool Found { get; private set; }
+
+        /// <inheritdoc/>
+        public override Expression? Visit(Expression? node) => Found || node is null ? node : base.Visit(node);
+
+        /// <inheritdoc/>
+        protected override Expression VisitParameter(ParameterExpression node)
         {
-            ParameterExpression parameterExpression => parameterExpression.Name == ParameterName,
-            UnaryExpression unaryExpression => ContainsParameter(unaryExpression.Operand),
-            BinaryExpression binaryExpression => ContainsParameter(binaryExpression.Left) || ContainsParameter(binaryExpression.Right),
-            MethodCallExpression methodCallExpression => methodCallExpression.Arguments.Any(ContainsParameter),
-            InvocationExpression invocationExpression => invocationExpression.Arguments.Any(ContainsParameter),
-            _ => false
-        };
+            if (ReferenceEquals(node, target))
+            {
+                Found = true;
+            }
+            return node;
+        }
     }
 
 }
@@ -449,8 +674,9 @@ public class ExpressionDerivation : ExpressionDerivation<double>
     /// Initializes a new instance of the <see cref="ExpressionDerivation"/> class.
     /// </summary>
     /// <param name="parameterName">Name of the variable with respect to which derivatives are computed.</param>
-    public ExpressionDerivation(string parameterName)
-        : base(parameterName)
+    /// <param name="allowNumericalFallback">See <see cref="ExpressionDerivation{T}.AllowNumericalFallback"/>.</param>
+    public ExpressionDerivation(string parameterName, bool allowNumericalFallback = false)
+        : base(parameterName, allowNumericalFallback)
     {
     }
 }

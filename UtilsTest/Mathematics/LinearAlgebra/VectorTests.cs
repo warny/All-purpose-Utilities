@@ -187,6 +187,29 @@ public class VectorTests
         Assert.ThrowsException<ArgumentException>(() => Vector<double>.CrossProduct(v1, v2));
     }
 
+    /// <summary>
+    /// Item 41: the generalized cross product must remain correct (perpendicular to every input) in
+    /// dimensions higher than 3, where the reimplementation via <see cref="Matrix{T}.Determinant"/>
+    /// cofactors is exercised beyond the trivial 2x2 minors of the 3D case.
+    /// </summary>
+    [TestMethod]
+    public void CrossProduct_4D_IsPerpendicularToAllThreeInputs()
+    {
+        var a = new Vector<double>(1d, 0d, 0d, 0d);
+        var b = new Vector<double>(0d, 1d, 0d, 0d);
+        var c = new Vector<double>(0d, 0d, 1d, 0d);
+
+        var result = Vector<double>.CrossProduct(a, b, c);
+
+        Assert.AreEqual(4, result.Dimension);
+        Assert.AreEqual(0d, a * result, 1e-9, "Result should be perpendicular to a");
+        Assert.AreEqual(0d, b * result, 1e-9, "Result should be perpendicular to b");
+        Assert.AreEqual(0d, c * result, 1e-9, "Result should be perpendicular to c");
+        // The three orthonormal basis inputs span the first three axes, so the result must be
+        // the fourth standard basis vector, up to sign.
+        Assert.AreEqual(1d, Math.Abs(result[3]), 1e-9);
+    }
+
     // ── ToNormalSpace / FromNormalSpace ────────────────────────────────────
 
     [TestMethod]
@@ -429,6 +452,54 @@ public class VectorTests
         var right = new Vector<double>(1d, 2d, 4d);
         Assert.IsFalse(left == right);
         Assert.IsTrue(left != right);
+    }
+
+    // ── Norm overflow/underflow stability (item 40) ───────────────────────────
+
+    /// <summary>
+    /// Components individually large enough that squaring them directly overflows to
+    /// <see cref="double.PositiveInfinity"/> must still produce a finite, correctly-scaled norm.
+    /// </summary>
+    [TestMethod]
+    public void Norm_VeryLargeComponents_DoesNotOverflow()
+    {
+        const double large = 1e200;
+        var vector = new Vector<double>(large, large);
+
+        double squared = large * large;
+        Assert.IsTrue(double.IsPositiveInfinity(squared + squared), "Test premise: naive sum-of-squares must overflow.");
+
+        double norm = vector.Norm;
+        Assert.IsFalse(double.IsPositiveInfinity(norm), "Norm of large-but-representable components must not overflow.");
+        Assert.AreEqual(large * Math.Sqrt(2), norm, large * 1e-9);
+    }
+
+    /// <summary>
+    /// Components individually small enough that squaring them directly underflows to zero must still
+    /// produce a correctly-scaled, nonzero norm.
+    /// </summary>
+    [TestMethod]
+    public void Norm_VerySmallComponents_DoesNotUnderflow()
+    {
+        const double small = 1e-200;
+        var vector = new Vector<double>(small, small);
+
+        Assert.AreEqual(0.0, small * small, "Test premise: squaring 'small' alone must underflow to zero.");
+
+        double norm = vector.Norm;
+        Assert.AreNotEqual(0.0, norm, "Norm of small-but-representable components must not underflow to zero.");
+        Assert.AreEqual(small * Math.Sqrt(2), norm, small * 1e-9);
+    }
+
+    /// <summary>
+    /// The scaled accumulation must still agree with the naive formula for ordinary, well-scaled
+    /// components (3-4-5 triangle), regardless of component order.
+    /// </summary>
+    [TestMethod]
+    public void Norm_OrdinaryComponents_MatchesExpectedValue()
+    {
+        Assert.AreEqual(5.0, new Vector<double>(3d, 4d).Norm, 1e-12);
+        Assert.AreEqual(5.0, new Vector<double>(4d, 3d).Norm, 1e-12);
     }
 }
 

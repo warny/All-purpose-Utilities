@@ -14,6 +14,7 @@ public class ExpressionDerivationTests
 
     CSyntaxExpressionCompiler compiler = new CSyntaxExpressionCompiler();
     ExpressionDerivation<double> derivation = new ExpressionDerivation<double>("x");
+    ExpressionDerivation<double> derivationWithFallback = new ExpressionDerivation<double>("x", allowNumericalFallback: true);
 
     /// <summary>
     /// A sample unknown function used to validate finite-difference fallback derivatives.
@@ -85,7 +86,7 @@ public class ExpressionDerivationTests
     public void Derivate_UnknownDoubleFunction_UsesFiniteDifferenceFallback()
     {
         Expression<Func<double, double>> function = x => CustomUnknown(x);
-        var result = (Expression<Func<double, double>>)derivation.Derivate(function);
+        var result = (Expression<Func<double, double>>)derivationWithFallback.Derivate(function);
         var derivative = result.Compile();
 
         double[] samples = [-2.0, -0.5, 0.25, 1.5];
@@ -104,7 +105,7 @@ public class ExpressionDerivationTests
     public void Derivate_ComposedUnknownDoubleFunction_AppliesChainRule()
     {
         Expression<Func<double, double>> function = x => CustomUnknown(x * x);
-        var result = (Expression<Func<double, double>>)derivation.Derivate(function);
+        var result = (Expression<Func<double, double>>)derivationWithFallback.Derivate(function);
         var derivative = result.Compile();
 
         double[] samples = [-1.5, -0.75, 0.5, 1.25];
@@ -206,7 +207,7 @@ public class ExpressionDerivationTests
     public void Derivate_Sinh_MatchesCosh()
     {
         Expression<Func<double, double>> f = x => double.Sinh(x);
-        var df = (Expression<Func<double, double>>)derivation.Derivate(f);
+        var df = (Expression<Func<double, double>>)derivationWithFallback.Derivate(f);
         var compiled = df.Compile();
 
         foreach (double xv in new[] { -1.0, 0.0, 0.5, 2.0 })
@@ -220,7 +221,7 @@ public class ExpressionDerivationTests
     public void Derivate_Cosh_MatchesSinh()
     {
         Expression<Func<double, double>> f = x => double.Cosh(x);
-        var df = (Expression<Func<double, double>>)derivation.Derivate(f);
+        var df = (Expression<Func<double, double>>)derivationWithFallback.Derivate(f);
         var compiled = df.Compile();
 
         foreach (double xv in new[] { -1.0, 0.0, 0.5, 2.0 })
@@ -234,7 +235,7 @@ public class ExpressionDerivationTests
     public void Derivate_Tanh_MatchesSechSquared()
     {
         Expression<Func<double, double>> f = x => double.Tanh(x);
-        var df = (Expression<Func<double, double>>)derivation.Derivate(f);
+        var df = (Expression<Func<double, double>>)derivationWithFallback.Derivate(f);
         var compiled = df.Compile();
 
         foreach (double xv in new[] { -1.0, 0.0, 0.5, 2.0 })
@@ -288,7 +289,7 @@ public class ExpressionDerivationTests
     [TestMethod]
     public void Derivate_UnknownFloatFunction_UsesFiniteDifferenceFallback()
     {
-        ExpressionDerivation<float> floatDerivation = new("x");
+        ExpressionDerivation<float> floatDerivation = new("x", allowNumericalFallback: true);
         Expression<Func<float, float>> f = x => x * x * x;
         var df = (Expression<Func<float, float>>)floatDerivation.Derivate(f);
         var compiled = df.Compile();
@@ -303,5 +304,281 @@ public class ExpressionDerivationTests
     /// <param name="x">Input value.</param>
     /// <returns>The cubic value of <paramref name="x"/>.</returns>
     private static float FloatCube(float x) => x * x * x;
+
+    // ── Opt-in finite-difference fallback (item 36) ───────────────────────────
+
+    /// <summary>
+    /// By default (<see cref="ExpressionDerivation{T}.AllowNumericalFallback"/> is <see langword="false"/>),
+    /// an unknown method must fail explicitly rather than silently falling back to a numerical
+    /// approximation that evaluates the source method twice per derivative evaluation.
+    /// </summary>
+    [TestMethod]
+    public void Derivate_UnknownDoubleFunction_FallbackDisabledByDefault_ThrowsClearException()
+    {
+        Expression<Func<double, double>> function = x => CustomUnknown(x);
+
+        var ex = Assert.ThrowsExactly<NotSupportedException>(() => derivation.Derivate(function));
+        StringAssert.Contains(ex.Message, nameof(ExpressionDerivation<double>.AllowNumericalFallback));
+    }
+
+    // ── Unsupported scalar-type capability (item 30) ─────────────────────────
+
+    /// <summary>
+    /// <see cref="decimal"/> satisfies <see cref="System.Numerics.IFloatingPoint{TSelf}"/> but declares no
+    /// <c>Exp</c> method. Differentiating a <c>double.Exp</c> call node against a decimal-configured
+    /// transformer must fail with a clear <see cref="NotSupportedException"/> instead of an incidental
+    /// reflection null failure deep inside <see cref="Expression.Call(System.Reflection.MethodInfo, Expression[])"/>.
+    /// </summary>
+    [TestMethod]
+    public void Derivate_ExpCall_UnsupportedScalarType_ThrowsClearException()
+    {
+        ExpressionDerivation<decimal> decimalDerivation = new("x");
+        var x = Expression.Parameter(typeof(decimal), "x");
+        var expCall = Expression.Call(typeof(double).GetMethod(nameof(double.Exp), [typeof(double)]), Expression.Convert(x, typeof(double)));
+        var f = Expression.Lambda<Func<decimal, double>>(expCall, x);
+
+        // Transformation rules are dispatched through reflection (see ExpressionTransformer.Transform),
+        // so the NotSupportedException surfaces wrapped in a TargetInvocationException.
+        var invocationException = Assert.ThrowsExactly<System.Reflection.TargetInvocationException>(() => decimalDerivation.Derivate(f));
+        Assert.IsInstanceOfType(invocationException.InnerException, typeof(NotSupportedException));
+        var ex = (NotSupportedException)invocationException.InnerException!;
+        StringAssert.Contains(ex.Message, "Exp");
+        StringAssert.Contains(ex.Message, "Decimal");
+    }
+
+    /// <summary>
+    /// Arithmetic-only expressions (no transcendental functions) remain differentiable for
+    /// <see cref="decimal"/> even though it lacks Log/Sin/Exp/etc.
+    /// </summary>
+    [TestMethod]
+    public void Derivate_ArithmeticOnlyExpression_WorksForDecimal()
+    {
+        ExpressionDerivation<decimal> decimalDerivation = new("x");
+        Expression<Func<decimal, decimal>> f = x => x * x;
+        var result = (Expression<Func<decimal, decimal>>)decimalDerivation.Derivate(f);
+        var derivative = result.Compile();
+
+        foreach (decimal xv in new[] { -2m, -0.5m, 0m, 1.25m, 3m })
+            Assert.AreEqual(2m * xv, derivative(xv), $"d/dx[x*x] for decimal at x={xv}");
+    }
+
+    // ── Parameter identity (item 31) and re-entrancy (item 32) ───────────────
+
+    /// <summary>
+    /// Two distinct <see cref="ParameterExpression"/> objects legally sharing the differentiation
+    /// variable's name cannot be resolved unambiguously by name alone; the previous name-based lookup
+    /// would silently differentiate as if both were the target variable. The fix rejects this instead
+    /// of guessing.
+    /// </summary>
+    [TestMethod]
+    public void Derivate_TwoDistinctParametersWithSameName_ThrowsAmbiguousException()
+    {
+        var x1 = Expression.Parameter(typeof(double), "x");
+        var x2 = Expression.Parameter(typeof(double), "x");
+        var f = Expression.Lambda<Func<double, double, double>>(Expression.Add(x1, x2), x1, x2);
+
+        Assert.ThrowsExactly<InvalidOperationException>(() => derivation.Derivate(f));
+    }
+
+    /// <summary>
+    /// When the configured parameter name is absent from the lambda's own parameter list, the target
+    /// variable cannot be resolved at all and differentiation must fail clearly rather than silently
+    /// matching an unrelated same-named parameter deep in the expression tree.
+    /// </summary>
+    [TestMethod]
+    public void Derivate_ParameterNameNotInLambda_ThrowsClearException()
+    {
+        var y = Expression.Parameter(typeof(double), "y");
+        var f = Expression.Lambda<Func<double, double>>(y, y);
+
+        Assert.ThrowsExactly<InvalidOperationException>(() => derivation.Derivate(f));
+    }
+
+    /// <summary>
+    /// Each <see cref="ExpressionDerivation{T}.Derivate"/> call resolves its target parameter into a
+    /// fresh, isolated worker instance rather than mutating shared instance state, so concurrent calls
+    /// on one shared transformer instance cannot corrupt each other's result (item 32).
+    /// </summary>
+    [TestMethod]
+    public void Derivate_ConcurrentCalls_AreIsolatedPerCall()
+    {
+        var shared = new ExpressionDerivation<double>("x");
+        var results = new Expression<Func<double, double>>[64];
+
+        System.Threading.Tasks.Parallel.For(0, results.Length, i =>
+        {
+            var x = Expression.Parameter(typeof(double), "x");
+            var f = Expression.Lambda<Func<double, double>>(Expression.Multiply(Expression.Constant((double)(i + 1)), x), x);
+            results[i] = (Expression<Func<double, double>>)shared.Derivate(f);
+        });
+
+        for (int i = 0; i < results.Length; i++)
+        {
+            double expected = i + 1;
+            double actual = results[i].Compile()(2.5);
+            Assert.AreEqual(expected, actual, 1e-9, $"Concurrent derivate #{i}");
+        }
+    }
+
+    // ── Conversion type preservation (item 33) ────────────────────────────────
+
+    /// <summary>
+    /// Differentiating a widening numeric conversion (here <c>decimal</c> to <c>double</c>) must
+    /// preserve the conversion's declared result type, so the produced lambda still matches the
+    /// delegate type the caller compiled the source expression against.
+    /// </summary>
+    [TestMethod]
+    public void Derivate_WideningConversion_PreservesDeclaredResultType()
+    {
+        ExpressionDerivation<decimal> decimalDerivation = new("x");
+        var x = Expression.Parameter(typeof(decimal), "x");
+        var body = Expression.Convert(x, typeof(double));
+        var f = Expression.Lambda<Func<decimal, double>>(body, x);
+
+        var result = (Expression<Func<decimal, double>>)decimalDerivation.Derivate(f);
+        var derivative = result.Compile();
+
+        Assert.AreEqual(1.0, derivative(3m), 1e-9);
+    }
+
+    /// <summary>
+    /// A checked conversion that actually changes the type (here <c>double</c> to <c>int</c>) has no
+    /// well-defined symbolic derivative and must be rejected explicitly rather than silently stripped,
+    /// which would otherwise return a value of the wrong type.
+    /// </summary>
+    [TestMethod]
+    public void Derivate_NarrowingCheckedConversion_ThrowsClearException()
+    {
+        var x = Expression.Parameter(typeof(double), "x");
+        var body = Expression.ConvertChecked(x, typeof(int));
+        var f = Expression.Lambda<Func<double, int>>(body, x);
+
+        var invocationException = Assert.ThrowsExactly<System.Reflection.TargetInvocationException>(() => derivation.Derivate(f));
+        Assert.IsInstanceOfType(invocationException.InnerException, typeof(NotSupportedException));
+    }
+
+    // ── Exactness reporting (item 42) ─────────────────────────────────────────
+
+    /// <summary>
+    /// A purely symbolic derivative (no finite-difference fallback involved) must report
+    /// <c>isExact = true</c>.
+    /// </summary>
+    [TestMethod]
+    public void Derivate_ExactRule_ReportsIsExactTrue()
+    {
+        Expression<Func<double, double>> f = x => x * x;
+        derivation.Derivate(f, out bool isExact);
+
+        Assert.IsTrue(isExact);
+    }
+
+    /// <summary>
+    /// When the finite-difference fallback (opted into via <see cref="ExpressionDerivation{T}.AllowNumericalFallback"/>)
+    /// is actually used for an unknown method, the result must report <c>isExact = false</c> so a caller
+    /// can distinguish an exact symbolic derivative from a numerical approximation.
+    /// </summary>
+    [TestMethod]
+    public void Derivate_FiniteDifferenceFallback_ReportsIsExactFalse()
+    {
+        Expression<Func<double, double>> function = x => CustomUnknown(x);
+        derivationWithFallback.Derivate(function, out bool isExact);
+
+        Assert.IsFalse(isExact);
+    }
+
+    /// <summary>
+    /// Even with the fallback enabled, an unknown method call whose argument does not depend on the
+    /// differentiation variable is resolved exactly (its derivative is trivially zero) without invoking
+    /// the numerical approximation at all.
+    /// </summary>
+    [TestMethod]
+    public void Derivate_FiniteDifferenceFallback_ConstantArgument_StillReportsIsExactTrue()
+    {
+        var x = Expression.Parameter(typeof(double), "x");
+        var y = Expression.Parameter(typeof(double), "y");
+        var body = Expression.Call(typeof(ExpressionDerivationTests).GetMethod(nameof(CustomUnknown), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!, y);
+        var f = Expression.Lambda<Func<double, double, double>>(body, x, y);
+
+        derivationWithFallback.Derivate(f, out bool isExact);
+
+        Assert.IsTrue(isExact);
+    }
+
+    // ── Parameter-dependency detection in the numerical fallback (PR 448 review) ──
+
+    /// <summary>
+    /// An unknown-method operand that depends on the differentiation variable only through a
+    /// <see cref="NewExpression"/> plus a <see cref="MemberExpression"/> (<c>(x, 0d).Item1</c>) must not
+    /// be mistaken for a constant: previously, <c>ContainsParameter</c> only recognized a hand-picked
+    /// subset of node kinds (via a <c>switch</c> defaulting to <c>false</c>) and would have silently
+    /// returned a zero derivative for these two node kinds instead of ever reaching
+    /// <see cref="Transform"/>. Since differentiating a <see cref="MemberExpression"/> is not itself
+    /// implemented, the correct behavior once the dependency is detected is an explicit failure — not a
+    /// silently wrong zero.
+    /// </summary>
+    [TestMethod]
+    public void Derivate_FiniteDifferenceFallback_NewAndMemberOperand_DoesNotSilentlyReturnZero()
+    {
+        var x = Expression.Parameter(typeof(double), "x");
+        var tupleCtor = typeof(ValueTuple<double, double>).GetConstructor([typeof(double), typeof(double)])!;
+        var tupleOperand = Expression.Field(Expression.New(tupleCtor, x, Expression.Constant(0d)), "Item1");
+        var method = typeof(ExpressionDerivationTests).GetMethod(nameof(CustomUnknown), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!;
+        var body = Expression.Call(method, tupleOperand);
+        var f = Expression.Lambda<Func<double, double>>(body, x);
+
+        Assert.ThrowsExactly<NotSupportedException>(() => derivationWithFallback.Derivate(f));
+    }
+
+    // ── Widening-only numeric conversions (PR 448 review) ─────────────────────
+
+    /// <summary>
+    /// An unchecked <c>double</c> to <c>float</c> conversion loses precision and is not a recognized
+    /// widening; it must be rejected rather than silently accepted just because both endpoints are
+    /// native numeric types.
+    /// </summary>
+    [TestMethod]
+    public void Derivate_DoubleToFloatConversion_ThrowsClearException()
+    {
+        var x = Expression.Parameter(typeof(double), "x");
+        var body = Expression.Convert(x, typeof(float));
+        var f = Expression.Lambda<Func<double, float>>(body, x);
+
+        var invocationException = Assert.ThrowsExactly<System.Reflection.TargetInvocationException>(() => derivation.Derivate(f));
+        Assert.IsInstanceOfType(invocationException.InnerException, typeof(NotSupportedException));
+    }
+
+    /// <summary>
+    /// An unchecked <c>double</c> to <c>int</c> conversion (e.g. <c>x =&gt; (int)x</c>) truncates and has
+    /// no well-defined symbolic derivative; it must be rejected instead of silently producing a constant
+    /// derivative such as <c>(int)1.0 == 1</c>.
+    /// </summary>
+    [TestMethod]
+    public void Derivate_DoubleToIntConversion_ThrowsClearException()
+    {
+        var x = Expression.Parameter(typeof(double), "x");
+        var body = Expression.Convert(x, typeof(int));
+        var f = Expression.Lambda<Func<double, int>>(body, x);
+
+        var invocationException = Assert.ThrowsExactly<System.Reflection.TargetInvocationException>(() => derivation.Derivate(f));
+        Assert.IsInstanceOfType(invocationException.InnerException, typeof(NotSupportedException));
+    }
+
+    /// <summary>
+    /// A genuine widening (<c>float</c> to <c>double</c>) must still be preserved after tightening the
+    /// widening check, so the fix does not overcorrect into rejecting legitimate conversions.
+    /// </summary>
+    [TestMethod]
+    public void Derivate_FloatToDoubleConversion_PreservesDeclaredResultType()
+    {
+        ExpressionDerivation<float> floatDerivation = new("x");
+        var x = Expression.Parameter(typeof(float), "x");
+        var body = Expression.Convert(x, typeof(double));
+        var f = Expression.Lambda<Func<float, double>>(body, x);
+
+        var result = (Expression<Func<float, double>>)floatDerivation.Derivate(f);
+        var derivativeFunc = result.Compile();
+
+        Assert.AreEqual(1.0, derivativeFunc(3f), 1e-9);
+    }
 
 }

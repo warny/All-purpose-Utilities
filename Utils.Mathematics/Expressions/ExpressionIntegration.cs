@@ -18,64 +18,169 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
     public string ParameterName { get; }
 
     /// <summary>
-    /// Gets or sets the cached parameter expression that matches <see cref="ParameterName"/>.
+    /// The specific <see cref="ParameterExpression"/> instance, resolved once per <see cref="Integrate"/>
+    /// call, that identifies the integration variable by reference rather than by name. Two distinct
+    /// <see cref="ParameterExpression"/> objects may legally share the same <see cref="ParameterName"/>
+    /// (e.g. an unrelated captured variable); comparing by reference instead of by name avoids treating
+    /// such a foreign parameter as the integration variable. This field is set once, in the private
+    /// constructor, on a fresh per-call worker instance (see <see cref="Integrate"/>), so it is never
+    /// mutated after construction and each call gets its own isolated instance.
     /// </summary>
-    private ParameterExpression parameter { get; set; } = null!;
+    private readonly ParameterExpression parameter;
+
+    /// <summary>
+    /// Determines whether <paramref name="candidate"/> is the specific parameter instance resolved as
+    /// the integration variable for the current call.
+    /// </summary>
+    private bool IsTargetParameter(ParameterExpression candidate) => ReferenceEquals(candidate, parameter);
+
+    /// <summary>
+    /// Creates a <typeparamref name="T"/>-typed constant from a <see cref="double"/> value computed
+    /// during rule evaluation (e.g. an exponent shifted by one). Rules must use this instead of
+    /// <c>Expression.Constant(value)</c> (which creates a raw <see cref="double"/> constant regardless
+    /// of <typeparamref name="T"/>), since combining a <see cref="double"/> constant with a
+    /// <typeparamref name="T"/>-typed expression fails to construct for any <typeparamref name="T"/>
+    /// other than <see cref="double"/> itself.
+    /// </summary>
+    private static ConstantExpression NumericConstant(double value) => ExpressionEx.CreateConstant(T.CreateChecked(value));
+
+    /// <summary>
+    /// Builds <c>Log(Abs(operand))</c> rather than a bare <c>Log(operand)</c>. Unlike the source
+    /// expressions these antiderivatives replace (e.g. <c>1/x</c> or <c>tan(x) = sin(x)/cos(x)</c>,
+    /// both well-defined for negative arguments), a raw <c>Log</c> is only real-valued for a positive
+    /// argument and would return NaN on exactly the negative-domain inputs the original expression
+    /// supported. <c>Abs</c> is always available (it is part of <see cref="INumberBase{TSelf}"/>, which
+    /// every <see cref="IFloatingPoint{TSelf}"/> implements), so this never needs a capability check.
+    /// </summary>
+    private static Expression LogAbs(Expression operand) =>
+        Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Log)),
+            Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Abs)), operand));
 
     /// <summary>
     /// Integrates a lambda expression with respect to the configured parameter.
     /// </summary>
     /// <param name="e">The lambda expression to integrate.</param>
     /// <returns>The integrated expression tree.</returns>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when no parameter named <see cref="ParameterName"/> is found in <paramref name="e"/>, or
+    /// when more than one distinct parameter shares that name (an ambiguous match that cannot be
+    /// resolved by name alone).
+    /// </exception>
     public Expression Integrate(LambdaExpression e)
     {
         ArgumentNullException.ThrowIfNull(e);
 
-        parameter = e.Parameters.FirstOrDefault(p => p.Name == ParameterName)
-                ?? throw new InvalidOperationException($"The parameter '{ParameterName}' was not found in the lambda expression.");
+        var candidates = e.Parameters.Where(p => p.Name == ParameterName).ToList();
+        if (candidates.Count == 0)
+        {
+            throw new InvalidOperationException($"The parameter '{ParameterName}' was not found in the lambda expression.");
+        }
+        if (candidates.Count > 1)
+        {
+            throw new InvalidOperationException(
+                $"The lambda expression declares {candidates.Count} distinct parameters named '{ParameterName}'; " +
+                "the integration variable is ambiguous. Use distinct parameter names.");
+        }
 
-        return Expression.Lambda(Transform(e.Body), e.Parameters);
+        // A fresh worker instance isolates the resolved target parameter for this call: concurrent or
+        // re-entrant calls on the same public ExpressionIntegration<T> instance no longer share mutable
+        // state (see TODO-2026-07-11-pass3.md item #32).
+        var worker = new ExpressionIntegration<T>(ParameterName, candidates[0]);
+        return Expression.Lambda(worker.Transform(e.Body), e.Parameters);
     }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ExpressionIntegration{T}"/> class.
     /// </summary>
     /// <param name="parameterName">The name of the parameter serving as the integration variable.</param>
-    public ExpressionIntegration(string parameterName)
+    public ExpressionIntegration(string parameterName) : this(parameterName, null!)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a per-call worker instance with its target parameter already resolved.
+    /// </summary>
+    /// <param name="parameterName">The name of the parameter serving as the integration variable.</param>
+    /// <param name="parameter">
+    /// The specific resolved <see cref="ParameterExpression"/> instance, or <see langword="null"/> for
+    /// the publicly-constructed instance that has not yet performed an <see cref="Integrate"/> call.
+    /// </param>
+    private ExpressionIntegration(string parameterName, ParameterExpression parameter)
     {
         this.ParameterName = parameterName;
+        this.parameter = parameter;
     }
 
 
 
     /// <summary>
-    /// Ignores conversion wrappers by integrating the wrapped operand.
+    /// Integrates the wrapped operand and re-applies the conversion's declared result type when the
+    /// integral's type does not already match it, so the result expression stays type-consistent with
+    /// the original conversion node.
     /// </summary>
     /// <param name="e">The conversion expression.</param>
     /// <param name="operand">The wrapped operand.</param>
-    /// <returns>The integral of the wrapped operand.</returns>
+    /// <returns>The integral of the wrapped operand, converted back to <c>e.Type</c> if needed.</returns>
     [ExpressionSignature(ExpressionType.Convert)]
     public Expression Convert(
         UnaryExpression e,
         Expression operand
     )
     {
-        return Transform(operand);
+        return PreserveConversion(e, Transform(operand), isChecked: false);
     }
 
     /// <summary>
-    /// Ignores checked conversion wrappers by integrating the wrapped operand.
+    /// Integrates the wrapped operand through a checked conversion. Checked conversions exist
+    /// specifically to guard against narrowing/overflow, which has no well-defined symbolic integral;
+    /// only a trivial same-type checked conversion is passed through, anything else is rejected instead
+    /// of silently stripped.
     /// </summary>
     /// <param name="e">The checked conversion expression.</param>
     /// <param name="operand">The wrapped operand.</param>
-    /// <returns>The integral of the wrapped operand.</returns>
+    /// <returns>The integral of the wrapped operand when the checked conversion is a same-type no-op.</returns>
+    /// <exception cref="NotSupportedException">
+    /// Thrown when the checked conversion actually changes the type (a narrowing or otherwise
+    /// non-trivial conversion), since integrating through it is not well-defined.
+    /// </exception>
     [ExpressionSignature(ExpressionType.ConvertChecked)]
     public Expression ConvertChecked(
         UnaryExpression e,
         Expression operand
     )
     {
-        return Transform(operand);
+        return PreserveConversion(e, Transform(operand), isChecked: true);
+    }
+
+    /// <summary>
+    /// Reconciles the type of a transformed integral with the declared result type of the original
+    /// conversion node it replaces.
+    /// </summary>
+    /// <param name="original">The original <c>Convert</c>/<c>ConvertChecked</c> expression being replaced.</param>
+    /// <param name="transformedOperand">The already-integrated operand.</param>
+    /// <param name="isChecked"><see langword="true"/> for <c>ConvertChecked</c>; <see langword="false"/> for <c>Convert</c>.</param>
+    /// <returns><paramref name="transformedOperand"/>, converted back to <c>original.Type</c> if needed.</returns>
+    /// <exception cref="NotSupportedException">
+    /// Thrown when the types differ and the conversion is either checked (narrowing/overflow-prone) or
+    /// not a recognized numeric widening (see <see cref="NumberUtils.IsWideningNumericConversion"/>) —
+    /// this notably rejects reducing conversions such as <c>double</c> to <c>float</c> or <c>double</c>
+    /// to <c>int</c>, which have no well-defined symbolic integral.
+    /// </exception>
+    private static Expression PreserveConversion(UnaryExpression original, Expression transformedOperand, bool isChecked)
+    {
+        if (transformedOperand.Type == original.Type)
+        {
+            return transformedOperand;
+        }
+
+        if (!isChecked && NumberUtils.IsWideningNumericConversion(transformedOperand.Type, original.Type))
+        {
+            return Expression.Convert(transformedOperand, original.Type);
+        }
+
+        throw new NotSupportedException(
+            $"Cannot preserve the {(isChecked ? "checked " : string.Empty)}conversion from '{transformedOperand.Type}' " +
+            $"to '{original.Type}': only same-type conversions and unchecked numeric widenings are supported.");
     }
     /// <summary>
     /// Integrates a numeric constant by multiplying it with the integration parameter.
@@ -117,11 +222,12 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         ParameterExpression e
     )
     {
-        if (e.Name == ParameterName)
+        if (IsTargetParameter(e))
         {
+            ConstantExpression two = ExpressionEx.CreateConstant(T.CreateChecked(2d));
             return Expression.Divide(
-                Expression.Power(e, ExpressionEx.CreateConstant(T.CreateChecked(2d))),
-                ExpressionEx.CreateConstant(T.CreateChecked(2d))
+                Expression.Call(MathMethodResolver.ResolveBinary<T>(nameof(double.Pow)), e, two),
+                two
             );
         }
         else
@@ -237,11 +343,8 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
             ParameterExpression right
 )
     {
-        if (right.Name != ParameterName) return null;
-        return Expression.Multiply(
-                left,
-                Expression.Call(typeof(T).GetMethod(nameof(double.Log), [typeof(T)]), right)
-            );
+        if (!IsTargetParameter(right)) return null;
+        return Expression.Multiply(left, LogAbs(right));
     }
 
     /// <summary>
@@ -259,15 +362,12 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         ParameterExpression right
     )
     {
-        if (right.Name != ParameterName) return null;
+        if (!IsTargetParameter(right)) return null;
         if (left.NodeType != ExpressionType.Convert && left.NodeType != ExpressionType.ConvertChecked) return null;
         if (left.Operand is not ConstantExpression constant || !NumberUtils.IsNumeric(constant.Value)) return null;
 
-        ConstantExpression numericLeft = Expression.Constant(System.Convert.ToDouble(constant.Value));
-        return Expression.Multiply(
-            numericLeft,
-            Expression.Call(typeof(T).GetMethod(nameof(double.Log), [typeof(T)]), right)
-        );
+        ConstantExpression numericLeft = NumericConstant(System.Convert.ToDouble(constant.Value));
+        return Expression.Multiply(numericLeft, LogAbs(right));
     }
 
     /// <summary>
@@ -284,7 +384,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
     [ExpressionSignature(ExpressionType.Power)] BinaryExpression right
 )
     {
-        if (right.Left is not ParameterExpression p || p.Name != ParameterName)
+        if (right.Left is not ParameterExpression p || !IsTargetParameter(p))
         {
             return null;
         }
@@ -304,16 +404,14 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         double n = System.Convert.ToDouble(expo.Value);
         if (double.Abs(n - 1.0) < 1e-10)
         {
-            return Expression.Multiply(
-                left,
-                Expression.Call(typeof(T).GetMethod(nameof(double.Log), [typeof(T)]), p)
-            );
+            return Expression.Multiply(left, LogAbs(p));
         }
 
         double newExpo = 1.0 - n;
+        ConstantExpression newExpoConstant = NumericConstant(newExpo);
         return Expression.Divide(
-            Expression.Multiply(left, Expression.Power(p, Expression.Constant(newExpo))),
-            Expression.Constant(newExpo)
+            Expression.Multiply(left, Expression.Call(MathMethodResolver.ResolveBinary<T>(nameof(double.Pow)), p, newExpoConstant)),
+            newExpoConstant
         );
     }
 
@@ -333,7 +431,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
     {
         if (left.NodeType != ExpressionType.Convert && left.NodeType != ExpressionType.ConvertChecked) return null;
         if (left.Operand is not ConstantExpression constant || !NumberUtils.IsNumeric(constant.Value)) return null;
-        ConstantExpression numericLeft = Expression.Constant(System.Convert.ToDouble(constant.Value));
+        ConstantExpression numericLeft = NumericConstant(System.Convert.ToDouble(constant.Value));
         return Divide(e, numericLeft, right);
     }
 
@@ -354,19 +452,19 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         if (right.Method.Name == nameof(double.Sqrt) &&
             right.Arguments.Count == 1 &&
             right.Arguments[0] is ParameterExpression pSqrt &&
-            pSqrt.Name == ParameterName)
+            IsTargetParameter(pSqrt))
         {
             double factor = 2.0 * System.Convert.ToDouble(left.Value);
             return Expression.Multiply(
-                Expression.Constant(factor),
-                Expression.Call(typeof(T).GetMethod(nameof(double.Sqrt), [typeof(T)]), pSqrt)
+                NumericConstant(factor),
+                Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Sqrt)), pSqrt)
             );
         }
 
         if (right.Method.Name == nameof(double.Pow) &&
             right.Arguments.Count == 2 &&
             right.Arguments[0] is ParameterExpression pPow &&
-            pPow.Name == ParameterName)
+            IsTargetParameter(pPow))
         {
             ConstantExpression? exponent = right.Arguments[1] as ConstantExpression;
             if (exponent is null && right.Arguments[1] is UnaryExpression unaryExponent &&
@@ -383,16 +481,14 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
             double n = System.Convert.ToDouble(exponent.Value);
             if (double.Abs(n - 1.0) < 1e-10)
             {
-                return Expression.Multiply(
-                    left,
-                    Expression.Call(typeof(T).GetMethod(nameof(double.Log), [typeof(T)]), pPow)
-                );
+                return Expression.Multiply(left, LogAbs(pPow));
             }
 
             double newExpo = 1.0 - n;
+            ConstantExpression newExpoConstant = NumericConstant(newExpo);
             return Expression.Divide(
-                Expression.Multiply(left, Expression.Power(pPow, Expression.Constant(newExpo))),
-                Expression.Constant(newExpo)
+                Expression.Multiply(left, Expression.Call(MathMethodResolver.ResolveBinary<T>(nameof(double.Pow)), pPow, newExpoConstant)),
+                newExpoConstant
             );
         }
 
@@ -415,7 +511,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
     {
         if (left.NodeType != ExpressionType.Convert && left.NodeType != ExpressionType.ConvertChecked) return null;
         if (left.Operand is not ConstantExpression constant || !NumberUtils.IsNumeric(constant.Value)) return null;
-        ConstantExpression numericLeft = Expression.Constant(System.Convert.ToDouble(constant.Value));
+        ConstantExpression numericLeft = NumericConstant(System.Convert.ToDouble(constant.Value));
         return Divide(e, numericLeft, right);
     }
 
@@ -431,11 +527,11 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
             ParameterExpression p
     )
     {
-        if (p.Name != ParameterName) return null;
+        if (!IsTargetParameter(p)) return null;
         return Expression.Multiply(
                     parameter,
                     Expression.Subtract(
-                        Expression.Call(typeof(T).GetMethod(nameof(double.Log), [typeof(T)]), parameter),
+                        Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Log)), parameter),
                         ExpressionEx.CreateConstant(T.CreateChecked(1d))
                         )
                 );
@@ -453,11 +549,11 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
             ParameterExpression p
     )
     {
-        if (p.Name != ParameterName) return null;
+        if (!IsTargetParameter(p)) return null;
         var ln10 = ExpressionEx.CreateConstant(T.CreateChecked(double.Log(10.0)));
         return Expression.Subtract(
             Expression.Multiply(p,
-                Expression.Call(typeof(T).GetMethod(nameof(double.Log10), [typeof(T)]), p)),
+                Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Log10)), p)),
             Expression.Divide(p, ln10)
         );
     }
@@ -476,15 +572,16 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
     [ConstantNumeric] ConstantExpression expo
 )
     {
-        if (p.Name != ParameterName) return null;
+        if (!IsTargetParameter(p)) return null;
         double n = System.Convert.ToDouble(expo.Value);
         if (double.Abs(n + 1.0) < 1e-10)
         {
-            return Expression.Call(typeof(T).GetMethod(nameof(double.Log), [typeof(T)]), p);
+            return LogAbs(p);
         }
+        ConstantExpression shiftedExpo = NumericConstant(n + 1.0);
         return Expression.Divide(
-            Expression.Power(p, Expression.Constant(n + 1.0)),
-            Expression.Constant(n + 1.0)
+            Expression.Call(MathMethodResolver.ResolveBinary<T>(nameof(double.Pow)), p, shiftedExpo),
+            shiftedExpo
         );
     }
 
@@ -512,7 +609,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
             return null;
         }
 
-        return Power(e, p, Expression.Constant(System.Convert.ToDouble(constantExpo.Value)));
+        return Power(e, p, NumericConstant(System.Convert.ToDouble(constantExpo.Value)));
     }
 
     /// <summary>
@@ -529,13 +626,14 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         [ConstantNumeric] ConstantExpression expo
     )
     {
-        if (p.Name != ParameterName) return null;
+        if (!IsTargetParameter(p)) return null;
         double n = System.Convert.ToDouble(expo.Value);
         if (double.Abs(n + 1.0) < 1e-10)
-            return Expression.Call(typeof(T).GetMethod(nameof(double.Log), [typeof(T)]), p);
+            return LogAbs(p);
+        ConstantExpression shiftedExpo = NumericConstant(n + 1.0);
         return Expression.Divide(
-            Expression.Power(p, Expression.Constant(n + 1.0)),
-            Expression.Constant(n + 1.0)
+            Expression.Call(MathMethodResolver.ResolveBinary<T>(nameof(double.Pow)), p, shiftedExpo),
+            shiftedExpo
         );
     }
 
@@ -557,7 +655,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
             return null;
         if (expo.Operand is not ConstantExpression constantExpo || !NumberUtils.IsNumeric(constantExpo.Value))
             return null;
-        return PowerMathCall(e, p, Expression.Constant(System.Convert.ToDouble(constantExpo.Value)));
+        return PowerMathCall(e, p, NumericConstant(System.Convert.ToDouble(constantExpo.Value)));
     }
 
     /// <summary>
@@ -572,8 +670,8 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
     ParameterExpression op
 )
     {
-        if (op.Name != ParameterName) return null;
-        return Expression.Call(typeof(T).GetMethod(nameof(double.Exp), [typeof(T)]), op);
+        if (!IsTargetParameter(op)) return null;
+        return Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Exp)), op);
     }
 
     /// <summary>
@@ -590,12 +688,12 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
     {
         if (be.NodeType != ExpressionType.Multiply ||
             be.Left is not ConstantExpression c || !NumberUtils.IsNumeric(c.Value) ||
-            be.Right is not ParameterExpression p2 || p2.Name != ParameterName)
+            be.Right is not ParameterExpression p2 || !IsTargetParameter(p2))
         {
             return null;
         }
         return Expression.Divide(
-                Expression.Call(typeof(T).GetMethod(nameof(double.Exp), [typeof(T)]), be),
+                Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Exp)), be),
                 c
             );
     }
@@ -612,9 +710,9 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
     ParameterExpression op
 )
     {
-        if (op.Name != ParameterName) return null;
+        if (!IsTargetParameter(op)) return null;
         return Expression.Negate(
-                Expression.Call(typeof(T).GetMethod(nameof(double.Cos), [typeof(T)]), op)
+                Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Cos)), op)
             );
     }
 
@@ -632,12 +730,12 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
     {
         if (be.NodeType != ExpressionType.Multiply ||
             be.Left is not ConstantExpression c || !NumberUtils.IsNumeric(c.Value) ||
-            be.Right is not ParameterExpression p2 || p2.Name != ParameterName)
+            be.Right is not ParameterExpression p2 || !IsTargetParameter(p2))
         {
             return null;
         }
         return Expression.Divide(
-                Expression.Negate(Expression.Call(typeof(T).GetMethod(nameof(double.Cos), [typeof(T)]), be)),
+                Expression.Negate(Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Cos)), be)),
                 c
             );
     }
@@ -654,8 +752,8 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
     ParameterExpression op
 )
     {
-        if (op.Name != ParameterName) return null;
-        return Expression.Call(typeof(T).GetMethod(nameof(double.Sin), [typeof(T)]), op);
+        if (!IsTargetParameter(op)) return null;
+        return Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Sin)), op);
     }
 
     /// <summary>
@@ -672,12 +770,12 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
     {
         if (be.NodeType != ExpressionType.Multiply ||
             be.Left is not ConstantExpression c || !NumberUtils.IsNumeric(c.Value) ||
-            be.Right is not ParameterExpression p2 || p2.Name != ParameterName)
+            be.Right is not ParameterExpression p2 || !IsTargetParameter(p2))
         {
             return null;
         }
         return Expression.Divide(
-                Expression.Call(typeof(T).GetMethod(nameof(double.Sin), [typeof(T)]), be),
+                Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Sin)), be),
                 c
             );
     }
@@ -695,12 +793,9 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
     ParameterExpression op
 )
     {
-        if (op.Name != ParameterName) return null;
+        if (!IsTargetParameter(op)) return null;
 
-        return Expression.Negate(
-                Expression.Call(typeof(T).GetMethod(nameof(double.Log), [typeof(T)]),
-                    Expression.Call(typeof(T).GetMethod(nameof(double.Cos), [typeof(T)]), op))
-            );
+        return Expression.Negate(LogAbs(Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Cos)), op)));
     }
 
     /// <summary>
@@ -717,13 +812,12 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
     {
         if (be.NodeType != ExpressionType.Multiply ||
             be.Left is not ConstantExpression c || !NumberUtils.IsNumeric(c.Value) ||
-            be.Right is not ParameterExpression p2 || p2.Name != ParameterName)
+            be.Right is not ParameterExpression p2 || !IsTargetParameter(p2))
         {
             return null;
         }
         return Expression.Divide(
-                Expression.Negate(Expression.Call(typeof(T).GetMethod(nameof(double.Log), [typeof(T)]),
-                    Expression.Call(typeof(T).GetMethod(nameof(double.Cos), [typeof(T)]), be))),
+                Expression.Negate(LogAbs(Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Cos)), be))),
                 c
             );
     }
@@ -740,11 +834,11 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
     ParameterExpression op
 )
     {
-        if (op.Name != ParameterName)
+        if (!IsTargetParameter(op))
         {
             return null;
         }
-        return Expression.Call(typeof(T).GetMethod(nameof(double.Cosh), [typeof(T)]), op);
+        return Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Cosh)), op);
     }
 
     /// <summary>
@@ -761,12 +855,12 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
     {
         if (be.NodeType != ExpressionType.Multiply ||
             be.Left is not ConstantExpression c || !NumberUtils.IsNumeric(c.Value) ||
-            be.Right is not ParameterExpression p2 || p2.Name != ParameterName)
+            be.Right is not ParameterExpression p2 || !IsTargetParameter(p2))
         {
             return null;
         }
         return Expression.Divide(
-                Expression.Call(typeof(T).GetMethod(nameof(double.Cosh), [typeof(T)]), be),
+                Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Cosh)), be),
                 c
             );
     }
@@ -783,9 +877,9 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
             ParameterExpression op
     )
     {
-        if (op.Name != ParameterName) return null;
+        if (!IsTargetParameter(op)) return null;
 
-        return Expression.Call(typeof(T).GetMethod(nameof(double.Sinh), [typeof(T)]), op);
+        return Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Sinh)), op);
     }
 
     /// <summary>
@@ -802,12 +896,12 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
     {
         if (be.NodeType != ExpressionType.Multiply ||
             be.Left is not ConstantExpression c || !NumberUtils.IsNumeric(c.Value) ||
-            be.Right is not ParameterExpression p2 || p2.Name != ParameterName)
+            be.Right is not ParameterExpression p2 || !IsTargetParameter(p2))
         {
             return null;
         }
         return Expression.Divide(
-                Expression.Call(typeof(T).GetMethod(nameof(double.Sinh), [typeof(T)]), be),
+                Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Sinh)), be),
                 c
             );
     }
@@ -824,11 +918,11 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
             ParameterExpression op
     )
     {
-        if (op.Name != ParameterName) return null;
+        if (!IsTargetParameter(op)) return null;
 
         return Expression.Call(
-            typeof(T).GetMethod(nameof(double.Log), [typeof(T)]),
-            Expression.Call(typeof(T).GetMethod(nameof(double.Cosh), [typeof(T)]), op)
+            MathMethodResolver.Resolve<T>(nameof(double.Log)),
+            Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Cosh)), op)
         );
     }
 
@@ -846,14 +940,14 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
     {
         if (be.NodeType != ExpressionType.Multiply ||
             be.Left is not ConstantExpression c || !NumberUtils.IsNumeric(c?.Value) ||
-            be.Right is not ParameterExpression p2 || p2.Name != ParameterName)
+            be.Right is not ParameterExpression p2 || !IsTargetParameter(p2))
         {
             return null;
         }
         return Expression.Divide(
                 Expression.Call(
-                    typeof(T).GetMethod(nameof(double.Log), [typeof(T)]),
-                    Expression.Call(typeof(T).GetMethod(nameof(double.Cosh), [typeof(T)]), be)
+                    MathMethodResolver.Resolve<T>(nameof(double.Log)),
+                    Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Cosh)), be)
                 ),
                 c
             );
