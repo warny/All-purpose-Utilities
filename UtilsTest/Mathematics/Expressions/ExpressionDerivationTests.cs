@@ -304,4 +304,45 @@ public class ExpressionDerivationTests
     /// <returns>The cubic value of <paramref name="x"/>.</returns>
     private static float FloatCube(float x) => x * x * x;
 
+    // ── Unsupported scalar-type capability (item 30) ─────────────────────────
+
+    /// <summary>
+    /// <see cref="decimal"/> satisfies <see cref="System.Numerics.IFloatingPoint{TSelf}"/> but declares no
+    /// <c>Exp</c> method. Differentiating a <c>double.Exp</c> call node against a decimal-configured
+    /// transformer must fail with a clear <see cref="NotSupportedException"/> instead of an incidental
+    /// reflection null failure deep inside <see cref="Expression.Call(System.Reflection.MethodInfo, Expression[])"/>.
+    /// </summary>
+    [TestMethod]
+    public void Derivate_ExpCall_UnsupportedScalarType_ThrowsClearException()
+    {
+        ExpressionDerivation<decimal> decimalDerivation = new("x");
+        var x = Expression.Parameter(typeof(decimal), "x");
+        var expCall = Expression.Call(typeof(double).GetMethod(nameof(double.Exp), [typeof(double)]), Expression.Convert(x, typeof(double)));
+        var f = Expression.Lambda<Func<decimal, double>>(expCall, x);
+
+        // Transformation rules are dispatched through reflection (see ExpressionTransformer.Transform),
+        // so the NotSupportedException surfaces wrapped in a TargetInvocationException.
+        var invocationException = Assert.ThrowsExactly<System.Reflection.TargetInvocationException>(() => decimalDerivation.Derivate(f));
+        Assert.IsInstanceOfType(invocationException.InnerException, typeof(NotSupportedException));
+        var ex = (NotSupportedException)invocationException.InnerException!;
+        StringAssert.Contains(ex.Message, "Exp");
+        StringAssert.Contains(ex.Message, "Decimal");
+    }
+
+    /// <summary>
+    /// Arithmetic-only expressions (no transcendental functions) remain differentiable for
+    /// <see cref="decimal"/> even though it lacks Log/Sin/Exp/etc.
+    /// </summary>
+    [TestMethod]
+    public void Derivate_ArithmeticOnlyExpression_WorksForDecimal()
+    {
+        ExpressionDerivation<decimal> decimalDerivation = new("x");
+        Expression<Func<decimal, decimal>> f = x => x * x;
+        var result = (Expression<Func<decimal, decimal>>)decimalDerivation.Derivate(f);
+        var derivative = result.Compile();
+
+        foreach (decimal xv in new[] { -2m, -0.5m, 0m, 1.25m, 3m })
+            Assert.AreEqual(2m * xv, derivative(xv), $"d/dx[x*x] for decimal at x={xv}");
+    }
+
 }

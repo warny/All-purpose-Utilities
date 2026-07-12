@@ -246,7 +246,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
                     Expression.Multiply(
                         left,
                         Expression.Multiply(
-                            Expression.Call(typeof(T).GetMethod(nameof(double.Log), [typeof(T)]), left),
+                            Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Log)), left),
                             Transform(right)
                         )
                     )
@@ -269,7 +269,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
         return
             Expression.Multiply(
                 Transform(operand),
-                Expression.Call(typeof(T).GetMethod(nameof(double.Exp), [typeof(T)]), operand)
+                Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Exp)), operand)
             );
     }
 
@@ -323,7 +323,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
     {
         return Expression.Multiply(
             Transform(operand),
-            Expression.Call(typeof(T).GetMethod(nameof(double.Cos), [typeof(T)]), operand));
+            Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Cos)), operand));
     }
 
     /// <summary>
@@ -340,7 +340,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
         return Expression.Negate(
             Expression.Multiply(
             Transform(operand),
-            Expression.Call(typeof(T).GetMethod(nameof(double.Sin), [typeof(T)]), operand)));
+            Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Sin)), operand)));
     }
 
     /// <summary>
@@ -359,7 +359,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
         return Expression.Divide(
             Transform(operand),
             Expression.Power(
-                Expression.Call(typeof(T).GetMethod(nameof(double.Cos), [typeof(T)]), operand),
+                Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Cos)), operand),
                 ExpressionEx.CreateConstant(T.CreateChecked(2d))
             )
         );

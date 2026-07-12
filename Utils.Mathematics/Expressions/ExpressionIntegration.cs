@@ -240,7 +240,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         if (right.Name != ParameterName) return null;
         return Expression.Multiply(
                 left,
-                Expression.Call(typeof(T).GetMethod(nameof(double.Log), [typeof(T)]), right)
+                Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Log)), right)
             );
     }
 
@@ -266,7 +266,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         ConstantExpression numericLeft = Expression.Constant(System.Convert.ToDouble(constant.Value));
         return Expression.Multiply(
             numericLeft,
-            Expression.Call(typeof(T).GetMethod(nameof(double.Log), [typeof(T)]), right)
+            Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Log)), right)
         );
     }
 
@@ -306,7 +306,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         {
             return Expression.Multiply(
                 left,
-                Expression.Call(typeof(T).GetMethod(nameof(double.Log), [typeof(T)]), p)
+                Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Log)), p)
             );
         }
 
@@ -359,7 +359,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
             double factor = 2.0 * System.Convert.ToDouble(left.Value);
             return Expression.Multiply(
                 Expression.Constant(factor),
-                Expression.Call(typeof(T).GetMethod(nameof(double.Sqrt), [typeof(T)]), pSqrt)
+                Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Sqrt)), pSqrt)
             );
         }
 
@@ -385,7 +385,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
             {
                 return Expression.Multiply(
                     left,
-                    Expression.Call(typeof(T).GetMethod(nameof(double.Log), [typeof(T)]), pPow)
+                    Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Log)), pPow)
                 );
             }
 
@@ -435,7 +435,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         return Expression.Multiply(
                     parameter,
                     Expression.Subtract(
-                        Expression.Call(typeof(T).GetMethod(nameof(double.Log), [typeof(T)]), parameter),
+                        Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Log)), parameter),
                         ExpressionEx.CreateConstant(T.CreateChecked(1d))
                         )
                 );
@@ -457,7 +457,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         var ln10 = ExpressionEx.CreateConstant(T.CreateChecked(double.Log(10.0)));
         return Expression.Subtract(
             Expression.Multiply(p,
-                Expression.Call(typeof(T).GetMethod(nameof(double.Log10), [typeof(T)]), p)),
+                Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Log10)), p)),
             Expression.Divide(p, ln10)
         );
     }
@@ -480,7 +480,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         double n = System.Convert.ToDouble(expo.Value);
         if (double.Abs(n + 1.0) < 1e-10)
         {
-            return Expression.Call(typeof(T).GetMethod(nameof(double.Log), [typeof(T)]), p);
+            return Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Log)), p);
         }
         return Expression.Divide(
             Expression.Power(p, Expression.Constant(n + 1.0)),
@@ -532,7 +532,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         if (p.Name != ParameterName) return null;
         double n = System.Convert.ToDouble(expo.Value);
         if (double.Abs(n + 1.0) < 1e-10)
-            return Expression.Call(typeof(T).GetMethod(nameof(double.Log), [typeof(T)]), p);
+            return Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Log)), p);
         return Expression.Divide(
             Expression.Power(p, Expression.Constant(n + 1.0)),
             Expression.Constant(n + 1.0)
@@ -573,7 +573,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
 )
     {
         if (op.Name != ParameterName) return null;
-        return Expression.Call(typeof(T).GetMethod(nameof(double.Exp), [typeof(T)]), op);
+        return Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Exp)), op);
     }
 
     /// <summary>
@@ -595,7 +595,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
             return null;
         }
         return Expression.Divide(
-                Expression.Call(typeof(T).GetMethod(nameof(double.Exp), [typeof(T)]), be),
+                Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Exp)), be),
                 c
             );
     }
@@ -614,7 +614,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
     {
         if (op.Name != ParameterName) return null;
         return Expression.Negate(
-                Expression.Call(typeof(T).GetMethod(nameof(double.Cos), [typeof(T)]), op)
+                Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Cos)), op)
             );
     }
 
@@ -637,7 +637,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
             return null;
         }
         return Expression.Divide(
-                Expression.Negate(Expression.Call(typeof(T).GetMethod(nameof(double.Cos), [typeof(T)]), be)),
+                Expression.Negate(Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Cos)), be)),
                 c
             );
     }
@@ -655,7 +655,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
 )
     {
         if (op.Name != ParameterName) return null;
-        return Expression.Call(typeof(T).GetMethod(nameof(double.Sin), [typeof(T)]), op);
+        return Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Sin)), op);
     }
 
     /// <summary>
@@ -677,7 +677,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
             return null;
         }
         return Expression.Divide(
-                Expression.Call(typeof(T).GetMethod(nameof(double.Sin), [typeof(T)]), be),
+                Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Sin)), be),
                 c
             );
     }
@@ -698,8 +698,8 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         if (op.Name != ParameterName) return null;
 
         return Expression.Negate(
-                Expression.Call(typeof(T).GetMethod(nameof(double.Log), [typeof(T)]),
-                    Expression.Call(typeof(T).GetMethod(nameof(double.Cos), [typeof(T)]), op))
+                Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Log)),
+                    Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Cos)), op))
             );
     }
 
@@ -722,8 +722,8 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
             return null;
         }
         return Expression.Divide(
-                Expression.Negate(Expression.Call(typeof(T).GetMethod(nameof(double.Log), [typeof(T)]),
-                    Expression.Call(typeof(T).GetMethod(nameof(double.Cos), [typeof(T)]), be))),
+                Expression.Negate(Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Log)),
+                    Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Cos)), be))),
                 c
             );
     }
@@ -744,7 +744,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         {
             return null;
         }
-        return Expression.Call(typeof(T).GetMethod(nameof(double.Cosh), [typeof(T)]), op);
+        return Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Cosh)), op);
     }
 
     /// <summary>
@@ -766,7 +766,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
             return null;
         }
         return Expression.Divide(
-                Expression.Call(typeof(T).GetMethod(nameof(double.Cosh), [typeof(T)]), be),
+                Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Cosh)), be),
                 c
             );
     }
@@ -785,7 +785,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
     {
         if (op.Name != ParameterName) return null;
 
-        return Expression.Call(typeof(T).GetMethod(nameof(double.Sinh), [typeof(T)]), op);
+        return Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Sinh)), op);
     }
 
     /// <summary>
@@ -807,7 +807,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
             return null;
         }
         return Expression.Divide(
-                Expression.Call(typeof(T).GetMethod(nameof(double.Sinh), [typeof(T)]), be),
+                Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Sinh)), be),
                 c
             );
     }
@@ -827,8 +827,8 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         if (op.Name != ParameterName) return null;
 
         return Expression.Call(
-            typeof(T).GetMethod(nameof(double.Log), [typeof(T)]),
-            Expression.Call(typeof(T).GetMethod(nameof(double.Cosh), [typeof(T)]), op)
+            MathMethodResolver.Resolve<T>(nameof(double.Log)),
+            Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Cosh)), op)
         );
     }
 
@@ -852,8 +852,8 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         }
         return Expression.Divide(
                 Expression.Call(
-                    typeof(T).GetMethod(nameof(double.Log), [typeof(T)]),
-                    Expression.Call(typeof(T).GetMethod(nameof(double.Cosh), [typeof(T)]), be)
+                    MathMethodResolver.Resolve<T>(nameof(double.Log)),
+                    Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Cosh)), be)
                 ),
                 c
             );
