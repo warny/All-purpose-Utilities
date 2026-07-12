@@ -273,9 +273,46 @@ Class ExpressionIntegration&lt;T&gt;  <a class="header-action link-secondary" ti
 
   <a id="Utils_Mathematics_Expressions_ExpressionIntegration_1__ctor_" data-uid="Utils.Mathematics.Expressions.ExpressionIntegration`1.#ctor*"></a>
 
+  <h3 id="Utils_Mathematics_Expressions_ExpressionIntegration_1__ctor_System_Linq_Expressions_ParameterExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionIntegration`1.#ctor(System.Linq.Expressions.ParameterExpression)">
+  ExpressionIntegration(ParameterExpression)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L134"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Mathematics.Expressions.ExpressionIntegration-1.html">ExpressionIntegration&lt;T&gt;</a> class that integrates with
+respect to a specific <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.parameterexpression">ParameterExpression</a> instance rather than a name. Unlike the
+name-based constructor, this identifies the integration variable unambiguously even when
+<code class="paramref">parameter</code>'s <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.parameterexpression.name">Name</a> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> or
+shared by another, unrelated parameter in the same lambda (see TODO-2026-07-11-pass4.md item #47).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ExpressionIntegration(ParameterExpression parameter)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>parameter</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.parameterexpression">ParameterExpression</a></dt>
+    <dd><p>The exact parameter instance to integrate against.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Mathematics_Expressions_ExpressionIntegration_1__ctor_" data-uid="Utils.Mathematics.Expressions.ExpressionIntegration`1.#ctor*"></a>
+
   <h3 id="Utils_Mathematics_Expressions_ExpressionIntegration_1__ctor_System_String_" data-uid="Utils.Mathematics.Expressions.ExpressionIntegration`1.#ctor(System.String)">
   ExpressionIntegration(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L96"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L122"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Mathematics.Expressions.ExpressionIntegration-1.html">ExpressionIntegration&lt;T&gt;</a> class.</p>
@@ -348,7 +385,7 @@ Class ExpressionIntegration&lt;T&gt;  <a class="header-action link-secondary" ti
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionIntegration_1_Add_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_Expression_" data-uid="Utils.Mathematics.Expressions.ExpressionIntegration`1.Add(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.Expression,System.Linq.Expressions.Expression)">
   Add(BinaryExpression, Expression, Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L248"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L288"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Integrates a sum by integrating each operand individually.</p>
@@ -394,7 +431,7 @@ public Expression Add(BinaryExpression e, Expression left, Expression right)</co
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionIntegration_1_Constant_System_Linq_Expressions_ConstantExpression_System_Object_" data-uid="Utils.Mathematics.Expressions.ExpressionIntegration`1.Constant(System.Linq.Expressions.ConstantExpression,System.Object)">
   Constant(ConstantExpression, object)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L191"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L231"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Integrates a numeric constant by multiplying it with the integration parameter.</p>
@@ -437,7 +474,7 @@ public Expression Constant(ConstantExpression e, object value)</code></pre>
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionIntegration_1_Convert_System_Linq_Expressions_UnaryExpression_System_Linq_Expressions_Expression_" data-uid="Utils.Mathematics.Expressions.ExpressionIntegration`1.Convert(System.Linq.Expressions.UnaryExpression,System.Linq.Expressions.Expression)">
   Convert(UnaryExpression, Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L124"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L164"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Integrates the wrapped operand and re-applies the conversion's declared result type when the
@@ -482,7 +519,7 @@ public Expression Convert(UnaryExpression e, Expression operand)</code></pre>
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionIntegration_1_ConvertChecked_System_Linq_Expressions_UnaryExpression_System_Linq_Expressions_Expression_" data-uid="Utils.Mathematics.Expressions.ExpressionIntegration`1.ConvertChecked(System.Linq.Expressions.UnaryExpression,System.Linq.Expressions.Expression)">
   ConvertChecked(UnaryExpression, Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L146"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L186"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Integrates the wrapped operand through a checked conversion. Checked conversions exist
@@ -535,7 +572,7 @@ non-trivial conversion), since integrating through it is not well-defined.</p>
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionIntegration_1_Cos_System_Linq_Expressions_MethodCallExpression_System_Linq_Expressions_BinaryExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionIntegration`1.Cos(System.Linq.Expressions.MethodCallExpression,System.Linq.Expressions.BinaryExpression)">
   Cos(MethodCallExpression, BinaryExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L765"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L805"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Integrates a cosine call whose argument is a scaled integration parameter.</p>
@@ -578,7 +615,7 @@ public Expression? Cos(MethodCallExpression e, BinaryExpression be)</code></pre>
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionIntegration_1_Cos_System_Linq_Expressions_MethodCallExpression_System_Linq_Expressions_ParameterExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionIntegration`1.Cos(System.Linq.Expressions.MethodCallExpression,System.Linq.Expressions.ParameterExpression)">
   Cos(MethodCallExpression, ParameterExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L749"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L789"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Integrates a cosine call that directly uses the integration parameter.</p>
@@ -621,7 +658,7 @@ public Expression? Cos(MethodCallExpression e, ParameterExpression op)</code></p
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionIntegration_1_Cosh_System_Linq_Expressions_MethodCallExpression_System_Linq_Expressions_BinaryExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionIntegration`1.Cosh(System.Linq.Expressions.MethodCallExpression,System.Linq.Expressions.BinaryExpression)">
   Cosh(MethodCallExpression, BinaryExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L891"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L931"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Integrates a hyperbolic cosine call whose argument is a scaled integration parameter.</p>
@@ -664,7 +701,7 @@ public Expression? Cosh(MethodCallExpression e, BinaryExpression be)</code></pre
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionIntegration_1_Cosh_System_Linq_Expressions_MethodCallExpression_System_Linq_Expressions_ParameterExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionIntegration`1.Cosh(System.Linq.Expressions.MethodCallExpression,System.Linq.Expressions.ParameterExpression)">
   Cosh(MethodCallExpression, ParameterExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L874"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L914"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Integrates a hyperbolic cosine call that directly uses the integration parameter.</p>
@@ -707,7 +744,7 @@ public Expression? Cosh(MethodCallExpression e, ParameterExpression op)</code></
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionIntegration_1_Divide_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_ConstantExpression_System_Linq_Expressions_BinaryExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionIntegration`1.Divide(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.ConstantExpression,System.Linq.Expressions.BinaryExpression)">
   Divide(BinaryExpression, ConstantExpression, BinaryExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L380"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L420"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Integrates a constant divided by a power expression representing x raised to n.</p>
@@ -753,7 +790,7 @@ public Expression? Divide(BinaryExpression e, ConstantExpression left, BinaryExp
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionIntegration_1_Divide_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_ConstantExpression_System_Linq_Expressions_MethodCallExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionIntegration`1.Divide(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.ConstantExpression,System.Linq.Expressions.MethodCallExpression)">
   Divide(BinaryExpression, ConstantExpression, MethodCallExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L445"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L485"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Integrates a constant divided by a square root method call of the integration parameter.</p>
@@ -799,7 +836,7 @@ public Expression? Divide(BinaryExpression e, ConstantExpression left, MethodCal
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionIntegration_1_Divide_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_ConstantExpression_System_Linq_Expressions_ParameterExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionIntegration`1.Divide(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.ConstantExpression,System.Linq.Expressions.ParameterExpression)">
   Divide(BinaryExpression, ConstantExpression, ParameterExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L339"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L379"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Integrates a constant divided by a parameter by applying the logarithm rule.</p>
@@ -845,7 +882,7 @@ public Expression? Divide(BinaryExpression e, ConstantExpression left, Parameter
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionIntegration_1_Divide_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_ConstantExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionIntegration`1.Divide(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.Expression,System.Linq.Expressions.ConstantExpression)">
   Divide(BinaryExpression, Expression, ConstantExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L322"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L362"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Integrates a quotient whose denominator is a constant by integrating the numerator.</p>
@@ -891,7 +928,7 @@ public Expression Divide(BinaryExpression e, Expression left, ConstantExpression
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionIntegration_1_Divide_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_UnaryExpression_System_Linq_Expressions_BinaryExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionIntegration`1.Divide(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.UnaryExpression,System.Linq.Expressions.BinaryExpression)">
   Divide(BinaryExpression, UnaryExpression, BinaryExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L425"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L465"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Integrates a converted numeric constant divided by a power expression in the denominator.</p>
@@ -937,7 +974,7 @@ public Expression? Divide(BinaryExpression e, UnaryExpression left, BinaryExpres
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionIntegration_1_Divide_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_UnaryExpression_System_Linq_Expressions_MethodCallExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionIntegration`1.Divide(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.UnaryExpression,System.Linq.Expressions.MethodCallExpression)">
   Divide(BinaryExpression, UnaryExpression, MethodCallExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L505"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L545"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Integrates a converted numeric constant divided by a method call denominator.</p>
@@ -983,7 +1020,7 @@ public Expression? Divide(BinaryExpression e, UnaryExpression left, MethodCallEx
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionIntegration_1_Divide_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_UnaryExpression_System_Linq_Expressions_ParameterExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionIntegration`1.Divide(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.UnaryExpression,System.Linq.Expressions.ParameterExpression)">
   Divide(BinaryExpression, UnaryExpression, ParameterExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L358"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L398"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Integrates a converted numeric constant divided by the integration parameter.
@@ -1030,7 +1067,7 @@ public Expression? Divide(BinaryExpression e, UnaryExpression left, ParameterExp
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionIntegration_1_Exp_System_Linq_Expressions_MethodCallExpression_System_Linq_Expressions_BinaryExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionIntegration`1.Exp(System.Linq.Expressions.MethodCallExpression,System.Linq.Expressions.BinaryExpression)">
   Exp(MethodCallExpression, BinaryExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L683"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L723"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Integrates an exponential call whose argument is a scaled integration parameter.</p>
@@ -1073,7 +1110,7 @@ public Expression? Exp(MethodCallExpression e, BinaryExpression be)</code></pre>
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionIntegration_1_Exp_System_Linq_Expressions_MethodCallExpression_System_Linq_Expressions_ParameterExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionIntegration`1.Exp(System.Linq.Expressions.MethodCallExpression,System.Linq.Expressions.ParameterExpression)">
   Exp(MethodCallExpression, ParameterExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L667"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L707"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Integrates an exponential call that directly uses the integration parameter.</p>
@@ -1116,7 +1153,7 @@ public Expression? Exp(MethodCallExpression e, ParameterExpression op)</code></p
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionIntegration_1_Integrate_System_Linq_Expressions_LambdaExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionIntegration`1.Integrate(System.Linq.Expressions.LambdaExpression)">
   Integrate(LambdaExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L69"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L81"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Integrates a lambda expression with respect to the configured parameter.</p>
@@ -1151,9 +1188,11 @@ public Expression? Exp(MethodCallExpression e, ParameterExpression op)</code></p
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a></dt>
-    <dd><p>Thrown when no parameter named <a class="xref" href="Utils.Mathematics.Expressions.ExpressionIntegration-1.html#Utils_Mathematics_Expressions_ExpressionIntegration_1_ParameterName">ParameterName</a> is found in <code class="paramref">e</code>, or
-when more than one distinct parameter shares that name (an ambiguous match that cannot be
-resolved by name alone).</p>
+    <dd><p>Thrown when this instance was constructed with a parameter name and no parameter named
+<a class="xref" href="Utils.Mathematics.Expressions.ExpressionIntegration-1.html#Utils_Mathematics_Expressions_ExpressionIntegration_1_ParameterName">ParameterName</a> is found in <code class="paramref">e</code>, or more than one distinct parameter
+shares that name (an ambiguous match that cannot be resolved by name alone). When this instance was
+instead constructed with an exact <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.parameterexpression">ParameterExpression</a> instance, thrown when that
+instance is not one of <code class="paramref">e</code>'s declared parameters.</p>
 </dd>
   </dl>
 
@@ -1163,7 +1202,7 @@ resolved by name alone).</p>
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionIntegration_1_Log_System_Linq_Expressions_MethodCallExpression_System_Linq_Expressions_ParameterExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionIntegration`1.Log(System.Linq.Expressions.MethodCallExpression,System.Linq.Expressions.ParameterExpression)">
   Log(MethodCallExpression, ParameterExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L524"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L564"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Integrates a natural logarithm call whose argument is the integration parameter.</p>
@@ -1206,7 +1245,7 @@ public Expression? Log(MethodCallExpression e, ParameterExpression p)</code></pr
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionIntegration_1_Log10_System_Linq_Expressions_MethodCallExpression_System_Linq_Expressions_ParameterExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionIntegration`1.Log10(System.Linq.Expressions.MethodCallExpression,System.Linq.Expressions.ParameterExpression)">
   Log10(MethodCallExpression, ParameterExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L546"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L586"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Integrates a base-10 logarithm call that uses the integration parameter.</p>
@@ -1249,7 +1288,7 @@ public Expression? Log10(MethodCallExpression e, ParameterExpression p)</code></
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionIntegration_1_Multiply_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_ConstantExpression_System_Linq_Expressions_Expression_" data-uid="Utils.Mathematics.Expressions.ExpressionIntegration`1.Multiply(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.ConstantExpression,System.Linq.Expressions.Expression)">
   Multiply(BinaryExpression, ConstantExpression, Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L288"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L328"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Integrates a product of a constant and an expression by treating the constant as a factor.</p>
@@ -1295,7 +1334,7 @@ public Expression Multiply(BinaryExpression e, ConstantExpression left, Expressi
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionIntegration_1_Multiply_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_ConstantExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionIntegration`1.Multiply(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.Expression,System.Linq.Expressions.ConstantExpression)">
   Multiply(BinaryExpression, Expression, ConstantExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L305"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L345"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Integrates a product of an expression and a constant by treating the constant as a factor.</p>
@@ -1341,7 +1380,7 @@ public Expression Multiply(BinaryExpression e, Expression left, ConstantExpressi
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionIntegration_1_Negate_System_Linq_Expressions_UnaryExpression_System_Linq_Expressions_Expression_" data-uid="Utils.Mathematics.Expressions.ExpressionIntegration`1.Negate(System.Linq.Expressions.UnaryExpression,System.Linq.Expressions.Expression)">
   Negate(UnaryExpression, Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L206"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L246"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Integrates a negated expression by negating the integral of its operand.</p>
@@ -1384,7 +1423,7 @@ public Expression Negate(UnaryExpression e, Expression operand)</code></pre>
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionIntegration_1_Parameter_System_Linq_Expressions_ParameterExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionIntegration`1.Parameter(System.Linq.Expressions.ParameterExpression)">
   Parameter(ParameterExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L220"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L260"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Integrates a parameter expression, returning x^2/2 when it matches the integration variable.</p>
@@ -1424,7 +1463,7 @@ public Expression Parameter(ParameterExpression e)</code></pre>
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionIntegration_1_Power_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_ParameterExpression_System_Linq_Expressions_ConstantExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionIntegration`1.Power(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.ParameterExpression,System.Linq.Expressions.ConstantExpression)">
   Power(BinaryExpression, ParameterExpression, ConstantExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L568"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L608"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Integrates a power expression whose base is the integration parameter.</p>
@@ -1470,7 +1509,7 @@ public Expression? Power(BinaryExpression e, ParameterExpression p, ConstantExpr
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionIntegration_1_Power_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_ParameterExpression_System_Linq_Expressions_UnaryExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionIntegration`1.Power(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.ParameterExpression,System.Linq.Expressions.UnaryExpression)">
   Power(BinaryExpression, ParameterExpression, UnaryExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L595"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L635"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Integrates a power expression whose exponent is wrapped in a numeric conversion.</p>
@@ -1516,7 +1555,7 @@ public Expression? Power(BinaryExpression e, ParameterExpression p, UnaryExpress
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionIntegration_1_PowerMathCall_System_Linq_Expressions_MethodCallExpression_System_Linq_Expressions_ParameterExpression_System_Linq_Expressions_ConstantExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionIntegration`1.PowerMathCall(System.Linq.Expressions.MethodCallExpression,System.Linq.Expressions.ParameterExpression,System.Linq.Expressions.ConstantExpression)">
   PowerMathCall(MethodCallExpression, ParameterExpression, ConstantExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L622"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L662"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Integrates a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.math.pow">Pow(double, double)</a> call whose base is the integration parameter and exponent is a numeric constant.</p>
@@ -1562,7 +1601,7 @@ public Expression? PowerMathCall(MethodCallExpression e, ParameterExpression p, 
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionIntegration_1_PowerMathCall_System_Linq_Expressions_MethodCallExpression_System_Linq_Expressions_ParameterExpression_System_Linq_Expressions_UnaryExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionIntegration`1.PowerMathCall(System.Linq.Expressions.MethodCallExpression,System.Linq.Expressions.ParameterExpression,System.Linq.Expressions.UnaryExpression)">
   PowerMathCall(MethodCallExpression, ParameterExpression, UnaryExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L647"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L687"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Integrates a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.math.pow">Pow(double, double)</a> call whose base is the integration parameter and exponent is a convert-wrapped numeric constant.</p>
@@ -1608,7 +1647,7 @@ public Expression? PowerMathCall(MethodCallExpression e, ParameterExpression p, 
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionIntegration_1_Sin_System_Linq_Expressions_MethodCallExpression_System_Linq_Expressions_BinaryExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionIntegration`1.Sin(System.Linq.Expressions.MethodCallExpression,System.Linq.Expressions.BinaryExpression)">
   Sin(MethodCallExpression, BinaryExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L725"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L765"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Integrates a sine call whose argument is a scaled integration parameter.</p>
@@ -1651,7 +1690,7 @@ public Expression? Sin(MethodCallExpression e, BinaryExpression be)</code></pre>
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionIntegration_1_Sin_System_Linq_Expressions_MethodCallExpression_System_Linq_Expressions_ParameterExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionIntegration`1.Sin(System.Linq.Expressions.MethodCallExpression,System.Linq.Expressions.ParameterExpression)">
   Sin(MethodCallExpression, ParameterExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L707"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L747"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Integrates a sine call that directly uses the integration parameter.</p>
@@ -1694,7 +1733,7 @@ public Expression? Sin(MethodCallExpression e, ParameterExpression op)</code></p
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionIntegration_1_Sinh_System_Linq_Expressions_MethodCallExpression_System_Linq_Expressions_BinaryExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionIntegration`1.Sinh(System.Linq.Expressions.MethodCallExpression,System.Linq.Expressions.BinaryExpression)">
   Sinh(MethodCallExpression, BinaryExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L850"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L890"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Integrates a hyperbolic sine call whose argument is a scaled integration parameter.</p>
@@ -1737,7 +1776,7 @@ public Expression? Sinh(MethodCallExpression e, BinaryExpression be)</code></pre
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionIntegration_1_Sinh_System_Linq_Expressions_MethodCallExpression_System_Linq_Expressions_ParameterExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionIntegration`1.Sinh(System.Linq.Expressions.MethodCallExpression,System.Linq.Expressions.ParameterExpression)">
   Sinh(MethodCallExpression, ParameterExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L831"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L871"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Integrates a hyperbolic sine call that directly uses the integration parameter.</p>
@@ -1780,7 +1819,7 @@ public Expression? Sinh(MethodCallExpression e, ParameterExpression op)</code></
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionIntegration_1_Subtract_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_Expression_" data-uid="Utils.Mathematics.Expressions.ExpressionIntegration`1.Subtract(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.Expression,System.Linq.Expressions.Expression)">
   Subtract(BinaryExpression, Expression, Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L268"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L308"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Integrates a subtraction by integrating both operands and subtracting the results.</p>
@@ -1826,7 +1865,7 @@ public Expression Subtract(BinaryExpression e, Expression left, Expression right
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionIntegration_1_Tan_System_Linq_Expressions_MethodCallExpression_System_Linq_Expressions_BinaryExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionIntegration`1.Tan(System.Linq.Expressions.MethodCallExpression,System.Linq.Expressions.BinaryExpression)">
   Tan(MethodCallExpression, BinaryExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L807"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L847"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Integrates a tangent call whose argument is a scaled integration parameter.</p>
@@ -1869,7 +1908,7 @@ public Expression? Tan(MethodCallExpression e, BinaryExpression be)</code></pre>
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionIntegration_1_Tan_System_Linq_Expressions_MethodCallExpression_System_Linq_Expressions_ParameterExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionIntegration`1.Tan(System.Linq.Expressions.MethodCallExpression,System.Linq.Expressions.ParameterExpression)">
   Tan(MethodCallExpression, ParameterExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L790"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L830"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Integrates a tangent call that directly uses the integration parameter.</p>
@@ -1912,7 +1951,7 @@ public Expression? Tan(MethodCallExpression e, ParameterExpression op)</code></p
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionIntegration_1_Tanh_System_Linq_Expressions_MethodCallExpression_System_Linq_Expressions_BinaryExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionIntegration`1.Tanh(System.Linq.Expressions.MethodCallExpression,System.Linq.Expressions.BinaryExpression)">
   Tanh(MethodCallExpression, BinaryExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L935"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L975"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Integrates a hyperbolic tangent call whose argument is a scaled integration parameter.</p>
@@ -1955,7 +1994,7 @@ public Expression? Tanh(MethodCallExpression e, BinaryExpression be)</code></pre
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionIntegration_1_Tanh_System_Linq_Expressions_MethodCallExpression_System_Linq_Expressions_ParameterExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionIntegration`1.Tanh(System.Linq.Expressions.MethodCallExpression,System.Linq.Expressions.ParameterExpression)">
   Tanh(MethodCallExpression, ParameterExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L915"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L955"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Integrates a hyperbolic tangent call that directly uses the integration parameter.</p>

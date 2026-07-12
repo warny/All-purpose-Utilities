@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Mathematics_Expressions_MathExpressionExtensions" data-uid="Utils.Mathematics.Expressions.MathExpressionExtensions" class="text-break">
-Class MathExpressionExtensions  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/MathExpressionExtensions.cs/#L10"><i class="bi bi-code-slash"></i></a>
+Class MathExpressionExtensions  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/MathExpressionExtensions.cs/#L13"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -157,10 +157,11 @@ Class MathExpressionExtensions  <a class="header-action link-secondary" title="V
 
   <h3 id="Utils_Mathematics_Expressions_MathExpressionExtensions_Derivate_System_Linq_Expressions_LambdaExpression_" data-uid="Utils.Mathematics.Expressions.MathExpressionExtensions.Derivate(System.Linq.Expressions.LambdaExpression)">
   Derivate(LambdaExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/MathExpressionExtensions.cs/#L17"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/MathExpressionExtensions.cs/#L154"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Computes the derivative of a single-parameter lambda expression with respect to its declared parameter.</p>
+  <div class="markdown level1 summary"><p>Computes the derivative of a single-parameter lambda expression with respect to its declared parameter.
+The scalar type is inferred from that parameter's CLR type instead of assuming <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a>.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -194,12 +195,65 @@ Class MathExpressionExtensions  <a class="header-action link-secondary" title="V
 
   <a id="Utils_Mathematics_Expressions_MathExpressionExtensions_Derivate_" data-uid="Utils.Mathematics.Expressions.MathExpressionExtensions.Derivate*"></a>
 
-  <h3 id="Utils_Mathematics_Expressions_MathExpressionExtensions_Derivate_System_Linq_Expressions_LambdaExpression_System_String_" data-uid="Utils.Mathematics.Expressions.MathExpressionExtensions.Derivate(System.Linq.Expressions.LambdaExpression,System.String)">
-  Derivate(LambdaExpression, string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/MathExpressionExtensions.cs/#L30"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_Mathematics_Expressions_MathExpressionExtensions_Derivate_System_Linq_Expressions_LambdaExpression_System_Linq_Expressions_ParameterExpression_" data-uid="Utils.Mathematics.Expressions.MathExpressionExtensions.Derivate(System.Linq.Expressions.LambdaExpression,System.Linq.Expressions.ParameterExpression)">
+  Derivate(LambdaExpression, ParameterExpression)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/MathExpressionExtensions.cs/#L207"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Computes the derivative of a lambda expression with respect to the specified parameter name.</p>
+  <div class="markdown level1 summary"><p>Computes the derivative of a lambda expression with respect to the exact declared parameter
+instance. Unlike the name-based overload, this resolves the differentiation variable unambiguously
+even when the parameter's <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.parameterexpression.name">Name</a> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> or
+shared with another, unrelated parameter (see TODO-pass4 item #47). The scalar type is inferred
+from <code class="paramref">parameter</code>'s own CLR type instead of assuming <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static LambdaExpression Derivate(this LambdaExpression e, ParameterExpression parameter)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>e</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.lambdaexpression">LambdaExpression</a></dt>
+    <dd><p>Lambda expression to differentiate.</p>
+</dd>
+    <dt><code>parameter</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.parameterexpression">ParameterExpression</a></dt>
+    <dd><p>The exact parameter instance used as the differentiation variable.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.lambdaexpression">LambdaExpression</a></dt>
+    <dd><p>A lambda expression representing the derivative.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a></dt>
+    <dd><p>Thrown when <code class="paramref">parameter</code>'s CLR type does not implement <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.ifloatingpoint-1">IFloatingPoint&lt;TSelf&gt;</a>.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Mathematics_Expressions_MathExpressionExtensions_Derivate_" data-uid="Utils.Mathematics.Expressions.MathExpressionExtensions.Derivate*"></a>
+
+  <h3 id="Utils_Mathematics_Expressions_MathExpressionExtensions_Derivate_System_Linq_Expressions_LambdaExpression_System_String_" data-uid="Utils.Mathematics.Expressions.MathExpressionExtensions.Derivate(System.Linq.Expressions.LambdaExpression,System.String)">
+  Derivate(LambdaExpression, string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/MathExpressionExtensions.cs/#L171"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Computes the derivative of a lambda expression with respect to the specified parameter name.
+The scalar type is inferred from that parameter's CLR type instead of assuming <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a>.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -231,6 +285,60 @@ Class MathExpressionExtensions  <a class="header-action link-secondary" title="V
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a></dt>
+    <dd><p>Thrown when <code class="paramref">paramName</code>'s CLR type does not implement <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.ifloatingpoint-1">IFloatingPoint&lt;TSelf&gt;</a>.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Mathematics_Expressions_MathExpressionExtensions_Derivate_" data-uid="Utils.Mathematics.Expressions.MathExpressionExtensions.Derivate*"></a>
+
+  <h3 id="Utils_Mathematics_Expressions_MathExpressionExtensions_Derivate__1_System_Linq_Expressions_LambdaExpression_System_Linq_Expressions_ParameterExpression_" data-uid="Utils.Mathematics.Expressions.MathExpressionExtensions.Derivate``1(System.Linq.Expressions.LambdaExpression,System.Linq.Expressions.ParameterExpression)">
+  Derivate&lt;T&gt;(LambdaExpression, ParameterExpression)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/MathExpressionExtensions.cs/#L222"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Computes the derivative of a lambda expression with respect to the exact declared parameter instance.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static LambdaExpression Derivate&lt;T&gt;(this LambdaExpression e, ParameterExpression parameter) where T : IFloatingPoint&lt;T&gt;</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>e</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.lambdaexpression">LambdaExpression</a></dt>
+    <dd><p>Lambda expression to differentiate.</p>
+</dd>
+    <dt><code>parameter</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.parameterexpression">ParameterExpression</a></dt>
+    <dd><p>The exact parameter instance used as the differentiation variable.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.lambdaexpression">LambdaExpression</a></dt>
+    <dd><p>A lambda expression representing the derivative.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Floating-point type used by derivative rules.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
 
 
 
@@ -238,7 +346,7 @@ Class MathExpressionExtensions  <a class="header-action link-secondary" title="V
 
   <h3 id="Utils_Mathematics_Expressions_MathExpressionExtensions_Derivate__1_System_Linq_Expressions_LambdaExpression_System_String_" data-uid="Utils.Mathematics.Expressions.MathExpressionExtensions.Derivate``1(System.Linq.Expressions.LambdaExpression,System.String)">
   Derivate&lt;T&gt;(LambdaExpression, string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/MathExpressionExtensions.cs/#L42"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/MathExpressionExtensions.cs/#L185"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Computes the derivative of a lambda expression with respect to the specified parameter name.</p>
@@ -286,11 +394,12 @@ Class MathExpressionExtensions  <a class="header-action link-secondary" title="V
 
   <h3 id="Utils_Mathematics_Expressions_MathExpressionExtensions_Gradient_System_Linq_Expressions_LambdaExpression_" data-uid="Utils.Mathematics.Expressions.MathExpressionExtensions.Gradient(System.Linq.Expressions.LambdaExpression)">
   Gradient(LambdaExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/MathExpressionExtensions.cs/#L57"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/MathExpressionExtensions.cs/#L243"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Computes the gradient of a multi-parameter lambda expression as an array of partial-derivative expressions.
-Each entry i is the partial derivative with respect to the i-th parameter.</p>
+Each entry i is the partial derivative with respect to the i-th parameter. All parameters must share
+the same CLR type, which is inferred instead of assuming <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a>.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -319,6 +428,64 @@ Each entry i is the partial derivative with respect to the i-th parameter.</p>
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a></dt>
+    <dd><p>Thrown when <code class="paramref">e</code>'s parameters do not share a single CLR type, or that type does not
+implement <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.ifloatingpoint-1">IFloatingPoint&lt;TSelf&gt;</a>.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Mathematics_Expressions_MathExpressionExtensions_Gradient_" data-uid="Utils.Mathematics.Expressions.MathExpressionExtensions.Gradient*"></a>
+
+  <h3 id="Utils_Mathematics_Expressions_MathExpressionExtensions_Gradient__1_System_Linq_Expressions_LambdaExpression_System_Collections_Generic_IEnumerable_System_Linq_Expressions_ParameterExpression__" data-uid="Utils.Mathematics.Expressions.MathExpressionExtensions.Gradient``1(System.Linq.Expressions.LambdaExpression,System.Collections.Generic.IEnumerable{System.Linq.Expressions.ParameterExpression})">
+  Gradient&lt;T&gt;(LambdaExpression, params IEnumerable&lt;ParameterExpression&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/MathExpressionExtensions.cs/#L282"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Computes the partial derivatives of a lambda expression with respect to the specified exact
+parameter instances. Unlike the name-based overload, this resolves each differentiation variable
+unambiguously even when multiple targeted parameters share one name — including <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>
+for unnamed parameters (see TODO-pass4 item #47).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static LambdaExpression[] Gradient&lt;T&gt;(this LambdaExpression e, params IEnumerable&lt;ParameterExpression&gt; parameters) where T : IFloatingPoint&lt;T&gt;</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>e</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.lambdaexpression">LambdaExpression</a></dt>
+    <dd><p>Lambda expression to differentiate.</p>
+</dd>
+    <dt><code>parameters</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.parameterexpression">ParameterExpression</a>&gt;</dt>
+    <dd><p>The exact parameter instances to differentiate with respect to.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.lambdaexpression">LambdaExpression</a>[]</dt>
+    <dd><p>Array of lambda expressions representing each partial derivative; shares the same parameter list as <code class="paramref">e</code>.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Floating-point type used by derivative rules.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
 
 
 
@@ -326,7 +493,7 @@ Each entry i is the partial derivative with respect to the i-th parameter.</p>
 
   <h3 id="Utils_Mathematics_Expressions_MathExpressionExtensions_Gradient__1_System_Linq_Expressions_LambdaExpression_System_Collections_Generic_IEnumerable_System_String__" data-uid="Utils.Mathematics.Expressions.MathExpressionExtensions.Gradient``1(System.Linq.Expressions.LambdaExpression,System.Collections.Generic.IEnumerable{System.String})">
   Gradient&lt;T&gt;(LambdaExpression, params IEnumerable&lt;string&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/MathExpressionExtensions.cs/#L70"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/MathExpressionExtensions.cs/#L258"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Computes the partial derivatives of a lambda expression with respect to the specified parameter names.</p>
@@ -374,10 +541,11 @@ Each entry i is the partial derivative with respect to the i-th parameter.</p>
 
   <h3 id="Utils_Mathematics_Expressions_MathExpressionExtensions_Integrate_System_Linq_Expressions_LambdaExpression_" data-uid="Utils.Mathematics.Expressions.MathExpressionExtensions.Integrate(System.Linq.Expressions.LambdaExpression)">
   Integrate(LambdaExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/MathExpressionExtensions.cs/#L89"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/MathExpressionExtensions.cs/#L305"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Computes the integral of a single-parameter lambda expression with respect to its declared parameter.</p>
+  <div class="markdown level1 summary"><p>Computes the integral of a single-parameter lambda expression with respect to its declared parameter.
+The scalar type is inferred from that parameter's CLR type instead of assuming <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a>.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -406,6 +574,112 @@ Each entry i is the partial derivative with respect to the i-th parameter.</p>
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a></dt>
+    <dd><p>Thrown when the declared parameter's CLR type does not implement <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.ifloatingpoint-1">IFloatingPoint&lt;TSelf&gt;</a>.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Mathematics_Expressions_MathExpressionExtensions_Integrate_" data-uid="Utils.Mathematics.Expressions.MathExpressionExtensions.Integrate*"></a>
+
+  <h3 id="Utils_Mathematics_Expressions_MathExpressionExtensions_Integrate_System_Linq_Expressions_LambdaExpression_System_Linq_Expressions_ParameterExpression_" data-uid="Utils.Mathematics.Expressions.MathExpressionExtensions.Integrate(System.Linq.Expressions.LambdaExpression,System.Linq.Expressions.ParameterExpression)">
+  Integrate(LambdaExpression, ParameterExpression)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/MathExpressionExtensions.cs/#L341"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Computes the integral of a lambda expression with respect to the exact declared parameter instance.
+Unlike the name-based overload, this resolves the integration variable unambiguously even when the
+parameter's <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.parameterexpression.name">Name</a> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> or shared with another,
+unrelated parameter (see TODO-pass4 item #47). The scalar type is inferred from
+<code class="paramref">parameter</code>'s own CLR type instead of assuming <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static LambdaExpression Integrate(this LambdaExpression e, ParameterExpression parameter)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>e</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.lambdaexpression">LambdaExpression</a></dt>
+    <dd><p>Lambda expression to integrate.</p>
+</dd>
+    <dt><code>parameter</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.parameterexpression">ParameterExpression</a></dt>
+    <dd><p>The exact parameter instance used as the integration variable.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.lambdaexpression">LambdaExpression</a></dt>
+    <dd><p>A lambda expression representing the integral.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a></dt>
+    <dd><p>Thrown when <code class="paramref">parameter</code>'s CLR type does not implement <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.ifloatingpoint-1">IFloatingPoint&lt;TSelf&gt;</a>.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Mathematics_Expressions_MathExpressionExtensions_Integrate_" data-uid="Utils.Mathematics.Expressions.MathExpressionExtensions.Integrate*"></a>
+
+  <h3 id="Utils_Mathematics_Expressions_MathExpressionExtensions_Integrate__1_System_Linq_Expressions_LambdaExpression_System_Linq_Expressions_ParameterExpression_" data-uid="Utils.Mathematics.Expressions.MathExpressionExtensions.Integrate``1(System.Linq.Expressions.LambdaExpression,System.Linq.Expressions.ParameterExpression)">
+  Integrate&lt;T&gt;(LambdaExpression, ParameterExpression)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/MathExpressionExtensions.cs/#L356"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Computes the integral of a lambda expression with respect to the exact declared parameter instance.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static LambdaExpression Integrate&lt;T&gt;(this LambdaExpression e, ParameterExpression parameter) where T : IFloatingPoint&lt;T&gt;</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>e</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.lambdaexpression">LambdaExpression</a></dt>
+    <dd><p>Lambda expression to integrate.</p>
+</dd>
+    <dt><code>parameter</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.parameterexpression">ParameterExpression</a></dt>
+    <dd><p>The exact parameter instance used as the integration variable.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.lambdaexpression">LambdaExpression</a></dt>
+    <dd><p>A lambda expression representing the integral.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Floating-point type used by integration rules.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
 
 
 
@@ -413,7 +687,7 @@ Each entry i is the partial derivative with respect to the i-th parameter.</p>
 
   <h3 id="Utils_Mathematics_Expressions_MathExpressionExtensions_Integrate__1_System_Linq_Expressions_LambdaExpression_System_String_" data-uid="Utils.Mathematics.Expressions.MathExpressionExtensions.Integrate``1(System.Linq.Expressions.LambdaExpression,System.String)">
   Integrate&lt;T&gt;(LambdaExpression, string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/MathExpressionExtensions.cs/#L103"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/MathExpressionExtensions.cs/#L319"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Computes the integral of a lambda expression with respect to the specified parameter name.</p>
@@ -461,7 +735,7 @@ Each entry i is the partial derivative with respect to the i-th parameter.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/MathExpressionExtensions.cs/#L10" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/MathExpressionExtensions.cs/#L13" class="edit-link">Edit this page</a>
         </div>
 
 

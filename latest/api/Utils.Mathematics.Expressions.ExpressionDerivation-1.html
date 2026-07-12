@@ -270,9 +270,49 @@ Class ExpressionDerivation&lt;T&gt;  <a class="header-action link-secondary" tit
 
   <a id="Utils_Mathematics_Expressions_ExpressionDerivation_1__ctor_" data-uid="Utils.Mathematics.Expressions.ExpressionDerivation`1.#ctor*"></a>
 
+  <h3 id="Utils_Mathematics_Expressions_ExpressionDerivation_1__ctor_System_Linq_Expressions_ParameterExpression_System_Boolean_" data-uid="Utils.Mathematics.Expressions.ExpressionDerivation`1.#ctor(System.Linq.Expressions.ParameterExpression,System.Boolean)">
+  ExpressionDerivation(ParameterExpression, bool)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L118"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Mathematics.Expressions.ExpressionDerivation-1.html">ExpressionDerivation&lt;T&gt;</a> class that differentiates
+with respect to a specific <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.parameterexpression">ParameterExpression</a> instance rather than a name. Unlike
+the name-based constructor, this identifies the differentiation variable unambiguously even when
+<code class="paramref">parameter</code>'s <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.parameterexpression.name">Name</a> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> or
+shared by another, unrelated parameter in the same lambda (see TODO-2026-07-11-pass4.md item #47).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ExpressionDerivation(ParameterExpression parameter, bool allowNumericalFallback = false)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>parameter</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.parameterexpression">ParameterExpression</a></dt>
+    <dd><p>The exact parameter instance to differentiate against.</p>
+</dd>
+    <dt><code>allowNumericalFallback</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p>See <a class="xref" href="Utils.Mathematics.Expressions.ExpressionDerivation-1.html#Utils_Mathematics_Expressions_ExpressionDerivation_1_AllowNumericalFallback">AllowNumericalFallback</a>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Mathematics_Expressions_ExpressionDerivation_1__ctor_" data-uid="Utils.Mathematics.Expressions.ExpressionDerivation`1.#ctor*"></a>
+
   <h3 id="Utils_Mathematics_Expressions_ExpressionDerivation_1__ctor_System_String_System_Boolean_" data-uid="Utils.Mathematics.Expressions.ExpressionDerivation`1.#ctor(System.String,System.Boolean)">
   ExpressionDerivation(string, bool)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L93"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L104"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Mathematics.Expressions.ExpressionDerivation-1.html">ExpressionDerivation&lt;T&gt;</a> class for the specified parameter.</p>
@@ -387,7 +427,7 @@ reasonably smooth near the evaluation point.</p>
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionDerivation_1_Add_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_Expression_" data-uid="Utils.Mathematics.Expressions.ExpressionDerivation`1.Add(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.Expression,System.Linq.Expressions.Expression)">
   Add(BinaryExpression, Expression, Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L297"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L339"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Applies the sum rule to differentiate the addition of two expressions.</p>
@@ -433,7 +473,7 @@ protected Expression Add(BinaryExpression e, Expression left, Expression right)<
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionDerivation_1_Constant_System_Linq_Expressions_ConstantExpression_System_Object_" data-uid="Utils.Mathematics.Expressions.ExpressionDerivation`1.Constant(System.Linq.Expressions.ConstantExpression,System.Object)">
   Constant(ConstantExpression, object)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L176"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L218"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Computes the derivative of a constant expression, which always yields zero.</p>
@@ -476,7 +516,7 @@ protected Expression Constant(ConstantExpression e, object value)</code></pre>
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionDerivation_1_Convert_System_Linq_Expressions_UnaryExpression_System_Linq_Expressions_Expression_" data-uid="Utils.Mathematics.Expressions.ExpressionDerivation`1.Convert(System.Linq.Expressions.UnaryExpression,System.Linq.Expressions.Expression)">
   Convert(UnaryExpression, Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L228"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L270"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Differentiates the wrapped operand and re-applies the conversion's declared result type when the
@@ -521,7 +561,7 @@ protected Expression Convert(UnaryExpression e, Expression operand)</code></pre>
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionDerivation_1_ConvertChecked_System_Linq_Expressions_UnaryExpression_System_Linq_Expressions_Expression_" data-uid="Utils.Mathematics.Expressions.ExpressionDerivation`1.ConvertChecked(System.Linq.Expressions.UnaryExpression,System.Linq.Expressions.Expression)">
   ConvertChecked(UnaryExpression, Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L250"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L292"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Differentiates the wrapped operand through a checked conversion. Checked conversions exist
@@ -574,7 +614,7 @@ non-trivial conversion), since differentiating through it is not well-defined.</
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionDerivation_1_Cos_System_Linq_Expressions_MethodCallExpression_System_Linq_Expressions_Expression_" data-uid="Utils.Mathematics.Expressions.ExpressionDerivation`1.Cos(System.Linq.Expressions.MethodCallExpression,System.Linq.Expressions.Expression)">
   Cos(MethodCallExpression, Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L514"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L556"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Differentiates a cosine call expression by applying the chain rule and negating the sine.</p>
@@ -617,7 +657,7 @@ protected Expression Cos(MethodCallExpression e, Expression operand)</code></pre
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionDerivation_1_Derivate_System_Linq_Expressions_LambdaExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionDerivation`1.Derivate(System.Linq.Expressions.LambdaExpression)">
   Derivate(LambdaExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L124"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L150"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Builds the derivative of the provided lambda expression with respect to the configured parameter.</p>
@@ -664,7 +704,7 @@ resolved by name alone).</p>
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionDerivation_1_Derivate_System_Linq_Expressions_LambdaExpression_System_Boolean__" data-uid="Utils.Mathematics.Expressions.ExpressionDerivation`1.Derivate(System.Linq.Expressions.LambdaExpression,System.Boolean@)">
   Derivate(LambdaExpression, out bool)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L144"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L172"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Builds the derivative of the provided lambda expression with respect to the configured parameter,
@@ -707,9 +747,11 @@ finite-difference approximation (only possible when <a class="xref" href="Utils.
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a></dt>
-    <dd><p>Thrown when no parameter named <a class="xref" href="Utils.Mathematics.Expressions.ExpressionDerivation-1.html#Utils_Mathematics_Expressions_ExpressionDerivation_1_ParameterName">ParameterName</a> is found in <code class="paramref">e</code>, or
-when more than one distinct parameter shares that name (an ambiguous match that cannot be
-resolved by name alone).</p>
+    <dd><p>Thrown when this instance was constructed with a parameter name and no parameter named
+<a class="xref" href="Utils.Mathematics.Expressions.ExpressionDerivation-1.html#Utils_Mathematics_Expressions_ExpressionDerivation_1_ParameterName">ParameterName</a> is found in <code class="paramref">e</code>, or more than one distinct parameter
+shares that name (an ambiguous match that cannot be resolved by name alone). When this instance was
+instead constructed with an exact <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.parameterexpression">ParameterExpression</a> instance, thrown when that
+instance is not one of <code class="paramref">e</code>'s declared parameters.</p>
 </dd>
   </dl>
 
@@ -719,7 +761,7 @@ resolved by name alone).</p>
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionDerivation_1_Divide_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_Expression_" data-uid="Utils.Mathematics.Expressions.ExpressionDerivation`1.Divide(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.Expression,System.Linq.Expressions.Expression)">
   Divide(BinaryExpression, Expression, Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L357"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L399"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Applies the quotient rule to differentiate the division of two expressions.</p>
@@ -765,7 +807,7 @@ protected Expression Divide(BinaryExpression e, Expression left, Expression righ
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionDerivation_1_Exp_System_Linq_Expressions_MethodCallExpression_System_Linq_Expressions_Expression_" data-uid="Utils.Mathematics.Expressions.ExpressionDerivation`1.Exp(System.Linq.Expressions.MethodCallExpression,System.Linq.Expressions.Expression)">
   Exp(MethodCallExpression, Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L443"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L485"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Differentiates an exponential call expression by applying the chain rule.</p>
@@ -808,7 +850,7 @@ protected Expression Exp(MethodCallExpression e, Expression operand)</code></pre
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionDerivation_1_FinalizeExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_Expression___" data-uid="Utils.Mathematics.Expressions.ExpressionDerivation`1.FinalizeExpression(System.Linq.Expressions.Expression,System.Linq.Expressions.Expression[])">
   FinalizeExpression(Expression, Expression[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L555"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L597"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Handles method-call derivatives that are not covered by specific derivative rules.
@@ -852,7 +894,7 @@ approximation and multiplies by the inner derivative.</p>
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionDerivation_1_Log10_System_Linq_Expressions_MethodCallExpression_System_Linq_Expressions_Expression_" data-uid="Utils.Mathematics.Expressions.ExpressionDerivation`1.Log10(System.Linq.Expressions.MethodCallExpression,System.Linq.Expressions.Expression)">
   Log10(MethodCallExpression, Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L478"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L520"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Differentiates a base-10 logarithm call expression.</p>
@@ -895,7 +937,7 @@ protected Expression Log10(MethodCallExpression e, Expression operand)</code></p
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionDerivation_1_LogMath_System_Linq_Expressions_MethodCallExpression_System_Linq_Expressions_Expression_" data-uid="Utils.Mathematics.Expressions.ExpressionDerivation`1.LogMath(System.Linq.Expressions.MethodCallExpression,System.Linq.Expressions.Expression)">
   LogMath(MethodCallExpression, Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L461"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L503"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Differentiates a natural logarithm call expression.</p>
@@ -938,7 +980,7 @@ protected Expression LogMath(MethodCallExpression e, Expression operand)</code><
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionDerivation_1_Multiply_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_Expression_" data-uid="Utils.Mathematics.Expressions.ExpressionDerivation`1.Multiply(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.Expression,System.Linq.Expressions.Expression)">
   Multiply(BinaryExpression, Expression, Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L337"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L379"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Applies the product rule to differentiate the multiplication of two expressions.</p>
@@ -984,7 +1026,7 @@ protected Expression Multiply(BinaryExpression e, Expression left, Expression ri
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionDerivation_1_Negate_System_Linq_Expressions_UnaryExpression_System_Linq_Expressions_Expression_" data-uid="Utils.Mathematics.Expressions.ExpressionDerivation`1.Negate(System.Linq.Expressions.UnaryExpression,System.Linq.Expressions.Expression)">
   Negate(UnaryExpression, Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L211"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L253"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Applies the derivative to a negated expression following the chain rule.</p>
@@ -1027,7 +1069,7 @@ protected Expression Negate(UnaryExpression e, Expression operand)</code></pre>
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionDerivation_1_Parameter_System_Linq_Expressions_ParameterExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionDerivation`1.Parameter(System.Linq.Expressions.ParameterExpression)">
   Parameter(ParameterExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L190"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L232"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Computes the derivative of a parameter expression by comparing it to the differentiation variable.</p>
@@ -1067,7 +1109,7 @@ protected Expression Parameter(ParameterExpression e)</code></pre>
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionDerivation_1_Power_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_ConstantExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionDerivation`1.Power(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.Expression,System.Linq.Expressions.ConstantExpression)">
   Power(BinaryExpression, Expression, ConstantExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L379"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L421"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Differentiates a power expression with a constant exponent using the standard power rule.</p>
@@ -1113,7 +1155,7 @@ protected Expression Power(BinaryExpression e, Expression left, ConstantExpressi
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionDerivation_1_Power_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_Expression_" data-uid="Utils.Mathematics.Expressions.ExpressionDerivation`1.Power(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.Expression,System.Linq.Expressions.Expression)">
   Power(BinaryExpression, Expression, Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L411"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L453"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Differentiates a power expression that has an expression exponent by applying logarithmic differentiation.</p>
@@ -1169,7 +1211,7 @@ derivative — it would just produce a different, unrelated formula.</p>
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionDerivation_1_Sin_System_Linq_Expressions_MethodCallExpression_System_Linq_Expressions_Expression_" data-uid="Utils.Mathematics.Expressions.ExpressionDerivation`1.Sin(System.Linq.Expressions.MethodCallExpression,System.Linq.Expressions.Expression)">
   Sin(MethodCallExpression, Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L498"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L540"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Differentiates a sine call expression by applying the chain rule.</p>
@@ -1212,7 +1254,7 @@ protected Expression Sin(MethodCallExpression e, Expression operand)</code></pre
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionDerivation_1_Subtract_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_Expression_" data-uid="Utils.Mathematics.Expressions.ExpressionDerivation`1.Subtract(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.Expression,System.Linq.Expressions.Expression)">
   Subtract(BinaryExpression, Expression, Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L317"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L359"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Applies the difference rule to differentiate the subtraction of two expressions.</p>
@@ -1258,7 +1300,7 @@ protected Expression Subtract(BinaryExpression e, Expression left, Expression ri
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionDerivation_1_Tan_System_Linq_Expressions_MethodCallExpression_System_Linq_Expressions_Expression_" data-uid="Utils.Mathematics.Expressions.ExpressionDerivation`1.Tan(System.Linq.Expressions.MethodCallExpression,System.Linq.Expressions.Expression)">
   Tan(MethodCallExpression, Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L531"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionDerivation.cs/#L573"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Differentiates a tangent call expression using the identity d/dx tan(f) = f'(x) / cos²(f(x)).</p>

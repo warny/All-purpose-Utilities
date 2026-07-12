@@ -681,7 +681,7 @@ of each component to that scale keeps every intermediate value within a represen
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Vector_1_ComputeBarycenter__1_System_Func___0__0__System_Func___0_Utils_Mathematics_LinearAlgebra_Vector__0___System_Collections_Generic_IEnumerable___0__" data-uid="Utils.Mathematics.LinearAlgebra.Vector`1.ComputeBarycenter``1(System.Func{``0,`0},System.Func{``0,Utils.Mathematics.LinearAlgebra.Vector{`0}},System.Collections.Generic.IEnumerable{``0})">
   ComputeBarycenter&lt;TW&gt;(Func&lt;TW, T&gt;, Func&lt;TW, Vector&lt;T&gt;&gt;, IEnumerable&lt;TW&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.Operators.cs/#L70"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.Operators.cs/#L82"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Computes the barycenter of the provided weighted points using selector functions.</p>
@@ -725,6 +725,21 @@ of each component to that scale keeps every intermediate value within a represen
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">getWeight</code>, <code class="paramref">getVector</code>, or
+<code class="paramref">weightedPoints</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when <code class="paramref">weightedPoints</code> is empty, when <code class="paramref">getVector</code> selects a
+<a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> vector for some element, when selected vectors do not all share the same
+dimension, when a weight is not finite (<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double.nan">NaN</a> or infinite), or when the total
+weight is exactly zero — the latter two make the normalizing division undefined. A total weight
+that is merely small (e.g. through near-cancelling positive/negative weights) is still divided by
+as ordinary IEEE arithmetic; only the exactly-undefined cases are rejected here.</p>
+</dd>
+  </dl>
 
 
 
@@ -1376,7 +1391,7 @@ also re-filtered the remaining-columns sequence at every recursion level.</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Vector_1_op_Addition_Utils_Mathematics_LinearAlgebra_Vector__0__Utils_Mathematics_LinearAlgebra_Vector__0__" data-uid="Utils.Mathematics.LinearAlgebra.Vector`1.op_Addition(Utils.Mathematics.LinearAlgebra.Vector{`0},Utils.Mathematics.LinearAlgebra.Vector{`0})">
   operator +(Vector&lt;T&gt;, Vector&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.Operators.cs/#L115"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.Operators.cs/#L140"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Adds two vectors component-wise.</p>
@@ -1424,7 +1439,7 @@ also re-filtered the remaining-columns sequence at every recursion level.</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Vector_1_op_Division_Utils_Mathematics_LinearAlgebra_Vector__0___0_" data-uid="Utils.Mathematics.LinearAlgebra.Vector`1.op_Division(Utils.Mathematics.LinearAlgebra.Vector{`0},`0)">
   operator /(Vector&lt;T&gt;, T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.Operators.cs/#L201"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.Operators.cs/#L226"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Divides a vector by a scalar.</p>
@@ -1466,7 +1481,7 @@ also re-filtered the remaining-columns sequence at every recursion level.</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Vector_1_op_Equality_Utils_Mathematics_LinearAlgebra_Vector__0__Utils_Mathematics_LinearAlgebra_Vector__0__" data-uid="Utils.Mathematics.LinearAlgebra.Vector`1.op_Equality(Utils.Mathematics.LinearAlgebra.Vector{`0},Utils.Mathematics.LinearAlgebra.Vector{`0})">
   operator ==(Vector&lt;T&gt;?, Vector&lt;T&gt;?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.Operators.cs/#L218"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.Operators.cs/#L243"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Checks if two vectors are equal.</p>
@@ -1508,7 +1523,7 @@ also re-filtered the remaining-columns sequence at every recursion level.</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Vector_1_op_Inequality_Utils_Mathematics_LinearAlgebra_Vector__0__Utils_Mathematics_LinearAlgebra_Vector__0__" data-uid="Utils.Mathematics.LinearAlgebra.Vector`1.op_Inequality(Utils.Mathematics.LinearAlgebra.Vector{`0},Utils.Mathematics.LinearAlgebra.Vector{`0})">
   operator !=(Vector&lt;T&gt;?, Vector&lt;T&gt;?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.Operators.cs/#L227"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.Operators.cs/#L252"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Checks if two vectors are not equal.</p>
@@ -1550,7 +1565,7 @@ also re-filtered the remaining-columns sequence at every recursion level.</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Vector_1_op_Multiply_Utils_Mathematics_LinearAlgebra_Vector__0__Utils_Mathematics_LinearAlgebra_Vector__0__" data-uid="Utils.Mathematics.LinearAlgebra.Vector`1.op_Multiply(Utils.Mathematics.LinearAlgebra.Vector{`0},Utils.Mathematics.LinearAlgebra.Vector{`0})">
   operator *(Vector&lt;T&gt;, Vector&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.Operators.cs/#L237"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.Operators.cs/#L262"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Calculates the dot product of two vectors.</p>
@@ -1598,7 +1613,7 @@ also re-filtered the remaining-columns sequence at every recursion level.</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Vector_1_op_Multiply_Utils_Mathematics_LinearAlgebra_Vector__0___0_" data-uid="Utils.Mathematics.LinearAlgebra.Vector`1.op_Multiply(Utils.Mathematics.LinearAlgebra.Vector{`0},`0)">
   operator *(Vector&lt;T&gt;, T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.Operators.cs/#L190"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.Operators.cs/#L215"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Multiplies a vector by a scalar.</p>
@@ -1640,7 +1655,7 @@ also re-filtered the remaining-columns sequence at every recursion level.</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Vector_1_op_Multiply__0_Utils_Mathematics_LinearAlgebra_Vector__0__" data-uid="Utils.Mathematics.LinearAlgebra.Vector`1.op_Multiply(`0,Utils.Mathematics.LinearAlgebra.Vector{`0})">
   operator *(T, Vector&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.Operators.cs/#L173"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.Operators.cs/#L198"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Multiplies a vector by a scalar.</p>
@@ -1682,7 +1697,7 @@ also re-filtered the remaining-columns sequence at every recursion level.</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Vector_1_op_Subtraction_Utils_Mathematics_LinearAlgebra_Vector__0__Utils_Mathematics_LinearAlgebra_Vector__0__" data-uid="Utils.Mathematics.LinearAlgebra.Vector`1.op_Subtraction(Utils.Mathematics.LinearAlgebra.Vector{`0},Utils.Mathematics.LinearAlgebra.Vector{`0})">
   operator -(Vector&lt;T&gt;, Vector&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.Operators.cs/#L137"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.Operators.cs/#L162"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Subtracts one vector from another component-wise.</p>
@@ -1730,7 +1745,7 @@ also re-filtered the remaining-columns sequence at every recursion level.</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Vector_1_op_UnaryNegation_Utils_Mathematics_LinearAlgebra_Vector__0__" data-uid="Utils.Mathematics.LinearAlgebra.Vector`1.op_UnaryNegation(Utils.Mathematics.LinearAlgebra.Vector{`0})">
   operator -(Vector&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.Operators.cs/#L157"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.Operators.cs/#L182"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Negates all components of the vector.</p>
@@ -1769,7 +1784,7 @@ also re-filtered the remaining-columns sequence at every recursion level.</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Vector_1_op_UnaryPlus_Utils_Mathematics_LinearAlgebra_Vector__0__" data-uid="Utils.Mathematics.LinearAlgebra.Vector`1.op_UnaryPlus(Utils.Mathematics.LinearAlgebra.Vector{`0})">
   operator +(Vector&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.Operators.cs/#L256"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.Operators.cs/#L281"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns a copy of the vector (unary plus).</p>
