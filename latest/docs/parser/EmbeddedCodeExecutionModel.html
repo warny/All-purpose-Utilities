@@ -633,6 +633,8 @@ var directPolicy = new ParserRuntimeFeaturePolicy
 </ul>
 <p>The following remain unsupported and must produce deterministic transformer diagnostics rather than new runtime syntax: <code>$child.value</code>, <code>$rule.value</code>, <code>$ctx</code>, <code>$c.ctx</code>, <code>$xs.ctx</code>, bare <code>$c</code> / <code>$xs</code> label objects, writes to <code>$c.value</code> or <code>$xs.value</code>, label-return reads in <code>@init</code>, label-return reads in semantic predicates, token attributes such as <code>$t.text</code>, lexer attributes, typed parser contexts, public ANTLR-style parser rule methods, and general ANTLR attribute compatibility.</p>
 <p>These forms are optional <code>IParserEmbeddedCodeTransformer</code> rewrites for generated C# only. The default/no-op transformer leaves <code>$...</code> text unchanged, conservative <code>Parse(...)</code> remains unchanged, and <code>ParserEngine</code> remains target-language-neutral. Parser-managed return and label state follows the existing rollback semantics; no rollback of external side effects is implied.</p>
+<h2 id="generated-c-injection-boundary">Generated C# injection boundary</h2>
+<p>Generated C# injection is centralized in <code>CSharpEmbeddedCodeInjector</code> after transformation. The injector is intentionally a writer only: it normalizes line endings, applies generated-source indentation, emits known markers, and writes <code>TransformedEmbeddedCode</code> into named-action regions or hook bodies without calling transformers, compiling C#, or changing parser rollback semantics.</p>
 
 </article>
 
