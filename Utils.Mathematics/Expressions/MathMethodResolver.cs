@@ -20,6 +20,7 @@ namespace Utils.Mathematics.Expressions;
 internal static class MathMethodResolver
 {
     private static readonly System.Collections.Concurrent.ConcurrentDictionary<(Type Type, string Name), MethodInfo?> cache = new();
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<(Type Type, string Name), MethodInfo?> binaryCache = new();
 
     /// <summary>
     /// Resolves the single-argument static method named <paramref name="methodName"/> on
@@ -36,6 +37,29 @@ internal static class MathMethodResolver
     public static MethodInfo Resolve<T>(string methodName) where T : IFloatingPoint<T>
     {
         MethodInfo? method = cache.GetOrAdd((typeof(T), methodName), key => key.Type.GetMethod(key.Name, [key.Type]));
+        return method ?? throw new NotSupportedException(
+            $"The '{methodName}' operation is not supported for type '{typeof(T)}'.");
+    }
+
+    /// <summary>
+    /// Resolves the two-argument static method named <paramref name="methodName"/> on
+    /// <typeparamref name="T"/> (matching the shape of <c>static T Method(T x, T y)</c>, as declared by
+    /// <see cref="double.Pow(double, double)"/>). Unlike <see cref="System.Linq.Expressions.Expression.Power(System.Linq.Expressions.Expression, System.Linq.Expressions.Expression)"/>,
+    /// which only works when both operands are literally <see cref="double"/>, this resolves a
+    /// type-appropriate method (e.g. <see cref="float.Pow(float, float)"/>) so the resulting call works
+    /// for any <typeparamref name="T"/> that declares it. Results (including failures) are cached per
+    /// <c>(T, methodName)</c> pair.
+    /// </summary>
+    /// <typeparam name="T">Scalar type the expression tree is being built for.</typeparam>
+    /// <param name="methodName">Name of the method, e.g. <c>nameof(double.Pow)</c>.</param>
+    /// <returns>The resolved <see cref="MethodInfo"/>.</returns>
+    /// <exception cref="NotSupportedException">
+    /// Thrown when <typeparamref name="T"/> does not declare a matching two-argument
+    /// <paramref name="methodName"/> method.
+    /// </exception>
+    public static MethodInfo ResolveBinary<T>(string methodName) where T : IFloatingPoint<T>
+    {
+        MethodInfo? method = binaryCache.GetOrAdd((typeof(T), methodName), key => key.Type.GetMethod(key.Name, [key.Type, key.Type]));
         return method ?? throw new NotSupportedException(
             $"The '{methodName}' operation is not supported for type '{typeof(T)}'.");
     }

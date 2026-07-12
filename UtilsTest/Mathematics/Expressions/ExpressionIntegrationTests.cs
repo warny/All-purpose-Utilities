@@ -378,4 +378,72 @@ public class ExpressionIntegrationTests
         Assert.IsInstanceOfType(invocationException.InnerException, typeof(NotSupportedException));
     }
 
+    // ── Generic-T constants in Power-rule integration (item 34) ───────────────
+
+    /// <summary>
+    /// Integrating the bare target parameter (∫x dx = x²/2) previously built
+    /// <c>Expression.Power(e, ...)</c> directly; that overload only ever works when the operand is
+    /// literally <see cref="double"/>, so it threw for any other scalar type even though the exponent
+    /// constant itself was already correctly typed. It now resolves a type-appropriate <c>Pow</c> method
+    /// through <see cref="MathMethodResolver"/> instead, so this works for <see cref="float"/> too.
+    /// </summary>
+    [TestMethod]
+    public void Integrate_TargetParameter_WorksForFloat()
+    {
+        ExpressionIntegration<float> floatIntegration = new("x");
+        var x = Expression.Parameter(typeof(float), "x");
+        var f = Expression.Lambda<Func<float, float>>(x, x);
+
+        var result = (Expression<Func<float, float>>)floatIntegration.Integrate(f);
+        var integral = result.Compile();
+
+        foreach (float xv in new[] { -2f, -0.5f, 0f, 1.25f, 3f })
+            Assert.AreEqual(xv * xv / 2f, integral(xv), 1e-3f, $"∫x dx (float) at x={xv}");
+    }
+
+    /// <summary>
+    /// ∫c/x² dx = -c/x for a non-<see cref="double"/> scalar type. The shifted exponent (<c>1-n</c>)
+    /// must be a <typeparamref name="float"/>-typed constant shared between the numerator's power call
+    /// and the denominator, rather than a raw <see cref="double"/> constant combined with
+    /// <typeparamref name="float"/>-typed expressions (which fails to construct).
+    /// </summary>
+    [TestMethod]
+    public void Integrate_ConstantDividedByPower_WorksForFloat()
+    {
+        ExpressionIntegration<float> floatIntegration = new("x");
+        var x = Expression.Parameter(typeof(float), "x");
+        var powMethod = typeof(float).GetMethod(nameof(float.Pow), [typeof(float), typeof(float)]);
+        var body = Expression.Divide(
+            Expression.Constant(3f),
+            Expression.Power(x, Expression.Constant(2f), powMethod));
+        var f = Expression.Lambda<Func<float, float>>(body, x);
+
+        var result = (Expression<Func<float, float>>)floatIntegration.Integrate(f);
+        var integral = result.Compile();
+
+        foreach (float xv in new[] { -2f, -1f, 0.5f, 2f })
+            Assert.AreEqual(-3f / xv, integral(xv), 0.05f, $"∫3/x² dx (float) at x={xv}");
+    }
+
+    /// <summary>
+    /// ∫c/√x dx = 2c·√x for a non-<see cref="double"/> scalar type. The doubled-constant factor must be
+    /// <typeparamref name="float"/>-typed rather than a raw <see cref="double"/> constant multiplied
+    /// against the <typeparamref name="float"/>-typed <c>Sqrt</c> call result.
+    /// </summary>
+    [TestMethod]
+    public void Integrate_ConstantDividedBySqrt_WorksForFloat()
+    {
+        ExpressionIntegration<float> floatIntegration = new("x");
+        var x = Expression.Parameter(typeof(float), "x");
+        var sqrtMethod = typeof(float).GetMethod(nameof(float.Sqrt), [typeof(float)]);
+        var body = Expression.Divide(Expression.Constant(3f), Expression.Call(sqrtMethod, x));
+        var f = Expression.Lambda<Func<float, float>>(body, x);
+
+        var result = (Expression<Func<float, float>>)floatIntegration.Integrate(f);
+        var integral = result.Compile();
+
+        foreach (float xv in new[] { 0.5f, 1f, 2f, 4f })
+            Assert.AreEqual(6f * MathF.Sqrt(xv), integral(xv), 0.05f, $"∫3/√x dx (float) at x={xv}");
+    }
+
 }

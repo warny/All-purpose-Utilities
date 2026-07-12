@@ -35,6 +35,16 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
     private bool IsTargetParameter(ParameterExpression candidate) => ReferenceEquals(candidate, parameter);
 
     /// <summary>
+    /// Creates a <typeparamref name="T"/>-typed constant from a <see cref="double"/> value computed
+    /// during rule evaluation (e.g. an exponent shifted by one). Rules must use this instead of
+    /// <c>Expression.Constant(value)</c> (which creates a raw <see cref="double"/> constant regardless
+    /// of <typeparamref name="T"/>), since combining a <see cref="double"/> constant with a
+    /// <typeparamref name="T"/>-typed expression fails to construct for any <typeparamref name="T"/>
+    /// other than <see cref="double"/> itself.
+    /// </summary>
+    private static ConstantExpression NumericConstant(double value) => ExpressionEx.CreateConstant(T.CreateChecked(value));
+
+    /// <summary>
     /// Integrates a lambda expression with respect to the configured parameter.
     /// </summary>
     /// <param name="e">The lambda expression to integrate.</param>
@@ -202,9 +212,10 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
     {
         if (IsTargetParameter(e))
         {
+            ConstantExpression two = ExpressionEx.CreateConstant(T.CreateChecked(2d));
             return Expression.Divide(
-                Expression.Power(e, ExpressionEx.CreateConstant(T.CreateChecked(2d))),
-                ExpressionEx.CreateConstant(T.CreateChecked(2d))
+                Expression.Call(MathMethodResolver.ResolveBinary<T>(nameof(double.Pow)), e, two),
+                two
             );
         }
         else
@@ -346,7 +357,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         if (left.NodeType != ExpressionType.Convert && left.NodeType != ExpressionType.ConvertChecked) return null;
         if (left.Operand is not ConstantExpression constant || !NumberUtils.IsNumeric(constant.Value)) return null;
 
-        ConstantExpression numericLeft = Expression.Constant(System.Convert.ToDouble(constant.Value));
+        ConstantExpression numericLeft = NumericConstant(System.Convert.ToDouble(constant.Value));
         return Expression.Multiply(
             numericLeft,
             Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Log)), right)
@@ -394,9 +405,10 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         }
 
         double newExpo = 1.0 - n;
+        ConstantExpression newExpoConstant = NumericConstant(newExpo);
         return Expression.Divide(
-            Expression.Multiply(left, Expression.Power(p, Expression.Constant(newExpo))),
-            Expression.Constant(newExpo)
+            Expression.Multiply(left, Expression.Call(MathMethodResolver.ResolveBinary<T>(nameof(double.Pow)), p, newExpoConstant)),
+            newExpoConstant
         );
     }
 
@@ -416,7 +428,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
     {
         if (left.NodeType != ExpressionType.Convert && left.NodeType != ExpressionType.ConvertChecked) return null;
         if (left.Operand is not ConstantExpression constant || !NumberUtils.IsNumeric(constant.Value)) return null;
-        ConstantExpression numericLeft = Expression.Constant(System.Convert.ToDouble(constant.Value));
+        ConstantExpression numericLeft = NumericConstant(System.Convert.ToDouble(constant.Value));
         return Divide(e, numericLeft, right);
     }
 
@@ -441,7 +453,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         {
             double factor = 2.0 * System.Convert.ToDouble(left.Value);
             return Expression.Multiply(
-                Expression.Constant(factor),
+                NumericConstant(factor),
                 Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Sqrt)), pSqrt)
             );
         }
@@ -473,9 +485,10 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
             }
 
             double newExpo = 1.0 - n;
+            ConstantExpression newExpoConstant = NumericConstant(newExpo);
             return Expression.Divide(
-                Expression.Multiply(left, Expression.Power(pPow, Expression.Constant(newExpo))),
-                Expression.Constant(newExpo)
+                Expression.Multiply(left, Expression.Call(MathMethodResolver.ResolveBinary<T>(nameof(double.Pow)), pPow, newExpoConstant)),
+                newExpoConstant
             );
         }
 
@@ -498,7 +511,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
     {
         if (left.NodeType != ExpressionType.Convert && left.NodeType != ExpressionType.ConvertChecked) return null;
         if (left.Operand is not ConstantExpression constant || !NumberUtils.IsNumeric(constant.Value)) return null;
-        ConstantExpression numericLeft = Expression.Constant(System.Convert.ToDouble(constant.Value));
+        ConstantExpression numericLeft = NumericConstant(System.Convert.ToDouble(constant.Value));
         return Divide(e, numericLeft, right);
     }
 
@@ -565,9 +578,10 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         {
             return Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Log)), p);
         }
+        ConstantExpression shiftedExpo = NumericConstant(n + 1.0);
         return Expression.Divide(
-            Expression.Power(p, Expression.Constant(n + 1.0)),
-            Expression.Constant(n + 1.0)
+            Expression.Call(MathMethodResolver.ResolveBinary<T>(nameof(double.Pow)), p, shiftedExpo),
+            shiftedExpo
         );
     }
 
@@ -595,7 +609,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
             return null;
         }
 
-        return Power(e, p, Expression.Constant(System.Convert.ToDouble(constantExpo.Value)));
+        return Power(e, p, NumericConstant(System.Convert.ToDouble(constantExpo.Value)));
     }
 
     /// <summary>
@@ -616,9 +630,10 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         double n = System.Convert.ToDouble(expo.Value);
         if (double.Abs(n + 1.0) < 1e-10)
             return Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Log)), p);
+        ConstantExpression shiftedExpo = NumericConstant(n + 1.0);
         return Expression.Divide(
-            Expression.Power(p, Expression.Constant(n + 1.0)),
-            Expression.Constant(n + 1.0)
+            Expression.Call(MathMethodResolver.ResolveBinary<T>(nameof(double.Pow)), p, shiftedExpo),
+            shiftedExpo
         );
     }
 
@@ -640,7 +655,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
             return null;
         if (expo.Operand is not ConstantExpression constantExpo || !NumberUtils.IsNumeric(constantExpo.Value))
             return null;
-        return PowerMathCall(e, p, Expression.Constant(System.Convert.ToDouble(constantExpo.Value)));
+        return PowerMathCall(e, p, NumericConstant(System.Convert.ToDouble(constantExpo.Value)));
     }
 
     /// <summary>
