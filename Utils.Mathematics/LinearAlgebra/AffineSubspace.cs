@@ -423,11 +423,29 @@ public sealed class AffineSubspace<T> : IEquatable<AffineSubspace<T>>, ICloneabl
     /// <summary>
     /// Returns a string describing the anchor point and the subspace dimensions.
     /// </summary>
-    /// <param name="format">Unused; reserved for future format specifiers.</param>
-    /// <param name="formatProvider">Unused; reserved for future format providers.</param>
+    /// <param name="format">
+    /// Numeric format string forwarded to each coordinate's own <see cref="IFormattable.ToString(string?, IFormatProvider?)"/>
+    /// (e.g. <c>"F2"</c>), or <see langword="null"/> for the default numeric format. Propagated the same
+    /// way as <see cref="Line{T}.ToString(string?, IFormatProvider?)"/>, since <see cref="Vector{T}"/>
+    /// itself does not implement <see cref="IFormattable"/> (see TODO-2026-07-11-pass4.md item #52 - this
+    /// type previously ignored both parameters entirely).
+    /// </param>
+    /// <param name="formatProvider">Format provider forwarded to each coordinate.</param>
     /// <returns>A human-readable description of this subspace.</returns>
     public string ToString(string? format, IFormatProvider? formatProvider)
-        => $"Anchor: {Anchor}, Dimension: {Dimension}/{AmbientDimension}";
+        => $"Anchor: {FormatVector(Anchor, format, formatProvider)}, Dimension: {Dimension}/{AmbientDimension}";
+
+    /// <summary>
+    /// Formats a vector's components individually with <paramref name="format"/>/<paramref name="formatProvider"/>,
+    /// since <see cref="Vector{T}"/> itself does not implement <see cref="IFormattable"/>.
+    /// </summary>
+    private static string FormatVector(Vector<T> vector, string? format, IFormatProvider? formatProvider)
+    {
+        string[] parts = new string[vector.Dimension];
+        for (int i = 0; i < vector.Dimension; i++)
+            parts[i] = vector[i].ToString(format, formatProvider);
+        return "(" + string.Join(", ", parts) + ")";
+    }
 
     // -------------------------------------------------------------------------
     // Private helpers

@@ -534,4 +534,30 @@ public class AffineSubspaceTests
     public void FromNormals_NegativeRankTolerance_Throws()
         => Assert.ThrowsException<ArgumentOutOfRangeException>(
             () => AffineSubspace<double>.FromNormals(V(0, 0, 0), -1e-9, V(0, 0, 1)));
+
+    // -------------------------------------------------------------------------
+    // ToString format/provider propagation (TODO-pass4 item #52)
+    // -------------------------------------------------------------------------
+
+    [TestMethod]
+    public void ToString_WithFormat_AppliesFormatToAnchorCoordinates()
+    {
+        var s = AffineSubspace<double>.FromNormals(V(1.23456, 2.5, 0), V(0, 0, 1));
+
+        string formatted = s.ToString("F2", System.Globalization.CultureInfo.InvariantCulture);
+
+        StringAssert.Contains(formatted, "1.23");
+        StringAssert.Contains(formatted, "2.50");
+    }
+
+    [TestMethod]
+    public void ToString_WithCulture_UsesCultureSpecificDecimalSeparator()
+    {
+        var s = AffineSubspace<double>.FromNormals(V(1.5, 0, 0), V(0, 0, 1));
+        var culture = new System.Globalization.CultureInfo("fr-FR");
+
+        string formatted = s.ToString("F1", culture);
+
+        StringAssert.Contains(formatted, "1,5");
+    }
 }
