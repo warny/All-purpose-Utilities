@@ -12,21 +12,22 @@ public static class MatrixTransformations
     /// Creates an identity matrix of the specified dimension.
     /// </summary>
     /// <typeparam name="T">Numeric type of the matrix.</typeparam>
-    /// <param name="dimension">Matrix dimension.</param>
+    /// <param name="dimension">Matrix dimension. Must be positive.</param>
     /// <returns>New identity matrix.</returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="dimension"/> is not positive.</exception>
+    /// <remarks>
+    /// Delegates to <see cref="Matrix{T}.Identity(int)"/>, which is the single implementation of
+    /// identity-matrix construction: an earlier, independent implementation here performed no
+    /// validation at all, so a zero dimension silently built a 0×0 matrix and a negative dimension
+    /// failed through raw array allocation instead of a clean, documented exception — disagreeing
+    /// with <see cref="Matrix{T}.Identity(int)"/>'s domain and exception behavior for the same
+    /// operation (see TODO-2026-07-11-pass5.md item #62). Two independently maintained factories for
+    /// the same construction had already drifted once for <see cref="Diagonal{T}(IEnumerable{T})"/>;
+    /// keeping one implementation avoids a repeat.
+    /// </remarks>
     public static Matrix<T> Identity<T>(int dimension)
         where T : struct, IFloatingPoint<T>, IRootFunctions<T>
-    {
-        var array = new T[dimension, dimension];
-        for (int i = 0; i < dimension; i++)
-        {
-            for (int j = 0; j < dimension; j++)
-            {
-                array[i, j] = i == j ? T.One : T.Zero;
-            }
-        }
-        return new Matrix<T>(array, true, true, true, T.One);
-    }
+        => Matrix<T>.Identity(dimension);
 
     /// <summary>
     /// Creates a diagonal matrix from the provided values.

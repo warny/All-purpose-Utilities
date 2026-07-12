@@ -29,6 +29,40 @@ public class MatrixTransformationsTests
         Assert.AreEqual(1d, m.Determinant, Delta);
     }
 
+    /// <summary>
+    /// Before TODO-pass5.md item #62 was fixed, <see cref="MatrixTransformations.Identity{T}"/> performed
+    /// no dimension validation at all, disagreeing with <see cref="Matrix{T}.Identity(int)"/> (which
+    /// rejects <c>size &lt;= 0</c>): a zero dimension silently built a 0×0 matrix instead of throwing.
+    /// </summary>
+    [TestMethod]
+    public void Identity_ZeroDimension_ThrowsLikeMatrixIdentity()
+        => Assert.ThrowsException<ArgumentException>(() => MatrixTransformations.Identity<double>(0));
+
+    /// <summary>
+    /// Same as <see cref="Identity_ZeroDimension_ThrowsLikeMatrixIdentity"/>, for a negative dimension:
+    /// previously this failed through raw array allocation (an undocumented, unrelated exception) rather
+    /// than the same validated <see cref="ArgumentException"/> as <see cref="Matrix{T}.Identity(int)"/>.
+    /// </summary>
+    [TestMethod]
+    public void Identity_NegativeDimension_ThrowsLikeMatrixIdentity()
+        => Assert.ThrowsException<ArgumentException>(() => MatrixTransformations.Identity<double>(-1));
+
+    [TestMethod]
+    public void Identity_MatchesMatrixIdentityFactory()
+    {
+        var viaTransformations = MatrixTransformations.Identity<double>(3);
+        var viaMatrix = Matrix<double>.Identity(3);
+
+        for (int i = 0; i < 3; i++)
+            for (int j = 0; j < 3; j++)
+                Assert.AreEqual(viaMatrix[i, j], viaTransformations[i, j], Delta, $"[{i},{j}]");
+
+        Assert.AreEqual(viaMatrix.IsDiagonal, viaTransformations.IsDiagonal);
+        Assert.AreEqual(viaMatrix.IsTriangular, viaTransformations.IsTriangular);
+        Assert.AreEqual(viaMatrix.IsIdentity, viaTransformations.IsIdentity);
+        Assert.AreEqual(viaMatrix.Determinant, viaTransformations.Determinant, Delta);
+    }
+
     // ── Diagonal ─────────────────────────────────────────────────────────────
 
     [TestMethod]
