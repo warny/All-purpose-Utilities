@@ -504,4 +504,81 @@ public class ExpressionDerivationTests
         Assert.IsTrue(isExact);
     }
 
+    // ── Parameter-dependency detection in the numerical fallback (PR 448 review) ──
+
+    /// <summary>
+    /// An unknown-method operand that depends on the differentiation variable only through a
+    /// <see cref="NewExpression"/> plus a <see cref="MemberExpression"/> (<c>(x, 0d).Item1</c>) must not
+    /// be mistaken for a constant: previously, <c>ContainsParameter</c> only recognized a hand-picked
+    /// subset of node kinds (via a <c>switch</c> defaulting to <c>false</c>) and would have silently
+    /// returned a zero derivative for these two node kinds instead of ever reaching
+    /// <see cref="Transform"/>. Since differentiating a <see cref="MemberExpression"/> is not itself
+    /// implemented, the correct behavior once the dependency is detected is an explicit failure — not a
+    /// silently wrong zero.
+    /// </summary>
+    [TestMethod]
+    public void Derivate_FiniteDifferenceFallback_NewAndMemberOperand_DoesNotSilentlyReturnZero()
+    {
+        var x = Expression.Parameter(typeof(double), "x");
+        var tupleCtor = typeof(ValueTuple<double, double>).GetConstructor([typeof(double), typeof(double)])!;
+        var tupleOperand = Expression.Field(Expression.New(tupleCtor, x, Expression.Constant(0d)), "Item1");
+        var method = typeof(ExpressionDerivationTests).GetMethod(nameof(CustomUnknown), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!;
+        var body = Expression.Call(method, tupleOperand);
+        var f = Expression.Lambda<Func<double, double>>(body, x);
+
+        Assert.ThrowsExactly<NotSupportedException>(() => derivationWithFallback.Derivate(f));
+    }
+
+    // ── Widening-only numeric conversions (PR 448 review) ─────────────────────
+
+    /// <summary>
+    /// An unchecked <c>double</c> to <c>float</c> conversion loses precision and is not a recognized
+    /// widening; it must be rejected rather than silently accepted just because both endpoints are
+    /// native numeric types.
+    /// </summary>
+    [TestMethod]
+    public void Derivate_DoubleToFloatConversion_ThrowsClearException()
+    {
+        var x = Expression.Parameter(typeof(double), "x");
+        var body = Expression.Convert(x, typeof(float));
+        var f = Expression.Lambda<Func<double, float>>(body, x);
+
+        var invocationException = Assert.ThrowsExactly<System.Reflection.TargetInvocationException>(() => derivation.Derivate(f));
+        Assert.IsInstanceOfType(invocationException.InnerException, typeof(NotSupportedException));
+    }
+
+    /// <summary>
+    /// An unchecked <c>double</c> to <c>int</c> conversion (e.g. <c>x =&gt; (int)x</c>) truncates and has
+    /// no well-defined symbolic derivative; it must be rejected instead of silently producing a constant
+    /// derivative such as <c>(int)1.0 == 1</c>.
+    /// </summary>
+    [TestMethod]
+    public void Derivate_DoubleToIntConversion_ThrowsClearException()
+    {
+        var x = Expression.Parameter(typeof(double), "x");
+        var body = Expression.Convert(x, typeof(int));
+        var f = Expression.Lambda<Func<double, int>>(body, x);
+
+        var invocationException = Assert.ThrowsExactly<System.Reflection.TargetInvocationException>(() => derivation.Derivate(f));
+        Assert.IsInstanceOfType(invocationException.InnerException, typeof(NotSupportedException));
+    }
+
+    /// <summary>
+    /// A genuine widening (<c>float</c> to <c>double</c>) must still be preserved after tightening the
+    /// widening check, so the fix does not overcorrect into rejecting legitimate conversions.
+    /// </summary>
+    [TestMethod]
+    public void Derivate_FloatToDoubleConversion_PreservesDeclaredResultType()
+    {
+        ExpressionDerivation<float> floatDerivation = new("x");
+        var x = Expression.Parameter(typeof(float), "x");
+        var body = Expression.Convert(x, typeof(double));
+        var f = Expression.Lambda<Func<float, double>>(body, x);
+
+        var result = (Expression<Func<float, double>>)floatDerivation.Derivate(f);
+        var derivativeFunc = result.Compile();
+
+        Assert.AreEqual(1.0, derivativeFunc(3f), 1e-9);
+    }
+
 }

@@ -266,7 +266,9 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
     /// <returns><paramref name="transformedOperand"/>, converted back to <c>original.Type</c> if needed.</returns>
     /// <exception cref="NotSupportedException">
     /// Thrown when the types differ and the conversion is either checked (narrowing/overflow-prone) or
-    /// not a recognized numeric-to-numeric widening.
+    /// not a recognized numeric widening (see <see cref="NumberUtils.IsWideningNumericConversion"/>) —
+    /// this notably rejects reducing conversions such as <c>double</c> to <c>float</c> or <c>double</c>
+    /// to <c>int</c>, which have no well-defined symbolic derivative.
     /// </exception>
     private static Expression PreserveConversion(UnaryExpression original, Expression transformedOperand, bool isChecked)
     {
@@ -275,9 +277,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
             return transformedOperand;
         }
 
-        if (!isChecked
-            && NumberUtils.IsNativeNumericType(transformedOperand.Type)
-            && NumberUtils.IsNativeNumericType(original.Type))
+        if (!isChecked && NumberUtils.IsWideningNumericConversion(transformedOperand.Type, original.Type))
         {
             return Expression.Convert(transformedOperand, original.Type);
         }
@@ -622,20 +622,43 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
 
     /// <summary>
     /// Determines whether an expression depends on the configured differentiation parameter.
+    /// Walks the entire expression tree (via <see cref="ParameterUsageVisitor"/>) rather than a
+    /// hand-picked subset of node kinds, so dependencies hidden inside e.g. a conditional, a member
+    /// access, a <c>new</c> expression, or an indexer are not mistaken for a constant.
     /// </summary>
     /// <param name="expression">Expression to inspect.</param>
     /// <returns><see langword="true"/> when the expression depends on the target parameter; otherwise <see langword="false"/>.</returns>
     private bool ContainsParameter(Expression expression)
     {
-        return expression switch
+        var visitor = new ParameterUsageVisitor(targetParameter);
+        visitor.Visit(expression);
+        return visitor.Found;
+    }
+
+    /// <summary>
+    /// Visits every node of an expression tree looking for a specific <see cref="ParameterExpression"/>
+    /// instance, matched by reference identity (see <see cref="IsTargetParameter"/>) rather than by name.
+    /// </summary>
+    /// <param name="target">The parameter instance to search for.</param>
+    private sealed class ParameterUsageVisitor(ParameterExpression target) : ExpressionVisitor
+    {
+        /// <summary>
+        /// Gets whether the target parameter was found during the last <see cref="Visit(Expression?)"/> call.
+        /// </summary>
+        public bool Found { get; private set; }
+
+        /// <inheritdoc/>
+        public override Expression? Visit(Expression? node) => Found || node is null ? node : base.Visit(node);
+
+        /// <inheritdoc/>
+        protected override Expression VisitParameter(ParameterExpression node)
         {
-            ParameterExpression parameterExpression => IsTargetParameter(parameterExpression),
-            UnaryExpression unaryExpression => ContainsParameter(unaryExpression.Operand),
-            BinaryExpression binaryExpression => ContainsParameter(binaryExpression.Left) || ContainsParameter(binaryExpression.Right),
-            MethodCallExpression methodCallExpression => methodCallExpression.Arguments.Any(ContainsParameter),
-            InvocationExpression invocationExpression => invocationExpression.Arguments.Any(ContainsParameter),
-            _ => false
-        };
+            if (ReferenceEquals(node, target))
+            {
+                Found = true;
+            }
+            return node;
+        }
     }
 
 }

@@ -378,6 +378,59 @@ public class ExpressionIntegrationTests
         Assert.IsInstanceOfType(invocationException.InnerException, typeof(NotSupportedException));
     }
 
+    // ── Widening-only numeric conversions (PR 448 review) ─────────────────────
+
+    /// <summary>
+    /// An unchecked <c>double</c> to <c>float</c> conversion loses precision and is not a recognized
+    /// widening; it must be rejected rather than silently accepted just because both endpoints are
+    /// native numeric types (the same bug as <c>ExpressionDerivation{T}.PreserveConversion</c>, since
+    /// this method is a duplicate of it).
+    /// </summary>
+    [TestMethod]
+    public void Integrate_DoubleToFloatConversion_ThrowsClearException()
+    {
+        var x = Expression.Parameter(typeof(double), "x");
+        var body = Expression.Convert(x, typeof(float));
+        var f = Expression.Lambda<Func<double, float>>(body, x);
+
+        var invocationException = Assert.ThrowsExactly<System.Reflection.TargetInvocationException>(() => integration.Integrate(f));
+        Assert.IsInstanceOfType(invocationException.InnerException, typeof(NotSupportedException));
+    }
+
+    /// <summary>
+    /// An unchecked <c>double</c> to <c>int</c> conversion truncates and has no well-defined symbolic
+    /// integral; it must be rejected instead of silently producing a value of the wrong type.
+    /// </summary>
+    [TestMethod]
+    public void Integrate_DoubleToIntConversion_ThrowsClearException()
+    {
+        var x = Expression.Parameter(typeof(double), "x");
+        var body = Expression.Convert(x, typeof(int));
+        var f = Expression.Lambda<Func<double, int>>(body, x);
+
+        var invocationException = Assert.ThrowsExactly<System.Reflection.TargetInvocationException>(() => integration.Integrate(f));
+        Assert.IsInstanceOfType(invocationException.InnerException, typeof(NotSupportedException));
+    }
+
+    /// <summary>
+    /// A genuine widening (<c>float</c> to <c>double</c>) must still be preserved after tightening the
+    /// widening check, so the fix does not overcorrect into rejecting legitimate conversions.
+    /// </summary>
+    [TestMethod]
+    public void Integrate_FloatToDoubleConversion_PreservesDeclaredResultType()
+    {
+        ExpressionIntegration<float> floatIntegration = new("x");
+        var x = Expression.Parameter(typeof(float), "x");
+        var n = Expression.Parameter(typeof(float), "n");
+        var body = Expression.Convert(n, typeof(double));
+        var f = Expression.Lambda<Func<float, float, double>>(body, x, n);
+
+        var result = (Expression<Func<float, float, double>>)floatIntegration.Integrate(f);
+        var integral = result.Compile();
+
+        Assert.AreEqual((double)(5f * 3f), integral(3f, 5f), 1e-4);
+    }
+
     // ── Generic-T constants in Power-rule integration (item 34) ───────────────
 
     /// <summary>

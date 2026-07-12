@@ -162,7 +162,9 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
     /// <returns><paramref name="transformedOperand"/>, converted back to <c>original.Type</c> if needed.</returns>
     /// <exception cref="NotSupportedException">
     /// Thrown when the types differ and the conversion is either checked (narrowing/overflow-prone) or
-    /// not a recognized numeric-to-numeric widening.
+    /// not a recognized numeric widening (see <see cref="NumberUtils.IsWideningNumericConversion"/>) —
+    /// this notably rejects reducing conversions such as <c>double</c> to <c>float</c> or <c>double</c>
+    /// to <c>int</c>, which have no well-defined symbolic integral.
     /// </exception>
     private static Expression PreserveConversion(UnaryExpression original, Expression transformedOperand, bool isChecked)
     {
@@ -171,9 +173,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
             return transformedOperand;
         }
 
-        if (!isChecked
-            && NumberUtils.IsNativeNumericType(transformedOperand.Type)
-            && NumberUtils.IsNativeNumericType(original.Type))
+        if (!isChecked && NumberUtils.IsWideningNumericConversion(transformedOperand.Type, original.Type))
         {
             return Expression.Convert(transformedOperand, original.Type);
         }
