@@ -14,6 +14,7 @@ public class ExpressionDerivationTests
 
     CSyntaxExpressionCompiler compiler = new CSyntaxExpressionCompiler();
     ExpressionDerivation<double> derivation = new ExpressionDerivation<double>("x");
+    ExpressionDerivation<double> derivationWithFallback = new ExpressionDerivation<double>("x", allowNumericalFallback: true);
 
     /// <summary>
     /// A sample unknown function used to validate finite-difference fallback derivatives.
@@ -85,7 +86,7 @@ public class ExpressionDerivationTests
     public void Derivate_UnknownDoubleFunction_UsesFiniteDifferenceFallback()
     {
         Expression<Func<double, double>> function = x => CustomUnknown(x);
-        var result = (Expression<Func<double, double>>)derivation.Derivate(function);
+        var result = (Expression<Func<double, double>>)derivationWithFallback.Derivate(function);
         var derivative = result.Compile();
 
         double[] samples = [-2.0, -0.5, 0.25, 1.5];
@@ -104,7 +105,7 @@ public class ExpressionDerivationTests
     public void Derivate_ComposedUnknownDoubleFunction_AppliesChainRule()
     {
         Expression<Func<double, double>> function = x => CustomUnknown(x * x);
-        var result = (Expression<Func<double, double>>)derivation.Derivate(function);
+        var result = (Expression<Func<double, double>>)derivationWithFallback.Derivate(function);
         var derivative = result.Compile();
 
         double[] samples = [-1.5, -0.75, 0.5, 1.25];
@@ -206,7 +207,7 @@ public class ExpressionDerivationTests
     public void Derivate_Sinh_MatchesCosh()
     {
         Expression<Func<double, double>> f = x => double.Sinh(x);
-        var df = (Expression<Func<double, double>>)derivation.Derivate(f);
+        var df = (Expression<Func<double, double>>)derivationWithFallback.Derivate(f);
         var compiled = df.Compile();
 
         foreach (double xv in new[] { -1.0, 0.0, 0.5, 2.0 })
@@ -220,7 +221,7 @@ public class ExpressionDerivationTests
     public void Derivate_Cosh_MatchesSinh()
     {
         Expression<Func<double, double>> f = x => double.Cosh(x);
-        var df = (Expression<Func<double, double>>)derivation.Derivate(f);
+        var df = (Expression<Func<double, double>>)derivationWithFallback.Derivate(f);
         var compiled = df.Compile();
 
         foreach (double xv in new[] { -1.0, 0.0, 0.5, 2.0 })
@@ -234,7 +235,7 @@ public class ExpressionDerivationTests
     public void Derivate_Tanh_MatchesSechSquared()
     {
         Expression<Func<double, double>> f = x => double.Tanh(x);
-        var df = (Expression<Func<double, double>>)derivation.Derivate(f);
+        var df = (Expression<Func<double, double>>)derivationWithFallback.Derivate(f);
         var compiled = df.Compile();
 
         foreach (double xv in new[] { -1.0, 0.0, 0.5, 2.0 })
@@ -288,7 +289,7 @@ public class ExpressionDerivationTests
     [TestMethod]
     public void Derivate_UnknownFloatFunction_UsesFiniteDifferenceFallback()
     {
-        ExpressionDerivation<float> floatDerivation = new("x");
+        ExpressionDerivation<float> floatDerivation = new("x", allowNumericalFallback: true);
         Expression<Func<float, float>> f = x => x * x * x;
         var df = (Expression<Func<float, float>>)floatDerivation.Derivate(f);
         var compiled = df.Compile();
@@ -303,6 +304,22 @@ public class ExpressionDerivationTests
     /// <param name="x">Input value.</param>
     /// <returns>The cubic value of <paramref name="x"/>.</returns>
     private static float FloatCube(float x) => x * x * x;
+
+    // ── Opt-in finite-difference fallback (item 36) ───────────────────────────
+
+    /// <summary>
+    /// By default (<see cref="ExpressionDerivation{T}.AllowNumericalFallback"/> is <see langword="false"/>),
+    /// an unknown method must fail explicitly rather than silently falling back to a numerical
+    /// approximation that evaluates the source method twice per derivative evaluation.
+    /// </summary>
+    [TestMethod]
+    public void Derivate_UnknownDoubleFunction_FallbackDisabledByDefault_ThrowsClearException()
+    {
+        Expression<Func<double, double>> function = x => CustomUnknown(x);
+
+        var ex = Assert.ThrowsExactly<NotSupportedException>(() => derivation.Derivate(function));
+        StringAssert.Contains(ex.Message, nameof(ExpressionDerivation<double>.AllowNumericalFallback));
+    }
 
     // ── Unsupported scalar-type capability (item 30) ─────────────────────────
 

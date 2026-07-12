@@ -12,12 +12,50 @@ namespace Utils.Mathematics.Expressions;
 /// </summary>
 public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloatingPoint<T>
 {
-    private static readonly double FiniteDifferenceEpsilon = typeof(T) == typeof(float) ? 1e-4 : 1e-7;
+    /// <summary>
+    /// Smallest positive value such that <c>1 + MachineEpsilon != 1</c> for <typeparamref name="T"/>,
+    /// computed generically (rather than hard-coded per type) so the finite-difference fallback step
+    /// (see <see cref="FiniteDifferenceStepBase"/>) scales correctly with <typeparamref name="T"/>'s own
+    /// precision instead of only special-casing <see cref="float"/>.
+    /// </summary>
+    private static readonly T MachineEpsilon = ComputeMachineEpsilon();
+
+    /// <summary>
+    /// Base step size for the centered finite-difference fallback (see <see cref="DeriveUnknownMethodCall"/>),
+    /// equal to <c>MachineEpsilon^(1/3)</c> — the standard step that balances truncation error (which
+    /// grows with the step) against floating-point rounding error (which grows as the step shrinks) for
+    /// a centered difference. The actual per-call step additionally scales with the operand's own
+    /// magnitude at evaluation time (see <see cref="DeriveUnknownMethodCall"/>).
+    /// </summary>
+    private static readonly T FiniteDifferenceStepBase =
+        T.CreateChecked(Math.Pow(System.Convert.ToDouble(MachineEpsilon), 1.0 / 3.0));
+
+    private static T ComputeMachineEpsilon()
+    {
+        T two = T.One + T.One;
+        T eps = T.One;
+        while (T.One + eps / two != T.One)
+        {
+            eps /= two;
+        }
+        return eps;
+    }
 
     /// <summary>
     /// Gets the name of the parameter that will be considered the differentiation variable.
     /// </summary>
     public string ParameterName { get; }
+
+    /// <summary>
+    /// Gets whether unknown single-argument methods (with no registered symbolic derivative rule) may be
+    /// differentiated through a centered finite-difference approximation (see
+    /// <see cref="DeriveUnknownMethodCall"/>) instead of failing with <see cref="NotSupportedException"/>.
+    /// This is opt-in and defaults to <see langword="false"/>, since the fallback turns an exact symbolic
+    /// derivation into a numerical runtime approximation that evaluates the source method twice per
+    /// derivative evaluation — only enable it for methods known to be pure (no side effects) and
+    /// reasonably smooth near the evaluation point.
+    /// </summary>
+    public bool AllowNumericalFallback { get; }
 
     /// <summary>
     /// The specific <see cref="ParameterExpression"/> instance, resolved once per <see cref="Derivate"/>
@@ -39,7 +77,12 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
     /// Initializes a new instance of the <see cref="ExpressionDerivation{T}"/> class for the specified parameter.
     /// </summary>
     /// <param name="parameterName">Name of the variable with respect to which derivatives are computed.</param>
-    public ExpressionDerivation(string parameterName) : this(parameterName, null!)
+    /// <param name="allowNumericalFallback">
+    /// See <see cref="AllowNumericalFallback"/>. Defaults to <see langword="false"/>: unknown methods
+    /// fail explicitly instead of silently falling back to a numerical approximation.
+    /// </param>
+    public ExpressionDerivation(string parameterName, bool allowNumericalFallback = false)
+        : this(parameterName, null!, allowNumericalFallback)
     {
     }
 
@@ -51,10 +94,12 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
     /// The specific resolved <see cref="ParameterExpression"/> instance, or <see langword="null"/> for
     /// the publicly-constructed instance that has not yet performed a <see cref="Derivate"/> call.
     /// </param>
-    private ExpressionDerivation(string parameterName, ParameterExpression targetParameter)
+    /// <param name="allowNumericalFallback">See <see cref="AllowNumericalFallback"/>.</param>
+    private ExpressionDerivation(string parameterName, ParameterExpression targetParameter, bool allowNumericalFallback)
     {
         this.ParameterName = parameterName;
         this.targetParameter = targetParameter;
+        this.AllowNumericalFallback = allowNumericalFallback;
     }
 
     /// <summary>
@@ -86,7 +131,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
         // A fresh worker instance isolates the resolved target parameter for this call: concurrent or
         // re-entrant calls on the same public ExpressionDerivation<T> instance no longer share mutable
         // state (see TODO-2026-07-11-pass3.md items #31 and #32).
-        var worker = new ExpressionDerivation<T>(ParameterName, candidates[0]);
+        var worker = new ExpressionDerivation<T>(ParameterName, candidates[0], AllowNumericalFallback);
         return Expression.Lambda(worker.Transform(e.Body.Simplify()).Simplify(), e.Parameters);
     }
 
@@ -494,6 +539,11 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
     /// <param name="methodCallExpression">Method call to derive.</param>
     /// <param name="parameters">Prepared arguments for the call.</param>
     /// <returns>The derivative expression using centered finite difference.</returns>
+    /// <exception cref="NotSupportedException">
+    /// Thrown when no symbolic derivative rule matches <paramref name="methodCallExpression"/>'s method,
+    /// and either its signature does not match the required single-argument <typeparamref name="T"/>
+    /// shape, or <see cref="AllowNumericalFallback"/> is <see langword="false"/> (the default).
+    /// </exception>
     private Expression DeriveUnknownMethodCall(MethodCallExpression methodCallExpression, Expression[] parameters)
     {
         if (methodCallExpression.Method.ReturnType != typeof(T)
@@ -503,14 +553,30 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
             throw new NotSupportedException($"No derivative rule is registered for '{methodCallExpression.Method}'.");
         }
 
+        if (!AllowNumericalFallback)
+        {
+            throw new NotSupportedException(
+                $"No symbolic derivative rule is registered for '{methodCallExpression.Method}'. " +
+                $"A centered finite-difference approximation is available but must be explicitly enabled " +
+                $"via '{nameof(AllowNumericalFallback)}' (only do so for a pure, reasonably smooth method, " +
+                "since it will be evaluated twice per derivative evaluation).");
+        }
+
         Expression operand = parameters[0];
         if (!ContainsParameter(operand))
         {
             return ExpressionEx.CreateConstant(T.CreateChecked(0d));
         }
 
-        var epsilon = ExpressionEx.CreateConstant(T.CreateChecked(FiniteDifferenceEpsilon));
-        var twoEpsilon = ExpressionEx.CreateConstant(T.CreateChecked(2.0 * FiniteDifferenceEpsilon));
+        // Scale-aware step: FiniteDifferenceStepBase (~MachineEpsilon^(1/3)) scaled by the operand's own
+        // magnitude at evaluation time, so the step neither underflows relative to a large operand nor
+        // overshoots relative to a small one.
+        var stepBase = ExpressionEx.CreateConstant(FiniteDifferenceStepBase);
+        var operandMagnitude = Expression.Call(MathMethodResolver.ResolveBinary<T>(nameof(double.Max)),
+            Expression.Call(MathMethodResolver.Resolve<T>(nameof(double.Abs)), operand),
+            ExpressionEx.CreateConstant(T.One));
+        var epsilon = Expression.Multiply(stepBase, operandMagnitude);
+        var twoEpsilon = Expression.Multiply(ExpressionEx.CreateConstant(T.CreateChecked(2d)), epsilon);
         var operandDerivative = Transform(operand);
 
         var plus = Expression.Call(methodCallExpression.Method, Expression.Add(operand, epsilon));
@@ -551,8 +617,9 @@ public class ExpressionDerivation : ExpressionDerivation<double>
     /// Initializes a new instance of the <see cref="ExpressionDerivation"/> class.
     /// </summary>
     /// <param name="parameterName">Name of the variable with respect to which derivatives are computed.</param>
-    public ExpressionDerivation(string parameterName)
-        : base(parameterName)
+    /// <param name="allowNumericalFallback">See <see cref="ExpressionDerivation{T}.AllowNumericalFallback"/>.</param>
+    public ExpressionDerivation(string parameterName, bool allowNumericalFallback = false)
+        : base(parameterName, allowNumericalFallback)
     {
     }
 }
