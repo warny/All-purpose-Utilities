@@ -130,7 +130,13 @@ public static class MatrixTransformations
             }
         }
 
-        return new Matrix<T>(array, false, false, false, null);
+        // Unlike hardcoded false, null defers isIdentity/isTriangular/isDiagonal to lazy recomputation
+        // (see TODO-2026-07-11-pass5.md item #68): with the degenerate zero-angle/base-dimension-1 input
+        // (no coefficients to place), the loop above leaves the array exactly the identity, which
+        // hardcoded false could never report correctly. For any non-degenerate input, at least one
+        // off-diagonal coefficient is filled on both sides of the diagonal (the loop covers every
+        // off-diagonal base-block position), so recomputation still correctly resolves to false there.
+        return new Matrix<T>(array, null, null, null, null);
     }
 
     /// <summary>
@@ -193,7 +199,12 @@ public static class MatrixTransformations
                 rotationArray[dim1, dim2] = -sin;
                 rotationArray[dim2, dim1] = sin;
 
-                Matrix<T> rotation = new Matrix<T>(rotationArray, false, false, false, null);
+                // isIdentity/isTriangular/isDiagonal depend on the specific angle (e.g. angle = 0 makes
+                // this elementary rotation the identity, which hardcoded false could never report - see
+                // TODO-2026-07-11-pass5.md item #68), so null defers to lazy recomputation. The
+                // determinant of any plane rotation is always cos^2 + sin^2 = 1, regardless of angle, so
+                // it is supplied directly instead of left for recomputation.
+                Matrix<T> rotation = new Matrix<T>(rotationArray, null, null, null, T.One);
                 result *= rotation;
                 angleIndex++;
             }
@@ -223,12 +234,20 @@ public static class MatrixTransformations
         }
 
         int lastColumn = dimension - 1;
+        bool allZero = true;
         for (int i = 0; i < valuesArray.Length; i++)
         {
             array[i, lastColumn] = valuesArray[i];
+            if (valuesArray[i] != T.Zero) allZero = false;
         }
 
-        return new Matrix<T>(array, false, false, false, null);
+        // Every flag below is mathematically guaranteed, not just a lazy default (see
+        // TODO-2026-07-11-pass5.md item #68): the translation entries only ever occupy strictly-upper
+        // positions (row i < lastColumn for every i in range), so the matrix is always upper triangular
+        // regardless of the supplied values; it is diagonal/the identity exactly when every translation
+        // value is zero; and its determinant is always 1 (an upper-triangular matrix with an all-ones
+        // diagonal).
+        return new Matrix<T>(array, isIdentity: allZero, isTriangular: true, isDiagonal: allZero, determinant: T.One);
     }
 
     /// <summary>
@@ -283,6 +302,10 @@ public static class MatrixTransformations
             }
         }
 
-        return new Matrix<T>(array, false, false, false, null);
+        // The linear block is arbitrary caller-supplied data, so none of these flags are provable at
+        // construction time in general (e.g. the caller could still supply exactly the identity
+        // coefficients); null defers to lazy recomputation instead of hardcoding false (see
+        // TODO-2026-07-11-pass5.md item #68).
+        return new Matrix<T>(array, null, null, null, null);
     }
 }

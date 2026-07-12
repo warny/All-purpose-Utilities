@@ -343,4 +343,105 @@ public class MatrixTransformationsTests
         // 5 is not d*(d+1) for any integer d (0, 2, 6, 12, ...).
         Assert.ThrowsException<ArgumentException>(() => MatrixTransformations.Transform<double>(1d, 2d, 3d, 4d, 5d));
     }
+
+    // ── Structural metadata invariants (TODO-pass5 item #68) ────────────────────
+
+    /// <summary>
+    /// Asserts that a factory-constructed matrix's cached structural flags/determinant agree with what
+    /// the same values would lazily recompute to from scratch (via the public array constructor, which
+    /// always defers to <c>DetermineStructuralFlags</c>). Before item #68, several factories hardcoded
+    /// <c>false</c> for flags that were not actually mathematically guaranteed for every input, which this
+    /// helper would have caught: a hardcoded <c>false</c> next to a lazily-recomputed <c>true</c> is
+    /// exactly the defect this item describes.
+    /// </summary>
+    private static void AssertStructuralMetadataMatchesRecomputation(Matrix<double> matrix)
+    {
+        var recomputed = new Matrix<double>(matrix.ToArray());
+        Assert.AreEqual(recomputed.IsIdentity, matrix.IsIdentity, "IsIdentity mismatch vs. recomputation.");
+        Assert.AreEqual(recomputed.IsTriangular, matrix.IsTriangular, "IsTriangular mismatch vs. recomputation.");
+        Assert.AreEqual(recomputed.IsDiagonal, matrix.IsDiagonal, "IsDiagonal mismatch vs. recomputation.");
+        Assert.AreEqual(recomputed.Determinant, matrix.Determinant, Delta, "Determinant mismatch vs. recomputation.");
+    }
+
+    [TestMethod]
+    public void Identity_MetadataMatchesRecomputation()
+        => AssertStructuralMetadataMatchesRecomputation(MatrixTransformations.Identity<double>(3));
+
+    [TestMethod]
+    public void Diagonal_MetadataMatchesRecomputation()
+        => AssertStructuralMetadataMatchesRecomputation(MatrixTransformations.Diagonal<double>(2d, 0d, 3d));
+
+    [TestMethod]
+    public void Scaling_MetadataMatchesRecomputation()
+        => AssertStructuralMetadataMatchesRecomputation(MatrixTransformations.Scaling<double>(2d, 3d));
+
+    [TestMethod]
+    public void Rotation_MetadataMatchesRecomputation()
+        => AssertStructuralMetadataMatchesRecomputation(MatrixTransformations.Rotation<double>(Math.PI / 4));
+
+    [TestMethod]
+    public void Skew_MetadataMatchesRecomputation()
+        => AssertStructuralMetadataMatchesRecomputation(MatrixTransformations.Skew<double>(0.5, 0.25));
+
+    [TestMethod]
+    public void Transform_MetadataMatchesRecomputation()
+        => AssertStructuralMetadataMatchesRecomputation(MatrixTransformations.Transform<double>(2d, 3d, 5d, 4d, 6d, 7d));
+
+    /// <summary>
+    /// Before item #68, <see cref="MatrixTransformations.Translation{T}"/> always hardcoded
+    /// <c>isIdentity: false</c>/<c>isDiagonal: false</c>, even though a translation by zero in every
+    /// axis is, by value, exactly the identity matrix.
+    /// </summary>
+    [TestMethod]
+    public void Translation_AllZeroValues_ReportsIdentity()
+    {
+        var m = MatrixTransformations.Translation<double>(0d, 0d);
+        Assert.IsTrue(m.IsIdentity);
+        Assert.IsTrue(m.IsDiagonal);
+        Assert.IsTrue(m.IsTriangular);
+        Assert.AreEqual(1d, m.Determinant, Delta);
+        AssertStructuralMetadataMatchesRecomputation(m);
+    }
+
+    /// <summary>
+    /// A translation matrix is always upper triangular by construction (translation entries only ever
+    /// occupy strictly-upper positions), which was previously hardcoded to the wrong answer (<c>false</c>)
+    /// alongside the correctly-false <see cref="Matrix{T}.IsDiagonal"/>/<see cref="Matrix{T}.IsIdentity"/>.
+    /// </summary>
+    [TestMethod]
+    public void Translation_NonZeroValues_IsTriangularButNotDiagonalOrIdentity()
+    {
+        var m = MatrixTransformations.Translation<double>(5d, 7d);
+        Assert.IsTrue(m.IsTriangular);
+        Assert.IsFalse(m.IsDiagonal);
+        Assert.IsFalse(m.IsIdentity);
+        Assert.AreEqual(1d, m.Determinant, Delta);
+        AssertStructuralMetadataMatchesRecomputation(m);
+    }
+
+    /// <summary>
+    /// With zero angles, <see cref="MatrixTransformations.Skew{T}"/> resolves to the degenerate base
+    /// dimension 1 (no off-diagonal position to fill) and returns a 2×2 identity matrix by value; before
+    /// item #68 this was hardcoded to report <c>isIdentity: false</c>.
+    /// </summary>
+    [TestMethod]
+    public void Skew_NoAngles_ReportsIdentity()
+    {
+        var m = MatrixTransformations.Skew<double>();
+        Assert.IsTrue(m.IsIdentity);
+        AssertStructuralMetadataMatchesRecomputation(m);
+    }
+
+    /// <summary>
+    /// Supplying exactly the identity coefficients to <see cref="MatrixTransformations.Transform{T}"/>
+    /// must report <see cref="Matrix{T}.IsIdentity"/> as <see langword="true"/> now that the factory no
+    /// longer hardcodes <c>false</c>.
+    /// </summary>
+    [TestMethod]
+    public void Transform_IdentityCoefficients_ReportsIdentity()
+    {
+        var m = MatrixTransformations.Transform<double>(1d, 0d, 0d, 0d, 1d, 0d);
+        Assert.IsTrue(m.IsIdentity);
+        AssertStructuralMetadataMatchesRecomputation(m);
+    }
 }
