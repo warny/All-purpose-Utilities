@@ -139,6 +139,66 @@ namespace UtilsTest.Mathematics.LinearAlgebra
             Assert.ThrowsException<InvalidOperationException>(() => matrix.Invert());
         }
 
+        // ── Structural metadata on the inverse (TODO-pass5 item #61) ───────────────
+
+        /// <summary>
+        /// Before the fix, <see cref="Matrix{T}.Invert"/> always hardcoded <c>isDiagonal: false</c> on the
+        /// returned matrix regardless of its actual structure, permanently disabling lazy recomputation.
+        /// The inverse of a diagonal matrix is itself diagonal (and therefore triangular).
+        /// </summary>
+        [TestMethod]
+        public void Invert_DiagonalMatrix_ResultReportsDiagonalAndTriangular()
+        {
+            Matrix<double> diagonal = Matrix<double>.Diagonal(2d, 4d, 5d);
+            Matrix<double> inverse = diagonal.Invert();
+
+            Assert.IsTrue(inverse.IsDiagonal);
+            Assert.IsTrue(inverse.IsTriangular);
+            Assert.IsFalse(inverse.IsIdentity);
+            AssertMatricesAreEqual(Matrix<double>.Diagonal(0.5d, 0.25d, 0.2d), inverse, 1e-9);
+        }
+
+        /// <summary>
+        /// Same as <see cref="Invert_DiagonalMatrix_ResultReportsDiagonalAndTriangular"/>, but for a
+        /// non-diagonal upper-triangular source: the inverse of an upper-triangular matrix is itself
+        /// upper-triangular, so the recomputed metadata should report it as such.
+        /// </summary>
+        [TestMethod]
+        public void Invert_TriangularMatrix_ResultReportsTriangular()
+        {
+            Matrix<double> upperTriangular = new Matrix<double>(new double[,]
+            {
+                { 2d, 3d },
+                { 0d, 4d },
+            });
+
+            Matrix<double> inverse = upperTriangular.Invert();
+
+            Assert.IsTrue(inverse.IsTriangular);
+            Assert.IsFalse(inverse.IsDiagonal);
+        }
+
+        /// <summary>
+        /// A general (non-triangular, non-diagonal) matrix's inverse is itself generally neither
+        /// triangular nor diagonal; the recomputed metadata (rather than a hardcoded value) must still
+        /// correctly report that.
+        /// </summary>
+        [TestMethod]
+        public void Invert_GeneralMatrix_ResultReportsNotTriangularNotDiagonal()
+        {
+            Matrix<double> matrix = new Matrix<double>(new double[,]
+            {
+                { 4d, 7d },
+                { 2d, 6d },
+            });
+
+            Matrix<double> inverse = matrix.Invert();
+
+            Assert.IsFalse(inverse.IsTriangular);
+            Assert.IsFalse(inverse.IsDiagonal);
+            Assert.IsFalse(inverse.IsIdentity);
+        }
+
         [TestMethod]
         public void Determinant_NearSingularMatrix_ReturnsZeroInsteadOfGarbage()
         {

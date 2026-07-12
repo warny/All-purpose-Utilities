@@ -206,6 +206,11 @@ public partial class Matrix<T>
             }
         }
 
-        return new Matrix<T>(inverse, false, false, false, null);
+        // Unlike false (a permanently cached, potentially wrong negative answer that disables lazy
+        // recomputation - see TODO-2026-07-11-pass5.md item #61), null defers isIdentity/isTriangular/
+        // isDiagonal to the first access of the corresponding property, which recomputes them from the
+        // actual computed inverse array. This correctly reports e.g. the inverse of a diagonal matrix
+        // as still diagonal, instead of always false regardless of the source's actual structure.
+        return new Matrix<T>(inverse, null, null, null, null);
     }
 }
