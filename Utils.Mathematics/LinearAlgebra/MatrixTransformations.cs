@@ -137,12 +137,32 @@ public static class MatrixTransformations
     /// Generates a rotation matrix.
     /// </summary>
     /// <typeparam name="T">Numeric type of the matrix.</typeparam>
-    /// <param name="angles">Angles of rotation.</param>
+    /// <param name="angles">
+    /// Angles of rotation, one per axis pair of the base <c>d × d</c> rotation block: <c>d * (d - 1) / 2</c>
+    /// angles are required for a given base dimension <c>d</c>. Must not be empty: with zero angles, the
+    /// <c>d * (d - 1) / 2 = n</c> formula solves to the degenerate <c>d = 1</c> (a meaningless "1×1
+    /// rotation", since rotation requires at least two axes to rotate between) rather than identifying
+    /// which ambient dimension's identity rotation the caller intended (see
+    /// TODO-2026-07-11-pass5.md item #66). To build an identity matrix of a specific dimension, call
+    /// <see cref="Identity{T}(int)"/> directly instead.
+    /// </param>
     /// <returns>New rotation matrix.</returns>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="angles"/> is empty, or its count does not match <c>d * (d - 1) / 2</c>
+    /// for any integer <c>d</c>.
+    /// </exception>
     public static Matrix<T> Rotation<T>(params IEnumerable<T> angles)
         where T : struct, IFloatingPoint<T>, ITrigonometricFunctions<T>, IRootFunctions<T>
     {
         T[] anglesArray = angles.ToArray();
+        if (anglesArray.Length == 0)
+        {
+            throw new ArgumentException(
+                "At least one angle is required: an empty angle list is ambiguous about the intended " +
+                $"ambient dimension (it would always resolve to a degenerate 1x1 base rotation). Use " +
+                $"{nameof(Identity)}<T>(int) to build an identity matrix of a specific dimension instead.",
+                nameof(angles));
+        }
         double baseComputeDimension = (1 + Math.Sqrt(8 * anglesArray.Length + 1)) / 2;
         int dimension = (int)Math.Floor(baseComputeDimension);
         if (baseComputeDimension != dimension)

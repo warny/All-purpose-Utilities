@@ -274,6 +274,15 @@ public class MatrixTransformationsTests
                 Assert.AreEqual(i == j ? 1d : 0d, m[i, j], Delta, $"[{i},{j}]");
     }
 
+    /// <summary>
+    /// Before TODO-pass5.md item #66 was fixed, an empty angle list silently resolved to the degenerate
+    /// base dimension <c>d = 1</c> (a meaningless "1×1 rotation") and returned a 2×2 homogeneous identity
+    /// matrix, with no way to instead request the identity rotation for a chosen ambient dimension.
+    /// </summary>
+    [TestMethod]
+    public void Rotation_NoAngles_ThrowsAmbiguousDimensionError()
+        => Assert.ThrowsException<ArgumentException>(() => MatrixTransformations.Rotation<double>());
+
     // ── Transform ────────────────────────────────────────────────────────────
 
     [TestMethod]
