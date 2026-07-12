@@ -1,3 +1,4 @@
+using System.Reflection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Mathematics.LinearAlgebra;
 
@@ -260,25 +261,126 @@ public class MatrixEigenvaluesTests
     }
 
     [TestMethod]
-    public void ComputeEigenvalues_ClusteredEigenvalues_FailsToConvergeWithinDefaultIterations()
+    public void ComputeEigenvalues_ClusteredEigenvalues_ConvergesWithinASmallIterationBudget()
     {
-        // Regression/documentation test for the unresolved "unshifted iteration converges slowly for
-        // clustered eigenvalues" limitation (TODO-pass2.md #28 - documented, NOT fixed: this
-        // implementation is still plain unshifted A <- R*Q with no tridiagonal reduction or Wilkinson
-        // shifts). M = R * diag(1.0, 1.0001) * R^T for a 45-degree rotation R has eigenvalues 1.0 and
-        // 1.0001 (ratio 0.9999...), which unshifted QR iteration approaches only linearly -
-        // convergence at this ratio needs on the order of hundreds of thousands of iterations, well
-        // past the default 1000-iteration budget. A "mitigation" test that actually runs enough
-        // iterations to converge (~250,000+) is deliberately not included here: it would inflate this
-        // test suite's runtime for no correctness value beyond what this failure-mode test already
-        // demonstrates. A real fix (shifted QR + tridiagonal reduction, converging cubically) is what
-        // would let a fast convergence test exist.
+        // Regression test for TODO-pass2.md #28, now actually fixed: ComputeEigenvalues previously
+        // used plain unshifted A <- R*Q, whose convergence rate is governed by the ratio between
+        // consecutive eigenvalues - for this matrix (eigenvalues 1.0 and 1.0001, ratio 0.9999...) that
+        // meant hundreds of thousands of iterations were needed, well past the default 1000-iteration
+        // budget, and the method threw. With a Wilkinson-shifted, deflating QR iteration, shifting by
+        // (an estimate of) an eigenvalue drives local convergence to cubic, so the same matrix now
+        // converges in a handful of iterations - verified here with a maxIterations budget far smaller
+        // than the default, let alone the ~250,000+ the old algorithm would have needed.
+        // M = R * diag(1.0, 1.0001) * R^T for a 45-degree rotation R.
         var m = new Matrix<double>(new double[,]
         {
             { 1.00005, 0.00005 },
             { 0.00005, 1.00005 },
         });
-        Assert.ThrowsException<InvalidOperationException>(() => m.ComputeEigenvalues());
+        var (values, _) = m.ComputeEigenvalues(maxIterations: 20);
+        Assert.AreEqual(1.0001, values[0], 1e-9);
+        Assert.AreEqual(1.0, values[1], 1e-9);
+    }
+
+    [TestMethod]
+    public void ComputeEigenvalues_ConvergesExactlyOnTheIterationItNeeds_NoOffByOne()
+    {
+        // Regression: the deflation check ran BEFORE each QR step but not after the last permitted
+        // one, so a matrix that first reached convergence exactly on the maxIterations-th step would
+        // exit the loop (budget exhausted) without the final state ever being re-checked, and
+        // incorrectly threw instead of succeeding.
+        //
+        // A naive "search upward for the smallest maxIterations that succeeds, then assert N-1
+        // fails" test would NOT catch this bug: under the buggy code the search simply finds a
+        // *different* minimal N (one step later than the true minimum, because the true minimum
+        // incorrectly fails and only gets caught as "already converged" on the *next* call's
+        // pre-step check), and "N-1 fails" still holds trivially for whatever N the search lands on
+        // - the assertion is tautological with respect to how the search is defined, in both the
+        // buggy and fixed code.
+        //
+        // Instead, this independently replicates the algorithm's shift/QR/deflation-check steps -
+        // via reflection into the same private helpers ComputeEigenvalues itself uses - to compute
+        // the true number of steps K this matrix needs external to ComputeEigenvalues's own
+        // pass/fail behavior, then asserts ComputeEigenvalues(K - 1) fails while
+        // ComputeEigenvalues(K) succeeds.
+        double[,] original =
+        {
+            { 1.00005, 0.00005 },
+            { 0.00005, 1.00005 },
+        };
+
+        const BindingFlags flags = BindingFlags.NonPublic | BindingFlags.Static;
+        var matrixType = typeof(Matrix<double>);
+        var lastRowOffDiagonalNorm = matrixType.GetMethod("LastRowOffDiagonalNorm", flags)!;
+        var wilkinsonShift = matrixType.GetMethod("WilkinsonShift", flags)!;
+        var maxAbsoluteEntry = matrixType.GetMethod("MaxAbsoluteEntry", flags)!;
+        var defaultTolerance = matrixType.GetMethod("DefaultTolerance", flags)!;
+
+        double scale = (double)maxAbsoluteEntry.Invoke(null, [original])!;
+        double tolerance = (double)defaultTolerance.Invoke(null, [scale, 2])!;
+
+        double[,] a = (double[,])original.Clone();
+        int steps = 0;
+        while ((double)lastRowOffDiagonalNorm.Invoke(null, [a, 2])! > tolerance)
+        {
+            double shift = (double)wilkinsonShift.Invoke(null, [a, 2])!;
+            a[0, 0] -= shift;
+            a[1, 1] -= shift;
+            var (q, r) = new Matrix<double>(a).DecomposeQR();
+            double[,] stepped = (r * q).ToArray();
+            stepped[0, 0] += shift;
+            stepped[1, 1] += shift;
+            a = stepped;
+            steps++;
+            Assert.IsTrue(steps <= 50, "Reference replication did not converge within 50 steps.");
+        }
+        Assert.IsTrue(steps >= 1, "Expected at least one step to be required for this matrix.");
+
+        var m = new Matrix<double>(original);
+        if (steps > 1)
+        {
+            Assert.ThrowsException<InvalidOperationException>(
+                () => m.ComputeEigenvalues(maxIterations: steps - 1),
+                $"maxIterations={steps - 1} should still be one step short of the {steps} steps this matrix needs.");
+        }
+
+        var (values, _) = m.ComputeEigenvalues(maxIterations: steps);
+        Assert.AreEqual(1.0001, values[0], 1e-9);
+        Assert.AreEqual(1.0, values[1], 1e-9);
+    }
+
+    [TestMethod]
+    public void ComputeEigenvalues_MixOfWellSeparatedAndClusteredEigenvalues_ConvergesCorrectly()
+    {
+        // Exercises multi-stage deflation: one well-separated eigenvalue (5) plus two clustered ones
+        // (1.0001, 1.0) coupled through a small off-diagonal block. Built as
+        // R * diag(5, 1.0001, 1.0) * R^T for a rotation R that only mixes the two close eigenvalues'
+        // subspace (indices 1, 2), leaving index 0 already decoupled. The outer active submatrix
+        // (size 3) must first deflate index 2 via iteration before the remaining 2x2 clustered block
+        // is resolved on its own.
+        var m = new Matrix<double>(new double[,]
+        {
+            { 5, 0, 0 },
+            { 0, 1.00005, -0.00005 },
+            { 0, -0.00005, 1.00005 },
+        });
+        var (values, vecs) = m.ComputeEigenvalues(maxIterations: 100);
+        Assert.AreEqual(5.0, values[0], 1e-9);
+        Assert.AreEqual(1.0001, values[1], 1e-9);
+        Assert.AreEqual(1.0, values[2], 1e-9);
+
+        var vtv = vecs.Transpose() * vecs;
+        for (int i = 0; i < 3; i++)
+            for (int j = 0; j < 3; j++)
+                Assert.AreEqual(i == j ? 1.0 : 0.0, vtv[i, j], 1e-9, $"V^T V [{i},{j}]");
+
+        for (int j = 0; j < 3; j++)
+        {
+            var v = new Vector<double>(vecs[0, j], vecs[1, j], vecs[2, j]);
+            var av = m * v;
+            for (int i = 0; i < 3; i++)
+                Assert.AreEqual(values[j] * v[i], av[i], 1e-8, $"Av=lambda*v failed at eigenpair {j}, component {i}");
+        }
     }
 
     [TestMethod]
