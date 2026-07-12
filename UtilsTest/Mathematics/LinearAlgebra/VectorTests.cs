@@ -36,6 +36,71 @@ public class VectorTests
         Assert.AreEqual(0d, barycenter[1], 1e-9);
     }
 
+    // ── Barycenter zero/non-finite total weight (TODO-pass4 item #44) ─────────
+
+    /// <summary>
+    /// All-zero weights sum to an exactly-zero total weight, which cannot normalize the accumulated
+    /// (also zero) coordinates; this must be rejected instead of silently dividing 0/0.
+    /// </summary>
+    [TestMethod]
+    public void ComputeBarycenter_AllZeroWeights_Throws()
+    {
+        var p1 = new Vector<double>(0d, 0d);
+        var p2 = new Vector<double>(2d, 0d);
+        Assert.ThrowsException<ArgumentException>(() => Vector<double>.ComputeBarycenter((0d, p1), (0d, p2)));
+    }
+
+    /// <summary>
+    /// Opposite weights that sum to exactly zero must be rejected the same way as all-zero weights,
+    /// even though the individual weights are non-zero.
+    /// </summary>
+    [TestMethod]
+    public void ComputeBarycenter_CancellingWeights_Throws()
+    {
+        var p1 = new Vector<double>(0d, 0d);
+        var p2 = new Vector<double>(2d, 0d);
+        Assert.ThrowsException<ArgumentException>(() => Vector<double>.ComputeBarycenter((1d, p1), (-1d, p2)));
+    }
+
+    /// <summary>
+    /// A <see cref="double.NaN"/> weight must be rejected explicitly instead of poisoning the total
+    /// weight and every accumulated coordinate with NaN.
+    /// </summary>
+    [TestMethod]
+    public void ComputeBarycenter_NaNWeight_Throws()
+    {
+        var p1 = new Vector<double>(0d, 0d);
+        var p2 = new Vector<double>(2d, 0d);
+        Assert.ThrowsException<ArgumentException>(() => Vector<double>.ComputeBarycenter((1d, p1), (double.NaN, p2)));
+    }
+
+    /// <summary>
+    /// An infinite weight must be rejected explicitly instead of producing an infinite or NaN
+    /// barycenter.
+    /// </summary>
+    [TestMethod]
+    public void ComputeBarycenter_InfiniteWeight_Throws()
+    {
+        var p1 = new Vector<double>(0d, 0d);
+        var p2 = new Vector<double>(2d, 0d);
+        Assert.ThrowsException<ArgumentException>(() => Vector<double>.ComputeBarycenter((1d, p1), (double.PositiveInfinity, p2)));
+    }
+
+    /// <summary>
+    /// Negative and positive weights that do not cancel out to zero remain a valid, well-defined
+    /// (unequal, "external division") barycenter and must not be rejected by the zero/non-finite guard.
+    /// </summary>
+    [TestMethod]
+    public void ComputeBarycenter_NegativeAndPositiveWeightsSummingNonZero_StillWorks()
+    {
+        var p1 = new Vector<double>(0d, 0d);
+        var p2 = new Vector<double>(2d, 0d);
+        var (weight, barycenter) = Vector<double>.ComputeBarycenter((3d, p1), (-1d, p2));
+        Assert.AreEqual(2d, weight, 1e-9);
+        Assert.AreEqual(-1d, barycenter[0], 1e-9);
+        Assert.AreEqual(0d, barycenter[1], 1e-9);
+    }
+
     /// <summary>
     /// Ensures that vectors copy incoming component arrays to remain immutable.
     /// </summary>
