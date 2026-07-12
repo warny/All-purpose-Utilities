@@ -31,55 +31,6 @@ internal static partial class GrammarEmitter
     }
 
     /// <summary>
-    /// Emits normalized user-authored embedded C# into a generated hook body.
-    /// </summary>
-    /// <param name="sb">Source builder receiving generated C#.</param>
-    /// <param name="body">Normalized generated embedded-code body.</param>
-    /// <param name="indent">Indentation prefix applied to generated code lines.</param>
-    private static void EmitGeneratedEmbeddedCodeBody(StringBuilder sb, GeneratedEmbeddedCodeBody body, string indent)
-    {
-        if (body.Kind == GeneratedEmbeddedCodeBodyKind.Expression)
-        {
-            sb.AppendLine($"{indent}return {body.Code};");
-            return;
-        }
-
-        foreach (string line in SplitEmbeddedCodeLines(body.Code))
-        {
-            sb.AppendLine($"{indent}{line}");
-        }
-    }
-
-    /// <summary>
-    /// Splits user-authored embedded C# into lines after normalizing platform-specific newline forms.
-    /// </summary>
-    /// <param name="code">Embedded C# code to split.</param>
-    /// <returns>Lines that can be re-emitted into a generated hook body.</returns>
-    private static IEnumerable<string> SplitEmbeddedCodeLines(TransformedEmbeddedCode code)
-    {
-        return SplitEmbeddedCodeLines(code.Text);
-    }
-
-    /// <summary>
-    /// Splits embedded C# text into normalized lines.
-    /// </summary>
-    /// <param name="code">Embedded C# code to split.</param>
-    /// <returns>Lines that can be emitted into generated source.</returns>
-    private static IEnumerable<string> SplitEmbeddedCodeLines(string code)
-    {
-        if (code.Length == 0)
-        {
-            yield break;
-        }
-
-        foreach (string line in code.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n'))
-        {
-            yield return line;
-        }
-    }
-
-
-    /// <summary>
     /// Applies the configured embedded-code transformer and rejects diagnostics marked as errors.
     /// </summary>
     /// <param name="transformer">Transformer selected for generation.</param>
@@ -235,42 +186,52 @@ internal static partial class GrammarEmitter
         /// Initializes a normalized generated embedded-code body.
         /// </summary>
         /// <param name="kind">Emission shape for the generated hook body.</param>
-        /// <param name="code">Trimmed user-authored C# body without ANTLR wrapper braces.</param>
-        private GeneratedEmbeddedCodeBody(GeneratedEmbeddedCodeBodyKind kind, string code)
+        /// <param name="code">Transformed user-authored C# body without ANTLR wrapper braces.</param>
+        private GeneratedEmbeddedCodeBody(GeneratedEmbeddedCodeBodyKind kind, TransformedEmbeddedCode code)
         {
             Kind = kind;
-            Code = code;
+            Code = code ?? throw new ArgumentNullException(nameof(code));
         }
 
         /// <summary>Gets the emission shape for the generated hook body.</summary>
         public GeneratedEmbeddedCodeBodyKind Kind { get; }
 
-        /// <summary>Gets the trimmed user-authored C# body without ANTLR wrapper braces.</summary>
-        public string Code { get; }
+        /// <summary>Gets the transformed user-authored C# body without ANTLR wrapper braces.</summary>
+        public TransformedEmbeddedCode Code { get; }
 
         /// <summary>
         /// Classifies a parser semantic predicate body as an expression or statement block.
         /// </summary>
-        /// <param name="code">Raw embedded predicate code without ANTLR braces.</param>
+        /// <param name="code">Transformed embedded predicate code without ANTLR braces.</param>
         /// <returns>A normalized predicate body.</returns>
         public static GeneratedEmbeddedCodeBody ForPredicate(TransformedEmbeddedCode code)
         {
+            if (code is null)
+            {
+                throw new ArgumentNullException(nameof(code));
+            }
+
             string trimmedCode = code.Text.Trim();
             var kind = ContainsReturnKeyword(trimmedCode)
                 ? GeneratedEmbeddedCodeBodyKind.Block
                 : GeneratedEmbeddedCodeBodyKind.Expression;
 
-            return new GeneratedEmbeddedCodeBody(kind, trimmedCode);
+            return new GeneratedEmbeddedCodeBody(kind, code);
         }
 
         /// <summary>
         /// Classifies a parser inline action body as statements emitted into a void hook.
         /// </summary>
-        /// <param name="code">Raw embedded action code without ANTLR braces.</param>
+        /// <param name="code">Transformed embedded action code without ANTLR braces.</param>
         /// <returns>A normalized action body.</returns>
         public static GeneratedEmbeddedCodeBody ForAction(TransformedEmbeddedCode code)
         {
-            return new GeneratedEmbeddedCodeBody(GeneratedEmbeddedCodeBodyKind.Block, code.Text.Trim());
+            if (code is null)
+            {
+                throw new ArgumentNullException(nameof(code));
+            }
+
+            return new GeneratedEmbeddedCodeBody(GeneratedEmbeddedCodeBodyKind.Block, code);
         }
 
         /// <summary>

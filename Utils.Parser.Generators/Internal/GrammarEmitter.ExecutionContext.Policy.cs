@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Utils.Parser.Diagnostics.EmbeddedCode;
 
 namespace Utils.Parser.Generators.Internal;
 
@@ -103,8 +105,9 @@ internal static partial class GrammarEmitter
         sb.AppendLine("        {");
         foreach (var predicate in predicates)
         {
+            string rawPredicateCode = Escape(GetRawEmbeddedCodeText(predicate.RawCode));
             sb.AppendLine($"            if (string.Equals(context.Rule.Name, \"{Escape(predicate.RuleName)}\", global::System.StringComparison.Ordinal)");
-            sb.AppendLine($"                && string.Equals(context.PredicateCode, \"{Escape(predicate.RawCode.Text)}\", global::System.StringComparison.Ordinal)");
+            sb.AppendLine($"                && string.Equals(context.PredicateCode, \"{rawPredicateCode}\", global::System.StringComparison.Ordinal)");
             sb.AppendLine($"                && context.AlternativeIndex == {predicate.AlternativeIndex}");
             sb.AppendLine($"                && context.ElementIndex == {predicate.ElementIndex})");
             sb.AppendLine("            {");
@@ -145,8 +148,9 @@ internal static partial class GrammarEmitter
         sb.AppendLine("        {");
         foreach (var action in actions)
         {
+            string rawActionCode = Escape(GetRawEmbeddedCodeText(action.RawCode));
             sb.AppendLine($"            if (string.Equals(context.Rule.Name, \"{Escape(action.RuleName)}\", global::System.StringComparison.Ordinal)");
-            sb.AppendLine($"                && string.Equals(context.ActionCode, \"{Escape(action.RawCode.Text)}\", global::System.StringComparison.Ordinal)");
+            sb.AppendLine($"                && string.Equals(context.ActionCode, \"{rawActionCode}\", global::System.StringComparison.Ordinal)");
             sb.AppendLine($"                && context.AlternativeIndex == {action.AlternativeIndex}");
             sb.AppendLine($"                && context.ElementIndex == {action.ElementIndex})");
             sb.AppendLine("            {");
@@ -160,6 +164,39 @@ internal static partial class GrammarEmitter
         sb.AppendLine("        }");
         sb.AppendLine("    }");
         sb.AppendLine();
+    }
+
+    /// <summary>
+    /// Emits normalized transformed embedded C# into a generated hook body through the centralized injector.
+    /// </summary>
+    /// <param name="sb">Source builder receiving generated C#.</param>
+    /// <param name="body">Normalized generated embedded-code body.</param>
+    /// <param name="indentationLevel">Indentation level applied to generated code lines.</param>
+    private static void EmitGeneratedEmbeddedCodeBody(StringBuilder sb, GeneratedEmbeddedCodeBody body, int indentationLevel)
+    {
+        var injector = new CSharpEmbeddedCodeInjector(sb);
+        if (body.Kind == GeneratedEmbeddedCodeBodyKind.Expression)
+        {
+            injector.InjectReturnExpression(body.Code, indentationLevel);
+            return;
+        }
+
+        injector.InjectCompleteFragment(body.Code, indentationLevel);
+    }
+
+    /// <summary>
+    /// Gets raw embedded-code text for generated runtime dispatch comparisons without injecting it as executable C# body.
+    /// </summary>
+    /// <param name="code">Raw embedded code stored in parser model metadata.</param>
+    /// <returns>Raw embedded-code text used as a runtime lookup key.</returns>
+    private static string GetRawEmbeddedCodeText(RawEmbeddedCode code)
+    {
+        if (code is null)
+        {
+            throw new ArgumentNullException(nameof(code));
+        }
+
+        return code.Text;
     }
 
     /// <summary>
@@ -247,8 +284,9 @@ internal static partial class GrammarEmitter
         sb.AppendLine("        {");
         foreach (var action in lexerActions)
         {
+            string rawLexerActionCode = Escape(GetRawEmbeddedCodeText(action.RawCode));
             sb.AppendLine($"            if (string.Equals(context.Rule.Name, \"{Escape(action.RuleName)}\", global::System.StringComparison.Ordinal)");
-            sb.AppendLine($"                && string.Equals(context.ActionCode, \"{Escape(action.RawCode.Text)}\", global::System.StringComparison.Ordinal)");
+            sb.AppendLine($"                && string.Equals(context.ActionCode, \"{rawLexerActionCode}\", global::System.StringComparison.Ordinal)");
             sb.AppendLine($"                && context.AlternativeIndex == {action.AlternativeIndex}");
             sb.AppendLine($"                && context.ElementIndex == {action.ElementIndex})");
             sb.AppendLine("            {");
@@ -291,8 +329,9 @@ internal static partial class GrammarEmitter
         sb.AppendLine("        {");
         foreach (var predicate in lexerPredicates)
         {
+            string rawLexerPredicateCode = Escape(GetRawEmbeddedCodeText(predicate.RawCode));
             sb.AppendLine($"            if (string.Equals(context.Rule.Name, \"{Escape(predicate.RuleName)}\", global::System.StringComparison.Ordinal)");
-            sb.AppendLine($"                && string.Equals(context.PredicateCode, \"{Escape(predicate.RawCode.Text)}\", global::System.StringComparison.Ordinal)");
+            sb.AppendLine($"                && string.Equals(context.PredicateCode, \"{rawLexerPredicateCode}\", global::System.StringComparison.Ordinal)");
             sb.AppendLine($"                && context.AlternativeIndex == {predicate.AlternativeIndex}");
             sb.AppendLine($"                && context.ElementIndex == {predicate.ElementIndex})");
             sb.AppendLine("            {");
@@ -320,7 +359,7 @@ internal static partial class GrammarEmitter
         sb.AppendLine($"    private bool {hook.MethodName}(SemanticPredicateEvaluationContext context)");
         sb.AppendLine("    {");
         EmitContextLocals(sb, predicate: true);
-        EmitGeneratedEmbeddedCodeBody(sb, body, "        ");
+        EmitGeneratedEmbeddedCodeBody(sb, body, 2);
         sb.AppendLine("    }");
         sb.AppendLine();
     }
@@ -338,7 +377,7 @@ internal static partial class GrammarEmitter
         sb.AppendLine($"    private void {hook.MethodName}(ParserActionExecutionContext context)");
         sb.AppendLine("    {");
         EmitContextLocals(sb, predicate: false);
-        EmitGeneratedEmbeddedCodeBody(sb, body, "        ");
+        EmitGeneratedEmbeddedCodeBody(sb, body, 2);
         sb.AppendLine("    }");
         sb.AppendLine();
     }
@@ -356,7 +395,7 @@ internal static partial class GrammarEmitter
         sb.AppendLine($"    /// <summary>Executes inline lexer action hook for rule <c>{EscapeXml(hook.RuleName)}</c>.</summary>");
         sb.AppendLine($"    private void {hook.MethodName}(LexerActionExecutionContext context, LexerActionExecutionResult result)");
         sb.AppendLine("    {");
-        EmitGeneratedEmbeddedCodeBody(sb, body, "        ");
+        EmitGeneratedEmbeddedCodeBody(sb, body, 2);
         sb.AppendLine("    }");
         sb.AppendLine();
     }
@@ -374,7 +413,7 @@ internal static partial class GrammarEmitter
         sb.AppendLine($"    /// <summary>Executes inline lexer predicate hook for rule <c>{EscapeXml(hook.RuleName)}</c>.</summary>");
         sb.AppendLine($"    private bool {hook.MethodName}(LexerPredicateEvaluationContext context)");
         sb.AppendLine("    {");
-        EmitGeneratedEmbeddedCodeBody(sb, body, "        ");
+        EmitGeneratedEmbeddedCodeBody(sb, body, 2);
         sb.AppendLine("    }");
         sb.AppendLine();
     }
@@ -455,7 +494,7 @@ internal static partial class GrammarEmitter
         sb.AppendLine("    {");
         sb.AppendLine("        string ruleName = context.RuleName;");
         sb.AppendLine("        int inputPosition = context.InputPosition;");
-        EmitGeneratedEmbeddedCodeBody(sb, body, "        ");
+        EmitGeneratedEmbeddedCodeBody(sb, body, 2);
         sb.AppendLine("    }");
         sb.AppendLine();
     }

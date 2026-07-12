@@ -69,22 +69,37 @@ Tests ajoutés ou consolidés :
   d'erreur restent cohérentes entre génération et compilation runtime.
 
 ### 3. Créer une classe dédiée à l'injection du code C#
-`GrammarEmitter` assure aujourd'hui à la fois la collecte des fragments, leur transformation, leur
-classification, leur indentation et leur écriture dans le `StringBuilder` généré.
+**Corrigé.** L'injection C# générée est désormais centralisée dans
+`Utils.Parser.Generators.Internal.CSharpEmbeddedCodeInjector`. `GrammarEmitter` conserve la collecte,
+la classification, la création des contextes et l'appel à `TransformEmbeddedCode(...)`, mais transmet
+ensuite uniquement des `TransformedEmbeddedCode` à l'injecteur. L'API d'injection n'accepte ni
+`RawEmbeddedCode`, ni `G4GrammarAction`, ni `G4EmbeddedAction`, ni chaîne de contenu brut ; les chaînes
+restantes sont limitées aux marqueurs/descripteurs internes contrôlés par `CSharpEmbeddedCodeRegion`.
 
-Cette organisation respecte actuellement le passage par le transformer, mais ne rend pas cet
-invariant structurel : une nouvelle méthode pourrait injecter directement `RawCode` ou `SourceText`.
+Familles migrées :
 
-**Fix proposé** : introduire une classe interne dédiée, par exemple
-`CSharpEmbeddedCodeInjector`, responsable de :
+- headers, members et footers parser (`@header`, `@members`, `@footer`, `@parser::*`) ;
+- headers, members et footers lexer (`@lexer::header`, `@lexer::members`, `@lexer::footer`) ;
+- actions inline parser et lexer ;
+- prédicats parser et lexer, avec distinction entre expression retournée et fragment complet ;
+- hooks de cycle de vie parser `@init` et `@after`.
 
-- l'injection des headers, members et footers ;
-- l'injection des corps de méthodes d'action ;
-- l'injection des expressions ou blocs de prédicat ;
-- la normalisation des fins de ligne et de l'indentation ;
-- les marqueurs de début et de fin du code injecté.
+L'injecteur porte la normalisation déterministe des fins de ligne (`\n`, `\r\n`, `\r`), le découpage
+en lignes, l'indentation à quatre espaces par niveau, les marqueurs de régions nommées et l'espacement
+final des régions. Une fin de ligne finale continue de produire une ligne vide finale lorsque le texte
+n'est pas préalablement rogné, afin de préserver le comportement historique des régions verbatim.
 
-`GrammarEmitter` ne devrait transmettre à cet injecteur que du code déjà transformé.
+Tests ajoutés :
+
+- `CSharpEmbeddedCodeInjectorTests` couvre les lignes simples/multiples, la normalisation des fins de
+  ligne, l'indentation, les corps de méthode, les lignes vides, le texte vide, les marqueurs,
+  l'espacement final, les expressions de prédicat, les blocs d'action et la frontière typée de l'API ;
+- `Antlr4GeneratedEmbeddedCodeTests.Emit_WhenTransformerReplacesNamedActions_UsesTransformedMarkedRegions` ;
+- `Antlr4GeneratedEmbeddedCodeTests.Emit_WhenTransformerReplacesParserHooks_UsesTransformedHookBodies` ;
+- `Antlr4GeneratedEmbeddedCodeTests.Emit_WhenTransformerReplacesLexerHooks_UsesTransformedHookBodies` ;
+- `CSharpEmbeddedCodeInjectorArchitectureTests` ajoute un garde-fou Roslyn fonctionnel qui interdit les
+  append directs de code brut et limite les lectures de texte transformé hors injecteur aux usages de
+  classification non injectants explicitement justifiés.
 
 ### 4. Ajouter des tests d'invariant pour tous les emplacements de code embarqué
 Les tests doivent couvrir au minimum :

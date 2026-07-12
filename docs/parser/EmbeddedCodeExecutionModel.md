@@ -698,3 +698,8 @@ Supported generated-C# opt-in convenience forms are deliberately narrow:
 The following remain unsupported and must produce deterministic transformer diagnostics rather than new runtime syntax: `$child.value`, `$rule.value`, `$ctx`, `$c.ctx`, `$xs.ctx`, bare `$c` / `$xs` label objects, writes to `$c.value` or `$xs.value`, label-return reads in `@init`, label-return reads in semantic predicates, token attributes such as `$t.text`, lexer attributes, typed parser contexts, public ANTLR-style parser rule methods, and general ANTLR attribute compatibility.
 
 These forms are optional `IParserEmbeddedCodeTransformer` rewrites for generated C# only. The default/no-op transformer leaves `$...` text unchanged, conservative `Parse(...)` remains unchanged, and `ParserEngine` remains target-language-neutral. Parser-managed return and label state follows the existing rollback semantics; no rollback of external side effects is implied.
+
+
+## Generated C# injection boundary
+
+Generated C# injection is centralized in `CSharpEmbeddedCodeInjector` after transformation. The injector is intentionally a writer only: it normalizes line endings, applies generated-source indentation, emits known markers, and writes `TransformedEmbeddedCode` into named-action regions or hook bodies without calling transformers, compiling C#, or changing parser rollback semantics.
