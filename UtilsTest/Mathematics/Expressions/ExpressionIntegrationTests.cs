@@ -292,4 +292,49 @@ public class ExpressionIntegrationTests
             Assert.AreEqual(xv * xv / 2.0 - Math.Cos(xv), compiled(xv), 1e-9, $"∫(x+sin(x)) dx at x={xv}");
     }
 
+    // ── Parameter identity (item 31) and re-entrancy (item 32) ───────────────
+
+    /// <summary>
+    /// Two distinct <see cref="ParameterExpression"/> objects legally sharing the integration
+    /// variable's name cannot be resolved unambiguously by name alone. The fix rejects this instead of
+    /// guessing which one is the real integration variable.
+    /// </summary>
+    [TestMethod]
+    public void Integrate_TwoDistinctParametersWithSameName_ThrowsAmbiguousException()
+    {
+        var x1 = Expression.Parameter(typeof(double), "x");
+        var x2 = Expression.Parameter(typeof(double), "x");
+        var f = Expression.Lambda<Func<double, double, double>>(Expression.Add(x1, x2), x1, x2);
+
+        Assert.ThrowsExactly<InvalidOperationException>(() => integration.Integrate(f));
+    }
+
+    /// <summary>
+    /// Each <see cref="ExpressionIntegration{T}.Integrate"/> call resolves its target parameter into a
+    /// fresh, isolated worker instance instead of mutating the shared instance's cached parameter field,
+    /// so concurrent calls on one shared transformer instance cannot corrupt each other's result
+    /// (item 32).
+    /// </summary>
+    [TestMethod]
+    public void Integrate_ConcurrentCalls_AreIsolatedPerCall()
+    {
+        var shared = new ExpressionIntegration<double>("x");
+        var results = new Expression<Func<double, double>>[64];
+
+        System.Threading.Tasks.Parallel.For(0, results.Length, i =>
+        {
+            var x = Expression.Parameter(typeof(double), "x");
+            var f = Expression.Lambda<Func<double, double>>(Expression.Constant((double)(i + 1)), x);
+            results[i] = (Expression<Func<double, double>>)shared.Integrate(f);
+        });
+
+        for (int i = 0; i < results.Length; i++)
+        {
+            double expectedFactor = i + 1;
+            var compiled = results[i].Compile();
+            foreach (double xv in new[] { -2.0, 0.0, 3.5 })
+                Assert.AreEqual(expectedFactor * xv, compiled(xv), 1e-9, $"Concurrent integrate #{i} at x={xv}");
+        }
+    }
+
 }

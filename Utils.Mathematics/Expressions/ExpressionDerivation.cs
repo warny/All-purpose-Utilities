@@ -19,12 +19,41 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
     public string ParameterName { get; }
 
     /// <summary>
+    /// The specific <see cref="ParameterExpression"/> instance, resolved once per <see cref="Derivate"/>
+    /// call, that identifies the differentiation variable by reference rather than by name. Two distinct
+    /// <see cref="ParameterExpression"/> objects may legally share the same <see cref="ParameterName"/>
+    /// (e.g. an unrelated captured variable); comparing by reference instead of by name avoids treating
+    /// such a foreign parameter as the differentiation variable. Set once, in the private constructor, on
+    /// a fresh per-call worker instance (see <see cref="Derivate"/>).
+    /// </summary>
+    private readonly ParameterExpression targetParameter;
+
+    /// <summary>
+    /// Determines whether <paramref name="candidate"/> is the specific parameter instance resolved as
+    /// the differentiation variable for the current call.
+    /// </summary>
+    private bool IsTargetParameter(ParameterExpression candidate) => ReferenceEquals(candidate, targetParameter);
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="ExpressionDerivation{T}"/> class for the specified parameter.
     /// </summary>
     /// <param name="parameterName">Name of the variable with respect to which derivatives are computed.</param>
-    public ExpressionDerivation(string parameterName)
+    public ExpressionDerivation(string parameterName) : this(parameterName, null!)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a per-call worker instance with its target parameter already resolved.
+    /// </summary>
+    /// <param name="parameterName">Name of the variable with respect to which derivatives are computed.</param>
+    /// <param name="targetParameter">
+    /// The specific resolved <see cref="ParameterExpression"/> instance, or <see langword="null"/> for
+    /// the publicly-constructed instance that has not yet performed a <see cref="Derivate"/> call.
+    /// </param>
+    private ExpressionDerivation(string parameterName, ParameterExpression targetParameter)
     {
         this.ParameterName = parameterName;
+        this.targetParameter = targetParameter;
     }
 
     /// <summary>
@@ -32,10 +61,32 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
     /// </summary>
     /// <param name="e">Lambda expression to differentiate.</param>
     /// <returns>The simplified derivative expression.</returns>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when no parameter named <see cref="ParameterName"/> is found in <paramref name="e"/>, or
+    /// when more than one distinct parameter shares that name (an ambiguous match that cannot be
+    /// resolved by name alone).
+    /// </exception>
     public Expression Derivate(LambdaExpression e)
     {
         ArgumentNullException.ThrowIfNull(e);
-        return Expression.Lambda(Transform(e.Body.Simplify()).Simplify(), e.Parameters);
+
+        var candidates = e.Parameters.Where(p => p.Name == ParameterName).ToList();
+        if (candidates.Count == 0)
+        {
+            throw new InvalidOperationException($"The parameter '{ParameterName}' was not found in the lambda expression.");
+        }
+        if (candidates.Count > 1)
+        {
+            throw new InvalidOperationException(
+                $"The lambda expression declares {candidates.Count} distinct parameters named '{ParameterName}'; " +
+                "the differentiation variable is ambiguous. Use distinct parameter names.");
+        }
+
+        // A fresh worker instance isolates the resolved target parameter for this call: concurrent or
+        // re-entrant calls on the same public ExpressionDerivation<T> instance no longer share mutable
+        // state (see TODO-2026-07-11-pass3.md items #31 and #32).
+        var worker = new ExpressionDerivation<T>(ParameterName, candidates[0]);
+        return Expression.Lambda(worker.Transform(e.Body.Simplify()).Simplify(), e.Parameters);
     }
 
     /// <summary>
@@ -63,7 +114,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
         ParameterExpression e
     )
     {
-        if (e.Name == ParameterName)
+        if (IsTargetParameter(e))
         {
             return ExpressionEx.CreateConstant(T.CreateChecked(1d));
         }
@@ -427,7 +478,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
     {
         return expression switch
         {
-            ParameterExpression parameterExpression => parameterExpression.Name == ParameterName,
+            ParameterExpression parameterExpression => IsTargetParameter(parameterExpression),
             UnaryExpression unaryExpression => ContainsParameter(unaryExpression.Operand),
             BinaryExpression binaryExpression => ContainsParameter(binaryExpression.Left) || ContainsParameter(binaryExpression.Right),
             MethodCallExpression methodCallExpression => methodCallExpression.Arguments.Any(ContainsParameter),

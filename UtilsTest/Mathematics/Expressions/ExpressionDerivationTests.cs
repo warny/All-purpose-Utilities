@@ -345,4 +345,62 @@ public class ExpressionDerivationTests
             Assert.AreEqual(2m * xv, derivative(xv), $"d/dx[x*x] for decimal at x={xv}");
     }
 
+    // ── Parameter identity (item 31) and re-entrancy (item 32) ───────────────
+
+    /// <summary>
+    /// Two distinct <see cref="ParameterExpression"/> objects legally sharing the differentiation
+    /// variable's name cannot be resolved unambiguously by name alone; the previous name-based lookup
+    /// would silently differentiate as if both were the target variable. The fix rejects this instead
+    /// of guessing.
+    /// </summary>
+    [TestMethod]
+    public void Derivate_TwoDistinctParametersWithSameName_ThrowsAmbiguousException()
+    {
+        var x1 = Expression.Parameter(typeof(double), "x");
+        var x2 = Expression.Parameter(typeof(double), "x");
+        var f = Expression.Lambda<Func<double, double, double>>(Expression.Add(x1, x2), x1, x2);
+
+        Assert.ThrowsExactly<InvalidOperationException>(() => derivation.Derivate(f));
+    }
+
+    /// <summary>
+    /// When the configured parameter name is absent from the lambda's own parameter list, the target
+    /// variable cannot be resolved at all and differentiation must fail clearly rather than silently
+    /// matching an unrelated same-named parameter deep in the expression tree.
+    /// </summary>
+    [TestMethod]
+    public void Derivate_ParameterNameNotInLambda_ThrowsClearException()
+    {
+        var y = Expression.Parameter(typeof(double), "y");
+        var f = Expression.Lambda<Func<double, double>>(y, y);
+
+        Assert.ThrowsExactly<InvalidOperationException>(() => derivation.Derivate(f));
+    }
+
+    /// <summary>
+    /// Each <see cref="ExpressionDerivation{T}.Derivate"/> call resolves its target parameter into a
+    /// fresh, isolated worker instance rather than mutating shared instance state, so concurrent calls
+    /// on one shared transformer instance cannot corrupt each other's result (item 32).
+    /// </summary>
+    [TestMethod]
+    public void Derivate_ConcurrentCalls_AreIsolatedPerCall()
+    {
+        var shared = new ExpressionDerivation<double>("x");
+        var results = new Expression<Func<double, double>>[64];
+
+        System.Threading.Tasks.Parallel.For(0, results.Length, i =>
+        {
+            var x = Expression.Parameter(typeof(double), "x");
+            var f = Expression.Lambda<Func<double, double>>(Expression.Multiply(Expression.Constant((double)(i + 1)), x), x);
+            results[i] = (Expression<Func<double, double>>)shared.Derivate(f);
+        });
+
+        for (int i = 0; i < results.Length; i++)
+        {
+            double expected = i + 1;
+            double actual = results[i].Compile()(2.5);
+            Assert.AreEqual(expected, actual, 1e-9, $"Concurrent derivate #{i}");
+        }
+    }
+
 }
