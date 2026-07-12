@@ -177,6 +177,7 @@ Apache 2.0 — see the repository root for details.
 For parser semantic predicates and inline parser actions, the generator emits executable C# hooks in addition to preserving the raw model metadata strings. This is the source-generator C# opt-in path documented in [`docs/parser/ANTLRCompatibility.md`](https://github.com/warny/All-purpose-Utilities/blob/master/docs/parser/ANTLRCompatibility.md). It is intentionally separate from `Utils.Parser.Expressions` and does not use `IExpressionCompiler`: embedded C# is compiled by Roslyn together with the consuming project.
 
 Embedded parser code is target-language code. The standard source generator emits embedded code through `NoOpParserEmbeddedCodeTransformer`, so grammar code appears in generated C# as written except for normal wrapping and indentation. Custom transformer injection is currently available through direct emitter/runtime preparer APIs; the standard source-generator discovery path uses the no-op default.
+Transformed embedded C# is written into generated source by the internal `CSharpEmbeddedCodeInjector`, which centralizes generated markers, line-ending normalization, and four-space indentation for named-action regions and generated hook bodies. The injector receives only `TransformedEmbeddedCode`; transformation and diagnostic validation remain owned by the existing transformer boundary.
 
 Preferred no-transformer embedded code should call the generated helper APIs directly instead of relying on ANTLR-style `$...` convenience syntax:
 
