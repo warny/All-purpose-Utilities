@@ -581,4 +581,65 @@ public class ExpressionDerivationTests
         Assert.AreEqual(1.0, derivativeFunc(3f), 1e-9);
     }
 
+    // ── Parameter-instance resolution (TODO-pass4 item #47) ────────────────────
+
+    /// <summary>
+    /// Two parameters sharing the same declared name (including <see langword="null"/> for unnamed
+    /// parameters) previously made name-based resolution ambiguous even when only one of them was
+    /// intended. Targeting the exact instance sidesteps the name entirely.
+    /// </summary>
+    [TestMethod]
+    public void Derivate_ByParameterInstance_TwoUnnamedParameters_ResolvesEachUnambiguously()
+    {
+        var x = Expression.Parameter(typeof(double));
+        var y = Expression.Parameter(typeof(double));
+        var f = Expression.Lambda<Func<double, double, double>>(Expression.Multiply(x, y), x, y);
+
+        ExpressionDerivation<double> derivationByX = new(x);
+        ExpressionDerivation<double> derivationByY = new(y);
+
+        var dfdx = (Expression<Func<double, double, double>>)derivationByX.Derivate(f);
+        var dfdy = (Expression<Func<double, double, double>>)derivationByY.Derivate(f);
+
+        Assert.AreEqual(3.0, dfdx.Compile()(2.0, 3.0), 1e-9);
+        Assert.AreEqual(2.0, dfdy.Compile()(2.0, 3.0), 1e-9);
+    }
+
+    /// <summary>
+    /// Two distinct parameters can legally share one non-null name; resolving by instance still picks
+    /// out exactly the one the caller passed instead of throwing an ambiguity error.
+    /// </summary>
+    [TestMethod]
+    public void Derivate_ByParameterInstance_DuplicateNamedParameters_ResolvesEachUnambiguously()
+    {
+        var x1 = Expression.Parameter(typeof(double), "x");
+        var x2 = Expression.Parameter(typeof(double), "x");
+        var f = Expression.Lambda<Func<double, double, double>>(Expression.Add(Expression.Multiply(x1, Expression.Constant(2.0)), x2), x1, x2);
+
+        ExpressionDerivation<double> derivationByX1 = new(x1);
+        ExpressionDerivation<double> derivationByX2 = new(x2);
+
+        var dfdx1 = (Expression<Func<double, double, double>>)derivationByX1.Derivate(f);
+        var dfdx2 = (Expression<Func<double, double, double>>)derivationByX2.Derivate(f);
+
+        Assert.AreEqual(2.0, dfdx1.Compile()(5.0, 7.0), 1e-9);
+        Assert.AreEqual(1.0, dfdx2.Compile()(5.0, 7.0), 1e-9);
+    }
+
+    /// <summary>
+    /// A parameter instance that does not belong to the lambda being differentiated must fail with a
+    /// contextual diagnostic instead of silently matching nothing or the wrong variable.
+    /// </summary>
+    [TestMethod]
+    public void Derivate_ByParameterInstance_ParameterNotInLambda_Throws()
+    {
+        var x = Expression.Parameter(typeof(double), "x");
+        var foreign = Expression.Parameter(typeof(double), "x");
+        var f = Expression.Lambda<Func<double, double>>(x, x);
+
+        ExpressionDerivation<double> derivationByForeign = new(foreign);
+
+        Assert.ThrowsExactly<InvalidOperationException>(() => derivationByForeign.Derivate(f));
+    }
+
 }

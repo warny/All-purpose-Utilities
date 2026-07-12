@@ -13,15 +13,27 @@ public static class MathExpressionExtensions
 {
     private static readonly MethodInfo DerivateGenericMethod = typeof(MathExpressionExtensions)
         .GetMethods()
-        .Single(m => m.Name == nameof(Derivate) && m.IsGenericMethodDefinition);
+        .Single(m => m.Name == nameof(Derivate) && m.IsGenericMethodDefinition && m.GetParameters()[1].ParameterType == typeof(string));
+
+    private static readonly MethodInfo DerivateByParameterGenericMethod = typeof(MathExpressionExtensions)
+        .GetMethods()
+        .Single(m => m.Name == nameof(Derivate) && m.IsGenericMethodDefinition && m.GetParameters()[1].ParameterType == typeof(ParameterExpression));
 
     private static readonly MethodInfo GradientGenericMethod = typeof(MathExpressionExtensions)
         .GetMethods()
-        .Single(m => m.Name == nameof(Gradient) && m.IsGenericMethodDefinition);
+        .Single(m => m.Name == nameof(Gradient) && m.IsGenericMethodDefinition && m.GetParameters()[1].ParameterType == typeof(IEnumerable<string>));
+
+    private static readonly MethodInfo GradientByParameterGenericMethod = typeof(MathExpressionExtensions)
+        .GetMethods()
+        .Single(m => m.Name == nameof(Gradient) && m.IsGenericMethodDefinition && m.GetParameters()[1].ParameterType == typeof(IEnumerable<ParameterExpression>));
 
     private static readonly MethodInfo IntegrateGenericMethod = typeof(MathExpressionExtensions)
         .GetMethods()
-        .Single(m => m.Name == nameof(Integrate) && m.IsGenericMethodDefinition);
+        .Single(m => m.Name == nameof(Integrate) && m.IsGenericMethodDefinition && m.GetParameters()[1].ParameterType == typeof(string));
+
+    private static readonly MethodInfo IntegrateByParameterGenericMethod = typeof(MathExpressionExtensions)
+        .GetMethods()
+        .Single(m => m.Name == nameof(Integrate) && m.IsGenericMethodDefinition && m.GetParameters()[1].ParameterType == typeof(ParameterExpression));
 
     /// <summary>
     /// Infers the scalar type shared by the parameters named in <paramref name="paramNames"/>, for the
@@ -48,16 +60,53 @@ public static class MathExpressionExtensions
             .Select(p => p.Type)
             .Distinct()
             .ToArray();
+        return ResolveScalarType(types);
+    }
 
-        if (types.Length > 1)
+    /// <summary>
+    /// Same as <see cref="ResolveScalarType(LambdaExpression, IReadOnlyList{string})"/>, but for the
+    /// parameter-instance overloads below (see TODO-pass4 item #47): the caller already holds the exact
+    /// <see cref="ParameterExpression"/> instances, so no name-based lookup into <c>e.Parameters</c> is
+    /// needed to obtain their declared types.
+    /// </summary>
+    /// <param name="parameters">The exact parameter instances the caller intends to target.</param>
+    /// <returns>The single shared <see cref="IFloatingPoint{TSelf}"/>-conforming CLR type.</returns>
+    /// <exception cref="NotSupportedException">
+    /// Thrown when the parameters do not share a single type, or when that type does not implement
+    /// <see cref="IFloatingPoint{TSelf}"/>.
+    /// </exception>
+    private static Type ResolveScalarType(IReadOnlyList<ParameterExpression> parameters)
+    {
+        Type[] types = parameters.Select(p => p.Type).Distinct().ToArray();
+        return ResolveScalarType(types);
+    }
+
+    /// <summary>
+    /// Shared core used by both <see cref="ResolveScalarType(LambdaExpression, IReadOnlyList{string})"/>
+    /// and <see cref="ResolveScalarType(IReadOnlyList{ParameterExpression})"/>: validates that the
+    /// distinct parameter types collapse to exactly one <see cref="IFloatingPoint{TSelf}"/>-conforming type.
+    /// </summary>
+    /// <param name="distinctTypes">The distinct CLR types of the targeted parameters.</param>
+    /// <returns>
+    /// The single shared type, or <see cref="double"/> when <paramref name="distinctTypes"/> is empty
+    /// (letting the downstream call surface its own "parameter not found" diagnostic instead of failing
+    /// here for an unrelated reason).
+    /// </returns>
+    /// <exception cref="NotSupportedException">
+    /// Thrown when <paramref name="distinctTypes"/> contains more than one type, or when the single
+    /// remaining type does not implement <see cref="IFloatingPoint{TSelf}"/>.
+    /// </exception>
+    private static Type ResolveScalarType(IReadOnlyCollection<Type> distinctTypes)
+    {
+        if (distinctTypes.Count > 1)
         {
             throw new NotSupportedException(
                 "Cannot infer a single scalar type for the non-generic derivative/integral overloads: " +
-                $"the targeted parameters have different types ({string.Join(", ", types.Select(t => t.Name))}). " +
+                $"the targeted parameters have different types ({string.Join(", ", distinctTypes.Select(t => t.Name))}). " +
                 "Use the explicit generic overload (e.g. Derivate<T>) to select the scalar type.");
         }
 
-        Type scalarType = types.Length == 1 ? types[0] : typeof(double);
+        Type scalarType = distinctTypes.Count == 1 ? distinctTypes.Single() : typeof(double);
         if (!scalarType.IsDefinedBy(typeof(IFloatingPoint<>)))
         {
             throw new NotSupportedException(
@@ -78,7 +127,7 @@ public static class MathExpressionExtensions
     {
         e.Arg().MustNotBeNull();
         e.Parameters.ArgMustBeOfSize(1);
-        return e.Derivate(e.Parameters[0].Name);
+        return e.Derivate(e.Parameters[0]);
     }
 
     /// <summary>
@@ -115,6 +164,44 @@ public static class MathExpressionExtensions
     }
 
     /// <summary>
+    /// Computes the derivative of a lambda expression with respect to the exact declared parameter
+    /// instance. Unlike the name-based overload, this resolves the differentiation variable unambiguously
+    /// even when the parameter's <see cref="ParameterExpression.Name"/> is <see langword="null"/> or
+    /// shared with another, unrelated parameter (see TODO-pass4 item #47). The scalar type is inferred
+    /// from <paramref name="parameter"/>'s own CLR type instead of assuming <see cref="double"/>.
+    /// </summary>
+    /// <param name="e">Lambda expression to differentiate.</param>
+    /// <param name="parameter">The exact parameter instance used as the differentiation variable.</param>
+    /// <returns>A lambda expression representing the derivative.</returns>
+    /// <exception cref="NotSupportedException">
+    /// Thrown when <paramref name="parameter"/>'s CLR type does not implement <see cref="IFloatingPoint{TSelf}"/>.
+    /// </exception>
+    public static LambdaExpression Derivate(this LambdaExpression e, ParameterExpression parameter)
+    {
+        e.Arg().MustNotBeNull();
+        parameter.Arg().MustNotBeNull();
+        Type scalarType = ResolveScalarType([parameter]);
+        return (LambdaExpression)DerivateByParameterGenericMethod.MakeGenericMethod(scalarType).Invoke(null, [e, parameter])!;
+    }
+
+    /// <summary>
+    /// Computes the derivative of a lambda expression with respect to the exact declared parameter instance.
+    /// </summary>
+    /// <typeparam name="T">Floating-point type used by derivative rules.</typeparam>
+    /// <param name="e">Lambda expression to differentiate.</param>
+    /// <param name="parameter">The exact parameter instance used as the differentiation variable.</param>
+    /// <returns>A lambda expression representing the derivative.</returns>
+    public static LambdaExpression Derivate<T>(this LambdaExpression e, ParameterExpression parameter) where T : IFloatingPoint<T>
+    {
+        e.Arg().MustNotBeNull();
+        parameter.Arg().MustNotBeNull();
+
+        ExpressionDerivation<T> derivation = new ExpressionDerivation<T>(parameter);
+        var expression = (LambdaExpression)derivation.Derivate(e);
+        return Expression.Lambda(expression.Body.Simplify(), e.Parameters);
+    }
+
+    /// <summary>
     /// Computes the gradient of a multi-parameter lambda expression as an array of partial-derivative expressions.
     /// Each entry i is the partial derivative with respect to the i-th parameter. All parameters must share
     /// the same CLR type, which is inferred instead of assuming <see cref="double"/>.
@@ -128,9 +215,9 @@ public static class MathExpressionExtensions
     public static LambdaExpression[] Gradient(this LambdaExpression e)
     {
         e.Arg().MustNotBeNull();
-        string[] paramNames = e.Parameters.Select(p => p.Name!).ToArray();
-        Type scalarType = ResolveScalarType(e, paramNames);
-        return (LambdaExpression[])GradientGenericMethod.MakeGenericMethod(scalarType).Invoke(null, [e, paramNames])!;
+        ParameterExpression[] parameters = e.Parameters.ToArray();
+        Type scalarType = ResolveScalarType(parameters);
+        return (LambdaExpression[])GradientByParameterGenericMethod.MakeGenericMethod(scalarType).Invoke(null, [e, parameters])!;
     }
 
     /// <summary>
@@ -155,6 +242,30 @@ public static class MathExpressionExtensions
     }
 
     /// <summary>
+    /// Computes the partial derivatives of a lambda expression with respect to the specified exact
+    /// parameter instances. Unlike the name-based overload, this resolves each differentiation variable
+    /// unambiguously even when multiple targeted parameters share one name — including <see langword="null"/>
+    /// for unnamed parameters (see TODO-pass4 item #47).
+    /// </summary>
+    /// <typeparam name="T">Floating-point type used by derivative rules.</typeparam>
+    /// <param name="e">Lambda expression to differentiate.</param>
+    /// <param name="parameters">The exact parameter instances to differentiate with respect to.</param>
+    /// <returns>Array of lambda expressions representing each partial derivative; shares the same parameter list as <paramref name="e"/>.</returns>
+    public static LambdaExpression[] Gradient<T>(this LambdaExpression e, params IEnumerable<ParameterExpression> parameters)
+        where T : IFloatingPoint<T>
+    {
+        e.Arg().MustNotBeNull();
+        return parameters
+            .Select(parameter =>
+            {
+                ExpressionDerivation<T> derivation = new ExpressionDerivation<T>(parameter);
+                var derived = (LambdaExpression)derivation.Derivate(e);
+                return Expression.Lambda(derived.Body.Simplify(), e.Parameters);
+            })
+            .ToArray();
+    }
+
+    /// <summary>
     /// Computes the integral of a single-parameter lambda expression with respect to its declared parameter.
     /// The scalar type is inferred from that parameter's CLR type instead of assuming <see cref="double"/>.
     /// </summary>
@@ -167,9 +278,7 @@ public static class MathExpressionExtensions
     {
         e.Arg().MustNotBeNull();
         e.Parameters.ArgMustBeOfSize(1);
-        string paramName = e.Parameters[0].Name;
-        Type scalarType = ResolveScalarType(e, [paramName]);
-        return (LambdaExpression)IntegrateGenericMethod.MakeGenericMethod(scalarType).Invoke(null, [e, paramName])!;
+        return e.Integrate(e.Parameters[0]);
     }
 
     /// <summary>
@@ -184,6 +293,44 @@ public static class MathExpressionExtensions
         e.Arg().MustNotBeNull();
 
         ExpressionIntegration<T> integration = new ExpressionIntegration<T>(paramName);
+        var expression = (LambdaExpression)integration.Integrate(e);
+        return Expression.Lambda(expression.Body.Simplify(), e.Parameters);
+    }
+
+    /// <summary>
+    /// Computes the integral of a lambda expression with respect to the exact declared parameter instance.
+    /// Unlike the name-based overload, this resolves the integration variable unambiguously even when the
+    /// parameter's <see cref="ParameterExpression.Name"/> is <see langword="null"/> or shared with another,
+    /// unrelated parameter (see TODO-pass4 item #47). The scalar type is inferred from
+    /// <paramref name="parameter"/>'s own CLR type instead of assuming <see cref="double"/>.
+    /// </summary>
+    /// <param name="e">Lambda expression to integrate.</param>
+    /// <param name="parameter">The exact parameter instance used as the integration variable.</param>
+    /// <returns>A lambda expression representing the integral.</returns>
+    /// <exception cref="NotSupportedException">
+    /// Thrown when <paramref name="parameter"/>'s CLR type does not implement <see cref="IFloatingPoint{TSelf}"/>.
+    /// </exception>
+    public static LambdaExpression Integrate(this LambdaExpression e, ParameterExpression parameter)
+    {
+        e.Arg().MustNotBeNull();
+        parameter.Arg().MustNotBeNull();
+        Type scalarType = ResolveScalarType([parameter]);
+        return (LambdaExpression)IntegrateByParameterGenericMethod.MakeGenericMethod(scalarType).Invoke(null, [e, parameter])!;
+    }
+
+    /// <summary>
+    /// Computes the integral of a lambda expression with respect to the exact declared parameter instance.
+    /// </summary>
+    /// <typeparam name="T">Floating-point type used by integration rules.</typeparam>
+    /// <param name="e">Lambda expression to integrate.</param>
+    /// <param name="parameter">The exact parameter instance used as the integration variable.</param>
+    /// <returns>A lambda expression representing the integral.</returns>
+    public static LambdaExpression Integrate<T>(this LambdaExpression e, ParameterExpression parameter) where T : IFloatingPoint<T>
+    {
+        e.Arg().MustNotBeNull();
+        parameter.Arg().MustNotBeNull();
+
+        ExpressionIntegration<T> integration = new ExpressionIntegration<T>(parameter);
         var expression = (LambdaExpression)integration.Integrate(e);
         return Expression.Lambda(expression.Body.Simplify(), e.Parameters);
     }

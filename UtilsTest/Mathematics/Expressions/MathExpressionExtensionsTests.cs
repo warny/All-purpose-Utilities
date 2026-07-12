@@ -74,4 +74,60 @@ public class MathExpressionExtensionsTests
         Expression<Func<float, double, double>> f = (x, y) => x + y;
         Assert.ThrowsException<NotSupportedException>(() => f.Gradient());
     }
+
+    // ── Parameter-instance resolution (TODO-pass4 item #47) ────────────────────
+
+    /// <summary>
+    /// Before the fix, <c>Gradient()</c> resolved each partial derivative by
+    /// <c>ParameterExpression.Name</c>; two unnamed parameters both have a <see langword="null"/> name, so
+    /// name-based resolution would find two "candidates" for either target and throw an ambiguity error
+    /// even though the parameters are perfectly identifiable by position/instance. Routing through the
+    /// parameter-instance overloads fixes this.
+    /// </summary>
+    [TestMethod]
+    public void Gradient_UnnamedParameters_ResolvesEachUnambiguously()
+    {
+        var x = Expression.Parameter(typeof(double));
+        var y = Expression.Parameter(typeof(double));
+        var f = Expression.Lambda<Func<double, double, double>>(Expression.Multiply(x, y), x, y);
+
+        LambdaExpression[] grad = f.Gradient();
+        Assert.AreEqual(2, grad.Length);
+
+        var dfdx = (Expression<Func<double, double, double>>)grad[0];
+        var dfdy = (Expression<Func<double, double, double>>)grad[1];
+        Assert.AreEqual(3.0, dfdx.Compile()(2.0, 3.0), 1e-9);
+        Assert.AreEqual(2.0, dfdy.Compile()(2.0, 3.0), 1e-9);
+    }
+
+    /// <summary>
+    /// <see cref="MathExpressionExtensions.Derivate(LambdaExpression, ParameterExpression)"/> targets the
+    /// exact parameter instance directly, without going through name-based resolution at all.
+    /// </summary>
+    [TestMethod]
+    public void Derivate_ByParameterInstance_UnnamedParameter_Works()
+    {
+        var x = Expression.Parameter(typeof(double));
+        Expression<Func<double, double>> f = Expression.Lambda<Func<double, double>>(Expression.Multiply(x, x), x);
+
+        var df = (Expression<Func<double, double>>)f.Derivate(x);
+
+        Assert.AreEqual(6.0, df.Compile()(3.0), 1e-9);
+    }
+
+    /// <summary>
+    /// <see cref="MathExpressionExtensions.Integrate(LambdaExpression, ParameterExpression)"/> targets the
+    /// exact parameter instance directly, without going through name-based resolution at all.
+    /// </summary>
+    [TestMethod]
+    public void Integrate_ByParameterInstance_UnnamedParameter_Works()
+    {
+        var x = Expression.Parameter(typeof(double));
+        Expression<Func<double, double>> f = Expression.Lambda<Func<double, double>>(x, x);
+
+        var intF = (Expression<Func<double, double>>)f.Integrate(x);
+
+        // integral of x dx = x^2/2; at x=4 -> 8
+        Assert.AreEqual(8.0, intF.Compile()(4.0), 1e-9);
+    }
 }

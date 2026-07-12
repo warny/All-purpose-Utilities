@@ -68,6 +68,17 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
     private readonly ParameterExpression targetParameter;
 
     /// <summary>
+    /// Set only by the <see cref="ExpressionDerivation{T}(ParameterExpression, bool)"/> constructor: the
+    /// exact parameter instance to differentiate against, supplied directly by the caller instead of by
+    /// name. When set, <see cref="Derivate(LambdaExpression, out bool)"/> skips name-based resolution
+    /// entirely and just checks that the lambda being differentiated declares this exact instance — see
+    /// TODO-2026-07-11-pass4.md item #47 (name-based resolution cannot distinguish two distinct
+    /// parameters sharing one name, and fails outright when a parameter's <see cref="ParameterExpression.Name"/>
+    /// is <see langword="null"/>).
+    /// </summary>
+    private readonly ParameterExpression? explicitTargetParameter;
+
+    /// <summary>
     /// Set when <see cref="DeriveUnknownMethodCall"/> actually builds a finite-difference approximation
     /// for at least one sub-expression during this worker's single <see cref="Derivate(LambdaExpression)"/>
     /// call, so that call can report <c>isExact = false</c> (see item #42). Safe as plain mutable state:
@@ -93,6 +104,21 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
     public ExpressionDerivation(string parameterName, bool allowNumericalFallback = false)
         : this(parameterName, null!, allowNumericalFallback)
     {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ExpressionDerivation{T}"/> class that differentiates
+    /// with respect to a specific <see cref="ParameterExpression"/> instance rather than a name. Unlike
+    /// the name-based constructor, this identifies the differentiation variable unambiguously even when
+    /// <paramref name="parameter"/>'s <see cref="ParameterExpression.Name"/> is <see langword="null"/> or
+    /// shared by another, unrelated parameter in the same lambda (see TODO-2026-07-11-pass4.md item #47).
+    /// </summary>
+    /// <param name="parameter">The exact parameter instance to differentiate against.</param>
+    /// <param name="allowNumericalFallback">See <see cref="AllowNumericalFallback"/>.</param>
+    public ExpressionDerivation(ParameterExpression parameter, bool allowNumericalFallback = false)
+        : this(parameter is null ? throw new ArgumentNullException(nameof(parameter)) : parameter.Name!, null!, allowNumericalFallback)
+    {
+        explicitTargetParameter = parameter;
     }
 
     /// <summary>
@@ -137,31 +163,47 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
     /// </param>
     /// <returns>The simplified derivative expression.</returns>
     /// <exception cref="InvalidOperationException">
-    /// Thrown when no parameter named <see cref="ParameterName"/> is found in <paramref name="e"/>, or
-    /// when more than one distinct parameter shares that name (an ambiguous match that cannot be
-    /// resolved by name alone).
+    /// Thrown when this instance was constructed with a parameter name and no parameter named
+    /// <see cref="ParameterName"/> is found in <paramref name="e"/>, or more than one distinct parameter
+    /// shares that name (an ambiguous match that cannot be resolved by name alone). When this instance was
+    /// instead constructed with an exact <see cref="ParameterExpression"/> instance, thrown when that
+    /// instance is not one of <paramref name="e"/>'s declared parameters.
     /// </exception>
     public Expression Derivate(LambdaExpression e, out bool isExact)
     {
         ArgumentNullException.ThrowIfNull(e);
 
-        var candidates = e.Parameters.Where(p => p.Name == ParameterName).ToList();
-        if (candidates.Count == 0)
+        ParameterExpression resolvedParameter;
+        if (explicitTargetParameter is not null)
         {
-            throw new InvalidOperationException($"The parameter '{ParameterName}' was not found in the lambda expression.");
+            if (!e.Parameters.Contains(explicitTargetParameter))
+            {
+                throw new InvalidOperationException(
+                    "The specified parameter instance was not declared in the lambda expression being differentiated.");
+            }
+            resolvedParameter = explicitTargetParameter;
         }
-        if (candidates.Count > 1)
+        else
         {
-            throw new InvalidOperationException(
-                $"The lambda expression declares {candidates.Count} distinct parameters named '{ParameterName}'; " +
-                "the differentiation variable is ambiguous. Use distinct parameter names.");
+            var candidates = e.Parameters.Where(p => p.Name == ParameterName).ToList();
+            if (candidates.Count == 0)
+            {
+                throw new InvalidOperationException($"The parameter '{ParameterName}' was not found in the lambda expression.");
+            }
+            if (candidates.Count > 1)
+            {
+                throw new InvalidOperationException(
+                    $"The lambda expression declares {candidates.Count} distinct parameters named '{ParameterName}'; " +
+                    "the differentiation variable is ambiguous. Use distinct parameter names.");
+            }
+            resolvedParameter = candidates[0];
         }
 
         // A fresh worker instance isolates the resolved target parameter for this call: concurrent or
         // re-entrant calls on the same public ExpressionDerivation<T> instance no longer share mutable
         // state (see TODO-2026-07-11-pass3.md items #31 and #32). usedNumericalFallback is likewise
         // scoped to this single worker instance, never shared across calls (see item #42).
-        var worker = new ExpressionDerivation<T>(ParameterName, candidates[0], AllowNumericalFallback);
+        var worker = new ExpressionDerivation<T>(ParameterName, resolvedParameter, AllowNumericalFallback);
         var result = Expression.Lambda(worker.Transform(e.Body.Simplify()).Simplify(), e.Parameters);
         isExact = !worker.usedNumericalFallback;
         return result;
