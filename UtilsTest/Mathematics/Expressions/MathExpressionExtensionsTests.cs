@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using System.Reflection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Mathematics.Expressions;
 
@@ -129,5 +130,50 @@ public class MathExpressionExtensionsTests
 
         // integral of x dx = x^2/2; at x=4 -> 8
         Assert.AreEqual(8.0, intF.Compile()(4.0), 1e-9);
+    }
+
+    // ── Reflection dispatch must not wrap exceptions (PR 450 review) ───────────
+
+    /// <summary>
+    /// The non-generic overloads dispatch to their <c>&lt;T&gt;</c> counterpart through
+    /// <see cref="MethodInfo.Invoke(object?, object?[]?)"/>, which by default wraps any exception thrown by
+    /// the invoked method in a <see cref="TargetInvocationException"/>. That would silently change the
+    /// public exception contract of these convenience overloads (their generic counterparts throw
+    /// <see cref="InvalidOperationException"/> directly); the dispatch helper must unwrap it.
+    /// </summary>
+    [TestMethod]
+    public void Derivate_UnknownParameterName_ThrowsInvalidOperationExceptionDirectly()
+    {
+        Expression<Func<double, double>> f = x => x;
+        Assert.ThrowsExactly<InvalidOperationException>(() => f.Derivate("missing"));
+    }
+
+    /// <summary>
+    /// Same as <see cref="Derivate_UnknownParameterName_ThrowsInvalidOperationExceptionDirectly"/>, but for
+    /// the parameter-instance overload: a parameter that does not belong to the lambda must surface the
+    /// underlying <see cref="InvalidOperationException"/> unwrapped.
+    /// </summary>
+    [TestMethod]
+    public void Derivate_ByParameterInstance_ForeignParameter_ThrowsInvalidOperationExceptionDirectly()
+    {
+        var x = Expression.Parameter(typeof(double), "x");
+        var foreign = Expression.Parameter(typeof(double), "x");
+        Expression<Func<double, double>> f = Expression.Lambda<Func<double, double>>(x, x);
+
+        Assert.ThrowsExactly<InvalidOperationException>(() => f.Derivate(foreign));
+    }
+
+    /// <summary>
+    /// Same as <see cref="Derivate_ByParameterInstance_ForeignParameter_ThrowsInvalidOperationExceptionDirectly"/>,
+    /// for the integration side.
+    /// </summary>
+    [TestMethod]
+    public void Integrate_ByParameterInstance_ForeignParameter_ThrowsInvalidOperationExceptionDirectly()
+    {
+        var x = Expression.Parameter(typeof(double), "x");
+        var foreign = Expression.Parameter(typeof(double), "x");
+        Expression<Func<double, double>> f = Expression.Lambda<Func<double, double>>(x, x);
+
+        Assert.ThrowsExactly<InvalidOperationException>(() => f.Integrate(foreign));
     }
 }

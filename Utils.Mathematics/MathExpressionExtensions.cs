@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using System.Numerics;
 using System.Reflection;
+using System.Runtime.ExceptionServices;
 using Utils.Objects;
 using Utils.Reflection;
 
@@ -118,6 +119,33 @@ public static class MathExpressionExtensions
     }
 
     /// <summary>
+    /// Invokes a closed generic form of <paramref name="genericMethodDefinition"/> built for
+    /// <paramref name="scalarType"/>, centralizing the reflection dispatch used by the non-generic
+    /// <c>Derivate</c>/<c>Gradient</c>/<c>Integrate</c> overloads (see TODO-pass4 item #47 review). Plain
+    /// <see cref="MethodInfo.Invoke(object?, object?[]?)"/> always wraps an exception thrown by the invoked
+    /// method in a <see cref="TargetInvocationException"/>; without unwrapping it here, a caller of e.g.
+    /// <c>expression.Derivate("unknown")</c> would see a <see cref="TargetInvocationException"/> instead of
+    /// the documented <see cref="InvalidOperationException"/>, breaking the public exception contract these
+    /// non-generic overloads share with their explicit generic counterparts.
+    /// </summary>
+    /// <param name="genericMethodDefinition">The open generic method to close over <paramref name="scalarType"/>.</param>
+    /// <param name="scalarType">The scalar type argument used to close the generic method.</param>
+    /// <param name="arguments">Arguments passed to the closed method.</param>
+    /// <returns>The closed method's return value.</returns>
+    private static object InvokeGeneric(MethodInfo genericMethodDefinition, Type scalarType, params object?[] arguments)
+    {
+        try
+        {
+            return genericMethodDefinition.MakeGenericMethod(scalarType).Invoke(null, arguments)!;
+        }
+        catch (TargetInvocationException ex) when (ex.InnerException is not null)
+        {
+            ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
+            throw; // unreachable: the line above always throws.
+        }
+    }
+
+    /// <summary>
     /// Computes the derivative of a single-parameter lambda expression with respect to its declared parameter.
     /// The scalar type is inferred from that parameter's CLR type instead of assuming <see cref="double"/>.
     /// </summary>
@@ -144,7 +172,7 @@ public static class MathExpressionExtensions
     {
         e.Arg().MustNotBeNull();
         Type scalarType = ResolveScalarType(e, [paramName]);
-        return (LambdaExpression)DerivateGenericMethod.MakeGenericMethod(scalarType).Invoke(null, [e, paramName])!;
+        return (LambdaExpression)InvokeGeneric(DerivateGenericMethod, scalarType, e, paramName);
     }
 
     /// <summary>
@@ -181,7 +209,7 @@ public static class MathExpressionExtensions
         e.Arg().MustNotBeNull();
         parameter.Arg().MustNotBeNull();
         Type scalarType = ResolveScalarType([parameter]);
-        return (LambdaExpression)DerivateByParameterGenericMethod.MakeGenericMethod(scalarType).Invoke(null, [e, parameter])!;
+        return (LambdaExpression)InvokeGeneric(DerivateByParameterGenericMethod, scalarType, e, parameter);
     }
 
     /// <summary>
@@ -217,7 +245,7 @@ public static class MathExpressionExtensions
         e.Arg().MustNotBeNull();
         ParameterExpression[] parameters = e.Parameters.ToArray();
         Type scalarType = ResolveScalarType(parameters);
-        return (LambdaExpression[])GradientByParameterGenericMethod.MakeGenericMethod(scalarType).Invoke(null, [e, parameters])!;
+        return (LambdaExpression[])InvokeGeneric(GradientByParameterGenericMethod, scalarType, e, parameters);
     }
 
     /// <summary>
@@ -315,7 +343,7 @@ public static class MathExpressionExtensions
         e.Arg().MustNotBeNull();
         parameter.Arg().MustNotBeNull();
         Type scalarType = ResolveScalarType([parameter]);
-        return (LambdaExpression)IntegrateByParameterGenericMethod.MakeGenericMethod(scalarType).Invoke(null, [e, parameter])!;
+        return (LambdaExpression)InvokeGeneric(IntegrateByParameterGenericMethod, scalarType, e, parameter);
     }
 
     /// <summary>
