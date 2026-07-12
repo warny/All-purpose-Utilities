@@ -337,4 +337,45 @@ public class ExpressionIntegrationTests
         }
     }
 
+    // ── Conversion type preservation (item 33) ────────────────────────────────
+
+    /// <summary>
+    /// Integrating a widening numeric conversion (here <c>decimal</c> to <c>double</c>) must preserve
+    /// the conversion's declared result type, so the produced lambda still matches the delegate type
+    /// the caller compiled the source expression against.
+    /// </summary>
+    [TestMethod]
+    public void Integrate_WideningConversion_PreservesDeclaredResultType()
+    {
+        // n is a foreign (non-integration-variable) parameter, so integrating it takes the
+        // "constant factor" branch (n * x) rather than the target-parameter branch (x**2/2, which
+        // relies on Expression.Power and is unsupported for decimal regardless of this fix).
+        ExpressionIntegration<decimal> decimalIntegration = new("x");
+        var x = Expression.Parameter(typeof(decimal), "x");
+        var n = Expression.Parameter(typeof(decimal), "n");
+        var body = Expression.Convert(n, typeof(double));
+        var f = Expression.Lambda<Func<decimal, decimal, double>>(body, x, n);
+
+        var result = (Expression<Func<decimal, decimal, double>>)decimalIntegration.Integrate(f);
+        var integral = result.Compile();
+
+        Assert.AreEqual((double)(5m * 3m), integral(3m, 5m), 1e-9);
+    }
+
+    /// <summary>
+    /// A checked conversion that actually changes the type (here <c>double</c> to <c>int</c>) has no
+    /// well-defined symbolic integral and must be rejected explicitly rather than silently stripped,
+    /// which would otherwise return a value of the wrong type.
+    /// </summary>
+    [TestMethod]
+    public void Integrate_NarrowingCheckedConversion_ThrowsClearException()
+    {
+        var x = Expression.Parameter(typeof(double), "x");
+        var body = Expression.ConvertChecked(x, typeof(int));
+        var f = Expression.Lambda<Func<double, int>>(body, x);
+
+        var invocationException = Assert.ThrowsExactly<System.Reflection.TargetInvocationException>(() => integration.Integrate(f));
+        Assert.IsInstanceOfType(invocationException.InnerException, typeof(NotSupportedException));
+    }
+
 }

@@ -403,4 +403,41 @@ public class ExpressionDerivationTests
         }
     }
 
+    // ── Conversion type preservation (item 33) ────────────────────────────────
+
+    /// <summary>
+    /// Differentiating a widening numeric conversion (here <c>decimal</c> to <c>double</c>) must
+    /// preserve the conversion's declared result type, so the produced lambda still matches the
+    /// delegate type the caller compiled the source expression against.
+    /// </summary>
+    [TestMethod]
+    public void Derivate_WideningConversion_PreservesDeclaredResultType()
+    {
+        ExpressionDerivation<decimal> decimalDerivation = new("x");
+        var x = Expression.Parameter(typeof(decimal), "x");
+        var body = Expression.Convert(x, typeof(double));
+        var f = Expression.Lambda<Func<decimal, double>>(body, x);
+
+        var result = (Expression<Func<decimal, double>>)decimalDerivation.Derivate(f);
+        var derivative = result.Compile();
+
+        Assert.AreEqual(1.0, derivative(3m), 1e-9);
+    }
+
+    /// <summary>
+    /// A checked conversion that actually changes the type (here <c>double</c> to <c>int</c>) has no
+    /// well-defined symbolic derivative and must be rejected explicitly rather than silently stripped,
+    /// which would otherwise return a value of the wrong type.
+    /// </summary>
+    [TestMethod]
+    public void Derivate_NarrowingCheckedConversion_ThrowsClearException()
+    {
+        var x = Expression.Parameter(typeof(double), "x");
+        var body = Expression.ConvertChecked(x, typeof(int));
+        var f = Expression.Lambda<Func<double, int>>(body, x);
+
+        var invocationException = Assert.ThrowsExactly<System.Reflection.TargetInvocationException>(() => derivation.Derivate(f));
+        Assert.IsInstanceOfType(invocationException.InnerException, typeof(NotSupportedException));
+    }
+
 }

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Numerics;
 using Utils.Expressions;
+using Utils.Objects;
 
 namespace Utils.Mathematics.Expressions;
 #pragma warning disable CS8604
@@ -140,33 +141,73 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
     }
 
     /// <summary>
-    /// Ignores conversion wrappers by differentiating the wrapped operand directly.
+    /// Differentiates the wrapped operand and re-applies the conversion's declared result type when the
+    /// derivative's type does not already match it, so the derivative expression stays type-consistent
+    /// with the original conversion node.
     /// </summary>
     /// <param name="e">Conversion expression to transform.</param>
     /// <param name="operand">Wrapped expression operand.</param>
-    /// <returns>The derivative of the wrapped operand.</returns>
+    /// <returns>The derivative of the wrapped operand, converted back to <c>e.Type</c> if needed.</returns>
     [ExpressionSignature(ExpressionType.Convert)]
     protected Expression Convert(
         UnaryExpression e,
         Expression operand
     )
     {
-        return Transform(operand);
+        return PreserveConversion(e, Transform(operand), isChecked: false);
     }
 
     /// <summary>
-    /// Ignores checked conversion wrappers by differentiating the wrapped operand directly.
+    /// Differentiates the wrapped operand through a checked conversion. Checked conversions exist
+    /// specifically to guard against narrowing/overflow, which has no well-defined symbolic derivative;
+    /// only a trivial same-type checked conversion is passed through, anything else is rejected instead
+    /// of silently stripped.
     /// </summary>
     /// <param name="e">Checked conversion expression to transform.</param>
     /// <param name="operand">Wrapped expression operand.</param>
-    /// <returns>The derivative of the wrapped operand.</returns>
+    /// <returns>The derivative of the wrapped operand when the checked conversion is a same-type no-op.</returns>
+    /// <exception cref="NotSupportedException">
+    /// Thrown when the checked conversion actually changes the type (a narrowing or otherwise
+    /// non-trivial conversion), since differentiating through it is not well-defined.
+    /// </exception>
     [ExpressionSignature(ExpressionType.ConvertChecked)]
     protected Expression ConvertChecked(
         UnaryExpression e,
         Expression operand
     )
     {
-        return Transform(operand);
+        return PreserveConversion(e, Transform(operand), isChecked: true);
+    }
+
+    /// <summary>
+    /// Reconciles the type of a transformed derivative with the declared result type of the original
+    /// conversion node it replaces.
+    /// </summary>
+    /// <param name="original">The original <c>Convert</c>/<c>ConvertChecked</c> expression being replaced.</param>
+    /// <param name="transformedOperand">The already-differentiated operand.</param>
+    /// <param name="isChecked"><see langword="true"/> for <c>ConvertChecked</c>; <see langword="false"/> for <c>Convert</c>.</param>
+    /// <returns><paramref name="transformedOperand"/>, converted back to <c>original.Type</c> if needed.</returns>
+    /// <exception cref="NotSupportedException">
+    /// Thrown when the types differ and the conversion is either checked (narrowing/overflow-prone) or
+    /// not a recognized numeric-to-numeric widening.
+    /// </exception>
+    private static Expression PreserveConversion(UnaryExpression original, Expression transformedOperand, bool isChecked)
+    {
+        if (transformedOperand.Type == original.Type)
+        {
+            return transformedOperand;
+        }
+
+        if (!isChecked
+            && NumberUtils.IsNativeNumericType(transformedOperand.Type)
+            && NumberUtils.IsNativeNumericType(original.Type))
+        {
+            return Expression.Convert(transformedOperand, original.Type);
+        }
+
+        throw new NotSupportedException(
+            $"Cannot preserve the {(isChecked ? "checked " : string.Empty)}conversion from '{transformedOperand.Type}' " +
+            $"to '{original.Type}': only same-type conversions and unchecked numeric widenings are supported.");
     }
 
     /// <summary>
