@@ -101,6 +101,58 @@ public class VectorTests
         Assert.AreEqual(0d, barycenter[1], 1e-9);
     }
 
+    // ── Barycenter selector/input validation (TODO-pass4 item #45) ────────────
+
+    /// <summary>A <see langword="null"/> weight selector must be rejected explicitly.</summary>
+    [TestMethod]
+    public void ComputeBarycenter_NullWeightSelector_Throws()
+    {
+        var p1 = new Vector<double>(0d, 0d);
+        Assert.ThrowsException<ArgumentNullException>(
+            () => Vector<double>.ComputeBarycenter<(double weight, Vector<double> vector)>(null, wp => wp.vector, [(1d, p1)]));
+    }
+
+    /// <summary>A <see langword="null"/> vector selector must be rejected explicitly.</summary>
+    [TestMethod]
+    public void ComputeBarycenter_NullVectorSelector_Throws()
+    {
+        var p1 = new Vector<double>(0d, 0d);
+        Assert.ThrowsException<ArgumentNullException>(
+            () => Vector<double>.ComputeBarycenter<(double weight, Vector<double> vector)>(wp => wp.weight, null, [(1d, p1)]));
+    }
+
+    /// <summary>A <see langword="null"/> source enumerable must be rejected explicitly.</summary>
+    [TestMethod]
+    public void ComputeBarycenter_NullWeightedPoints_Throws()
+    {
+        Assert.ThrowsException<ArgumentNullException>(
+            () => Vector<double>.ComputeBarycenter<(double weight, Vector<double> vector)>(wp => wp.weight, wp => wp.vector, null));
+    }
+
+    /// <summary>
+    /// A vector selector that returns <see langword="null"/> for some element must be rejected instead of
+    /// failing later with an incidental <see cref="NullReferenceException"/> when the dimension is read.
+    /// </summary>
+    [TestMethod]
+    public void ComputeBarycenter_NullSelectedVector_Throws()
+    {
+        Assert.ThrowsException<ArgumentException>(
+            () => Vector<double>.ComputeBarycenter<double>(w => w, w => null, [1d, 2d]));
+    }
+
+    /// <summary>
+    /// Selected vectors of mismatched dimension must be rejected with <see cref="ArgumentException"/>,
+    /// consistent with other public <see cref="Vector{T}"/> APIs, instead of the previous
+    /// <see cref="InvalidOperationException"/>.
+    /// </summary>
+    [TestMethod]
+    public void ComputeBarycenter_MismatchedDimensions_ThrowsArgumentException()
+    {
+        var p1 = new Vector<double>(0d, 0d);
+        var p2 = new Vector<double>(1d, 1d, 1d);
+        Assert.ThrowsException<ArgumentException>(() => Vector<double>.ComputeBarycenter((1d, p1), (1d, p2)));
+    }
+
     /// <summary>
     /// Ensures that vectors copy incoming component arrays to remain immutable.
     /// </summary>
