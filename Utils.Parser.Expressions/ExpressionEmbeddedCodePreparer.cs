@@ -47,7 +47,7 @@ public sealed class ExpressionEmbeddedCodePreparer : IEmbeddedCodePreparer<Prepa
 
         try
         {
-            TransformedEmbeddedCode transformedCode = TransformSource(source, ParserEmbeddedCodeLocation.SemanticPredicate);
+            TransformedEmbeddedCode transformedCode = TransformSource(source, context, ParserEmbeddedCodeLocation.SemanticPredicate);
             var runtimeContext = Expression.Parameter(typeof(SemanticPredicateEvaluationContext), "context");
             var expression = _compiler.Compile(transformedCode.Text, BuildSemanticPredicateSymbols(runtimeContext, context.SupportedSymbols));
             if (expression.Type != typeof(bool))
@@ -89,7 +89,7 @@ public sealed class ExpressionEmbeddedCodePreparer : IEmbeddedCodePreparer<Prepa
 
         try
         {
-            TransformedEmbeddedCode transformedCode = TransformSource(source, ParserEmbeddedCodeLocation.InlineAction);
+            TransformedEmbeddedCode transformedCode = TransformSource(source, context, ParserEmbeddedCodeLocation.InlineAction);
             var runtimeContext = Expression.Parameter(typeof(ParserActionExecutionContext), "context");
             var expression = _compiler.Compile(transformedCode.Text, BuildParserActionSymbols(runtimeContext, context.SupportedSymbols));
             var executableExpression = expression.Type == typeof(void)
@@ -111,9 +111,10 @@ public sealed class ExpressionEmbeddedCodePreparer : IEmbeddedCodePreparer<Prepa
     /// Applies the configured transformer before invoking the expression compiler.
     /// </summary>
     /// <param name="source">Original embedded-code source.</param>
+    /// <param name="context">Runtime preparation context that supplies grammar metadata.</param>
     /// <param name="location">Embedded-code location represented by the source.</param>
     /// <returns>Transformed source text to pass to the compiler.</returns>
-    private TransformedEmbeddedCode TransformSource(EmbeddedCodeSource source, ParserEmbeddedCodeLocation location)
+    private TransformedEmbeddedCode TransformSource(EmbeddedCodeSource source, EmbeddedCodePreparationContext context, ParserEmbeddedCodeLocation location)
     {
         try
         {
@@ -123,12 +124,14 @@ public sealed class ExpressionEmbeddedCodePreparer : IEmbeddedCodePreparer<Prepa
                 new ParserEmbeddedCodeTransformationContext
                 {
                     Location = location,
+                    GrammarName = context.GrammarName,
                     RuleName = source.RuleName
                 },
                 new ParserEmbeddedCodeTransformationFailureContext
                 {
                     Path = ParserEmbeddedCodeTransformationPath.RuntimeCompilation,
                     Location = location,
+                    GrammarName = context.GrammarName,
                     RuleName = source.RuleName
                 });
         }
