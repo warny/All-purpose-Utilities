@@ -217,20 +217,33 @@ d'un pipeline de compilation parallèle.
 ## Garde-fous et contrôles (priorité basse)
 
 ### 12. Ajouter un contrôle statique contre l'injection directe de code brut
-Un test architectural ou un analyseur Roslyn pourrait interdire l'utilisation directe de `RawCode`,
-`SourceText` ou de propriétés équivalentes dans des appels `Append`/`AppendLine` hors des composants
-autorisés.
 
-**Fix proposé** : commencer par un test statique ciblé et audit-friendly, puis envisager un analyseur
-Roslyn interne si les chemins de génération continuent à se multiplier.
+**Corrigé.** `CSharpEmbeddedCodeInjectorArchitectureTests` utilise une analyse sémantique Roslyn pour
+interdire les écritures directes de `RawEmbeddedCode.Text`, `TransformedEmbeddedCode.Text` et
+`SourceText` vers `Append` ou `AppendLine` hors de `CSharpEmbeddedCodeInjector`.
+
+Le contrôle suit également les affectations dans des variables locales afin d'interdire les
+contournements par alias. La seule lecture de texte transformé autorisée hors de l'injecteur est la
+classification non injectante effectuée dans `GeneratedEmbeddedCodeBody.ForPredicate`.
+
+Le garde-fou reste volontairement ciblé et audit-friendly. Si les chemins de génération deviennent
+plus indirects, une analyse de flux plus générale pourra être envisagée sans remettre en cause la
+frontière actuelle.
 
 ### 13. Uniformiser les exceptions de transformation
-Les erreurs du transformer sont aujourd'hui converties différemment selon le chemin de génération ou
-de compilation.
 
-**Fix proposé** : utiliser une exception commune contenant au minimum le code du diagnostic, son
-message, l'emplacement du code embarqué, le nom de grammaire et le nom de règle lorsqu'ils sont
-disponibles.
+**Corrigé.** Les chemins de génération C# et de compilation runtime reposent sur
+`Utils.Parser.Diagnostics.EmbeddedCode.ParserEmbeddedCodeTransformationException`.
+
+L'exception commune expose le code et le message du diagnostic, le chemin de transformation, le
+`ParserEmbeddedCodeLocation`, le nom de grammaire, le nom de règle, le span et l'exception interne
+éventuelle. `ParserEmbeddedCodeTransformationService.TransformOrThrow` l'utilise pour les diagnostics
+bloquants, les exceptions du transformer, les résultats nuls et les codes transformés nuls.
+
+`Utils.Parser.Expressions.ParserEmbeddedCodeTransformationException` dérive du type commun afin de
+préserver l'API publique du projet Expressions sans perdre les métadonnées structurées. Le constructeur
+historique prenant uniquement un message reste conservé pour compatibilité, mais les chemins de
+production utilisent la forme structurée.
 
 ### 14. Vérifier la documentation après chaque refactorisation du pipeline
 Toute modification du comportement ou des frontières du code embarqué doit être répercutée dans les
