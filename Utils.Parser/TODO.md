@@ -129,13 +129,13 @@ Les invariants vérifiés sont les suivants :
 - le texte brut ne réapparaît pas dans les corps exécutables générés ni dans l'entrée du compilateur runtime ;
 - les prédicats générés couvrent la forme expression et la forme bloc avec `return` ;
 - `@init` et `@after` sur la même règle restent deux appels distincts, ordonnés et non confondus ;
-- un diagnostic `Error` ou une exception du transformer bloque l'injection générée ;
-- un diagnostic `Error` bloque la compilation runtime ;
+- un diagnostic `Error`, une exception du transformer, un résultat nul ou un code transformé nul bloque l'injection générée ;
+- un diagnostic `Error`, une exception du transformer, un résultat nul ou un code transformé nul bloque la compilation runtime ;
 - un diagnostic `Warning` runtime conserve un traitement simple : transformation unique et compilation unique.
 
 Les garde-fous architecturaux existants restent consolidés par :
 
-- `EmbeddedCodeTransformerArchitectureTests`, qui limite les appels directs à `Transform(...)` au service central ;
+- `EmbeddedCodeTransformerArchitectureTests`, qui limite les appels directs à `Transform(...)` au service central et vérifie par modèle sémantique Roslyn que les préparateurs de code embarqué ne créent pas de second chemin direct vers `IExpressionCompiler.Compile(...)` ;
 - `CSharpEmbeddedCodeInjectorArchitectureTests`, qui vérifie que les méthodes d'émission ciblées utilisent `CSharpEmbeddedCodeInjector` et que les lectures de `TransformedEmbeddedCode.Text` hors injecteur restent limitées aux classifications non injectantes autorisées ;
 - `CSharpEmbeddedCodeInjectorTests`, qui verrouille l'API d'injection sur `TransformedEmbeddedCode` et interdit les paramètres `RawEmbeddedCode` ou chaînes brutes.
 
