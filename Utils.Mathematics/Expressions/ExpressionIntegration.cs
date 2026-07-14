@@ -87,7 +87,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
         {
             if (!e.Parameters.Contains(explicitTargetParameter))
             {
-                throw new InvalidOperationException(
+                throw new SymbolicParameterException(
                     "The specified parameter instance was not declared in the lambda expression being integrated.");
             }
             resolvedParameter = explicitTargetParameter;
@@ -97,11 +97,11 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
             var candidates = e.Parameters.Where(p => p.Name == ParameterName).ToList();
             if (candidates.Count == 0)
             {
-                throw new InvalidOperationException($"The parameter '{ParameterName}' was not found in the lambda expression.");
+                throw new SymbolicParameterException($"The parameter '{ParameterName}' was not found in the lambda expression.");
             }
             if (candidates.Count > 1)
             {
-                throw new InvalidOperationException(
+                throw new SymbolicParameterException(
                     $"The lambda expression declares {candidates.Count} distinct parameters named '{ParameterName}'; " +
                     "the integration variable is ambiguous. Use distinct parameter names.");
             }

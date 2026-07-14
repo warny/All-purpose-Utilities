@@ -396,8 +396,9 @@ public static class MathExpressionExtensions
             var simplified = Expression.Lambda(((LambdaExpression)derived).Body.Simplify(), e.Parameters);
             return SymbolicTransformationResult.SuccessResult(simplified, isExact);
         }
-        catch (Exception ex) when (TryClassify(ex, out SymbolicTransformationResult classified))
+        catch (Exception ex)
         {
+            TryClassify(ex, out var classified);
             return classified;
         }
     }
@@ -429,23 +430,24 @@ public static class MathExpressionExtensions
             var simplified = Expression.Lambda(integrated.Body.Simplify(), e.Parameters);
             return SymbolicTransformationResult.SuccessResult(simplified, isExact: true);
         }
-        catch (Exception ex) when (TryClassify(ex, out SymbolicTransformationResult classified))
+        catch (Exception ex)
         {
+            TryClassify(ex, out var classified);
             return classified;
         }
     }
 
     /// <summary>
-    /// Classifies a categorized exception thrown during a symbolic transformation into a
-    /// <see cref="SymbolicTransformationResult"/>. Only the specific exception types the transformer is
-    /// documented to throw are handled here; any other exception is left to propagate (there is no global
-    /// <c>catch (Exception)</c>). Returns <see langword="false"/> — declining to handle — for exceptions
-    /// outside the recognized vocabulary so the exception filter lets them through unchanged.
+    /// Classifies any exception thrown during a symbolic transformation into a
+    /// <see cref="SymbolicTransformationResult"/>. This method always produces a result — it never
+    /// returns <see langword="false"/> — so <c>TryDerivate</c> and <c>TryIntegrate</c> are guaranteed
+    /// to be non-throwing: every failure (including unexpected ones) surfaces as
+    /// <see cref="SymbolicTransformationStatus.ConstructionFailure"/> rather than propagating.
     /// </summary>
     /// <param name="ex">The caught exception.</param>
-    /// <param name="result">The classified result, when this method returns <see langword="true"/>.</param>
-    /// <returns><see langword="true"/> when <paramref name="ex"/> was recognized and classified.</returns>
-    private static bool TryClassify(Exception ex, out SymbolicTransformationResult result)
+    /// <param name="result">The classified result.</param>
+    /// <returns>Always <see langword="true"/>.</returns>
+    internal static bool TryClassify(Exception ex, out SymbolicTransformationResult result)
     {
         // Transformation rules are invoked by the transformer through reflection
         // (MethodInfo.Invoke), which wraps any exception a rule raises in a
@@ -468,10 +470,16 @@ public static class MathExpressionExtensions
                     SymbolicTransformationStatus.InvalidInput, nullArg.Message, innerException: nullArg);
                 return true;
 
-            case InvalidOperationException invalid:
-                // Ambiguous or foreign differentiation/integration parameter.
+            case SymbolicParameterException paramEx:
+                // Absent, ambiguous, or foreign differentiation/integration parameter: caller error.
                 result = SymbolicTransformationResult.Failure(
-                    SymbolicTransformationStatus.InvalidInput, invalid.Message, innerException: invalid);
+                    SymbolicTransformationStatus.InvalidInput, paramEx.Message, innerException: paramEx);
+                return true;
+
+            case InvalidOperationException invalidOp:
+                // Any other InvalidOperationException is an internal failure, not a caller error.
+                result = SymbolicTransformationResult.Failure(
+                    SymbolicTransformationStatus.ConstructionFailure, invalidOp.Message, innerException: invalidOp);
                 return true;
 
             case NotSupportedException notSupported:
@@ -493,8 +501,12 @@ public static class MathExpressionExtensions
                 return true;
 
             default:
-                result = null!;
-                return false;
+                // Catch-all: any unexpected exception (IndexOutOfRangeException, NullReferenceException,
+                // OverflowException, etc.) is reported as ConstructionFailure rather than propagating.
+                // This upholds the "non-throwing" contract of TryDerivate/TryIntegrate.
+                result = SymbolicTransformationResult.Failure(
+                    SymbolicTransformationStatus.ConstructionFailure, ex.Message, innerException: ex);
+                return true;
         }
     }
 

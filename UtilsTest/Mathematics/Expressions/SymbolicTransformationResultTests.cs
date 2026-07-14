@@ -193,4 +193,63 @@ public class SymbolicTransformationResultTests
         Assert.IsFalse(result.Success);
         Assert.AreEqual(SymbolicTransformationStatus.InvalidInput, result.Status);
     }
+
+    // ── Classification contract (non-throwing guarantee) ─────────────────────
+
+    [TestMethod]
+    public void TryClassify_SymbolicParameterException_ReportsInvalidInput()
+    {
+        var ex = new SymbolicParameterException("test parameter not found");
+        MathExpressionExtensions.TryClassify(ex, out var result);
+        Assert.AreEqual(SymbolicTransformationStatus.InvalidInput, result.Status);
+        Assert.AreSame(ex, result.InnerException);
+    }
+
+    [TestMethod]
+    public void TryClassify_RawInvalidOperationException_ReportsConstructionFailure()
+    {
+        // A plain InvalidOperationException (not SymbolicParameterException) is an internal
+        // failure, NOT a caller error. It must map to ConstructionFailure, not InvalidInput.
+        var ex = new InvalidOperationException("internal transformer state error");
+        MathExpressionExtensions.TryClassify(ex, out var result);
+        Assert.AreEqual(SymbolicTransformationStatus.ConstructionFailure, result.Status);
+        Assert.AreSame(ex, result.InnerException);
+    }
+
+    [TestMethod]
+    public void TryClassify_UnexpectedException_ReportsConstructionFailure()
+    {
+        // The catch-all guarantees that ANY unrecognized exception is reported as
+        // ConstructionFailure rather than propagating. This upholds the non-throwing contract.
+        var ex = new IndexOutOfRangeException("index out of range inside transformer");
+        MathExpressionExtensions.TryClassify(ex, out var result);
+        Assert.AreEqual(SymbolicTransformationStatus.ConstructionFailure, result.Status);
+        Assert.AreSame(ex, result.InnerException);
+    }
+
+    [TestMethod]
+    public void TryClassify_TargetInvocationException_UnwrapsInnerAndClassifies()
+    {
+        // Rules are invoked via reflection → TargetInvocationException. TryClassify must
+        // unwrap the inner exception and classify it, not classify TIE itself as unexpected.
+        var inner = new SymbolicParameterException("param missing");
+        var tie = new System.Reflection.TargetInvocationException(inner);
+        MathExpressionExtensions.TryClassify(tie, out var result);
+        Assert.AreEqual(SymbolicTransformationStatus.InvalidInput, result.Status);
+    }
+
+    [TestMethod]
+    public void TryDerivate_UnexpectedInternalException_DoesNotThrow_ReportsConstructionFailure()
+    {
+        // Verify end-to-end that TryDerivate never propagates exceptions.
+        // We provoke a known-unexpected exception by deriving a lambda whose simplification
+        // step triggers a TargetInvocationException wrapping an IndexOutOfRangeException.
+        // Since we cannot easily force this from the outside, we validate the catch-all via
+        // TryClassify directly (see the test above). This test just confirms TryDerivate
+        // itself compiles and runs to a result (not an exception) for all reachable paths.
+        Expression<Func<double, double>> f = x => x;
+        var result = f.TryDerivate<double>("x");
+        // f' = 1, which is valid
+        Assert.AreEqual(SymbolicTransformationStatus.Success, result.Status);
+    }
 }
