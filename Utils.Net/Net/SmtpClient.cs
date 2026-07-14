@@ -100,6 +100,7 @@ public class SmtpClient : CommandResponseClient
     /// <returns>List of server extensions.</returns>
     public async Task<IReadOnlyList<string>> EhloAsync(string domain, CancellationToken cancellationToken = default)
     {
+        ValidateCommandArgument(domain, nameof(domain));
         IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"EHLO {domain}", cancellationToken).ConfigureAwait(false);
         List<string> extensions = new();
         for (int i = 1; i < responses.Count - 1; i++)
@@ -120,6 +121,7 @@ public class SmtpClient : CommandResponseClient
     /// <param name="cancellationToken">Cancellation token.</param>
     public async Task HeloAsync(string domain, CancellationToken cancellationToken = default)
     {
+        ValidateCommandArgument(domain, nameof(domain));
         await EnsureCompletionAsync(await SendCommandAsync($"HELO {domain}", cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
     }
 
@@ -131,6 +133,7 @@ public class SmtpClient : CommandResponseClient
     /// <returns>Server response message.</returns>
     public async Task<string?> VrfyAsync(string address, CancellationToken cancellationToken = default)
     {
+        ValidateCommandArgument(address, nameof(address));
         IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"VRFY {address}", cancellationToken).ConfigureAwait(false);
         await EnsureCompletionAsync(responses).ConfigureAwait(false);
         return responses[^1].Message;
@@ -144,6 +147,7 @@ public class SmtpClient : CommandResponseClient
     /// <returns>Expanded entries returned by the server.</returns>
     public async Task<IReadOnlyList<string>> ExpnAsync(string list, CancellationToken cancellationToken = default)
     {
+        ValidateCommandArgument(list, nameof(list));
         IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"EXPN {list}", cancellationToken).ConfigureAwait(false);
         List<string> entries = new();
         for (int i = 0; i < responses.Count - 1; i++)
@@ -188,9 +192,11 @@ public class SmtpClient : CommandResponseClient
     /// <param name="cancellationToken">Cancellation token.</param>
     public async Task SendMailAsync(string from, IEnumerable<string> recipients, string data, CancellationToken cancellationToken = default)
     {
+        ValidateCommandArgument(from, nameof(from));
         await EnsureCompletionAsync(await SendCommandAsync($"MAIL FROM:<{from}>", cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
         foreach (string rcpt in recipients)
         {
+            ValidateCommandArgument(rcpt, nameof(recipients));
             await EnsureCompletionAsync(await SendCommandAsync($"RCPT TO:<{rcpt}>", cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
         }
         await EnsureIntermediateAsync(await SendCommandAsync("DATA", cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);

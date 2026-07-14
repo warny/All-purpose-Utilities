@@ -340,6 +340,25 @@ public class CommandResponseClient : IDisposable
     }
 
     /// <summary>
+    /// Validates that <paramref name="value"/> does not contain CR, LF or NUL characters,
+    /// which would allow an attacker to inject additional protocol commands.
+    /// </summary>
+    /// <param name="value">String to validate.</param>
+    /// <param name="paramName">Parameter name used in the exception message.</param>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="value"/> contains <c>\r</c>, <c>\n</c> or <c>\0</c>.
+    /// </exception>
+    protected static void ValidateCommandArgument(string value, string paramName)
+    {
+        if (value.AsSpan().IndexOfAny('\r', '\n', '\0') >= 0)
+        {
+            throw new ArgumentException(
+                "Command argument must not contain CR, LF or NUL characters.",
+                paramName);
+        }
+    }
+
+    /// <summary>
     /// Returns a loggable (redacted) representation of a command before it is sent.
     /// The default implementation logs only the verb (first space-separated word) to avoid
     /// accidentally exposing secret-bearing arguments such as AUTH credentials or PASS values.

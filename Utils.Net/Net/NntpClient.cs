@@ -61,6 +61,7 @@ public class NntpClient : CommandResponseClient
     /// <returns>Tuple containing article count, first article number and last article number.</returns>
     public async Task<(int articleCount, int firstArticle, int lastArticle)> GroupAsync(string group, CancellationToken cancellationToken = default)
     {
+        ValidateCommandArgument(group, nameof(group));
         IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"GROUP {group}", cancellationToken).ConfigureAwait(false);
         await EnsureCompletionAsync(responses).ConfigureAwait(false);
         string[] parts = responses[0].Message?.Split(' ', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
@@ -143,6 +144,7 @@ public class NntpClient : CommandResponseClient
     /// <returns>Collection of article numbers.</returns>
     public async Task<IReadOnlyList<int>> NewNewsAsync(string group, DateTime sinceUtc, CancellationToken cancellationToken = default)
     {
+        ValidateCommandArgument(group, nameof(group));
         string date = sinceUtc.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
         string time = sinceUtc.ToString("HHmmss", CultureInfo.InvariantCulture);
         IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"NEWNEWS {group} {date} {time}", cancellationToken).ConfigureAwait(false);

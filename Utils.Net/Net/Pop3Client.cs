@@ -54,6 +54,8 @@ public class Pop3Client : CommandResponseClient
     [Obsolete("POP3 USER/PASS authentication can expose credentials on unencrypted connections. Use a TLS-protected stream or a stronger mechanism.", false)]
     public async Task AuthenticateAsync(string user, string password, CancellationToken cancellationToken = default)
     {
+        ValidateCommandArgument(user, nameof(user));
+        ValidateCommandArgument(password, nameof(password));
         await EnsureOkAsync(await SendCommandAsync($"USER {user}", cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
         await EnsureOkAsync(await SendCommandAsync($"PASS {password}", cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
     }
@@ -72,6 +74,7 @@ public class Pop3Client : CommandResponseClient
     [Obsolete("APOP relies on MD5, which is cryptographically broken. Use a TLS-protected transport instead.", false)]
     public async Task AuthenticateApopAsync(string user, string password, CancellationToken cancellationToken = default)
     {
+        ValidateCommandArgument(user, nameof(user));
         if (_timestamp is null)
         {
             throw new InvalidOperationException("Server greeting did not contain APOP timestamp");
