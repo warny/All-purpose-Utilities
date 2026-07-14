@@ -18,6 +18,7 @@ public class CommandResponseServer : IDisposable
     private Stream? _stream;
     private StreamReader? _reader;
     private StreamWriter? _writer;
+    private readonly SemaphoreSlim _writeLock = new(1, 1);
     private CancellationTokenSource? _listenTokenSource;
     private Thread? _listenThread;
     private Task? _processTask;
@@ -168,7 +169,7 @@ public class CommandResponseServer : IDisposable
     /// Sends an unsolicited response to the client.
     /// </summary>
     /// <param name="response">Response to send.</param>
-    public Task SendResponseAsync(ServerResponse response)
+    public async Task SendResponseAsync(ServerResponse response)
     {
         if (_writer is null)
         {
@@ -176,7 +177,15 @@ public class CommandResponseServer : IDisposable
         }
         string line = _formatter(response);
         Logger?.LogDebug("Sending: {Line}", line);
-        return _writer.WriteLineAsync(line);
+        await _writeLock.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            await _writer.WriteLineAsync(line).ConfigureAwait(false);
+        }
+        finally
+        {
+            _writeLock.Release();
+        }
     }
 
     /// <summary>
@@ -282,11 +291,19 @@ public class CommandResponseServer : IDisposable
                 }
                 responses ??= [new ServerResponse("502", ResponseSeverity.PermanentNegative, "Command not implemented")];
                 List<ServerResponse> responseList = responses.ToList();
-                foreach (ServerResponse response in responseList)
+                await _writeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+                try
                 {
-                    string line = _formatter(response);
-                    Logger?.LogDebug("Sending: {Line}", line);
-                    await _writer.WriteLineAsync(line).ConfigureAwait(false);
+                    foreach (ServerResponse response in responseList)
+                    {
+                        string line = _formatter(response);
+                        Logger?.LogDebug("Sending: {Line}", line);
+                        await _writer.WriteLineAsync(line).ConfigureAwait(false);
+                    }
+                }
+                finally
+                {
+                    _writeLock.Release();
                 }
 
                 if (responseList.Count > 0 && MaxConsecutiveErrors > 0)
@@ -338,6 +355,7 @@ public class CommandResponseServer : IDisposable
         }
         _listenTokenSource?.Dispose();
         _commandSignal.Dispose();
+        _writeLock.Dispose();
         Logger?.LogInformation("Server stopped");
     }
 
