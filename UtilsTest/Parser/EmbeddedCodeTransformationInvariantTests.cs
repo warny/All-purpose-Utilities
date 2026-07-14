@@ -85,6 +85,30 @@ public sealed class EmbeddedCodeTransformationInvariantTests
     }
 
     /// <summary>
+    /// Ensures lexer hook transformation keeps the historical synthetic rule context without lexer rule metadata.
+    /// </summary>
+    [TestMethod]
+    public void Emit_WhenLexerRuleHasLabels_TransformerReceivesSyntheticLexerRuleContext()
+    {
+        const string grammar = """
+            grammar P;
+            start : A ;
+            A : first=F { RAW_LEXER_ACTION; } ;
+            fragment F : 'a' ;
+            """;
+        var transformer = new RecordingEmbeddedCodeTransformer();
+
+        EmitWithTransformer(grammar, transformer);
+
+        RecordedTransformationCall lexerAction = FindCall(transformer, ParserEmbeddedCodeLocation.LexerInlineAction);
+        AssertCall(lexerAction, " RAW_LEXER_ACTION; ", ParserEmbeddedCodeLocation.LexerInlineAction, "P", "A");
+        Assert.AreEqual(0, lexerAction.Parameters.Count);
+        Assert.AreEqual(0, lexerAction.Locals.Count);
+        Assert.AreEqual(0, lexerAction.Returns.Count);
+        Assert.AreEqual(0, lexerAction.Labels.Count, "Lexer hook transformers must keep the pre-refactor synthetic G4Rule context and must not expose labels from lexer rule content.");
+    }
+
+    /// <summary>
     /// Ensures repeated named-action fragments keep grammar order through transformation and generated source injection.
     /// </summary>
     [TestMethod]

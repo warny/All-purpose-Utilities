@@ -107,7 +107,7 @@ internal static partial class GrammarEmitter
                 for (int index = firstHookIndex; index < hooks.Count; index++)
                 {
                     EmbeddedCodeHook hook = hooks[index];
-                    hook.EmittedCode = TransformEmbeddedCode(transformer, hook.RawCode, _strategy.GetLocation(hook.Kind), grammar, rule);
+                    hook.EmittedCode = TransformEmbeddedCode(transformer, hook.RawCode, _strategy.GetLocation(hook.Kind), grammar, _strategy.GetTransformationRule(rule));
                 }
             }
 
@@ -239,6 +239,9 @@ internal static partial class GrammarEmitter
 
         /// <summary>Gets the transformation location for the hook category.</summary>
         ParserEmbeddedCodeLocation GetLocation(EmbeddedCodeHookKind kind);
+
+        /// <summary>Gets the rule metadata shape exposed to the transformer.</summary>
+        G4Rule GetTransformationRule(G4Rule rule);
 
         /// <summary>Creates the parser- or lexer-owned hook through the typed factory.</summary>
         EmbeddedCodeHook CreateHook(string ruleName, string code, EmbeddedCodeHookKind kind, HookTraversalPosition position, string methodName);
@@ -376,6 +379,9 @@ internal static partial class GrammarEmitter
         }
 
         /// <inheritdoc />
+        public G4Rule GetTransformationRule(G4Rule rule) => rule;
+
+        /// <inheritdoc />
         public EmbeddedCodeHook CreateHook(string ruleName, string code, EmbeddedCodeHookKind kind, HookTraversalPosition position, string methodName)
         {
             return EmbeddedCodeHook.CreateParser(ruleName, code, kind, position.AlternativeIndex, position.ElementIndex, methodName);
@@ -469,6 +475,12 @@ internal static partial class GrammarEmitter
         public ParserEmbeddedCodeLocation GetLocation(EmbeddedCodeHookKind kind)
         {
             return kind == EmbeddedCodeHookKind.SemanticPredicate ? ParserEmbeddedCodeLocation.LexerSemanticPredicate : ParserEmbeddedCodeLocation.LexerInlineAction;
+        }
+
+        /// <inheritdoc />
+        public G4Rule GetTransformationRule(G4Rule rule)
+        {
+            return new G4Rule { Name = rule.Name };
         }
 
         /// <inheritdoc />
