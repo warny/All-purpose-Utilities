@@ -110,10 +110,23 @@ public class CommandResponseServer : IDisposable
     /// <param name="stream">Bi-directional stream connected to the client.</param>
     /// <param name="leaveOpen">True to leave the stream open when disposing the server.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the server is already running. <see cref="CommandResponseServer"/> instances
+    /// are single-use; create a new instance for each incoming connection.
+    /// </exception>
     public Task StartAsync(Stream stream, bool leaveOpen = false, CancellationToken cancellationToken = default)
     {
+        if (_listenThread is not null)
+        {
+            throw new InvalidOperationException(
+                "This server instance is already running or has already been used. " +
+                "Create a new instance for each incoming connection.");
+        }
         _stream = stream;
         _leaveOpen = leaveOpen;
+        _contexts.Clear();
+        while (_commandQueue.TryDequeue(out _)) { }
+        _errorCount = 0;
         _reader = new StreamReader(stream, Encoding.ASCII, false, 1024, true);
         _writer = new StreamWriter(stream, Encoding.ASCII, 1024, true)
         {
