@@ -20,8 +20,7 @@ dotnet add package omy.Utils.Mathematics
 ```csharp
 int[] line = Utils.Mathematics.MathEx.ComputePascalTriangleLine(4); // [1,4,6,4,1]
 Complex[] signal = [1, 1, 0, 0];
-var fft = new Utils.Mathematics.Fourrier.FastFourrierTransform();
-fft.Transform(signal);
+Utils.Mathematics.Fourier.FastFourierTransform.Transform(signal);
 ```
 
 ## MathEx — extended math utilities
@@ -79,17 +78,16 @@ MathEx.Max(3, 1, 4, 1, 5);   // 5
 
 ## FFT examples
 
-`FastFourrierTransform` performs an in-place Cooley-Tukey FFT. The input length must be a power of two.
+`FastFourierTransform` is a static class that performs an in-place Cooley-Tukey FFT. The input length must be a power of two.
 
 ### Forward transform
 
 ```csharp
 using System.Numerics;
-using Utils.Mathematics.Fourrier;
+using Utils.Mathematics.Fourier;
 
 Complex[] signal = [1, 1, 0, 0, 0, 0, 0, 0]; // 8 samples
-var fft = new FastFourrierTransform();
-fft.Transform(signal);
+FastFourierTransform.Transform(signal);
 // signal now contains the frequency-domain representation
 // only signal[0..N/2] carry unique information (Nyquist)
 ```
@@ -105,10 +103,14 @@ for (int i = 0; i < frequencies.Length; i++)
 
 ### Transform a sub-range
 
+There is no built-in sub-range overload. Extract a power-of-two slice, transform it, and copy it back:
+
 ```csharp
 Complex[] buffer = new Complex[16];
 // ... fill buffer ...
-fft.Transform(buffer, start: 4, end: 12); // transform samples [4..12)
+Complex[] subRange = buffer[4..12]; // length 8, a power of two
+FastFourierTransform.Transform(subRange);
+Array.Copy(subRange, 0, buffer, 4, subRange.Length);
 ```
 
 ## Symbolic expression examples
@@ -193,7 +195,7 @@ var a = new Vector<double>(0.0, 0.0);
 var b = new Vector<double>(4.0, 0.0);
 var c = new Vector<double>(0.0, 4.0);
 
-var (_, center) = a.ComputeBarycenter(b, c); // (1.33, 1.33)
+var (_, center) = Vector<double>.ComputeBarycenter(a, b, c); // (1.33, 1.33)
 
 // Weighted barycenter
 var (_, weighted) = Vector<double>.ComputeBarycenter(
@@ -257,7 +259,7 @@ var (L, U, P) = m.DiagonalizeLU();
 Console.WriteLine(m.Rows);          // 2
 Console.WriteLine(m.Columns);       // 2
 Console.WriteLine(m.IsSquare);      // True
-Console.WriteLine(m.IsDiagonalized); // False
+Console.WriteLine(m.IsDiagonal); // False
 ```
 
 ## MatrixTransformations examples
