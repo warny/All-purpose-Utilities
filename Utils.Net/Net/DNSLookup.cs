@@ -64,7 +64,6 @@ namespace Utils.Net
             request.RecursionDesired = true;
             request.Requests.Add(new DNSRequestRecord(type, name, @class));
 
-
             byte[] requestDatagram = packetWriter.Write(request);
 
             foreach (IPAddress nameServer in NameServers)
@@ -72,7 +71,23 @@ namespace Utils.Net
                 try
                 {
                     byte[] responseDatagram = UdpTransport(nameServer, 53, requestDatagram);
-                    return packetReader.Read(responseDatagram);
+                    DNSHeader response = packetReader.Read(responseDatagram);
+
+                    // Validate response correlation: ID, QR bit and opcode must match the query.
+                    if (response.ID != request.ID)
+                    {
+                        continue; // Stale or spoofed reply — try next server.
+                    }
+                    if (response.QrBit != DNS.DNSQRBit.Response)
+                    {
+                        continue; // Not a response packet.
+                    }
+                    if (response.OpCode != request.OpCode)
+                    {
+                        continue; // Opcode mismatch.
+                    }
+
+                    return response;
                 }
                 catch
                 {
@@ -92,18 +107,30 @@ namespace Utils.Net
         /// <returns>The response result.</returns>
         private static byte[] UdpTransport(IPAddress server, int port, byte[] packet)
         {
-            byte[] responseBytes = new byte[512]; // Initialize a response buffer with a maximum UDP size of 512 bytes
-            int receivedBytes = 0;
+            byte[] responseBytes = new byte[512];
+            int receivedBytes;
+
+            IPEndPoint serverEndpoint = new IPEndPoint(server, port);
 
             using (Socket udpSocket = new Socket(server.AddressFamily, SocketType.Dgram, ProtocolType.Udp))
             {
                 udpSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveTimeout, 5000);
 
-                EndPoint remoteHost = new IPEndPoint(server, port);
+                udpSocket.Connect(serverEndpoint);
+                udpSocket.Send(packet);
 
-                udpSocket.SendTo(packet, packet.Length, SocketFlags.None, remoteHost);
+                EndPoint remoteEndpoint = new IPEndPoint(
+                    server.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6
+                        ? IPAddress.IPv6Any
+                        : IPAddress.Any,
+                    0);
+                receivedBytes = udpSocket.ReceiveFrom(responseBytes, responseBytes.Length, SocketFlags.None, ref remoteEndpoint);
 
-                receivedBytes = udpSocket.ReceiveFrom(responseBytes, responseBytes.Length, SocketFlags.None, ref remoteHost);
+                // Reject datagrams that did not originate from the server we queried.
+                if (!((IPEndPoint)remoteEndpoint).Address.Equals(server))
+                {
+                    throw new InvalidOperationException("DNS response received from unexpected endpoint.");
+                }
             }
 
             byte[] response = new byte[receivedBytes];
