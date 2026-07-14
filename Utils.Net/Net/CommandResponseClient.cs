@@ -29,6 +29,7 @@ public class CommandResponseClient : IDisposable
     private TimeSpan _noOpInterval = Timeout.InfiniteTimeSpan;
     private string _noOpCommand = "NOOP";
     private bool _leaveOpen;
+    private bool _everConnected;
     private bool _disconnected;
     private TimeSpan _listenTimeout = Timeout.InfiniteTimeSpan;
 
@@ -86,9 +87,12 @@ public class CommandResponseClient : IDisposable
     }
 
     /// <summary>
-    /// Gets a value indicating whether the client is still connected.
+    /// Gets a value indicating whether the client is currently connected.
+    /// Returns <see langword="false"/> on a newly constructed instance that has not yet called
+    /// <see cref="ConnectAsync(string,int,System.Threading.CancellationToken)"/>, and returns
+    /// <see langword="false"/> again once the connection has been closed or disposed.
     /// </summary>
-    public bool IsConnected => !_disconnected;
+    public bool IsConnected => _everConnected && !_disconnected;
 
     /// <summary>
     /// Default port used by the protocol.
@@ -135,6 +139,8 @@ public class CommandResponseClient : IDisposable
         {
             IsBackground = true
         };
+        _everConnected = true;
+        _disconnected = false;
         _listenThread.Start();
         Logger?.LogInformation("Client connected to stream");
         if (_noOpInterval != Timeout.InfiniteTimeSpan)
