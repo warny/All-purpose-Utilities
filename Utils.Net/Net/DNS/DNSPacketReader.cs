@@ -331,7 +331,9 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
         for (int i = 0; i < count; i++)
         {
             var requestRecord = ReadRequestRecord(datas);
-            requestRecord.Type = requestClassNames[requestRecord.RequestType];
+            requestRecord.Type = requestClassNames.TryGetValue(requestRecord.RequestType, out string? typeName)
+                ? typeName
+                : requestRecord.RequestType.ToString();
             requests.Add(requestRecord);
         }
     }
@@ -353,9 +355,21 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
             BytesLeft = responseRecord.RDLength,
             Length = responseRecord.RDLength
         };
-        Debug.WriteLine($"Read record {requestClassNames[responseRecord.Class]}. Length = {responseRecord.RDLength}");
-        var responseDetail = readers[(responseRecord.Class, responseRecord.ClassId)](datas);
-        responseRecord.RData = responseDetail;
+        string recordTypeName = requestClassNames.TryGetValue(responseRecord.Class, out string? rtn) ? rtn : responseRecord.Class.ToString();
+        Debug.WriteLine($"Read record {recordTypeName}. Length = {responseRecord.RDLength}");
+        if (readers.TryGetValue((responseRecord.Class, responseRecord.ClassId), out var reader))
+        {
+            responseRecord.RData = reader(datas);
+        }
+        else
+        {
+            // Unknown or unsupported record type: consume the RDATA bytes to keep the parser in sync,
+            // leave RData as null so the caller can still process surrounding records.
+            if (responseRecord.RDLength > 0)
+            {
+                datas.ReadBytes(responseRecord.RDLength);
+            }
+        }
         datas.Context = null;
         return responseRecord;
     }
