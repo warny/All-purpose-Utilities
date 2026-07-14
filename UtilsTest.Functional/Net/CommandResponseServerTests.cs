@@ -29,12 +29,12 @@ public class CommandResponseServerTests
         {
             using TcpClient serverClient = await listener.AcceptTcpClientAsync();
             using CommandResponseServer server = new();
-            server.RegisterCommand("LOGIN", (ctx, args) =>
+            server.RegisterCommand("LOGIN", (ctx, args, ct) =>
             {
                 ctx.Add("AUTH");
                 return Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("200", ResponseSeverity.Completion, "OK") });
             });
-            server.RegisterCommand("LIST", (ctx, args) =>
+            server.RegisterCommand("LIST", (ctx, args, ct) =>
                 Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("200", ResponseSeverity.Completion, "Listed") }),
                 "AUTH");
             await server.StartAsync(serverClient.GetStream());
@@ -68,7 +68,7 @@ public class CommandResponseServerTests
         {
             using TcpClient serverClient = await listener.AcceptTcpClientAsync();
             using CommandResponseServer server = new() { Logger = logger };
-            server.RegisterCommand("PING", (ctx, args) => Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("200", ResponseSeverity.Completion, "Pong") }));
+            server.RegisterCommand("PING", (ctx, args, ct) => Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("200", ResponseSeverity.Completion, "Pong") }));
             await server.StartAsync(serverClient.GetStream());
             await server.Completion;
             listener.Stop();
@@ -126,7 +126,7 @@ public class CommandResponseServerTests
         {
             using TcpClient serverClient = await listener.AcceptTcpClientAsync();
             using CommandResponseServer server = new();
-            server.CommandReceived += _ => Task.FromResult<IEnumerable<ServerResponse>>(System.Array.Empty<ServerResponse>());
+            server.CommandReceived += (_, ct) => Task.FromResult<IEnumerable<ServerResponse>>(System.Array.Empty<ServerResponse>());
             await server.StartAsync(serverClient.GetStream());
             await server.Completion;
             listener.Stop();
