@@ -137,6 +137,21 @@ public class CommandResponseServer : IDisposable
     public Task Completion => _processTask ?? Task.CompletedTask;
 
     /// <summary>
+    /// Returns a loggable (redacted) representation of a line received from the client.
+    /// The default implementation logs only the verb (first space-separated word) to avoid
+    /// accidentally exposing secret-bearing lines such as AUTH continuations, PASS arguments
+    /// or Base64-encoded credential payloads.
+    /// Override in a protocol-aware subclass to log more detail for lines that are known safe.
+    /// </summary>
+    /// <param name="line">Raw line received from the client.</param>
+    /// <returns>A string safe to write to the log.</returns>
+    protected virtual string RedactLineForLog(string line)
+    {
+        int space = line.IndexOf(' ');
+        return space >= 0 ? line[..space] + " [...]" : line;
+    }
+
+    /// <summary>
     /// Sends an unsolicited response to the client.
     /// </summary>
     /// <param name="response">Response to send.</param>
@@ -147,7 +162,7 @@ public class CommandResponseServer : IDisposable
             throw new InvalidOperationException("Server is not started.");
         }
         string line = _formatter(response);
-        Logger?.LogInformation("Sending: {Line}", line);
+        Logger?.LogDebug("Sending: {Line}", line);
         return _writer.WriteLineAsync(line);
     }
 
@@ -171,7 +186,7 @@ public class CommandResponseServer : IDisposable
                     _listenTokenSource?.Cancel();
                     break;
                 }
-                Logger?.LogInformation("Received: {Command}", command);
+                Logger?.LogDebug("Received: {Command}", RedactLineForLog(command));
                 _commandQueue.Enqueue(command);
                 _commandSignal.Release();
             }
@@ -241,7 +256,7 @@ public class CommandResponseServer : IDisposable
                 foreach (ServerResponse response in responseList)
                 {
                     string line = _formatter(response);
-                    Logger?.LogInformation("Sending: {Line}", line);
+                    Logger?.LogDebug("Sending: {Line}", line);
                     await _writer.WriteLineAsync(line).ConfigureAwait(false);
                 }
 

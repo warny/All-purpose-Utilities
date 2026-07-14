@@ -184,7 +184,7 @@ public class CommandResponseClient : IDisposable
                 throw new IOException("Connection closed.");
             }
             DrainPendingResponses();
-            Logger?.LogInformation("Sending: {Command}", command);
+            Logger?.LogDebug("Sending: {Command}", RedactCommandForLog(command));
             await _writer.WriteLineAsync(command).ConfigureAwait(false);
             List<ServerResponse> responses = new();
             while (true)
@@ -317,7 +317,7 @@ public class CommandResponseClient : IDisposable
                 }
 
                 ServerResponse response = ParseResponseLine(line);
-                Logger?.LogInformation("Received: {Code} {Message}", response.Code, response.Message);
+                Logger?.LogDebug("Received: {Code} {Message}", response.Code, response.Message);
                 _responseQueue.Enqueue(response);
                 _responseSignal.Release();
                 UnsolicitedResponseReceived?.Invoke(response);
@@ -337,6 +337,20 @@ public class CommandResponseClient : IDisposable
             _responseSignal.Release();
             Logger?.LogWarning("Listener thread terminated");
         }
+    }
+
+    /// <summary>
+    /// Returns a loggable (redacted) representation of a command before it is sent.
+    /// The default implementation logs only the verb (first space-separated word) to avoid
+    /// accidentally exposing secret-bearing arguments such as AUTH credentials or PASS values.
+    /// Override in a protocol subclass to log more detail for commands that are known to be safe.
+    /// </summary>
+    /// <param name="command">Command about to be sent.</param>
+    /// <returns>A string safe to write to the log.</returns>
+    protected virtual string RedactCommandForLog(string command)
+    {
+        int space = command.IndexOf(' ');
+        return space >= 0 ? command[..space] + " [...]" : command;
     }
 
     /// <summary>
