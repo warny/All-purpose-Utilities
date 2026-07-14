@@ -5122,6 +5122,62 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Mathematics.Expressions.SymbolicParameterException.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Mathematics.Expressions.SymbolicParameterException.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Mathematics.Expressions.SymbolicParameterException",
+      "Summary": "<p sourcefile=\"api/Utils.Mathematics.Expressions.SymbolicParameterException.yml\" sourcestartlinenumber=\"1\">Thrown when the symbolic transformation target parameter cannot be resolved from a\n<xref href=\"System.Linq.Expressions.LambdaExpression\" data-throw-if-not-resolved=\"false\"></xref>: the named parameter was not found,\nis present more than once (ambiguous), or the explicit parameter instance is not declared\nin the given lambda. This is a caller-error: InvalidInput classification in\n<xref href=\"Utils.Mathematics.Expressions.SymbolicTransformationResult\" data-throw-if-not-resolved=\"false\"></xref>.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Mathematics.Expressions.SymbolicTransformationResult.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Mathematics.Expressions.SymbolicTransformationResult.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Mathematics.Expressions.SymbolicTransformationResult",
+      "Summary": "<p sourcefile=\"api/Utils.Mathematics.Expressions.SymbolicTransformationResult.yml\" sourcestartlinenumber=\"1\">A structured, non-throwing result of a symbolic transformation (differentiation or integration).\nLets callers distinguish &quot;not differentiable/integrable&quot;, &quot;approximately transformed&quot;, &quot;invalid\ninput&quot;, and &quot;internal construction failure&quot; without relying on exception types or null conventions\n(see TODO-2026-07-11-pass3.md item #42).</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Mathematics.Expressions.SymbolicTransformationStatus.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Mathematics.Expressions.SymbolicTransformationStatus.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Mathematics.Expressions.SymbolicTransformationStatus",
+      "Summary": "<p sourcefile=\"api/Utils.Mathematics.Expressions.SymbolicTransformationStatus.yml\" sourcestartlinenumber=\"1\">Categorizes the outcome of a non-throwing symbolic transformation\n(see <xref href=\"Utils.Mathematics.Expressions.MathExpressionExtensions.TryDerivate%60%601(System.Linq.Expressions.LambdaExpression%2cSystem.String%2cSystem.Boolean)\" data-throw-if-not-resolved=\"false\"></xref> and\n<xref href=\"Utils.Mathematics.Expressions.MathExpressionExtensions.TryIntegrate%60%601(System.Linq.Expressions.LambdaExpression%2cSystem.String)\" data-throw-if-not-resolved=\"false\"></xref>).</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Mathematics.Expressions.UnsupportedScalarOperationException.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Mathematics.Expressions.UnsupportedScalarOperationException.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Mathematics.Expressions.UnsupportedScalarOperationException",
+      "Summary": "<p sourcefile=\"api/Utils.Mathematics.Expressions.UnsupportedScalarOperationException.yml\" sourcestartlinenumber=\"1\">Thrown when a required scalar math operation (e.g. <code>Log</code>, <code>Sin</code>, <code>Sqrt</code>) is not\navailable for the scalar type used to build a symbolic derivative/integral. This is a specialized\n<xref href=\"System.NotSupportedException\" data-throw-if-not-resolved=\"false\"></xref> so callers can categorize &quot;operation unavailable for scalar type\nT&quot; (see <xref href=\"Utils.Mathematics.Expressions.SymbolicTransformationStatus.UnsupportedScalarOperation\" data-throw-if-not-resolved=\"false\"></xref>) distinctly from other\nunsupported-expression failures, while existing <code>catch (NotSupportedException)</code> sites keep working.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.Mathematics.Expressions.yml",
       "output": {
         ".html": {

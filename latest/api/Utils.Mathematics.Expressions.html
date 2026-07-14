@@ -145,6 +145,42 @@ a complete transformation pipeline.</p>
       <dd><p>Provides helper methods to derive lambda expressions using <a class="xref" href="Utils.Mathematics.Expressions.ExpressionDerivation-1.html">ExpressionDerivation&lt;T&gt;</a>.</p>
 </dd>
     </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Mathematics.Expressions.SymbolicParameterException.html">SymbolicParameterException</a></dt>
+      <dd><p>Thrown when the symbolic transformation target parameter cannot be resolved from a
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.lambdaexpression">LambdaExpression</a>: the named parameter was not found,
+is present more than once (ambiguous), or the explicit parameter instance is not declared
+in the given lambda. This is a caller-error: InvalidInput classification in
+<a class="xref" href="Utils.Mathematics.Expressions.SymbolicTransformationResult.html">SymbolicTransformationResult</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Mathematics.Expressions.SymbolicTransformationResult.html">SymbolicTransformationResult</a></dt>
+      <dd><p>A structured, non-throwing result of a symbolic transformation (differentiation or integration).
+Lets callers distinguish &quot;not differentiable/integrable&quot;, &quot;approximately transformed&quot;, &quot;invalid
+input&quot;, and &quot;internal construction failure&quot; without relying on exception types or null conventions
+(see TODO-2026-07-11-pass3.md item #42).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Mathematics.Expressions.UnsupportedScalarOperationException.html">UnsupportedScalarOperationException</a></dt>
+      <dd><p>Thrown when a required scalar math operation (e.g. <code>Log</code>, <code>Sin</code>, <code>Sqrt</code>) is not
+available for the scalar type used to build a symbolic derivative/integral. This is a specialized
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a> so callers can categorize &quot;operation unavailable for scalar type
+T&quot; (see <a class="xref" href="Utils.Mathematics.Expressions.SymbolicTransformationStatus.html#Utils_Mathematics_Expressions_SymbolicTransformationStatus_UnsupportedScalarOperation">UnsupportedScalarOperation</a>) distinctly from other
+unsupported-expression failures, while existing <code>catch (NotSupportedException)</code> sites keep working.</p>
+</dd>
+    </dl>
+    <h3 id="enums">
+Enums
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Mathematics.Expressions.SymbolicTransformationStatus.html">SymbolicTransformationStatus</a></dt>
+      <dd><p>Categorizes the outcome of a non-throwing symbolic transformation
+(see <a class="xref" href="Utils.Mathematics.Expressions.MathExpressionExtensions.html#Utils_Mathematics_Expressions_MathExpressionExtensions_TryDerivate__1_System_Linq_Expressions_LambdaExpression_System_String_System_Boolean_">TryDerivate&lt;T&gt;(LambdaExpression, string, bool)</a> and
+<a class="xref" href="Utils.Mathematics.Expressions.MathExpressionExtensions.html#Utils_Mathematics_Expressions_MathExpressionExtensions_TryIntegrate__1_System_Linq_Expressions_LambdaExpression_System_String_">TryIntegrate&lt;T&gt;(LambdaExpression, string)</a>).</p>
+</dd>
+    </dl>
 
 
 </article>

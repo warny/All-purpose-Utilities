@@ -140,9 +140,6 @@ Class ExpressionIntegration&lt;T&gt;  <a class="header-action link-secondary" ti
       <a class="xref" href="Utils.Expressions.ExpressionTransformer.html#Utils_Expressions_ExpressionTransformer_Transform_System_Linq_Expressions_Expression_">ExpressionTransformer.Transform(Expression)</a>
     </div>
     <div>
-      <a class="xref" href="Utils.Expressions.ExpressionTransformer.html#Utils_Expressions_ExpressionTransformer_FinalizeExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_Expression___">ExpressionTransformer.FinalizeExpression(Expression, Expression[])</a>
-    </div>
-    <div>
       <a class="xref" href="Utils.Expressions.ExpressionTransformer.html#Utils_Expressions_ExpressionTransformer_ReplaceArguments_System_Linq_Expressions_Expression_System_Linq_Expressions_ParameterExpression___System_Linq_Expressions_Expression___">ExpressionTransformer.ReplaceArguments(Expression, ParameterExpression[], Expression[])</a>
     </div>
     <div>
@@ -1146,6 +1143,57 @@ public Expression? Exp(MethodCallExpression e, ParameterExpression op)</code></p
 
 
 
+
+
+
+  <a id="Utils_Mathematics_Expressions_ExpressionIntegration_1_FinalizeExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionIntegration`1.FinalizeExpression*"></a>
+
+  <h3 id="Utils_Mathematics_Expressions_ExpressionIntegration_1_FinalizeExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_Expression___" data-uid="Utils.Mathematics.Expressions.ExpressionIntegration`1.FinalizeExpression(System.Linq.Expressions.Expression,System.Linq.Expressions.Expression[])">
+  FinalizeExpression(Expression, Expression[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/Expressions/ExpressionIntegration.cs/#L1006"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Called when no integration rule matches the current node. Replaces the base transformer's generic
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.exception">Exception</a> with a specific, node-tagged <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a>, so a
+failed integration is distinguishable as &quot;not integrable&quot; (see TODO-2026-07-11-pass3.md item #42)
+and <a class="xref" href="Utils.Mathematics.Expressions.MathExpressionExtensions.html#Utils_Mathematics_Expressions_MathExpressionExtensions_TryIntegrate__1_System_Linq_Expressions_LambdaExpression_System_String_">TryIntegrate&lt;T&gt;(LambdaExpression, string)</a> can surface the offending node.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected override Expression FinalizeExpression(Expression e, Expression[] parameters)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>e</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></dt>
+    <dd><p>The expression that could not be integrated.</p>
+</dd>
+    <dt><code>parameters</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a>[]</dt>
+    <dd><p>Prepared child expressions (unused; no rule consumed them).</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></dt>
+    <dd><p>Never returns; always throws.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a></dt>
+    <dd><p>Always thrown, tagged with <code class="paramref">e</code>.</p>
+</dd>
+  </dl>
 
 
 

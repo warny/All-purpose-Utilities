@@ -731,6 +731,118 @@ unrelated parameter (see TODO-pass4 item #47). The scalar type is inferred from
 
 
 
+  <a id="Utils_Mathematics_Expressions_MathExpressionExtensions_TryDerivate_" data-uid="Utils.Mathematics.Expressions.MathExpressionExtensions.TryDerivate*"></a>
+
+  <h3 id="Utils_Mathematics_Expressions_MathExpressionExtensions_TryDerivate__1_System_Linq_Expressions_LambdaExpression_System_String_System_Boolean_" data-uid="Utils.Mathematics.Expressions.MathExpressionExtensions.TryDerivate``1(System.Linq.Expressions.LambdaExpression,System.String,System.Boolean)">
+  TryDerivate&lt;T&gt;(LambdaExpression, string, bool)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/MathExpressionExtensions.cs/#L384"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Attempts to differentiate <code class="paramref">e</code> with respect to the parameter named
+<code class="paramref">paramName</code> without throwing, returning a structured
+<a class="xref" href="Utils.Mathematics.Expressions.SymbolicTransformationResult.html">SymbolicTransformationResult</a> that distinguishes success (exact or numeric-fallback),
+unsupported expression, unsupported scalar operation, invalid input, and construction failure
+(see TODO-2026-07-11-pass3.md item #42). The throwing <a class="xref" href="Utils.Mathematics.Expressions.MathExpressionExtensions.html#Utils_Mathematics_Expressions_MathExpressionExtensions_Derivate__1_System_Linq_Expressions_LambdaExpression_System_String_">Derivate&lt;T&gt;(LambdaExpression, string)</a>
+overload is unchanged.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static SymbolicTransformationResult TryDerivate&lt;T&gt;(this LambdaExpression e, string paramName, bool allowNumericalFallback = false) where T : IFloatingPoint&lt;T&gt;</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>e</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.lambdaexpression">LambdaExpression</a></dt>
+    <dd><p>Lambda expression to differentiate.</p>
+</dd>
+    <dt><code>paramName</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Name of the parameter used as the differentiation variable.</p>
+</dd>
+    <dt><code>allowNumericalFallback</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p>When <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a>, unknown single-argument methods are approximated with a centered
+finite difference and the result reports <a class="xref" href="Utils.Mathematics.Expressions.SymbolicTransformationResult.html#Utils_Mathematics_Expressions_SymbolicTransformationResult_IsExact">IsExact</a> as
+<a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>; when <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> (default) such a method yields
+<a class="xref" href="Utils.Mathematics.Expressions.SymbolicTransformationStatus.html#Utils_Mathematics_Expressions_SymbolicTransformationStatus_UnsupportedExpression">UnsupportedExpression</a>.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Mathematics.Expressions.SymbolicTransformationResult.html">SymbolicTransformationResult</a></dt>
+    <dd><p>A structured result describing the outcome.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Floating-point type used by derivative rules.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Mathematics_Expressions_MathExpressionExtensions_TryIntegrate_" data-uid="Utils.Mathematics.Expressions.MathExpressionExtensions.TryIntegrate*"></a>
+
+  <h3 id="Utils_Mathematics_Expressions_MathExpressionExtensions_TryIntegrate__1_System_Linq_Expressions_LambdaExpression_System_String_" data-uid="Utils.Mathematics.Expressions.MathExpressionExtensions.TryIntegrate``1(System.Linq.Expressions.LambdaExpression,System.String)">
+  TryIntegrate&lt;T&gt;(LambdaExpression, string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/MathExpressionExtensions.cs/#L418"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Attempts to integrate <code class="paramref">e</code> with respect to the parameter named
+<code class="paramref">paramName</code> without throwing, returning a structured
+<a class="xref" href="Utils.Mathematics.Expressions.SymbolicTransformationResult.html">SymbolicTransformationResult</a> (see TODO-2026-07-11-pass3.md item #42). A successful
+symbolic integral always reports <a class="xref" href="Utils.Mathematics.Expressions.SymbolicTransformationResult.html#Utils_Mathematics_Expressions_SymbolicTransformationResult_IsExact">IsExact</a> as
+<a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> (integration has no numeric fallback). The throwing
+<a class="xref" href="Utils.Mathematics.Expressions.MathExpressionExtensions.html#Utils_Mathematics_Expressions_MathExpressionExtensions_Integrate__1_System_Linq_Expressions_LambdaExpression_System_String_">Integrate&lt;T&gt;(LambdaExpression, string)</a> overload is unchanged.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static SymbolicTransformationResult TryIntegrate&lt;T&gt;(this LambdaExpression e, string paramName) where T : IFloatingPoint&lt;T&gt;</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>e</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.lambdaexpression">LambdaExpression</a></dt>
+    <dd><p>Lambda expression to integrate.</p>
+</dd>
+    <dt><code>paramName</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Name of the parameter used as the integration variable.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Mathematics.Expressions.SymbolicTransformationResult.html">SymbolicTransformationResult</a></dt>
+    <dd><p>A structured result describing the outcome.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>T</code></dt>
+    <dd><p>Floating-point type used by integration rules.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
 
 </article>
 
