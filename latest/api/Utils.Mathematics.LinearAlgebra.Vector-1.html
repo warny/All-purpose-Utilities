@@ -1439,7 +1439,7 @@ also re-filtered the remaining-columns sequence at every recursion level.</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Vector_1_op_Division_Utils_Mathematics_LinearAlgebra_Vector__0___0_" data-uid="Utils.Mathematics.LinearAlgebra.Vector`1.op_Division(Utils.Mathematics.LinearAlgebra.Vector{`0},`0)">
   operator /(Vector&lt;T&gt;, T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.Operators.cs/#L226"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.Operators.cs/#L235"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Divides a vector by a scalar.</p>
@@ -1456,7 +1456,14 @@ also re-filtered the remaining-columns sequence at every recursion level.</p>
     <dd><p>Vector to divide.</p>
 </dd>
     <dt><code>number</code> <span class="xref">T</span></dt>
-    <dd><p>Scalar value.</p>
+    <dd><p>Scalar divisor. Not validated: this raw operator performs plain component-wise IEEE division, so
+a zero, near-zero, <code>NaN</code>, or infinite divisor propagates the corresponding
+infinity/NaN component per <code class="typeparamref">T</code>'s own IEEE semantics rather than throwing (see
+TODO-2026-07-11-pass4.md item #56). Higher-level members that need a numerically reliable result
+validate their own denominator before reaching this operator - e.g. <a class="xref" href="Utils.Mathematics.LinearAlgebra.Vector-1.html#Utils_Mathematics_LinearAlgebra_Vector_1_Normalize_System_Nullable__0__">Normalize(T?)</a> rejects
+a near-zero norm, and <a class="xref" href="Utils.Mathematics.LinearAlgebra.Vector-1.html#Utils_Mathematics_LinearAlgebra_Vector_1_ComputeBarycenter__1_System_Func___0__0__System_Func___0_Utils_Mathematics_LinearAlgebra_Vector__0___System_Collections_Generic_IEnumerable___0__">ComputeBarycenter&lt;TW&gt;(Func&lt;TW, T&gt;, Func&lt;TW, Vector&lt;T&gt;&gt;, IEnumerable&lt;TW&gt;)</a>
+rejects a zero/non-finite total weight - rather than this primitive operator growing an arbitrary,
+undocumented &quot;near-zero&quot; threshold of its own.</p>
 </dd>
   </dl>
 
@@ -1481,7 +1488,7 @@ also re-filtered the remaining-columns sequence at every recursion level.</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Vector_1_op_Equality_Utils_Mathematics_LinearAlgebra_Vector__0__Utils_Mathematics_LinearAlgebra_Vector__0__" data-uid="Utils.Mathematics.LinearAlgebra.Vector`1.op_Equality(Utils.Mathematics.LinearAlgebra.Vector{`0},Utils.Mathematics.LinearAlgebra.Vector{`0})">
   operator ==(Vector&lt;T&gt;?, Vector&lt;T&gt;?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.Operators.cs/#L243"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.Operators.cs/#L252"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Checks if two vectors are equal.</p>
@@ -1523,7 +1530,7 @@ also re-filtered the remaining-columns sequence at every recursion level.</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Vector_1_op_Inequality_Utils_Mathematics_LinearAlgebra_Vector__0__Utils_Mathematics_LinearAlgebra_Vector__0__" data-uid="Utils.Mathematics.LinearAlgebra.Vector`1.op_Inequality(Utils.Mathematics.LinearAlgebra.Vector{`0},Utils.Mathematics.LinearAlgebra.Vector{`0})">
   operator !=(Vector&lt;T&gt;?, Vector&lt;T&gt;?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.Operators.cs/#L252"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.Operators.cs/#L261"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Checks if two vectors are not equal.</p>
@@ -1565,7 +1572,7 @@ also re-filtered the remaining-columns sequence at every recursion level.</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Vector_1_op_Multiply_Utils_Mathematics_LinearAlgebra_Vector__0__Utils_Mathematics_LinearAlgebra_Vector__0__" data-uid="Utils.Mathematics.LinearAlgebra.Vector`1.op_Multiply(Utils.Mathematics.LinearAlgebra.Vector{`0},Utils.Mathematics.LinearAlgebra.Vector{`0})">
   operator *(Vector&lt;T&gt;, Vector&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.Operators.cs/#L262"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.Operators.cs/#L271"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Calculates the dot product of two vectors.</p>
@@ -1784,7 +1791,7 @@ also re-filtered the remaining-columns sequence at every recursion level.</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Vector_1_op_UnaryPlus_Utils_Mathematics_LinearAlgebra_Vector__0__" data-uid="Utils.Mathematics.LinearAlgebra.Vector`1.op_UnaryPlus(Utils.Mathematics.LinearAlgebra.Vector{`0})">
   operator +(Vector&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.Operators.cs/#L281"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Vector.Operators.cs/#L290"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns a copy of the vector (unary plus).</p>

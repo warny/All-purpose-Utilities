@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Mathematics_LinearAlgebra_AffineSubspace_1" data-uid="Utils.Mathematics.LinearAlgebra.AffineSubspace`1" class="text-break">
-Class AffineSubspace&lt;T&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/AffineSubspace.cs/#L20"><i class="bi bi-code-slash"></i></a>
+Class AffineSubspace&lt;T&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/AffineSubspace.cs/#L32"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -243,9 +243,21 @@ Class AffineSubspace&lt;T&gt;  <a class="header-action link-secondary" title="Vi
   <h2 id="Utils_Mathematics_LinearAlgebra_AffineSubspace_1_remarks">Remarks</h2>
   <div class="markdown level0 remarks"><p>
 Construct via <a class="xref" href="Utils.Mathematics.LinearAlgebra.AffineSubspace-1.html#Utils_Mathematics_LinearAlgebra_AffineSubspace_1_FromSpan_Utils_Mathematics_LinearAlgebra_Vector__0__Utils_Mathematics_LinearAlgebra_Vector__0____">FromSpan(Vector&lt;T&gt;, params Vector&lt;T&gt;[])</a> (k spanning vectors → dimension k) or
-<a class="xref" href="Utils.Mathematics.LinearAlgebra.AffineSubspace-1.html#Utils_Mathematics_LinearAlgebra_AffineSubspace_1_FromNormals_Utils_Mathematics_LinearAlgebra_Vector__0__Utils_Mathematics_LinearAlgebra_Vector__0____">FromNormals(Vector&lt;T&gt;, params Vector&lt;T&gt;[])</a> (k normal vectors → dimension d − k).
-The internal representation is an orthonormal basis computed by Gram–Schmidt, so all
-geometric operations are numerically stable.
+<a class="xref" href="Utils.Mathematics.LinearAlgebra.AffineSubspace-1.html#Utils_Mathematics_LinearAlgebra_AffineSubspace_1_FromNormals_Utils_Mathematics_LinearAlgebra_Vector__0__Utils_Mathematics_LinearAlgebra_Vector__0____">FromNormals(Vector&lt;T&gt;, params Vector&lt;T&gt;[])</a> (k normal vectors → dimension d − k). The internal
+representation is an orthonormal basis computed by Gram–Schmidt.
+</p>
+<p>
+<b>Numerical stability is limited, not unconditional</b> (see TODO-2026-07-11-pass4.md item #50):
+rank/independence decisions during construction, and the tolerance-based comparisons in
+<a class="xref" href="Utils.Mathematics.LinearAlgebra.AffineSubspace-1.html#Utils_Mathematics_LinearAlgebra_AffineSubspace_1_IntersectWith_Utils_Mathematics_LinearAlgebra_AffineSubspace__0__">IntersectWith(AffineSubspace&lt;T&gt;)</a>/<a class="xref" href="Utils.Mathematics.LinearAlgebra.AffineSubspace-1.html#Utils_Mathematics_LinearAlgebra_AffineSubspace_1_IntersectWith_Utils_Mathematics_LinearAlgebra_Line__0__">IntersectWith(Line&lt;T&gt;)</a>/<a class="xref" href="Utils.Mathematics.LinearAlgebra.AffineSubspace-1.html#Utils_Mathematics_LinearAlgebra_AffineSubspace_1_Equals_Utils_Mathematics_LinearAlgebra_AffineSubspace__0__">Equals(AffineSubspace&lt;T&gt;?)</a>,
+use a fixed absolute epsilon (<code>1e-10</code>) rather than a scale-aware relative tolerance, and there is
+no re-orthogonalization pass or conditioning/residual diagnostic. This is adequate for
+moderate-magnitude coordinates and clearly independent inputs, but nearly dependent directions/normals
+or large coordinate scales can silently produce an incorrect rank or a looser-than-expected membership
+test. <a class="xref" href="Utils.Mathematics.LinearAlgebra.AffineSubspace-1.html#Utils_Mathematics_LinearAlgebra_AffineSubspace_1_FromSpan_Utils_Mathematics_LinearAlgebra_Vector__0__System_Nullable__0__Utils_Mathematics_LinearAlgebra_Vector__0____">FromSpan(Vector&lt;T&gt;, T?, params Vector&lt;T&gt;[])</a>/<a class="xref" href="Utils.Mathematics.LinearAlgebra.AffineSubspace-1.html#Utils_Mathematics_LinearAlgebra_AffineSubspace_1_FromNormals_Utils_Mathematics_LinearAlgebra_Vector__0__System_Nullable__0__Utils_Mathematics_LinearAlgebra_Vector__0____">FromNormals(Vector&lt;T&gt;, T?, params Vector&lt;T&gt;[])</a>
+accept an optional <code>rankTolerance</code> override for callers who need to tune this threshold for their
+own scale; a fully scale-aware/SVD-based construction was not implemented (see the item's "Fixed" note
+for why).
 </p>
 <p>
 Special cases: dimension 0 is a single point; dimension d is the full ambient space.
@@ -261,7 +273,7 @@ Special cases: dimension 0 is a single point; dimension d is the full ambient sp
 
   <h3 id="Utils_Mathematics_LinearAlgebra_AffineSubspace_1_AmbientDimension" data-uid="Utils.Mathematics.LinearAlgebra.AffineSubspace`1.AmbientDimension">
   AmbientDimension
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/AffineSubspace.cs/#L38"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/AffineSubspace.cs/#L50"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the dimension of the ambient space.</p>
@@ -293,7 +305,7 @@ Special cases: dimension 0 is a single point; dimension d is the full ambient sp
 
   <h3 id="Utils_Mathematics_LinearAlgebra_AffineSubspace_1_Anchor" data-uid="Utils.Mathematics.LinearAlgebra.AffineSubspace`1.Anchor">
   Anchor
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/AffineSubspace.cs/#L32"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/AffineSubspace.cs/#L44"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the anchor point that lies on the subspace.</p>
@@ -325,7 +337,7 @@ Special cases: dimension 0 is a single point; dimension d is the full ambient sp
 
   <h3 id="Utils_Mathematics_LinearAlgebra_AffineSubspace_1_Codimension" data-uid="Utils.Mathematics.LinearAlgebra.AffineSubspace`1.Codimension">
   Codimension
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/AffineSubspace.cs/#L41"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/AffineSubspace.cs/#L53"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the codimension (= AmbientDimension − Dimension).</p>
@@ -357,7 +369,7 @@ Special cases: dimension 0 is a single point; dimension d is the full ambient sp
 
   <h3 id="Utils_Mathematics_LinearAlgebra_AffineSubspace_1_Dimension" data-uid="Utils.Mathematics.LinearAlgebra.AffineSubspace`1.Dimension">
   Dimension
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/AffineSubspace.cs/#L35"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/AffineSubspace.cs/#L47"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the dimension of this subspace.</p>
@@ -393,7 +405,7 @@ Special cases: dimension 0 is a single point; dimension d is the full ambient sp
 
   <h3 id="Utils_Mathematics_LinearAlgebra_AffineSubspace_1_Clone" data-uid="Utils.Mathematics.LinearAlgebra.AffineSubspace`1.Clone">
   Clone()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/AffineSubspace.cs/#L302"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/AffineSubspace.cs/#L418"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Creates a new object that is a copy of the current instance.</p>
@@ -426,7 +438,7 @@ Special cases: dimension 0 is a single point; dimension d is the full ambient sp
 
   <h3 id="Utils_Mathematics_LinearAlgebra_AffineSubspace_1_Contains_Utils_Mathematics_LinearAlgebra_Vector__0___0_" data-uid="Utils.Mathematics.LinearAlgebra.AffineSubspace`1.Contains(Utils.Mathematics.LinearAlgebra.Vector{`0},`0)">
   Contains(Vector&lt;T&gt;, T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/AffineSubspace.cs/#L136"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/AffineSubspace.cs/#L230"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether <code class="paramref">point</code> lies on this subspace within the given tolerance.</p>
@@ -443,7 +455,7 @@ Special cases: dimension 0 is a single point; dimension d is the full ambient sp
     <dd><p>Point to test.</p>
 </dd>
     <dt><code>tolerance</code> <span class="xref">T</span></dt>
-    <dd><p>Maximum allowable perpendicular distance.</p>
+    <dd><p>Maximum allowable perpendicular distance. Must be finite and non-negative.</p>
 </dd>
   </dl>
 
@@ -461,6 +473,18 @@ Special cases: dimension 0 is a single point; dimension d is the full ambient sp
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">point</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when <code class="paramref">tolerance</code> is not finite or is negative: an unchecked negative
+tolerance would reject even an exact member, <code>NaN</code> would make every comparison
+false, and positive infinity would silently accept every finite-distance point as a member (see
+TODO-2026-07-11-pass4.md item #48).</p>
+</dd>
+  </dl>
 
 
 
@@ -468,7 +492,7 @@ Special cases: dimension 0 is a single point; dimension d is the full ambient sp
 
   <h3 id="Utils_Mathematics_LinearAlgebra_AffineSubspace_1_DistanceTo_Utils_Mathematics_LinearAlgebra_Vector__0__" data-uid="Utils.Mathematics.LinearAlgebra.AffineSubspace`1.DistanceTo(Utils.Mathematics.LinearAlgebra.Vector{`0})">
   DistanceTo(Vector&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/AffineSubspace.cs/#L124"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/AffineSubspace.cs/#L211"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Computes the shortest distance from <code class="paramref">point</code> to this subspace.</p>
@@ -502,6 +526,9 @@ Special cases: dimension 0 is a single point; dimension d is the full ambient sp
 
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">point</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
     <dd><p>Thrown when the point has a different ambient dimension.</p>
 </dd>
@@ -513,7 +540,7 @@ Special cases: dimension 0 is a single point; dimension d is the full ambient sp
 
   <h3 id="Utils_Mathematics_LinearAlgebra_AffineSubspace_1_Equals_System_Object_" data-uid="Utils.Mathematics.LinearAlgebra.AffineSubspace`1.Equals(System.Object)">
   Equals(object?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/AffineSubspace.cs/#L296"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/AffineSubspace.cs/#L397"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether the specified object is equal to the current object.</p>
@@ -552,7 +579,7 @@ Special cases: dimension 0 is a single point; dimension d is the full ambient sp
 
   <h3 id="Utils_Mathematics_LinearAlgebra_AffineSubspace_1_Equals_Utils_Mathematics_LinearAlgebra_AffineSubspace__0__" data-uid="Utils.Mathematics.LinearAlgebra.AffineSubspace`1.Equals(Utils.Mathematics.LinearAlgebra.AffineSubspace{`0})">
   Equals(AffineSubspace&lt;T&gt;?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/AffineSubspace.cs/#L284"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/AffineSubspace.cs/#L385"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether <code class="paramref">other</code> represents the same affine subspace as this one.
@@ -591,15 +618,78 @@ Two subspaces are equal when they have the same dimension and the same point set
 
   <a id="Utils_Mathematics_LinearAlgebra_AffineSubspace_1_FromNormals_" data-uid="Utils.Mathematics.LinearAlgebra.AffineSubspace`1.FromNormals*"></a>
 
-  <h3 id="Utils_Mathematics_LinearAlgebra_AffineSubspace_1_FromNormals_Utils_Mathematics_LinearAlgebra_Vector__0__Utils_Mathematics_LinearAlgebra_Vector__0____" data-uid="Utils.Mathematics.LinearAlgebra.AffineSubspace`1.FromNormals(Utils.Mathematics.LinearAlgebra.Vector{`0},Utils.Mathematics.LinearAlgebra.Vector{`0}[])">
-  FromNormals(Vector&lt;T&gt;, params Vector&lt;T&gt;[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/AffineSubspace.cs/#L88"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_Mathematics_LinearAlgebra_AffineSubspace_1_FromNormals_Utils_Mathematics_LinearAlgebra_Vector__0__System_Nullable__0__Utils_Mathematics_LinearAlgebra_Vector__0____" data-uid="Utils.Mathematics.LinearAlgebra.AffineSubspace`1.FromNormals(Utils.Mathematics.LinearAlgebra.Vector{`0},System.Nullable{`0},Utils.Mathematics.LinearAlgebra.Vector{`0}[])">
+  FromNormals(Vector&lt;T&gt;, T?, params Vector&lt;T&gt;[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/AffineSubspace.cs/#L165"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Creates an affine subspace of dimension <code>d − k</code> defined by <code>k</code> normal vectors.
 The subspace is the set of points whose displacement from <code class="paramref">anchor</code>
 is orthogonal to every supplied normal.
 Linearly dependent normals are silently discarded.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static AffineSubspace&lt;T&gt; FromNormals(Vector&lt;T&gt; anchor, T? rankTolerance, params Vector&lt;T&gt;[] normals)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>anchor</code> <a class="xref" href="Utils.Mathematics.LinearAlgebra.Vector-1.html">Vector</a>&lt;T&gt;</dt>
+    <dd><p>A point on the subspace.</p>
+</dd>
+    <dt><code>rankTolerance</code> T?</dt>
+    <dd><p>Overrides the default fixed absolute epsilon (<code>1e-10</code>) used to decide whether a normal is
+linearly independent of those already accepted, and to decide when a candidate complement
+direction has collapsed to zero (see this type's remarks on numerical stability,
+TODO-2026-07-11-pass4.md item #50). Must be finite and non-negative when supplied.</p>
+</dd>
+    <dt><code>normals</code> <a class="xref" href="Utils.Mathematics.LinearAlgebra.Vector-1.html">Vector</a>&lt;T&gt;[]</dt>
+    <dd><p>Normal vectors. Each independent normal reduces the dimension by one.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Mathematics.LinearAlgebra.AffineSubspace-1.html">AffineSubspace</a>&lt;T&gt;</dt>
+    <dd><p>The affine subspace through <code class="paramref">anchor</code> orthogonal to the given normals.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">anchor</code>, <code class="paramref">normals</code>, or any element of
+<code class="paramref">normals</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when no normals are supplied or a normal has the wrong ambient dimension.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when <code class="paramref">rankTolerance</code> is supplied but not finite or is negative.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_AffineSubspace_1_FromNormals_" data-uid="Utils.Mathematics.LinearAlgebra.AffineSubspace`1.FromNormals*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_AffineSubspace_1_FromNormals_Utils_Mathematics_LinearAlgebra_Vector__0__Utils_Mathematics_LinearAlgebra_Vector__0____" data-uid="Utils.Mathematics.LinearAlgebra.AffineSubspace`1.FromNormals(Utils.Mathematics.LinearAlgebra.Vector{`0},Utils.Mathematics.LinearAlgebra.Vector{`0}[])">
+  FromNormals(Vector&lt;T&gt;, params Vector&lt;T&gt;[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/AffineSubspace.cs/#L139"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Creates an affine subspace of dimension <code>d − k</code> defined by <code>k</code> normal vectors, using
+the default rank tolerance. See <a class="xref" href="Utils.Mathematics.LinearAlgebra.AffineSubspace-1.html#Utils_Mathematics_LinearAlgebra_AffineSubspace_1_FromNormals_Utils_Mathematics_LinearAlgebra_Vector__0__System_Nullable__0__Utils_Mathematics_LinearAlgebra_Vector__0____">FromNormals(Vector&lt;T&gt;, T?, params Vector&lt;T&gt;[])</a> for an
+overload accepting an explicit tolerance override.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -633,6 +723,10 @@ Linearly dependent normals are silently discarded.</p>
 
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">anchor</code>, <code class="paramref">normals</code>, or any element of
+<code class="paramref">normals</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
     <dd><p>Thrown when no normals are supplied or a normal has the wrong ambient dimension.</p>
 </dd>
@@ -642,13 +736,76 @@ Linearly dependent normals are silently discarded.</p>
 
   <a id="Utils_Mathematics_LinearAlgebra_AffineSubspace_1_FromSpan_" data-uid="Utils.Mathematics.LinearAlgebra.AffineSubspace`1.FromSpan*"></a>
 
-  <h3 id="Utils_Mathematics_LinearAlgebra_AffineSubspace_1_FromSpan_Utils_Mathematics_LinearAlgebra_Vector__0__Utils_Mathematics_LinearAlgebra_Vector__0____" data-uid="Utils.Mathematics.LinearAlgebra.AffineSubspace`1.FromSpan(Utils.Mathematics.LinearAlgebra.Vector{`0},Utils.Mathematics.LinearAlgebra.Vector{`0}[])">
-  FromSpan(Vector&lt;T&gt;, params Vector&lt;T&gt;[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/AffineSubspace.cs/#L64"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_Mathematics_LinearAlgebra_AffineSubspace_1_FromSpan_Utils_Mathematics_LinearAlgebra_Vector__0__System_Nullable__0__Utils_Mathematics_LinearAlgebra_Vector__0____" data-uid="Utils.Mathematics.LinearAlgebra.AffineSubspace`1.FromSpan(Utils.Mathematics.LinearAlgebra.Vector{`0},System.Nullable{`0},Utils.Mathematics.LinearAlgebra.Vector{`0}[])">
+  FromSpan(Vector&lt;T&gt;, T?, params Vector&lt;T&gt;[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/AffineSubspace.cs/#L105"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Creates an affine subspace of dimension <code>k</code> spanned by <code>k</code> direction vectors.
 Linearly dependent inputs are silently discarded; the resulting dimension equals the rank.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static AffineSubspace&lt;T&gt; FromSpan(Vector&lt;T&gt; anchor, T? rankTolerance, params Vector&lt;T&gt;[] directions)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>anchor</code> <a class="xref" href="Utils.Mathematics.LinearAlgebra.Vector-1.html">Vector</a>&lt;T&gt;</dt>
+    <dd><p>A point on the subspace.</p>
+</dd>
+    <dt><code>rankTolerance</code> T?</dt>
+    <dd><p>Overrides the default fixed absolute epsilon (<code>1e-10</code>) used to decide whether a direction is
+linearly independent of those already accepted (see this type's remarks on numerical stability,
+TODO-2026-07-11-pass4.md item #50). Must be finite and non-negative when supplied.</p>
+</dd>
+    <dt><code>directions</code> <a class="xref" href="Utils.Mathematics.LinearAlgebra.Vector-1.html">Vector</a>&lt;T&gt;[]</dt>
+    <dd><p>Spanning directions. At least one must be non-zero.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Mathematics.LinearAlgebra.AffineSubspace-1.html">AffineSubspace</a>&lt;T&gt;</dt>
+    <dd><p>The affine subspace through <code class="paramref">anchor</code> in the given directions.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">anchor</code>, <code class="paramref">directions</code>, or any element of
+<code class="paramref">directions</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when no directions are supplied, a direction has the wrong ambient dimension,
+or all directions are zero / mutually collinear.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when <code class="paramref">rankTolerance</code> is supplied but not finite or is negative.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Mathematics_LinearAlgebra_AffineSubspace_1_FromSpan_" data-uid="Utils.Mathematics.LinearAlgebra.AffineSubspace`1.FromSpan*"></a>
+
+  <h3 id="Utils_Mathematics_LinearAlgebra_AffineSubspace_1_FromSpan_Utils_Mathematics_LinearAlgebra_Vector__0__Utils_Mathematics_LinearAlgebra_Vector__0____" data-uid="Utils.Mathematics.LinearAlgebra.AffineSubspace`1.FromSpan(Utils.Mathematics.LinearAlgebra.Vector{`0},Utils.Mathematics.LinearAlgebra.Vector{`0}[])">
+  FromSpan(Vector&lt;T&gt;, params Vector&lt;T&gt;[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/AffineSubspace.cs/#L81"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Creates an affine subspace of dimension <code>k</code> spanned by <code>k</code> direction vectors, using the
+default rank tolerance. See <a class="xref" href="Utils.Mathematics.LinearAlgebra.AffineSubspace-1.html#Utils_Mathematics_LinearAlgebra_AffineSubspace_1_FromSpan_Utils_Mathematics_LinearAlgebra_Vector__0__System_Nullable__0__Utils_Mathematics_LinearAlgebra_Vector__0____">FromSpan(Vector&lt;T&gt;, T?, params Vector&lt;T&gt;[])</a> for an overload
+accepting an explicit tolerance override.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -682,6 +839,10 @@ Linearly dependent inputs are silently discarded; the resulting dimension equals
 
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">anchor</code>, <code class="paramref">directions</code>, or any element of
+<code class="paramref">directions</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
     <dd><p>Thrown when no directions are supplied, a direction has the wrong ambient dimension,
 or all directions are zero / mutually collinear.</p>
@@ -694,10 +855,23 @@ or all directions are zero / mutually collinear.</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_AffineSubspace_1_GetHashCode" data-uid="Utils.Mathematics.LinearAlgebra.AffineSubspace`1.GetHashCode">
   GetHashCode()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/AffineSubspace.cs/#L299"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/AffineSubspace.cs/#L415"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Serves as the default hash function.</p>
+  <div class="markdown level1 summary"><p>Combines only <a class="xref" href="Utils.Mathematics.LinearAlgebra.AffineSubspace-1.html#Utils_Mathematics_LinearAlgebra_AffineSubspace_1_Dimension">Dimension</a> and <a class="xref" href="Utils.Mathematics.LinearAlgebra.AffineSubspace-1.html#Utils_Mathematics_LinearAlgebra_AffineSubspace_1_AmbientDimension">AmbientDimension</a>. This is a deliberately
+coarse hash, not an oversight (see TODO-2026-07-11-pass4.md item #51): <a class="xref" href="Utils.Mathematics.LinearAlgebra.AffineSubspace-1.html#Utils_Mathematics_LinearAlgebra_AffineSubspace_1_Equals_Utils_Mathematics_LinearAlgebra_AffineSubspace__0__">Equals(AffineSubspace&lt;T&gt;?)</a>
+is a tolerance-based geometric comparison (same point set, not same anchor/basis representation),
+so a hash that is actually consistent with it would need to derive a value invariant across every
+representation of the same subspace - and stable across the boundary where two subspaces stop
+being &quot;close enough&quot; to compare equal - which the fixed-epsilon geometric equality this type uses
+cannot support without also risking hash/equals inconsistency (two subspaces that compare equal
+hashing differently because their real-valued invariants fall in different quantization buckets).
+This satisfies the required equal-implies-same-hash contract, but every subspace of the same
+dimension/ambient dimension collides: this makes hash-based collections (<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.hashset-1">HashSet&lt;T&gt;</a>,
+dictionary keys) degrade to near-linear lookup for a collection containing many subspaces. Callers
+needing better distribution should key such collections by an application-specific canonical
+representation (e.g. a snapped/rounded anchor plus basis) via a dedicated <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.iequalitycomparer-1">IEqualityComparer&lt;T&gt;</a>
+instead of relying on this type's own hash.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -709,8 +883,7 @@ or all directions are zero / mutually collinear.</p>
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
-    <dd><p>A hash code for the current object.</p>
-</dd>
+    <dd></dd>
   </dl>
 
 
@@ -727,7 +900,7 @@ or all directions are zero / mutually collinear.</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_AffineSubspace_1_IntersectWith_Utils_Mathematics_LinearAlgebra_AffineSubspace__0__" data-uid="Utils.Mathematics.LinearAlgebra.AffineSubspace`1.IntersectWith(Utils.Mathematics.LinearAlgebra.AffineSubspace{`0})">
   IntersectWith(AffineSubspace&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/AffineSubspace.cs/#L198"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/AffineSubspace.cs/#L298"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Computes the intersection of this subspace with another affine subspace.</p>
@@ -767,6 +940,9 @@ The anchor of the returned subspace is the minimum-norm solution of the combined
 
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">other</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
     <dd><p>Thrown when <code class="paramref">other</code> has a different ambient dimension.</p>
 </dd>
@@ -778,7 +954,7 @@ The anchor of the returned subspace is the minimum-norm solution of the combined
 
   <h3 id="Utils_Mathematics_LinearAlgebra_AffineSubspace_1_IntersectWith_Utils_Mathematics_LinearAlgebra_Line__0__" data-uid="Utils.Mathematics.LinearAlgebra.AffineSubspace`1.IntersectWith(Utils.Mathematics.LinearAlgebra.Line{`0})">
   IntersectWith(Line&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/AffineSubspace.cs/#L152"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/AffineSubspace.cs/#L250"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Computes the intersection of this subspace with a line.</p>
@@ -817,6 +993,9 @@ subspace. The result is exact when the line is not parallel to the subspace.</p>
 
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">line</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
     <dd><p>Thrown when the line has a different ambient dimension.</p>
 </dd>
@@ -828,7 +1007,7 @@ subspace. The result is exact when the line is not parallel to the subspace.</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_AffineSubspace_1_Project_Utils_Mathematics_LinearAlgebra_Vector__0__" data-uid="Utils.Mathematics.LinearAlgebra.AffineSubspace`1.Project(Utils.Mathematics.LinearAlgebra.Vector{`0})">
   Project(Vector&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/AffineSubspace.cs/#L108"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/AffineSubspace.cs/#L194"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns the orthogonal projection of <code class="paramref">point</code> onto this subspace.</p>
@@ -862,6 +1041,9 @@ subspace. The result is exact when the line is not parallel to the subspace.</p>
 
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">point</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
     <dd><p>Thrown when the point has a different ambient dimension.</p>
 </dd>
@@ -873,7 +1055,7 @@ subspace. The result is exact when the line is not parallel to the subspace.</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_AffineSubspace_1_ToLine" data-uid="Utils.Mathematics.LinearAlgebra.AffineSubspace`1.ToLine">
   ToLine()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/AffineSubspace.cs/#L265"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/AffineSubspace.cs/#L366"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns a <a class="xref" href="Utils.Mathematics.LinearAlgebra.Line-1.html">Line&lt;T&gt;</a> equivalent to this subspace.</p>
@@ -911,7 +1093,7 @@ subspace. The result is exact when the line is not parallel to the subspace.</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_AffineSubspace_1_ToString" data-uid="Utils.Mathematics.LinearAlgebra.AffineSubspace`1.ToString">
   ToString()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/AffineSubspace.cs/#L305"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/AffineSubspace.cs/#L421"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns a string that represents the current object.</p>
@@ -944,7 +1126,7 @@ subspace. The result is exact when the line is not parallel to the subspace.</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_AffineSubspace_1_ToString_System_String_System_IFormatProvider_" data-uid="Utils.Mathematics.LinearAlgebra.AffineSubspace`1.ToString(System.String,System.IFormatProvider)">
   ToString(string?, IFormatProvider?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/AffineSubspace.cs/#L313"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/AffineSubspace.cs/#L435"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns a string describing the anchor point and the subspace dimensions.</p>
@@ -958,10 +1140,14 @@ subspace. The result is exact when the line is not parallel to the subspace.</p>
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>format</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>Unused; reserved for future format specifiers.</p>
+    <dd><p>Numeric format string forwarded to each coordinate's own <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.iformattable.tostring">ToString(string, IFormatProvider)</a>
+(e.g. <code>&quot;F2&quot;</code>), or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> for the default numeric format. Propagated the same
+way as <a class="xref" href="Utils.Mathematics.LinearAlgebra.Line-1.html#Utils_Mathematics_LinearAlgebra_Line_1_ToString_System_String_System_IFormatProvider_">ToString(string?, IFormatProvider?)</a>, since <a class="xref" href="Utils.Mathematics.LinearAlgebra.Vector-1.html">Vector&lt;T&gt;</a>
+itself does not implement <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.iformattable">IFormattable</a> (see TODO-2026-07-11-pass4.md item #52 - this
+type previously ignored both parameters entirely).</p>
 </dd>
     <dt><code>formatProvider</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.iformatprovider">IFormatProvider</a></dt>
-    <dd><p>Unused; reserved for future format providers.</p>
+    <dd><p>Format provider forwarded to each coordinate.</p>
 </dd>
   </dl>
 
@@ -986,7 +1172,7 @@ subspace. The result is exact when the line is not parallel to the subspace.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/AffineSubspace.cs/#L20" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/AffineSubspace.cs/#L32" class="edit-link">Edit this page</a>
         </div>
 
 

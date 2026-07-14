@@ -2166,10 +2166,16 @@ element's own formatter alongside the numeric format.</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_op_Division_Utils_Mathematics_LinearAlgebra_Matrix__0___0_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.op_Division(Utils.Mathematics.LinearAlgebra.Matrix{`0},`0)">
   operator /(Matrix&lt;T&gt;, T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Operators.cs/#L101"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Operators.cs/#L107"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Divides a matrix by a scalar.</p>
+  <div class="markdown level1 summary"><p>Divides a matrix by a scalar. Not validated: this raw operator performs plain component-wise IEEE
+division, so a zero, near-zero, <code>NaN</code>, or infinite <code class="paramref">scalar</code>
+propagates the corresponding infinity/NaN entries per <code class="typeparamref">T</code>'s own IEEE
+semantics rather than throwing (see TODO-2026-07-11-pass4.md item #56). Higher-level members that
+need a numerically reliable result validate their own denominator before reaching this operator -
+e.g. <a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html#Utils_Mathematics_LinearAlgebra_Matrix_1_Invert_System_Nullable__0__">Invert(T?)</a>/<a class="xref" href="Utils.Mathematics.LinearAlgebra.Matrix-1.html#Utils_Mathematics_LinearAlgebra_Matrix_1_Solve_Utils_Mathematics_LinearAlgebra_Vector__0__System_Nullable__0__">Solve(Vector&lt;T&gt;, T?)</a> reject a numerically near-singular pivot - rather
+than this primitive operator growing an arbitrary, undocumented &quot;near-zero&quot; threshold of its own.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -2205,7 +2211,7 @@ element's own formatter alongside the numeric format.</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_op_Equality_Utils_Mathematics_LinearAlgebra_Matrix__0__System_Object_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.op_Equality(Utils.Mathematics.LinearAlgebra.Matrix{`0},System.Object)">
   operator ==(Matrix&lt;T&gt;?, object?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Operators.cs/#L183"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Operators.cs/#L189"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Checks if the matrix is equal to an object.</p>
@@ -2244,7 +2250,7 @@ element's own formatter alongside the numeric format.</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_op_Equality_Utils_Mathematics_LinearAlgebra_Matrix__0__Utils_Mathematics_LinearAlgebra_Matrix__0__" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.op_Equality(Utils.Mathematics.LinearAlgebra.Matrix{`0},Utils.Mathematics.LinearAlgebra.Matrix{`0})">
   operator ==(Matrix&lt;T&gt;?, Matrix&lt;T&gt;?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Operators.cs/#L173"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Operators.cs/#L179"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Checks if two matrices are equal.</p>
@@ -2283,7 +2289,7 @@ element's own formatter alongside the numeric format.</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_op_Inequality_Utils_Mathematics_LinearAlgebra_Matrix__0__System_Object_" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.op_Inequality(Utils.Mathematics.LinearAlgebra.Matrix{`0},System.Object)">
   operator !=(Matrix&lt;T&gt;?, object?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Operators.cs/#L188"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Operators.cs/#L194"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Checks if the matrix is not equal to an object.</p>
@@ -2322,7 +2328,7 @@ element's own formatter alongside the numeric format.</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_op_Inequality_Utils_Mathematics_LinearAlgebra_Matrix__0__Utils_Mathematics_LinearAlgebra_Matrix__0__" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.op_Inequality(Utils.Mathematics.LinearAlgebra.Matrix{`0},Utils.Mathematics.LinearAlgebra.Matrix{`0})">
   operator !=(Matrix&lt;T&gt;?, Matrix&lt;T&gt;?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Operators.cs/#L178"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Operators.cs/#L184"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Checks if two matrices are not equal.</p>
@@ -2361,7 +2367,7 @@ element's own formatter alongside the numeric format.</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_op_Multiply_Utils_Mathematics_LinearAlgebra_Matrix__0__Utils_Mathematics_LinearAlgebra_Matrix__0__" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.op_Multiply(Utils.Mathematics.LinearAlgebra.Matrix{`0},Utils.Mathematics.LinearAlgebra.Matrix{`0})">
   operator *(Matrix&lt;T&gt;, Matrix&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Operators.cs/#L118"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Operators.cs/#L124"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Multiplies two matrices.</p>
@@ -2406,7 +2412,7 @@ element's own formatter alongside the numeric format.</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_op_Multiply_Utils_Mathematics_LinearAlgebra_Matrix__0__Utils_Mathematics_LinearAlgebra_Vector__0__" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.op_Multiply(Utils.Mathematics.LinearAlgebra.Matrix{`0},Utils.Mathematics.LinearAlgebra.Vector{`0})">
   operator *(Matrix&lt;T&gt;, Vector&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Operators.cs/#L145"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Operators.cs/#L151"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Multiplies a matrix by a vector.</p>
@@ -2611,7 +2617,7 @@ element's own formatter alongside the numeric format.</p>
 
   <h3 id="Utils_Mathematics_LinearAlgebra_Matrix_1_op_UnaryPlus_Utils_Mathematics_LinearAlgebra_Matrix__0__" data-uid="Utils.Mathematics.LinearAlgebra.Matrix`1.op_UnaryPlus(Utils.Mathematics.LinearAlgebra.Matrix{`0})">
   operator +(Matrix&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Operators.cs/#L168"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Mathematics/LinearAlgebra/Matrix.Operators.cs/#L174"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns the matrix itself (unary plus).</p>
