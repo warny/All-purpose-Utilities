@@ -302,10 +302,56 @@ Tests ajoutés ou renforcés :
 - tests existants `EmbeddedCodeTransformationInvariantTests` couvrant ordre, nombre d'appels au
   transformer, localisations, noms de règles, code brut et absence de double transformation.
 
-#### 8b. Dispatchers runtime — restant
+#### 8b. Dispatchers runtime — corrigé
 
-Les dispatchers runtime parser et lexer ne sont pas mutualisés par cette correction. Ils restent dans
-leurs chemins spécialisés existants afin de ne pas mélanger cette étape avec la collecte.
+L'émission des dispatchers runtime parser et lexer est désormais mutualisée par le moteur privé
+`EmbeddedHookDispatcherEmitter`. Ce moteur porte l'algorithme stable : déclaration de la classe
+générée, signature de la méthode de dispatch, boucle ordonnée sur les hooks déjà sélectionnés,
+validation des discriminants `Owner` et `Kind`, comparaisons dans l'ordre historique
+`Rule.Name`, code brut (`PredicateCode` ou `ActionCode`), `AlternativeIndex`, `ElementIndex`, appel de
+la méthode de hook, retour de succès et retour de fallback. Aucun tri supplémentaire n'est introduit ;
+l'ordre reste celui des listes `predicates`, `actions`, `lexerActions` et `lexerPredicates` produites par
+la collecte existante.
+
+Les différences déclaratives sont concentrées dans le descripteur immuable privé
+`EmbeddedHookDispatcherDescriptor`, qui expose explicitement les quatre configurations constantes :
+
+- `ParserPredicate` pour `GeneratedSemanticPredicateEvaluator` / `ISemanticPredicateEvaluator`,
+  `SemanticPredicateEvaluationContext`, `SemanticPredicateEvaluationOutcome`, succès
+  `Satisfied`/`Rejected` et fallback `_fallback.Evaluate(context)` ;
+- `ParserAction` pour `GeneratedParserActionExecutor` / `IParserActionExecutor`,
+  `ParserActionExecutionContext`, `ParserActionExecutionOutcome.Executed` et fallback
+  `_fallback.Execute(context)` ;
+- `LexerPredicate` pour `GeneratedLexerPredicateEvaluator` / `ILexerPredicateEvaluator`,
+  `LexerPredicateEvaluationContext`, `LexerPredicateEvaluationOutcome.True`/`False` et fallback
+  `_fallback.Evaluate(context)` ;
+- `LexerAction` pour `GeneratedLexerActionExecutor` / `ILexerActionExecutor`,
+  `LexerActionExecutionContext` avec `LexerActionExecutionResult`,
+  `LexerActionExecutionOutcome.Executed` et fallback `_fallback.Execute(context, result)`.
+
+Les wrappers explicites `EmitSemanticPredicateEvaluator(...)`, `EmitParserActionExecutor(...)`,
+`EmitLexerPredicateEvaluator(...)` et `EmitLexerActionExecutor(...)` sont conservés comme points de
+lecture parser/lexer et prédicat/action ; ils sélectionnent seulement le descripteur correspondant et
+délèguent au moteur commun. Aucune stratégie comportementale supplémentaire n'a été nécessaire : les
+différences constatées sont les types, signatures, propriétés de code, expressions de succès, arguments
+d'appel et fallbacks, donc elles restent décrites par données. Aucun paramètre `isLexer` ou
+`isPredicate`, aucun gros `switch` de domaine et aucune nouvelle API publique ne sont introduits.
+
+La source générée est préservée : noms de classes, interfaces, signatures, conditions, ordre des
+conditions, appels `__Predicate...`, `__Action...`, `__LexerPredicate...`, `__LexerAction...`, retours de
+succès et fallbacks restent identiques. Les méthodes de hooks elles-mêmes ne sont pas mutualisées et
+restent explicitement ouvertes pour 8c.
+
+Tests ajoutés ou renforcés :
+
+- `Antlr4GeneratedEmbeddedCodeTests.Emit_CombinedEmbeddedCode_GeneratesEquivalentRuntimeDispatchers`
+  caractérise les quatre dispatchers sur une grammaire combinée avec plusieurs hooks parser et lexer ;
+- `EmbeddedCodeTransformerArchitectureTests.GrammarEmitterEmbeddedHookDispatchers_UseSharedEmitterAndImmutableDescriptors`
+  vérifie par Roslyn la délégation des quatre wrappers, l'absence de boucle et de structure complète
+  dans les wrappers, l'émetteur commun unique, le descripteur immuable privé, l'absence de `isLexer` /
+  `isPredicate`, l'absence de branches parser/lexer dispersées dans l'émetteur, la validation des
+  discriminants `Owner` et `Kind`, les quatre configurations explicites, les fallbacks et le maintien des
+  méthodes de hooks séparées pour 8c.
 
 #### 8c. Méthodes de hooks — restant
 
@@ -314,9 +360,9 @@ retours, fallbacks et corps générés restent inchangés.
 
 #### 8d. Garde-fous globaux — partiellement corrigé
 
-Un garde-fou architectural couvre maintenant la collecte des hooks. Les garde-fous globaux sur une
-future mutualisation des dispatchers runtime et des méthodes de hooks restent à compléter lorsque ces
-sous-étapes seront traitées.
+Des garde-fous architecturaux couvrent maintenant la collecte des hooks et les dispatchers runtime. Les
+garde-fous globaux sur une future mutualisation des méthodes de hooks restent à compléter lorsque 8c
+sera traitée.
 
 ## Duplications d'intention et lisibilité (priorité moyenne)
 

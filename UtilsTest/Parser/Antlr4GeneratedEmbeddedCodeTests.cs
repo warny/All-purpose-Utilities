@@ -2429,6 +2429,68 @@ public class Antlr4GeneratedEmbeddedCodeTests
     }
 
     /// <summary>
+    /// Characterizes the four generated runtime dispatchers for a combined grammar with parser and lexer hooks.
+    /// </summary>
+    [TestMethod]
+    public void Emit_CombinedEmbeddedCode_GeneratesEquivalentRuntimeDispatchers()
+    {
+        const string grammar = """
+            grammar P;
+
+            @parser::members {
+                public int ParserActions;
+            }
+
+            @lexer::members {
+                public bool LexerEnabled = true;
+                public int LexerActions;
+            }
+
+            start
+                : { true }? A { ParserActions++; }
+                | { false }? B { ParserActions += 10; }
+                ;
+            A : { LexerEnabled }? 'a' { LexerActions++; } ;
+            B : { true }? 'b' { LexerActions += 10; } ;
+            """;
+
+        string source = Emit(grammar);
+
+        AssertSourceContainsInOrder(
+            source,
+            "private sealed class GeneratedSemanticPredicateEvaluator : ISemanticPredicateEvaluator",
+            "public SemanticPredicateEvaluationOutcome Evaluate(SemanticPredicateEvaluationContext context)",
+            "&& string.Equals(context.PredicateCode, \" true \", global::System.StringComparison.Ordinal)",
+            "&& context.AlternativeIndex == 0",
+            "&& context.ElementIndex == 0",
+            "return _executionContext.__Predicate_start_0_0_0(context) ? SemanticPredicateEvaluationOutcome.Satisfied : SemanticPredicateEvaluationOutcome.Rejected;",
+            "return _fallback.Evaluate(context);");
+        AssertSourceContainsInOrder(
+            source,
+            "private sealed class GeneratedParserActionExecutor : IParserActionExecutor",
+            "public ParserActionExecutionOutcome Execute(ParserActionExecutionContext context)",
+            "&& string.Equals(context.ActionCode, \" ParserActions++; \", global::System.StringComparison.Ordinal)",
+            "_executionContext.__Action_start_0_2_1(context);",
+            "return ParserActionExecutionOutcome.Executed;",
+            "return _fallback.Execute(context);");
+        AssertSourceContainsInOrder(
+            source,
+            "private sealed class GeneratedLexerActionExecutor : ILexerActionExecutor",
+            "public LexerActionExecutionOutcome Execute(LexerActionExecutionContext context, LexerActionExecutionResult result)",
+            "&& string.Equals(context.ActionCode, \" LexerActions++; \", global::System.StringComparison.Ordinal)",
+            "_executionContext.__LexerAction_A_0_2_1(context, result);",
+            "return LexerActionExecutionOutcome.Executed;",
+            "return _fallback.Execute(context, result);");
+        AssertSourceContainsInOrder(
+            source,
+            "private sealed class GeneratedLexerPredicateEvaluator : ILexerPredicateEvaluator",
+            "public LexerPredicateEvaluationOutcome Evaluate(LexerPredicateEvaluationContext context)",
+            "&& string.Equals(context.PredicateCode, \" LexerEnabled \", global::System.StringComparison.Ordinal)",
+            "return _executionContext.__LexerPredicate_A_0_0_0(context) ? LexerPredicateEvaluationOutcome.True : LexerPredicateEvaluationOutcome.False;",
+            "return _fallback.Evaluate(context);");
+    }
+
+    /// <summary>
     /// Ensures a generated <c>false</c> predicate hook is executed and rejects the branch through the parser engine.
     /// </summary>
     [TestMethod]
@@ -6978,6 +7040,20 @@ public class Antlr4GeneratedEmbeddedCodeTests
         if (indentation.Length > 0)
         {
             StringAssert.Contains(source, $"{Environment.NewLine}{indentation}{transformedLine.TrimStart()}{Environment.NewLine}");
+        }
+    }
+
+    /// <summary>
+    /// Asserts that generated source fragments appear in a strict ordinal order.
+    /// </summary>
+    private static void AssertSourceContainsInOrder(string source, params string[] fragments)
+    {
+        int searchStart = 0;
+        foreach (string fragment in fragments)
+        {
+            int index = source.IndexOf(fragment, searchStart, StringComparison.Ordinal);
+            Assert.IsTrue(index >= 0, $"Expected to find fragment after index {searchStart}: {fragment}\n{source}");
+            searchStart = index + fragment.Length;
         }
     }
 
