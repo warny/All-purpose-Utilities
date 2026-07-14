@@ -161,6 +161,35 @@ Every API-changing PR must include:
 - Avoid wrappers and abstractions unless they remove real ambiguity.
 - Do not introduce architecture layers without a clear invariant-driven reason.
 - Optimize only after behavior is locked down.
+- When parser and lexer paths share a stable algorithm, prefer composition: a common engine owns the invariant algorithm, while a parser- or lexer-specific strategy owns only the true variation points.
+- Use small immutable context values for traversal state instead of large mutable state objects shared across recursive calls.
+- Prefer immutable descriptors when parser/lexer differences are declarative, such as generated names, context types, signatures, success expressions, fallback expressions, or transformation locations.
+- Do not hide parser/lexer differences behind `isLexer` booleans or domain switches spread throughout a common engine.
+- Avoid abstract base classes that require most of the algorithm to be overridden.
+
+## Parser/lexer specialization refactor direction
+
+Several generator paths currently share a similar global algorithm while still carrying real parser/lexer variation points. This direction is validated for future refactorings, but it is not implemented as a single completed architecture yet. The affected areas include embedded-hook collection, runtime dispatcher generation, generated hook-method emission, and other parser/lexer-specific construction or emission paths.
+
+The target model is incremental and composition-based:
+
+1. a common engine owns the stable traversal, ordering, accumulation, validation, and invariant checks;
+2. parser and lexer strategies own only the true variation points;
+3. small immutable traversal context values carry changing state such as alternative and element indexes;
+4. immutable emission descriptors carry declarative generation differences such as generated class names, method names, context type names, implemented interfaces, success expressions, fallback expressions, transformation locations, prefixes, and signatures;
+5. explicit parser and lexer wrappers remain responsible for choosing the appropriate strategy or descriptor.
+
+The refactor must keep the following differences explicit: parser left recursion, alternative priority ordering, lexer modes, quantifier and negation index semantics, generated names, transformation locations, runtime context types, method signatures, success results, and fallback calls. These differences must not be hidden behind a single `isLexer` flag or scattered parser/lexer switches inside a shared engine.
+
+Incremental plan:
+
+- introduce a shared embedded-hook collection engine;
+- add parser and lexer collection strategies;
+- introduce a shared runtime dispatcher emitter where descriptors or targeted strategies can preserve real differences;
+- introduce a shared generated hook-method emitter for genuinely common hook bodies and signatures;
+- add Roslyn architecture guards that prevent duplicated algorithms, hidden parser/lexer switches, accidental public contracts, and behavioral drift.
+
+Each step must preserve generated C# shape, hook order, indexes, transformer invocation count and order, fallback behavior, diagnostics, public API, parser authority, and lexer/runtime semantics. Each step should be delivered as a separate PR or, at minimum, as a separate auditable change.
 
 ## Roadmap phases
 

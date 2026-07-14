@@ -130,6 +130,57 @@ public sealed class EmbeddedCodeTransformerArchitectureTests
     }
 
 
+
+    /// <summary>
+    /// Ensures runtime expression context symbols are built through one shared implementation.
+    /// </summary>
+    [TestMethod]
+    public void ExpressionEmbeddedCodePreparer_RuntimeContextSymbols_UseSingleSharedBuilder()
+    {
+        string repositoryRoot = FindRepositoryRoot();
+        string relativePath = NormalizePath(Path.Combine("Utils.Parser.Expressions", "ExpressionEmbeddedCodePreparer.cs"));
+        string source = File.ReadAllText(Path.Combine(repositoryRoot, relativePath));
+        SyntaxTree tree = CSharpSyntaxTree.ParseText(source, path: relativePath);
+        CSharpCompilation compilation = CSharpCompilation.Create(
+            "Utils.Parser.Expressions.SymbolArchitectureScan",
+            [tree],
+            CreateRuntimeReferences(),
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+        SemanticModel semanticModel = compilation.GetSemanticModel(tree);
+        ClassDeclarationSyntax preparer = tree.GetCompilationUnitRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().Single(static type => type.Identifier.ValueText == "ExpressionEmbeddedCodePreparer");
+        MethodDeclarationSyntax[] methods = preparer.Members.OfType<MethodDeclarationSyntax>().ToArray();
+        MethodDeclarationSyntax semanticWrapper = methods.Single(static method => method.Identifier.ValueText == "BuildSemanticPredicateSymbols");
+        MethodDeclarationSyntax actionWrapper = methods.Single(static method => method.Identifier.ValueText == "BuildParserActionSymbols");
+        MethodDeclarationSyntax sharedBuilder = methods.Single(static method => method.Identifier.ValueText == "BuildRuntimeContextSymbols");
+
+        AssertWrapperDelegatesToSharedBuilder(semanticWrapper, semanticModel);
+        AssertWrapperDelegatesToSharedBuilder(actionWrapper, semanticModel);
+        Assert.AreEqual(0, semanticWrapper.DescendantNodes().OfType<SwitchStatementSyntax>().Count());
+        Assert.AreEqual(0, actionWrapper.DescendantNodes().OfType<SwitchStatementSyntax>().Count());
+        Assert.IsFalse(methods.Any(static method => method.Identifier.ValueText == "AddSemanticPredicateSymbol"));
+        Assert.IsFalse(methods.Any(static method => method.Identifier.ValueText == "AddParserActionSymbol"));
+
+        MethodDeclarationSyntax[] symbolClassifiers = methods
+            .Where(static method => method.DescendantNodes().OfType<SwitchStatementSyntax>().Any(@switch => @switch.Expression.ToString() == "symbol"))
+            .ToArray();
+        CollectionAssert.AreEqual(new[] { "BuildRuntimeContextSymbols" }, symbolClassifiers.Select(static method => method.Identifier.ValueText).ToArray());
+        Assert.IsTrue(sharedBuilder.DescendantNodes().OfType<AssignmentExpressionSyntax>().Any(assignment => assignment.Right is InvocationExpressionSyntax invocation && invocation.ToString().Contains("Expression.Property", StringComparison.Ordinal)));
+
+        InvocationExpressionSyntax[] expressionCompilerCalls = preparer.DescendantNodes().OfType<InvocationExpressionSyntax>()
+            .Where(static invocation => invocation.ToString().StartsWith("_compiler.Compile", StringComparison.Ordinal))
+            .ToArray();
+        Assert.AreEqual(2, expressionCompilerCalls.Length, "The preparer must keep exactly one IExpressionCompiler.Compile call per runtime artifact path.");
+
+        Assert.IsTrue(preparer.DescendantNodes().OfType<InvocationExpressionSyntax>().Any(invocation => invocation.ToString().StartsWith("Expression.Lambda<Func<SemanticPredicateEvaluationContext, bool>>", StringComparison.Ordinal)));
+        Assert.IsTrue(preparer.DescendantNodes().OfType<InvocationExpressionSyntax>().Any(invocation => invocation.ToString().StartsWith("Expression.Lambda<Action<ParserActionExecutionContext>>", StringComparison.Ordinal)));
+
+        string[] publicContracts = tree.GetCompilationUnitRoot().DescendantNodes().OfType<TypeDeclarationSyntax>()
+            .Where(static type => type.Modifiers.Any(SyntaxKind.PublicKeyword) && type.Identifier.ValueText.Contains("RuntimeContext", StringComparison.Ordinal))
+            .Select(static type => type.Identifier.ValueText)
+            .ToArray();
+        CollectionAssert.AreEqual(Array.Empty<string>(), publicContracts);
+    }
+
     /// <summary>
     /// Ensures generated embedded-code hooks use one typed data model with explicit parser/lexer and predicate/action discriminants.
     /// </summary>
@@ -222,6 +273,18 @@ public sealed class EmbeddedCodeTransformerArchitectureTests
             .ToArray();
         string[] expectedRecursiveCollectors = ["CollectEmbeddedCodeHooks", "CollectLexerEmbeddedCodeHooks"];
         CollectionAssert.AreEqual(expectedRecursiveCollectors, recursiveCollectors);
+    }
+
+
+    /// <summary>
+    /// Asserts that a specialized symbol wrapper delegates directly to the shared runtime symbol builder.
+    /// </summary>
+    /// <param name="wrapper">Wrapper method declaration to inspect.</param>
+    /// <param name="semanticModel">Semantic model used to resolve the delegated invocation.</param>
+    private static void AssertWrapperDelegatesToSharedBuilder(MethodDeclarationSyntax wrapper, SemanticModel semanticModel)
+    {
+        InvocationExpressionSyntax invocation = wrapper.DescendantNodes().OfType<InvocationExpressionSyntax>().Single();
+        Assert.AreEqual("BuildRuntimeContextSymbols", (semanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol)?.Name);
     }
 
     /// <summary>
