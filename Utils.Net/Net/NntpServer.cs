@@ -71,11 +71,12 @@ public sealed class NntpServer : IDisposable
     /// </summary>
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Responses to send.</returns>
-    private async Task<IEnumerable<ServerResponse>> HandleGroup(CommandContext ctx, string[] args)
+    private async Task<IEnumerable<ServerResponse>> HandleGroup(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
         string group = args.Length > 0 ? args[0] : string.Empty;
-        IReadOnlyDictionary<int, string> articles = await _store.ListAsync(group).ConfigureAwait(false);
+        IReadOnlyDictionary<int, string> articles = await _store.ListAsync(group, cancellationToken).ConfigureAwait(false);
         if (articles.Count == 0)
         {
             ctx.Remove("GROUP");
@@ -108,8 +109,9 @@ public sealed class NntpServer : IDisposable
     /// </summary>
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Responses to send.</returns>
-    private async Task<IEnumerable<ServerResponse>> HandleArticle(CommandContext ctx, string[] args)
+    private async Task<IEnumerable<ServerResponse>> HandleArticle(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
         if (_currentGroup is null)
         {
@@ -119,7 +121,7 @@ public sealed class NntpServer : IDisposable
         {
             return new[] { new ServerResponse("420", ResponseSeverity.PermanentNegative, "no article number") };
         }
-        string? article = await _store.RetrieveAsync(_currentGroup, id).ConfigureAwait(false);
+        string? article = await _store.RetrieveAsync(_currentGroup, id, cancellationToken).ConfigureAwait(false);
         if (article is null)
         {
             return new[] { new ServerResponse("423", ResponseSeverity.PermanentNegative, "no such article") };
@@ -145,17 +147,18 @@ public sealed class NntpServer : IDisposable
     /// </summary>
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Responses to send.</returns>
-    private async Task<IEnumerable<ServerResponse>> HandleList(CommandContext ctx, string[] args)
+    private async Task<IEnumerable<ServerResponse>> HandleList(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
-        IReadOnlyCollection<string> groups = await _store.ListGroupsAsync().ConfigureAwait(false);
+        IReadOnlyCollection<string> groups = await _store.ListGroupsAsync(cancellationToken).ConfigureAwait(false);
         List<ServerResponse> responses = new()
         {
             new ServerResponse("215", ResponseSeverity.Completion, "list of newsgroups follows")
         };
         foreach (string group in groups)
         {
-            IReadOnlyDictionary<int, string> articles = await _store.ListAsync(group).ConfigureAwait(false);
+            IReadOnlyDictionary<int, string> articles = await _store.ListAsync(group, cancellationToken).ConfigureAwait(false);
             int first = int.MaxValue;
             int last = int.MinValue;
             foreach (int id in articles.Keys)
@@ -185,21 +188,22 @@ public sealed class NntpServer : IDisposable
     /// </summary>
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Responses to send.</returns>
-    private async Task<IEnumerable<ServerResponse>> HandleNewGroups(CommandContext ctx, string[] args)
+    private async Task<IEnumerable<ServerResponse>> HandleNewGroups(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
         if (args.Length < 2 || !TryParseDateTime(args[0], args[1], out DateTime since))
         {
             return new[] { new ServerResponse("501", ResponseSeverity.PermanentNegative, "syntax error") };
         }
-        IReadOnlyCollection<string> groups = await _store.ListGroupsAsync().ConfigureAwait(false);
+        IReadOnlyCollection<string> groups = await _store.ListGroupsAsync(cancellationToken).ConfigureAwait(false);
         List<ServerResponse> responses = new()
         {
             new ServerResponse("231", ResponseSeverity.Completion, "list follows")
         };
         foreach (string group in groups)
         {
-            DateTime? created = await _store.GetGroupCreationDateAsync(group).ConfigureAwait(false);
+            DateTime? created = await _store.GetGroupCreationDateAsync(group, cancellationToken).ConfigureAwait(false);
             if (created is not null && created.Value.ToUniversalTime() >= since)
             {
                 responses.Add(new ServerResponse(group, ResponseSeverity.Preliminary, null));
@@ -214,15 +218,16 @@ public sealed class NntpServer : IDisposable
     /// </summary>
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Responses to send.</returns>
-    private async Task<IEnumerable<ServerResponse>> HandleNewNews(CommandContext ctx, string[] args)
+    private async Task<IEnumerable<ServerResponse>> HandleNewNews(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
         if (args.Length < 3 || !TryParseDateTime(args[1], args[2], out DateTime since))
         {
             return new[] { new ServerResponse("501", ResponseSeverity.PermanentNegative, "syntax error") };
         }
         string group = args[0];
-        IReadOnlyCollection<int> ids = await _store.ListNewsSinceAsync(group, since).ConfigureAwait(false);
+        IReadOnlyCollection<int> ids = await _store.ListNewsSinceAsync(group, since, cancellationToken).ConfigureAwait(false);
         List<ServerResponse> responses = new()
         {
             new ServerResponse("230", ResponseSeverity.Completion, "list of new articles follows")
@@ -240,8 +245,9 @@ public sealed class NntpServer : IDisposable
     /// </summary>
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Responses to send.</returns>
-    private async Task<IEnumerable<ServerResponse>> HandleHeader(CommandContext ctx, string[] args)
+    private async Task<IEnumerable<ServerResponse>> HandleHeader(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
         if (_currentGroup is null)
         {
@@ -260,7 +266,7 @@ public sealed class NntpServer : IDisposable
         {
             return new[] { new ServerResponse("420", ResponseSeverity.PermanentNegative, "no article number") };
         }
-        string? article = await _store.RetrieveAsync(_currentGroup, id).ConfigureAwait(false);
+        string? article = await _store.RetrieveAsync(_currentGroup, id, cancellationToken).ConfigureAwait(false);
         if (article is null)
         {
             return new[] { new ServerResponse("423", ResponseSeverity.PermanentNegative, "no such article") };
@@ -290,8 +296,9 @@ public sealed class NntpServer : IDisposable
     /// </summary>
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Responses to send.</returns>
-    private async Task<IEnumerable<ServerResponse>> HandleBody(CommandContext ctx, string[] args)
+    private async Task<IEnumerable<ServerResponse>> HandleBody(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
         if (_currentGroup is null)
         {
@@ -310,7 +317,7 @@ public sealed class NntpServer : IDisposable
         {
             return new[] { new ServerResponse("420", ResponseSeverity.PermanentNegative, "no article number") };
         }
-        string? article = await _store.RetrieveAsync(_currentGroup, id).ConfigureAwait(false);
+        string? article = await _store.RetrieveAsync(_currentGroup, id, cancellationToken).ConfigureAwait(false);
         if (article is null)
         {
             return new[] { new ServerResponse("423", ResponseSeverity.PermanentNegative, "no such article") };
@@ -338,8 +345,9 @@ public sealed class NntpServer : IDisposable
     /// </summary>
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Responses to send.</returns>
-    private async Task<IEnumerable<ServerResponse>> HandleStat(CommandContext ctx, string[] args)
+    private async Task<IEnumerable<ServerResponse>> HandleStat(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
         if (_currentGroup is null)
         {
@@ -358,7 +366,7 @@ public sealed class NntpServer : IDisposable
         {
             return new[] { new ServerResponse("420", ResponseSeverity.PermanentNegative, "no article number") };
         }
-        string? article = await _store.RetrieveAsync(_currentGroup, id).ConfigureAwait(false);
+        string? article = await _store.RetrieveAsync(_currentGroup, id, cancellationToken).ConfigureAwait(false);
         if (article is null)
         {
             return new[] { new ServerResponse("423", ResponseSeverity.PermanentNegative, "no such article") };
@@ -372,14 +380,15 @@ public sealed class NntpServer : IDisposable
     /// </summary>
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Responses to send.</returns>
-    private async Task<IEnumerable<ServerResponse>> HandleNext(CommandContext ctx, string[] args)
+    private async Task<IEnumerable<ServerResponse>> HandleNext(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
         if (_currentGroup is null)
         {
             return new[] { new ServerResponse("412", ResponseSeverity.PermanentNegative, "no newsgroup selected") };
         }
-        IReadOnlyDictionary<int, string> articles = await _store.ListAsync(_currentGroup).ConfigureAwait(false);
+        IReadOnlyDictionary<int, string> articles = await _store.ListAsync(_currentGroup, cancellationToken).ConfigureAwait(false);
         List<int> ids = new(articles.Keys);
         ids.Sort();
         int? next = null;
@@ -404,8 +413,9 @@ public sealed class NntpServer : IDisposable
     /// </summary>
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Responses to send.</returns>
-    private Task<IEnumerable<ServerResponse>> HandlePost(CommandContext ctx, string[] args)
+    private Task<IEnumerable<ServerResponse>> HandlePost(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
         if (_currentGroup is null)
         {
@@ -420,8 +430,9 @@ public sealed class NntpServer : IDisposable
     /// Handles unrecognized lines, primarily used to receive article data during POST.
     /// </summary>
     /// <param name="line">Line received from the client.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Responses to send.</returns>
-    private async Task<IEnumerable<ServerResponse>> HandleUnrecognizedAsync(string line)
+    private async Task<IEnumerable<ServerResponse>> HandleUnrecognizedAsync(string line, CancellationToken cancellationToken)
     {
         if (_posting)
         {
@@ -429,7 +440,7 @@ public sealed class NntpServer : IDisposable
             {
                 _posting = false;
                 string article = string.Join("\r\n", _postLines) + "\r\n";
-                int id = await _store.AddAsync(_currentGroup!, article).ConfigureAwait(false);
+                int id = await _store.AddAsync(_currentGroup!, article, cancellationToken).ConfigureAwait(false);
                 _currentArticle = id;
                 return new[] { new ServerResponse("240", ResponseSeverity.Completion, "article received") };
             }
@@ -460,10 +471,10 @@ public sealed class NntpServer : IDisposable
     /// </summary>
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Responses to send.</returns>
-    private Task<IEnumerable<ServerResponse>> HandleQuit(CommandContext ctx, string[] args)
+    private Task<IEnumerable<ServerResponse>> HandleQuit(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
         return Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("205", ResponseSeverity.Completion, "closing connection") });
     }
 }
-

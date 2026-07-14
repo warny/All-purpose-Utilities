@@ -71,7 +71,7 @@ public class CommandResponseServer : IDisposable
     /// Occurs when a command is received from the client. The handler must return the responses to send.
     /// Returning an empty sequence results in no response being written to the client.
     /// </summary>
-    public event Func<string, Task<IEnumerable<ServerResponse>>>? CommandReceived;
+    public event Func<string, CancellationToken, Task<IEnumerable<ServerResponse>>>? CommandReceived;
 
     /// <summary>
     /// Registers a command handler.
@@ -79,7 +79,7 @@ public class CommandResponseServer : IDisposable
     /// <param name="command">Command name.</param>
     /// <param name="handler">Handler invoked when the command is received.</param>
     /// <param name="requiredContexts">Contexts required for the command to execute.</param>
-    public void RegisterCommand(string command, Func<CommandContext, string[], Task<IEnumerable<ServerResponse>>> handler, params string[] requiredContexts)
+    public void RegisterCommand(string command, Func<CommandContext, string[], CancellationToken, Task<IEnumerable<ServerResponse>>> handler, params string[] requiredContexts)
     {
         _handlers[command] = new CommandRegistration(handler, requiredContexts);
         Logger?.LogDebug("Command registered: {Command}", command);
@@ -294,7 +294,7 @@ public class CommandResponseServer : IDisposable
                         CommandContext ctx = new(_contexts);
                         try
                         {
-                            responses = await registration.Handler(ctx, args).ConfigureAwait(false);
+                            responses = await registration.Handler(ctx, args, cancellationToken).ConfigureAwait(false);
                         }
                         catch (Exception ex)
                         {
@@ -311,7 +311,7 @@ public class CommandResponseServer : IDisposable
                 {
                     try
                     {
-                        responses = await CommandReceived.Invoke(command).ConfigureAwait(false);
+                        responses = await CommandReceived.Invoke(command, cancellationToken).ConfigureAwait(false);
                     }
                     catch (Exception ex)
                     {
@@ -393,7 +393,7 @@ public class CommandResponseServer : IDisposable
     /// Represents a registered command handler.
     /// </summary>
     private sealed record CommandRegistration(
-        Func<CommandContext, string[], Task<IEnumerable<ServerResponse>>> Handler,
+        Func<CommandContext, string[], CancellationToken, Task<IEnumerable<ServerResponse>>> Handler,
         IReadOnlyCollection<string> RequiredContexts);
 }
 

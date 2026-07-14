@@ -92,7 +92,7 @@ public sealed class SmtpServer : IDisposable
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
     /// <returns>Responses to send.</returns>
-    private Task<IEnumerable<ServerResponse>> HandleEhlo(CommandContext ctx, string[] args)
+    private Task<IEnumerable<ServerResponse>> HandleEhlo(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
         ctx.Add("GREETED");
         List<ServerResponse> responses = new()
@@ -113,7 +113,7 @@ public sealed class SmtpServer : IDisposable
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
     /// <returns>Responses to send.</returns>
-    private Task<IEnumerable<ServerResponse>> HandleHelo(CommandContext ctx, string[] args)
+    private Task<IEnumerable<ServerResponse>> HandleHelo(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
         ctx.Add("GREETED");
         return Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("250", ResponseSeverity.Completion, "Hello") });
@@ -125,7 +125,7 @@ public sealed class SmtpServer : IDisposable
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
     /// <returns>Responses to send.</returns>
-    private Task<IEnumerable<ServerResponse>> HandleMail(CommandContext ctx, string[] args)
+    private Task<IEnumerable<ServerResponse>> HandleMail(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
         // Null reverse-path (<>) is explicitly allowed for bounce messages.
         if (!TryParseSmtpPath(args, allowNullPath: true, out string? from))
@@ -145,7 +145,7 @@ public sealed class SmtpServer : IDisposable
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
     /// <returns>Responses to send.</returns>
-    private async Task<IEnumerable<ServerResponse>> HandleAuth(CommandContext ctx, string[] args)
+    private async Task<IEnumerable<ServerResponse>> HandleAuth(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
         if (_authenticator is null || !_isTls)
         {
@@ -175,7 +175,7 @@ public sealed class SmtpServer : IDisposable
             int secondNull = credentials.IndexOf('\0', 1);
             string user = secondNull > 0 ? credentials[1..secondNull] : string.Empty;
             string password = secondNull > 0 && secondNull < credentials.Length - 1 ? credentials[(secondNull + 1)..] : string.Empty;
-            SmtpAuthenticationResult result = await _authenticator.AuthenticateAsync(user, password).ConfigureAwait(false);
+            SmtpAuthenticationResult result = await _authenticator.AuthenticateAsync(user, password, cancellationToken).ConfigureAwait(false);
             if (result.IsAuthenticated)
             {
                 _isAuthenticated = true;
@@ -201,7 +201,7 @@ public sealed class SmtpServer : IDisposable
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
     /// <returns>Responses to send.</returns>
-    private static Task<IEnumerable<ServerResponse>> HandleVrfy(CommandContext ctx, string[] args)
+    private static Task<IEnumerable<ServerResponse>> HandleVrfy(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
         return Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("252", ResponseSeverity.Completion, "Cannot VRFY user") });
     }
@@ -212,7 +212,7 @@ public sealed class SmtpServer : IDisposable
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
     /// <returns>Responses to send.</returns>
-    private static Task<IEnumerable<ServerResponse>> HandleExpn(CommandContext ctx, string[] args)
+    private static Task<IEnumerable<ServerResponse>> HandleExpn(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
         return Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("252", ResponseSeverity.Completion, "Cannot EXPN list") });
     }
@@ -223,7 +223,7 @@ public sealed class SmtpServer : IDisposable
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
     /// <returns>Responses to send.</returns>
-    private static Task<IEnumerable<ServerResponse>> HandleHelp(CommandContext ctx, string[] args)
+    private static Task<IEnumerable<ServerResponse>> HandleHelp(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
         return Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("214", ResponseSeverity.Completion, "No help available") });
     }
@@ -234,7 +234,7 @@ public sealed class SmtpServer : IDisposable
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
     /// <returns>Responses to send.</returns>
-    private Task<IEnumerable<ServerResponse>> HandleRcpt(CommandContext ctx, string[] args)
+    private Task<IEnumerable<ServerResponse>> HandleRcpt(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
         if (!TryParseSmtpPath(args, allowNullPath: false, out string? address) || address is null)
         {
@@ -261,7 +261,7 @@ public sealed class SmtpServer : IDisposable
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
     /// <returns>Responses to send.</returns>
-    private Task<IEnumerable<ServerResponse>> HandleData(CommandContext ctx, string[] args)
+    private Task<IEnumerable<ServerResponse>> HandleData(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
         _dataLines.Clear();
         ctx.Add("DATA");
@@ -274,7 +274,7 @@ public sealed class SmtpServer : IDisposable
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
     /// <returns>Responses to send.</returns>
-    private Task<IEnumerable<ServerResponse>> HandleRset(CommandContext ctx, string[] args)
+    private Task<IEnumerable<ServerResponse>> HandleRset(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
         _from = null;
         _recipients.Clear();
@@ -291,7 +291,7 @@ public sealed class SmtpServer : IDisposable
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
     /// <returns>Responses to send.</returns>
-    private static Task<IEnumerable<ServerResponse>> HandleNoOp(CommandContext ctx, string[] args)
+    private static Task<IEnumerable<ServerResponse>> HandleNoOp(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
         return Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("250", ResponseSeverity.Completion, "OK") });
     }
@@ -302,7 +302,7 @@ public sealed class SmtpServer : IDisposable
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
     /// <returns>Responses to send.</returns>
-    private static Task<IEnumerable<ServerResponse>> HandleQuit(CommandContext ctx, string[] args)
+    private static Task<IEnumerable<ServerResponse>> HandleQuit(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
         return Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("221", ResponseSeverity.Completion, "Bye") });
     }
@@ -312,14 +312,14 @@ public sealed class SmtpServer : IDisposable
     /// </summary>
     /// <param name="line">Line received from the client.</param>
     /// <returns>Responses to send, or <see langword="null"/> if the line was not handled.</returns>
-    private async Task<IEnumerable<ServerResponse>> HandleSpecialLinesAsync(string line)
+    private async Task<IEnumerable<ServerResponse>> HandleSpecialLinesAsync(string line, CancellationToken cancellationToken)
     {
-        IEnumerable<ServerResponse>? responses = await HandleAuthLoginAsync(line).ConfigureAwait(false);
+        IEnumerable<ServerResponse>? responses = await HandleAuthLoginAsync(line, cancellationToken).ConfigureAwait(false);
         if (responses is not null)
         {
             return responses;
         }
-        responses = await HandleDataLinesAsync(line).ConfigureAwait(false);
+        responses = await HandleDataLinesAsync(line, cancellationToken).ConfigureAwait(false);
         return responses;
     }
 
@@ -328,7 +328,7 @@ public sealed class SmtpServer : IDisposable
     /// </summary>
     /// <param name="line">Line received from the client.</param>
     /// <returns>Responses to send.</returns>
-    private async Task<IEnumerable<ServerResponse>> HandleAuthLoginAsync(string line)
+    private async Task<IEnumerable<ServerResponse>> HandleAuthLoginAsync(string line, CancellationToken cancellationToken)
     {
         if (_server.HasContext("AUTH-LOGIN-USER"))
         {
@@ -363,7 +363,7 @@ public sealed class SmtpServer : IDisposable
             _server.RemoveContext("AUTH-LOGIN-PASS");
             if (_authenticator is not null && _loginUser is not null)
             {
-                SmtpAuthenticationResult result = await _authenticator.AuthenticateAsync(_loginUser, password).ConfigureAwait(false);
+                SmtpAuthenticationResult result = await _authenticator.AuthenticateAsync(_loginUser, password, cancellationToken).ConfigureAwait(false);
                 if (result.IsAuthenticated)
                 {
                     _isAuthenticated = true;
@@ -382,7 +382,7 @@ public sealed class SmtpServer : IDisposable
     /// </summary>
     /// <param name="line">Line received from the client.</param>
     /// <returns>Responses to send.</returns>
-    private async Task<IEnumerable<ServerResponse>> HandleDataLinesAsync(string line)
+    private async Task<IEnumerable<ServerResponse>> HandleDataLinesAsync(string line, CancellationToken cancellationToken)
     {
         if (_server.HasContext("DATA"))
         {
@@ -391,7 +391,7 @@ public sealed class SmtpServer : IDisposable
                 _server.RemoveContext("DATA");
                 string data = string.Join("\r\n", _dataLines);
                 SmtpMessage message = new(_from ?? string.Empty, new List<string>(_recipients), data);
-                await _store.StoreAsync(message).ConfigureAwait(false);
+                await _store.StoreAsync(message, cancellationToken).ConfigureAwait(false);
                 _from = null;
                 _recipients.Clear();
                 _dataLines.Clear();
