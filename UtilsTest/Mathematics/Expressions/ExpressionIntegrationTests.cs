@@ -306,7 +306,7 @@ public class ExpressionIntegrationTests
         var x2 = Expression.Parameter(typeof(double), "x");
         var f = Expression.Lambda<Func<double, double, double>>(Expression.Add(x1, x2), x1, x2);
 
-        Assert.ThrowsExactly<InvalidOperationException>(() => integration.Integrate(f));
+        Assert.ThrowsExactly<SymbolicParameterException>(() => integration.Integrate(f));
     }
 
     /// <summary>
@@ -575,7 +575,7 @@ public class ExpressionIntegrationTests
 
         ExpressionIntegration<double> integrationByForeign = new(foreign);
 
-        Assert.ThrowsExactly<InvalidOperationException>(() => integrationByForeign.Integrate(f));
+        Assert.ThrowsExactly<SymbolicParameterException>(() => integrationByForeign.Integrate(f));
     }
 
 }

@@ -145,7 +145,7 @@ public class MathExpressionExtensionsTests
     public void Derivate_UnknownParameterName_ThrowsInvalidOperationExceptionDirectly()
     {
         Expression<Func<double, double>> f = x => x;
-        Assert.ThrowsExactly<InvalidOperationException>(() => f.Derivate("missing"));
+        Assert.ThrowsExactly<SymbolicParameterException>(() => f.Derivate("missing"));
     }
 
     /// <summary>
@@ -160,7 +160,7 @@ public class MathExpressionExtensionsTests
         var foreign = Expression.Parameter(typeof(double), "x");
         Expression<Func<double, double>> f = Expression.Lambda<Func<double, double>>(x, x);
 
-        Assert.ThrowsExactly<InvalidOperationException>(() => f.Derivate(foreign));
+        Assert.ThrowsExactly<SymbolicParameterException>(() => f.Derivate(foreign));
     }
 
     /// <summary>
@@ -174,6 +174,6 @@ public class MathExpressionExtensionsTests
         var foreign = Expression.Parameter(typeof(double), "x");
         Expression<Func<double, double>> f = Expression.Lambda<Func<double, double>>(x, x);
 
-        Assert.ThrowsExactly<InvalidOperationException>(() => f.Integrate(foreign));
+        Assert.ThrowsExactly<SymbolicParameterException>(() => f.Integrate(foreign));
     }
 }

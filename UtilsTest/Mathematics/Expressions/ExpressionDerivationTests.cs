@@ -377,7 +377,7 @@ public class ExpressionDerivationTests
         var x2 = Expression.Parameter(typeof(double), "x");
         var f = Expression.Lambda<Func<double, double, double>>(Expression.Add(x1, x2), x1, x2);
 
-        Assert.ThrowsExactly<InvalidOperationException>(() => derivation.Derivate(f));
+        Assert.ThrowsExactly<SymbolicParameterException>(() => derivation.Derivate(f));
     }
 
     /// <summary>
@@ -391,7 +391,7 @@ public class ExpressionDerivationTests
         var y = Expression.Parameter(typeof(double), "y");
         var f = Expression.Lambda<Func<double, double>>(y, y);
 
-        Assert.ThrowsExactly<InvalidOperationException>(() => derivation.Derivate(f));
+        Assert.ThrowsExactly<SymbolicParameterException>(() => derivation.Derivate(f));
     }
 
     /// <summary>
@@ -639,7 +639,7 @@ public class ExpressionDerivationTests
 
         ExpressionDerivation<double> derivationByForeign = new(foreign);
 
-        Assert.ThrowsExactly<InvalidOperationException>(() => derivationByForeign.Derivate(f));
+        Assert.ThrowsExactly<SymbolicParameterException>(() => derivationByForeign.Derivate(f));
     }
 
 }
