@@ -436,6 +436,31 @@ internal static partial class GrammarEmitter
         }
     }
 
+
+    /// <summary>
+    /// Validates that a generated embedded-code hook is consumed by the parser or lexer path it belongs to.
+    /// </summary>
+    /// <param name="hook">Hook consumed by a specialized emitter path.</param>
+    /// <param name="expectedOwner">Owner required by the specialized emitter path.</param>
+    /// <param name="expectedKind">Executable category required by the specialized emitter path.</param>
+    private static void ValidateEmbeddedCodeHook(EmbeddedCodeHook hook, EmbeddedCodeHookOwner expectedOwner, EmbeddedCodeHookKind expectedKind)
+    {
+        if (hook is null)
+        {
+            throw new ArgumentNullException(nameof(hook));
+        }
+
+        if (hook.Owner != expectedOwner)
+        {
+            throw new InvalidOperationException($"Embedded code hook '{hook.MethodName}' belongs to {hook.Owner} but was consumed by the {expectedOwner} emission path.");
+        }
+
+        if (hook.Kind != expectedKind)
+        {
+            throw new InvalidOperationException($"Embedded code hook '{hook.MethodName}' is a {hook.Kind} hook but was consumed by a {expectedKind} emission path.");
+        }
+    }
+
     /// <summary>
     /// Metadata for one generated rule lifecycle hook (<c>@init</c> or <c>@after</c>).
     /// </summary>

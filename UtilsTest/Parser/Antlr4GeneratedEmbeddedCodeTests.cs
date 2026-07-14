@@ -6226,6 +6226,9 @@ public class Antlr4GeneratedEmbeddedCodeTests
         Assert.IsFalse(source.Contains("        RAW_LEXER_ACTION;", StringComparison.Ordinal), source);
     }
 
+    /// <summary>
+    /// Ensures generated embedded-code hooks use one common typed representation with explicit owner and kind discriminants.
+    /// </summary>
     [TestMethod]
     public void EmbeddedCodeHookTypes_UseOneTypedHookWithExplicitOwnerAndKind()
     {
@@ -6239,11 +6242,16 @@ public class Antlr4GeneratedEmbeddedCodeTests
         Assert.AreEqual(typeof(TransformedEmbeddedCode), hookType.GetProperty("EmittedCode", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.PropertyType);
         Assert.AreEqual(ownerType, hookType.GetProperty("Owner", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.PropertyType);
         Assert.AreEqual(kindType, hookType.GetProperty("Kind", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.PropertyType);
-        CollectionAssert.AreEquivalent(new[] { "Parser", "Lexer" }, Enum.GetNames(ownerType));
-        CollectionAssert.AreEquivalent(new[] { "SemanticPredicate", "InlineAction" }, Enum.GetNames(kindType));
+        string[] expectedOwners = ["Parser", "Lexer"];
+        CollectionAssert.AreEquivalent(expectedOwners, Enum.GetNames(ownerType));
+        string[] expectedKinds = ["SemanticPredicate", "InlineAction"];
+        CollectionAssert.AreEquivalent(expectedKinds, Enum.GetNames(kindType));
         Assert.IsNull(hookType.GetProperty("Code", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic));
     }
 
+    /// <summary>
+    /// Ensures parser and lexer factories preserve the four generated embedded-code hook categories.
+    /// </summary>
     [TestMethod]
     public void EmbeddedCodeHookTypes_WhenCreatedThroughFactories_PreserveFourCategories()
     {
@@ -6261,15 +6269,24 @@ public class Antlr4GeneratedEmbeddedCodeTests
             InvokeHookFactory(hookType, "CreateLexer", "A", "RAW_LEXER_ACTION;", actionKind, 0, 1, "__LexerAction_A_0_1_1")
         ];
 
-        CollectionAssert.AreEqual(new[] { "Parser", "Parser", "Lexer", "Lexer" }, hooks.Select(hook => hookType.GetProperty("Owner", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.GetValue(hook)!.ToString()).ToArray());
-        CollectionAssert.AreEqual(new[] { "SemanticPredicate", "InlineAction", "SemanticPredicate", "InlineAction" }, hooks.Select(hook => hookType.GetProperty("Kind", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.GetValue(hook)!.ToString()).ToArray());
-        CollectionAssert.AreEqual(new[] { "start", "start", "A", "A" }, hooks.Select(hook => hookType.GetProperty("RuleName", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.GetValue(hook)).ToArray());
-        CollectionAssert.AreEqual(new[] { 0, 0, 0, 0 }, hooks.Select(hook => hookType.GetProperty("AlternativeIndex", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.GetValue(hook)).ToArray());
-        CollectionAssert.AreEqual(new[] { 0, 1, 0, 1 }, hooks.Select(hook => hookType.GetProperty("ElementIndex", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.GetValue(hook)).ToArray());
-        CollectionAssert.AreEqual(new[] { "__Predicate_start_0_0_0", "__Action_start_0_1_1", "__LexerPredicate_A_0_0_0", "__LexerAction_A_0_1_1" }, hooks.Select(hook => hookType.GetProperty("MethodName", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.GetValue(hook)).ToArray());
+        string[] expectedOwners = ["Parser", "Parser", "Lexer", "Lexer"];
+        CollectionAssert.AreEqual(expectedOwners, hooks.Select(hook => hookType.GetProperty("Owner", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.GetValue(hook)!.ToString()).ToArray());
+        string[] expectedKinds = ["SemanticPredicate", "InlineAction", "SemanticPredicate", "InlineAction"];
+        CollectionAssert.AreEqual(expectedKinds, hooks.Select(hook => hookType.GetProperty("Kind", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.GetValue(hook)!.ToString()).ToArray());
+        string[] expectedRuleNames = ["start", "start", "A", "A"];
+        CollectionAssert.AreEqual(expectedRuleNames, hooks.Select(hook => hookType.GetProperty("RuleName", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.GetValue(hook)).ToArray());
+        int[] expectedAlternativeIndexes = [0, 0, 0, 0];
+        CollectionAssert.AreEqual(expectedAlternativeIndexes, hooks.Select(hook => hookType.GetProperty("AlternativeIndex", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.GetValue(hook)).ToArray());
+        int[] expectedElementIndexes = [0, 1, 0, 1];
+        CollectionAssert.AreEqual(expectedElementIndexes, hooks.Select(hook => hookType.GetProperty("ElementIndex", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.GetValue(hook)).ToArray());
+        string[] expectedMethodNames = ["__Predicate_start_0_0_0", "__Action_start_0_1_1", "__LexerPredicate_A_0_0_0", "__LexerAction_A_0_1_1"];
+        CollectionAssert.AreEqual(expectedMethodNames, hooks.Select(hook => hookType.GetProperty("MethodName", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.GetValue(hook)).ToArray());
         Assert.IsTrue(hooks.All(hook => hookType.GetProperty("RawCode", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.GetValue(hook) is RawEmbeddedCode));
     }
 
+    /// <summary>
+    /// Ensures transformed hook code cannot be read before the transformation phase assigns it.
+    /// </summary>
     [TestMethod]
     public void EmbeddedCodeHookTypes_WhenEmittedCodeIsReadBeforeTransformation_Throws()
     {
@@ -6292,6 +6309,9 @@ public class Antlr4GeneratedEmbeddedCodeTests
         }
     }
 
+    /// <summary>
+    /// Ensures the common generated hook model rejects invalid construction state.
+    /// </summary>
     [TestMethod]
     public void EmbeddedCodeHookTypes_WhenInvalidStateIsCreated_RejectsIt()
     {
@@ -6306,6 +6326,28 @@ public class Antlr4GeneratedEmbeddedCodeTests
         AssertFactoryThrows<ArgumentException>(() => InvokeHookFactory(hookType, "CreateParser", "start", "RAW_ACTION;", actionKind, 0, 0, ""));
     }
 
+    /// <summary>
+    /// Ensures specialized hook consumers reject hooks owned by the other generated-code domain.
+    /// </summary>
+    [TestMethod]
+    public void EmbeddedCodeHookTypes_WhenConsumedByWrongOwnerPath_RejectsIt()
+    {
+        Type emitterType = typeof(GrammarEmitter);
+        Type hookType = emitterType.GetNestedType("EmbeddedCodeHook", BindingFlags.NonPublic)!;
+        Type ownerType = emitterType.GetNestedType("EmbeddedCodeHookOwner", BindingFlags.NonPublic)!;
+        Type kindType = emitterType.GetNestedType("EmbeddedCodeHookKind", BindingFlags.NonPublic)!;
+        object actionKind = Enum.Parse(kindType, "InlineAction");
+        object lexerOwner = Enum.Parse(ownerType, "Lexer");
+        object hook = InvokeHookFactory(hookType, "CreateParser", "start", "RAW_ACTION;", actionKind, 0, 0, "__Action_start_0_0_0");
+
+        MethodInfo validator = emitterType.GetMethod("ValidateEmbeddedCodeHook", BindingFlags.Static | BindingFlags.NonPublic)!;
+
+        AssertFactoryThrows<InvalidOperationException>(() => validator.Invoke(null, [hook, lexerOwner, actionKind]));
+    }
+
+    /// <summary>
+    /// Ensures a combined grammar keeps parser and lexer hook categories stable after transformation.
+    /// </summary>
     [TestMethod]
     public void Emit_WhenParserAndLexerHooksShareGrammar_PreservesStableCategoriesAndGeneratedBodies()
     {
@@ -6331,11 +6373,28 @@ public class Antlr4GeneratedEmbeddedCodeTests
         Assert.IsFalse(source.Contains("        RAW_LEXER_ACTION;", StringComparison.Ordinal));
     }
 
+    /// <summary>
+    /// Invokes one of the private generated hook factory methods by reflection.
+    /// </summary>
+    /// <param name="hookType">Private hook type that owns the factory.</param>
+    /// <param name="methodName">Factory method name.</param>
+    /// <param name="ruleName">Owning rule name passed to the factory.</param>
+    /// <param name="code">Raw embedded code passed to the factory.</param>
+    /// <param name="kind">Hook kind enum value passed to the factory.</param>
+    /// <param name="alternativeIndex">Alternative index passed to the factory.</param>
+    /// <param name="elementIndex">Element index passed to the factory.</param>
+    /// <param name="hookMethodName">Generated hook method name passed to the factory.</param>
+    /// <returns>The created private hook instance.</returns>
     private static object InvokeHookFactory(Type hookType, string methodName, string ruleName, string code, object kind, int alternativeIndex, int elementIndex, string hookMethodName)
     {
         return hookType.GetMethod(methodName, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)!.Invoke(null, [ruleName, code, kind, alternativeIndex, elementIndex, hookMethodName])!;
     }
 
+    /// <summary>
+    /// Asserts that invoking a reflected hook operation throws the expected inner exception type.
+    /// </summary>
+    /// <typeparam name="TException">Expected exception type.</typeparam>
+    /// <param name="action">Reflected hook operation to execute.</param>
     private static void AssertFactoryThrows<TException>(Action action) where TException : Exception
     {
         try
@@ -6349,6 +6408,12 @@ public class Antlr4GeneratedEmbeddedCodeTests
         }
     }
 
+    /// <summary>
+    /// Counts exact textual occurrences in generated source for hook-body regression assertions.
+    /// </summary>
+    /// <param name="source">Generated source to inspect.</param>
+    /// <param name="value">Exact text to count.</param>
+    /// <returns>The number of exact occurrences.</returns>
     private static int CountHookOccurrences(string source, string value)
     {
         int count = 0;
