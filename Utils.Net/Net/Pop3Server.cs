@@ -16,6 +16,13 @@ public sealed class Pop3Server : IDisposable
     private string? _user;
     private string? _timestamp;
     private readonly HashSet<int> _deleted = new();
+    private int _failedAuthCount;
+
+    /// <summary>
+    /// Gets or sets the maximum number of failed authentication attempts allowed per connection
+    /// before the session is terminated. Default is 5. Set to 0 to disable.
+    /// </summary>
+    public int MaxAuthAttempts { get; set; } = 5;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Pop3Server"/> class.
@@ -106,9 +113,15 @@ public sealed class Pop3Server : IDisposable
         bool ok = await _mailbox.AuthenticateAsync(_user ?? string.Empty, password, cancellationToken).ConfigureAwait(false);
         if (ok)
         {
+            _failedAuthCount = 0;
             ctx.Remove("USER");
             ctx.Add("AUTH");
             return new[] { new ServerResponse("+OK", ResponseSeverity.Completion, "authentication successful") };
+        }
+        _failedAuthCount++;
+        if (MaxAuthAttempts > 0 && _failedAuthCount >= MaxAuthAttempts)
+        {
+            return new[] { new ServerResponse("-ERR", ResponseSeverity.PermanentNegative, "Too many authentication failures — bye") };
         }
         return new[] { new ServerResponse("-ERR", ResponseSeverity.PermanentNegative, "authentication failed") };
     }
@@ -320,8 +333,14 @@ public sealed class Pop3Server : IDisposable
         bool ok = await _mailbox.AuthenticateApopAsync(user, _timestamp, digest, cancellationToken).ConfigureAwait(false);
         if (ok)
         {
+            _failedAuthCount = 0;
             ctx.Add("AUTH");
             return new[] { new ServerResponse("+OK", ResponseSeverity.Completion, "authentication successful") };
+        }
+        _failedAuthCount++;
+        if (MaxAuthAttempts > 0 && _failedAuthCount >= MaxAuthAttempts)
+        {
+            return new[] { new ServerResponse("-ERR", ResponseSeverity.PermanentNegative, "Too many authentication failures — bye") };
         }
         return new[] { new ServerResponse("-ERR", ResponseSeverity.PermanentNegative, "authentication failed") };
     }

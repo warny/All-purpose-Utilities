@@ -24,6 +24,7 @@ public sealed class SmtpServer : IDisposable
     private bool _isAuthenticated;
     private bool _canRelay;
     private bool _isTls;
+    private int _failedAuthCount;
 
     /// <summary>
     /// Gets or sets the maximum total number of characters accepted in a single SMTP DATA body.
@@ -36,6 +37,12 @@ public sealed class SmtpServer : IDisposable
     /// Default is 100 000. Set to 0 to disable.
     /// </summary>
     public int MaxDataLines { get; set; } = 100_000;
+
+    /// <summary>
+    /// Gets or sets the maximum number of failed authentication attempts allowed per connection
+    /// before the session is terminated. Default is 5. Set to 0 to disable.
+    /// </summary>
+    public int MaxAuthAttempts { get; set; } = 5;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SmtpServer"/> class.
@@ -191,10 +198,16 @@ public sealed class SmtpServer : IDisposable
             SmtpAuthenticationResult result = await _authenticator.AuthenticateAsync(user, password, cancellationToken).ConfigureAwait(false);
             if (result.IsAuthenticated)
             {
+                _failedAuthCount = 0;
                 _isAuthenticated = true;
                 _canRelay = result.CanRelay;
                 ctx.Add("AUTH");
                 return new[] { new ServerResponse("235", ResponseSeverity.Completion, "Authenticated") };
+            }
+            _failedAuthCount++;
+            if (MaxAuthAttempts > 0 && _failedAuthCount >= MaxAuthAttempts)
+            {
+                return new[] { new ServerResponse("535", ResponseSeverity.PermanentNegative, "Too many authentication failures — bye") };
             }
             return new[] { new ServerResponse("535", ResponseSeverity.PermanentNegative, "Authentication failed") };
         }
@@ -380,11 +393,17 @@ public sealed class SmtpServer : IDisposable
                 SmtpAuthenticationResult result = await _authenticator.AuthenticateAsync(_loginUser, password, cancellationToken).ConfigureAwait(false);
                 if (result.IsAuthenticated)
                 {
+                    _failedAuthCount = 0;
                     _isAuthenticated = true;
                     _canRelay = result.CanRelay;
                     _server.AddContext("AUTH");
                     return new[] { new ServerResponse("235", ResponseSeverity.Completion, "Authenticated") };
                 }
+            }
+            _failedAuthCount++;
+            if (MaxAuthAttempts > 0 && _failedAuthCount >= MaxAuthAttempts)
+            {
+                return new[] { new ServerResponse("535", ResponseSeverity.PermanentNegative, "Too many authentication failures — bye") };
             }
             return new[] { new ServerResponse("535", ResponseSeverity.PermanentNegative, "Authentication failed") };
         }
