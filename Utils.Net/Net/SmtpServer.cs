@@ -27,13 +27,17 @@ public sealed class SmtpServer : IDisposable
     /// Initializes a new instance of the <see cref="SmtpServer"/> class.
     /// </summary>
     /// <param name="store">Store used to persist received messages.</param>
-    /// <param name="isLocalDomain">Function used to determine if a domain is local and does not require relaying.</param>
+    /// <param name="isLocalDomain">
+    /// Function used to determine if a domain is local and does not require relaying.
+    /// When <see langword="null"/>, all non-authenticated recipients are rejected (fail-closed).
+    /// Pass an explicit predicate to allow delivery to specific local domains.
+    /// </param>
     /// <param name="authenticator">Optional authenticator used to validate credentials.</param>
     public SmtpServer(ISmtpMessageStore store, Func<string, bool>? isLocalDomain = null, ISmtpAuthenticator? authenticator = null)
     {
         _store = store;
         _authenticator = authenticator;
-        _isLocalDomain = isLocalDomain ?? (_ => true);
+        _isLocalDomain = isLocalDomain ?? (_ => false);
         _server = new CommandResponseServer(SmtpFormatter);
         _server.RegisterCommand("EHLO", HandleEhlo);
         _server.RegisterCommand("HELO", HandleHelo);
