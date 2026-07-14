@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Utils.Net;
@@ -17,17 +18,18 @@ public static class TimeProtocolClient
     /// </summary>
     /// <param name="host">Hostname or IP address of the Time server.</param>
     /// <param name="port">TCP port of the Time service, default is 37.</param>
+    /// <param name="cancellationToken">Cancellation token applied to the connect and read operations.</param>
     /// <returns>UTC time reported by the server.</returns>
-    public static async Task<DateTime> GetTimeAsync(string host, int port)
+    public static async Task<DateTime> GetTimeAsync(string host, int port, CancellationToken cancellationToken = default)
     {
         using TcpClient client = new();
-        await client.ConnectAsync(host, port).ConfigureAwait(false);
+        await client.ConnectAsync(host, port, cancellationToken).ConfigureAwait(false);
         byte[] buffer = new byte[4];
         int bytesRead = 0;
         NetworkStream stream = client.GetStream();
         while (bytesRead < 4)
         {
-            int read = await stream.ReadAsync(buffer.AsMemory(bytesRead)).ConfigureAwait(false);
+            int read = await stream.ReadAsync(buffer.AsMemory(bytesRead), cancellationToken).ConfigureAwait(false);
             if (read == 0)
             {
                 throw new IOException("Connection closed before 4 bytes were received.");
@@ -42,9 +44,10 @@ public static class TimeProtocolClient
     /// Retrieves the current time from a Time protocol server on the default port (37).
     /// </summary>
     /// <param name="host">Hostname or IP address of the Time server.</param>
+    /// <param name="cancellationToken">Cancellation token applied to the connect and read operations.</param>
     /// <returns>UTC time reported by the server.</returns>
-    public static Task<DateTime> GetTimeAsync(string host)
+    public static Task<DateTime> GetTimeAsync(string host, CancellationToken cancellationToken = default)
     {
-        return GetTimeAsync(host, 37);
+        return GetTimeAsync(host, 37, cancellationToken);
     }
 }
