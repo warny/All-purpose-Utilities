@@ -516,6 +516,42 @@ public class VectorTests
     }
 
     [TestMethod]
+    public void AngleWith_NullSelf_Throws()
+    {
+        Vector<double> v1 = null;
+        var v2 = new Vector<double>(1d, 0d);
+        Assert.ThrowsException<ArgumentNullException>(() => v1.AngleWith(v2));
+    }
+
+    [TestMethod]
+    public void AngleWith_NullOther_Throws()
+    {
+        var v1 = new Vector<double>(1d, 0d);
+        Vector<double> v2 = null;
+        Assert.ThrowsException<ArgumentNullException>(() => v1.AngleWith(v2));
+    }
+
+    [TestMethod]
+    public void AngleWith_LargeParallelVectors_ReturnsZero()
+    {
+        // Regression for norm-product overflow (item #70): each norm is 1e200, so
+        // self.Norm * other.Norm = 1e400 overflows to infinity; the old cosine division
+        // produced NaN and Acos returned NaN. The fix normalizes to (1,0) first, making
+        // the cosine exactly 1.0 and the angle exactly 0.
+        var v1 = new Vector<double>(1e200, 0d);
+        var v2 = new Vector<double>(1e200, 0d);
+        Assert.AreEqual(0.0, v1.AngleWith(v2), 1e-9);
+    }
+
+    [TestMethod]
+    public void AngleWith_NaNComponent_Throws()
+    {
+        var v1 = new Vector<double>(double.NaN, 0d);
+        var v2 = new Vector<double>(1d, 0d);
+        Assert.ThrowsException<InvalidOperationException>(() => v1.AngleWith(v2));
+    }
+
+    [TestMethod]
     public void EqualityOperator_BothNull_ReturnsTrue()
     {
         Vector<double> left = null;
