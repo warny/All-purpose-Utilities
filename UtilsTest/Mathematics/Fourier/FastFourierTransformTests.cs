@@ -359,6 +359,18 @@ public class FastFourierTransformTests
         Assert.ThrowsException<ArgumentNullException>(() => transform.GetMagnitudes());
     }
 
+    [TestMethod]
+    public void GetOneSidedMagnitudes_MatchesGetOneSidedAmplitudes()
+    {
+        Complex[] samples = [1, 1, 1, 1];
+        FastFourierTransform.Transform(samples);
+
+        CollectionAssert.AreEqual(samples.GetOneSidedAmplitudes(), samples.GetOneSidedMagnitudes());
+        CollectionAssert.AreEqual(
+            samples.GetOneSidedAmplitudes(includeNyquist: true),
+            samples.GetOneSidedMagnitudes(includeNyquist: true));
+    }
+
     // ── InverseTransform ──────────────────────────────────────────────────────
 
     [TestMethod]

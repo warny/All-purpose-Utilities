@@ -208,7 +208,8 @@ public static class FourierExtensions
     /// Returns the raw spectral magnitude (see <see cref="GetMagnitudes"/> - <b>not</b> a physically
     /// normalized sinusoidal amplitude) of each one-sided (non-negative frequency) bin, length-matched
     /// with <see cref="GetOneSidedFrequencies"/> for the same <paramref name="includeNyquist"/> choice
-    /// (see TODO-2026-07-11-pass4.md items #54/#55).
+    /// (see TODO-2026-07-11-pass4.md items #54/#55). <see cref="GetOneSidedMagnitudes"/> is an
+    /// identical, more accurately-named alias; this method is kept for backward compatibility.
     /// </summary>
     /// <param name="transform">The transform result. Must be non-null and non-empty.</param>
     /// <param name="includeNyquist">See <see cref="GetOneSidedBinCount"/>.</param>
@@ -216,13 +217,29 @@ public static class FourierExtensions
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="transform"/> is <see langword="null"/>.</exception>
     /// <exception cref="ArgumentException">Thrown when <paramref name="transform"/> is empty.</exception>
     public static double[] GetOneSidedAmplitudes(this Complex[] transform, bool includeNyquist = false)
+        => GetOneSidedMagnitudes(transform, includeNyquist);
+
+    /// <summary>
+    /// Returns the raw spectral magnitude (<see cref="Complex.Magnitude"/>) of each one-sided
+    /// (non-negative frequency) bin, length-matched with <see cref="GetOneSidedFrequencies"/> for the
+    /// same <paramref name="includeNyquist"/> choice. The more accurately-named counterpart to
+    /// <see cref="GetOneSidedAmplitudes"/>, mirroring the <see cref="GetMagnitudes"/>/<see cref="GetAmplitudes"/>
+    /// relationship: "amplitude" suggests a physically normalized sinusoidal amplitude, but this is the
+    /// raw, unnormalized FFT bin magnitude (see TODO-2026-07-11-pass4.md items #54/#55).
+    /// </summary>
+    /// <param name="transform">The transform result. Must be non-null and non-empty.</param>
+    /// <param name="includeNyquist">See <see cref="GetOneSidedBinCount"/>.</param>
+    /// <returns>Array of one-sided raw magnitudes; see <see cref="GetOneSidedBinCount"/> for the exact count.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="transform"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="transform"/> is empty.</exception>
+    public static double[] GetOneSidedMagnitudes(this Complex[] transform, bool includeNyquist = false)
     {
         ValidateTransform(transform, nameof(transform));
         int count = GetOneSidedBinCount(transform.Length, includeNyquist);
-        double[] amplitudes = new double[count];
+        double[] magnitudes = new double[count];
         for (int i = 0; i < count; i++)
-            amplitudes[i] = transform[i].Magnitude;
-        return amplitudes;
+            magnitudes[i] = transform[i].Magnitude;
+        return magnitudes;
     }
 
     /// <summary>
