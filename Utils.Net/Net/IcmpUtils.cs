@@ -19,7 +19,7 @@ public class IcmpUtils
     {
         IcmpPacket packet = new()
         {
-            PacketType = destination.AddressFamily == AddressFamily.InterNetwork ? IcmpPacketType.IcmpV4EchoReply : IcmpPacketType.IcmpV6EchoRequest
+            PacketType = destination.AddressFamily == AddressFamily.InterNetwork ? IcmpPacketType.IcmpV4EchoRequest : IcmpPacketType.IcmpV6EchoRequest
         };
         packet.CreateRandomPayload(size);
 
@@ -43,12 +43,21 @@ public class IcmpUtils
         await socket.SendAsync(requestBytes).ConfigureAwait(false);
 
         DateTime startTime = DateTime.UtcNow;
-        byte[] responseBuffer = new byte[requestBytes.Length]; // Expect same length
+        // IPv4 raw sockets include a 20-byte IP header before the ICMP payload;
+        // allocate a generous buffer and parse only the bytes actually received.
+        byte[] responseBuffer = new byte[65535];
 
         try
         {
-            await socket.ReceiveAsync(responseBuffer).ConfigureAwait(false);
-            IcmpPacket responsePacket = IcmpPacket.ReadPacket(responseBuffer);
+            int received = await socket.ReceiveAsync(responseBuffer).ConfigureAwait(false);
+
+            // For IPv4, strip the IP header (first 20 bytes) before parsing ICMP.
+            int icmpOffset = destination.AddressFamily == AddressFamily.InterNetwork ? 20 : 0;
+            if (received <= icmpOffset)
+            {
+                throw new IcmpException("ICMP response too short.");
+            }
+            IcmpPacket responsePacket = IcmpPacket.ReadPacket(responseBuffer[icmpOffset..received]);
 
             // Verify response type
             var expectedReplyType = destination.AddressFamily == AddressFamily.InterNetwork ? IcmpPacketType.IcmpV4EchoReply : IcmpPacketType.IcmpV6EchoReply;
