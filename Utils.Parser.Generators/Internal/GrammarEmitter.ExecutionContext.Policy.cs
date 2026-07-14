@@ -105,6 +105,7 @@ internal static partial class GrammarEmitter
         sb.AppendLine("        {");
         foreach (var predicate in predicates)
         {
+            ValidateEmbeddedCodeHook(predicate, EmbeddedCodeHookOwner.Parser, EmbeddedCodeHookKind.SemanticPredicate);
             string rawPredicateCode = Escape(GetRawEmbeddedCodeText(predicate.RawCode));
             sb.AppendLine($"            if (string.Equals(context.Rule.Name, \"{Escape(predicate.RuleName)}\", global::System.StringComparison.Ordinal)");
             sb.AppendLine($"                && string.Equals(context.PredicateCode, \"{rawPredicateCode}\", global::System.StringComparison.Ordinal)");
@@ -148,6 +149,7 @@ internal static partial class GrammarEmitter
         sb.AppendLine("        {");
         foreach (var action in actions)
         {
+            ValidateEmbeddedCodeHook(action, EmbeddedCodeHookOwner.Parser, EmbeddedCodeHookKind.InlineAction);
             string rawActionCode = Escape(GetRawEmbeddedCodeText(action.RawCode));
             sb.AppendLine($"            if (string.Equals(context.Rule.Name, \"{Escape(action.RuleName)}\", global::System.StringComparison.Ordinal)");
             sb.AppendLine($"                && string.Equals(context.ActionCode, \"{rawActionCode}\", global::System.StringComparison.Ordinal)");
@@ -264,7 +266,7 @@ internal static partial class GrammarEmitter
     /// <param name="sb">Source builder receiving generated C#.</param>
     /// <param name="lexerActions">Lexer action hooks available to the executor.</param>
     /// <param name="contextClassName">Generated execution context class name.</param>
-    private static void EmitLexerActionExecutor(StringBuilder sb, IReadOnlyList<LexerEmbeddedCodeHook> lexerActions, string contextClassName)
+    private static void EmitLexerActionExecutor(StringBuilder sb, IReadOnlyList<EmbeddedCodeHook> lexerActions, string contextClassName)
     {
         sb.AppendLine("    /// <summary>Dispatches accepted lexer inline actions to generated C# lexer action hooks.</summary>");
         sb.AppendLine("    private sealed class GeneratedLexerActionExecutor : ILexerActionExecutor");
@@ -284,6 +286,7 @@ internal static partial class GrammarEmitter
         sb.AppendLine("        {");
         foreach (var action in lexerActions)
         {
+            ValidateEmbeddedCodeHook(action, EmbeddedCodeHookOwner.Lexer, EmbeddedCodeHookKind.InlineAction);
             string rawLexerActionCode = Escape(GetRawEmbeddedCodeText(action.RawCode));
             sb.AppendLine($"            if (string.Equals(context.Rule.Name, \"{Escape(action.RuleName)}\", global::System.StringComparison.Ordinal)");
             sb.AppendLine($"                && string.Equals(context.ActionCode, \"{rawLexerActionCode}\", global::System.StringComparison.Ordinal)");
@@ -309,7 +312,7 @@ internal static partial class GrammarEmitter
     /// <param name="sb">Source builder receiving generated C#.</param>
     /// <param name="lexerPredicates">Lexer predicate hooks available to the evaluator.</param>
     /// <param name="contextClassName">Generated execution context class name.</param>
-    private static void EmitLexerPredicateEvaluator(StringBuilder sb, IReadOnlyList<LexerEmbeddedCodeHook> lexerPredicates, string contextClassName)
+    private static void EmitLexerPredicateEvaluator(StringBuilder sb, IReadOnlyList<EmbeddedCodeHook> lexerPredicates, string contextClassName)
     {
         sb.AppendLine("    /// <summary>Dispatches lexer predicate contexts to generated C# lexer predicate hooks.</summary>");
         sb.AppendLine("    private sealed class GeneratedLexerPredicateEvaluator : ILexerPredicateEvaluator");
@@ -329,6 +332,7 @@ internal static partial class GrammarEmitter
         sb.AppendLine("        {");
         foreach (var predicate in lexerPredicates)
         {
+            ValidateEmbeddedCodeHook(predicate, EmbeddedCodeHookOwner.Lexer, EmbeddedCodeHookKind.SemanticPredicate);
             string rawLexerPredicateCode = Escape(GetRawEmbeddedCodeText(predicate.RawCode));
             sb.AppendLine($"            if (string.Equals(context.Rule.Name, \"{Escape(predicate.RuleName)}\", global::System.StringComparison.Ordinal)");
             sb.AppendLine($"                && string.Equals(context.PredicateCode, \"{rawLexerPredicateCode}\", global::System.StringComparison.Ordinal)");
@@ -353,6 +357,7 @@ internal static partial class GrammarEmitter
     /// <param name="hook">Predicate hook metadata.</param>
     private static void EmitPredicateHook(StringBuilder sb, EmbeddedCodeHook hook)
     {
+        ValidateEmbeddedCodeHook(hook, EmbeddedCodeHookOwner.Parser, EmbeddedCodeHookKind.SemanticPredicate);
         var body = GeneratedEmbeddedCodeBody.ForPredicate(hook.EmittedCode);
 
         sb.AppendLine($"    /// <summary>Executes semantic predicate hook for rule <c>{EscapeXml(hook.RuleName)}</c>, alternative {hook.AlternativeIndex}, element {hook.ElementIndex}.</summary>");
@@ -371,6 +376,7 @@ internal static partial class GrammarEmitter
     /// <param name="hook">Action hook metadata.</param>
     private static void EmitActionHook(StringBuilder sb, EmbeddedCodeHook hook)
     {
+        ValidateEmbeddedCodeHook(hook, EmbeddedCodeHookOwner.Parser, EmbeddedCodeHookKind.InlineAction);
         var body = GeneratedEmbeddedCodeBody.ForAction(hook.EmittedCode);
 
         sb.AppendLine($"    /// <summary>Executes inline parser action hook for rule <c>{EscapeXml(hook.RuleName)}</c>, alternative {hook.AlternativeIndex}, element {hook.ElementIndex}.</summary>");
@@ -388,8 +394,9 @@ internal static partial class GrammarEmitter
     /// </summary>
     /// <param name="sb">Source builder receiving generated C#.</param>
     /// <param name="hook">Lexer action hook metadata.</param>
-    private static void EmitLexerActionHook(StringBuilder sb, LexerEmbeddedCodeHook hook)
+    private static void EmitLexerActionHook(StringBuilder sb, EmbeddedCodeHook hook)
     {
+        ValidateEmbeddedCodeHook(hook, EmbeddedCodeHookOwner.Lexer, EmbeddedCodeHookKind.InlineAction);
         var body = GeneratedEmbeddedCodeBody.ForAction(hook.EmittedCode);
 
         sb.AppendLine($"    /// <summary>Executes inline lexer action hook for rule <c>{EscapeXml(hook.RuleName)}</c>.</summary>");
@@ -406,8 +413,9 @@ internal static partial class GrammarEmitter
     /// </summary>
     /// <param name="sb">Source builder receiving generated C#.</param>
     /// <param name="hook">Lexer predicate hook metadata.</param>
-    private static void EmitLexerPredicateHook(StringBuilder sb, LexerEmbeddedCodeHook hook)
+    private static void EmitLexerPredicateHook(StringBuilder sb, EmbeddedCodeHook hook)
     {
+        ValidateEmbeddedCodeHook(hook, EmbeddedCodeHookOwner.Lexer, EmbeddedCodeHookKind.SemanticPredicate);
         var body = GeneratedEmbeddedCodeBody.ForPredicate(hook.EmittedCode);
 
         sb.AppendLine($"    /// <summary>Executes inline lexer predicate hook for rule <c>{EscapeXml(hook.RuleName)}</c>.</summary>");

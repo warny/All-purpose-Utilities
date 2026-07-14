@@ -43,9 +43,9 @@ internal static partial class GrammarEmitter
     /// <param name="grammar">Parsed grammar AST.</param>
     /// <param name="transformer">Embedded-code transformer used for supported lexer action bodies.</param>
     /// <returns>Deterministic lexer action hook metadata.</returns>
-    private static IReadOnlyList<LexerEmbeddedCodeHook> CollectLexerEmbeddedCodeHooks(G4Grammar grammar, IParserEmbeddedCodeTransformer transformer)
+    private static IReadOnlyList<EmbeddedCodeHook> CollectLexerEmbeddedCodeHooks(G4Grammar grammar, IParserEmbeddedCodeTransformer transformer)
     {
-        var hooks = new List<LexerEmbeddedCodeHook>();
+        var hooks = new List<EmbeddedCodeHook>();
         foreach (var rule in grammar.LexerRules)
         {
             CollectLexerEmbeddedCodeHooks(rule.Name, rule.Content, hooks, -1, -1);
@@ -68,7 +68,7 @@ internal static partial class GrammarEmitter
     }
 
     /// <summary>Recursively collects lexer inline actions from lexer rule content.</summary>
-    private static void CollectLexerEmbeddedCodeHooks(string ruleName, G4Content content, List<LexerEmbeddedCodeHook> hooks, int alternativeIndex, int elementIndex)
+    private static void CollectLexerEmbeddedCodeHooks(string ruleName, G4Content content, List<EmbeddedCodeHook> hooks, int alternativeIndex, int elementIndex)
     {
         switch (content)
         {
@@ -99,7 +99,7 @@ internal static partial class GrammarEmitter
             case G4EmbeddedAction action:
                 string prefix = action.IsPredicate ? "__LexerPredicate" : "__LexerAction";
                 string methodName = $"{prefix}_{Sanitize(ruleName)}_{NormalizeIndexForName(alternativeIndex)}_{NormalizeIndexForName(elementIndex)}_{hooks.Count}";
-                hooks.Add(new LexerEmbeddedCodeHook(ruleName, action.Code, action.IsPredicate, alternativeIndex, elementIndex, methodName));
+                hooks.Add(EmbeddedCodeHook.CreateLexer(ruleName, action.Code, action.IsPredicate ? EmbeddedCodeHookKind.SemanticPredicate : EmbeddedCodeHookKind.InlineAction, alternativeIndex, elementIndex, methodName));
                 break;
         }
     }
@@ -291,7 +291,7 @@ internal static partial class GrammarEmitter
     {
         string prefix = action.IsPredicate ? "__Predicate" : "__Action";
         string methodName = $"{prefix}_{Sanitize(ruleName)}_{NormalizeIndexForName(alternativeIndex)}_{NormalizeIndexForName(elementIndex)}_{hooks.Count}";
-        hooks.Add(new EmbeddedCodeHook(ruleName, action.Code, action.IsPredicate, alternativeIndex, elementIndex, methodName));
+        hooks.Add(EmbeddedCodeHook.CreateParser(ruleName, action.Code, action.IsPredicate ? EmbeddedCodeHookKind.SemanticPredicate : EmbeddedCodeHookKind.InlineAction, alternativeIndex, elementIndex, methodName));
     }
 
     /// <summary>
@@ -306,74 +306,99 @@ internal static partial class GrammarEmitter
 
 
     /// <summary>
-    /// Metadata for one generated lexer inline action hook.
+    /// Identifies the generated embedded-code hook owner.
     /// </summary>
-    private sealed class LexerEmbeddedCodeHook
+    private enum EmbeddedCodeHookOwner
     {
-        private TransformedEmbeddedCode? _emittedCode;
-        /// <summary>Initializes lexer embedded-code hook metadata.</summary>
-        public LexerEmbeddedCodeHook(string ruleName, string code, bool isPredicate, int alternativeIndex, int elementIndex, string methodName)
-        {
-            RuleName = ruleName;
-            RawCode = new RawEmbeddedCode(code);
-            IsPredicate = isPredicate;
-            AlternativeIndex = alternativeIndex;
-            ElementIndex = elementIndex;
-            MethodName = methodName;
-        }
+        /// <summary>The hook belongs to parser embedded code.</summary>
+        Parser,
 
-        /// <summary>Gets the owning lexer rule name.</summary>
-        public string RuleName { get; }
-
-        /// <summary>Gets the raw embedded source code without ANTLR braces.</summary>
-        public RawEmbeddedCode RawCode { get; }
-
-        /// <summary>Gets the transformed C# source emitted into the hook method.</summary>
-        public TransformedEmbeddedCode EmittedCode
-        {
-            get => _emittedCode ?? throw new InvalidOperationException("Embedded code has not been transformed yet.");
-            set => _emittedCode = value ?? throw new ArgumentNullException(nameof(value));
-        }
-
-        /// <summary>Gets whether this hook is a lexer predicate rather than a lexer action.</summary>
-        public bool IsPredicate { get; }
-
-        /// <summary>Gets the best-effort alternative index.</summary>
-        public int AlternativeIndex { get; }
-
-        /// <summary>Gets the best-effort element index.</summary>
-        public int ElementIndex { get; }
-
-        /// <summary>Gets the generated C# hook method name.</summary>
-        public string MethodName { get; }
+        /// <summary>The hook belongs to lexer embedded code.</summary>
+        Lexer
     }
 
     /// <summary>
-    /// Metadata for one generated embedded-code hook.
+    /// Identifies the generated embedded-code hook executable category.
+    /// </summary>
+    private enum EmbeddedCodeHookKind
+    {
+        /// <summary>The hook evaluates a semantic predicate.</summary>
+        SemanticPredicate,
+
+        /// <summary>The hook executes an inline action.</summary>
+        InlineAction
+    }
+
+    /// <summary>
+    /// Metadata for one generated parser or lexer embedded-code hook.
     /// </summary>
     private sealed class EmbeddedCodeHook
     {
         private TransformedEmbeddedCode? _emittedCode;
+
         /// <summary>
-        /// Initializes embedded-code hook metadata.
+        /// Initializes generated embedded-code hook metadata after validating common invariants.
         /// </summary>
-        /// <param name="ruleName">Owning parser rule name.</param>
+        /// <param name="owner">Parser or lexer owner for this hook.</param>
+        /// <param name="kind">Predicate or action category for this hook.</param>
+        /// <param name="ruleName">Owning grammar rule name.</param>
         /// <param name="code">Raw embedded source code without ANTLR braces.</param>
-        /// <param name="isPredicate">Whether the hook is a semantic predicate.</param>
         /// <param name="alternativeIndex">Runtime alternative index used for dispatch.</param>
         /// <param name="elementIndex">Runtime element index used for dispatch.</param>
         /// <param name="methodName">Generated C# hook method name.</param>
-        public EmbeddedCodeHook(string ruleName, string code, bool isPredicate, int alternativeIndex, int elementIndex, string methodName)
+        private EmbeddedCodeHook(EmbeddedCodeHookOwner owner, EmbeddedCodeHookKind kind, string ruleName, string code, int alternativeIndex, int elementIndex, string methodName)
         {
+            if (!Enum.IsDefined(typeof(EmbeddedCodeHookOwner), owner))
+            {
+                throw new ArgumentOutOfRangeException(nameof(owner));
+            }
+
+            if (!Enum.IsDefined(typeof(EmbeddedCodeHookKind), kind))
+            {
+                throw new ArgumentOutOfRangeException(nameof(kind));
+            }
+
+            if (string.IsNullOrWhiteSpace(ruleName))
+            {
+                throw new ArgumentException("Rule name is required.", nameof(ruleName));
+            }
+
+            if (code is null)
+            {
+                throw new ArgumentNullException(nameof(code));
+            }
+
+            if (alternativeIndex < -1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(alternativeIndex));
+            }
+
+            if (elementIndex < -1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(elementIndex));
+            }
+
+            if (string.IsNullOrWhiteSpace(methodName))
+            {
+                throw new ArgumentException("Generated hook method name is required.", nameof(methodName));
+            }
+
+            Owner = owner;
+            Kind = kind;
             RuleName = ruleName;
             RawCode = new RawEmbeddedCode(code);
-            IsPredicate = isPredicate;
             AlternativeIndex = alternativeIndex;
             ElementIndex = elementIndex;
             MethodName = methodName;
         }
 
-        /// <summary>Gets the owning parser rule name.</summary>
+        /// <summary>Gets the parser or lexer owner for this hook.</summary>
+        public EmbeddedCodeHookOwner Owner { get; }
+
+        /// <summary>Gets the predicate or action category for this hook.</summary>
+        public EmbeddedCodeHookKind Kind { get; }
+
+        /// <summary>Gets the owning grammar rule name.</summary>
         public string RuleName { get; }
 
         /// <summary>Gets the raw embedded source code without ANTLR braces.</summary>
@@ -387,7 +412,7 @@ internal static partial class GrammarEmitter
         }
 
         /// <summary>Gets a value indicating whether the hook is a semantic predicate.</summary>
-        public bool IsPredicate { get; }
+        public bool IsPredicate => Kind == EmbeddedCodeHookKind.SemanticPredicate;
 
         /// <summary>Gets the runtime alternative index used for dispatch.</summary>
         public int AlternativeIndex { get; }
@@ -397,6 +422,43 @@ internal static partial class GrammarEmitter
 
         /// <summary>Gets the generated C# hook method name.</summary>
         public string MethodName { get; }
+
+        /// <summary>Creates a parser-owned embedded-code hook.</summary>
+        public static EmbeddedCodeHook CreateParser(string ruleName, string code, EmbeddedCodeHookKind kind, int alternativeIndex, int elementIndex, string methodName)
+        {
+            return new EmbeddedCodeHook(EmbeddedCodeHookOwner.Parser, kind, ruleName, code, alternativeIndex, elementIndex, methodName);
+        }
+
+        /// <summary>Creates a lexer-owned embedded-code hook.</summary>
+        public static EmbeddedCodeHook CreateLexer(string ruleName, string code, EmbeddedCodeHookKind kind, int alternativeIndex, int elementIndex, string methodName)
+        {
+            return new EmbeddedCodeHook(EmbeddedCodeHookOwner.Lexer, kind, ruleName, code, alternativeIndex, elementIndex, methodName);
+        }
+    }
+
+
+    /// <summary>
+    /// Validates that a generated embedded-code hook is consumed by the parser or lexer path it belongs to.
+    /// </summary>
+    /// <param name="hook">Hook consumed by a specialized emitter path.</param>
+    /// <param name="expectedOwner">Owner required by the specialized emitter path.</param>
+    /// <param name="expectedKind">Executable category required by the specialized emitter path.</param>
+    private static void ValidateEmbeddedCodeHook(EmbeddedCodeHook hook, EmbeddedCodeHookOwner expectedOwner, EmbeddedCodeHookKind expectedKind)
+    {
+        if (hook is null)
+        {
+            throw new ArgumentNullException(nameof(hook));
+        }
+
+        if (hook.Owner != expectedOwner)
+        {
+            throw new InvalidOperationException($"Embedded code hook '{hook.MethodName}' belongs to {hook.Owner} but was consumed by the {expectedOwner} emission path.");
+        }
+
+        if (hook.Kind != expectedKind)
+        {
+            throw new InvalidOperationException($"Embedded code hook '{hook.MethodName}' is a {hook.Kind} hook but was consumed by a {expectedKind} emission path.");
+        }
     }
 
     /// <summary>

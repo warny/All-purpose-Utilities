@@ -175,11 +175,41 @@ parcours récursifs, symboles runtime et compilation/préparation d'expressions 
 par cette correction.
 
 ### 6. Fusionner `EmbeddedCodeHook` et `LexerEmbeddedCodeHook`
-Ces deux classes possèdent les mêmes données : nom de règle, code brut, code émis, nature
-prédicat/action, indexes d'alternative et d'élément, et nom de méthode générée.
+**Corrigé.** Les hooks parser et lexer générés sont désormais représentés par un seul type interne
+`GrammarEmitter.EmbeddedCodeHook`. L'ancien type `LexerEmbeddedCodeHook` a été supprimé. Le type
+commun conserve le code brut dans `RawEmbeddedCode RawCode` et le code transformé prêt à l'émission
+dans `TransformedEmbeddedCode EmittedCode`, sans remplacer ces frontières typées par des chaînes.
 
-**Fix proposé** : utiliser une structure commune avec un discriminant explicite parser/lexer ou un
-type de domaine équivalent.
+La distinction de domaine est explicite grâce à deux discriminants internes :
+
+- `EmbeddedCodeHookOwner` distingue `Parser` et `Lexer` ;
+- `EmbeddedCodeHookKind` distingue `SemanticPredicate` et `InlineAction`.
+
+Les quatre catégories sont donc couvertes sans booléen ambigu comme état principal : prédicat parser,
+action inline parser, prédicat lexer et action inline lexer. La construction passe par les fabriques
+`CreateParser(...)` et `CreateLexer(...)`, qui valident le nom de règle, le code brut, les indices
+acceptés (`-1` comme sentinelle historique ou valeur positive/nulle), le nom de méthode générée et les
+valeurs d'enum. La lecture de `EmittedCode` avant transformation continue d'échouer, et l'affectation
+d'un code transformé nul reste rejetée.
+
+Les producteurs parser et lexer restent séparés : `CollectEmbeddedCodeHooks(...)` conserve les règles
+d'indexation parser, notamment les traitements de séquences, quantificateurs, négations et récursion
+gauche, tandis que `CollectLexerEmbeddedCodeHooks(...)` conserve le parcours lexer existant. Les
+parcours récursifs ne sont pas mutualisés dans cette correction afin de ne pas masquer les différences
+runtime. Les conventions de nommage restent portées par les producteurs (`__Predicate...`,
+`__Action...`, `__LexerPredicate...`, `__LexerAction...`) et la source C# générée reste inchangée.
+
+Tests ajoutés ou renforcés :
+
+- `Antlr4GeneratedEmbeddedCodeTests.EmbeddedCodeHookTypes_UseOneTypedHookWithExplicitOwnerAndKind` ;
+- `Antlr4GeneratedEmbeddedCodeTests.EmbeddedCodeHookTypes_WhenCreatedThroughFactories_PreserveFourCategories` ;
+- `Antlr4GeneratedEmbeddedCodeTests.EmbeddedCodeHookTypes_WhenInvalidStateIsCreated_RejectsIt` ;
+- `Antlr4GeneratedEmbeddedCodeTests.Emit_WhenParserAndLexerHooksShareGrammar_PreservesStableCategoriesAndGeneratedBodies` ;
+- `EmbeddedCodeTransformerArchitectureTests.GrammarEmitterEmbeddedCodeHooks_UseSingleCommonHookModel`.
+
+Les points 7 à 11 restent hors périmètre : construction des symboles runtime, mutualisation générale
+des parcours récursifs, formalisation globale du pipeline, renommage complet de `EmittedCode` et
+documentation de la façade runtime ne sont pas traités par cette correction.
 
 ### 7. Factoriser la construction des symboles d'expressions
 `BuildSemanticPredicateSymbols` et `BuildParserActionSymbols`, ainsi que leurs méthodes `Add...Symbol`,

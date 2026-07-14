@@ -25,7 +25,7 @@ internal static partial class GrammarEmitter
     private static void EmitExecutionContext(
         StringBuilder sb,
         IReadOnlyList<EmbeddedCodeHook> hooks,
-        IReadOnlyList<LexerEmbeddedCodeHook> lexerHooks,
+        IReadOnlyList<EmbeddedCodeHook> lexerHooks,
         IReadOnlyList<LifecycleHook> lifecycleHooks,
         IReadOnlyList<G4GrammarAction> parserMembers,
         IReadOnlyList<G4GrammarAction> lexerMembers,
