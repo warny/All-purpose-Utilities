@@ -144,19 +144,36 @@ Aucun injecteur espion de production n'a été ajouté : la frontière `CSharpEm
 ## Duplications de code (priorité moyenne)
 
 ### 5. Factoriser les named actions parser et lexer
-`GrammarEmitter.ParserNamedActions.cs` et `GrammarEmitter.LexerNamedActions.cs` contiennent chacun les
-mêmes familles de méthodes : collecte et émission des headers, members et footers.
+**Corrigé.** Les six familles de named actions générées (`parser @header`, `parser @members`,
+`parser @footer`, `lexer @header`, `lexer @members`, `lexer @footer`) passent désormais par un
+descripteur interne immuable `NamedActionInjectionDescriptor` et par la méthode commune
+`EmitNamedActionRegion`.
 
-Les différences portent principalement sur :
+Le descripteur porte uniquement les différences nécessaires entre familles :
 
-- le prédicat de sélection dans `EmbeddedMembersSupport` ;
-- le `ParserEmbeddedCodeLocation` ;
-- les marqueurs générés ;
-- l'indentation.
+- le `ParserEmbeddedCodeLocation` transmis à la frontière de transformation ;
+- la `CSharpEmbeddedCodeRegion`, qui conserve les marqueurs, l'indentation et l'espacement existants ;
+- le sélecteur basé sur `EmbeddedMembersSupport`, afin de ne pas dupliquer la classification
+  `@header` / `@parser::header` / `@lexer::header` et équivalents ;
+- un nom descriptif réservé aux diagnostics et à la lecture du code.
 
-**Fix proposé** : introduire un descripteur de point d'injection et une méthode commune
-d'émission. Conserver éventuellement des wrappers courts et descriptifs tels que
-`EmitParserHeaders` ou `EmitLexerMembers`.
+Les wrappers explicites `EmitParserHeaders`, `EmitParserMembers`, `EmitParserFooters`,
+`EmitLexerHeaders`, `EmitLexerMembers` et `EmitLexerFooters` sont conservés. Ils choisissent
+uniquement le descripteur statique approprié et délèguent à la méthode commune. La source C# générée
+reste inchangée : mêmes positions d'émission, mêmes régions, même indentation, mêmes lignes vides et
+même ordre d'appel au transformer.
+
+Tests ajoutés ou renforcés :
+
+- couverture d'invariant pour l'ordre de plusieurs fragments d'une même catégorie de named action ;
+- garde-fous Roslyn vérifiant que les six wrappers délèguent à `EmitNamedActionRegion` ;
+- garde-fous Roslyn vérifiant que les wrappers ne transforment pas et n'injectent pas directement ;
+- maintien des invariants existants couvrant les six `ParserEmbeddedCodeLocation` nommés, l'absence
+  de fallback vers le texte brut et le passage exclusif par `CSharpEmbeddedCodeInjector`.
+
+Les points 6 à 11 restent hors périmètre : actions inline parser/lexer, prédicats, lifecycle hooks,
+parcours récursifs, symboles runtime et compilation/préparation d'expressions ne sont pas factorisés
+par cette correction.
 
 ### 6. Fusionner `EmbeddedCodeHook` et `LexerEmbeddedCodeHook`
 Ces deux classes possèdent les mêmes données : nom de règle, code brut, code émis, nature

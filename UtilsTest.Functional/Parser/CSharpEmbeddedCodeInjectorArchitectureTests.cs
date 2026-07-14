@@ -53,41 +53,134 @@ public sealed class CSharpEmbeddedCodeInjectorArchitectureTests
     }
 
     /// <summary>
-    /// Ensures the targeted GrammarEmitter methods reference the centralized injector.
+    /// Ensures named-action wrappers delegate to the common descriptor-based emitter without transforming or injecting directly.
     /// </summary>
     [TestMethod]
-    public void TargetedGrammarEmitterMethods_WhenInspected_UseCSharpEmbeddedCodeInjector()
+    public void NamedActionWrappers_WhenInspected_DelegateOnlyToCommonEmitter()
     {
         string repositoryRoot = FindRepositoryRoot();
         string generatorRoot = Path.Combine(repositoryRoot, "Utils.Parser.Generators");
-        string[] requiredMethods =
+        IReadOnlyList<SourceScan> scans = CreateProductionGeneratorScans(repositoryRoot, generatorRoot);
+        string[] wrapperNames =
         [
             "EmitParserHeaders",
             "EmitParserMembers",
             "EmitParserFooters",
             "EmitLexerHeaders",
             "EmitLexerMembers",
-            "EmitLexerFooters",
-            "EmitGeneratedEmbeddedCodeBody"
+            "EmitLexerFooters"
         ];
 
-        Dictionary<string, bool> methodUses = requiredMethods.ToDictionary(static method => method, static _ => false);
-        foreach (string file in Directory.GetFiles(generatorRoot, "GrammarEmitter*.cs", SearchOption.AllDirectories))
+        Dictionary<string, MethodDeclarationSyntax> wrappers = FindMethods(scans, wrapperNames);
+        string[] violations = wrappers
+            .SelectMany(pair => FindNamedActionWrapperViolations(scans, pair.Key, pair.Value))
+            .ToArray();
+
+        Assert.AreEqual(0, violations.Length, string.Join(Environment.NewLine, violations));
+    }
+
+    /// <summary>
+    /// Ensures the common named-action emitter is the only named-action method that invokes transformation and injection.
+    /// </summary>
+    [TestMethod]
+    public void NamedActionEmitter_WhenInspected_OwnsTransformAndInjectionCalls()
+    {
+        string repositoryRoot = FindRepositoryRoot();
+        string generatorRoot = Path.Combine(repositoryRoot, "Utils.Parser.Generators");
+        IReadOnlyList<SourceScan> scans = CreateProductionGeneratorScans(repositoryRoot, generatorRoot);
+        string[] methodNames =
+        [
+            "EmitNamedActionRegion",
+            "EmitParserHeaders",
+            "EmitParserMembers",
+            "EmitParserFooters",
+            "EmitLexerHeaders",
+            "EmitLexerMembers",
+            "EmitLexerFooters"
+        ];
+
+        Dictionary<string, MethodDeclarationSyntax> methods = FindMethods(scans, methodNames);
+        MethodDeclarationSyntax commonEmitter = methods["EmitNamedActionRegion"];
+        Assert.IsTrue(MethodInvokes(commonEmitter, "TransformEmbeddedCode"), "EmitNamedActionRegion must transform named-action code.");
+        Assert.IsTrue(MethodCreates(commonEmitter, "CSharpEmbeddedCodeInjector"), "EmitNamedActionRegion must use the centralized injector.");
+        Assert.IsTrue(MethodInvokes(commonEmitter, "InjectRegion"), "EmitNamedActionRegion must inject named-action regions.");
+
+        foreach (string wrapperName in methodNames.Where(static name => name != "EmitNamedActionRegion"))
         {
-            SyntaxTree tree = CSharpSyntaxTree.ParseText(File.ReadAllText(file));
-            foreach (MethodDeclarationSyntax method in tree.GetRoot().DescendantNodes().OfType<MethodDeclarationSyntax>())
+            MethodDeclarationSyntax wrapper = methods[wrapperName];
+            Assert.IsFalse(MethodInvokes(wrapper, "TransformEmbeddedCode"), $"{wrapperName} must not transform directly.");
+            Assert.IsFalse(MethodCreates(wrapper, "CSharpEmbeddedCodeInjector"), $"{wrapperName} must not create the injector directly.");
+            Assert.IsFalse(MethodInvokes(wrapper, "InjectRegion"), $"{wrapperName} must not inject directly.");
+        }
+    }
+
+
+    /// <summary>Finds required method declarations by name across source scans.</summary>
+    private static Dictionary<string, MethodDeclarationSyntax> FindMethods(IReadOnlyList<SourceScan> scans, IReadOnlyList<string> methodNames)
+    {
+        HashSet<string> required = new(methodNames, StringComparer.Ordinal);
+        Dictionary<string, MethodDeclarationSyntax> found = new(StringComparer.Ordinal);
+        foreach (SourceScan scan in scans)
+        {
+            foreach (MethodDeclarationSyntax method in scan.Tree.GetCompilationUnitRoot().DescendantNodes().OfType<MethodDeclarationSyntax>())
             {
                 string name = method.Identifier.ValueText;
-                if (methodUses.ContainsKey(name)
-                    && method.DescendantNodes().OfType<IdentifierNameSyntax>().Any(static identifier => identifier.Identifier.ValueText == "CSharpEmbeddedCodeInjector"))
+                if (required.Contains(name))
                 {
-                    methodUses[name] = true;
+                    found[name] = method;
                 }
             }
         }
 
-        string[] missing = methodUses.Where(static pair => !pair.Value).Select(static pair => pair.Key).ToArray();
+        string[] missing = methodNames.Where(name => !found.ContainsKey(name)).ToArray();
         Assert.AreEqual(0, missing.Length, string.Join(Environment.NewLine, missing));
+        return found;
+    }
+
+    /// <summary>Finds direct-call violations inside a named-action wrapper.</summary>
+    private static IEnumerable<string> FindNamedActionWrapperViolations(IReadOnlyList<SourceScan> scans, string wrapperName, MethodDeclarationSyntax wrapper)
+    {
+        if (!MethodInvokes(wrapper, "EmitNamedActionRegion"))
+        {
+            yield return $"{wrapperName} does not call EmitNamedActionRegion.";
+        }
+
+        if (MethodInvokes(wrapper, "TransformEmbeddedCode"))
+        {
+            yield return $"{wrapperName} calls TransformEmbeddedCode directly.";
+        }
+
+        if (MethodCreates(wrapper, "CSharpEmbeddedCodeInjector"))
+        {
+            yield return $"{wrapperName} creates CSharpEmbeddedCodeInjector directly.";
+        }
+
+        if (MethodInvokes(wrapper, "InjectRegion"))
+        {
+            yield return $"{wrapperName} calls InjectRegion directly.";
+        }
+
+        int invocationCount = wrapper.DescendantNodes().OfType<InvocationExpressionSyntax>().Count();
+        if (wrapper.ExpressionBody is null && invocationCount != 1)
+        {
+            yield return $"{wrapperName} should contain exactly one invocation but contains {invocationCount}.";
+        }
+
+        _ = scans;
+    }
+
+    /// <summary>Determines whether a method contains an invocation of the requested method name.</summary>
+    private static bool MethodInvokes(MethodDeclarationSyntax method, string invokedName)
+    {
+        return method.DescendantNodes().OfType<InvocationExpressionSyntax>()
+            .Any(invocation => string.Equals(GetInvokedMethodName(invocation), invokedName, StringComparison.Ordinal));
+    }
+
+    /// <summary>Determines whether a method creates the requested type directly.</summary>
+    private static bool MethodCreates(MethodDeclarationSyntax method, string typeName)
+    {
+        return method.DescendantNodes().OfType<ObjectCreationExpressionSyntax>()
+            .Any(creation => string.Equals(creation.Type.ToString(), typeName, StringComparison.Ordinal));
     }
 
     /// <summary>Creates semantic scans for all production generator source files.</summary>
