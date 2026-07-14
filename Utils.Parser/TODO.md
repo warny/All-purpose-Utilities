@@ -154,8 +154,7 @@ Le descripteur porte uniquement les différences nécessaires entre familles :
 - le `ParserEmbeddedCodeLocation` transmis à la frontière de transformation ;
 - la `CSharpEmbeddedCodeRegion`, qui conserve les marqueurs, l'indentation et l'espacement existants ;
 - le sélecteur basé sur `EmbeddedMembersSupport`, afin de ne pas dupliquer la classification
-  `@header` / `@parser::header` / `@lexer::header` et équivalents ;
-- un nom descriptif réservé aux diagnostics et à la lecture du code.
+  `@header` / `@parser::header` / `@lexer::header` et équivalents.
 
 Les wrappers explicites `EmitParserHeaders`, `EmitParserMembers`, `EmitParserFooters`,
 `EmitLexerHeaders`, `EmitLexerMembers` et `EmitLexerFooters` sont conservés. Ils choisissent

@@ -71,9 +71,9 @@ public sealed class CSharpEmbeddedCodeInjectorArchitectureTests
             "EmitLexerFooters"
         ];
 
-        Dictionary<string, MethodDeclarationSyntax> wrappers = FindMethods(scans, wrapperNames);
+        Dictionary<string, LocatedMethod> wrappers = FindMethods(scans, wrapperNames);
         string[] violations = wrappers
-            .SelectMany(pair => FindNamedActionWrapperViolations(scans, pair.Key, pair.Value))
+            .SelectMany(pair => FindNamedActionWrapperViolations(pair.Key, pair.Value))
             .ToArray();
 
         Assert.AreEqual(0, violations.Length, string.Join(Environment.NewLine, violations));
@@ -99,35 +99,37 @@ public sealed class CSharpEmbeddedCodeInjectorArchitectureTests
             "EmitLexerFooters"
         ];
 
-        Dictionary<string, MethodDeclarationSyntax> methods = FindMethods(scans, methodNames);
-        MethodDeclarationSyntax commonEmitter = methods["EmitNamedActionRegion"];
-        Assert.IsTrue(MethodInvokes(commonEmitter, "TransformEmbeddedCode"), "EmitNamedActionRegion must transform named-action code.");
-        Assert.IsTrue(MethodCreates(commonEmitter, "CSharpEmbeddedCodeInjector"), "EmitNamedActionRegion must use the centralized injector.");
-        Assert.IsTrue(MethodInvokes(commonEmitter, "InjectRegion"), "EmitNamedActionRegion must inject named-action regions.");
+        Dictionary<string, LocatedMethod> methods = FindMethods(scans, methodNames);
+        LocatedMethod commonEmitter = methods["EmitNamedActionRegion"];
+        Assert.IsTrue(MethodInvokes(commonEmitter, "Utils.Parser.Generators.Internal.GrammarEmitter.TransformEmbeddedCode"), "EmitNamedActionRegion must transform named-action code.");
+        Assert.IsTrue(MethodCreates(commonEmitter, "Utils.Parser.Generators.Internal.CSharpEmbeddedCodeInjector"), "EmitNamedActionRegion must use the centralized injector.");
+        Assert.IsTrue(MethodInvokes(commonEmitter, "Utils.Parser.Generators.Internal.CSharpEmbeddedCodeInjector.InjectRegion"), "EmitNamedActionRegion must inject named-action regions.");
 
         foreach (string wrapperName in methodNames.Where(static name => name != "EmitNamedActionRegion"))
         {
-            MethodDeclarationSyntax wrapper = methods[wrapperName];
-            Assert.IsFalse(MethodInvokes(wrapper, "TransformEmbeddedCode"), $"{wrapperName} must not transform directly.");
-            Assert.IsFalse(MethodCreates(wrapper, "CSharpEmbeddedCodeInjector"), $"{wrapperName} must not create the injector directly.");
-            Assert.IsFalse(MethodInvokes(wrapper, "InjectRegion"), $"{wrapperName} must not inject directly.");
+            LocatedMethod wrapper = methods[wrapperName];
+            Assert.IsFalse(MethodInvokes(wrapper, "Utils.Parser.Generators.Internal.GrammarEmitter.TransformEmbeddedCode"), $"{wrapperName} must not transform directly.");
+            Assert.IsFalse(MethodCreates(wrapper, "Utils.Parser.Generators.Internal.CSharpEmbeddedCodeInjector"), $"{wrapperName} must not create the injector directly.");
+            Assert.IsFalse(MethodInvokes(wrapper, "Utils.Parser.Generators.Internal.CSharpEmbeddedCodeInjector.InjectRegion"), $"{wrapperName} must not inject directly.");
         }
     }
 
 
     /// <summary>Finds required method declarations by name across source scans.</summary>
-    private static Dictionary<string, MethodDeclarationSyntax> FindMethods(IReadOnlyList<SourceScan> scans, IReadOnlyList<string> methodNames)
+    private static Dictionary<string, LocatedMethod> FindMethods(IReadOnlyList<SourceScan> scans, IReadOnlyList<string> methodNames)
     {
         HashSet<string> required = new(methodNames, StringComparer.Ordinal);
-        Dictionary<string, MethodDeclarationSyntax> found = new(StringComparer.Ordinal);
+        Dictionary<string, LocatedMethod> found = new(StringComparer.Ordinal);
         foreach (SourceScan scan in scans)
         {
             foreach (MethodDeclarationSyntax method in scan.Tree.GetCompilationUnitRoot().DescendantNodes().OfType<MethodDeclarationSyntax>())
             {
                 string name = method.Identifier.ValueText;
-                if (required.Contains(name))
+                if (required.Contains(name)
+                    && scan.SemanticModel.GetDeclaredSymbol(method) is IMethodSymbol symbol
+                    && string.Equals(GetFullyQualifiedMetadataName(symbol.ContainingType), "Utils.Parser.Generators.Internal.GrammarEmitter", StringComparison.Ordinal))
                 {
-                    found[name] = method;
+                    found[name] = new LocatedMethod(scan, method);
                 }
             }
         }
@@ -138,49 +140,78 @@ public sealed class CSharpEmbeddedCodeInjectorArchitectureTests
     }
 
     /// <summary>Finds direct-call violations inside a named-action wrapper.</summary>
-    private static IEnumerable<string> FindNamedActionWrapperViolations(IReadOnlyList<SourceScan> scans, string wrapperName, MethodDeclarationSyntax wrapper)
+    private static IEnumerable<string> FindNamedActionWrapperViolations(string wrapperName, LocatedMethod wrapper)
     {
-        if (!MethodInvokes(wrapper, "EmitNamedActionRegion"))
+        if (!MethodInvokes(wrapper, "Utils.Parser.Generators.Internal.GrammarEmitter.EmitNamedActionRegion"))
         {
-            yield return $"{wrapperName} does not call EmitNamedActionRegion.";
+            yield return $"{wrapperName} does not call GrammarEmitter.EmitNamedActionRegion.";
         }
 
-        if (MethodInvokes(wrapper, "TransformEmbeddedCode"))
+        if (MethodInvokes(wrapper, "Utils.Parser.Generators.Internal.GrammarEmitter.TransformEmbeddedCode"))
         {
-            yield return $"{wrapperName} calls TransformEmbeddedCode directly.";
+            yield return $"{wrapperName} calls GrammarEmitter.TransformEmbeddedCode directly.";
         }
 
-        if (MethodCreates(wrapper, "CSharpEmbeddedCodeInjector"))
+        if (MethodCreates(wrapper, "Utils.Parser.Generators.Internal.CSharpEmbeddedCodeInjector"))
         {
             yield return $"{wrapperName} creates CSharpEmbeddedCodeInjector directly.";
         }
 
-        if (MethodInvokes(wrapper, "InjectRegion"))
+        if (MethodInvokes(wrapper, "Utils.Parser.Generators.Internal.CSharpEmbeddedCodeInjector.InjectRegion"))
         {
-            yield return $"{wrapperName} calls InjectRegion directly.";
+            yield return $"{wrapperName} calls CSharpEmbeddedCodeInjector.InjectRegion directly.";
         }
 
-        int invocationCount = wrapper.DescendantNodes().OfType<InvocationExpressionSyntax>().Count();
-        if (wrapper.ExpressionBody is null && invocationCount != 1)
+        int invocationCount = wrapper.Method.DescendantNodes().OfType<InvocationExpressionSyntax>().Count();
+        if (invocationCount != 1)
         {
             yield return $"{wrapperName} should contain exactly one invocation but contains {invocationCount}.";
         }
-
-        _ = scans;
     }
 
-    /// <summary>Determines whether a method contains an invocation of the requested method name.</summary>
-    private static bool MethodInvokes(MethodDeclarationSyntax method, string invokedName)
+    /// <summary>Determines whether a method contains an invocation of the requested fully-qualified method name.</summary>
+    private static bool MethodInvokes(LocatedMethod method, string fullyQualifiedMethodName)
     {
-        return method.DescendantNodes().OfType<InvocationExpressionSyntax>()
-            .Any(invocation => string.Equals(GetInvokedMethodName(invocation), invokedName, StringComparison.Ordinal));
+        return method.Method.DescendantNodes().OfType<InvocationExpressionSyntax>()
+            .Any(invocation => SymbolMatches(method.Scan.SemanticModel.GetSymbolInfo(invocation).Symbol, fullyQualifiedMethodName));
     }
 
-    /// <summary>Determines whether a method creates the requested type directly.</summary>
-    private static bool MethodCreates(MethodDeclarationSyntax method, string typeName)
+    /// <summary>Determines whether a method creates the requested fully-qualified type directly.</summary>
+    private static bool MethodCreates(LocatedMethod method, string fullyQualifiedTypeName)
     {
-        return method.DescendantNodes().OfType<ObjectCreationExpressionSyntax>()
-            .Any(creation => string.Equals(creation.Type.ToString(), typeName, StringComparison.Ordinal));
+        return method.Method.DescendantNodes().OfType<ObjectCreationExpressionSyntax>()
+            .Any(creation => TypeSymbolMatches(method.Scan.SemanticModel.GetTypeInfo(creation).Type, fullyQualifiedTypeName));
+    }
+
+    /// <summary>Determines whether a symbol matches a fully-qualified method name.</summary>
+    private static bool SymbolMatches(ISymbol? symbol, string fullyQualifiedMethodName)
+    {
+        return symbol is IMethodSymbol method
+            && string.Equals(GetFullyQualifiedMetadataName(method.ContainingType) + "." + method.Name, fullyQualifiedMethodName, StringComparison.Ordinal);
+    }
+
+    /// <summary>Determines whether a type symbol matches a fully-qualified type name.</summary>
+    private static bool TypeSymbolMatches(ITypeSymbol? symbol, string fullyQualifiedTypeName)
+    {
+        return string.Equals(GetFullyQualifiedMetadataName(symbol), fullyQualifiedTypeName, StringComparison.Ordinal);
+    }
+
+    /// <summary>Gets the namespace-qualified metadata name for a type symbol.</summary>
+    private static string GetFullyQualifiedMetadataName(ITypeSymbol? symbol)
+    {
+        if (symbol is null)
+        {
+            return string.Empty;
+        }
+
+        string metadataName = symbol.MetadataName;
+        INamespaceSymbol? namespaceSymbol = symbol.ContainingNamespace;
+        if (namespaceSymbol is null || namespaceSymbol.IsGlobalNamespace)
+        {
+            return metadataName;
+        }
+
+        return namespaceSymbol.ToDisplayString() + "." + metadataName;
     }
 
     /// <summary>Creates semantic scans for all production generator source files.</summary>
@@ -450,6 +481,9 @@ public sealed class CSharpEmbeddedCodeInjectorArchitectureTests
 
     /// <summary>Represents one source file with the semantic model used by the architecture guard.</summary>
     private sealed record SourceScan(string RelativePath, SyntaxTree Tree, SemanticModel SemanticModel);
+
+    /// <summary>Represents one method together with the semantic model that owns it.</summary>
+    private sealed record LocatedMethod(SourceScan Scan, MethodDeclarationSyntax Method);
 
     /// <summary>Identifies the embedded-code text source that reached generated-source writing.</summary>
     private enum EmbeddedCodeTextKind

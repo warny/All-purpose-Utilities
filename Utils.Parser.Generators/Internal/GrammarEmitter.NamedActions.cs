@@ -11,38 +11,32 @@ internal static partial class GrammarEmitter
     private static readonly NamedActionInjectionDescriptor ParserHeaderDescriptor = new(
         ParserEmbeddedCodeLocation.ParserHeader,
         CSharpEmbeddedCodeRegion.ParserHeader,
-        EmbeddedMembersSupport.IsInjectableParserHeaderAction,
-        "parser header");
+        EmbeddedMembersSupport.IsInjectableParserHeaderAction);
 
     private static readonly NamedActionInjectionDescriptor ParserMembersDescriptor = new(
         ParserEmbeddedCodeLocation.ParserMembers,
         CSharpEmbeddedCodeRegion.ParserMembers,
-        EmbeddedMembersSupport.IsInjectableParserMembersAction,
-        "parser members");
+        EmbeddedMembersSupport.IsInjectableParserMembersAction);
 
     private static readonly NamedActionInjectionDescriptor ParserFooterDescriptor = new(
         ParserEmbeddedCodeLocation.ParserFooter,
         CSharpEmbeddedCodeRegion.ParserFooter,
-        EmbeddedMembersSupport.IsInjectableParserFooterAction,
-        "parser footer");
+        EmbeddedMembersSupport.IsInjectableParserFooterAction);
 
     private static readonly NamedActionInjectionDescriptor LexerHeaderDescriptor = new(
         ParserEmbeddedCodeLocation.LexerHeader,
         CSharpEmbeddedCodeRegion.LexerHeader,
-        EmbeddedMembersSupport.IsInjectableLexerHeaderAction,
-        "lexer header");
+        EmbeddedMembersSupport.IsInjectableLexerHeaderAction);
 
     private static readonly NamedActionInjectionDescriptor LexerMembersDescriptor = new(
         ParserEmbeddedCodeLocation.LexerMembers,
         CSharpEmbeddedCodeRegion.LexerMembers,
-        EmbeddedMembersSupport.IsInjectableLexerMembersAction,
-        "lexer members");
+        EmbeddedMembersSupport.IsInjectableLexerMembersAction);
 
     private static readonly NamedActionInjectionDescriptor LexerFooterDescriptor = new(
         ParserEmbeddedCodeLocation.LexerFooter,
         CSharpEmbeddedCodeRegion.LexerFooter,
-        EmbeddedMembersSupport.IsInjectableLexerFooterAction,
-        "lexer footer");
+        EmbeddedMembersSupport.IsInjectableLexerFooterAction);
 
     /// <summary>
     /// Describes the grammar-level named-action injection point that varies between parser and lexer headers, members, and footers.
@@ -53,13 +47,11 @@ internal static partial class GrammarEmitter
         /// <param name="location">Transformation location to report to the embedded-code transformer.</param>
         /// <param name="region">Generated C# region that controls markers, indentation, and spacing.</param>
         /// <param name="selector">Classification predicate used to choose grammar actions.</param>
-        /// <param name="diagnosticTargetName">Human-readable target name reserved for diagnostics and debugging.</param>
-        public NamedActionInjectionDescriptor(ParserEmbeddedCodeLocation location, CSharpEmbeddedCodeRegion region, Func<G4Grammar, G4GrammarAction, bool> selector, string diagnosticTargetName)
+        public NamedActionInjectionDescriptor(ParserEmbeddedCodeLocation location, CSharpEmbeddedCodeRegion region, Func<G4Grammar, G4GrammarAction, bool> selector)
         {
             Location = location;
             Region = region;
             Selector = selector ?? throw new ArgumentNullException(nameof(selector));
-            DiagnosticTargetName = diagnosticTargetName ?? throw new ArgumentNullException(nameof(diagnosticTargetName));
         }
 
         /// <summary>Gets the embedded-code transformer location.</summary>
@@ -70,9 +62,6 @@ internal static partial class GrammarEmitter
 
         /// <summary>Gets the predicate that selects matching grammar actions.</summary>
         public Func<G4Grammar, G4GrammarAction, bool> Selector { get; }
-
-        /// <summary>Gets the human-readable target name reserved for diagnostics and debugging.</summary>
-        public string DiagnosticTargetName { get; }
     }
 
     /// <summary>
@@ -200,7 +189,6 @@ internal static partial class GrammarEmitter
     /// <param name="descriptor">Descriptor for the named-action injection point.</param>
     private static void EmitNamedActionRegion(StringBuilder sb, IReadOnlyList<G4GrammarAction> actions, G4Grammar grammar, IParserEmbeddedCodeTransformer transformer, NamedActionInjectionDescriptor descriptor)
     {
-        _ = descriptor.DiagnosticTargetName;
         var injector = new CSharpEmbeddedCodeInjector(sb);
         foreach (G4GrammarAction action in actions)
         {
