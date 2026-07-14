@@ -146,7 +146,7 @@ float d = (float)df.Compile().DynamicInvoke(3f)!; // 7
 
 ## Vector examples
 
-`Vector<T>` is a generic immutable vector that works with any `IFloatingPoint<T>` type.
+`Vector<T>` is a generic immutable vector. The base constraint is `IFloatingPoint<T>, IRootFunctions<T>` (required for `Norm`/`Normalize`); some operations such as `AngleWith` additionally require `ITrigonometricFunctions<T>`.
 
 ### Construction and basic properties
 
@@ -205,7 +205,7 @@ var (_, weighted) = Vector<double>.ComputeBarycenter(
 
 ## Matrix examples
 
-`Matrix<T>` is a generic immutable matrix. Supports `+`, `-`, `*` (matrix/scalar/vector), `/` (scalar), inversion, LU decomposition, and determinant.
+`Matrix<T>` is a generic immutable matrix with base constraint `IFloatingPoint<T>, IRootFunctions<T>`. Supports `+`, `-`, `*` (matrix/scalar/vector), `/` (scalar), inversion, LU decomposition, and determinant. Transformation factories (`MatrixTransformations`) may additionally require `ITrigonometricFunctions<T>`.
 
 ### Construction
 
