@@ -330,7 +330,7 @@ public class CommandResponseClient : IDisposable
                 }
 
                 ServerResponse response = ParseResponseLine(line);
-                Logger?.LogDebug("Received: {Code} {Message}", response.Code, response.Message);
+                Logger?.LogDebug("Received: {Code} {Message}", SanitizeForLog(response.Code, 10), SanitizeForLog(response.Message ?? string.Empty, 200));
                 _responseQueue.Enqueue(response);
                 _responseSignal.Release();
                 UnsolicitedResponseReceived?.Invoke(response);
@@ -382,7 +382,24 @@ public class CommandResponseClient : IDisposable
     protected virtual string RedactCommandForLog(string command)
     {
         int space = command.IndexOf(' ');
-        return space >= 0 ? command[..space] + " [...]" : command;
+        string verb = space >= 0 ? command[..space] : command;
+        string suffix = space >= 0 ? " [...]" : string.Empty;
+        return SanitizeForLog(verb) + suffix;
+    }
+
+    /// <summary>
+    /// Replaces control characters with '?' and truncates the value to
+    /// <paramref name="maxLength"/> characters to prevent log injection or flooding.
+    /// </summary>
+    protected static string SanitizeForLog(string value, int maxLength = 100)
+    {
+        bool truncated = value.Length > maxLength;
+        ReadOnlySpan<char> source = truncated ? value.AsSpan(0, maxLength) : value.AsSpan();
+        char[] chars = new char[truncated ? maxLength + 3 : source.Length];
+        for (int i = 0; i < source.Length; i++)
+            chars[i] = source[i] < 0x20 || source[i] == 0x7F ? '?' : source[i];
+        if (truncated) { chars[maxLength] = '.'; chars[maxLength + 1] = '.'; chars[maxLength + 2] = '.'; }
+        return new string(chars);
     }
 
     /// <summary>
