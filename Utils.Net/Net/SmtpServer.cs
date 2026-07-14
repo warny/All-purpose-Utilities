@@ -127,7 +127,12 @@ public sealed class SmtpServer : IDisposable
     /// <returns>Responses to send.</returns>
     private Task<IEnumerable<ServerResponse>> HandleMail(CommandContext ctx, string[] args)
     {
-        _from = ExtractAddress(args);
+        // Null reverse-path (<>) is explicitly allowed for bounce messages.
+        if (!TryParseSmtpPath(args, allowNullPath: true, out string? from))
+        {
+            return Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("501", ResponseSeverity.PermanentNegative, "Malformed MAIL FROM path") });
+        }
+        _from = from ?? string.Empty;
         _recipients.Clear();
         ctx.Add("MAIL");
         ctx.Remove("RCPT");
@@ -231,7 +236,10 @@ public sealed class SmtpServer : IDisposable
     /// <returns>Responses to send.</returns>
     private Task<IEnumerable<ServerResponse>> HandleRcpt(CommandContext ctx, string[] args)
     {
-        string address = ExtractAddress(args);
+        if (!TryParseSmtpPath(args, allowNullPath: false, out string? address) || address is null)
+        {
+            return Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("501", ResponseSeverity.PermanentNegative, "Malformed RCPT TO path") });
+        }
         string domain = string.Empty;
         int at = address.IndexOf('@');
         if (at >= 0 && at < address.Length - 1)
@@ -399,20 +407,68 @@ public sealed class SmtpServer : IDisposable
     }
 
     /// <summary>
-    /// Extracts an address from command arguments.
+    /// Parses a strict SMTP path from command arguments (RFC 5321).
+    /// Paths must be enclosed in angle brackets. The null reverse-path <c>&lt;&gt;</c> is
+    /// accepted only when <paramref name="allowNullPath"/> is <see langword="true"/>.
+    /// Source routes are stripped. Local-part is limited to 64 characters, domain to 255,
+    /// and the full address to 254 characters.
     /// </summary>
-    /// <param name="args">Command arguments.</param>
-    /// <returns>Extracted address.</returns>
-    private static string ExtractAddress(string[] args)
+    /// <param name="args">Space-split command arguments (everything after the verb).</param>
+    /// <param name="allowNullPath">Whether <c>&lt;&gt;</c> (null reverse-path) is valid.</param>
+    /// <param name="address">
+    /// When the method returns <see langword="true"/>, contains the extracted address,
+    /// or <see langword="null"/> for the null reverse-path.
+    /// </param>
+    /// <returns><see langword="true"/> if the path is syntactically valid.</returns>
+    private static bool TryParseSmtpPath(string[] args, bool allowNullPath, out string? address)
     {
-        if (args.Length == 0)
+        address = null;
+        if (args.Length == 0) return false;
+
+        // Rejoin tokens in case a space appears between "FROM:" and "<addr>".
+        string argString = string.Join(" ", args);
+
+        int lt = argString.IndexOf('<');
+        int gt = lt >= 0 ? argString.IndexOf('>', lt + 1) : -1;
+        if (lt < 0 || gt <= lt) return false;
+
+        string path = argString[(lt + 1)..gt];
+
+        // Null reverse-path.
+        if (path.Length == 0)
         {
-            return string.Empty;
+            if (!allowNullPath) return false;
+            address = null;
+            return true;
         }
-        string value = args[0];
-        int start = value.IndexOf('<');
-        int end = value.IndexOf('>');
-        return start >= 0 && end > start ? value[(start + 1)..end] : value;
+
+        // Strip source routes ("@route1,@route2:localpart@domain" → "localpart@domain").
+        int colon = path.IndexOf(':');
+        int firstAt = path.IndexOf('@');
+        if (colon >= 0 && (firstAt < 0 || colon < firstAt))
+        {
+            path = path[(colon + 1)..];
+        }
+
+        // Reject control characters and whitespace.
+        foreach (char c in path)
+        {
+            if (c <= 0x20 || c == 0x7F) return false;
+        }
+
+        // Must contain exactly one '@' and both parts must be non-empty.
+        int at = path.IndexOf('@');
+        if (at <= 0 || at == path.Length - 1) return false;
+        if (path.IndexOf('@', at + 1) >= 0) return false;
+
+        string localPart = path[..at];
+        string domain = path[(at + 1)..];
+
+        // RFC 5321 limits.
+        if (localPart.Length > 64 || domain.Length > 255 || path.Length > 254) return false;
+
+        address = path;
+        return true;
     }
 
     /// <summary>
