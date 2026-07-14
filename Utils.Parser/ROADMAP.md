@@ -169,27 +169,35 @@ Every API-changing PR must include:
 
 ## Parser/lexer specialization refactor direction
 
-Several generator paths currently share a similar global algorithm while still carrying real parser/lexer variation points. This direction is validated for future refactorings, but it is not implemented as a single completed architecture yet. The affected areas include embedded-hook collection, runtime dispatcher generation, generated hook-method emission, and other parser/lexer-specific construction or emission paths.
+Several generator paths share a similar global algorithm while still carrying real parser/lexer variation points. The composition-based direction remains active and is now partially implemented for embedded-hook collection.
 
-The target model is incremental and composition-based:
+Implemented for embedded-hook collection:
 
-1. a common engine owns the stable traversal, ordering, accumulation, validation, and invariant checks;
-2. parser and lexer strategies own only the true variation points;
-3. small immutable traversal context values carry changing state such as alternative and element indexes;
-4. immutable emission descriptors carry declarative generation differences such as generated class names, method names, context type names, implemented interfaces, success expressions, fallback expressions, transformation locations, prefixes, and signatures;
-5. explicit parser and lexer wrappers remain responsible for choosing the appropriate strategy or descriptor.
+- `EmbeddedHookCollector` owns the common collection algorithm: collection creation, strategy-provided rule/root traversal, recursive traversal of common `G4Content` node shapes, hook accumulation, and ordered transformation through the existing `TransformEmbeddedCode(...)` boundary.
+- `IEmbeddedHookCollectionStrategy` defines the parser/lexer variation points used by the collector.
+- `ParserEmbeddedHookCollectionStrategy` owns parser rule enumeration, priority ordering, direct-left-recursive root preparation, parser quantifier/negation index semantics, parser method-name prefixes, parser transformation locations, and `EmbeddedCodeHook.CreateParser(...)`.
+- `LexerEmbeddedHookCollectionStrategy` owns lexer rule enumeration across the default rule list and extra modes, source-order alternative traversal, lexer quantifier/negation index semantics, lexer method-name prefixes, lexer transformation locations, and `EmbeddedCodeHook.CreateLexer(...)`.
+- `HookTraversalPosition` is the immutable value that carries alternative and element indexes, including the historical `-1` sentinels, through recursive traversal.
+- Explicit wrappers `CollectEmbeddedCodeHooks(...)` and `CollectLexerEmbeddedCodeHooks(...)` remain as the parser/lexer selection points and delegate to the shared collector.
 
-The refactor must keep the following differences explicit: parser left recursion, alternative priority ordering, lexer modes, quantifier and negation index semantics, generated names, transformation locations, runtime context types, method signatures, success results, and fallback calls. These differences must not be hidden behind a single `isLexer` flag or scattered parser/lexer switches inside a shared engine.
+Invariants now locked by tests and architecture guards:
 
-Incremental plan:
+- parser and lexer hook collection share one recursive collector rather than two duplicated traversals;
+- parser left recursion remains in parser-specific root preparation;
+- lexer modes remain in lexer-specific rule enumeration;
+- hook method names, owner/kind categories, indexes, sentinels, source order, priority order, and transformation locations are preserved;
+- each hook is transformed once, in final collection order, through the existing centralized transformation boundary;
+- no `isLexer` parameter, broad inheritance hierarchy, or public strategy/collector API is introduced.
 
-- introduce a shared embedded-hook collection engine;
-- add parser and lexer collection strategies;
-- introduce a shared runtime dispatcher emitter where descriptors or targeted strategies can preserve real differences;
-- introduce a shared generated hook-method emitter for genuinely common hook bodies and signatures;
-- add Roslyn architecture guards that prevent duplicated algorithms, hidden parser/lexer switches, accidental public contracts, and behavioral drift.
+Still planned:
 
-Each step must preserve generated C# shape, hook order, indexes, transformer invocation count and order, fallback behavior, diagnostics, public API, parser authority, and lexer/runtime semantics. Each step should be delivered as a separate PR or, at minimum, as a separate auditable change.
+- introduce a shared runtime dispatcher emitter only where immutable descriptors can preserve parser/lexer differences such as signatures, context types, success results, fallback expressions, and action result handling;
+- introduce a shared generated hook-method emitter only for genuinely common method-body and signature construction;
+- extend Roslyn architecture guards to those future dispatcher and hook-method refactors when they are implemented.
+
+The refactor must continue to keep the following differences explicit: parser left recursion, alternative priority ordering, lexer modes, quantifier and negation index semantics, generated names, transformation locations, runtime context types, method signatures, success results, and fallback calls. These differences must not be hidden behind a single `isLexer` flag or scattered parser/lexer switches inside a shared engine.
+
+Each remaining step must preserve generated C# shape, hook order, indexes, transformer invocation count and order, fallback behavior, diagnostics, public API, parser authority, and lexer/runtime semantics. Each step should be delivered as a separate PR or, at minimum, as a separate auditable change.
 
 ## Roadmap phases
 

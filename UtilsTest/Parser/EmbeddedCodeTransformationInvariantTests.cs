@@ -85,6 +85,41 @@ public sealed class EmbeddedCodeTransformationInvariantTests
     }
 
     /// <summary>
+    /// Ensures parser hook transformation receives real rule metadata while lexer hook transformation keeps the historical synthetic rule context.
+    /// </summary>
+    [TestMethod]
+    public void Emit_WhenParserAndLexerRulesHaveMetadata_TransformerReceivesOwnerSpecificRuleContext()
+    {
+        const string grammar = """
+            grammar P;
+            start[int p] returns [int r] locals [int l]
+                : first=child { RAW_PARSER_ACTION; } A
+                ;
+            child : A ;
+            A : first=F { RAW_LEXER_ACTION; } ;
+            fragment F : 'a' ;
+            """;
+        var transformer = new RecordingEmbeddedCodeTransformer();
+
+        EmitWithTransformer(grammar, transformer);
+
+        RecordedTransformationCall parserAction = FindCall(transformer, ParserEmbeddedCodeLocation.InlineAction);
+        AssertCall(parserAction, " RAW_PARSER_ACTION; ", ParserEmbeddedCodeLocation.InlineAction, "P", "start");
+        CollectionAssert.AreEqual(new[] { "p" }, parserAction.Parameters.Select(static item => item.Name).ToArray());
+        CollectionAssert.AreEqual(new[] { "l" }, parserAction.Locals.Select(static item => item.Name).ToArray());
+        CollectionAssert.AreEqual(new[] { "r" }, parserAction.Returns.Select(static item => item.Name).ToArray());
+        CollectionAssert.AreEqual(new[] { "first" }, parserAction.Labels.Keys.ToArray());
+        Assert.IsFalse(parserAction.Labels["first"].IsList);
+
+        RecordedTransformationCall lexerAction = FindCall(transformer, ParserEmbeddedCodeLocation.LexerInlineAction);
+        AssertCall(lexerAction, " RAW_LEXER_ACTION; ", ParserEmbeddedCodeLocation.LexerInlineAction, "P", "A");
+        Assert.AreEqual(0, lexerAction.Parameters.Count);
+        Assert.AreEqual(0, lexerAction.Locals.Count);
+        Assert.AreEqual(0, lexerAction.Returns.Count);
+        Assert.AreEqual(0, lexerAction.Labels.Count, "Lexer hook transformers must keep the pre-refactor synthetic G4Rule context and must not expose labels from lexer rule content.");
+    }
+
+    /// <summary>
     /// Ensures repeated named-action fragments keep grammar order through transformation and generated source injection.
     /// </summary>
     [TestMethod]
