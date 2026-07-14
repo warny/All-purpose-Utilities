@@ -253,7 +253,15 @@ public class CommandResponseServer : IDisposable
                     if (registration.RequiredContexts.All(_contexts.Contains))
                     {
                         CommandContext ctx = new(_contexts);
-                        responses = await registration.Handler(ctx, args).ConfigureAwait(false);
+                        try
+                        {
+                            responses = await registration.Handler(ctx, args).ConfigureAwait(false);
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger?.LogError(ex, "Handler for {Verb} threw an unhandled exception", verb);
+                            responses = [new ServerResponse("500", ResponseSeverity.PermanentNegative, "Internal server error")];
+                        }
                     }
                     else
                     {
@@ -262,7 +270,15 @@ public class CommandResponseServer : IDisposable
                 }
                 else if (CommandReceived is not null)
                 {
-                    responses = await CommandReceived.Invoke(command).ConfigureAwait(false);
+                    try
+                    {
+                        responses = await CommandReceived.Invoke(command).ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger?.LogError(ex, "CommandReceived handler threw an unhandled exception for command {Verb}", verb);
+                        responses = [new ServerResponse("500", ResponseSeverity.PermanentNegative, "Internal server error")];
+                    }
                 }
                 responses ??= [new ServerResponse("502", ResponseSeverity.PermanentNegative, "Command not implemented")];
                 List<ServerResponse> responseList = responses.ToList();
