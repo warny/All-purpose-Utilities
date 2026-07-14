@@ -303,8 +303,15 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
     /// </summary>
     /// <param name="datas">The datagram content to parse.</param>
     /// <returns>The populated <see cref="DNSHeader"/> representing the packet.</returns>
+    // DNS header is 12 bytes (ID + Flags + 4 × 2-byte counts).
+    private const int DnsHeaderLength = 12;
+
     public DNSHeader Read(byte[] datas)
     {
+        if (datas.Length < DnsHeaderLength)
+        {
+            throw new InvalidDataException($"DNS datagram too short ({datas.Length} bytes); minimum is {DnsHeaderLength} bytes.");
+        }
         Datas datasStructure = new Datas()
         {
             Datagram = datas,
@@ -324,6 +331,10 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
         var datagram = new byte[512];
         var length = datas.Read(datagram, 0, 512);
 
+        if (length < DnsHeaderLength)
+        {
+            throw new InvalidDataException($"DNS datagram too short ({length} bytes); minimum is {DnsHeaderLength} bytes.");
+        }
 
         Datas datasStructure = new Datas()
         {
