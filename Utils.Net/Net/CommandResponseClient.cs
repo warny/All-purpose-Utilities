@@ -34,6 +34,13 @@ public class CommandResponseClient : IDisposable
     private TimeSpan _listenTimeout = Timeout.InfiniteTimeSpan;
 
     /// <summary>
+    /// Gets or sets the maximum number of bytes allowed in a single incoming response line.
+    /// Lines longer than this limit cause the listener loop to disconnect.
+    /// Default is 8192 bytes (8 KiB). Set to 0 to disable the check.
+    /// </summary>
+    public int MaxLineLength { get; set; } = 8192;
+
+    /// <summary>
     /// Gets or sets the logger used to trace client activity.
     /// </summary>
     public ILogger? Logger { get; set; }
@@ -313,6 +320,12 @@ public class CommandResponseClient : IDisposable
 
                 if (line is null)
                 {
+                    break;
+                }
+
+                if (MaxLineLength > 0 && line.Length > MaxLineLength)
+                {
+                    Logger?.LogWarning("Incoming response line exceeded MaxLineLength ({MaxLineLength}); disconnecting.", MaxLineLength);
                     break;
                 }
 

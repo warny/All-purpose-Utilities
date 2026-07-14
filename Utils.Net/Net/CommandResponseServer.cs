@@ -26,6 +26,13 @@ public class CommandResponseServer : IDisposable
     private readonly SemaphoreSlim _commandSignal = new(0);
     private bool _leaveOpen;
     private readonly Dictionary<string, CommandRegistration> _handlers = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Gets or sets the maximum number of bytes allowed in a single incoming command line.
+    /// Lines longer than this limit cause the session to close with a 500 error.
+    /// Default is 8192 bytes (8 KiB).
+    /// </summary>
+    public int MaxLineLength { get; set; } = 8192;
     private readonly HashSet<string> _contexts = new();
     private readonly Func<ServerResponse, string> _formatter;
     private int _errorCount;
@@ -205,6 +212,12 @@ public class CommandResponseServer : IDisposable
                 string? command = _reader.ReadLine();
                 if (command is null)
                 {
+                    _listenTokenSource?.Cancel();
+                    break;
+                }
+                if (MaxLineLength > 0 && command.Length > MaxLineLength)
+                {
+                    Logger?.LogWarning("Incoming line exceeded MaxLineLength ({MaxLineLength}); closing session.", MaxLineLength);
                     _listenTokenSource?.Cancel();
                     break;
                 }
