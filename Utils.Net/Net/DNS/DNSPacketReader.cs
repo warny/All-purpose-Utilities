@@ -228,40 +228,58 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
         {
             if (depth > MaxDomainNameDepth)
                 throw new InvalidDataException("DNS domain name exceeds maximum depth — possible compression pointer loop.");
-            bool restorePosition = position != this.Position;
-            int temp = this.Position;
+
+            // Save both the sequential cursor (this.Position) and the RDATA context
+            // before we may redirect to a compression pointer target.
+            int savedPosition = this.Position;
+            bool movedCursor = position != savedPosition;
             this.Position = position;
-            var context = Context;
+            var savedContext = Context;
             Context = null;
-            ushort length = ReadByte();
-            if (length == 0) return null;
-            if ((length & 0xC0) != 0)
+
+            try
             {
-                ushort p = (ushort)(((length & 0x3F) << 8) | ReadByte());
-                if (PositionsStrings.TryGetValue(p, out string s))
+                ushort length = ReadByte();
+                if (length == 0) return null;
+                if ((length & 0xC0) == 0xC0)
                 {
-                    if (restorePosition) this.Position = temp;
-                    Context = context;
-                    return s;
+                    // Compression pointer: two high bits both set (RFC 1035 §4.1.4).
+                    ushort p = (ushort)(((length & 0x3F) << 8) | ReadByte());
+                    // After reading the two pointer bytes the sequential cursor must
+                    // advance to just past those two bytes — not to the pointer target.
+                    int afterPointer = this.Position;
+                    if (PositionsStrings.TryGetValue(p, out string? cached))
+                    {
+                        return cached;
+                    }
+                    // Recurse into the pointer target with a fresh sequential cursor.
+                    this.Position = p;
+                    var resolved = ReadDomainName(p, depth + 1);
+                    // Restore the sequential cursor to just after the two pointer bytes.
+                    this.Position = afterPointer;
+                    return resolved;
+                }
+                else if ((length & 0xC0) != 0)
+                {
+                    // Label type 01 or 10 — reserved, reject.
+                    throw new InvalidDataException($"DNS label with reserved type bits 0x{length & 0xC0:X2} at offset {position}.");
                 }
                 else
                 {
-                    var rs = ReadDomainName(p, depth + 1);
-                    Context = context;
-                    return rs;
+                    DNSDomainName s = Encoding.UTF8.GetString(ReadBytes(length));
+                    var next = ReadDomainName(this.Position, depth + 1);
+                    s = s.Append(next);
+                    PositionsStrings[(ushort)position] = s;
+                    return s;
                 }
             }
-            else
+            finally
             {
-                DNSDomainName s = Encoding.UTF8.GetString(ReadBytes(length));
-                var next = ReadDomainName(this.Position, depth + 1);
-                s = s.Append(next);
-                if (restorePosition) this.Position = temp;
-                PositionsStrings[(ushort)position] = s;
-                Context = context;
-                return s;
+                // Always restore the RDATA context and the sequential cursor (unless
+                // we were called with the same position, meaning we are the outer call).
+                Context = savedContext;
+                if (movedCursor) this.Position = savedPosition;
             }
-
         }
 
         public string ReadString()
