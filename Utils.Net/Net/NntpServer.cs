@@ -14,6 +14,7 @@ public sealed class NntpServer : IDisposable
 {
     private readonly CommandResponseServer _server;
     private readonly INntpArticleStore _store;
+    private readonly Func<bool> _isPostingAllowed;
     private string? _currentGroup;
     private int? _currentArticle;
     private bool _posting;
@@ -36,9 +37,15 @@ public sealed class NntpServer : IDisposable
     /// Initializes a new instance of the <see cref="NntpServer"/> class.
     /// </summary>
     /// <param name="store">Article data provider.</param>
-    public NntpServer(INntpArticleStore store)
+    /// <param name="isPostingAllowed">
+    /// Predicate evaluated each time a POST command is received.
+    /// When <see langword="null"/>, posting is disabled for all sessions (fail-closed).
+    /// Pass an explicit predicate to enable posting under specific conditions.
+    /// </param>
+    public NntpServer(INntpArticleStore store, Func<bool>? isPostingAllowed = null)
     {
         _store = store;
+        _isPostingAllowed = isPostingAllowed ?? (() => false);
         _server = new CommandResponseServer();
         _server.RegisterCommand("GROUP", HandleGroup);
         _server.RegisterCommand("ARTICLE", HandleArticle, "GROUP");
@@ -56,6 +63,7 @@ public sealed class NntpServer : IDisposable
 
     /// <summary>
     /// Starts the NNTP server using the specified stream and sends the greeting line.
+    /// The greeting code reflects whether posting is currently allowed (200 = allowed, 201 = read-only).
     /// </summary>
     /// <param name="stream">Stream connected to the client.</param>
     /// <param name="leaveOpen">True to leave the stream open when disposing the server.</param>
@@ -63,7 +71,9 @@ public sealed class NntpServer : IDisposable
     public async Task StartAsync(Stream stream, bool leaveOpen = false, CancellationToken cancellationToken = default)
     {
         await _server.StartAsync(stream, leaveOpen, cancellationToken).ConfigureAwait(false);
-        await _server.SendResponseAsync(new ServerResponse("200", ResponseSeverity.Completion, "server ready")).ConfigureAwait(false);
+        string greetingCode = _isPostingAllowed() ? "200" : "201";
+        string greetingMsg = _isPostingAllowed() ? "server ready - posting allowed" : "server ready - no posting allowed";
+        await _server.SendResponseAsync(new ServerResponse(greetingCode, ResponseSeverity.Completion, greetingMsg)).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -430,9 +440,13 @@ public sealed class NntpServer : IDisposable
     /// <returns>Responses to send.</returns>
     private Task<IEnumerable<ServerResponse>> HandlePost(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
-        if (_currentGroup is null)
+        if (!_isPostingAllowed())
         {
             return Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("440", ResponseSeverity.PermanentNegative, "posting not allowed") });
+        }
+        if (_currentGroup is null)
+        {
+            return Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("440", ResponseSeverity.PermanentNegative, "no newsgroup selected") });
         }
         _posting = true;
         _postLines.Clear();
@@ -453,6 +467,14 @@ public sealed class NntpServer : IDisposable
             if (line == ".")
             {
                 _posting = false;
+                // Validate required article headers (From, Newsgroups, Subject must be present).
+                string? missingHeader = ValidateArticleHeaders(_postLines);
+                if (missingHeader is not null)
+                {
+                    _postLines.Clear();
+                    _postChars = 0;
+                    return new[] { new ServerResponse("441", ResponseSeverity.PermanentNegative, $"Missing required header: {missingHeader}") };
+                }
                 string article = string.Join("\r\n", _postLines) + "\r\n";
                 int id = await _store.AddAsync(_currentGroup!, article, cancellationToken).ConfigureAwait(false);
                 _currentArticle = id;
@@ -481,6 +503,28 @@ public sealed class NntpServer : IDisposable
             return Array.Empty<ServerResponse>();
         }
         return new[] { new ServerResponse("502", ResponseSeverity.PermanentNegative, "Command not implemented") };
+    }
+
+    /// <summary>
+    /// Checks that all required article headers are present.
+    /// Returns the name of the first missing required header, or null if all are present.
+    /// </summary>
+    private static string? ValidateArticleHeaders(IReadOnlyList<string> lines)
+    {
+        bool hasFrom = false;
+        bool hasNewsgroups = false;
+        bool hasSubject = false;
+        foreach (string line in lines)
+        {
+            if (line.Length == 0) break; // blank line separates headers from body
+            if (line.StartsWith("From:", StringComparison.OrdinalIgnoreCase)) hasFrom = true;
+            else if (line.StartsWith("Newsgroups:", StringComparison.OrdinalIgnoreCase)) hasNewsgroups = true;
+            else if (line.StartsWith("Subject:", StringComparison.OrdinalIgnoreCase)) hasSubject = true;
+        }
+        if (!hasFrom) return "From";
+        if (!hasNewsgroups) return "Newsgroups";
+        if (!hasSubject) return "Subject";
+        return null;
     }
 
     /// <summary>
