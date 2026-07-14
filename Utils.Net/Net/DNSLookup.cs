@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using Utils.Net.DNS;
@@ -10,6 +11,10 @@ namespace Utils.Net
     /// </summary>
     public class DNSLookup
     {
+        // RFC 6891: 4096 bytes is the recommended EDNS(0) payload size for modern resolvers.
+        private const int UdpBufferSize = 4096;
+        // RFC 1035 §4.2.2: DNS messages over TCP are prefixed with a 2-byte length field.
+        private const int TcpReceiveTimeout = 5000;
         private readonly DNSPacketWriter packetWriter;
         private readonly DNSPacketReader packetReader;
 
@@ -87,6 +92,18 @@ namespace Utils.Net
                         continue; // Opcode mismatch.
                     }
 
+                    // If the TC (Truncation) bit is set, the UDP response was cut off.
+                    // Retry the same query over TCP to get the full response (RFC 1035 §4.2.1).
+                    if (response.MessageTruncated)
+                    {
+                        responseDatagram = TcpTransport(nameServer, 53, requestDatagram);
+                        response = packetReader.Read(responseDatagram);
+                        if (response.ID != request.ID || response.QrBit != DNS.DNSQRBit.Response || response.OpCode != request.OpCode)
+                        {
+                            continue;
+                        }
+                    }
+
                     return response;
                 }
                 catch
@@ -107,7 +124,7 @@ namespace Utils.Net
         /// <returns>The response result.</returns>
         private static byte[] UdpTransport(IPAddress server, int port, byte[] packet)
         {
-            byte[] responseBytes = new byte[512];
+            byte[] responseBytes = new byte[UdpBufferSize];
             int receivedBytes;
 
             IPEndPoint serverEndpoint = new IPEndPoint(server, port);
@@ -136,6 +153,48 @@ namespace Utils.Net
             byte[] response = new byte[receivedBytes];
             Array.Copy(responseBytes, 0, response, 0, receivedBytes);
             return response;
+        }
+
+        /// <summary>
+        /// Sends a DNS query over TCP and returns the response.
+        /// Used as a fallback when the UDP response has the TC (Truncation) bit set.
+        /// DNS over TCP prefixes each message with a 2-byte big-endian length field (RFC 1035 §4.2.2).
+        /// </summary>
+        private static byte[] TcpTransport(IPAddress server, int port, byte[] packet)
+        {
+            IPEndPoint serverEndpoint = new IPEndPoint(server, port);
+            using Socket tcpSocket = new Socket(server.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            tcpSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveTimeout, TcpReceiveTimeout);
+            tcpSocket.Connect(serverEndpoint);
+
+            // Prefix the request with its 2-byte length.
+            byte[] lengthPrefix = new byte[] { (byte)(packet.Length >> 8), (byte)(packet.Length & 0xFF) };
+            tcpSocket.Send(lengthPrefix);
+            tcpSocket.Send(packet);
+
+            // Read the 2-byte response length.
+            byte[] responseLengthBytes = new byte[2];
+            int read = 0;
+            while (read < 2)
+            {
+                int n = tcpSocket.Receive(responseLengthBytes, read, 2 - read, SocketFlags.None);
+                if (n == 0) throw new IOException("DNS TCP connection closed unexpectedly.");
+                read += n;
+            }
+            int responseLength = (responseLengthBytes[0] << 8) | responseLengthBytes[1];
+            if (responseLength <= 0 || responseLength > 65535)
+                throw new InvalidDataException($"DNS TCP response declared invalid length {responseLength}.");
+
+            // Read exactly responseLength bytes.
+            byte[] responseBytes = new byte[responseLength];
+            read = 0;
+            while (read < responseLength)
+            {
+                int n = tcpSocket.Receive(responseBytes, read, responseLength - read, SocketFlags.None);
+                if (n == 0) throw new IOException("DNS TCP connection closed unexpectedly.");
+                read += n;
+            }
+            return responseBytes;
         }
         #endregion
     }
