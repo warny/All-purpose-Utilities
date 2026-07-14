@@ -430,6 +430,195 @@ public class ExpressionEmbeddedCodePreparerTests
         Assert.IsNotNull(result.Exception);
     }
 
+
+    [DataTestMethod]
+    [DataRow(nameof(ExpressionEmbeddedCodePreparer.PrepareSemanticPredicate), EmbeddedCodeKind.SemanticPredicate, typeof(SemanticPredicateEvaluationContext))]
+    [DataRow(nameof(ExpressionEmbeddedCodePreparer.PrepareParserAction), EmbeddedCodeKind.ParserInlineAction, typeof(ParserActionExecutionContext))]
+    public void PrepareRuntimeArtifact_WhenNoSymbolsAreSupported_PassesEmptySymbolDictionary(string prepareMethodName, EmbeddedCodeKind kind, Type runtimeContextType)
+    {
+        var compiler = new FakeExpressionCompiler();
+        var preparer = new ExpressionEmbeddedCodePreparer(compiler);
+
+        InvokePrepare(preparer, prepareMethodName, CreateSource("true", kind), CreateContext(EmbeddedCodeTarget.RuntimeInlineExpression, new HashSet<EmbeddedCodeContextSymbol>()));
+
+        Assert.AreEqual(1, compiler.CompileCount);
+        Assert.IsNotNull(compiler.LastSymbols);
+        Assert.AreEqual(0, compiler.LastSymbols.Count);
+    }
+
+    [DataTestMethod]
+    [DataRow(nameof(ExpressionEmbeddedCodePreparer.PrepareSemanticPredicate), EmbeddedCodeKind.SemanticPredicate, typeof(SemanticPredicateEvaluationContext), EmbeddedCodeContextSymbol.RuleName, "ruleName", typeof(string), "Rule.Name")]
+    [DataRow(nameof(ExpressionEmbeddedCodePreparer.PrepareSemanticPredicate), EmbeddedCodeKind.SemanticPredicate, typeof(SemanticPredicateEvaluationContext), EmbeddedCodeContextSymbol.InputPosition, "inputPosition", typeof(int), "InputPosition")]
+    [DataRow(nameof(ExpressionEmbeddedCodePreparer.PrepareSemanticPredicate), EmbeddedCodeKind.SemanticPredicate, typeof(SemanticPredicateEvaluationContext), EmbeddedCodeContextSymbol.AlternativeIndex, "alternativeIndex", typeof(int), "AlternativeIndex")]
+    [DataRow(nameof(ExpressionEmbeddedCodePreparer.PrepareSemanticPredicate), EmbeddedCodeKind.SemanticPredicate, typeof(SemanticPredicateEvaluationContext), EmbeddedCodeContextSymbol.ElementIndex, "elementIndex", typeof(int), "ElementIndex")]
+    [DataRow(nameof(ExpressionEmbeddedCodePreparer.PrepareParserAction), EmbeddedCodeKind.ParserInlineAction, typeof(ParserActionExecutionContext), EmbeddedCodeContextSymbol.RuleName, "ruleName", typeof(string), "Rule.Name")]
+    [DataRow(nameof(ExpressionEmbeddedCodePreparer.PrepareParserAction), EmbeddedCodeKind.ParserInlineAction, typeof(ParserActionExecutionContext), EmbeddedCodeContextSymbol.InputPosition, "inputPosition", typeof(int), "InputPosition")]
+    [DataRow(nameof(ExpressionEmbeddedCodePreparer.PrepareParserAction), EmbeddedCodeKind.ParserInlineAction, typeof(ParserActionExecutionContext), EmbeddedCodeContextSymbol.AlternativeIndex, "alternativeIndex", typeof(int), "AlternativeIndex")]
+    [DataRow(nameof(ExpressionEmbeddedCodePreparer.PrepareParserAction), EmbeddedCodeKind.ParserInlineAction, typeof(ParserActionExecutionContext), EmbeddedCodeContextSymbol.ElementIndex, "elementIndex", typeof(int), "ElementIndex")]
+    public void PrepareRuntimeArtifact_WhenSingleSymbolIsSupported_PassesOnlyExpectedRuntimeMember(
+        string prepareMethodName,
+        EmbeddedCodeKind kind,
+        Type runtimeContextType,
+        EmbeddedCodeContextSymbol symbol,
+        string expectedName,
+        Type expectedType,
+        string expectedPath)
+    {
+        var compiler = new FakeExpressionCompiler();
+        var preparer = new ExpressionEmbeddedCodePreparer(compiler);
+
+        InvokePrepare(preparer, prepareMethodName, CreateSource("true", kind), CreateContext(EmbeddedCodeTarget.RuntimeInlineExpression, new HashSet<EmbeddedCodeContextSymbol> { symbol }));
+
+        Assert.IsNotNull(compiler.LastSymbols);
+        Assert.AreEqual(1, compiler.LastSymbols.Count);
+        Assert.IsTrue(compiler.LastSymbols.ContainsKey(expectedName));
+        AssertSymbolExpression(compiler.LastSymbols[expectedName], runtimeContextType, expectedType, expectedPath);
+    }
+
+    [DataTestMethod]
+    [DataRow(nameof(ExpressionEmbeddedCodePreparer.PrepareSemanticPredicate), EmbeddedCodeKind.SemanticPredicate, typeof(SemanticPredicateEvaluationContext))]
+    [DataRow(nameof(ExpressionEmbeddedCodePreparer.PrepareParserAction), EmbeddedCodeKind.ParserInlineAction, typeof(ParserActionExecutionContext))]
+    public void PrepareRuntimeArtifact_WhenAllSymbolsAreSupported_PassesExpectedRuntimeMembers(string prepareMethodName, EmbeddedCodeKind kind, Type runtimeContextType)
+    {
+        var compiler = new FakeExpressionCompiler();
+        var preparer = new ExpressionEmbeddedCodePreparer(compiler);
+
+        InvokePrepare(preparer, prepareMethodName, CreateSource("true", kind), CreateContext(EmbeddedCodeTarget.RuntimeInlineExpression));
+
+        Assert.IsNotNull(compiler.LastSymbols);
+        AssertSymbolSet(compiler.LastSymbols, runtimeContextType);
+    }
+
+    [DataTestMethod]
+    [DataRow(nameof(ExpressionEmbeddedCodePreparer.PrepareSemanticPredicate), EmbeddedCodeKind.SemanticPredicate, typeof(SemanticPredicateEvaluationContext))]
+    [DataRow(nameof(ExpressionEmbeddedCodePreparer.PrepareParserAction), EmbeddedCodeKind.ParserInlineAction, typeof(ParserActionExecutionContext))]
+    public void PrepareRuntimeArtifact_WhenSubsetIsUnordered_DoesNotAddExtraSymbols(string prepareMethodName, EmbeddedCodeKind kind, Type runtimeContextType)
+    {
+        var compiler = new FakeExpressionCompiler();
+        var preparer = new ExpressionEmbeddedCodePreparer(compiler);
+        var symbols = new HashSet<EmbeddedCodeContextSymbol>
+        {
+            EmbeddedCodeContextSymbol.ElementIndex,
+            EmbeddedCodeContextSymbol.RuleName
+        };
+
+        InvokePrepare(preparer, prepareMethodName, CreateSource("true", kind), CreateContext(EmbeddedCodeTarget.RuntimeInlineExpression, symbols));
+
+        Assert.IsNotNull(compiler.LastSymbols);
+        CollectionAssert.AreEquivalent(new[] { "elementIndex", "ruleName" }, compiler.LastSymbols.Keys.ToArray());
+        AssertSymbolExpression(compiler.LastSymbols["ruleName"], runtimeContextType, typeof(string), "Rule.Name");
+        AssertSymbolExpression(compiler.LastSymbols["elementIndex"], runtimeContextType, typeof(int), "ElementIndex");
+    }
+
+    [DataTestMethod]
+    [DataRow(nameof(ExpressionEmbeddedCodePreparer.PrepareSemanticPredicate), EmbeddedCodeKind.SemanticPredicate)]
+    [DataRow(nameof(ExpressionEmbeddedCodePreparer.PrepareParserAction), EmbeddedCodeKind.ParserInlineAction)]
+    public void PrepareRuntimeArtifact_WhenUnknownSymbolIsSupported_IgnoresIt(string prepareMethodName, EmbeddedCodeKind kind)
+    {
+        var compiler = new FakeExpressionCompiler();
+        var preparer = new ExpressionEmbeddedCodePreparer(compiler);
+        var symbols = new HashSet<EmbeddedCodeContextSymbol> { (EmbeddedCodeContextSymbol)999 };
+
+        InvokePrepare(preparer, prepareMethodName, CreateSource("true", kind), CreateContext(EmbeddedCodeTarget.RuntimeInlineExpression, symbols));
+
+        Assert.IsNotNull(compiler.LastSymbols);
+        Assert.AreEqual(0, compiler.LastSymbols.Count);
+    }
+
+    [TestMethod]
+    public void PreparedSemanticPredicate_WhenIndexSymbolsAreUsed_ReadsCurrentRuntimeContext()
+    {
+        var preparer = new ExpressionEmbeddedCodePreparer(new FakeExpressionCompiler());
+
+        var result = preparer.PrepareSemanticPredicate(
+            CreateSource("indexes-match", EmbeddedCodeKind.SemanticPredicate),
+            CreateContext(EmbeddedCodeTarget.RuntimeInlineExpression));
+
+        Assert.AreEqual(EmbeddedCodePreparationStatus.Succeeded, result.Status);
+        Assert.IsNotNull(result.Artifact);
+        Assert.AreEqual(SemanticPredicateEvaluationStatus.Satisfied, result.Artifact.Evaluate(CreatePredicateContext("indexes-match", inputPosition: 1, alternativeIndex: 2, elementIndex: 3)).Status);
+        Assert.AreEqual(SemanticPredicateEvaluationStatus.Rejected, result.Artifact.Evaluate(CreatePredicateContext("indexes-match", inputPosition: 4, alternativeIndex: 5, elementIndex: 6)).Status);
+    }
+
+    [TestMethod]
+    public void PreparedParserAction_WhenIndexSymbolsAreUsed_ReadsCurrentRuntimeContext()
+    {
+        var compiler = new FakeExpressionCompiler();
+        var preparer = new ExpressionEmbeddedCodePreparer(compiler);
+
+        var result = preparer.PrepareParserAction(
+            CreateSource("record-indexes", EmbeddedCodeKind.ParserInlineAction),
+            CreateContext(EmbeddedCodeTarget.RuntimeInlineExpression));
+
+        Assert.AreEqual(EmbeddedCodePreparationStatus.Succeeded, result.Status);
+        Assert.IsNotNull(result.Artifact);
+        _ = result.Artifact.Execute(CreateActionContext("record-indexes", inputPosition: 1, alternativeIndex: 2, elementIndex: 3));
+        _ = result.Artifact.Execute(CreateActionContext("record-indexes", inputPosition: 4, alternativeIndex: 5, elementIndex: 6));
+        CollectionAssert.AreEqual(new[] { "1:2:3", "4:5:6" }, compiler.RecordedIndexes);
+    }
+
+
+    /// <summary>
+    /// Invokes a preparation method selected by a data-driven test.
+    /// </summary>
+    /// <param name="preparer">Preparer under test.</param>
+    /// <param name="prepareMethodName">Name of the preparation method to invoke.</param>
+    /// <param name="source">Embedded-code source to prepare.</param>
+    /// <param name="context">Preparation context to pass to the method.</param>
+    private static void InvokePrepare(
+        ExpressionEmbeddedCodePreparer preparer,
+        string prepareMethodName,
+        EmbeddedCodeSource source,
+        EmbeddedCodePreparationContext context)
+    {
+        if (prepareMethodName == nameof(ExpressionEmbeddedCodePreparer.PrepareSemanticPredicate))
+        {
+            _ = preparer.PrepareSemanticPredicate(source, context);
+            return;
+        }
+
+        _ = preparer.PrepareParserAction(source, context);
+    }
+
+    /// <summary>
+    /// Asserts that a full symbol dictionary exposes the expected public names and runtime member expressions.
+    /// </summary>
+    /// <param name="symbols">Symbol dictionary passed to the expression compiler.</param>
+    /// <param name="runtimeContextType">Runtime context type expected at the root of each expression.</param>
+    private static void AssertSymbolSet(IReadOnlyDictionary<string, Expression> symbols, Type runtimeContextType)
+    {
+        CollectionAssert.AreEquivalent(new[] { "ruleName", "inputPosition", "alternativeIndex", "elementIndex" }, symbols.Keys.ToArray());
+        AssertSymbolExpression(symbols["ruleName"], runtimeContextType, typeof(string), "Rule.Name");
+        AssertSymbolExpression(symbols["inputPosition"], runtimeContextType, typeof(int), "InputPosition");
+        AssertSymbolExpression(symbols["alternativeIndex"], runtimeContextType, typeof(int), "AlternativeIndex");
+        AssertSymbolExpression(symbols["elementIndex"], runtimeContextType, typeof(int), "ElementIndex");
+    }
+
+    /// <summary>
+    /// Asserts that a symbol expression targets the expected runtime member chain without relying on expression text.
+    /// </summary>
+    /// <param name="expression">Expression to inspect.</param>
+    /// <param name="runtimeContextType">Runtime context type expected at the root of the member chain.</param>
+    /// <param name="expectedType">Expression type expected by the compiler.</param>
+    /// <param name="expectedPath">Dot-separated member path expected from the runtime context.</param>
+    private static void AssertSymbolExpression(Expression expression, Type runtimeContextType, Type expectedType, string expectedPath)
+    {
+        Assert.AreEqual(expectedType, expression.Type);
+        string[] members = expectedPath.Split('.');
+        Expression current = expression;
+
+        for (int index = members.Length - 1; index >= 0; index--)
+        {
+            Assert.IsInstanceOfType(current, typeof(MemberExpression));
+            var memberExpression = (MemberExpression)current;
+            Assert.AreEqual(members[index], memberExpression.Member.Name);
+            current = memberExpression.Expression!;
+        }
+
+        Assert.IsInstanceOfType(current, typeof(ParameterExpression));
+        Assert.AreEqual(runtimeContextType, current.Type);
+    }
+
     /// <summary>
     /// Creates source metadata for a test embedded-code construct.
     /// </summary>
@@ -456,11 +645,15 @@ public class ExpressionEmbeddedCodePreparerTests
     /// <param name="predicateCode">Predicate source code stored in the context.</param>
     /// <param name="ruleName">Rule name exposed to contextual expressions.</param>
     /// <param name="inputPosition">Input position exposed to contextual expressions.</param>
+    /// <param name="alternativeIndex">Alternative index exposed to contextual expressions.</param>
+    /// <param name="elementIndex">Element index exposed to contextual expressions.</param>
     /// <returns>A semantic predicate runtime context.</returns>
     private static SemanticPredicateEvaluationContext CreatePredicateContext(
         string predicateCode,
         string ruleName = "start",
-        int inputPosition = 0)
+        int inputPosition = 0,
+        int alternativeIndex = 0,
+        int elementIndex = 0)
     {
         var rule = CreateRule(ruleName);
         return new SemanticPredicateEvaluationContext(
@@ -468,8 +661,8 @@ public class ExpressionEmbeddedCodePreparerTests
             Predicate: new ValidatingPredicate(predicateCode),
             PredicateCode: predicateCode,
             InputPosition: inputPosition,
-            AlternativeIndex: 0,
-            ElementIndex: 0);
+            AlternativeIndex: alternativeIndex,
+            ElementIndex: elementIndex);
     }
 
     /// <summary>
@@ -478,11 +671,15 @@ public class ExpressionEmbeddedCodePreparerTests
     /// <param name="actionCode">Action source code stored in the context.</param>
     /// <param name="ruleName">Rule name exposed to contextual expressions.</param>
     /// <param name="inputPosition">Input position exposed to contextual expressions.</param>
+    /// <param name="alternativeIndex">Alternative index exposed to contextual expressions.</param>
+    /// <param name="elementIndex">Element index exposed to contextual expressions.</param>
     /// <returns>A parser action runtime context.</returns>
     private static ParserActionExecutionContext CreateActionContext(
         string actionCode,
         string ruleName = "start",
-        int inputPosition = 0)
+        int inputPosition = 0,
+        int alternativeIndex = 0,
+        int elementIndex = 0)
     {
         var rule = CreateRule(ruleName);
         return new ParserActionExecutionContext(
@@ -490,8 +687,8 @@ public class ExpressionEmbeddedCodePreparerTests
             Action: new EmbeddedAction(actionCode, ActionContext.Alternative, ActionPosition.Inline, []),
             ActionCode: actionCode,
             InputPosition: inputPosition,
-            AlternativeIndex: 0,
-            ElementIndex: 0);
+            AlternativeIndex: alternativeIndex,
+            ElementIndex: elementIndex);
     }
 
     /// <summary>
@@ -536,11 +733,20 @@ public class ExpressionEmbeddedCodePreparerTests
         /// </summary>
         public List<int> RecordedPositions { get; } = [];
 
+        /// <summary>
+        /// Gets index tuples recorded by generated action delegates.
+        /// </summary>
+        public List<string> RecordedIndexes { get; } = [];
+
+        /// <summary>Gets the last symbol dictionary passed to the fake compiler.</summary>
+        public IReadOnlyDictionary<string, Expression>? LastSymbols { get; private set; }
+
         /// <inheritdoc />
         public Expression Compile(string content, IReadOnlyDictionary<string, Expression>? symbols = null)
         {
             CompileCount++;
             LastContent = content;
+            LastSymbols = symbols;
             return content switch
             {
                 "true" => Expression.Constant(true),
@@ -550,6 +756,18 @@ public class ExpressionEmbeddedCodePreparerTests
                 "record-position inputPosition" => Expression.Call(Expression.Constant(this), nameof(RecordPosition), Type.EmptyTypes, symbols!["inputPosition"]),
                 "ruleName == target" => Expression.Equal(symbols!["ruleName"], Expression.Constant("start")),
                 "inputPosition >= 0" => Expression.GreaterThanOrEqual(symbols!["inputPosition"], Expression.Constant(0)),
+                "indexes-match" => Expression.AndAlso(
+                    Expression.Equal(symbols!["inputPosition"], Expression.Constant(1)),
+                    Expression.AndAlso(
+                        Expression.Equal(symbols!["alternativeIndex"], Expression.Constant(2)),
+                        Expression.Equal(symbols!["elementIndex"], Expression.Constant(3)))),
+                "record-indexes" => Expression.Call(
+                    Expression.Constant(this),
+                    nameof(RecordIndexes),
+                    Type.EmptyTypes,
+                    symbols!["inputPosition"],
+                    symbols!["alternativeIndex"],
+                    symbols!["elementIndex"]),
                 "throw-compile" => throw new InvalidOperationException("boom"),
                 _ => Expression.Empty()
             };
@@ -571,6 +789,15 @@ public class ExpressionEmbeddedCodePreparerTests
         /// </summary>
         /// <param name="inputPosition">Input position to record.</param>
         public void RecordPosition(int inputPosition) => RecordedPositions.Add(inputPosition);
+
+        /// <summary>
+        /// Records runtime indexes supplied through runtime context symbols.
+        /// </summary>
+        /// <param name="inputPosition">Runtime input position.</param>
+        /// <param name="alternativeIndex">Runtime alternative index.</param>
+        /// <param name="elementIndex">Runtime element index.</param>
+        public void RecordIndexes(int inputPosition, int alternativeIndex, int elementIndex) =>
+            RecordedIndexes.Add($"{inputPosition}:{alternativeIndex}:{elementIndex}");
     }
 
 

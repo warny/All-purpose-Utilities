@@ -212,68 +212,87 @@ des parcours récursifs, formalisation globale du pipeline, renommage complet de
 documentation de la façade runtime ne sont pas traités par cette correction.
 
 ### 7. Factoriser la construction des symboles d'expressions
-`BuildSemanticPredicateSymbols` et `BuildParserActionSymbols`, ainsi que leurs méthodes `Add...Symbol`,
-répètent la gestion de `RuleName`, `InputPosition`, `AlternativeIndex` et `ElementIndex`.
+**Corrigé.** `ExpressionEmbeddedCodePreparer` conserve les wrappers spécialisés
+`BuildSemanticPredicateSymbols(...)` et `BuildParserActionSymbols(...)`, mais ceux-ci ne portent plus
+aucune logique de classification : ils délèguent directement à la méthode commune privée
+`BuildRuntimeContextSymbols(ParameterExpression runtimeContext, IReadOnlySet<EmbeddedCodeContextSymbol> supportedSymbols)`.
 
-**Fix proposé** : conserver ce chantier comme une factorisation locale et limitée de
-`ExpressionEmbeddedCodePreparer`. Créer un constructeur privé commun de symboles exploitant les
-propriétés partagées par `SemanticPredicateEvaluationContext` et `ParserActionExecutionContext`, avec
-des wrappers spécialisés courts si ceux-ci améliorent la lisibilité.
+La méthode commune crée le dictionnaire avec `StringComparer.Ordinal`, parcourt `supportedSymbols` une
+seule fois et expose les quatre symboles historiques sans changer leurs noms publics :
 
-Ne pas introduire une interface publique uniquement pour ces quatre propriétés. Une petite stratégie
-privée ou interne n'est justifiée que si l'audit révèle de vraies différences de résolution entre
-plusieurs familles de contextes runtime. Ce point ne doit pas servir à anticiper la mutualisation plus
-large parser/lexer décrite au point 8.
+- `RuleName` -> `ruleName` -> `context.Rule.Name` ;
+- `InputPosition` -> `inputPosition` -> `context.InputPosition` ;
+- `AlternativeIndex` -> `alternativeIndex` -> `context.AlternativeIndex` ;
+- `ElementIndex` -> `elementIndex` -> `context.ElementIndex`.
+
+Les helpers dupliqués `AddSemanticPredicateSymbol(...)` et `AddParserActionSymbol(...)` ont été
+supprimés. `BuildRuleName(...)` reste isolé, car il documente explicitement la chaîne de lecture
+`Rule.Name` partagée par les deux contextes runtime. Aucune interface ou classe de base publique n'a
+été ajoutée pour les contextes `SemanticPredicateEvaluationContext` et `ParserActionExecutionContext` ;
+le type de lambda de chaque chemin reste spécialisé. Les expressions construites lisent toujours les
+valeurs depuis le contexte fourni au moment de l'exécution, sans capture de valeur à la préparation et
+sans appel supplémentaire à `IExpressionCompiler.Compile(...)`. Les valeurs inconnues de
+`EmbeddedCodeContextSymbol` restent ignorées, comme dans les anciens `switch` sans branche `default`.
+
+Tests ajoutés ou renforcés :
+
+- matrice unitaire couvrant `PrepareSemanticPredicate` et `PrepareParserAction` pour les quatre
+  symboles, le dictionnaire vide, un symbole unique, un sous-ensemble non ordonné et les valeurs
+  inconnues de l'enum ;
+- inspection des `MemberExpression` pour vérifier les membres runtime ciblés sans dépendre de
+  `Expression.ToString()` ;
+- tests d'exécution réutilisant le même artefact préparé avec deux contextes différents pour prouver
+  la lecture runtime des valeurs ;
+- garde-fou Roslyn fonctionnel vérifiant que les wrappers délèguent à `BuildRuntimeContextSymbols`,
+  que les anciens helpers `Add...Symbol` n'existent plus, qu'une seule méthode classe
+  `EmbeddedCodeContextSymbol`, que les lambdas conservent leurs types runtime spécialisés et qu'aucun
+  nouveau contrat public n'a été introduit.
+
+Les points 8 à 11 restent hors périmètre du code de production de cette correction : la mutualisation
+générale parser/lexer, le pipeline global, le renommage de `EmittedCode` et la documentation de façade
+runtime demeurent des chantiers séparés.
 
 ### 8. Introduire des moteurs communs avec stratégies parser/lexer spécialisées
-Plusieurs zones de `GrammarEmitter` répètent le même algorithme général et ne diffèrent que par les
-règles propres au parser ou au lexer :
+Plusieurs zones de `GrammarEmitter` répètent un algorithme global comparable, notamment la collecte
+des hooks embarqués, la propagation des indices, la sélection des emplacements de transformation, les
+conventions de nommage, la génération des dispatchers runtime et la génération des méthodes de hooks.
 
-- collecte récursive des hooks embarqués ;
-- calcul ou propagation des indices d'alternative et d'élément ;
-- choix des emplacements de transformation ;
-- conventions de nommage des méthodes générées ;
-- génération des dispatchers runtime de prédicats et d'actions ;
-- génération des méthodes de hooks et de leurs signatures.
+**Direction architecturale retenue** : appliquer une composition explicite plutôt qu'une hiérarchie
+abstraite surchargée :
 
-Les différences sont réelles et doivent rester explicites : ordre et priorité des alternatives,
-récursion gauche parser, traitement des quantificateurs et négations, modes lexer, types de contexte,
-signatures, types de résultat et appels de fallback.
+1. un moteur commun porte l'ordre des opérations, le parcours stable, l'accumulation des résultats,
+   les invariants et les validations communes ;
+2. une stratégie parser ou lexer fournit uniquement les différences réelles ;
+3. un petit contexte immuable transporte l'état variable du parcours, par exemple l'index
+   d'alternative et l'index d'élément ;
+4. un descripteur immuable est préféré à une interface comportementale lorsque les différences sont
+   purement déclaratives, par exemple noms générés, signatures, types de contexte, expressions de
+   succès ou fallbacks ;
+5. des wrappers parser et lexer explicites choisissent la stratégie ou le descripteur approprié.
 
-**Direction architecturale retenue** : utiliser la composition sous la forme suivante :
+Les différences à préserver restent visibles : règles parser contre lexer, modes lexer supplémentaires,
+ordre source contre ordre de priorité, récursion gauche parser, alternatives de base et queues
+récursives, indexation des quantificateurs et négations, préfixes de noms générés,
+`ParserEmbeddedCodeLocation`, types de contextes runtime, signatures avec ou sans
+`LexerActionExecutionResult`, types et valeurs de retour, appels de fallback, conventions de nommage,
+ordre des hooks et source C# générée. Le moteur commun ne doit pas contenir un booléen `isLexer` ni
+des `switch` parser/lexer dispersés.
 
-1. un moteur commun porte l'algorithme stable ;
-2. une stratégie spécialisée parser ou lexer fournit uniquement les décisions différentes ;
-3. un petit contexte immuable transporte l'état variable du parcours, par exemple le nom de règle,
-   l'index d'alternative et l'index d'élément ;
-4. des descripteurs immuables sont préférés aux interfaces lorsque les différences sont uniquement des
-   valeurs de génération ;
-5. les wrappers parser et lexer restent explicites et choisissent la stratégie ou le descripteur
-   approprié.
+Découpage proposé, à réaliser dans des PR distinctes ou au minimum dans des changements séparés et
+auditables :
 
-Exemples de rôles envisagés, sans imposer prématurément leurs noms exacts :
+- **8a — moteur commun de collecte des hooks** : extraire uniquement l'algorithme stable de parcours et
+  d'accumulation ;
+- **8b — stratégies parser et lexer de collecte** : isoler les règles parser/lexer réelles sans
+  réimplémenter le parcours complet ;
+- **8c — émission commune des dispatchers** : utiliser des descripteurs immuables ou des stratégies
+  ciblées pour les différences de signature, contexte, résultat et fallback ;
+- **8d — émission commune des méthodes de hooks et garde-fous architecturaux** : factoriser les corps
+  réellement communs et verrouiller l'absence de retour à la duplication avec des tests Roslyn.
 
-- `EmbeddedHookCollector` pour le parcours commun ;
-- `IEmbeddedHookCollectionStrategy` avec implémentations parser et lexer ;
-- `HookTraversalPosition` comme valeur immuable de récursion ;
-- un descripteur d'émission pour les dispatchers et méthodes de hooks.
-
-Le moteur commun ne doit pas contenir de booléen `isLexer` ni de gros `switch` central sur le domaine.
-Les stratégies ne doivent pas réimplémenter l'algorithme entier : elles répondent uniquement aux
-points de variation demandés par le moteur. Préférer la composition à une classe de base abstraite
-comportant de nombreuses méthodes virtuelles.
-
-La mise en œuvre doit être progressive et découpée en PR vérifiables :
-
-- **8a — collecte** : extraire le parcours commun et les décisions parser/lexer ;
-- **8b — dispatchers** : factoriser la structure commune des évaluateurs/exécuteurs générés ;
-- **8c — méthodes de hooks** : factoriser les signatures et corps communs à l'aide de descripteurs ;
-- **8d — consolidation** : supprimer les helpers devenus redondants et verrouiller l'architecture avec
-  des tests Roslyn.
-
-Chaque étape doit préserver strictement les indices runtime, l'ordre des hooks, les noms générés, les
-appels au transformer, la source C# produite et le comportement des fallbacks. La récursion gauche et
-les particularités lexer restent des stratégies explicites, pas des branches cachées dans le moteur.
+Chaque étape doit préserver strictement la forme du C# généré, l'ordre des hooks, les indices, le
+nombre et l'ordre d'appel au transformer, les diagnostics, les fallbacks, l'API publique, l'autorité du
+parser et la sémantique lexer/runtime.
 
 ## Duplications d'intention et lisibilité (priorité moyenne)
 
