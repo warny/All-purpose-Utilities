@@ -120,6 +120,19 @@ public class ExpressionTransformerTests
         public double Scale(double x) => x * Factor;
     }
 
+    /// <summary>Exposes the protected ReplaceArguments method for direct unit testing.</summary>
+    private sealed class ExposedTransformer : ExpressionTransformer
+    {
+        public Expression ExposeReplaceArguments(
+            Expression e,
+            ParameterExpression[] oldParameters,
+            Expression[] newParameters)
+            => ReplaceArguments(e, oldParameters, newParameters);
+
+        protected override Expression FinalizeExpression(Expression e, Expression[] parameters)
+            => CopyExpression(e, parameters);
+    }
+
     /// <summary>
     /// An instance method call must keep its receiver object: the previous transformer rebuilt every
     /// call with the static overload and dropped <see cref="MethodCallExpression.Object"/>, throwing.
@@ -198,5 +211,92 @@ public class ExpressionTransformerTests
         Assert.AreEqual(4.0, compiled(2.0), 1e-9);
         // x=-1 ≤ 0 → box2 (factor 3): box2.Scale(-1) = -3
         Assert.AreEqual(-3.0, compiled(-1.0), 1e-9);
+    }
+
+    /// <summary>
+    /// The expression target of an <see cref="InvocationExpression"/> must be recursively prepared,
+    /// mirroring the fix applied to <see cref="MethodCallExpression.Object"/>.
+    /// </summary>
+    [TestMethod]
+    public void Simplify_InvocationExpression_TransformsInvocationTarget()
+    {
+        Func<double, double> mul2 = y => y * 2.0;
+        Func<double, double> mul3 = y => y * 3.0;
+
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        // Target: ((x + 0.0) > 0.0) ? mul2 : mul3 — PrepareExpression must visit this subtree.
+        Expression xPlusZero = Expression.Add(x, Expression.Constant(0.0));
+        Expression target = Expression.Condition(
+            Expression.GreaterThan(xPlusZero, Expression.Constant(0.0)),
+            Expression.Constant(mul2),
+            Expression.Constant(mul3));
+        // Argument also contains a simplifiable x + 0.0 (both paths are exercised).
+        Expression arg = Expression.Add(x, Expression.Constant(0.0));
+        Expression invocation = Expression.Invoke(target, arg);
+        var lambda = Expression.Lambda<Func<double, double>>(invocation, x);
+
+        var simplified = (Expression<Func<double, double>>)((Expression)lambda).Simplify();
+        var compiled = simplified.Compile();
+
+        Assert.AreEqual(4.0, compiled(2.0), 1e-9);    // 2 > 0 → mul2(2) = 4
+        Assert.AreEqual(-9.0, compiled(-3.0), 1e-9);   // -3 ≤ 0 → mul3(-3) = -9
+    }
+
+    /// <summary>
+    /// <see cref="ExpressionTransformer.ReplaceArguments"/> must substitute parameters inside
+    /// the invocation target expression, not only in the argument list.
+    /// </summary>
+    [TestMethod]
+    public void ReplaceArguments_InvocationExpression_ReplacesParametersInTarget()
+    {
+        var transformer = new ExposedTransformer();
+        ParameterExpression p = Expression.Parameter(typeof(double), "p");
+
+        Func<double, double> mul2 = y => y * 2.0;
+        Func<double, double> mul3 = y => y * 3.0;
+        // Target conditional references p; argument is also p.
+        Expression target = Expression.Condition(
+            Expression.GreaterThan(p, Expression.Constant(0.0)),
+            Expression.Constant(mul2),
+            Expression.Constant(mul3));
+        Expression invocation = Expression.Invoke(target, p);
+
+        // Replace p → 4.0
+        Expression result = transformer.ExposeReplaceArguments(
+            invocation,
+            new[] { p },
+            new Expression[] { Expression.Constant(4.0) });
+
+        // 4 > 0 → mul2(4) = 8
+        double value = Expression.Lambda<Func<double>>(result).Compile()();
+        Assert.AreEqual(8.0, value, 1e-9);
+    }
+
+    /// <summary>
+    /// <see cref="ExpressionTransformer.ReplaceArguments"/> must recurse into Test, IfTrue, and
+    /// IfFalse of a <see cref="ConditionalExpression"/>. Without an explicit case it fell through
+    /// to <c>return e</c>, leaving parameters unsubstituted in all three branches.
+    /// </summary>
+    [TestMethod]
+    public void ReplaceArguments_ConditionalExpression_ReplacesParametersInAllBranches()
+    {
+        var transformer = new ExposedTransformer();
+        ParameterExpression p = Expression.Parameter(typeof(double), "p");
+
+        // p > 0.0 ? p * 2.0 : p * (-1.0)
+        Expression conditional = Expression.Condition(
+            Expression.GreaterThan(p, Expression.Constant(0.0)),
+            Expression.Multiply(p, Expression.Constant(2.0)),
+            Expression.Multiply(p, Expression.Constant(-1.0)));
+
+        // Replace p → 5.0
+        Expression result = transformer.ExposeReplaceArguments(
+            conditional,
+            new[] { p },
+            new Expression[] { Expression.Constant(5.0) });
+
+        // 5 > 0 → 5 * 2 = 10
+        double value = Expression.Lambda<Func<double>>(result).Compile()();
+        Assert.AreEqual(10.0, value, 1e-9);
     }
 }
