@@ -100,11 +100,35 @@ public abstract class ExpressionTransformer
 
             case MethodCallExpression mce:
                 {
+                    // Transform the instance receiver alongside the arguments. The previous code
+                    // only prepared arguments, leaving mce.Object as the original (un-transformed)
+                    // expression. Rebuilding inline (rather than through CopyExpression) lets us
+                    // pass the transformed receiver without adding an extra parameter slot.
+                    Expression? transformedObject = mce.Object is null ? null : PrepareExpression(mce.Object);
                     expressionParameters = mce.Arguments.Select(PrepareExpression).ToArray();
-                    e = mce = (MethodCallExpression)CopyExpression(e, expressionParameters);
+                    e = mce = transformedObject is null
+                        ? Expression.Call(mce.Method, expressionParameters)
+                        : Expression.Call(transformedObject, mce.Method, expressionParameters);
                     parameters = new object[mce.Arguments.Count + 1];
                     parameters[0] = mce;
                     Array.Copy(expressionParameters, 0, parameters, 1, expressionParameters.Length);
+                    break;
+                }
+
+            case ConditionalExpression ce:
+                {
+                    // A ternary has exactly three sub-expressions (Test, IfTrue, IfFalse). Without an
+                    // explicit case here it fell through to the default branch, which produced an empty
+                    // sub-expression array; CopyExpression's Conditional branch then indexed parameters[0..2]
+                    // and threw IndexOutOfRangeException (see TODO-2026-07-11-pass3.md item #43 note).
+                    expressionParameters =
+                    [
+                        PrepareExpression(ce.Test),
+                        PrepareExpression(ce.IfTrue),
+                        PrepareExpression(ce.IfFalse)
+                    ];
+                    e = ce = (ConditionalExpression)CopyExpression(e, expressionParameters);
+                    parameters = [ce, ce.Test, ce.IfTrue, ce.IfFalse];
                     break;
                 }
 
@@ -115,8 +139,9 @@ public abstract class ExpressionTransformer
 
             case InvocationExpression ie:
                 {
+                    Expression invokedExpression = PrepareExpression(ie.Expression);
                     expressionParameters = ie.Arguments.Select(PrepareExpression).ToArray();
-                    e = ie = (InvocationExpression)CopyExpression(e, expressionParameters);
+                    e = ie = Expression.Invoke(invokedExpression, expressionParameters);
                     parameters = new object[ie.Arguments.Count + 1];
                     parameters[0] = ie;
                     Array.Copy(expressionParameters, 0, parameters, 1, expressionParameters.Length);
@@ -268,18 +293,30 @@ public abstract class ExpressionTransformer
                 }
             case InvocationExpression ie:
                 {
+                    Expression invokedExpression = ReplaceArguments(ie.Expression, oldParameters, newParameters);
                     var arguments = ie.Arguments
                                       .Select(a => ReplaceArguments(a, oldParameters, newParameters))
                                       .ToArray();
-                    return CopyExpression(ie, arguments);
+                    return Expression.Invoke(invokedExpression, arguments);
                 }
             case MethodCallExpression mce:
                 {
+                    Expression? replacedObject = mce.Object is null
+                        ? null
+                        : ReplaceArguments(mce.Object, oldParameters, newParameters);
                     var arguments = mce.Arguments
                                        .Select(a => ReplaceArguments(a, oldParameters, newParameters))
                                        .ToArray();
-                    return CopyExpression(mce, arguments);
+                    return replacedObject is null
+                        ? Expression.Call(mce.Method, arguments)
+                        : Expression.Call(replacedObject, mce.Method, arguments);
                 }
+            case ConditionalExpression ce:
+                return Expression.Condition(
+                    ReplaceArguments(ce.Test, oldParameters, newParameters),
+                    ReplaceArguments(ce.IfTrue, oldParameters, newParameters),
+                    ReplaceArguments(ce.IfFalse, oldParameters, newParameters),
+                    ce.Type);
         }
         return e;
     }
@@ -298,6 +335,22 @@ public abstract class ExpressionTransformer
     /// </returns>
     protected static Expression CopyExpression(Expression e, params Expression[] parameters)
     {
+        // Use MakeBinary for every BinaryExpression so that Method, IsLiftedToNull, and
+        // Conversion are all preserved. The type-specific factory methods (Expression.Add, etc.)
+        // silently drop these fields; MakeBinary is the only factory that carries them all.
+        // This matters for: user-defined operators (Method), Coalesce with a conversion lambda
+        // (Conversion), and lifted nullable operators (IsLiftedToNull).
+        if (e is BinaryExpression binaryExpr && parameters.Length >= 2)
+        {
+            return Expression.MakeBinary(
+                binaryExpr.NodeType,
+                parameters[0],
+                parameters[1],
+                binaryExpr.IsLiftedToNull,
+                binaryExpr.Method,
+                binaryExpr.Conversion);
+        }
+
         return e.NodeType switch
         {
             ExpressionType.Add => Expression.Add(parameters[0], parameters[1]),
@@ -306,9 +359,9 @@ public abstract class ExpressionTransformer
             ExpressionType.AndAlso => Expression.AndAlso(parameters[0], parameters[1]),
             ExpressionType.ArrayLength => Expression.ArrayLength(parameters[0]),
             ExpressionType.ArrayIndex => Expression.ArrayIndex(parameters[0], parameters[1]),
-            ExpressionType.Call => Expression.Call(((MethodCallExpression)e).Method, parameters),
+            ExpressionType.Call => CopyMethodCall((MethodCallExpression)e, parameters),
             ExpressionType.Coalesce => Expression.Coalesce(parameters[0], parameters[1]),
-            ExpressionType.Conditional => Expression.Condition(parameters[0], parameters[1], parameters[2]),
+            ExpressionType.Conditional => Expression.Condition(parameters[0], parameters[1], parameters[2], ((ConditionalExpression)e).Type),
             ExpressionType.Constant => Expression.Constant(((ConstantExpression)e).Value, e.Type),
             ExpressionType.Convert => Expression.Convert(parameters[0], ((UnaryExpression)e).Type),
             ExpressionType.ConvertChecked => Expression.ConvertChecked(parameters[0], ((UnaryExpression)e).Type),
@@ -387,6 +440,23 @@ public abstract class ExpressionTransformer
             ExpressionType.IsFalse => Expression.IsFalse(parameters[0]),
             _ => throw new NotSupportedException($"Expression type '{e.NodeType}' is not supported.")
         };
+    }
+
+    /// <summary>
+    /// Rebuilds a <see cref="MethodCallExpression"/> preserving its instance receiver. The previous code
+    /// always used the static <see cref="Expression.Call(MethodInfo, Expression[])"/> overload, which
+    /// dropped <see cref="MethodCallExpression.Object"/> and therefore threw an
+    /// <see cref="ArgumentException"/> ("Static method requires null instance, non-static method requires
+    /// non-null instance") whenever an instance method call flowed through the transformer.
+    /// </summary>
+    /// <param name="original">The original method-call expression being copied.</param>
+    /// <param name="arguments">The (already prepared) argument sub-expressions.</param>
+    /// <returns>A method-call expression with the same method and instance and the supplied arguments.</returns>
+    private static Expression CopyMethodCall(MethodCallExpression original, Expression[] arguments)
+    {
+        return original.Object is null
+            ? Expression.Call(original.Method, arguments)
+            : Expression.Call(original.Object, original.Method, arguments);
     }
 
     /// <summary>

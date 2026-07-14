@@ -1,7 +1,40 @@
+using System;
 using System.Numerics;
 using System.Reflection;
 
 namespace Utils.Mathematics.Expressions;
+
+/// <summary>
+/// Thrown when a required scalar math operation (e.g. <c>Log</c>, <c>Sin</c>, <c>Sqrt</c>) is not
+/// available for the scalar type used to build a symbolic derivative/integral. This is a specialized
+/// <see cref="NotSupportedException"/> so callers can categorize "operation unavailable for scalar type
+/// T" (see <see cref="SymbolicTransformationStatus.UnsupportedScalarOperation"/>) distinctly from other
+/// unsupported-expression failures, while existing <c>catch (NotSupportedException)</c> sites keep working.
+/// </summary>
+public sealed class UnsupportedScalarOperationException : NotSupportedException
+{
+    /// <summary>
+    /// Gets the name of the operation that was not available (e.g. <c>Log</c>).
+    /// </summary>
+    public string OperationName { get; }
+
+    /// <summary>
+    /// Gets the scalar type for which <see cref="OperationName"/> was unavailable.
+    /// </summary>
+    public Type ScalarType { get; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="UnsupportedScalarOperationException"/> class.
+    /// </summary>
+    /// <param name="operationName">Name of the unavailable operation.</param>
+    /// <param name="scalarType">Scalar type for which the operation is unavailable.</param>
+    public UnsupportedScalarOperationException(string operationName, Type scalarType)
+        : base($"The '{operationName}' operation is not supported for type '{scalarType}'.")
+    {
+        OperationName = operationName;
+        ScalarType = scalarType;
+    }
+}
 
 /// <summary>
 /// Resolves the single-argument static math method (e.g. <c>Log</c>, <c>Sin</c>, <c>Exp</c>) that a
@@ -37,8 +70,7 @@ internal static class MathMethodResolver
     public static MethodInfo Resolve<T>(string methodName) where T : IFloatingPoint<T>
     {
         MethodInfo? method = cache.GetOrAdd((typeof(T), methodName), key => key.Type.GetMethod(key.Name, [key.Type]));
-        return method ?? throw new NotSupportedException(
-            $"The '{methodName}' operation is not supported for type '{typeof(T)}'.");
+        return method ?? throw new UnsupportedScalarOperationException(methodName, typeof(T));
     }
 
     /// <summary>
@@ -60,7 +92,6 @@ internal static class MathMethodResolver
     public static MethodInfo ResolveBinary<T>(string methodName) where T : IFloatingPoint<T>
     {
         MethodInfo? method = binaryCache.GetOrAdd((typeof(T), methodName), key => key.Type.GetMethod(key.Name, [key.Type, key.Type]));
-        return method ?? throw new NotSupportedException(
-            $"The '{methodName}' operation is not supported for type '{typeof(T)}'.");
+        return method ?? throw new UnsupportedScalarOperationException(methodName, typeof(T));
     }
 }

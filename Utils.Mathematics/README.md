@@ -131,7 +131,7 @@ double value = (double)df.Compile().DynamicInvoke(3.0)!; // 25
 ### Integral (anti-derivative)
 
 ```csharp
-Expression<Func<double, double>> f = x => 3 * x * x;
+Expression<Func<double, double>> f = x => 3 * Math.Pow(x, 2);
 LambdaExpression F = f.Integrate(); // x³  (+ C)
 double value = (double)F.Compile().DynamicInvoke(2.0)!; // 8
 ```

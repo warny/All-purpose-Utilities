@@ -178,7 +178,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
         {
             if (!e.Parameters.Contains(explicitTargetParameter))
             {
-                throw new InvalidOperationException(
+                throw new SymbolicParameterException(
                     "The specified parameter instance was not declared in the lambda expression being differentiated.");
             }
             resolvedParameter = explicitTargetParameter;
@@ -188,11 +188,11 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
             var candidates = e.Parameters.Where(p => p.Name == ParameterName).ToList();
             if (candidates.Count == 0)
             {
-                throw new InvalidOperationException($"The parameter '{ParameterName}' was not found in the lambda expression.");
+                throw new SymbolicParameterException($"The parameter '{ParameterName}' was not found in the lambda expression.");
             }
             if (candidates.Count > 1)
             {
-                throw new InvalidOperationException(
+                throw new SymbolicParameterException(
                     $"The lambda expression declares {candidates.Count} distinct parameters named '{ParameterName}'; " +
                     "the differentiation variable is ambiguous. Use distinct parameter names.");
             }
@@ -326,7 +326,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
 
         throw new NotSupportedException(
             $"Cannot preserve the {(isChecked ? "checked " : string.Empty)}conversion from '{transformedOperand.Type}' " +
-            $"to '{original.Type}': only same-type conversions and unchecked numeric widenings are supported.");
+            $"to '{original.Type}': only same-type conversions and unchecked numeric widenings are supported.").Tag(original);
     }
 
     /// <summary>
@@ -604,7 +604,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
             return DeriveUnknownMethodCall(methodCallExpression, parameters);
         }
 
-        throw new NotSupportedException($"The expression '{e.NodeType}' is not supported by {nameof(ExpressionDerivation<T>)}.");
+        throw new NotSupportedException($"The expression '{e.NodeType}' is not supported by {nameof(ExpressionDerivation<T>)}.").Tag(e);
     }
 
     /// <summary>
@@ -624,7 +624,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
             || methodCallExpression.Method.GetParameters().Length != 1
             || methodCallExpression.Method.GetParameters()[0].ParameterType != typeof(T))
         {
-            throw new NotSupportedException($"No derivative rule is registered for '{methodCallExpression.Method}'.");
+            throw new NotSupportedException($"No derivative rule is registered for '{methodCallExpression.Method}'.").Tag(methodCallExpression);
         }
 
         if (!AllowNumericalFallback)
@@ -633,7 +633,7 @@ public class ExpressionDerivation<T> : ExpressionTransformer where T : IFloating
                 $"No symbolic derivative rule is registered for '{methodCallExpression.Method}'. " +
                 $"A centered finite-difference approximation is available but must be explicitly enabled " +
                 $"via '{nameof(AllowNumericalFallback)}' (only do so for a pure, reasonably smooth method, " +
-                "since it will be evaluated twice per derivative evaluation).");
+                "since it will be evaluated twice per derivative evaluation).").Tag(methodCallExpression);
         }
 
         Expression operand = parameters[0];
