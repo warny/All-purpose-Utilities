@@ -224,6 +224,31 @@ public class CommandResponseServer : IDisposable
     /// Listens for commands from the client on a dedicated thread and enqueues them for processing.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
+    /// <summary>
+    /// Reads one line from <paramref name="reader"/>, enforcing <see cref="MaxLineLength"/> during
+    /// the read rather than after the full line has been buffered. Returns <see langword="null"/> on EOF.
+    /// </summary>
+    /// <exception cref="InvalidDataException">Thrown when the line exceeds <see cref="MaxLineLength"/>.</exception>
+    private string? ReadLimitedLine(StreamReader reader)
+    {
+        var sb = new StringBuilder(256);
+        int ch;
+        while ((ch = reader.Read()) != -1)
+        {
+            char c = (char)ch;
+            if (c == '\n')
+            {
+                if (sb.Length > 0 && sb[sb.Length - 1] == '\r')
+                    sb.Length--;
+                return sb.ToString();
+            }
+            sb.Append(c);
+            if (MaxLineLength > 0 && sb.Length > MaxLineLength)
+                throw new InvalidDataException($"Incoming line exceeded MaxLineLength ({MaxLineLength}).");
+        }
+        return sb.Length == 0 ? null : sb.ToString();
+    }
+
     private void ListenLoop(CancellationToken cancellationToken)
     {
         if (_reader is null)
@@ -234,15 +259,19 @@ public class CommandResponseServer : IDisposable
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                string? command = _reader.ReadLine();
-                if (command is null)
+                string? command;
+                try
                 {
+                    command = ReadLimitedLine(_reader);
+                }
+                catch (InvalidDataException)
+                {
+                    Logger?.LogWarning("Incoming line exceeded MaxLineLength ({MaxLineLength}); closing session.", MaxLineLength);
                     _listenTokenSource?.Cancel();
                     break;
                 }
-                if (MaxLineLength > 0 && command.Length > MaxLineLength)
+                if (command is null)
                 {
-                    Logger?.LogWarning("Incoming line exceeded MaxLineLength ({MaxLineLength}); closing session.", MaxLineLength);
                     _listenTokenSource?.Cancel();
                     break;
                 }

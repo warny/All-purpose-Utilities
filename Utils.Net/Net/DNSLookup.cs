@@ -91,6 +91,10 @@ namespace Utils.Net
                     {
                         continue; // Opcode mismatch.
                     }
+                    if (!QuestionMatches(response, request))
+                    {
+                        continue; // Question section does not echo the query — stale or spoofed.
+                    }
 
                     // If the TC (Truncation) bit is set, the UDP response was cut off.
                     // Retry the same query over TCP to get the full response (RFC 1035 §4.2.1).
@@ -99,6 +103,10 @@ namespace Utils.Net
                         responseDatagram = TcpTransport(nameServer, 53, requestDatagram);
                         response = packetReader.Read(responseDatagram);
                         if (response.ID != request.ID || response.QrBit != DNS.DNSQRBit.Response || response.OpCode != request.OpCode)
+                        {
+                            continue;
+                        }
+                        if (!QuestionMatches(response, request))
                         {
                             continue;
                         }
@@ -112,6 +120,29 @@ namespace Utils.Net
             }
 
             throw new Exception("Unable to execute the request");
+        }
+
+        /// <summary>
+        /// Returns <see langword="true"/> when the question section of <paramref name="response"/>
+        /// echoes back the same name, type and class as the original <paramref name="request"/>.
+        /// A mismatch indicates a stale or spoofed reply.
+        /// </summary>
+        private static bool QuestionMatches(DNSHeader response, DNSHeader request)
+        {
+            if (response.Requests.Count != request.Requests.Count)
+                return false;
+            for (int i = 0; i < request.Requests.Count; i++)
+            {
+                var sent = request.Requests[i];
+                var echoed = response.Requests[i];
+                if (!string.Equals(echoed.Name.ToString(), sent.Name.ToString(), StringComparison.OrdinalIgnoreCase))
+                    return false;
+                if (!string.Equals(echoed.Type, sent.Type, StringComparison.OrdinalIgnoreCase))
+                    return false;
+                if (echoed.Class != sent.Class)
+                    return false;
+            }
+            return true;
         }
 
         #region Transport Procedures

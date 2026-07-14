@@ -17,6 +17,7 @@ public sealed class Pop3Server : IDisposable
     private string? _timestamp;
     private readonly HashSet<int> _deleted = new();
     private int _failedAuthCount;
+    private bool _authLocked;
 
     /// <summary>
     /// Gets or sets the maximum number of failed authentication attempts allowed per connection
@@ -109,6 +110,8 @@ public sealed class Pop3Server : IDisposable
     /// <returns>Responses to send.</returns>
     private async Task<IEnumerable<ServerResponse>> HandlePass(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
+        if (_authLocked)
+            return new[] { new ServerResponse("-ERR", ResponseSeverity.PermanentNegative, "Too many authentication failures — bye") };
         string password = args.Length > 0 ? args[0] : string.Empty;
         bool ok = await _mailbox.AuthenticateAsync(_user ?? string.Empty, password, cancellationToken).ConfigureAwait(false);
         if (ok)
@@ -121,6 +124,7 @@ public sealed class Pop3Server : IDisposable
         _failedAuthCount++;
         if (MaxAuthAttempts > 0 && _failedAuthCount >= MaxAuthAttempts)
         {
+            _authLocked = true;
             return new[] { new ServerResponse("-ERR", ResponseSeverity.PermanentNegative, "Too many authentication failures — bye") };
         }
         return new[] { new ServerResponse("-ERR", ResponseSeverity.PermanentNegative, "authentication failed") };
@@ -324,6 +328,8 @@ public sealed class Pop3Server : IDisposable
     /// <returns>Responses to send.</returns>
     private async Task<IEnumerable<ServerResponse>> HandleApop(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
+        if (_authLocked)
+            return new[] { new ServerResponse("-ERR", ResponseSeverity.PermanentNegative, "Too many authentication failures — bye") };
         if (_timestamp is null || args.Length < 2)
         {
             return new[] { new ServerResponse("-ERR", ResponseSeverity.PermanentNegative, "invalid arguments") };
@@ -340,6 +346,7 @@ public sealed class Pop3Server : IDisposable
         _failedAuthCount++;
         if (MaxAuthAttempts > 0 && _failedAuthCount >= MaxAuthAttempts)
         {
+            _authLocked = true;
             return new[] { new ServerResponse("-ERR", ResponseSeverity.PermanentNegative, "Too many authentication failures — bye") };
         }
         return new[] { new ServerResponse("-ERR", ResponseSeverity.PermanentNegative, "authentication failed") };

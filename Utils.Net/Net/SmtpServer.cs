@@ -25,6 +25,7 @@ public sealed class SmtpServer : IDisposable
     private bool _canRelay;
     private bool _isTls;
     private int _failedAuthCount;
+    private bool _authLocked;
 
     /// <summary>
     /// Gets or sets the maximum total number of characters accepted in a single SMTP DATA body.
@@ -171,6 +172,10 @@ public sealed class SmtpServer : IDisposable
         {
             return new[] { new ServerResponse("502", ResponseSeverity.PermanentNegative, "Auth not supported") };
         }
+        if (_authLocked)
+        {
+            return new[] { new ServerResponse("535", ResponseSeverity.PermanentNegative, "Too many authentication failures — bye") };
+        }
         if (args.Length == 0)
         {
             return new[] { new ServerResponse("501", ResponseSeverity.PermanentNegative, "Invalid auth") };
@@ -207,6 +212,7 @@ public sealed class SmtpServer : IDisposable
             _failedAuthCount++;
             if (MaxAuthAttempts > 0 && _failedAuthCount >= MaxAuthAttempts)
             {
+                _authLocked = true;
                 return new[] { new ServerResponse("535", ResponseSeverity.PermanentNegative, "Too many authentication failures — bye") };
             }
             return new[] { new ServerResponse("535", ResponseSeverity.PermanentNegative, "Authentication failed") };
@@ -403,6 +409,7 @@ public sealed class SmtpServer : IDisposable
             _failedAuthCount++;
             if (MaxAuthAttempts > 0 && _failedAuthCount >= MaxAuthAttempts)
             {
+                _authLocked = true;
                 return new[] { new ServerResponse("535", ResponseSeverity.PermanentNegative, "Too many authentication failures — bye") };
             }
             return new[] { new ServerResponse("535", ResponseSeverity.PermanentNegative, "Authentication failed") };
