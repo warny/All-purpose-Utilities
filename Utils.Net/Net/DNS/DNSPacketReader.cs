@@ -182,25 +182,29 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
 
         public byte ReadByte()
         {
-            if (Context != null) { Context.BytesLeft--; }
+            if (Context != null && Position >= Context.RDataEnd)
+                throw new InvalidDataException($"DNS RDATA reader attempted to read beyond the declared RDLength boundary (position {Position}, RDataEnd {Context.RDataEnd}).");
+            if (Position >= Datagram.Length)
+                throw new InvalidDataException($"DNS datagram ended unexpectedly at position {Position}.");
             return Datagram[Position++];
         }
 
         public byte[] ReadBytes()
         {
             if (Context == null) throw new InvalidOperationException("ReadBytes requires an active RData context. Call BeginRData first.");
-            var length = Context.BytesLeft;
+            int length = Context.RDataEnd - Position;
             return ReadBytes(length);
         }
 
         public byte[] ReadBytes(int length)
         {
+            if (Context != null && Position + length > Context.RDataEnd)
+                throw new InvalidDataException($"DNS RDATA reader attempted to read {length} bytes but only {Context.RDataEnd - Position} byte(s) remain within the declared RDLength boundary.");
             if (Position + length > Datagram.Length)
                 throw new InvalidDataException($"Attempted to read {length} bytes at position {Position}, but the datagram is only {Datagram.Length} bytes.");
             byte[] result = new byte[length];
             Array.Copy(Datagram, Position, result, 0, length);
             Position += length;
-            if (Context != null) { Context.BytesLeft -= length; }
             return result;
         }
 
@@ -285,7 +289,7 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
         public string ReadString()
         {
             if (Context == null) throw new InvalidOperationException("ReadString requires an active RData context. Call BeginRData first.");
-            return ReadString(Context.BytesLeft);
+            return ReadString(Context.RDataEnd - Position);
         }
 
         public string ReadString(int length) => Encoding.UTF8.GetString(ReadBytes(length));
@@ -294,7 +298,8 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
     private sealed class Context
     {
         public int Length { get; init; }
-        public int BytesLeft { get; set; }
+        // Absolute datagram offset one past the last RDATA byte.
+        public int RDataEnd { get; init; }
     }
 
 
@@ -379,16 +384,27 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
     private DNSResponseRecord ReadResponse(Datas datas)
     {
         var responseRecord = ReadResponseRecord(datas);
+        int rdataStart = datas.Position;
         datas.Context = new Context
         {
-            BytesLeft = responseRecord.RDLength,
-            Length = responseRecord.RDLength
+            Length = responseRecord.RDLength,
+            RDataEnd = rdataStart + responseRecord.RDLength
         };
         string recordTypeName = requestClassNames.TryGetValue(responseRecord.Class, out string? rtn) ? rtn : responseRecord.Class.ToString();
         Debug.WriteLine($"Read record {recordTypeName}. Length = {responseRecord.RDLength}");
         if (readers.TryGetValue((responseRecord.Class, responseRecord.ClassId), out var reader))
         {
             responseRecord.RData = reader(datas);
+            int consumed = datas.Position - rdataStart;
+            if (consumed > responseRecord.RDLength)
+                throw new InvalidDataException($"DNS record reader for {recordTypeName} consumed {consumed} bytes but RDLength is only {responseRecord.RDLength}.");
+            if (consumed < responseRecord.RDLength)
+            {
+                // Reader did not consume all declared bytes; advance to the RDATA boundary
+                // to keep the parser cursor in sync with surrounding records.
+                datas.Context = null;
+                datas.Position = rdataStart + responseRecord.RDLength;
+            }
         }
         else
         {
