@@ -100,8 +100,15 @@ public abstract class ExpressionTransformer
 
             case MethodCallExpression mce:
                 {
+                    // Transform the instance receiver alongside the arguments. The previous code
+                    // only prepared arguments, leaving mce.Object as the original (un-transformed)
+                    // expression. Rebuilding inline (rather than through CopyExpression) lets us
+                    // pass the transformed receiver without adding an extra parameter slot.
+                    Expression? transformedObject = mce.Object is null ? null : PrepareExpression(mce.Object);
                     expressionParameters = mce.Arguments.Select(PrepareExpression).ToArray();
-                    e = mce = (MethodCallExpression)CopyExpression(e, expressionParameters);
+                    e = mce = transformedObject is null
+                        ? Expression.Call(mce.Method, expressionParameters)
+                        : Expression.Call(transformedObject, mce.Method, expressionParameters);
                     parameters = new object[mce.Arguments.Count + 1];
                     parameters[0] = mce;
                     Array.Copy(expressionParameters, 0, parameters, 1, expressionParameters.Length);
@@ -292,10 +299,15 @@ public abstract class ExpressionTransformer
                 }
             case MethodCallExpression mce:
                 {
+                    Expression? replacedObject = mce.Object is null
+                        ? null
+                        : ReplaceArguments(mce.Object, oldParameters, newParameters);
                     var arguments = mce.Arguments
                                        .Select(a => ReplaceArguments(a, oldParameters, newParameters))
                                        .ToArray();
-                    return CopyExpression(mce, arguments);
+                    return replacedObject is null
+                        ? Expression.Call(mce.Method, arguments)
+                        : Expression.Call(replacedObject, mce.Method, arguments);
                 }
         }
         return e;
@@ -315,20 +327,20 @@ public abstract class ExpressionTransformer
     /// </returns>
     protected static Expression CopyExpression(Expression e, params Expression[] parameters)
     {
-        // Preserve the original operator method (and lifting) for any binary node that carries one.
-        // Expression.Add/Power/etc. called without a method argument silently drop
-        // BinaryExpression.Method, which is load-bearing for user-defined operators and for a Power node
-        // built with an explicit (e.g. float) Pow method. MakeBinary reconstructs the node with the same
-        // method and lifting, so a non-double Power node (or any user-operator binary) survives the
-        // transform unchanged instead of failing to rebuild.
-        if (e is BinaryExpression binaryWithMethod && binaryWithMethod.Method is not null && parameters.Length >= 2)
+        // Use MakeBinary for every BinaryExpression so that Method, IsLiftedToNull, and
+        // Conversion are all preserved. The type-specific factory methods (Expression.Add, etc.)
+        // silently drop these fields; MakeBinary is the only factory that carries them all.
+        // This matters for: user-defined operators (Method), Coalesce with a conversion lambda
+        // (Conversion), and lifted nullable operators (IsLiftedToNull).
+        if (e is BinaryExpression binaryExpr && parameters.Length >= 2)
         {
             return Expression.MakeBinary(
-                binaryWithMethod.NodeType,
+                binaryExpr.NodeType,
                 parameters[0],
                 parameters[1],
-                binaryWithMethod.IsLiftedToNull,
-                binaryWithMethod.Method);
+                binaryExpr.IsLiftedToNull,
+                binaryExpr.Method,
+                binaryExpr.Conversion);
         }
 
         return e.NodeType switch

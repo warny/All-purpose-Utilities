@@ -135,4 +135,68 @@ public class ExpressionTransformerTests
 
         Assert.AreEqual(6.0, compiled(2.0), 1e-9);
     }
+
+    /// <summary>
+    /// A <c>??</c> (Coalesce) node with an explicit conversion lambda must preserve that lambda
+    /// after transformation. The type-specific <see cref="System.Linq.Expressions.Expression.Coalesce"/>
+    /// factory drops <see cref="System.Linq.Expressions.BinaryExpression.Conversion"/>;
+    /// <see cref="System.Linq.Expressions.Expression.MakeBinary"/> preserves it.
+    /// </summary>
+    [TestMethod]
+    public void Simplify_CoalesceWithConversionLambda_PreservesConversion()
+    {
+        ParameterExpression x = Expression.Parameter(typeof(int?), "x");
+        // Conversion: (int n) => n * 10  — takes the UNWRAPPED value (int, not int?)
+        // Expression.Coalesce with conversion requires the lambda parameter to be the
+        // non-nullable value type of the left operand.
+        ParameterExpression convParam = Expression.Parameter(typeof(int), "n");
+        LambdaExpression conversion = Expression.Lambda(
+            Expression.Multiply(convParam, Expression.Constant(10)),
+            convParam);
+        // x ?? 0 with conversion: x.HasValue ? x.Value * 10 : 0  (result type: int)
+        BinaryExpression coalesce = Expression.Coalesce(x, Expression.Constant(0), conversion);
+        var lambda = Expression.Lambda<Func<int?, int>>(coalesce, x);
+
+        // Simplify (round-trips through the transformer; must not lose the Conversion lambda).
+        // Without the MakeBinary fix, CopyExpression used Expression.Coalesce(left, right)
+        // which drops Conversion, changing the result type and semantics.
+        var simplified = (Expression<Func<int?, int>>)((Expression)lambda).Simplify();
+        var compiled = simplified.Compile();
+
+        Assert.AreEqual(50, compiled(5));    // x=5 → 5*10 = 50
+        Assert.AreEqual(0, compiled(null));   // x=null → 0
+    }
+
+    /// <summary>
+    /// The receiver of an instance method call must be recursively transformed (not left as the
+    /// original sub-tree). This verifies that <see cref="ExpressionTransformer"/> calls
+    /// <c>PrepareExpression</c> on <see cref="MethodCallExpression.Object"/> just as it does
+    /// on arguments.
+    /// </summary>
+    [TestMethod]
+    public void Simplify_InstanceMethodCallWithConditionalReceiver_ReceiverIsTransformed()
+    {
+        var box1 = new Box(2.0);
+        var box2 = new Box(3.0);
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+
+        // Object = (x + 0.0) > 0.0 ? box1 : box2
+        // The simplifier should visit the object and reduce x+0.0 → x inside the condition.
+        Expression xPlusZero = Expression.Add(x, Expression.Constant(0.0));
+        Expression cond = Expression.GreaterThan(xPlusZero, Expression.Constant(0.0));
+        Expression obj = Expression.Condition(cond, Expression.Constant(box1), Expression.Constant(box2));
+        System.Reflection.MethodInfo scale = typeof(Box).GetMethod(nameof(Box.Scale))!;
+        // Argument also contains a simplifiable x + 0.0 to confirm both paths are exercised.
+        Expression arg = Expression.Add(x, Expression.Constant(0.0));
+        Expression call = Expression.Call(obj, scale, arg);
+        var lambda = Expression.Lambda<Func<double, double>>(call, x);
+
+        var simplified = (Expression<Func<double, double>>)((Expression)lambda).Simplify();
+        var compiled = simplified.Compile();
+
+        // x=2 > 0 → box1 (factor 2): box1.Scale(2) = 4
+        Assert.AreEqual(4.0, compiled(2.0), 1e-9);
+        // x=-1 ≤ 0 → box2 (factor 3): box2.Scale(-1) = -3
+        Assert.AreEqual(-3.0, compiled(-1.0), 1e-9);
+    }
 }
