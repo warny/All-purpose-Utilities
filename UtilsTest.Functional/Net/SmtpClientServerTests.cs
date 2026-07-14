@@ -93,7 +93,7 @@ public class SmtpClientServerTests
         {
             using TcpClient serverClient = await listener.AcceptTcpClientAsync();
             using SmtpServer server = new(store, d => d == "example.com", new InMemoryAuthenticator());
-            await server.StartAsync(serverClient.GetStream());
+            await server.StartAsync(serverClient.GetStream(), isTls: true);
             await server.Completion;
             listener.Stop();
         });
@@ -125,7 +125,7 @@ public class SmtpClientServerTests
         {
             using TcpClient serverClient = await listener.AcceptTcpClientAsync();
             using SmtpServer server = new(store, d => d == "example.com", new InMemoryAuthenticator());
-            await server.StartAsync(serverClient.GetStream());
+            await server.StartAsync(serverClient.GetStream(), isTls: true);
             await server.Completion;
             listener.Stop();
         });

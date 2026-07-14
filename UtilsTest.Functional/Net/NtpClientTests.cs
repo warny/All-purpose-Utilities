@@ -29,6 +29,7 @@ public class NtpClientTests
             UdpReceiveResult request = await server.ReceiveAsync();
             byte[] response = new byte[48];
             response[0] = 0x1C; // LI = 0, VN = 3, Mode = 4 (server)
+            response[1] = 1; // stratum 1 (primary reference)
             response[40] = (byte)(seconds >> 24);
             response[41] = (byte)(seconds >> 16);
             response[42] = (byte)(seconds >> 8);

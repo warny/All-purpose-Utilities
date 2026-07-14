@@ -30,7 +30,7 @@ public class NntpClientServerTests
         {
             using TcpClient serverClient = await listener.AcceptTcpClientAsync();
             using NetworkStream ns = serverClient.GetStream();
-            using NntpServer server = new(store);
+            using NntpServer server = new(store, () => true);
             await server.StartAsync(ns);
             await server.Completion;
             listener.Stop();
@@ -55,7 +55,7 @@ public class NntpClientServerTests
         Assert.AreEqual("hello\r\n", body);
         (int id, string messageId) stat = await client.StatAsync(1);
         Assert.AreEqual(1, stat.id);
-        await client.PostAsync("header2\r\n\r\nposted\r\n");
+        await client.PostAsync("From: test@example.com\r\nNewsgroups: comp.test\r\nSubject: Test post\r\n\r\nposted\r\n");
         IReadOnlyList<int> newNews2 = await client.NewNewsAsync("comp.test", DateTime.UtcNow.AddMinutes(-1));
         CollectionAssert.Contains((System.Collections.ICollection)newNews2, 2);
         await client.QuitAsync();
