@@ -33,6 +33,14 @@ public class CommandResponseServer : IDisposable
     /// Default is 8192 bytes (8 KiB).
     /// </summary>
     public int MaxLineLength { get; set; } = 8192;
+
+    /// <summary>
+    /// Gets or sets the maximum number of commands that may wait in the command queue before
+    /// the server closes the session to prevent unbounded memory consumption.
+    /// Default is 1000. Set to 0 to disable.
+    /// </summary>
+    public int MaxCommandQueueDepth { get; set; } = 1000;
+
     private readonly HashSet<string> _contexts = new();
     private readonly Func<ServerResponse, string> _formatter;
     private int _errorCount;
@@ -235,6 +243,12 @@ public class CommandResponseServer : IDisposable
                 if (MaxLineLength > 0 && command.Length > MaxLineLength)
                 {
                     Logger?.LogWarning("Incoming line exceeded MaxLineLength ({MaxLineLength}); closing session.", MaxLineLength);
+                    _listenTokenSource?.Cancel();
+                    break;
+                }
+                if (MaxCommandQueueDepth > 0 && _commandQueue.Count >= MaxCommandQueueDepth)
+                {
+                    Logger?.LogWarning("Command queue depth exceeded MaxCommandQueueDepth ({MaxCommandQueueDepth}); closing session.", MaxCommandQueueDepth);
                     _listenTokenSource?.Cancel();
                     break;
                 }

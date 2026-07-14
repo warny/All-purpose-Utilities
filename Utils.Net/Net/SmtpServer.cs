@@ -19,10 +19,23 @@ public sealed class SmtpServer : IDisposable
     private string? _from;
     private readonly List<string> _recipients = new();
     private readonly List<string> _dataLines = new();
+    private int _dataChars;
     private string? _loginUser;
     private bool _isAuthenticated;
     private bool _canRelay;
     private bool _isTls;
+
+    /// <summary>
+    /// Gets or sets the maximum total number of characters accepted in a single SMTP DATA body.
+    /// Default is 10 MiB worth of characters. Set to 0 to disable.
+    /// </summary>
+    public int MaxDataChars { get; set; } = 10 * 1024 * 1024;
+
+    /// <summary>
+    /// Gets or sets the maximum number of lines accepted in a single SMTP DATA body.
+    /// Default is 100 000. Set to 0 to disable.
+    /// </summary>
+    public int MaxDataLines { get; set; } = 100_000;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SmtpServer"/> class.
@@ -264,6 +277,7 @@ public sealed class SmtpServer : IDisposable
     private Task<IEnumerable<ServerResponse>> HandleData(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
         _dataLines.Clear();
+        _dataChars = 0;
         ctx.Add("DATA");
         return Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("354", ResponseSeverity.Intermediate, "Start mail input") });
     }
@@ -400,6 +414,21 @@ public sealed class SmtpServer : IDisposable
 
             string processed = line.StartsWith("..", StringComparison.Ordinal) ? line[1..] : line;
             _dataLines.Add(processed);
+            _dataChars += processed.Length;
+            if (MaxDataLines > 0 && _dataLines.Count > MaxDataLines)
+            {
+                _server.RemoveContext("DATA");
+                _dataLines.Clear();
+                _dataChars = 0;
+                return new[] { new ServerResponse("552", ResponseSeverity.PermanentNegative, "Message body too long (line limit exceeded)") };
+            }
+            if (MaxDataChars > 0 && _dataChars > MaxDataChars)
+            {
+                _server.RemoveContext("DATA");
+                _dataLines.Clear();
+                _dataChars = 0;
+                return new[] { new ServerResponse("552", ResponseSeverity.PermanentNegative, "Message body too long (size limit exceeded)") };
+            }
             return Array.Empty<ServerResponse>();
         }
 

@@ -18,6 +18,19 @@ public sealed class NntpServer : IDisposable
     private int? _currentArticle;
     private bool _posting;
     private readonly List<string> _postLines = new();
+    private int _postChars;
+
+    /// <summary>
+    /// Gets or sets the maximum total number of characters accepted in a single NNTP POST body.
+    /// Default is 10 MiB worth of characters. Set to 0 to disable.
+    /// </summary>
+    public int MaxPostChars { get; set; } = 10 * 1024 * 1024;
+
+    /// <summary>
+    /// Gets or sets the maximum number of lines accepted in a single NNTP POST body.
+    /// Default is 100 000. Set to 0 to disable.
+    /// </summary>
+    public int MaxPostLines { get; set; } = 100_000;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="NntpServer"/> class.
@@ -423,6 +436,7 @@ public sealed class NntpServer : IDisposable
         }
         _posting = true;
         _postLines.Clear();
+        _postChars = 0;
         return Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("340", ResponseSeverity.Intermediate, "send article") });
     }
 
@@ -449,6 +463,21 @@ public sealed class NntpServer : IDisposable
                 line = line[1..];
             }
             _postLines.Add(line);
+            _postChars += line.Length;
+            if (MaxPostLines > 0 && _postLines.Count > MaxPostLines)
+            {
+                _posting = false;
+                _postLines.Clear();
+                _postChars = 0;
+                return new[] { new ServerResponse("441", ResponseSeverity.PermanentNegative, "Article too long (line limit exceeded)") };
+            }
+            if (MaxPostChars > 0 && _postChars > MaxPostChars)
+            {
+                _posting = false;
+                _postLines.Clear();
+                _postChars = 0;
+                return new[] { new ServerResponse("441", ResponseSeverity.PermanentNegative, "Article too long (size limit exceeded)") };
+            }
             return Array.Empty<ServerResponse>();
         }
         return new[] { new ServerResponse("502", ResponseSeverity.PermanentNegative, "Command not implemented") };
