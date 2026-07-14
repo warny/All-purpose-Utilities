@@ -270,9 +270,16 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
                 }
                 else
                 {
-                    DNSDomainName s = Encoding.UTF8.GetString(ReadBytes(length));
+                    // Labels are raw octets (RFC 1035); Latin-1 maps each byte 0x00–0xFF
+                    // to the same code point, preserving the raw content without throwing
+                    // on byte sequences that would be invalid UTF-8.
+                    DNSDomainName s = Encoding.Latin1.GetString(ReadBytes(length));
                     var next = ReadDomainName(this.Position, depth + 1);
                     s = s.Append(next);
+                    // RFC 1035 §2.3.4: total name length must not exceed 255 bytes on the
+                    // wire, which corresponds to 253 characters in presentation form.
+                    if (s.Value.Length > 253)
+                        throw new InvalidDataException($"DNS domain name exceeds the 253-character presentation limit ({s.Value.Length} chars).");
                     PositionsStrings[(ushort)position] = s;
                     return s;
                 }
