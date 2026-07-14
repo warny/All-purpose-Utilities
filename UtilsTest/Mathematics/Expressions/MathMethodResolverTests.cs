@@ -29,13 +29,15 @@ public class MathMethodResolverTests
 
     /// <summary>
     /// <see cref="decimal"/> satisfies <see cref="System.Numerics.IFloatingPoint{TSelf}"/> but declares no
-    /// transcendental functions; resolving one must fail with a diagnostic naming both the operation and
-    /// the type rather than an incidental null-reference failure deep inside <see cref="Expression.Call(System.Reflection.MethodInfo, Expression[])"/>.
+    /// transcendental functions; resolving one must fail with a dedicated
+    /// <see cref="UnsupportedScalarOperationException"/> (a <see cref="NotSupportedException"/> subclass)
+    /// naming both the operation and the type rather than an incidental null-reference failure deep inside
+    /// <see cref="Expression.Call(System.Reflection.MethodInfo, Expression[])"/>.
     /// </summary>
     [TestMethod]
     public void Resolve_UnsupportedScalarType_ThrowsNotSupportedExceptionWithDiagnostic()
     {
-        var ex = Assert.ThrowsExactly<NotSupportedException>(() => MathMethodResolver.Resolve<decimal>(nameof(double.Log)));
+        var ex = Assert.ThrowsExactly<UnsupportedScalarOperationException>(() => MathMethodResolver.Resolve<decimal>(nameof(double.Log)));
 
         StringAssert.Contains(ex.Message, "Log");
         StringAssert.Contains(ex.Message, "Decimal");
@@ -48,8 +50,8 @@ public class MathMethodResolverTests
     [TestMethod]
     public void Resolve_UnsupportedScalarType_IsConsistentAcrossRepeatedCalls()
     {
-        var first = Assert.ThrowsExactly<NotSupportedException>(() => MathMethodResolver.Resolve<decimal>(nameof(double.Sin)));
-        var second = Assert.ThrowsExactly<NotSupportedException>(() => MathMethodResolver.Resolve<decimal>(nameof(double.Sin)));
+        var first = Assert.ThrowsExactly<UnsupportedScalarOperationException>(() => MathMethodResolver.Resolve<decimal>(nameof(double.Sin)));
+        var second = Assert.ThrowsExactly<UnsupportedScalarOperationException>(() => MathMethodResolver.Resolve<decimal>(nameof(double.Sin)));
 
         Assert.AreEqual(first.Message, second.Message);
     }
