@@ -17,6 +17,10 @@ public class SymbolicTransformationResultTests
     /// <summary>An unknown single-argument double function with no registered derivative rule.</summary>
     private static double CustomUnknown(double x) => x * x * x + 1.0;
 
+    /// <summary>
+    /// A lambda with a known derivative rule must return <see cref="SymbolicTransformationStatus.Success"/>
+    /// and an exact result that evaluates correctly.
+    /// </summary>
     [TestMethod]
     public void TryDerivate_ExactRule_ReportsSuccessAndExact()
     {
@@ -32,6 +36,11 @@ public class SymbolicTransformationResultTests
         Assert.AreEqual(25.0, value, 1e-9); // 3x^2 - 2 at x=3
     }
 
+    /// <summary>
+    /// A lambda whose derivative cannot be computed symbolically must fall back to finite differences
+    /// when <c>allowNumericalFallback</c> is true, reporting <see cref="SymbolicTransformationResult.IsExact"/>
+    /// as false.
+    /// </summary>
     [TestMethod]
     public void TryDerivate_NumericFallback_ReportsSuccessButNotExact()
     {
@@ -48,6 +57,11 @@ public class SymbolicTransformationResultTests
         Assert.IsNotNull(result.Expression);
     }
 
+    /// <summary>
+    /// A lambda with an unknown method call and no numerical fallback must return
+    /// <see cref="SymbolicTransformationStatus.UnsupportedExpression"/> with the offending node
+    /// populated in <see cref="SymbolicTransformationResult.UnsupportedNode"/>.
+    /// </summary>
     [TestMethod]
     public void TryDerivate_UnknownMethodFallbackDisabled_ReportsUnsupportedExpression()
     {
@@ -68,6 +82,11 @@ public class SymbolicTransformationResultTests
         Assert.AreEqual(nameof(CustomUnknown), ((MethodCallExpression)result.UnsupportedNode!).Method.Name);
     }
 
+    /// <summary>
+    /// Deriving a <c>double.Exp</c> call against a <c>decimal</c> transformer (which has no
+    /// corresponding exponential rule) must return
+    /// <see cref="SymbolicTransformationStatus.UnsupportedScalarOperation"/>.
+    /// </summary>
     [TestMethod]
     public void TryDerivate_MathFunctionUnavailableForDecimal_ReportsUnsupportedScalarOperation()
     {
@@ -84,6 +103,10 @@ public class SymbolicTransformationResultTests
         Assert.IsInstanceOfType(result.InnerException, typeof(UnsupportedScalarOperationException));
     }
 
+    /// <summary>
+    /// When two distinct parameters share the same name, derivation by name is ambiguous and must
+    /// return <see cref="SymbolicTransformationStatus.InvalidInput"/>.
+    /// </summary>
     [TestMethod]
     public void TryDerivate_AmbiguousParameter_ReportsInvalidInput()
     {
@@ -97,6 +120,10 @@ public class SymbolicTransformationResultTests
         Assert.AreEqual(SymbolicTransformationStatus.InvalidInput, result.Status);
     }
 
+    /// <summary>
+    /// Requesting derivation with respect to a parameter name not declared in the lambda must
+    /// return <see cref="SymbolicTransformationStatus.InvalidInput"/>.
+    /// </summary>
     [TestMethod]
     public void TryDerivate_ForeignParameter_ReportsInvalidInput()
     {
@@ -108,6 +135,11 @@ public class SymbolicTransformationResultTests
         Assert.AreEqual(SymbolicTransformationStatus.InvalidInput, result.Status);
     }
 
+    /// <summary>
+    /// A narrowing <c>Convert</c> node (double → float) has no symbolic derivative and must
+    /// return <see cref="SymbolicTransformationStatus.UnsupportedExpression"/> with the
+    /// unsupported node identified.
+    /// </summary>
     [TestMethod]
     public void TryDerivate_UnsupportedConversion_ReportsUnsupportedExpression()
     {
@@ -123,6 +155,12 @@ public class SymbolicTransformationResultTests
         Assert.IsNotNull(result.UnsupportedNode);
     }
 
+    /// <summary>
+    /// A two-argument <c>Math.Max</c> call does not fit any derivative rule and does not match
+    /// the single-argument finite-difference fallback shape; it must be reported as
+    /// <see cref="SymbolicTransformationStatus.UnsupportedExpression"/> even with the fallback
+    /// enabled.
+    /// </summary>
     [TestMethod]
     public void TryDerivate_UnknownExpressionType_ReportsUnsupportedExpression()
     {
@@ -141,6 +179,10 @@ public class SymbolicTransformationResultTests
         Assert.IsNotNull(result.UnsupportedNode);
     }
 
+    /// <summary>
+    /// Passing a null lambda must not throw; it must return
+    /// <see cref="SymbolicTransformationStatus.InvalidInput"/>.
+    /// </summary>
     [TestMethod]
     public void TryDerivate_NullLambda_ReportsInvalidInput()
     {
@@ -152,6 +194,11 @@ public class SymbolicTransformationResultTests
         Assert.AreEqual(SymbolicTransformationStatus.InvalidInput, result.Status);
     }
 
+    /// <summary>
+    /// A lambda with a known integration rule must return
+    /// <see cref="SymbolicTransformationStatus.Success"/> with an exact anti-derivative that
+    /// evaluates correctly.
+    /// </summary>
     [TestMethod]
     public void TryIntegrate_ExactRule_ReportsSuccessAndExact()
     {
@@ -166,6 +213,11 @@ public class SymbolicTransformationResultTests
         Assert.AreEqual(6.0, value, 1e-9); // integral of 3x = 1.5 x^2, at x=2 -> 6
     }
 
+    /// <summary>
+    /// A lambda with an arbitrary unknown method call must return
+    /// <see cref="SymbolicTransformationStatus.UnsupportedExpression"/> with the offending node
+    /// identified.
+    /// </summary>
     [TestMethod]
     public void TryIntegrate_NoRule_ReportsUnsupportedExpression()
     {
@@ -183,6 +235,10 @@ public class SymbolicTransformationResultTests
         Assert.IsNotNull(result.UnsupportedNode);
     }
 
+    /// <summary>
+    /// Requesting integration with respect to a parameter name not declared in the lambda must
+    /// return <see cref="SymbolicTransformationStatus.InvalidInput"/>.
+    /// </summary>
     [TestMethod]
     public void TryIntegrate_ForeignParameter_ReportsInvalidInput()
     {
@@ -196,6 +252,11 @@ public class SymbolicTransformationResultTests
 
     // ── Classification contract (non-throwing guarantee) ─────────────────────
 
+    /// <summary>
+    /// A <see cref="SymbolicParameterException"/> (caller error) must be classified as
+    /// <see cref="SymbolicTransformationStatus.InvalidInput"/>, not as
+    /// <see cref="SymbolicTransformationStatus.ConstructionFailure"/>.
+    /// </summary>
     [TestMethod]
     public void TryClassify_SymbolicParameterException_ReportsInvalidInput()
     {
@@ -205,6 +266,11 @@ public class SymbolicTransformationResultTests
         Assert.AreSame(ex, result.InnerException);
     }
 
+    /// <summary>
+    /// A plain <see cref="InvalidOperationException"/> that is not a
+    /// <see cref="SymbolicParameterException"/> represents an internal transformer failure and
+    /// must be classified as <see cref="SymbolicTransformationStatus.ConstructionFailure"/>.
+    /// </summary>
     [TestMethod]
     public void TryClassify_RawInvalidOperationException_ReportsConstructionFailure()
     {
@@ -216,6 +282,11 @@ public class SymbolicTransformationResultTests
         Assert.AreSame(ex, result.InnerException);
     }
 
+    /// <summary>
+    /// Any unrecognized exception type must be classified as
+    /// <see cref="SymbolicTransformationStatus.ConstructionFailure"/> to uphold the non-throwing
+    /// contract of <c>TryDerivate</c> and <c>TryIntegrate</c>.
+    /// </summary>
     [TestMethod]
     public void TryClassify_UnexpectedException_ReportsConstructionFailure()
     {
@@ -227,6 +298,10 @@ public class SymbolicTransformationResultTests
         Assert.AreSame(ex, result.InnerException);
     }
 
+    /// <summary>
+    /// A <see cref="System.Reflection.TargetInvocationException"/> must be unwrapped before
+    /// classification so that the inner exception drives the status, not the wrapper.
+    /// </summary>
     [TestMethod]
     public void TryClassify_TargetInvocationException_UnwrapsInnerAndClassifies()
     {
@@ -238,6 +313,11 @@ public class SymbolicTransformationResultTests
         Assert.AreEqual(SymbolicTransformationStatus.InvalidInput, result.Status);
     }
 
+    /// <summary>
+    /// <see cref="MathExpressionExtensions.TryDerivate{T}"/> must never propagate an exception;
+    /// any internal failure must be returned as a <see cref="SymbolicTransformationResult"/> with
+    /// an appropriate failure status.
+    /// </summary>
     [TestMethod]
     public void TryDerivate_UnexpectedInternalException_DoesNotThrow_ReportsConstructionFailure()
     {

@@ -123,12 +123,20 @@ public class ExpressionTransformerTests
     /// <summary>Exposes the protected ReplaceArguments method for direct unit testing.</summary>
     private sealed class ExposedTransformer : ExpressionTransformer
     {
+        /// <summary>
+        /// Calls the protected <see cref="ExpressionTransformer.ReplaceArguments"/> method, making
+        /// it accessible from unit tests without subclassing the full transformer hierarchy.
+        /// </summary>
         public Expression ExposeReplaceArguments(
             Expression e,
             ParameterExpression[] oldParameters,
             Expression[] newParameters)
             => ReplaceArguments(e, oldParameters, newParameters);
 
+        /// <summary>
+        /// Copies the expression with the supplied sub-expressions so the transformer does not
+        /// throw when no signature method matches (required by the abstract base class contract).
+        /// </summary>
         protected override Expression FinalizeExpression(Expression e, Expression[] parameters)
             => CopyExpression(e, parameters);
     }
