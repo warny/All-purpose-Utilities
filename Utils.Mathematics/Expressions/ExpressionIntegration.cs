@@ -220,7 +220,7 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
 
         throw new NotSupportedException(
             $"Cannot preserve the {(isChecked ? "checked " : string.Empty)}conversion from '{transformedOperand.Type}' " +
-            $"to '{original.Type}': only same-type conversions and unchecked numeric widenings are supported.");
+            $"to '{original.Type}': only same-type conversions and unchecked numeric widenings are supported.").Tag(original);
     }
     /// <summary>
     /// Integrates a numeric constant by multiplying it with the integration parameter.
@@ -991,6 +991,23 @@ public class ExpressionIntegration<T> : ExpressionTransformer where T : IFloatin
                 ),
                 c
             );
+    }
+
+    /// <summary>
+    /// Called when no integration rule matches the current node. Replaces the base transformer's generic
+    /// <see cref="Exception"/> with a specific, node-tagged <see cref="NotSupportedException"/>, so a
+    /// failed integration is distinguishable as "not integrable" (see TODO-2026-07-11-pass3.md item #42)
+    /// and <see cref="MathExpressionExtensions.TryIntegrate{T}"/> can surface the offending node.
+    /// </summary>
+    /// <param name="e">The expression that could not be integrated.</param>
+    /// <param name="parameters">Prepared child expressions (unused; no rule consumed them).</param>
+    /// <returns>Never returns; always throws.</returns>
+    /// <exception cref="NotSupportedException">Always thrown, tagged with <paramref name="e"/>.</exception>
+    protected override Expression FinalizeExpression(Expression e, Expression[] parameters)
+    {
+        ArgumentNullException.ThrowIfNull(e);
+        throw new NotSupportedException(
+            $"No integration rule is registered for the expression '{e.NodeType}'.").Tag(e);
     }
 
 }

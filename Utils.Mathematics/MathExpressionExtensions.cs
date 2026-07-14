@@ -363,6 +363,153 @@ public static class MathExpressionExtensions
         return Expression.Lambda(expression.Body.Simplify(), e.Parameters);
     }
 
+    /// <summary>
+    /// Attempts to differentiate <paramref name="e"/> with respect to the parameter named
+    /// <paramref name="paramName"/> without throwing, returning a structured
+    /// <see cref="SymbolicTransformationResult"/> that distinguishes success (exact or numeric-fallback),
+    /// unsupported expression, unsupported scalar operation, invalid input, and construction failure
+    /// (see TODO-2026-07-11-pass3.md item #42). The throwing <see cref="Derivate{T}(LambdaExpression, string)"/>
+    /// overload is unchanged.
+    /// </summary>
+    /// <typeparam name="T">Floating-point type used by derivative rules.</typeparam>
+    /// <param name="e">Lambda expression to differentiate.</param>
+    /// <param name="paramName">Name of the parameter used as the differentiation variable.</param>
+    /// <param name="allowNumericalFallback">
+    /// When <see langword="true"/>, unknown single-argument methods are approximated with a centered
+    /// finite difference and the result reports <see cref="SymbolicTransformationResult.IsExact"/> as
+    /// <see langword="false"/>; when <see langword="false"/> (default) such a method yields
+    /// <see cref="SymbolicTransformationStatus.UnsupportedExpression"/>.
+    /// </param>
+    /// <returns>A structured result describing the outcome.</returns>
+    public static SymbolicTransformationResult TryDerivate<T>(this LambdaExpression e, string paramName, bool allowNumericalFallback = false)
+        where T : IFloatingPoint<T>
+    {
+        if (e is null)
+        {
+            return SymbolicTransformationResult.Failure(SymbolicTransformationStatus.InvalidInput, "The lambda expression is null.");
+        }
+
+        try
+        {
+            var derivation = new ExpressionDerivation<T>(paramName, allowNumericalFallback);
+            var derived = derivation.Derivate(e, out bool isExact);
+            var simplified = Expression.Lambda(((LambdaExpression)derived).Body.Simplify(), e.Parameters);
+            return SymbolicTransformationResult.SuccessResult(simplified, isExact);
+        }
+        catch (Exception ex) when (TryClassify(ex, out SymbolicTransformationResult classified))
+        {
+            return classified;
+        }
+    }
+
+    /// <summary>
+    /// Attempts to integrate <paramref name="e"/> with respect to the parameter named
+    /// <paramref name="paramName"/> without throwing, returning a structured
+    /// <see cref="SymbolicTransformationResult"/> (see TODO-2026-07-11-pass3.md item #42). A successful
+    /// symbolic integral always reports <see cref="SymbolicTransformationResult.IsExact"/> as
+    /// <see langword="true"/> (integration has no numeric fallback). The throwing
+    /// <see cref="Integrate{T}(LambdaExpression, string)"/> overload is unchanged.
+    /// </summary>
+    /// <typeparam name="T">Floating-point type used by integration rules.</typeparam>
+    /// <param name="e">Lambda expression to integrate.</param>
+    /// <param name="paramName">Name of the parameter used as the integration variable.</param>
+    /// <returns>A structured result describing the outcome.</returns>
+    public static SymbolicTransformationResult TryIntegrate<T>(this LambdaExpression e, string paramName)
+        where T : IFloatingPoint<T>
+    {
+        if (e is null)
+        {
+            return SymbolicTransformationResult.Failure(SymbolicTransformationStatus.InvalidInput, "The lambda expression is null.");
+        }
+
+        try
+        {
+            var integration = new ExpressionIntegration<T>(paramName);
+            var integrated = (LambdaExpression)integration.Integrate(e);
+            var simplified = Expression.Lambda(integrated.Body.Simplify(), e.Parameters);
+            return SymbolicTransformationResult.SuccessResult(simplified, isExact: true);
+        }
+        catch (Exception ex) when (TryClassify(ex, out SymbolicTransformationResult classified))
+        {
+            return classified;
+        }
+    }
+
+    /// <summary>
+    /// Classifies a categorized exception thrown during a symbolic transformation into a
+    /// <see cref="SymbolicTransformationResult"/>. Only the specific exception types the transformer is
+    /// documented to throw are handled here; any other exception is left to propagate (there is no global
+    /// <c>catch (Exception)</c>). Returns <see langword="false"/> — declining to handle — for exceptions
+    /// outside the recognized vocabulary so the exception filter lets them through unchanged.
+    /// </summary>
+    /// <param name="ex">The caught exception.</param>
+    /// <param name="result">The classified result, when this method returns <see langword="true"/>.</param>
+    /// <returns><see langword="true"/> when <paramref name="ex"/> was recognized and classified.</returns>
+    private static bool TryClassify(Exception ex, out SymbolicTransformationResult result)
+    {
+        // Transformation rules are invoked by the transformer through reflection
+        // (MethodInfo.Invoke), which wraps any exception a rule raises in a
+        // TargetInvocationException. Unwrap it so the underlying categorized exception drives
+        // classification (and its node tag / message survive).
+        if (ex is TargetInvocationException { InnerException: not null } tie)
+        {
+            ex = tie.InnerException;
+        }
+
+        switch (ex)
+        {
+            case UnsupportedScalarOperationException scalar:
+                result = SymbolicTransformationResult.Failure(
+                    SymbolicTransformationStatus.UnsupportedScalarOperation, scalar.Message, innerException: scalar);
+                return true;
+
+            case ArgumentNullException nullArg:
+                result = SymbolicTransformationResult.Failure(
+                    SymbolicTransformationStatus.InvalidInput, nullArg.Message, innerException: nullArg);
+                return true;
+
+            case InvalidOperationException invalid:
+                // Ambiguous or foreign differentiation/integration parameter.
+                result = SymbolicTransformationResult.Failure(
+                    SymbolicTransformationStatus.InvalidInput, invalid.Message, innerException: invalid);
+                return true;
+
+            case NotSupportedException notSupported:
+                // Unknown method (fallback disabled), unsupported conversion, or unknown node type.
+                result = SymbolicTransformationResult.Failure(
+                    SymbolicTransformationStatus.UnsupportedExpression, notSupported.Message,
+                    unsupportedNode: ExtractUnsupportedNode(notSupported), innerException: notSupported);
+                return true;
+
+            case InvalidProgramException program:
+                result = SymbolicTransformationResult.Failure(
+                    SymbolicTransformationStatus.ConstructionFailure, program.Message, innerException: program);
+                return true;
+
+            case ArgumentException argument:
+                // Malformed expression-tree construction (e.g. mismatched operand types).
+                result = SymbolicTransformationResult.Failure(
+                    SymbolicTransformationStatus.ConstructionFailure, argument.Message, innerException: argument);
+                return true;
+
+            default:
+                result = null!;
+                return false;
+        }
+    }
+
+    /// <summary>
+    /// Extracts the offending expression node from a categorized exception when it carries one.
+    /// </summary>
+    /// <param name="ex">The exception to inspect.</param>
+    /// <returns>The unsupported node when available; otherwise <see langword="null"/>.</returns>
+    private static Expression? ExtractUnsupportedNode(Exception ex) =>
+        ex.Data.Contains(UnsupportedNodeKey) ? ex.Data[UnsupportedNodeKey] as Expression : null;
+
+    /// <summary>
+    /// <see cref="Exception.Data"/> key under which the transformer stores the offending node, when known.
+    /// </summary>
+    internal const string UnsupportedNodeKey = "Utils.Mathematics.Expressions.UnsupportedNode";
 }
 
 /// <summary>
