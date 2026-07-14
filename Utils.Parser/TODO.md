@@ -215,20 +215,65 @@ documentation de la façade runtime ne sont pas traités par cette correction.
 `BuildSemanticPredicateSymbols` et `BuildParserActionSymbols`, ainsi que leurs méthodes `Add...Symbol`,
 répètent la gestion de `RuleName`, `InputPosition`, `AlternativeIndex` et `ElementIndex`.
 
-**Fix proposé** : créer une méthode privée commune exploitant les noms de propriétés partagés par les
-contextes d'exécution. Éviter d'ajouter une interface publique uniquement pour cette factorisation si
-elle n'apporte pas d'autre bénéfice architectural.
+**Fix proposé** : conserver ce chantier comme une factorisation locale et limitée de
+`ExpressionEmbeddedCodePreparer`. Créer un constructeur privé commun de symboles exploitant les
+propriétés partagées par `SemanticPredicateEvaluationContext` et `ParserActionExecutionContext`, avec
+des wrappers spécialisés courts si ceux-ci améliorent la lisibilité.
 
-### 8. Mutualiser prudemment le parcours des contenus parser et lexer
-Les parcours récursifs parser et lexer traitent les mêmes types de nœuds (`G4Alternation`,
-`G4Alternative`, `G4Sequence`, `G4Quantifier`, `G4Negation`, `G4EmbeddedAction`).
+Ne pas introduire une interface publique uniquement pour ces quatre propriétés. Une petite stratégie
+privée ou interne n'est justifiée que si l'audit révèle de vraies différences de résolution entre
+plusieurs familles de contextes runtime. Ce point ne doit pas servir à anticiper la mutualisation plus
+large parser/lexer décrite au point 8.
 
-Les règles d'indexation runtime du parser diffèrent toutefois de celles du lexer, notamment pour les
-quantificateurs, la négation et la récursion gauche.
+### 8. Introduire des moteurs communs avec stratégies parser/lexer spécialisées
+Plusieurs zones de `GrammarEmitter` répètent le même algorithme général et ne diffèrent que par les
+règles propres au parser ou au lexer :
 
-**Fix proposé** : n'extraire qu'un mécanisme de visite neutre ou des helpers réellement communs. Ne
-pas fusionner les deux parcours au moyen de booléens ou d'une logique conditionnelle qui masquerait
-les invariants runtime.
+- collecte récursive des hooks embarqués ;
+- calcul ou propagation des indices d'alternative et d'élément ;
+- choix des emplacements de transformation ;
+- conventions de nommage des méthodes générées ;
+- génération des dispatchers runtime de prédicats et d'actions ;
+- génération des méthodes de hooks et de leurs signatures.
+
+Les différences sont réelles et doivent rester explicites : ordre et priorité des alternatives,
+récursion gauche parser, traitement des quantificateurs et négations, modes lexer, types de contexte,
+signatures, types de résultat et appels de fallback.
+
+**Direction architecturale retenue** : utiliser la composition sous la forme suivante :
+
+1. un moteur commun porte l'algorithme stable ;
+2. une stratégie spécialisée parser ou lexer fournit uniquement les décisions différentes ;
+3. un petit contexte immuable transporte l'état variable du parcours, par exemple le nom de règle,
+   l'index d'alternative et l'index d'élément ;
+4. des descripteurs immuables sont préférés aux interfaces lorsque les différences sont uniquement des
+   valeurs de génération ;
+5. les wrappers parser et lexer restent explicites et choisissent la stratégie ou le descripteur
+   approprié.
+
+Exemples de rôles envisagés, sans imposer prématurément leurs noms exacts :
+
+- `EmbeddedHookCollector` pour le parcours commun ;
+- `IEmbeddedHookCollectionStrategy` avec implémentations parser et lexer ;
+- `HookTraversalPosition` comme valeur immuable de récursion ;
+- un descripteur d'émission pour les dispatchers et méthodes de hooks.
+
+Le moteur commun ne doit pas contenir de booléen `isLexer` ni de gros `switch` central sur le domaine.
+Les stratégies ne doivent pas réimplémenter l'algorithme entier : elles répondent uniquement aux
+points de variation demandés par le moteur. Préférer la composition à une classe de base abstraite
+comportant de nombreuses méthodes virtuelles.
+
+La mise en œuvre doit être progressive et découpée en PR vérifiables :
+
+- **8a — collecte** : extraire le parcours commun et les décisions parser/lexer ;
+- **8b — dispatchers** : factoriser la structure commune des évaluateurs/exécuteurs générés ;
+- **8c — méthodes de hooks** : factoriser les signatures et corps communs à l'aide de descripteurs ;
+- **8d — consolidation** : supprimer les helpers devenus redondants et verrouiller l'architecture avec
+  des tests Roslyn.
+
+Chaque étape doit préserver strictement les indices runtime, l'ordre des hooks, les noms générés, les
+appels au transformer, la source C# produite et le comportement des fallbacks. La récursion gauche et
+les particularités lexer restent des stratégies explicites, pas des branches cachées dans le moteur.
 
 ## Duplications d'intention et lisibilité (priorité moyenne)
 
