@@ -186,6 +186,40 @@ public class AffineSubspaceTests
         Assert.IsFalse(plane.Contains(V(0, 0, 0.1), 1e-9));
     }
 
+    // ── Contains tolerance validation (TODO-pass4 item #48) ─────────────────────
+
+    [TestMethod]
+    public void Contains_NegativeTolerance_Throws()
+    {
+        var plane = AffineSubspace<double>.FromNormals(V(0, 0, 0), V(0, 0, 1));
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => plane.Contains(V(3, 4, 0), -1e-9));
+    }
+
+    [TestMethod]
+    public void Contains_NaNTolerance_Throws()
+    {
+        var plane = AffineSubspace<double>.FromNormals(V(0, 0, 0), V(0, 0, 1));
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => plane.Contains(V(3, 4, 0), double.NaN));
+    }
+
+    /// <summary>
+    /// Before this fix, positive infinity silently made every finite-distance point a "member" of the
+    /// subspace instead of being rejected like the rest of this library's tolerance parameters.
+    /// </summary>
+    [TestMethod]
+    public void Contains_PositiveInfinityTolerance_Throws()
+    {
+        var plane = AffineSubspace<double>.FromNormals(V(0, 0, 0), V(0, 0, 1));
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => plane.Contains(V(3, 4, 100), double.PositiveInfinity));
+    }
+
+    [TestMethod]
+    public void Contains_ZeroToleranceExactMember_ReturnsTrue()
+    {
+        var plane = AffineSubspace<double>.FromNormals(V(0, 0, 0), V(0, 0, 1));
+        Assert.IsTrue(plane.Contains(V(3, 4, 0), 0d));
+    }
+
     // -------------------------------------------------------------------------
     // IntersectWith(Line<T>)
     // -------------------------------------------------------------------------
@@ -365,6 +399,23 @@ public class AffineSubspaceTests
         Assert.IsTrue(fromSpan.Equals(fromNormals));
     }
 
+    // ── GetHashCode consistency (TODO-pass4 item #51) ───────────────────────────
+
+    /// <summary>
+    /// The required equal-implies-same-hash contract must hold even though <see cref="AffineSubspace{T}.GetHashCode"/>
+    /// is deliberately coarser than <see cref="AffineSubspace{T}.Equals(AffineSubspace{T})"/> (see this
+    /// type's XML doc on <c>GetHashCode</c>): two geometrically identical subspaces built from different
+    /// anchors/normal scales must still hash identically.
+    /// </summary>
+    [TestMethod]
+    public void GetHashCode_EqualSubspacesWithDifferentAnchorAndNormalScale_HaveSameHash()
+    {
+        var a = AffineSubspace<double>.FromNormals(V(0, 0, 0), V(0, 0, 1));
+        var b = AffineSubspace<double>.FromNormals(V(5, -3, 0), V(0, 0, 2));
+        Assert.IsTrue(a.Equals(b));
+        Assert.AreEqual(a.GetHashCode(), b.GetHashCode());
+    }
+
     // -------------------------------------------------------------------------
     // Clone
     // -------------------------------------------------------------------------
@@ -376,5 +427,137 @@ public class AffineSubspaceTests
         var clone = (AffineSubspace<double>)original.Clone();
         Assert.IsTrue(original.Equals(clone));
         Assert.IsFalse(ReferenceEquals(original, clone));
+    }
+
+    // -------------------------------------------------------------------------
+    // Null-member validation (TODO-pass4 item #49)
+    // -------------------------------------------------------------------------
+
+    [TestMethod]
+    public void FromSpan_NullAnchor_Throws()
+        => Assert.ThrowsException<ArgumentNullException>(
+            () => AffineSubspace<double>.FromSpan(null!, V(1, 0, 0)));
+
+    [TestMethod]
+    public void FromSpan_NullDirectionsArray_Throws()
+        => Assert.ThrowsException<ArgumentNullException>(
+            () => AffineSubspace<double>.FromSpan(V(0, 0, 0), (Vector<double>[])null!));
+
+    [TestMethod]
+    public void FromSpan_NullDirectionElement_Throws()
+        => Assert.ThrowsException<ArgumentNullException>(
+            () => AffineSubspace<double>.FromSpan(V(0, 0, 0), V(1, 0, 0), null!));
+
+    [TestMethod]
+    public void FromNormals_NullAnchor_Throws()
+        => Assert.ThrowsException<ArgumentNullException>(
+            () => AffineSubspace<double>.FromNormals(null!, V(0, 0, 1)));
+
+    [TestMethod]
+    public void FromNormals_NullNormalsArray_Throws()
+        => Assert.ThrowsException<ArgumentNullException>(
+            () => AffineSubspace<double>.FromNormals(V(0, 0, 0), (Vector<double>[])null!));
+
+    [TestMethod]
+    public void FromNormals_NullNormalElement_Throws()
+        => Assert.ThrowsException<ArgumentNullException>(
+            () => AffineSubspace<double>.FromNormals(V(0, 0, 0), V(0, 0, 1), null!));
+
+    [TestMethod]
+    public void Project_NullPoint_Throws()
+    {
+        var plane = AffineSubspace<double>.FromNormals(V(0, 0, 0), V(0, 0, 1));
+        Assert.ThrowsException<ArgumentNullException>(() => plane.Project(null!));
+    }
+
+    [TestMethod]
+    public void DistanceTo_NullPoint_Throws()
+    {
+        var plane = AffineSubspace<double>.FromNormals(V(0, 0, 0), V(0, 0, 1));
+        Assert.ThrowsException<ArgumentNullException>(() => plane.DistanceTo(null!));
+    }
+
+    [TestMethod]
+    public void Contains_NullPoint_Throws()
+    {
+        var plane = AffineSubspace<double>.FromNormals(V(0, 0, 0), V(0, 0, 1));
+        Assert.ThrowsException<ArgumentNullException>(() => plane.Contains(null!, 1e-9));
+    }
+
+    [TestMethod]
+    public void IntersectWith_NullLine_Throws()
+    {
+        var plane = AffineSubspace<double>.FromNormals(V(0, 0, 0), V(0, 0, 1));
+        Assert.ThrowsException<ArgumentNullException>(() => plane.IntersectWith((Line<double>)null!));
+    }
+
+    [TestMethod]
+    public void IntersectWith_NullAffineSubspace_Throws()
+    {
+        var plane = AffineSubspace<double>.FromNormals(V(0, 0, 0), V(0, 0, 1));
+        Assert.ThrowsException<ArgumentNullException>(() => plane.IntersectWith((AffineSubspace<double>)null!));
+    }
+
+    // -------------------------------------------------------------------------
+    // Explicit rank tolerance (TODO-pass4 item #50)
+    // -------------------------------------------------------------------------
+
+    [TestMethod]
+    public void FromSpan_ExplicitRankTolerance_StillProducesCorrectSubspace()
+    {
+        var s = AffineSubspace<double>.FromSpan(V(0, 0, 0), 1e-6, V(1, 0, 0), V(0, 1, 0));
+        Assert.AreEqual(2, s.Dimension);
+    }
+
+    [TestMethod]
+    public void FromSpan_LooseRankTolerance_TreatsNearDependentDirectionAsDependent()
+    {
+        // A direction that is only slightly off collinear with the first one is treated as dependent
+        // when the caller supplies a looser tolerance than the tiny default epsilon.
+        var s = AffineSubspace<double>.FromSpan(V(0, 0, 0), 1e-3, V(1, 0, 0), V(1, 1e-6, 0));
+        Assert.AreEqual(1, s.Dimension);
+    }
+
+    [TestMethod]
+    public void FromSpan_NegativeRankTolerance_Throws()
+        => Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => AffineSubspace<double>.FromSpan(V(0, 0, 0), -1e-9, V(1, 0, 0)));
+
+    [TestMethod]
+    public void FromNormals_ExplicitRankTolerance_StillProducesCorrectSubspace()
+    {
+        var s = AffineSubspace<double>.FromNormals(V(0, 0, 0), 1e-6, V(0, 0, 1));
+        Assert.AreEqual(2, s.Dimension);
+    }
+
+    [TestMethod]
+    public void FromNormals_NegativeRankTolerance_Throws()
+        => Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => AffineSubspace<double>.FromNormals(V(0, 0, 0), -1e-9, V(0, 0, 1)));
+
+    // -------------------------------------------------------------------------
+    // ToString format/provider propagation (TODO-pass4 item #52)
+    // -------------------------------------------------------------------------
+
+    [TestMethod]
+    public void ToString_WithFormat_AppliesFormatToAnchorCoordinates()
+    {
+        var s = AffineSubspace<double>.FromNormals(V(1.23456, 2.5, 0), V(0, 0, 1));
+
+        string formatted = s.ToString("F2", System.Globalization.CultureInfo.InvariantCulture);
+
+        StringAssert.Contains(formatted, "1.23");
+        StringAssert.Contains(formatted, "2.50");
+    }
+
+    [TestMethod]
+    public void ToString_WithCulture_UsesCultureSpecificDecimalSeparator()
+    {
+        var s = AffineSubspace<double>.FromNormals(V(1.5, 0, 0), V(0, 0, 1));
+        var culture = new System.Globalization.CultureInfo("fr-FR");
+
+        string formatted = s.ToString("F1", culture);
+
+        StringAssert.Contains(formatted, "1,5");
     }
 }

@@ -516,6 +516,42 @@ public class VectorTests
     }
 
     [TestMethod]
+    public void AngleWith_NullSelf_Throws()
+    {
+        Vector<double> v1 = null;
+        var v2 = new Vector<double>(1d, 0d);
+        Assert.ThrowsException<ArgumentNullException>(() => v1.AngleWith(v2));
+    }
+
+    [TestMethod]
+    public void AngleWith_NullOther_Throws()
+    {
+        var v1 = new Vector<double>(1d, 0d);
+        Vector<double> v2 = null;
+        Assert.ThrowsException<ArgumentNullException>(() => v1.AngleWith(v2));
+    }
+
+    [TestMethod]
+    public void AngleWith_LargeParallelVectors_ReturnsZero()
+    {
+        // Regression for norm-product overflow (item #70): each norm is 1e200, so
+        // self.Norm * other.Norm = 1e400 overflows to infinity; the old cosine division
+        // produced NaN and Acos returned NaN. The fix normalizes to (1,0) first, making
+        // the cosine exactly 1.0 and the angle exactly 0.
+        var v1 = new Vector<double>(1e200, 0d);
+        var v2 = new Vector<double>(1e200, 0d);
+        Assert.AreEqual(0.0, v1.AngleWith(v2), 1e-9);
+    }
+
+    [TestMethod]
+    public void AngleWith_NaNComponent_Throws()
+    {
+        var v1 = new Vector<double>(double.NaN, 0d);
+        var v2 = new Vector<double>(1d, 0d);
+        Assert.ThrowsException<InvalidOperationException>(() => v1.AngleWith(v2));
+    }
+
+    [TestMethod]
     public void EqualityOperator_BothNull_ReturnsTrue()
     {
         Vector<double> left = null;
@@ -617,6 +653,24 @@ public class VectorTests
     {
         Assert.AreEqual(5.0, new Vector<double>(3d, 4d).Norm, 1e-12);
         Assert.AreEqual(5.0, new Vector<double>(4d, 3d).Norm, 1e-12);
+    }
+
+    // ── Raw scalar division operator (TODO-pass4 item #56) ──────────────────────
+
+    /// <summary>
+    /// The raw <c>/</c> operator is documented as unchecked IEEE division (see its XML doc): a zero
+    /// divisor propagates <see cref="double.PositiveInfinity"/>/<see cref="double.NegativeInfinity"/> per
+    /// component instead of throwing. Callers needing a validated division use a higher-level member such
+    /// as <see cref="Vector{T}.Normalize"/> instead.
+    /// </summary>
+    [TestMethod]
+    public void DivisionOperator_ByZero_ProducesInfinityInsteadOfThrowing()
+    {
+        var v = new Vector<double>(1d, -1d, 0d);
+        var result = v / 0d;
+        Assert.AreEqual(double.PositiveInfinity, result[0]);
+        Assert.AreEqual(double.NegativeInfinity, result[1]);
+        Assert.IsTrue(double.IsNaN(result[2]));
     }
 }
 

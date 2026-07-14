@@ -221,7 +221,16 @@ public partial class Vector<T> :
     /// Divides a vector by a scalar.
     /// </summary>
     /// <param name="vector">Vector to divide.</param>
-    /// <param name="number">Scalar value.</param>
+    /// <param name="number">
+    /// Scalar divisor. Not validated: this raw operator performs plain component-wise IEEE division, so
+    /// a zero, near-zero, <see langword="NaN"/>, or infinite divisor propagates the corresponding
+    /// infinity/NaN component per <typeparamref name="T"/>'s own IEEE semantics rather than throwing (see
+    /// TODO-2026-07-11-pass4.md item #56). Higher-level members that need a numerically reliable result
+    /// validate their own denominator before reaching this operator - e.g. <see cref="Normalize"/> rejects
+    /// a near-zero norm, and <see cref="ComputeBarycenter{TW}(Func{TW, T}, Func{TW, Vector{T}}, IEnumerable{TW})"/>
+    /// rejects a zero/non-finite total weight - rather than this primitive operator growing an arbitrary,
+    /// undocumented "near-zero" threshold of its own.
+    /// </param>
     /// <returns>The scaled vector.</returns>
     public static Vector<T> operator /(Vector<T> vector, T number)
     {

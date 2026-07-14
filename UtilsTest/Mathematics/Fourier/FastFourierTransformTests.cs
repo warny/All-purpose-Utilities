@@ -132,6 +132,157 @@ public class FastFourierTransformTests
         Assert.ThrowsException<ArgumentOutOfRangeException>(() => samples.GetFrequencies(0));
     }
 
+    // ── Null/empty/non-finite validation (TODO-pass4 item #53) ─────────────────
+
+    [TestMethod]
+    public void GetFrequencies_NaNSampleRate_Throws()
+    {
+        // Previously only "sampleRate <= 0" was checked, silently accepting NaN (NaN <= 0 is false).
+        Complex[] samples = [1, 1, 1, 1];
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => samples.GetFrequencies(double.NaN));
+    }
+
+    [TestMethod]
+    public void GetFrequencies_PositiveInfinitySampleRate_Throws()
+    {
+        Complex[] samples = [1, 1, 1, 1];
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => samples.GetFrequencies(double.PositiveInfinity));
+    }
+
+    [TestMethod]
+    public void GetFrequencies_NullTransform_Throws()
+    {
+        Complex[] transform = null!;
+        Assert.ThrowsException<ArgumentNullException>(() => transform.GetFrequencies(8));
+    }
+
+    [TestMethod]
+    public void GetFrequencies_EmptyTransform_Throws()
+    {
+        // Previously computed sampleRate / 0 (an unused infinity) and silently returned an empty array.
+        Complex[] transform = [];
+        Assert.ThrowsException<ArgumentException>(() => transform.GetFrequencies(8));
+    }
+
+    [TestMethod]
+    public void GetAmplitudes_NullTransform_Throws()
+    {
+        Complex[] transform = null!;
+        Assert.ThrowsException<ArgumentNullException>(() => transform.GetAmplitudes());
+    }
+
+    [TestMethod]
+    public void GetAmplitudes_EmptyTransform_Throws()
+    {
+        Complex[] transform = [];
+        Assert.ThrowsException<ArgumentException>(() => transform.GetAmplitudes());
+    }
+
+    [TestMethod]
+    public void GetPhases_NullTransform_Throws()
+    {
+        Complex[] transform = null!;
+        Assert.ThrowsException<ArgumentNullException>(() => transform.GetPhases());
+    }
+
+    [TestMethod]
+    public void GetPhases_EmptyTransform_Throws()
+    {
+        Complex[] transform = [];
+        Assert.ThrowsException<ArgumentException>(() => transform.GetPhases());
+    }
+
+    // ── One-sided / all-bin spectrum APIs (TODO-pass4 item #54) ────────────────
+
+    [TestMethod]
+    public void GetAllBinFrequencies_EightBinTransform_MatchesFftfreqConvention()
+    {
+        // N=8, sampleRate=8 → step=1. Positive bins 0..3, negative (aliased) bins -4..-1 for 4..7.
+        Complex[] transform = new Complex[8];
+        double[] frequencies = transform.GetAllBinFrequencies(8);
+        CollectionAssert.AreEqual(new double[] { 0, 1, 2, 3, -4, -3, -2, -1 }, frequencies);
+    }
+
+    [TestMethod]
+    public void GetAllBinFrequencies_MatchesAmplitudesAndPhasesBinCount()
+    {
+        Complex[] transform = new Complex[8];
+        Assert.AreEqual(transform.GetAmplitudes().Length, transform.GetAllBinFrequencies(8).Length);
+        Assert.AreEqual(transform.GetPhases().Length, transform.GetAllBinFrequencies(8).Length);
+    }
+
+    [TestMethod]
+    public void GetOneSidedFrequencies_EvenLengthDefault_ExcludesNyquistAndMatchesLegacyGetFrequencies()
+    {
+        Complex[] transform = new Complex[8];
+        CollectionAssert.AreEqual(transform.GetFrequencies(8), transform.GetOneSidedFrequencies(8));
+    }
+
+    [TestMethod]
+    public void GetOneSidedFrequencies_EvenLengthIncludeNyquist_AddsNyquistBin()
+    {
+        // N=8, sampleRate=8 → Nyquist bin (index 4) is frequency 4.
+        Complex[] transform = new Complex[8];
+        double[] frequencies = transform.GetOneSidedFrequencies(8, includeNyquist: true);
+        CollectionAssert.AreEqual(new double[] { 0, 1, 2, 3, 4 }, frequencies);
+    }
+
+    [TestMethod]
+    public void GetOneSidedFrequencies_OddLength_IncludeNyquistHasNoEffect()
+    {
+        // N=7 has no separate Nyquist bin: both calls return the same 4 bins.
+        Complex[] transform = new Complex[7];
+        double[] withoutNyquist = transform.GetOneSidedFrequencies(7);
+        double[] withNyquist = transform.GetOneSidedFrequencies(7, includeNyquist: true);
+        CollectionAssert.AreEqual(new double[] { 0, 1, 2, 3 }, withoutNyquist);
+        CollectionAssert.AreEqual(withoutNyquist, withNyquist);
+    }
+
+    [TestMethod]
+    public void GetOneSidedAmplitudesAndPhases_MatchOneSidedFrequenciesBinCount()
+    {
+        int n = 8;
+        Complex[] samples = new Complex[n];
+        for (int i = 0; i < n; i++)
+            samples[i] = Math.Sin(2 * Math.PI * i / n);
+        FastFourierTransform.Transform(samples);
+
+        Assert.AreEqual(samples.GetOneSidedFrequencies(n).Length, samples.GetOneSidedAmplitudes().Length);
+        Assert.AreEqual(samples.GetOneSidedFrequencies(n).Length, samples.GetOneSidedPhases().Length);
+        Assert.AreEqual(
+            samples.GetOneSidedFrequencies(n, includeNyquist: true).Length,
+            samples.GetOneSidedAmplitudes(includeNyquist: true).Length);
+    }
+
+    [TestMethod]
+    public void GetOneSidedAmplitudes_SineWave_PeakAtFrequency1()
+    {
+        int n = 8;
+        Complex[] samples = new Complex[n];
+        for (int i = 0; i < n; i++)
+            samples[i] = Math.Sin(2 * Math.PI * i / n);
+        FastFourierTransform.Transform(samples);
+
+        double[] amplitudes = samples.GetOneSidedAmplitudes();
+        Assert.AreEqual(4, amplitudes.Length);
+        Assert.AreEqual(4.0, amplitudes[1], Delta);
+        Assert.AreEqual(0.0, amplitudes[0], Delta);
+    }
+
+    [TestMethod]
+    public void GetAllBinFrequencies_NullTransform_Throws()
+    {
+        Complex[] transform = null!;
+        Assert.ThrowsException<ArgumentNullException>(() => transform.GetAllBinFrequencies(8));
+    }
+
+    [TestMethod]
+    public void GetOneSidedFrequencies_EmptyTransform_Throws()
+    {
+        Complex[] transform = [];
+        Assert.ThrowsException<ArgumentException>(() => transform.GetOneSidedFrequencies(8));
+    }
+
     [TestMethod]
     public void GetAmplitudes_ConstantSignal_DcBinIsN()
     {
@@ -173,6 +324,51 @@ public class FastFourierTransformTests
         Assert.AreEqual(0.0, amplitudes[0], Delta);
         for (int k = 2; k <= 6; k++)
             Assert.AreEqual(0.0, amplitudes[k], Delta, $"bin {k}");
+    }
+
+    // ── GetMagnitudes (TODO-pass4 item #55) ─────────────────────────────────────
+
+    /// <summary>
+    /// <see cref="FourierExtensions.GetMagnitudes"/> is an identically-behaving, more accurately-named
+    /// alias for <see cref="FourierExtensions.GetAmplitudes"/> ("amplitude" implies a physically
+    /// normalized value; this is the raw FFT bin magnitude).
+    /// </summary>
+    [TestMethod]
+    public void GetMagnitudes_MatchesGetAmplitudes()
+    {
+        Complex[] samples = [1, 1, 1, 1];
+        FastFourierTransform.Transform(samples);
+
+        CollectionAssert.AreEqual(samples.GetAmplitudes(), samples.GetMagnitudes());
+    }
+
+    [TestMethod]
+    public void GetMagnitudes_ConstantSignal_DcBinIsN()
+    {
+        Complex[] samples = [1, 1, 1, 1];
+        FastFourierTransform.Transform(samples);
+
+        double[] magnitudes = samples.GetMagnitudes();
+        Assert.AreEqual(4.0, magnitudes[0], Delta);
+    }
+
+    [TestMethod]
+    public void GetMagnitudes_NullTransform_Throws()
+    {
+        Complex[] transform = null!;
+        Assert.ThrowsException<ArgumentNullException>(() => transform.GetMagnitudes());
+    }
+
+    [TestMethod]
+    public void GetOneSidedMagnitudes_MatchesGetOneSidedAmplitudes()
+    {
+        Complex[] samples = [1, 1, 1, 1];
+        FastFourierTransform.Transform(samples);
+
+        CollectionAssert.AreEqual(samples.GetOneSidedAmplitudes(), samples.GetOneSidedMagnitudes());
+        CollectionAssert.AreEqual(
+            samples.GetOneSidedAmplitudes(includeNyquist: true),
+            samples.GetOneSidedMagnitudes(includeNyquist: true));
     }
 
     // ── InverseTransform ──────────────────────────────────────────────────────

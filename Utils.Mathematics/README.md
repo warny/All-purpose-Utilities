@@ -1,6 +1,6 @@
 # omy.Utils.Mathematics (advanced math)
 
-`omy.Utils.Mathematics` offers FFTs, symbolic math helpers, SI conversions, and generic linear algebra structures used across the utility family.
+`omy.Utils.Mathematics` offers FFTs, symbolic expression transformers, polynomials, and generic linear algebra structures used across the utility family.
 
 ## Install
 ```bash
@@ -12,16 +12,15 @@ dotnet add package omy.Utils.Mathematics
 
 ## Features
 - Symbolic expression derivation and integration, including generic numeric transformers.
-- Fast Fourier Transform implementation.
-- SI unit conversions and number-to-text conversion utilities.
-- Generic vector and matrix structures for linear algebra operations.
+- Fast Fourier Transform with frequency/magnitude/phase extraction helpers.
+- Polynomial arithmetic with canonical form and symbolic calculus.
+- Generic vector and matrix structures for linear algebra (arithmetic, inversion, LU decomposition, affine subspaces, geometric transformations).
 
 ## Quick usage
 ```csharp
 int[] line = Utils.Mathematics.MathEx.ComputePascalTriangleLine(4); // [1,4,6,4,1]
 Complex[] signal = [1, 1, 0, 0];
-var fft = new Utils.Mathematics.Fourrier.FastFourrierTransform();
-fft.Transform(signal);
+Utils.Mathematics.Fourier.FastFourierTransform.Transform(signal);
 ```
 
 ## MathEx — extended math utilities
@@ -79,17 +78,16 @@ MathEx.Max(3, 1, 4, 1, 5);   // 5
 
 ## FFT examples
 
-`FastFourrierTransform` performs an in-place Cooley-Tukey FFT. The input length must be a power of two.
+`FastFourierTransform` is a static class that performs an in-place Cooley-Tukey FFT. The input length must be a power of two.
 
 ### Forward transform
 
 ```csharp
 using System.Numerics;
-using Utils.Mathematics.Fourrier;
+using Utils.Mathematics.Fourier;
 
 Complex[] signal = [1, 1, 0, 0, 0, 0, 0, 0]; // 8 samples
-var fft = new FastFourrierTransform();
-fft.Transform(signal);
+FastFourierTransform.Transform(signal);
 // signal now contains the frequency-domain representation
 // only signal[0..N/2] carry unique information (Nyquist)
 ```
@@ -105,10 +103,14 @@ for (int i = 0; i < frequencies.Length; i++)
 
 ### Transform a sub-range
 
+There is no built-in sub-range overload. Extract a power-of-two slice, transform it, and copy it back:
+
 ```csharp
 Complex[] buffer = new Complex[16];
 // ... fill buffer ...
-fft.Transform(buffer, start: 4, end: 12); // transform samples [4..12)
+Complex[] subRange = buffer[4..12]; // length 8, a power of two
+FastFourierTransform.Transform(subRange);
+Array.Copy(subRange, 0, buffer, 4, subRange.Length);
 ```
 
 ## Symbolic expression examples
@@ -144,7 +146,7 @@ float d = (float)df.Compile().DynamicInvoke(3f)!; // 7
 
 ## Vector examples
 
-`Vector<T>` is a generic immutable vector that works with any `IFloatingPoint<T>` type.
+`Vector<T>` is a generic immutable vector. The base constraint is `IFloatingPoint<T>, IRootFunctions<T>` (required for `Norm`/`Normalize`); some operations such as `AngleWith` additionally require `ITrigonometricFunctions<T>`.
 
 ### Construction and basic properties
 
@@ -193,7 +195,7 @@ var a = new Vector<double>(0.0, 0.0);
 var b = new Vector<double>(4.0, 0.0);
 var c = new Vector<double>(0.0, 4.0);
 
-var (_, center) = a.ComputeBarycenter(b, c); // (1.33, 1.33)
+var (_, center) = Vector<double>.ComputeBarycenter(a, b, c); // (1.33, 1.33)
 
 // Weighted barycenter
 var (_, weighted) = Vector<double>.ComputeBarycenter(
@@ -203,7 +205,7 @@ var (_, weighted) = Vector<double>.ComputeBarycenter(
 
 ## Matrix examples
 
-`Matrix<T>` is a generic immutable matrix. Supports `+`, `-`, `*` (matrix/scalar/vector), `/` (scalar), inversion, LU decomposition, and determinant.
+`Matrix<T>` is a generic immutable matrix with base constraint `IFloatingPoint<T>, IRootFunctions<T>`. Supports `+`, `-`, `*` (matrix/scalar/vector), `/` (scalar), inversion, LU decomposition, and determinant. Transformation factories (`MatrixTransformations`) may additionally require `ITrigonometricFunctions<T>`.
 
 ### Construction
 
@@ -257,7 +259,7 @@ var (L, U, P) = m.DiagonalizeLU();
 Console.WriteLine(m.Rows);          // 2
 Console.WriteLine(m.Columns);       // 2
 Console.WriteLine(m.IsSquare);      // True
-Console.WriteLine(m.IsDiagonalized); // False
+Console.WriteLine(m.IsDiagonal); // False
 ```
 
 ## MatrixTransformations examples
