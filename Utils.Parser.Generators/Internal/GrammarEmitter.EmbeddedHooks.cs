@@ -45,63 +45,7 @@ internal static partial class GrammarEmitter
     /// <returns>Deterministic lexer action hook metadata.</returns>
     private static IReadOnlyList<EmbeddedCodeHook> CollectLexerEmbeddedCodeHooks(G4Grammar grammar, IParserEmbeddedCodeTransformer transformer)
     {
-        var hooks = new List<EmbeddedCodeHook>();
-        foreach (var rule in grammar.LexerRules)
-        {
-            CollectLexerEmbeddedCodeHooks(rule.Name, rule.Content, hooks, -1, -1);
-        }
-
-        foreach (var mode in grammar.ExtraModes)
-        {
-            foreach (var rule in mode.Rules)
-            {
-                CollectLexerEmbeddedCodeHooks(rule.Name, rule.Content, hooks, -1, -1);
-            }
-        }
-
-        foreach (var hook in hooks)
-        {
-            hook.EmittedCode = TransformEmbeddedCode(transformer, hook.RawCode, hook.IsPredicate ? ParserEmbeddedCodeLocation.LexerSemanticPredicate : ParserEmbeddedCodeLocation.LexerInlineAction, grammar, new G4Rule { Name = hook.RuleName });
-        }
-
-        return hooks;
-    }
-
-    /// <summary>Recursively collects lexer inline actions from lexer rule content.</summary>
-    private static void CollectLexerEmbeddedCodeHooks(string ruleName, G4Content content, List<EmbeddedCodeHook> hooks, int alternativeIndex, int elementIndex)
-    {
-        switch (content)
-        {
-            case G4Alternation alternation:
-                for (int index = 0; index < alternation.Alternatives.Count; index++)
-                {
-                    CollectLexerEmbeddedCodeHooks(ruleName, alternation.Alternatives[index], hooks, index, -1);
-                }
-                break;
-            case G4Alternative alternative:
-                for (int index = 0; index < alternative.Items.Count; index++)
-                {
-                    CollectLexerEmbeddedCodeHooks(ruleName, alternative.Items[index], hooks, alternativeIndex, index);
-                }
-                break;
-            case G4Sequence sequence:
-                for (int index = 0; index < sequence.Items.Count; index++)
-                {
-                    CollectLexerEmbeddedCodeHooks(ruleName, sequence.Items[index], hooks, alternativeIndex, index);
-                }
-                break;
-            case G4Quantifier quantifier:
-                CollectLexerEmbeddedCodeHooks(ruleName, quantifier.Inner, hooks, alternativeIndex, elementIndex);
-                break;
-            case G4Negation negation:
-                CollectLexerEmbeddedCodeHooks(ruleName, negation.Inner, hooks, alternativeIndex, elementIndex);
-                break;
-            case G4EmbeddedAction action:
-                string prefix = action.IsPredicate ? "__LexerPredicate" : "__LexerAction";
-                string methodName = $"{prefix}_{Sanitize(ruleName)}_{NormalizeIndexForName(alternativeIndex)}_{NormalizeIndexForName(elementIndex)}_{hooks.Count}";
-                hooks.Add(EmbeddedCodeHook.CreateLexer(ruleName, action.Code, action.IsPredicate ? EmbeddedCodeHookKind.SemanticPredicate : EmbeddedCodeHookKind.InlineAction, alternativeIndex, elementIndex, methodName));
-                break;
-        }
+        return EmbeddedHookCollector.Collect(grammar, transformer, LexerEmbeddedHookCollectionStrategy.Instance);
     }
 
     /// <summary>
@@ -112,149 +56,426 @@ internal static partial class GrammarEmitter
     /// <returns>Deterministic hook metadata for embedded parser code.</returns>
     private static IReadOnlyList<EmbeddedCodeHook> CollectEmbeddedCodeHooks(G4Grammar grammar, IParserEmbeddedCodeTransformer transformer)
     {
-        var hooks = new List<EmbeddedCodeHook>();
-        foreach (var rule in grammar.ParserRules)
+        return EmbeddedHookCollector.Collect(grammar, transformer, ParserEmbeddedHookCollectionStrategy.Instance);
+    }
+
+    /// <summary>
+    /// Common embedded-code hook collection engine for parser and lexer generated-C# hooks.
+    /// </summary>
+    private sealed class EmbeddedHookCollector
+    {
+        private readonly IEmbeddedHookCollectionStrategy _strategy;
+
+        /// <summary>
+        /// Initializes the collector with the supplied parser or lexer strategy.
+        /// </summary>
+        /// <param name="strategy">Strategy that owns parser- or lexer-specific traversal differences.</param>
+        private EmbeddedHookCollector(IEmbeddedHookCollectionStrategy strategy)
         {
-            int firstHookIndex = hooks.Count;
-            CollectRuleEmbeddedCodeHooks(rule, hooks);
-            for (int index = firstHookIndex; index < hooks.Count; index++)
+            _strategy = strategy ?? throw new ArgumentNullException(nameof(strategy));
+        }
+
+        /// <summary>
+        /// Collects, orders, and transforms embedded-code hooks using the shared traversal algorithm.
+        /// </summary>
+        /// <param name="grammar">Parsed grammar AST.</param>
+        /// <param name="transformer">Embedded-code transformer used for hook bodies.</param>
+        /// <param name="strategy">Parser or lexer strategy supplying real variation points.</param>
+        /// <returns>Deterministic embedded-code hook metadata.</returns>
+        public static IReadOnlyList<EmbeddedCodeHook> Collect(G4Grammar grammar, IParserEmbeddedCodeTransformer transformer, IEmbeddedHookCollectionStrategy strategy)
+        {
+            return new EmbeddedHookCollector(strategy).Collect(grammar, transformer);
+        }
+
+        /// <summary>
+        /// Collects hooks for every strategy-provided traversal root and transforms each hook once in collection order.
+        /// </summary>
+        /// <param name="grammar">Parsed grammar AST.</param>
+        /// <param name="transformer">Embedded-code transformer used for hook bodies.</param>
+        /// <returns>Deterministic embedded-code hook metadata.</returns>
+        private IReadOnlyList<EmbeddedCodeHook> Collect(G4Grammar grammar, IParserEmbeddedCodeTransformer transformer)
+        {
+            var hooks = new List<EmbeddedCodeHook>();
+            foreach (G4Rule rule in _strategy.EnumerateRules(grammar))
             {
-                EmbeddedCodeHook hook = hooks[index];
-                hook.EmittedCode = TransformEmbeddedCode(transformer, hook.RawCode, hook.IsPredicate ? ParserEmbeddedCodeLocation.SemanticPredicate : ParserEmbeddedCodeLocation.InlineAction, grammar, rule);
+                int firstHookIndex = hooks.Count;
+                foreach (HookTraversalRoot root in _strategy.EnumerateTraversalRoots(rule))
+                {
+                    VisitContent(rule.Name, root.Content, root.InitialPosition, hooks);
+                }
+
+                for (int index = firstHookIndex; index < hooks.Count; index++)
+                {
+                    EmbeddedCodeHook hook = hooks[index];
+                    hook.EmittedCode = TransformEmbeddedCode(transformer, hook.RawCode, _strategy.GetLocation(hook.Kind), grammar, rule);
+                }
+            }
+
+            return hooks;
+        }
+
+        /// <summary>
+        /// Recursively visits grammar content nodes that can contain executable embedded code.
+        /// </summary>
+        /// <param name="ruleName">Owning rule name.</param>
+        /// <param name="content">Grammar content to inspect.</param>
+        /// <param name="position">Current runtime-compatible traversal position.</param>
+        /// <param name="hooks">Destination hook collection.</param>
+        private void VisitContent(string ruleName, G4Content content, HookTraversalPosition position, List<EmbeddedCodeHook> hooks)
+        {
+            switch (content)
+            {
+                case G4Alternation alternation:
+                    IReadOnlyList<G4Alternative> alternatives = _strategy.OrderAlternatives(alternation);
+                    for (int index = 0; index < alternatives.Count; index++)
+                    {
+                        VisitContent(ruleName, alternatives[index], _strategy.EnterAlternative(position, index), hooks);
+                    }
+                    break;
+                case G4Alternative alternative:
+                    VisitAlternative(ruleName, alternative, position, hooks);
+                    break;
+                case G4Sequence sequence:
+                    VisitSequence(ruleName, sequence.Items, position, hooks);
+                    break;
+                case G4Quantifier quantifier:
+                    VisitContent(ruleName, quantifier.Inner, _strategy.EnterQuantifier(position), hooks);
+                    break;
+                case G4Negation negation:
+                    VisitContent(ruleName, negation.Inner, _strategy.EnterNegation(position), hooks);
+                    break;
+                case G4EmbeddedAction action:
+                    AddEmbeddedCodeHook(ruleName, action, position, hooks);
+                    break;
             }
         }
 
-        return hooks;
+        /// <summary>
+        /// Visits one alternative while preserving parser and lexer element-index conventions.
+        /// </summary>
+        /// <param name="ruleName">Owning rule name.</param>
+        /// <param name="alternative">Alternative to inspect.</param>
+        /// <param name="position">Current runtime-compatible traversal position.</param>
+        /// <param name="hooks">Destination hook collection.</param>
+        private void VisitAlternative(string ruleName, G4Alternative alternative, HookTraversalPosition position, List<EmbeddedCodeHook> hooks)
+        {
+            IReadOnlyList<G4Content> items = _strategy.GetAlternativeItems(alternative);
+            if (_strategy.ShouldVisitSingleAlternativeItemDirectly(items))
+            {
+                VisitContent(ruleName, items[0], _strategy.EnterSingleAlternativeItem(position), hooks);
+                return;
+            }
+
+            VisitSequence(ruleName, items, position, hooks);
+        }
+
+        /// <summary>
+        /// Visits sequence items and assigns each child position through the active strategy.
+        /// </summary>
+        /// <param name="ruleName">Owning rule name.</param>
+        /// <param name="items">Sequence items to inspect.</param>
+        /// <param name="position">Current runtime-compatible traversal position.</param>
+        /// <param name="hooks">Destination hook collection.</param>
+        private void VisitSequence(string ruleName, IReadOnlyList<G4Content> items, HookTraversalPosition position, List<EmbeddedCodeHook> hooks)
+        {
+            for (int itemIndex = 0; itemIndex < items.Count; itemIndex++)
+            {
+                VisitContent(ruleName, items[itemIndex], _strategy.EnterSequenceItem(position, itemIndex), hooks);
+            }
+        }
+
+        /// <summary>
+        /// Adds one embedded-code hook with a deterministic method name and strategy-selected owner.
+        /// </summary>
+        /// <param name="ruleName">Owning rule name.</param>
+        /// <param name="action">Embedded action or predicate AST node.</param>
+        /// <param name="position">Runtime-compatible traversal position.</param>
+        /// <param name="hooks">Destination hook collection.</param>
+        private void AddEmbeddedCodeHook(string ruleName, G4EmbeddedAction action, HookTraversalPosition position, List<EmbeddedCodeHook> hooks)
+        {
+            EmbeddedCodeHookKind kind = action.IsPredicate ? EmbeddedCodeHookKind.SemanticPredicate : EmbeddedCodeHookKind.InlineAction;
+            string methodName = _strategy.BuildMethodName(ruleName, kind, position, hooks.Count);
+            hooks.Add(_strategy.CreateHook(ruleName, action.Code, kind, position, methodName));
+        }
     }
 
     /// <summary>
-    /// Collects embedded-code hooks from a parser rule using the same alternative split that
-    /// <c>ParserEngine</c> applies to direct-left-recursive rules.
+    /// Parser- or lexer-specific strategy for the shared embedded-code hook collector.
     /// </summary>
-    /// <param name="rule">Parser rule to inspect.</param>
-    /// <param name="hooks">Destination hook collection.</param>
-    private static void CollectRuleEmbeddedCodeHooks(G4Rule rule, List<EmbeddedCodeHook> hooks)
+    private interface IEmbeddedHookCollectionStrategy
     {
-        var orderedAlternatives = rule.Content.Alternatives.OrderBy(static alternative => alternative.Priority).ToList();
-        var recursiveAlternatives = orderedAlternatives.Where(alternative => StartsWithRuleRef(alternative, rule.Name)).ToList();
-        if (recursiveAlternatives.Count == 0)
-        {
-            CollectEmbeddedCodeHooks(rule.Name, rule.Content, hooks, -1, -1);
-            return;
-        }
+        /// <summary>Enumerates rules in the order used by the generated hook family.</summary>
+        IEnumerable<G4Rule> EnumerateRules(G4Grammar grammar);
 
-        var baseAlternatives = orderedAlternatives.Where(alternative => !StartsWithRuleRef(alternative, rule.Name)).ToList();
-        for (int index = 0; index < baseAlternatives.Count; index++)
-        {
-            CollectEmbeddedCodeHooks(rule.Name, baseAlternatives[index], hooks, index, -1);
-        }
+        /// <summary>Enumerates traversal roots for one rule, including parser left-recursive specialization.</summary>
+        IEnumerable<HookTraversalRoot> EnumerateTraversalRoots(G4Rule rule);
 
-        for (int index = 0; index < recursiveAlternatives.Count; index++)
-        {
-            CollectLeftRecursiveTailEmbeddedCodeHooks(rule.Name, recursiveAlternatives[index], hooks, index);
-        }
+        /// <summary>Orders alternatives for the active domain.</summary>
+        IReadOnlyList<G4Alternative> OrderAlternatives(G4Alternation alternation);
+
+        /// <summary>Creates the child position used when entering an alternation alternative.</summary>
+        HookTraversalPosition EnterAlternative(HookTraversalPosition current, int alternativeIndex);
+
+        /// <summary>Returns the content items that form an alternative traversal view.</summary>
+        IReadOnlyList<G4Content> GetAlternativeItems(G4Alternative alternative);
+
+        /// <summary>Determines whether a one-item alternative keeps the historical direct-item sentinel.</summary>
+        bool ShouldVisitSingleAlternativeItemDirectly(IReadOnlyList<G4Content> items);
+
+        /// <summary>Creates the child position used for a directly visited single alternative item.</summary>
+        HookTraversalPosition EnterSingleAlternativeItem(HookTraversalPosition current);
+
+        /// <summary>Creates the child position used when entering a sequence item.</summary>
+        HookTraversalPosition EnterSequenceItem(HookTraversalPosition current, int itemIndex);
+
+        /// <summary>Creates the child position used when entering quantified content.</summary>
+        HookTraversalPosition EnterQuantifier(HookTraversalPosition current);
+
+        /// <summary>Creates the child position used when entering negated content.</summary>
+        HookTraversalPosition EnterNegation(HookTraversalPosition current);
+
+        /// <summary>Builds the generated C# method name for one hook.</summary>
+        string BuildMethodName(string ruleName, EmbeddedCodeHookKind kind, HookTraversalPosition position, int hookIndex);
+
+        /// <summary>Gets the transformation location for the hook category.</summary>
+        ParserEmbeddedCodeLocation GetLocation(EmbeddedCodeHookKind kind);
+
+        /// <summary>Creates the parser- or lexer-owned hook through the typed factory.</summary>
+        EmbeddedCodeHook CreateHook(string ruleName, string code, EmbeddedCodeHookKind kind, HookTraversalPosition position, string methodName);
     }
 
     /// <summary>
-    /// Recursively collects embedded-code hooks from a grammar element using runtime-compatible alternative and element indexes.
+    /// Immutable traversal root passed from a strategy to the shared collector.
     /// </summary>
-    /// <param name="ruleName">Owning parser rule name.</param>
-    /// <param name="content">Grammar content to inspect.</param>
-    /// <param name="hooks">Destination hook collection.</param>
-    /// <param name="alternativeIndex">Current runtime alternative index, or <c>-1</c> when unavailable.</param>
-    /// <param name="elementIndex">Current runtime element index, or <c>-1</c> when unavailable.</param>
-    private static void CollectEmbeddedCodeHooks(string ruleName, G4Content content, List<EmbeddedCodeHook> hooks, int alternativeIndex, int elementIndex)
+    private readonly struct HookTraversalRoot
     {
-        switch (content)
+        /// <summary>
+        /// Initializes an immutable traversal root.
+        /// </summary>
+        /// <param name="content">Grammar content root to visit.</param>
+        /// <param name="initialPosition">Initial runtime-compatible traversal position.</param>
+        public HookTraversalRoot(G4Content content, HookTraversalPosition initialPosition)
         {
-            case G4Alternation alternation:
-                var orderedAlternatives = alternation.Alternatives.OrderBy(static alternative => alternative.Priority).ToList();
-                for (int index = 0; index < orderedAlternatives.Count; index++)
+            Content = content ?? throw new ArgumentNullException(nameof(content));
+            InitialPosition = initialPosition;
+        }
+
+        /// <summary>Gets the grammar content root to visit.</summary>
+        public G4Content Content { get; }
+
+        /// <summary>Gets the initial runtime-compatible traversal position.</summary>
+        public HookTraversalPosition InitialPosition { get; }
+    }
+
+    /// <summary>
+    /// Immutable runtime-compatible alternative and element indexes for hook traversal.
+    /// </summary>
+    private readonly struct HookTraversalPosition
+    {
+        /// <summary>
+        /// Initializes an immutable traversal position.
+        /// </summary>
+        /// <param name="alternativeIndex">Current alternative index, or <c>-1</c> when unavailable.</param>
+        /// <param name="elementIndex">Current element index, or <c>-1</c> when unavailable.</param>
+        public HookTraversalPosition(int alternativeIndex, int elementIndex)
+        {
+            AlternativeIndex = alternativeIndex;
+            ElementIndex = elementIndex;
+        }
+
+        /// <summary>Gets the current alternative index, or <c>-1</c> when unavailable.</summary>
+        public int AlternativeIndex { get; }
+
+        /// <summary>Gets the current element index, or <c>-1</c> when unavailable.</summary>
+        public int ElementIndex { get; }
+
+        /// <summary>Gets the historical sentinel position used before an alternative or element is selected.</summary>
+        public static HookTraversalPosition Unspecified { get; } = new HookTraversalPosition(-1, -1);
+    }
+
+    /// <summary>
+    /// Parser hook collection strategy preserving parser priority, left-recursion, and runtime index rules.
+    /// </summary>
+    private sealed class ParserEmbeddedHookCollectionStrategy : IEmbeddedHookCollectionStrategy
+    {
+        /// <summary>Gets the singleton parser strategy instance.</summary>
+        public static ParserEmbeddedHookCollectionStrategy Instance { get; } = new();
+
+        /// <summary>Prevents external construction of the singleton strategy.</summary>
+        private ParserEmbeddedHookCollectionStrategy()
+        {
+        }
+
+        /// <inheritdoc />
+        public IEnumerable<G4Rule> EnumerateRules(G4Grammar grammar) => grammar.ParserRules;
+
+        /// <inheritdoc />
+        public IEnumerable<HookTraversalRoot> EnumerateTraversalRoots(G4Rule rule)
+        {
+            IReadOnlyList<G4Alternative> orderedAlternatives = OrderAlternatives(rule.Content);
+            var recursiveAlternatives = orderedAlternatives.Where(alternative => StartsWithRuleRef(alternative, rule.Name)).ToList();
+            if (recursiveAlternatives.Count == 0)
+            {
+                yield return new HookTraversalRoot(rule.Content, HookTraversalPosition.Unspecified);
+                yield break;
+            }
+
+            var baseAlternatives = orderedAlternatives.Where(alternative => !StartsWithRuleRef(alternative, rule.Name)).ToList();
+            for (int index = 0; index < baseAlternatives.Count; index++)
+            {
+                yield return new HookTraversalRoot(baseAlternatives[index], new HookTraversalPosition(index, -1));
+            }
+
+            for (int index = 0; index < recursiveAlternatives.Count; index++)
+            {
+                G4Alternative recursiveAlternative = recursiveAlternatives[index];
+                if (recursiveAlternative.Items.Count == 0 || !IsRuleRef(recursiveAlternative.Items[0], rule.Name))
                 {
-                    CollectEmbeddedCodeHooks(ruleName, orderedAlternatives[index], hooks, index, -1);
+                    continue;
                 }
-                break;
-            case G4Alternative alternative:
-                CollectAlternativeEmbeddedCodeHooks(ruleName, alternative, hooks, alternativeIndex);
-                break;
-            case G4Sequence sequence:
-                CollectSequenceEmbeddedCodeHooks(ruleName, sequence.Items, hooks, alternativeIndex);
-                break;
-            case G4Quantifier quantifier:
-                // ParserEngine reparses quantified content with the current alternative index
-                // as the inner element index, rather than with the quantifier parent's
-                // sequence position. The generated dispatcher must mirror that runtime key.
-                CollectEmbeddedCodeHooks(ruleName, quantifier.Inner, hooks, alternativeIndex, alternativeIndex);
-                break;
-            case G4Negation negation:
-                // ParserEngine probes negated content with the current alternative index
-                // as the inner element index. This preserves dispatch for predicates that
-                // are evaluated during the negation probe.
-                CollectEmbeddedCodeHooks(ruleName, negation.Inner, hooks, alternativeIndex, alternativeIndex);
-                break;
-            case G4EmbeddedAction action:
-                AddEmbeddedCodeHook(ruleName, action, hooks, alternativeIndex, elementIndex);
-                break;
+
+                yield return new HookTraversalRoot(CreateTailAlternative(recursiveAlternative), new HookTraversalPosition(index, -1));
+            }
+        }
+
+        /// <inheritdoc />
+        public IReadOnlyList<G4Alternative> OrderAlternatives(G4Alternation alternation) => alternation.Alternatives.OrderBy(static alternative => alternative.Priority).ToList();
+
+        /// <inheritdoc />
+        public HookTraversalPosition EnterAlternative(HookTraversalPosition current, int alternativeIndex) => new(alternativeIndex, -1);
+
+        /// <inheritdoc />
+        public IReadOnlyList<G4Content> GetAlternativeItems(G4Alternative alternative) => alternative.Items;
+
+        /// <inheritdoc />
+        public bool ShouldVisitSingleAlternativeItemDirectly(IReadOnlyList<G4Content> items) => items.Count == 1 && items[0] is not G4Sequence;
+
+        /// <inheritdoc />
+        public HookTraversalPosition EnterSingleAlternativeItem(HookTraversalPosition current) => new(current.AlternativeIndex, -1);
+
+        /// <inheritdoc />
+        public HookTraversalPosition EnterSequenceItem(HookTraversalPosition current, int itemIndex) => new(current.AlternativeIndex, itemIndex);
+
+        /// <inheritdoc />
+        public HookTraversalPosition EnterQuantifier(HookTraversalPosition current) => new(current.AlternativeIndex, current.AlternativeIndex);
+
+        /// <inheritdoc />
+        public HookTraversalPosition EnterNegation(HookTraversalPosition current) => new(current.AlternativeIndex, current.AlternativeIndex);
+
+        /// <inheritdoc />
+        public string BuildMethodName(string ruleName, EmbeddedCodeHookKind kind, HookTraversalPosition position, int hookIndex)
+        {
+            string prefix = kind == EmbeddedCodeHookKind.SemanticPredicate ? "__Predicate" : "__Action";
+            return $"{prefix}_{Sanitize(ruleName)}_{NormalizeIndexForName(position.AlternativeIndex)}_{NormalizeIndexForName(position.ElementIndex)}_{hookIndex}";
+        }
+
+        /// <inheritdoc />
+        public ParserEmbeddedCodeLocation GetLocation(EmbeddedCodeHookKind kind)
+        {
+            return kind == EmbeddedCodeHookKind.SemanticPredicate ? ParserEmbeddedCodeLocation.SemanticPredicate : ParserEmbeddedCodeLocation.InlineAction;
+        }
+
+        /// <inheritdoc />
+        public EmbeddedCodeHook CreateHook(string ruleName, string code, EmbeddedCodeHookKind kind, HookTraversalPosition position, string methodName)
+        {
+            return EmbeddedCodeHook.CreateParser(ruleName, code, kind, position.AlternativeIndex, position.ElementIndex, methodName);
+        }
+
+        /// <summary>
+        /// Creates the parser runtime tail view for a direct-left-recursive alternative.
+        /// </summary>
+        /// <param name="alternative">Source alternative that starts with a direct self-reference.</param>
+        /// <returns>Alternative containing only the recursive tail items.</returns>
+        private static G4Alternative CreateTailAlternative(G4Alternative alternative)
+        {
+            var tail = new G4Alternative { Priority = alternative.Priority };
+            foreach (G4Content item in alternative.Items.Skip(1))
+            {
+                tail.Items.Add(item);
+            }
+
+            return tail;
         }
     }
 
     /// <summary>
-    /// Collects hooks from one alternative, mirroring whether the emitter creates a sequence wrapper.
+    /// Lexer hook collection strategy preserving source order, mode traversal, and lexer index rules.
     /// </summary>
-    /// <param name="ruleName">Owning parser rule name.</param>
-    /// <param name="alternative">Alternative to inspect.</param>
-    /// <param name="hooks">Destination hook collection.</param>
-    /// <param name="alternativeIndex">Current runtime alternative index.</param>
-    private static void CollectAlternativeEmbeddedCodeHooks(string ruleName, G4Alternative alternative, List<EmbeddedCodeHook> hooks, int alternativeIndex)
+    private sealed class LexerEmbeddedHookCollectionStrategy : IEmbeddedHookCollectionStrategy
     {
-        if (alternative.Items.Count == 1 && alternative.Items[0] is not G4Sequence)
+        /// <summary>Gets the singleton lexer strategy instance.</summary>
+        public static LexerEmbeddedHookCollectionStrategy Instance { get; } = new();
+
+        /// <summary>Prevents external construction of the singleton strategy.</summary>
+        private LexerEmbeddedHookCollectionStrategy()
         {
-            CollectEmbeddedCodeHooks(ruleName, alternative.Items[0], hooks, alternativeIndex, -1);
-            return;
         }
 
-        CollectSequenceEmbeddedCodeHooks(ruleName, alternative.Items, hooks, alternativeIndex);
-    }
-
-    /// <summary>
-    /// Collects hooks from a generated sequence and assigns each item its zero-based runtime element index.
-    /// </summary>
-    /// <param name="ruleName">Owning parser rule name.</param>
-    /// <param name="items">Sequence items to inspect.</param>
-    /// <param name="hooks">Destination hook collection.</param>
-    /// <param name="alternativeIndex">Current runtime alternative index.</param>
-    private static void CollectSequenceEmbeddedCodeHooks(string ruleName, IReadOnlyList<G4Content> items, List<EmbeddedCodeHook> hooks, int alternativeIndex)
-    {
-        for (int itemIndex = 0; itemIndex < items.Count; itemIndex++)
+        /// <inheritdoc />
+        public IEnumerable<G4Rule> EnumerateRules(G4Grammar grammar)
         {
-            CollectEmbeddedCodeHooks(ruleName, items[itemIndex], hooks, alternativeIndex, itemIndex);
-        }
-    }
+            foreach (G4Rule rule in grammar.LexerRules)
+            {
+                yield return rule;
+            }
 
-
-    /// <summary>
-    /// Collects hooks from a direct-left-recursive alternative after removing the leading
-    /// self-reference, matching the runtime tail view used by <c>ParserEngine</c>.
-    /// </summary>
-    /// <param name="ruleName">Owning parser rule name.</param>
-    /// <param name="alternative">Direct-left-recursive source alternative.</param>
-    /// <param name="hooks">Destination hook collection.</param>
-    /// <param name="alternativeIndex">Runtime index inside the recursive-alternative set.</param>
-    private static void CollectLeftRecursiveTailEmbeddedCodeHooks(string ruleName, G4Alternative alternative, List<EmbeddedCodeHook> hooks, int alternativeIndex)
-    {
-        if (alternative.Items.Count == 0 || !IsRuleRef(alternative.Items[0], ruleName))
-        {
-            return;
+            foreach (G4LexerMode mode in grammar.ExtraModes)
+            {
+                foreach (G4Rule rule in mode.Rules)
+                {
+                    yield return rule;
+                }
+            }
         }
 
-        var tailItems = alternative.Items.Skip(1).ToList();
-        if (tailItems.Count == 1 && tailItems[0] is not G4Sequence)
+        /// <inheritdoc />
+        public IEnumerable<HookTraversalRoot> EnumerateTraversalRoots(G4Rule rule)
         {
-            CollectEmbeddedCodeHooks(ruleName, tailItems[0], hooks, alternativeIndex, -1);
-            return;
+            yield return new HookTraversalRoot(rule.Content, HookTraversalPosition.Unspecified);
         }
 
-        CollectSequenceEmbeddedCodeHooks(ruleName, tailItems, hooks, alternativeIndex);
+        /// <inheritdoc />
+        public IReadOnlyList<G4Alternative> OrderAlternatives(G4Alternation alternation) => alternation.Alternatives;
+
+        /// <inheritdoc />
+        public HookTraversalPosition EnterAlternative(HookTraversalPosition current, int alternativeIndex) => new(alternativeIndex, -1);
+
+        /// <inheritdoc />
+        public IReadOnlyList<G4Content> GetAlternativeItems(G4Alternative alternative) => alternative.Items;
+
+        /// <inheritdoc />
+        public bool ShouldVisitSingleAlternativeItemDirectly(IReadOnlyList<G4Content> items) => false;
+
+        /// <inheritdoc />
+        public HookTraversalPosition EnterSingleAlternativeItem(HookTraversalPosition current) => current;
+
+        /// <inheritdoc />
+        public HookTraversalPosition EnterSequenceItem(HookTraversalPosition current, int itemIndex) => new(current.AlternativeIndex, itemIndex);
+
+        /// <inheritdoc />
+        public HookTraversalPosition EnterQuantifier(HookTraversalPosition current) => current;
+
+        /// <inheritdoc />
+        public HookTraversalPosition EnterNegation(HookTraversalPosition current) => current;
+
+        /// <inheritdoc />
+        public string BuildMethodName(string ruleName, EmbeddedCodeHookKind kind, HookTraversalPosition position, int hookIndex)
+        {
+            string prefix = kind == EmbeddedCodeHookKind.SemanticPredicate ? "__LexerPredicate" : "__LexerAction";
+            return $"{prefix}_{Sanitize(ruleName)}_{NormalizeIndexForName(position.AlternativeIndex)}_{NormalizeIndexForName(position.ElementIndex)}_{hookIndex}";
+        }
+
+        /// <inheritdoc />
+        public ParserEmbeddedCodeLocation GetLocation(EmbeddedCodeHookKind kind)
+        {
+            return kind == EmbeddedCodeHookKind.SemanticPredicate ? ParserEmbeddedCodeLocation.LexerSemanticPredicate : ParserEmbeddedCodeLocation.LexerInlineAction;
+        }
+
+        /// <inheritdoc />
+        public EmbeddedCodeHook CreateHook(string ruleName, string code, EmbeddedCodeHookKind kind, HookTraversalPosition position, string methodName)
+        {
+            return EmbeddedCodeHook.CreateLexer(ruleName, code, kind, position.AlternativeIndex, position.ElementIndex, methodName);
+        }
     }
 
     /// <summary>
@@ -277,21 +498,6 @@ internal static partial class GrammarEmitter
     private static bool IsRuleRef(G4Content content, string ruleName)
     {
         return content is G4RuleRef ruleRef && string.Equals(ruleRef.RuleName, ruleName, StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    /// Adds one embedded-code hook with a deterministic, collision-resistant method name.
-    /// </summary>
-    /// <param name="ruleName">Owning parser rule name.</param>
-    /// <param name="action">Embedded action or predicate AST node.</param>
-    /// <param name="hooks">Destination hook collection.</param>
-    /// <param name="alternativeIndex">Runtime alternative index.</param>
-    /// <param name="elementIndex">Runtime element index.</param>
-    private static void AddEmbeddedCodeHook(string ruleName, G4EmbeddedAction action, List<EmbeddedCodeHook> hooks, int alternativeIndex, int elementIndex)
-    {
-        string prefix = action.IsPredicate ? "__Predicate" : "__Action";
-        string methodName = $"{prefix}_{Sanitize(ruleName)}_{NormalizeIndexForName(alternativeIndex)}_{NormalizeIndexForName(elementIndex)}_{hooks.Count}";
-        hooks.Add(EmbeddedCodeHook.CreateParser(ruleName, action.Code, action.IsPredicate ? EmbeddedCodeHookKind.SemanticPredicate : EmbeddedCodeHookKind.InlineAction, alternativeIndex, elementIndex, methodName));
     }
 
     /// <summary>
