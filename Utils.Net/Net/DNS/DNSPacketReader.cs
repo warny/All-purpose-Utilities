@@ -340,13 +340,18 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
     /// <returns>The populated <see cref="DNSHeader"/> representing the packet.</returns>
     public DNSHeader Read(Stream datas)
     {
-        var datagram = new byte[512];
-        var length = datas.Read(datagram, 0, 512);
+        var buffer = new byte[512];
+        var length = datas.Read(buffer, 0, 512);
 
         if (length < DnsHeaderLength)
         {
             throw new InvalidDataException($"DNS datagram too short ({length} bytes); minimum is {DnsHeaderLength} bytes.");
         }
+
+        // Trim the array to the actual received length so that ReadByte / ReadBytes
+        // cannot silently advance into zero-filled uninitialized tail bytes.
+        var datagram = new byte[length];
+        Array.Copy(buffer, datagram, length);
 
         Datas datasStructure = new Datas()
         {

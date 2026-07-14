@@ -169,6 +169,7 @@ public class SmtpClient : CommandResponseClient
     /// <returns>Help text returned by the server.</returns>
     public async Task<IReadOnlyList<string>> HelpAsync(string? subject = null, CancellationToken cancellationToken = default)
     {
+        if (subject is not null) ValidateCommandArgument(subject, nameof(subject));
         string command = subject is null ? "HELP" : $"HELP {subject}";
         IReadOnlyList<ServerResponse> responses = await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
         List<string> lines = new();
