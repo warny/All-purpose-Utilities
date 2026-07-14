@@ -64,6 +64,12 @@ public class Pop3Client : CommandResponseClient
     /// <param name="user">User name.</param>
     /// <param name="password">Password.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
+    /// <remarks>
+    /// APOP uses MD5, which is cryptographically broken. It provides no meaningful protection
+    /// against an active attacker who can observe or modify the challenge. Use a TLS-protected
+    /// stream with USER/PASS or a modern SASL mechanism regardless of authentication method.
+    /// </remarks>
+    [Obsolete("APOP relies on MD5, which is cryptographically broken. Use a TLS-protected transport instead.", false)]
     public async Task AuthenticateApopAsync(string user, string password, CancellationToken cancellationToken = default)
     {
         if (_timestamp is null)
