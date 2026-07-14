@@ -15,6 +15,18 @@ public class Pop3Client : CommandResponseClient
     private string? _timestamp;
 
     /// <summary>
+    /// Gets or sets the maximum number of lines accepted in a single POP3 multi-line response.
+    /// Default is 100 000. Set to 0 to disable.
+    /// </summary>
+    public int MaxMultilineLines { get; set; } = 100_000;
+
+    /// <summary>
+    /// Gets or sets the maximum total number of characters accepted across all lines in a single
+    /// POP3 multi-line response. Default is 10 MiB worth of characters. Set to 0 to disable.
+    /// </summary>
+    public int MaxMultilineChars { get; set; } = 10 * 1024 * 1024;
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="Pop3Client"/> class.
     /// </summary>
     public Pop3Client()
@@ -267,6 +279,7 @@ public class Pop3Client : CommandResponseClient
     private async Task<IReadOnlyList<string>> ReadMultilineAsync(CancellationToken cancellationToken)
     {
         List<string> lines = new();
+        int totalChars = 0;
         while (true)
         {
             IReadOnlyList<ServerResponse> batch = await ReadAsync(cancellationToken).ConfigureAwait(false);
@@ -278,6 +291,11 @@ public class Pop3Client : CommandResponseClient
                     return lines;
                 }
                 lines.Add(line);
+                if (MaxMultilineLines > 0 && lines.Count > MaxMultilineLines)
+                    throw new InvalidDataException($"POP3 multi-line response exceeded the line limit of {MaxMultilineLines}.");
+                totalChars += line.Length;
+                if (MaxMultilineChars > 0 && totalChars > MaxMultilineChars)
+                    throw new InvalidDataException($"POP3 multi-line response exceeded the character limit of {MaxMultilineChars}.");
             }
         }
     }

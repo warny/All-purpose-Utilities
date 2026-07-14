@@ -41,6 +41,13 @@ public class CommandResponseClient : IDisposable
     public int MaxLineLength { get; set; } = 8192;
 
     /// <summary>
+    /// Gets or sets the maximum number of response lines that <see cref="SendCommandAsync"/> will
+    /// accumulate for a single command before throwing <see cref="InvalidDataException"/>.
+    /// Default is 10 000. Set to 0 to disable the check.
+    /// </summary>
+    public int MaxResponseCount { get; set; } = 10_000;
+
+    /// <summary>
     /// Gets or sets the logger used to trace client activity.
     /// </summary>
     public ILogger? Logger { get; set; }
@@ -206,6 +213,10 @@ public class CommandResponseClient : IDisposable
                     continue;
                 }
                 responses.Add(response);
+                if (MaxResponseCount > 0 && responses.Count > MaxResponseCount)
+                {
+                    throw new InvalidDataException($"Server sent more than {MaxResponseCount} response lines for a single command.");
+                }
                 if (response.Severity >= ResponseSeverity.Completion || response.Severity == ResponseSeverity.Unknown)
                 {
                     break;
