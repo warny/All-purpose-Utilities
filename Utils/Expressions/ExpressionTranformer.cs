@@ -108,6 +108,23 @@ public abstract class ExpressionTransformer
                     break;
                 }
 
+            case ConditionalExpression ce:
+                {
+                    // A ternary has exactly three sub-expressions (Test, IfTrue, IfFalse). Without an
+                    // explicit case here it fell through to the default branch, which produced an empty
+                    // sub-expression array; CopyExpression's Conditional branch then indexed parameters[0..2]
+                    // and threw IndexOutOfRangeException (see TODO-2026-07-11-pass3.md item #43 note).
+                    expressionParameters =
+                    [
+                        PrepareExpression(ce.Test),
+                        PrepareExpression(ce.IfTrue),
+                        PrepareExpression(ce.IfFalse)
+                    ];
+                    e = ce = (ConditionalExpression)CopyExpression(e, expressionParameters);
+                    parameters = [ce, ce.Test, ce.IfTrue, ce.IfFalse];
+                    break;
+                }
+
             case ParameterExpression pe:
                 expressionParameters = Array.Empty<Expression>();
                 parameters = [pe];
@@ -298,6 +315,22 @@ public abstract class ExpressionTransformer
     /// </returns>
     protected static Expression CopyExpression(Expression e, params Expression[] parameters)
     {
+        // Preserve the original operator method (and lifting) for any binary node that carries one.
+        // Expression.Add/Power/etc. called without a method argument silently drop
+        // BinaryExpression.Method, which is load-bearing for user-defined operators and for a Power node
+        // built with an explicit (e.g. float) Pow method. MakeBinary reconstructs the node with the same
+        // method and lifting, so a non-double Power node (or any user-operator binary) survives the
+        // transform unchanged instead of failing to rebuild.
+        if (e is BinaryExpression binaryWithMethod && binaryWithMethod.Method is not null && parameters.Length >= 2)
+        {
+            return Expression.MakeBinary(
+                binaryWithMethod.NodeType,
+                parameters[0],
+                parameters[1],
+                binaryWithMethod.IsLiftedToNull,
+                binaryWithMethod.Method);
+        }
+
         return e.NodeType switch
         {
             ExpressionType.Add => Expression.Add(parameters[0], parameters[1]),
@@ -306,9 +339,9 @@ public abstract class ExpressionTransformer
             ExpressionType.AndAlso => Expression.AndAlso(parameters[0], parameters[1]),
             ExpressionType.ArrayLength => Expression.ArrayLength(parameters[0]),
             ExpressionType.ArrayIndex => Expression.ArrayIndex(parameters[0], parameters[1]),
-            ExpressionType.Call => Expression.Call(((MethodCallExpression)e).Method, parameters),
+            ExpressionType.Call => CopyMethodCall((MethodCallExpression)e, parameters),
             ExpressionType.Coalesce => Expression.Coalesce(parameters[0], parameters[1]),
-            ExpressionType.Conditional => Expression.Condition(parameters[0], parameters[1], parameters[2]),
+            ExpressionType.Conditional => Expression.Condition(parameters[0], parameters[1], parameters[2], ((ConditionalExpression)e).Type),
             ExpressionType.Constant => Expression.Constant(((ConstantExpression)e).Value, e.Type),
             ExpressionType.Convert => Expression.Convert(parameters[0], ((UnaryExpression)e).Type),
             ExpressionType.ConvertChecked => Expression.ConvertChecked(parameters[0], ((UnaryExpression)e).Type),
@@ -387,6 +420,23 @@ public abstract class ExpressionTransformer
             ExpressionType.IsFalse => Expression.IsFalse(parameters[0]),
             _ => throw new NotSupportedException($"Expression type '{e.NodeType}' is not supported.")
         };
+    }
+
+    /// <summary>
+    /// Rebuilds a <see cref="MethodCallExpression"/> preserving its instance receiver. The previous code
+    /// always used the static <see cref="Expression.Call(MethodInfo, Expression[])"/> overload, which
+    /// dropped <see cref="MethodCallExpression.Object"/> and therefore threw an
+    /// <see cref="ArgumentException"/> ("Static method requires null instance, non-static method requires
+    /// non-null instance") whenever an instance method call flowed through the transformer.
+    /// </summary>
+    /// <param name="original">The original method-call expression being copied.</param>
+    /// <param name="arguments">The (already prepared) argument sub-expressions.</param>
+    /// <returns>A method-call expression with the same method and instance and the supplied arguments.</returns>
+    private static Expression CopyMethodCall(MethodCallExpression original, Expression[] arguments)
+    {
+        return original.Object is null
+            ? Expression.Call(original.Method, arguments)
+            : Expression.Call(original.Object, original.Method, arguments);
     }
 
     /// <summary>
