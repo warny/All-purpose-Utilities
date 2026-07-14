@@ -139,8 +139,9 @@ public abstract class ExpressionTransformer
 
             case InvocationExpression ie:
                 {
+                    Expression invokedExpression = PrepareExpression(ie.Expression);
                     expressionParameters = ie.Arguments.Select(PrepareExpression).ToArray();
-                    e = ie = (InvocationExpression)CopyExpression(e, expressionParameters);
+                    e = ie = Expression.Invoke(invokedExpression, expressionParameters);
                     parameters = new object[ie.Arguments.Count + 1];
                     parameters[0] = ie;
                     Array.Copy(expressionParameters, 0, parameters, 1, expressionParameters.Length);
@@ -292,10 +293,11 @@ public abstract class ExpressionTransformer
                 }
             case InvocationExpression ie:
                 {
+                    Expression invokedExpression = ReplaceArguments(ie.Expression, oldParameters, newParameters);
                     var arguments = ie.Arguments
                                       .Select(a => ReplaceArguments(a, oldParameters, newParameters))
                                       .ToArray();
-                    return CopyExpression(ie, arguments);
+                    return Expression.Invoke(invokedExpression, arguments);
                 }
             case MethodCallExpression mce:
                 {
@@ -309,6 +311,12 @@ public abstract class ExpressionTransformer
                         ? Expression.Call(mce.Method, arguments)
                         : Expression.Call(replacedObject, mce.Method, arguments);
                 }
+            case ConditionalExpression ce:
+                return Expression.Condition(
+                    ReplaceArguments(ce.Test, oldParameters, newParameters),
+                    ReplaceArguments(ce.IfTrue, oldParameters, newParameters),
+                    ReplaceArguments(ce.IfFalse, oldParameters, newParameters),
+                    ce.Type);
         }
         return e;
     }
