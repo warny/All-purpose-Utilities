@@ -22,6 +22,7 @@ public sealed class SmtpServer : IDisposable
     private string? _loginUser;
     private bool _isAuthenticated;
     private bool _canRelay;
+    private bool _isTls;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SmtpServer"/> class.
@@ -59,9 +60,15 @@ public sealed class SmtpServer : IDisposable
     /// </summary>
     /// <param name="stream">Stream connected to the client.</param>
     /// <param name="leaveOpen">True to leave the stream open when disposing the server.</param>
+    /// <param name="isTls">
+    /// Set to <see langword="true"/> when <paramref name="stream"/> is already protected by TLS.
+    /// When <see langword="false"/> (the default), the server will not advertise or accept AUTH
+    /// to prevent credentials from being transmitted in cleartext.
+    /// </param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    public async Task StartAsync(Stream stream, bool leaveOpen = false, CancellationToken cancellationToken = default)
+    public async Task StartAsync(Stream stream, bool leaveOpen = false, bool isTls = false, CancellationToken cancellationToken = default)
     {
+        _isTls = isTls;
         await _server.StartAsync(stream, leaveOpen, cancellationToken).ConfigureAwait(false);
         await _server.SendResponseAsync(new ServerResponse("220", ResponseSeverity.Completion, "ready")).ConfigureAwait(false);
     }
@@ -92,7 +99,7 @@ public sealed class SmtpServer : IDisposable
         {
             new ServerResponse("250", ResponseSeverity.Preliminary, "Hello")
         };
-        if (_authenticator is not null)
+        if (_authenticator is not null && _isTls)
         {
             responses.Add(new ServerResponse("250", ResponseSeverity.Preliminary, "AUTH PLAIN LOGIN"));
         }
@@ -135,7 +142,7 @@ public sealed class SmtpServer : IDisposable
     /// <returns>Responses to send.</returns>
     private async Task<IEnumerable<ServerResponse>> HandleAuth(CommandContext ctx, string[] args)
     {
-        if (_authenticator is null)
+        if (_authenticator is null || !_isTls)
         {
             return new[] { new ServerResponse("502", ResponseSeverity.PermanentNegative, "Auth not supported") };
         }
