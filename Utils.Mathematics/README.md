@@ -1,6 +1,6 @@
 # omy.Utils.Mathematics (advanced math)
 
-`omy.Utils.Mathematics` offers FFTs, symbolic math helpers, SI conversions, and generic linear algebra structures used across the utility family.
+`omy.Utils.Mathematics` offers FFTs, symbolic expression transformers, polynomials, and generic linear algebra structures used across the utility family.
 
 ## Install
 ```bash
@@ -12,9 +12,9 @@ dotnet add package omy.Utils.Mathematics
 
 ## Features
 - Symbolic expression derivation and integration, including generic numeric transformers.
-- Fast Fourier Transform implementation.
-- SI unit conversions and number-to-text conversion utilities.
-- Generic vector and matrix structures for linear algebra operations.
+- Fast Fourier Transform with frequency/magnitude/phase extraction helpers.
+- Polynomial arithmetic with canonical form and symbolic calculus.
+- Generic vector and matrix structures for linear algebra (arithmetic, inversion, LU decomposition, affine subspaces, geometric transformations).
 
 ## Quick usage
 ```csharp
