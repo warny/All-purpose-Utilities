@@ -264,7 +264,7 @@ internal static partial class GrammarEmitter
     /// <param name="sb">Source builder receiving generated C#.</param>
     /// <param name="lexerActions">Lexer action hooks available to the executor.</param>
     /// <param name="contextClassName">Generated execution context class name.</param>
-    private static void EmitLexerActionExecutor(StringBuilder sb, IReadOnlyList<LexerEmbeddedCodeHook> lexerActions, string contextClassName)
+    private static void EmitLexerActionExecutor(StringBuilder sb, IReadOnlyList<EmbeddedCodeHook> lexerActions, string contextClassName)
     {
         sb.AppendLine("    /// <summary>Dispatches accepted lexer inline actions to generated C# lexer action hooks.</summary>");
         sb.AppendLine("    private sealed class GeneratedLexerActionExecutor : ILexerActionExecutor");
@@ -309,7 +309,7 @@ internal static partial class GrammarEmitter
     /// <param name="sb">Source builder receiving generated C#.</param>
     /// <param name="lexerPredicates">Lexer predicate hooks available to the evaluator.</param>
     /// <param name="contextClassName">Generated execution context class name.</param>
-    private static void EmitLexerPredicateEvaluator(StringBuilder sb, IReadOnlyList<LexerEmbeddedCodeHook> lexerPredicates, string contextClassName)
+    private static void EmitLexerPredicateEvaluator(StringBuilder sb, IReadOnlyList<EmbeddedCodeHook> lexerPredicates, string contextClassName)
     {
         sb.AppendLine("    /// <summary>Dispatches lexer predicate contexts to generated C# lexer predicate hooks.</summary>");
         sb.AppendLine("    private sealed class GeneratedLexerPredicateEvaluator : ILexerPredicateEvaluator");
@@ -388,7 +388,7 @@ internal static partial class GrammarEmitter
     /// </summary>
     /// <param name="sb">Source builder receiving generated C#.</param>
     /// <param name="hook">Lexer action hook metadata.</param>
-    private static void EmitLexerActionHook(StringBuilder sb, LexerEmbeddedCodeHook hook)
+    private static void EmitLexerActionHook(StringBuilder sb, EmbeddedCodeHook hook)
     {
         var body = GeneratedEmbeddedCodeBody.ForAction(hook.EmittedCode);
 
@@ -406,7 +406,7 @@ internal static partial class GrammarEmitter
     /// </summary>
     /// <param name="sb">Source builder receiving generated C#.</param>
     /// <param name="hook">Lexer predicate hook metadata.</param>
-    private static void EmitLexerPredicateHook(StringBuilder sb, LexerEmbeddedCodeHook hook)
+    private static void EmitLexerPredicateHook(StringBuilder sb, EmbeddedCodeHook hook)
     {
         var body = GeneratedEmbeddedCodeBody.ForPredicate(hook.EmittedCode);
 

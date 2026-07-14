@@ -129,6 +129,87 @@ public sealed class EmbeddedCodeTransformerArchitectureTests
         StringAssert.StartsWith(violations[0], "Utils.Parser.Expressions/OtherEmbeddedCodePreparer.cs:10: compiler.Compile(\"raw\")");
     }
 
+
+    /// <summary>
+    /// Ensures generated embedded-code hooks use one typed data model with explicit parser/lexer and predicate/action discriminants.
+    /// </summary>
+    [TestMethod]
+    public void GrammarEmitterEmbeddedCodeHooks_UseSingleCommonHookModel()
+    {
+        string repositoryRoot = FindRepositoryRoot();
+        string[] emitterFiles = Directory.GetFiles(Path.Combine(repositoryRoot, "Utils.Parser.Generators", "Internal"), "GrammarEmitter*.cs", SearchOption.TopDirectoryOnly);
+        SyntaxTree contractsTree = CSharpSyntaxTree.ParseText(
+            """
+            namespace Utils.Parser.Diagnostics.EmbeddedCode
+            {
+                public sealed class RawEmbeddedCode
+                {
+                    public RawEmbeddedCode(string text) { Text = text; }
+                    public string Text { get; }
+                }
+
+                public sealed class TransformedEmbeddedCode
+                {
+                    public string Text { get; } = string.Empty;
+                }
+            }
+            """,
+            path: "EmbeddedCodeContracts.cs");
+        SyntaxTree[] trees = emitterFiles
+            .Select(file => CSharpSyntaxTree.ParseText(File.ReadAllText(file), path: NormalizePath(Path.GetRelativePath(repositoryRoot, file))))
+            .Append(contractsTree)
+            .ToArray();
+        CSharpCompilation compilation = CSharpCompilation.Create(
+            "Utils.Parser.Generators.HookArchitectureScan",
+            trees,
+            CreateRuntimeReferences(),
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+        INamedTypeSymbol? grammarEmitter = compilation.GetTypeByMetadataName("Utils.Parser.Generators.Internal.GrammarEmitter");
+        Assert.IsNotNull(grammarEmitter);
+
+        INamedTypeSymbol[] nestedTypes = grammarEmitter!.GetTypeMembers().ToArray();
+        Assert.IsNull(nestedTypes.SingleOrDefault(static type => type.Name == "LexerEmbeddedCodeHook"));
+        INamedTypeSymbol hookType = nestedTypes.Single(static type => type.Name == "EmbeddedCodeHook");
+        INamedTypeSymbol ownerType = nestedTypes.Single(static type => type.Name == "EmbeddedCodeHookOwner");
+        INamedTypeSymbol kindType = nestedTypes.Single(static type => type.Name == "EmbeddedCodeHookKind");
+
+        CollectionAssert.AreEquivalent(new[] { "Parser", "Lexer" }, ownerType.GetMembers().OfType<IFieldSymbol>().Where(static field => field.HasConstantValue).Select(static field => field.Name).ToArray());
+        CollectionAssert.AreEquivalent(new[] { "SemanticPredicate", "InlineAction" }, kindType.GetMembers().OfType<IFieldSymbol>().Where(static field => field.HasConstantValue).Select(static field => field.Name).ToArray());
+        Assert.AreEqual("Utils.Parser.Diagnostics.EmbeddedCode.RawEmbeddedCode", hookType.GetMembers("RawCode").OfType<IPropertySymbol>().Single().Type.ToDisplayString());
+        Assert.AreEqual("Utils.Parser.Diagnostics.EmbeddedCode.TransformedEmbeddedCode", hookType.GetMembers("EmittedCode").OfType<IPropertySymbol>().Single().Type.ToDisplayString());
+        Assert.AreEqual(ownerType, hookType.GetMembers("Owner").OfType<IPropertySymbol>().Single().Type, SymbolEqualityComparer.Default);
+        Assert.AreEqual(kindType, hookType.GetMembers("Kind").OfType<IPropertySymbol>().Single().Type, SymbolEqualityComparer.Default);
+
+        IMethodSymbol[] hookFactories = hookType.GetMembers().OfType<IMethodSymbol>().Where(static method => method.MethodKind == MethodKind.Ordinary && (method.Name == "CreateParser" || method.Name == "CreateLexer")).ToArray();
+        CollectionAssert.AreEquivalent(new[] { "CreateParser", "CreateLexer" }, hookFactories.Select(static method => method.Name).ToArray());
+
+        string[] hookLikeTypes = nestedTypes
+            .Where(type => type.Name.Contains("EmbeddedCodeHook", StringComparison.Ordinal) && type.TypeKind == TypeKind.Class)
+            .Select(static type => type.Name)
+            .ToArray();
+        CollectionAssert.AreEqual(new[] { "EmbeddedCodeHook" }, hookLikeTypes);
+
+        string embeddedHooksPath = NormalizePath(Path.Combine("Utils.Parser.Generators", "Internal", "GrammarEmitter.EmbeddedHooks.cs"));
+        SourceScan embeddedHooksScan = trees.Select(tree => new SourceScan(tree.FilePath, tree, compilation.GetSemanticModel(tree))).Single(scan => string.Equals(scan.RelativePath, embeddedHooksPath, StringComparison.Ordinal));
+        string[] factoryCalls = embeddedHooksScan.Tree.GetCompilationUnitRoot().DescendantNodes().OfType<InvocationExpressionSyntax>()
+            .Select(invocation => embeddedHooksScan.SemanticModel.GetSymbolInfo(invocation).Symbol)
+            .OfType<IMethodSymbol>()
+            .Where(symbol => SymbolEqualityComparer.Default.Equals(symbol.ContainingType, hookType) && (symbol.Name == "CreateParser" || symbol.Name == "CreateLexer"))
+            .Select(static symbol => symbol.Name)
+            .OrderBy(static name => name, StringComparer.Ordinal)
+            .ToArray();
+        CollectionAssert.AreEqual(new[] { "CreateLexer", "CreateParser" }, factoryCalls);
+
+        string[] recursiveCollectors = grammarEmitter.GetMembers().OfType<IMethodSymbol>()
+            .Where(static method => method.Name == "CollectEmbeddedCodeHooks" || method.Name == "CollectLexerEmbeddedCodeHooks")
+            .Select(static method => method.Name)
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(static name => name, StringComparer.Ordinal)
+            .ToArray();
+        CollectionAssert.AreEqual(new[] { "CollectEmbeddedCodeHooks", "CollectLexerEmbeddedCodeHooks" }, recursiveCollectors);
+    }
+
     /// <summary>
     /// Finds the repository root from the functional test output folder.
     /// </summary>
