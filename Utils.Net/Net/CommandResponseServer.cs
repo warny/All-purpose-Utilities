@@ -44,6 +44,7 @@ public class CommandResponseServer : IDisposable
     private readonly HashSet<string> _contexts = new();
     private readonly Func<ServerResponse, string> _formatter;
     private int _errorCount;
+    private volatile bool _closeAfterResponse;
 
     /// <summary>
     /// Gets or sets the logger used to trace server activity.
@@ -159,6 +160,12 @@ public class CommandResponseServer : IDisposable
         _processTask = ProcessQueueAsync(_listenTokenSource.Token);
         return Task.CompletedTask;
     }
+
+    /// <summary>
+    /// Requests that the server close the connection after the current response has been sent.
+    /// Safe to call from within a command handler.
+    /// </summary>
+    public void CloseAfterResponse() => _closeAfterResponse = true;
 
     /// <summary>
     /// Gets a task that completes when the server stops processing commands.
@@ -379,6 +386,11 @@ public class CommandResponseServer : IDisposable
                     _writeLock.Release();
                 }
 
+                if (_closeAfterResponse)
+                {
+                    await (_listenTokenSource?.CancelAsync() ?? Task.CompletedTask).ConfigureAwait(false);
+                    break;
+                }
                 if (responseList.Count > 0 && MaxConsecutiveErrors > 0)
                 {
                     ResponseSeverity finalSeverity = responseList[^1].Severity;

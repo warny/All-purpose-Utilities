@@ -71,6 +71,7 @@ namespace Utils.Net
 
             byte[] requestDatagram = packetWriter.Write(request);
 
+            Exception? lastException = null;
             foreach (IPAddress nameServer in NameServers)
             {
                 try
@@ -114,12 +115,13 @@ namespace Utils.Net
 
                     return response;
                 }
-                catch
+                catch (Exception ex)
                 {
+                    lastException = ex;
                 }
             }
 
-            throw new Exception("Unable to execute the request");
+            throw new InvalidOperationException("None of the configured DNS servers returned a valid response.", lastException);
         }
 
         /// <summary>
@@ -137,7 +139,8 @@ namespace Utils.Net
                 var echoed = response.Requests[i];
                 if (!string.Equals(echoed.Name.ToString(), sent.Name.ToString(), StringComparison.OrdinalIgnoreCase))
                     return false;
-                if (!string.Equals(echoed.Type, sent.Type, StringComparison.OrdinalIgnoreCase))
+                // Compare the numeric record type to avoid dependency on textual normalization.
+                if (echoed.RequestType != sent.RequestType)
                     return false;
                 if (echoed.Class != sent.Class)
                     return false;
@@ -174,8 +177,8 @@ namespace Utils.Net
                     0);
                 receivedBytes = udpSocket.ReceiveFrom(responseBytes, responseBytes.Length, SocketFlags.None, ref remoteEndpoint);
 
-                // Reject datagrams that did not originate from the server we queried.
-                if (!((IPEndPoint)remoteEndpoint).Address.Equals(server))
+                // Reject datagrams that did not originate from the exact endpoint we queried.
+                if (!remoteEndpoint.Equals(serverEndpoint))
                 {
                     throw new InvalidOperationException("DNS response received from unexpected endpoint.");
                 }
@@ -198,10 +201,19 @@ namespace Utils.Net
             tcpSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveTimeout, TcpReceiveTimeout);
             tcpSocket.Connect(serverEndpoint);
 
-            // Prefix the request with its 2-byte length.
-            byte[] lengthPrefix = new byte[] { (byte)(packet.Length >> 8), (byte)(packet.Length & 0xFF) };
-            tcpSocket.Send(lengthPrefix);
-            tcpSocket.Send(packet);
+            // Build a single frame: 2-byte length prefix followed by the DNS message.
+            // Send as one buffer in a loop to guard against partial writes.
+            byte[] frame = new byte[2 + packet.Length];
+            frame[0] = (byte)(packet.Length >> 8);
+            frame[1] = (byte)(packet.Length & 0xFF);
+            Array.Copy(packet, 0, frame, 2, packet.Length);
+            int sent = 0;
+            while (sent < frame.Length)
+            {
+                int n = tcpSocket.Send(frame, sent, frame.Length - sent, SocketFlags.None);
+                if (n == 0) throw new IOException("DNS TCP connection closed during send.");
+                sent += n;
+            }
 
             // Read the 2-byte response length.
             byte[] responseLengthBytes = new byte[2];

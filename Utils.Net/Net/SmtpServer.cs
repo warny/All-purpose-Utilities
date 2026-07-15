@@ -213,6 +213,7 @@ public sealed class SmtpServer : IDisposable
             if (MaxAuthAttempts > 0 && _failedAuthCount >= MaxAuthAttempts)
             {
                 _authLocked = true;
+                _server.CloseAfterResponse();
                 return new[] { new ServerResponse("535", ResponseSeverity.PermanentNegative, "Too many authentication failures — bye") };
             }
             return new[] { new ServerResponse("535", ResponseSeverity.PermanentNegative, "Authentication failed") };
@@ -410,6 +411,7 @@ public sealed class SmtpServer : IDisposable
             if (MaxAuthAttempts > 0 && _failedAuthCount >= MaxAuthAttempts)
             {
                 _authLocked = true;
+                _server.CloseAfterResponse();
                 return new[] { new ServerResponse("535", ResponseSeverity.PermanentNegative, "Too many authentication failures — bye") };
             }
             return new[] { new ServerResponse("535", ResponseSeverity.PermanentNegative, "Authentication failed") };

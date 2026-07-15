@@ -55,8 +55,16 @@ public class IcmpUtils
         {
             int received = await socket.ReceiveAsync(responseBuffer, linkedToken).ConfigureAwait(false);
 
-            // For IPv4, strip the IP header (first 20 bytes) before parsing ICMP.
-            int icmpOffset = destination.AddressFamily == AddressFamily.InterNetwork ? 20 : 0;
+            // For IPv4, read the actual IP header length from the IHL field (bits 3–0 of byte 0).
+            // The header can be 20–60 bytes when options are present; hardcoding 20 is incorrect.
+            int icmpOffset = 0;
+            if (destination.AddressFamily == AddressFamily.InterNetwork)
+            {
+                if (received < 1) throw new IcmpException("ICMP response too short.");
+                icmpOffset = (responseBuffer[0] & 0x0F) * 4;
+                if (icmpOffset < 20 || icmpOffset > received)
+                    throw new IcmpException($"ICMP response has invalid IPv4 header length ({icmpOffset} bytes).");
+            }
             if (received <= icmpOffset)
             {
                 throw new IcmpException("ICMP response too short.");
@@ -133,8 +141,14 @@ public class IcmpUtils
         try
         {
             int received = await socket.ReceiveAsync(responseBuffer, linkedToken).ConfigureAwait(false);
-            // Strip the IP header for IPv4 raw sockets.
-            int icmpOffset = isIPv4 ? 20 : 0;
+            // For IPv4, read the actual IP header length from the IHL field.
+            int icmpOffset = 0;
+            if (isIPv4)
+            {
+                if (received < 1) return new TracerouteHop(ttl, null, -1, false, false);
+                icmpOffset = (responseBuffer[0] & 0x0F) * 4;
+                if (icmpOffset < 20 || icmpOffset > received) return new TracerouteHop(ttl, null, -1, false, false);
+            }
             if (received <= icmpOffset) return new TracerouteHop(ttl, null, -1, false, false);
             responseBuffer = responseBuffer[icmpOffset..received];
             TimeSpan rtt = DateTime.UtcNow - startTime;
