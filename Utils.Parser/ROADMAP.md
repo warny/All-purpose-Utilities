@@ -169,7 +169,7 @@ Every API-changing PR must include:
 
 ## Parser/lexer specialization refactor direction
 
-Several generator paths share a similar global algorithm while still carrying real parser/lexer variation points. The composition-based direction remains active and is now partially implemented for embedded-hook collection.
+Several generator paths share a similar global algorithm while still carrying real parser/lexer variation points. The composition-based direction remains active and is now implemented for embedded-hook collection and runtime dispatcher emission.
 
 Implemented for embedded-hook collection:
 
@@ -183,17 +183,23 @@ Implemented for embedded-hook collection:
 Invariants now locked by tests and architecture guards:
 
 - parser and lexer hook collection share one recursive collector rather than two duplicated traversals;
+- parser and lexer runtime dispatchers share one emitter rather than four duplicated dispatcher bodies;
 - parser left recursion remains in parser-specific root preparation;
 - lexer modes remain in lexer-specific rule enumeration;
 - hook method names, owner/kind categories, indexes, sentinels, source order, priority order, and transformation locations are preserved;
 - each hook is transformed once, in final collection order, through the existing centralized transformation boundary;
-- no `isLexer` parameter, broad inheritance hierarchy, or public strategy/collector API is introduced.
+- no `isLexer` / `isPredicate` parameter, broad inheritance hierarchy, or public strategy/collector/dispatcher API is introduced.
+
+Implemented for runtime dispatcher emission:
+
+- `EmbeddedHookDispatcherEmitter` owns the common generated dispatcher algorithm: generated class and method emission, stable hook iteration, owner/kind validation, rule/code/alternative/element comparisons, hook invocation, success return, and fallback return.
+- `EmbeddedHookDispatcherDescriptor` owns immutable declarative differences for parser predicates, parser actions, lexer predicates, and lexer actions, including interfaces, context types, return types, signatures, code-property names, success expressions, invocation arguments, and fallback expressions.
+- Explicit wrappers `EmitSemanticPredicateEvaluator(...)`, `EmitParserActionExecutor(...)`, `EmitLexerPredicateEvaluator(...)`, and `EmitLexerActionExecutor(...)` remain as the four readable selection points and delegate to the shared emitter.
 
 Still planned:
 
-- introduce a shared runtime dispatcher emitter only where immutable descriptors can preserve parser/lexer differences such as signatures, context types, success results, fallback expressions, and action result handling;
 - introduce a shared generated hook-method emitter only for genuinely common method-body and signature construction;
-- extend Roslyn architecture guards to those future dispatcher and hook-method refactors when they are implemented.
+- extend Roslyn architecture guards to the future hook-method refactor when it is implemented.
 
 The refactor must continue to keep the following differences explicit: parser left recursion, alternative priority ordering, lexer modes, quantifier and negation index semantics, generated names, transformation locations, runtime context types, method signatures, success results, and fallback calls. These differences must not be hidden behind a single `isLexer` flag or scattered parser/lexer switches inside a shared engine.
 

@@ -337,6 +337,64 @@ public sealed class EmbeddedCodeTransformerArchitectureTests
     }
 
     /// <summary>
+    /// Ensures parser and lexer runtime hook dispatchers share one emitter while keeping four explicit descriptor-backed wrappers.
+    /// </summary>
+    [TestMethod]
+    public void GrammarEmitterEmbeddedHookDispatchers_UseSharedEmitterAndImmutableDescriptors()
+    {
+        string repositoryRoot = FindRepositoryRoot();
+        string relativePath = NormalizePath(Path.Combine("Utils.Parser.Generators", "Internal", "GrammarEmitter.ExecutionContext.Policy.cs"));
+        string source = File.ReadAllText(Path.Combine(repositoryRoot, relativePath));
+        SyntaxTree tree = CSharpSyntaxTree.ParseText(source, path: relativePath);
+        CSharpCompilation compilation = CSharpCompilation.Create(
+            "Utils.Parser.Generators.DispatcherArchitectureScan",
+            [tree],
+            CreateRuntimeReferences(),
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+        SemanticModel semanticModel = compilation.GetSemanticModel(tree);
+        ClassDeclarationSyntax grammarEmitter = tree.GetCompilationUnitRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().Single(static type => type.Identifier.ValueText == "GrammarEmitter");
+        ClassDeclarationSyntax emitter = grammarEmitter.DescendantNodes().OfType<ClassDeclarationSyntax>().Single(static type => type.Identifier.ValueText == "EmbeddedHookDispatcherEmitter");
+        StructDeclarationSyntax descriptor = grammarEmitter.DescendantNodes().OfType<StructDeclarationSyntax>().Single(static type => type.Identifier.ValueText == "EmbeddedHookDispatcherDescriptor");
+
+        Assert.IsTrue(emitter.Modifiers.Any(SyntaxKind.PrivateKeyword));
+        Assert.IsTrue(descriptor.Modifiers.Any(SyntaxKind.PrivateKeyword));
+        Assert.IsTrue(descriptor.Modifiers.Any(SyntaxKind.ReadOnlyKeyword));
+        CollectionAssert.AreEquivalent(new[] { "ParserPredicate", "ParserAction", "LexerPredicate", "LexerAction" }, descriptor.Members.OfType<FieldDeclarationSyntax>().SelectMany(static field => field.Declaration.Variables).Select(static variable => variable.Identifier.ValueText).ToArray());
+
+        string[] wrapperNames = ["EmitSemanticPredicateEvaluator", "EmitParserActionExecutor", "EmitLexerPredicateEvaluator", "EmitLexerActionExecutor"];
+        foreach (string wrapperName in wrapperNames)
+        {
+            MethodDeclarationSyntax wrapper = grammarEmitter.Members.OfType<MethodDeclarationSyntax>().Single(method => method.Identifier.ValueText == wrapperName);
+            InvocationExpressionSyntax invocation = wrapper.DescendantNodes().OfType<InvocationExpressionSyntax>().Single();
+            IMethodSymbol? symbol = semanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol;
+            Assert.AreEqual("Emit", symbol?.Name);
+            Assert.AreEqual("EmbeddedHookDispatcherEmitter", symbol?.ContainingType.Name);
+            Assert.AreEqual(0, wrapper.DescendantNodes().OfType<ForEachStatementSyntax>().Count(), $"{wrapperName} must not loop over hooks.");
+            Assert.AreEqual(0, wrapper.DescendantNodes().OfType<IfStatementSyntax>().Count(), $"{wrapperName} must not emit dispatcher conditions.");
+        }
+
+        MethodDeclarationSyntax sharedEmit = emitter.Members.OfType<MethodDeclarationSyntax>().Single(static method => method.Identifier.ValueText == "Emit");
+        Assert.AreEqual(1, sharedEmit.DescendantNodes().OfType<ForEachStatementSyntax>().Count(statement => statement.Expression.ToString() == "hooks"), "Only the shared emitter should iterate over runtime dispatcher hooks.");
+        Assert.IsTrue(sharedEmit.DescendantNodes().OfType<InvocationExpressionSyntax>().Any(invocation => invocation.ToString().StartsWith("ValidateEmbeddedCodeHook", StringComparison.Ordinal)), "The shared emitter must keep Owner and Kind validation.");
+        Assert.IsTrue(sharedEmit.DescendantNodes().OfType<MemberAccessExpressionSyntax>().Any(member => member.ToString() == "descriptor.Owner"));
+        Assert.IsTrue(sharedEmit.DescendantNodes().OfType<MemberAccessExpressionSyntax>().Any(member => member.ToString() == "descriptor.Kind"));
+        Assert.AreEqual(0, sharedEmit.DescendantNodes().OfType<SwitchStatementSyntax>().Count());
+        Assert.AreEqual(0, sharedEmit.DescendantNodes().OfType<MemberAccessExpressionSyntax>().Count(member => member.ToString() is "EmbeddedCodeHookOwner.Parser" or "EmbeddedCodeHookOwner.Lexer"));
+        Assert.AreEqual(0, sharedEmit.DescendantNodes().OfType<MemberAccessExpressionSyntax>().Count(member => member.ToString() is "EmbeddedCodeHookKind.SemanticPredicate" or "EmbeddedCodeHookKind.InlineAction"));
+        Assert.IsFalse(grammarEmitter.DescendantNodes().OfType<ParameterSyntax>().Any(parameter => parameter.Identifier.ValueText is "isLexer" or "isPredicate"));
+        Assert.AreEqual(4, descriptor.DescendantNodes().OfType<LiteralExpressionSyntax>().Count(literal => literal.Token.ValueText.Contains("_fallback.", StringComparison.Ordinal)), "Each descriptor-backed dispatcher must keep a fallback expression.");
+        Assert.AreEqual(4, descriptor.DescendantNodes().OfType<MemberAccessExpressionSyntax>().Count(member => member.ToString() is "EmbeddedCodeHookOwner.Parser" or "EmbeddedCodeHookOwner.Lexer"));
+        Assert.AreEqual(4, descriptor.DescendantNodes().OfType<MemberAccessExpressionSyntax>().Count(member => member.ToString() is "EmbeddedCodeHookKind.SemanticPredicate" or "EmbeddedCodeHookKind.InlineAction"));
+
+        string[] hookMethodEmitters = ["EmitPredicateHook", "EmitActionHook", "EmitLexerPredicateHook", "EmitLexerActionHook"];
+        foreach (string hookMethodEmitter in hookMethodEmitters)
+        {
+            Assert.IsTrue(grammarEmitter.Members.OfType<MethodDeclarationSyntax>().Any(method => method.Identifier.ValueText == hookMethodEmitter), $"{hookMethodEmitter} must remain separate until TODO 8c is addressed.");
+        }
+    }
+
+
+    /// <summary>
     /// Asserts that a specialized symbol wrapper delegates directly to the shared runtime symbol builder.
     /// </summary>
     /// <param name="wrapper">Wrapper method declaration to inspect.</param>

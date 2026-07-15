@@ -80,92 +80,230 @@ internal static partial class GrammarEmitter
     }
 
     /// <summary>
-    /// Emits the grammar-specific semantic predicate evaluator.
+    /// Emits a generated runtime dispatcher by applying the stable hook selection algorithm to descriptor-provided domain data.
+    /// </summary>
+    private static class EmbeddedHookDispatcherEmitter
+    {
+        /// <summary>
+        /// Writes the dispatcher class, method signature, ordered hook comparisons, hook invocation, success return, and fallback return.
+        /// </summary>
+        /// <param name="sb">Source builder receiving generated C#.</param>
+        /// <param name="hooks">Already ordered hooks selected by the wrapper for one owner and one hook kind.</param>
+        /// <param name="contextClassName">Generated execution context class name.</param>
+        /// <param name="descriptor">Immutable descriptor for the parser/lexer and predicate/action variation.</param>
+        public static void Emit(StringBuilder sb, IReadOnlyList<EmbeddedCodeHook> hooks, string contextClassName, EmbeddedHookDispatcherDescriptor descriptor)
+        {
+            sb.AppendLine($"    /// <summary>{descriptor.ClassSummary}</summary>");
+            sb.AppendLine($"    private sealed class {descriptor.ClassName} : {descriptor.InterfaceName}");
+            sb.AppendLine("    {");
+            sb.AppendLine($"        private readonly {contextClassName} _executionContext;");
+            sb.AppendLine($"        private readonly {descriptor.InterfaceName} _fallback;");
+            sb.AppendLine();
+            sb.AppendLine($"        /// <summary>{descriptor.ConstructorSummary}</summary>");
+            sb.AppendLine($"        public {descriptor.ClassName}({contextClassName} executionContext, {descriptor.InterfaceName} fallback)");
+            sb.AppendLine("        {");
+            sb.AppendLine("            _executionContext = executionContext;");
+            sb.AppendLine("            _fallback = fallback;");
+            sb.AppendLine("        }");
+            sb.AppendLine();
+            sb.AppendLine($"        /// <summary>{descriptor.MethodSummary}</summary>");
+            sb.AppendLine($"        public {descriptor.ReturnTypeName} {descriptor.DispatchMethodName}({descriptor.Parameters})");
+            sb.AppendLine("        {");
+            foreach (var hook in hooks)
+            {
+                ValidateEmbeddedCodeHook(hook, descriptor.Owner, descriptor.Kind);
+                string rawCode = Escape(GetRawEmbeddedCodeText(hook.RawCode));
+                sb.AppendLine($"            if (string.Equals({descriptor.ContextParameterName}.Rule.Name, \"{Escape(hook.RuleName)}\", global::System.StringComparison.Ordinal)");
+                sb.AppendLine($"                && string.Equals({descriptor.ContextParameterName}.{descriptor.CodePropertyName}, \"{rawCode}\", global::System.StringComparison.Ordinal)");
+                sb.AppendLine($"                && {descriptor.ContextParameterName}.AlternativeIndex == {hook.AlternativeIndex}");
+                sb.AppendLine($"                && {descriptor.ContextParameterName}.ElementIndex == {hook.ElementIndex})");
+                sb.AppendLine("            {");
+                foreach (string statement in descriptor.CreateMatchedHookStatements(hook))
+                {
+                    sb.AppendLine($"                {statement}");
+                }
+                sb.AppendLine("            }");
+                sb.AppendLine();
+            }
+
+            sb.AppendLine($"            {descriptor.FallbackStatement}");
+            sb.AppendLine("        }");
+            sb.AppendLine("    }");
+            sb.AppendLine();
+        }
+    }
+
+    /// <summary>
+    /// Describes the declarative differences between generated parser and lexer runtime dispatchers while keeping one emission algorithm.
+    /// </summary>
+    private readonly struct EmbeddedHookDispatcherDescriptor
+    {
+        /// <summary>
+        /// Initializes immutable dispatcher descriptor data for one runtime dispatch domain.
+        /// </summary>
+        private EmbeddedHookDispatcherDescriptor(EmbeddedCodeHookOwner owner, EmbeddedCodeHookKind kind, string className, string interfaceName, string classSummary, string constructorSummary, string methodSummary, string returnTypeName, string dispatchMethodName, string parameters, string contextParameterName, string codePropertyName, string invocationStatementFormat, string successStatement, string fallbackStatement)
+        {
+            Owner = owner;
+            Kind = kind;
+            ClassName = className;
+            InterfaceName = interfaceName;
+            ClassSummary = classSummary;
+            ConstructorSummary = constructorSummary;
+            MethodSummary = methodSummary;
+            ReturnTypeName = returnTypeName;
+            DispatchMethodName = dispatchMethodName;
+            Parameters = parameters;
+            ContextParameterName = contextParameterName;
+            CodePropertyName = codePropertyName;
+            InvocationStatementFormat = invocationStatementFormat;
+            SuccessStatement = successStatement;
+            FallbackStatement = fallbackStatement;
+        }
+
+        public EmbeddedCodeHookOwner Owner { get; }
+
+        public EmbeddedCodeHookKind Kind { get; }
+
+        public string ClassName { get; }
+
+        public string InterfaceName { get; }
+
+        public string ClassSummary { get; }
+
+        public string ConstructorSummary { get; }
+
+        public string MethodSummary { get; }
+
+        public string ReturnTypeName { get; }
+
+        public string DispatchMethodName { get; }
+
+        public string Parameters { get; }
+
+        public string ContextParameterName { get; }
+
+        public string CodePropertyName { get; }
+
+        public string InvocationStatementFormat { get; }
+
+        public string SuccessStatement { get; }
+
+        public string FallbackStatement { get; }
+        /// <summary>
+        /// Describes parser semantic predicate dispatching without changing the shared comparison order.
+        /// </summary>
+        public static readonly EmbeddedHookDispatcherDescriptor ParserPredicate = new(
+            EmbeddedCodeHookOwner.Parser,
+            EmbeddedCodeHookKind.SemanticPredicate,
+            "GeneratedSemanticPredicateEvaluator",
+            "ISemanticPredicateEvaluator",
+            "Dispatches runtime semantic predicate contexts to generated C# predicate hooks.",
+            "Initializes a generated semantic predicate evaluator for one execution context.",
+            "Evaluates a generated semantic predicate hook when the runtime context matches exactly.",
+            "SemanticPredicateEvaluationOutcome",
+            "Evaluate",
+            "SemanticPredicateEvaluationContext context",
+            "context",
+            "PredicateCode",
+            "return _executionContext.{0}(context) ? SemanticPredicateEvaluationOutcome.Satisfied : SemanticPredicateEvaluationOutcome.Rejected;",
+            string.Empty,
+            "return _fallback.Evaluate(context);");
+
+        /// <summary>
+        /// Describes parser inline action dispatching, including its void hook call followed by the unchanged executed outcome.
+        /// </summary>
+        public static readonly EmbeddedHookDispatcherDescriptor ParserAction = new(
+            EmbeddedCodeHookOwner.Parser,
+            EmbeddedCodeHookKind.InlineAction,
+            "GeneratedParserActionExecutor",
+            "IParserActionExecutor",
+            "Dispatches runtime parser action contexts to generated C# action hooks.",
+            "Initializes a generated parser action executor for one execution context.",
+            "Executes a generated parser action hook when the runtime context matches exactly.",
+            "ParserActionExecutionOutcome",
+            "Execute",
+            "ParserActionExecutionContext context",
+            "context",
+            "ActionCode",
+            "_executionContext.{0}(context);",
+            "return ParserActionExecutionOutcome.Executed;",
+            "return _fallback.Execute(context);");
+
+        /// <summary>
+        /// Describes lexer semantic predicate dispatching with lexer-specific outcomes represented as immutable data.
+        /// </summary>
+        public static readonly EmbeddedHookDispatcherDescriptor LexerPredicate = new(
+            EmbeddedCodeHookOwner.Lexer,
+            EmbeddedCodeHookKind.SemanticPredicate,
+            "GeneratedLexerPredicateEvaluator",
+            "ILexerPredicateEvaluator",
+            "Dispatches lexer predicate contexts to generated C# lexer predicate hooks.",
+            "Initializes a generated lexer predicate evaluator for one execution context.",
+            "Evaluates a generated lexer predicate hook when the runtime context matches.",
+            "LexerPredicateEvaluationOutcome",
+            "Evaluate",
+            "LexerPredicateEvaluationContext context",
+            "context",
+            "PredicateCode",
+            "return _executionContext.{0}(context) ? LexerPredicateEvaluationOutcome.True : LexerPredicateEvaluationOutcome.False;",
+            string.Empty,
+            "return _fallback.Evaluate(context);");
+
+        /// <summary>
+        /// Describes lexer inline action dispatching, including the separate mutable lexer action result parameter.
+        /// </summary>
+        public static readonly EmbeddedHookDispatcherDescriptor LexerAction = new(
+            EmbeddedCodeHookOwner.Lexer,
+            EmbeddedCodeHookKind.InlineAction,
+            "GeneratedLexerActionExecutor",
+            "ILexerActionExecutor",
+            "Dispatches accepted lexer inline actions to generated C# lexer action hooks.",
+            "Initializes a generated lexer action executor for one execution context.",
+            "Executes a generated lexer action hook when the runtime context matches.",
+            "LexerActionExecutionOutcome",
+            "Execute",
+            "LexerActionExecutionContext context, LexerActionExecutionResult result",
+            "context",
+            "ActionCode",
+            "_executionContext.{0}(context, result);",
+            "return LexerActionExecutionOutcome.Executed;",
+            "return _fallback.Execute(context, result);");
+
+        /// <summary>
+        /// Creates the exact statements emitted when a hook comparison matches.
+        /// </summary>
+        /// <param name="hook">Hook selected by the shared dispatcher loop.</param>
+        /// <returns>Generated C# statements that invoke the hook and, when needed, return the descriptor success outcome.</returns>
+        public IEnumerable<string> CreateMatchedHookStatements(EmbeddedCodeHook hook)
+        {
+            yield return string.Format(global::System.Globalization.CultureInfo.InvariantCulture, InvocationStatementFormat, hook.MethodName);
+            if (!string.IsNullOrEmpty(SuccessStatement))
+            {
+                yield return SuccessStatement;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Emits the grammar-specific semantic predicate evaluator through the shared dispatcher emitter.
     /// </summary>
     /// <param name="sb">Source builder receiving generated C#.</param>
     /// <param name="predicates">Predicate hooks available to the evaluator.</param>
     /// <param name="contextClassName">Generated execution context class name.</param>
     private static void EmitSemanticPredicateEvaluator(StringBuilder sb, IReadOnlyList<EmbeddedCodeHook> predicates, string contextClassName)
     {
-        sb.AppendLine("    /// <summary>Dispatches runtime semantic predicate contexts to generated C# predicate hooks.</summary>");
-        sb.AppendLine("    private sealed class GeneratedSemanticPredicateEvaluator : ISemanticPredicateEvaluator");
-        sb.AppendLine("    {");
-        sb.AppendLine($"        private readonly {contextClassName} _executionContext;");
-        sb.AppendLine("        private readonly ISemanticPredicateEvaluator _fallback;");
-        sb.AppendLine();
-        sb.AppendLine("        /// <summary>Initializes a generated semantic predicate evaluator for one execution context.</summary>");
-        sb.AppendLine($"        public GeneratedSemanticPredicateEvaluator({contextClassName} executionContext, ISemanticPredicateEvaluator fallback)");
-        sb.AppendLine("        {");
-        sb.AppendLine("            _executionContext = executionContext;");
-        sb.AppendLine("            _fallback = fallback;");
-        sb.AppendLine("        }");
-        sb.AppendLine();
-        sb.AppendLine("        /// <summary>Evaluates a generated semantic predicate hook when the runtime context matches exactly.</summary>");
-        sb.AppendLine("        public SemanticPredicateEvaluationOutcome Evaluate(SemanticPredicateEvaluationContext context)");
-        sb.AppendLine("        {");
-        foreach (var predicate in predicates)
-        {
-            ValidateEmbeddedCodeHook(predicate, EmbeddedCodeHookOwner.Parser, EmbeddedCodeHookKind.SemanticPredicate);
-            string rawPredicateCode = Escape(GetRawEmbeddedCodeText(predicate.RawCode));
-            sb.AppendLine($"            if (string.Equals(context.Rule.Name, \"{Escape(predicate.RuleName)}\", global::System.StringComparison.Ordinal)");
-            sb.AppendLine($"                && string.Equals(context.PredicateCode, \"{rawPredicateCode}\", global::System.StringComparison.Ordinal)");
-            sb.AppendLine($"                && context.AlternativeIndex == {predicate.AlternativeIndex}");
-            sb.AppendLine($"                && context.ElementIndex == {predicate.ElementIndex})");
-            sb.AppendLine("            {");
-            sb.AppendLine($"                return _executionContext.{predicate.MethodName}(context) ? SemanticPredicateEvaluationOutcome.Satisfied : SemanticPredicateEvaluationOutcome.Rejected;");
-            sb.AppendLine("            }");
-            sb.AppendLine();
-        }
-
-        sb.AppendLine("            return _fallback.Evaluate(context);");
-        sb.AppendLine("        }");
-        sb.AppendLine("    }");
-        sb.AppendLine();
+        EmbeddedHookDispatcherEmitter.Emit(sb, predicates, contextClassName, EmbeddedHookDispatcherDescriptor.ParserPredicate);
     }
 
     /// <summary>
-    /// Emits the grammar-specific parser action executor.
+    /// Emits the grammar-specific parser action executor through the shared dispatcher emitter.
     /// </summary>
     /// <param name="sb">Source builder receiving generated C#.</param>
     /// <param name="actions">Action hooks available to the executor.</param>
     /// <param name="contextClassName">Generated execution context class name.</param>
     private static void EmitParserActionExecutor(StringBuilder sb, IReadOnlyList<EmbeddedCodeHook> actions, string contextClassName)
     {
-        sb.AppendLine("    /// <summary>Dispatches runtime parser action contexts to generated C# action hooks.</summary>");
-        sb.AppendLine("    private sealed class GeneratedParserActionExecutor : IParserActionExecutor");
-        sb.AppendLine("    {");
-        sb.AppendLine($"        private readonly {contextClassName} _executionContext;");
-        sb.AppendLine("        private readonly IParserActionExecutor _fallback;");
-        sb.AppendLine();
-        sb.AppendLine("        /// <summary>Initializes a generated parser action executor for one execution context.</summary>");
-        sb.AppendLine($"        public GeneratedParserActionExecutor({contextClassName} executionContext, IParserActionExecutor fallback)");
-        sb.AppendLine("        {");
-        sb.AppendLine("            _executionContext = executionContext;");
-        sb.AppendLine("            _fallback = fallback;");
-        sb.AppendLine("        }");
-        sb.AppendLine();
-        sb.AppendLine("        /// <summary>Executes a generated parser action hook when the runtime context matches exactly.</summary>");
-        sb.AppendLine("        public ParserActionExecutionOutcome Execute(ParserActionExecutionContext context)");
-        sb.AppendLine("        {");
-        foreach (var action in actions)
-        {
-            ValidateEmbeddedCodeHook(action, EmbeddedCodeHookOwner.Parser, EmbeddedCodeHookKind.InlineAction);
-            string rawActionCode = Escape(GetRawEmbeddedCodeText(action.RawCode));
-            sb.AppendLine($"            if (string.Equals(context.Rule.Name, \"{Escape(action.RuleName)}\", global::System.StringComparison.Ordinal)");
-            sb.AppendLine($"                && string.Equals(context.ActionCode, \"{rawActionCode}\", global::System.StringComparison.Ordinal)");
-            sb.AppendLine($"                && context.AlternativeIndex == {action.AlternativeIndex}");
-            sb.AppendLine($"                && context.ElementIndex == {action.ElementIndex})");
-            sb.AppendLine("            {");
-            sb.AppendLine($"                _executionContext.{action.MethodName}(context);");
-            sb.AppendLine("                return ParserActionExecutionOutcome.Executed;");
-            sb.AppendLine("            }");
-            sb.AppendLine();
-        }
-
-        sb.AppendLine("            return _fallback.Execute(context);");
-        sb.AppendLine("        }");
-        sb.AppendLine("    }");
-        sb.AppendLine();
+        EmbeddedHookDispatcherEmitter.Emit(sb, actions, contextClassName, EmbeddedHookDispatcherDescriptor.ParserAction);
     }
 
     /// <summary>
@@ -261,93 +399,26 @@ internal static partial class GrammarEmitter
 
 
     /// <summary>
-    /// Emits the grammar-specific lexer action executor.
+    /// Emits the grammar-specific lexer action executor through the shared dispatcher emitter.
     /// </summary>
     /// <param name="sb">Source builder receiving generated C#.</param>
     /// <param name="lexerActions">Lexer action hooks available to the executor.</param>
     /// <param name="contextClassName">Generated execution context class name.</param>
     private static void EmitLexerActionExecutor(StringBuilder sb, IReadOnlyList<EmbeddedCodeHook> lexerActions, string contextClassName)
     {
-        sb.AppendLine("    /// <summary>Dispatches accepted lexer inline actions to generated C# lexer action hooks.</summary>");
-        sb.AppendLine("    private sealed class GeneratedLexerActionExecutor : ILexerActionExecutor");
-        sb.AppendLine("    {");
-        sb.AppendLine($"        private readonly {contextClassName} _executionContext;");
-        sb.AppendLine("        private readonly ILexerActionExecutor _fallback;");
-        sb.AppendLine();
-        sb.AppendLine("        /// <summary>Initializes a generated lexer action executor for one execution context.</summary>");
-        sb.AppendLine($"        public GeneratedLexerActionExecutor({contextClassName} executionContext, ILexerActionExecutor fallback)");
-        sb.AppendLine("        {");
-        sb.AppendLine("            _executionContext = executionContext;");
-        sb.AppendLine("            _fallback = fallback;");
-        sb.AppendLine("        }");
-        sb.AppendLine();
-        sb.AppendLine("        /// <summary>Executes a generated lexer action hook when the runtime context matches.</summary>");
-        sb.AppendLine("        public LexerActionExecutionOutcome Execute(LexerActionExecutionContext context, LexerActionExecutionResult result)");
-        sb.AppendLine("        {");
-        foreach (var action in lexerActions)
-        {
-            ValidateEmbeddedCodeHook(action, EmbeddedCodeHookOwner.Lexer, EmbeddedCodeHookKind.InlineAction);
-            string rawLexerActionCode = Escape(GetRawEmbeddedCodeText(action.RawCode));
-            sb.AppendLine($"            if (string.Equals(context.Rule.Name, \"{Escape(action.RuleName)}\", global::System.StringComparison.Ordinal)");
-            sb.AppendLine($"                && string.Equals(context.ActionCode, \"{rawLexerActionCode}\", global::System.StringComparison.Ordinal)");
-            sb.AppendLine($"                && context.AlternativeIndex == {action.AlternativeIndex}");
-            sb.AppendLine($"                && context.ElementIndex == {action.ElementIndex})");
-            sb.AppendLine("            {");
-            sb.AppendLine($"                _executionContext.{action.MethodName}(context, result);");
-            sb.AppendLine("                return LexerActionExecutionOutcome.Executed;");
-            sb.AppendLine("            }");
-            sb.AppendLine();
-        }
-
-        sb.AppendLine("            return _fallback.Execute(context, result);");
-        sb.AppendLine("        }");
-        sb.AppendLine("    }");
-        sb.AppendLine();
+        EmbeddedHookDispatcherEmitter.Emit(sb, lexerActions, contextClassName, EmbeddedHookDispatcherDescriptor.LexerAction);
     }
 
 
     /// <summary>
-    /// Emits the grammar-specific lexer predicate evaluator.
+    /// Emits the grammar-specific lexer predicate evaluator through the shared dispatcher emitter.
     /// </summary>
     /// <param name="sb">Source builder receiving generated C#.</param>
     /// <param name="lexerPredicates">Lexer predicate hooks available to the evaluator.</param>
     /// <param name="contextClassName">Generated execution context class name.</param>
     private static void EmitLexerPredicateEvaluator(StringBuilder sb, IReadOnlyList<EmbeddedCodeHook> lexerPredicates, string contextClassName)
     {
-        sb.AppendLine("    /// <summary>Dispatches lexer predicate contexts to generated C# lexer predicate hooks.</summary>");
-        sb.AppendLine("    private sealed class GeneratedLexerPredicateEvaluator : ILexerPredicateEvaluator");
-        sb.AppendLine("    {");
-        sb.AppendLine($"        private readonly {contextClassName} _executionContext;");
-        sb.AppendLine("        private readonly ILexerPredicateEvaluator _fallback;");
-        sb.AppendLine();
-        sb.AppendLine("        /// <summary>Initializes a generated lexer predicate evaluator for one execution context.</summary>");
-        sb.AppendLine($"        public GeneratedLexerPredicateEvaluator({contextClassName} executionContext, ILexerPredicateEvaluator fallback)");
-        sb.AppendLine("        {");
-        sb.AppendLine("            _executionContext = executionContext;");
-        sb.AppendLine("            _fallback = fallback;");
-        sb.AppendLine("        }");
-        sb.AppendLine();
-        sb.AppendLine("        /// <summary>Evaluates a generated lexer predicate hook when the runtime context matches.</summary>");
-        sb.AppendLine("        public LexerPredicateEvaluationOutcome Evaluate(LexerPredicateEvaluationContext context)");
-        sb.AppendLine("        {");
-        foreach (var predicate in lexerPredicates)
-        {
-            ValidateEmbeddedCodeHook(predicate, EmbeddedCodeHookOwner.Lexer, EmbeddedCodeHookKind.SemanticPredicate);
-            string rawLexerPredicateCode = Escape(GetRawEmbeddedCodeText(predicate.RawCode));
-            sb.AppendLine($"            if (string.Equals(context.Rule.Name, \"{Escape(predicate.RuleName)}\", global::System.StringComparison.Ordinal)");
-            sb.AppendLine($"                && string.Equals(context.PredicateCode, \"{rawLexerPredicateCode}\", global::System.StringComparison.Ordinal)");
-            sb.AppendLine($"                && context.AlternativeIndex == {predicate.AlternativeIndex}");
-            sb.AppendLine($"                && context.ElementIndex == {predicate.ElementIndex})");
-            sb.AppendLine("            {");
-            sb.AppendLine($"                return _executionContext.{predicate.MethodName}(context) ? LexerPredicateEvaluationOutcome.True : LexerPredicateEvaluationOutcome.False;");
-            sb.AppendLine("            }");
-            sb.AppendLine();
-        }
-
-        sb.AppendLine("            return _fallback.Evaluate(context);");
-        sb.AppendLine("        }");
-        sb.AppendLine("    }");
-        sb.AppendLine();
+        EmbeddedHookDispatcherEmitter.Emit(sb, lexerPredicates, contextClassName, EmbeddedHookDispatcherDescriptor.LexerPredicate);
     }
 
     /// <summary>
