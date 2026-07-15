@@ -169,7 +169,7 @@ Every API-changing PR must include:
 
 ## Parser/lexer specialization refactor direction
 
-Several generator paths share a similar global algorithm while still carrying real parser/lexer variation points. The composition-based direction remains active and is now implemented for embedded-hook collection and runtime dispatcher emission.
+Several generator paths share a similar global algorithm while still carrying real parser/lexer variation points. The composition-based direction remains active and is now implemented for embedded-hook collection and runtime dispatcher emission and generated hook-method emission.
 
 Implemented for embedded-hook collection:
 
@@ -184,11 +184,12 @@ Invariants now locked by tests and architecture guards:
 
 - parser and lexer hook collection share one recursive collector rather than two duplicated traversals;
 - parser and lexer runtime dispatchers share one emitter rather than four duplicated dispatcher bodies;
+- parser and lexer generated hook methods share one method emitter rather than four duplicated method bodies;
 - parser left recursion remains in parser-specific root preparation;
 - lexer modes remain in lexer-specific rule enumeration;
 - hook method names, owner/kind categories, indexes, sentinels, source order, priority order, and transformation locations are preserved;
 - each hook is transformed once, in final collection order, through the existing centralized transformation boundary;
-- no `isLexer` / `isPredicate` parameter, broad inheritance hierarchy, or public strategy/collector/dispatcher API is introduced.
+- no `isLexer` / `isPredicate` parameter, broad inheritance hierarchy, or public strategy/collector/dispatcher/method-emitter API is introduced.
 
 Implemented for runtime dispatcher emission:
 
@@ -196,10 +197,16 @@ Implemented for runtime dispatcher emission:
 - `EmbeddedHookDispatcherDescriptor` owns immutable declarative differences for parser predicates, parser actions, lexer predicates, and lexer actions, including interfaces, context types, return types, signatures, code-property names, success expressions, invocation arguments, and fallback expressions.
 - Explicit wrappers `EmitSemanticPredicateEvaluator(...)`, `EmitParserActionExecutor(...)`, `EmitLexerPredicateEvaluator(...)`, and `EmitLexerActionExecutor(...)` remain as the four readable selection points and delegate to the shared emitter.
 
+Implemented for generated hook-method emission:
+
+- `EmbeddedHookMethodEmitter` owns the common generated hook-method algorithm: owner/kind validation, body classification, XML summary, signature, braces, optional parser context locals, centralized `EmitGeneratedEmbeddedCodeBody(...)`, and final spacing.
+- `EmbeddedHookMethodDescriptor` owns immutable declarative differences for parser predicates, parser actions, lexer predicates, and lexer actions, including owner, kind, return type, parameters, XML summary, context-local profile, and `ForPredicate(...)` / `ForAction(...)` body factory.
+- Explicit wrappers `EmitPredicateHook(...)`, `EmitActionHook(...)`, `EmitLexerPredicateHook(...)`, and `EmitLexerActionHook(...)` remain as the four readable selection points and delegate to the shared emitter.
+- Lifecycle hooks remain separate because they use `LifecycleHook`, `ParserRuleLifecycleContext`, lifecycle phases, `internal` visibility, and lifecycle-specific locals rather than `EmbeddedCodeHookOwner` / `EmbeddedCodeHookKind`.
+
 Still planned:
 
-- introduce a shared generated hook-method emitter only for genuinely common method-body and signature construction;
-- extend Roslyn architecture guards to the future hook-method refactor when it is implemented.
+- keep points 9, 10, and 11 open for the broader embedded-code pipeline, `EmittedCode` naming, and public preparer documentation work.
 
 The refactor must continue to keep the following differences explicit: parser left recursion, alternative priority ordering, lexer modes, quantifier and negation index semantics, generated names, transformation locations, runtime context types, method signatures, success results, and fallback calls. These differences must not be hidden behind a single `isLexer` flag or scattered parser/lexer switches inside a shared engine.
 

@@ -353,16 +353,61 @@ Tests ajoutés ou renforcés :
   discriminants `Owner` et `Kind`, les quatre configurations explicites, les fallbacks et le maintien des
   méthodes de hooks séparées pour 8c.
 
-#### 8c. Méthodes de hooks — restant
+#### 8c. Méthodes de hooks — corrigé
 
-L'émission des méthodes de hooks générées n'est pas mutualisée par cette correction. Les signatures,
-retours, fallbacks et corps générés restent inchangés.
+L'émission des quatre familles de méthodes de hooks générées est désormais mutualisée par le moteur
+privé `EmbeddedHookMethodEmitter`. Ce moteur porte l'algorithme stable : validation typée du hook par
+`Owner` et `Kind`, création du `GeneratedEmbeddedCodeBody`, commentaire XML, signature, accolade
+d'ouverture, préambule éventuel de locaux de contexte, appel centralisé à
+`EmitGeneratedEmbeddedCodeBody(...)`, accolade de fermeture et ligne vide finale. La source générée
+reste préservée : mêmes commentaires XML, mêmes signatures, même indentation, mêmes corps injectés et
+même ordre d'émission.
 
-#### 8d. Garde-fous globaux — partiellement corrigé
+Les différences déclaratives sont concentrées dans le descripteur immuable privé
+`EmbeddedHookMethodDescriptor`, qui expose explicitement les quatre configurations :
 
-Des garde-fous architecturaux couvrent maintenant la collecte des hooks et les dispatchers runtime. Les
-garde-fous globaux sur une future mutualisation des méthodes de hooks restent à compléter lorsque 8c
-sera traitée.
+- `ParserPredicate` valide `Parser` / `SemanticPredicate`, émet `private bool`, reçoit
+  `SemanticPredicateEvaluationContext context`, utilise `GeneratedEmbeddedCodeBody.ForPredicate(...)`
+  et conserve les locaux parser predicate (`ruleName`, `inputPosition`, `alternativeIndex`,
+  `elementIndex`, `predicateCode`) ;
+- `ParserAction` valide `Parser` / `InlineAction`, émet `private void`, reçoit
+  `ParserActionExecutionContext context`, utilise `GeneratedEmbeddedCodeBody.ForAction(...)` et
+  conserve les locaux parser action (`ruleName`, `inputPosition`, `alternativeIndex`, `elementIndex`,
+  `actionCode`) ;
+- `LexerPredicate` valide `Lexer` / `SemanticPredicate`, émet `private bool`, reçoit
+  `LexerPredicateEvaluationContext context`, utilise `GeneratedEmbeddedCodeBody.ForPredicate(...)` et
+  ne reçoit aucun local parser ;
+- `LexerAction` valide `Lexer` / `InlineAction`, émet `private void`, reçoit
+  `LexerActionExecutionContext context, LexerActionExecutionResult result`, utilise
+  `GeneratedEmbeddedCodeBody.ForAction(...)`, conserve le paramètre mutable `result` et ne reçoit aucun
+  local parser.
+
+Le profil explicite `EmbeddedHookContextLocalProfile` limite le préambule aux trois cas réels
+(`None`, `ParserPredicate`, `ParserAction`) sans introduire de booléen de domaine. Les wrappers
+`EmitPredicateHook(...)`, `EmitActionHook(...)`, `EmitLexerPredicateHook(...)` et
+`EmitLexerActionHook(...)` restent les points de lecture spécialisés ; ils sélectionnent uniquement le
+descripteur et délèguent au moteur commun. Les hooks lifecycle restent hors périmètre : ils reposent
+sur `LifecycleHook`, une visibilité `internal`, `ParserRuleLifecycleContext`, des locaux et phases
+`@init` / `@after`, sans discriminants `EmbeddedCodeHookOwner` / `EmbeddedCodeHookKind`.
+
+Tests ajoutés ou renforcés :
+
+- `Antlr4GeneratedEmbeddedCodeTests.Emit_CombinedEmbeddedCode_GeneratesStableHookMethodBlocks`
+  caractérise les commentaires, signatures, locaux parser, absence de locaux parser côté lexer,
+  transformation expression/bloc, ordre des familles et conservation du paramètre lexer `result` ;
+- `EmbeddedCodeTransformerArchitectureTests.GrammarEmitterEmbeddedHookMethods_UseSharedEmitterAndImmutableDescriptors`
+  vérifie par Roslyn l'émetteur commun, le descripteur immuable, les quatre configurations explicites,
+  la délégation des wrappers, l'absence d'appels directs interdits dans les wrappers, la validation
+  typée, l'appel unique à `EmitGeneratedEmbeddedCodeBody(...)`, la distinction typée
+  `ForPredicate(...)` / `ForAction(...)`, les profils de locaux explicites, l'absence de `isLexer` /
+  `isPredicate`, et le maintien des hooks lifecycle hors abstraction.
+
+#### 8d. Garde-fous globaux — corrigé
+
+Les garde-fous architecturaux couvrent maintenant la collecte, les dispatchers runtime et les méthodes
+de hooks. Ils vérifient l'absence de réintroduction d'algorithmes parallèles, l'absence de booléens de
+domaine `isLexer` / `isPredicate`, l'absence de nouvelle API publique, la conservation des wrappers
+explicites, la validation typée et la séparation volontaire des hooks lifecycle.
 
 ## Duplications d'intention et lisibilité (priorité moyenne)
 

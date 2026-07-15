@@ -6453,6 +6453,78 @@ public class Antlr4GeneratedEmbeddedCodeTests
         Assert.IsFalse(source.Contains("        RAW_LEXER_ACTION;", StringComparison.Ordinal));
     }
 
+
+    /// <summary>
+    /// Characterizes complete generated hook method blocks for parser and lexer predicate/action families.
+    /// </summary>
+    [TestMethod]
+    public void Emit_CombinedEmbeddedCode_GeneratesStableHookMethodBlocks()
+    {
+        const string grammar = """
+            grammar P;
+
+            @parser::members {
+                public int ParserActions;
+            }
+
+            @lexer::members {
+                public int LexerActions;
+            }
+
+            start
+                : { true }? A { ParserActions++; }
+                | { return true; }? B { ParserActions += 10; }
+                ;
+            A : { true }? 'a' { result.Type = 2; } ;
+            B : { return true; }? 'b' { LexerActions += 10; } ;
+            """;
+
+        string source = Emit(grammar);
+
+        AssertSourceContainsInOrder(
+            source,
+            "/// <summary>Executes semantic predicate hook for rule <c>start</c>, alternative 0, element 0.</summary>",
+            "private bool __Predicate_start_0_0_0(SemanticPredicateEvaluationContext context)",
+            "string ruleName = context.Rule.Name;",
+            "int inputPosition = context.InputPosition;",
+            "int alternativeIndex = context.AlternativeIndex;",
+            "int elementIndex = context.ElementIndex;",
+            "string predicateCode = context.PredicateCode;",
+            "return true;",
+            "/// <summary>Executes semantic predicate hook for rule <c>start</c>, alternative 1, element 0.</summary>",
+            "private bool __Predicate_start_1_0_2(SemanticPredicateEvaluationContext context)",
+            "return true;",
+            "/// <summary>Executes inline parser action hook for rule <c>start</c>, alternative 0, element 2.</summary>",
+            "private void __Action_start_0_2_1(ParserActionExecutionContext context)",
+            "string ruleName = context.Rule.Name;",
+            "int inputPosition = context.InputPosition;",
+            "int alternativeIndex = context.AlternativeIndex;",
+            "int elementIndex = context.ElementIndex;",
+            "string actionCode = context.ActionCode;",
+            "ParserActions++;",
+            "/// <summary>Executes inline parser action hook for rule <c>start</c>, alternative 1, element 2.</summary>",
+            "private void __Action_start_1_2_3(ParserActionExecutionContext context)",
+            "ParserActions += 10;",
+            "/// <summary>Executes inline lexer action hook for rule <c>A</c>.</summary>",
+            "private void __LexerAction_A_0_2_1(LexerActionExecutionContext context, LexerActionExecutionResult result)",
+            "result.Type = 2;",
+            "/// <summary>Executes inline lexer action hook for rule <c>B</c>.</summary>",
+            "private void __LexerAction_B_0_2_3(LexerActionExecutionContext context, LexerActionExecutionResult result)",
+            "LexerActions += 10;",
+            "/// <summary>Executes inline lexer predicate hook for rule <c>A</c>.</summary>",
+            "private bool __LexerPredicate_A_0_0_0(LexerPredicateEvaluationContext context)",
+            "return true;",
+            "/// <summary>Executes inline lexer predicate hook for rule <c>B</c>.</summary>",
+            "private bool __LexerPredicate_B_0_0_2(LexerPredicateEvaluationContext context)",
+            "return true;");
+
+        string lexerPredicateBlock = ExtractMethodBlock(source, "private bool __LexerPredicate_A_0_0_0");
+        string lexerActionBlock = ExtractMethodBlock(source, "private void __LexerAction_A_0_2_1");
+        Assert.IsFalse(lexerPredicateBlock.Contains("ruleName = context.Rule.Name", StringComparison.Ordinal));
+        Assert.IsFalse(lexerActionBlock.Contains("alternativeIndex = context.AlternativeIndex", StringComparison.Ordinal));
+        Assert.IsFalse(ExtractMethodBlock(source, "private void __Action_start_0_2_1").Contains("return ParserActions", StringComparison.Ordinal));
+    }
+
     /// <summary>
     /// Invokes one of the private generated hook factory methods by reflection.
     /// </summary>
@@ -7045,6 +7117,19 @@ public class Antlr4GeneratedEmbeddedCodeTests
         }
     }
 
+
+
+    /// <summary>
+    /// Extracts a generated method block starting at the supplied signature fragment.
+    /// </summary>
+    private static string ExtractMethodBlock(string source, string signatureFragment)
+    {
+        int start = source.IndexOf(signatureFragment, StringComparison.Ordinal);
+        Assert.IsTrue(start >= 0, $"Signature not found: {signatureFragment}");
+        int nextSummary = source.IndexOf("    /// <summary>", start + signatureFragment.Length, StringComparison.Ordinal);
+        Assert.IsTrue(nextSummary >= 0, $"End marker not found after: {signatureFragment}");
+        return source.Substring(start, nextSummary - start);
+    }
 
     /// <summary>
     /// Asserts that a generated embedded-code region contains exactly one transformed marker line.

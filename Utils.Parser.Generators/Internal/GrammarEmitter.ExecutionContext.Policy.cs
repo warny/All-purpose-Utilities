@@ -428,16 +428,7 @@ internal static partial class GrammarEmitter
     /// <param name="hook">Predicate hook metadata.</param>
     private static void EmitPredicateHook(StringBuilder sb, EmbeddedCodeHook hook)
     {
-        ValidateEmbeddedCodeHook(hook, EmbeddedCodeHookOwner.Parser, EmbeddedCodeHookKind.SemanticPredicate);
-        var body = GeneratedEmbeddedCodeBody.ForPredicate(hook.EmittedCode);
-
-        sb.AppendLine($"    /// <summary>Executes semantic predicate hook for rule <c>{EscapeXml(hook.RuleName)}</c>, alternative {hook.AlternativeIndex}, element {hook.ElementIndex}.</summary>");
-        sb.AppendLine($"    private bool {hook.MethodName}(SemanticPredicateEvaluationContext context)");
-        sb.AppendLine("    {");
-        EmitContextLocals(sb, predicate: true);
-        EmitGeneratedEmbeddedCodeBody(sb, body, 2);
-        sb.AppendLine("    }");
-        sb.AppendLine();
+        EmbeddedHookMethodEmitter.Emit(sb, hook, EmbeddedHookMethodDescriptor.ParserPredicate);
     }
 
     /// <summary>
@@ -447,16 +438,7 @@ internal static partial class GrammarEmitter
     /// <param name="hook">Action hook metadata.</param>
     private static void EmitActionHook(StringBuilder sb, EmbeddedCodeHook hook)
     {
-        ValidateEmbeddedCodeHook(hook, EmbeddedCodeHookOwner.Parser, EmbeddedCodeHookKind.InlineAction);
-        var body = GeneratedEmbeddedCodeBody.ForAction(hook.EmittedCode);
-
-        sb.AppendLine($"    /// <summary>Executes inline parser action hook for rule <c>{EscapeXml(hook.RuleName)}</c>, alternative {hook.AlternativeIndex}, element {hook.ElementIndex}.</summary>");
-        sb.AppendLine($"    private void {hook.MethodName}(ParserActionExecutionContext context)");
-        sb.AppendLine("    {");
-        EmitContextLocals(sb, predicate: false);
-        EmitGeneratedEmbeddedCodeBody(sb, body, 2);
-        sb.AppendLine("    }");
-        sb.AppendLine();
+        EmbeddedHookMethodEmitter.Emit(sb, hook, EmbeddedHookMethodDescriptor.ParserAction);
     }
 
 
@@ -467,15 +449,7 @@ internal static partial class GrammarEmitter
     /// <param name="hook">Lexer action hook metadata.</param>
     private static void EmitLexerActionHook(StringBuilder sb, EmbeddedCodeHook hook)
     {
-        ValidateEmbeddedCodeHook(hook, EmbeddedCodeHookOwner.Lexer, EmbeddedCodeHookKind.InlineAction);
-        var body = GeneratedEmbeddedCodeBody.ForAction(hook.EmittedCode);
-
-        sb.AppendLine($"    /// <summary>Executes inline lexer action hook for rule <c>{EscapeXml(hook.RuleName)}</c>.</summary>");
-        sb.AppendLine($"    private void {hook.MethodName}(LexerActionExecutionContext context, LexerActionExecutionResult result)");
-        sb.AppendLine("    {");
-        EmitGeneratedEmbeddedCodeBody(sb, body, 2);
-        sb.AppendLine("    }");
-        sb.AppendLine();
+        EmbeddedHookMethodEmitter.Emit(sb, hook, EmbeddedHookMethodDescriptor.LexerAction);
     }
 
 
@@ -486,15 +460,124 @@ internal static partial class GrammarEmitter
     /// <param name="hook">Lexer predicate hook metadata.</param>
     private static void EmitLexerPredicateHook(StringBuilder sb, EmbeddedCodeHook hook)
     {
-        ValidateEmbeddedCodeHook(hook, EmbeddedCodeHookOwner.Lexer, EmbeddedCodeHookKind.SemanticPredicate);
-        var body = GeneratedEmbeddedCodeBody.ForPredicate(hook.EmittedCode);
+        EmbeddedHookMethodEmitter.Emit(sb, hook, EmbeddedHookMethodDescriptor.LexerPredicate);
+    }
 
-        sb.AppendLine($"    /// <summary>Executes inline lexer predicate hook for rule <c>{EscapeXml(hook.RuleName)}</c>.</summary>");
-        sb.AppendLine($"    private bool {hook.MethodName}(LexerPredicateEvaluationContext context)");
-        sb.AppendLine("    {");
-        EmitGeneratedEmbeddedCodeBody(sb, body, 2);
-        sb.AppendLine("    }");
-        sb.AppendLine();
+    /// <summary>
+    /// Emits generated C# hook methods using one stable algorithm and descriptor-provided variation points.
+    /// </summary>
+    private static class EmbeddedHookMethodEmitter
+    {
+        /// <summary>
+        /// Emits a complete generated hook method for one parser or lexer embedded-code hook.
+        /// </summary>
+        /// <param name="sb">Source builder receiving generated C#.</param>
+        /// <param name="hook">Embedded-code hook to emit.</param>
+        /// <param name="descriptor">Immutable descriptor for the hook family.</param>
+        public static void Emit(StringBuilder sb, EmbeddedCodeHook hook, EmbeddedHookMethodDescriptor descriptor)
+        {
+            ValidateEmbeddedCodeHook(hook, descriptor.Owner, descriptor.Kind);
+            GeneratedEmbeddedCodeBody body = descriptor.CreateBody(hook.EmittedCode);
+
+            sb.AppendLine(descriptor.CreateSummary(hook));
+            sb.AppendLine($"    private {descriptor.ReturnTypeName} {hook.MethodName}({descriptor.Parameters})");
+            sb.AppendLine("    {");
+            EmitContextLocals(sb, descriptor.ContextLocalProfile);
+            EmitGeneratedEmbeddedCodeBody(sb, body, 2);
+            sb.AppendLine("    }");
+            sb.AppendLine();
+        }
+
+        /// <summary>
+        /// Emits parser context locals when required by the selected hook profile.
+        /// </summary>
+        /// <param name="sb">Source builder receiving generated C#.</param>
+        /// <param name="profile">Context-local profile selected by the descriptor.</param>
+        private static void EmitContextLocals(StringBuilder sb, EmbeddedHookContextLocalProfile profile)
+        {
+            switch (profile)
+            {
+                case EmbeddedHookContextLocalProfile.None:
+                    break;
+                case EmbeddedHookContextLocalProfile.ParserPredicate:
+                    GrammarEmitter.EmitContextLocals(sb, predicate: true);
+                    break;
+                case EmbeddedHookContextLocalProfile.ParserAction:
+                    GrammarEmitter.EmitContextLocals(sb, predicate: false);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(profile));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Identifies the parser context locals emitted before a generated hook body.
+    /// </summary>
+    private enum EmbeddedHookContextLocalProfile
+    {
+        /// <summary>No parser context locals are emitted.</summary>
+        None,
+
+        /// <summary>Parser predicate locals, including <c>predicateCode</c>, are emitted.</summary>
+        ParserPredicate,
+
+        /// <summary>Parser action locals, including <c>actionCode</c>, are emitted.</summary>
+        ParserAction
+    }
+
+    /// <summary>
+    /// Immutable descriptor for one generated embedded-code hook method family.
+    /// </summary>
+    private readonly struct EmbeddedHookMethodDescriptor
+    {
+        private readonly Func<TransformedEmbeddedCode, GeneratedEmbeddedCodeBody> _createBody;
+        private readonly Func<EmbeddedCodeHook, string> _createSummary;
+
+        /// <summary>Initializes a generated hook method descriptor.</summary>
+        private EmbeddedHookMethodDescriptor(EmbeddedCodeHookOwner owner, EmbeddedCodeHookKind kind, string returnTypeName, string parameters, EmbeddedHookContextLocalProfile contextLocalProfile, Func<TransformedEmbeddedCode, GeneratedEmbeddedCodeBody> createBody, Func<EmbeddedCodeHook, string> createSummary)
+        {
+            Owner = owner;
+            Kind = kind;
+            ReturnTypeName = returnTypeName;
+            Parameters = parameters;
+            ContextLocalProfile = contextLocalProfile;
+            _createBody = createBody ?? throw new ArgumentNullException(nameof(createBody));
+            _createSummary = createSummary ?? throw new ArgumentNullException(nameof(createSummary));
+        }
+
+        /// <summary>Gets the parser predicate method descriptor.</summary>
+        public static EmbeddedHookMethodDescriptor ParserPredicate { get; } = new(EmbeddedCodeHookOwner.Parser, EmbeddedCodeHookKind.SemanticPredicate, "bool", "SemanticPredicateEvaluationContext context", EmbeddedHookContextLocalProfile.ParserPredicate, GeneratedEmbeddedCodeBody.ForPredicate, static hook => $"    /// <summary>Executes semantic predicate hook for rule <c>{EscapeXml(hook.RuleName)}</c>, alternative {hook.AlternativeIndex}, element {hook.ElementIndex}.</summary>");
+
+        /// <summary>Gets the parser action method descriptor.</summary>
+        public static EmbeddedHookMethodDescriptor ParserAction { get; } = new(EmbeddedCodeHookOwner.Parser, EmbeddedCodeHookKind.InlineAction, "void", "ParserActionExecutionContext context", EmbeddedHookContextLocalProfile.ParserAction, GeneratedEmbeddedCodeBody.ForAction, static hook => $"    /// <summary>Executes inline parser action hook for rule <c>{EscapeXml(hook.RuleName)}</c>, alternative {hook.AlternativeIndex}, element {hook.ElementIndex}.</summary>");
+
+        /// <summary>Gets the lexer predicate method descriptor.</summary>
+        public static EmbeddedHookMethodDescriptor LexerPredicate { get; } = new(EmbeddedCodeHookOwner.Lexer, EmbeddedCodeHookKind.SemanticPredicate, "bool", "LexerPredicateEvaluationContext context", EmbeddedHookContextLocalProfile.None, GeneratedEmbeddedCodeBody.ForPredicate, static hook => $"    /// <summary>Executes inline lexer predicate hook for rule <c>{EscapeXml(hook.RuleName)}</c>.</summary>");
+
+        /// <summary>Gets the lexer action method descriptor.</summary>
+        public static EmbeddedHookMethodDescriptor LexerAction { get; } = new(EmbeddedCodeHookOwner.Lexer, EmbeddedCodeHookKind.InlineAction, "void", "LexerActionExecutionContext context, LexerActionExecutionResult result", EmbeddedHookContextLocalProfile.None, GeneratedEmbeddedCodeBody.ForAction, static hook => $"    /// <summary>Executes inline lexer action hook for rule <c>{EscapeXml(hook.RuleName)}</c>.</summary>");
+
+        /// <summary>Gets the expected hook owner.</summary>
+        public EmbeddedCodeHookOwner Owner { get; }
+
+        /// <summary>Gets the expected hook kind.</summary>
+        public EmbeddedCodeHookKind Kind { get; }
+
+        /// <summary>Gets the generated method return type name.</summary>
+        public string ReturnTypeName { get; }
+
+        /// <summary>Gets the generated method parameter list.</summary>
+        public string Parameters { get; }
+
+        /// <summary>Gets the context-local profile emitted before the hook body.</summary>
+        public EmbeddedHookContextLocalProfile ContextLocalProfile { get; }
+
+        /// <summary>Creates the generated body wrapper for transformed code.</summary>
+        public GeneratedEmbeddedCodeBody CreateBody(TransformedEmbeddedCode code) => _createBody(code);
+
+        /// <summary>Creates the generated XML documentation summary line.</summary>
+        public string CreateSummary(EmbeddedCodeHook hook) => _createSummary(hook);
     }
 
     /// <summary>
