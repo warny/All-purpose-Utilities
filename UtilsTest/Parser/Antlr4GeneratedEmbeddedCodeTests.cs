@@ -1,5 +1,6 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Reflection;
 using System.Runtime.Loader;
@@ -7120,9 +7121,27 @@ public class Antlr4GeneratedEmbeddedCodeTests
 
 
     /// <summary>
-    /// Extracts a generated method block starting at the supplied signature fragment.
+    /// Extracts a generated method block containing the supplied signature fragment.
     /// </summary>
     private static string ExtractMethodBlock(string source, string signatureFragment)
+    {
+        CompilationUnitSyntax root = CSharpSyntaxTree.ParseText(source).GetCompilationUnitRoot();
+        MethodDeclarationSyntax? method = root.DescendantNodes()
+            .OfType<MethodDeclarationSyntax>()
+            .FirstOrDefault(method => method.ToFullString().Contains(signatureFragment, StringComparison.Ordinal));
+
+        if (method is not null)
+        {
+            return method.ToFullString();
+        }
+
+        return ExtractMethodBlockByBraceFallback(source, signatureFragment);
+    }
+
+    /// <summary>
+    /// Extracts a generated method block by matching braces when syntax-based extraction cannot locate the method.
+    /// </summary>
+    private static string ExtractMethodBlockByBraceFallback(string source, string signatureFragment)
     {
         int start = source.IndexOf(signatureFragment, StringComparison.Ordinal);
         Assert.IsTrue(start >= 0, $"Signature not found: {signatureFragment}");
