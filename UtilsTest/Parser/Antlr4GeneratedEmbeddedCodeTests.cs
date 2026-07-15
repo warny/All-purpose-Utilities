@@ -2464,6 +2464,10 @@ public class Antlr4GeneratedEmbeddedCodeTests
             "&& context.AlternativeIndex == 0",
             "&& context.ElementIndex == 0",
             "return _executionContext.__Predicate_start_0_0_0(context) ? SemanticPredicateEvaluationOutcome.Satisfied : SemanticPredicateEvaluationOutcome.Rejected;",
+            "&& string.Equals(context.PredicateCode, \" false \", global::System.StringComparison.Ordinal)",
+            "&& context.AlternativeIndex == 1",
+            "&& context.ElementIndex == 0",
+            "return _executionContext.__Predicate_start_1_0_2(context) ? SemanticPredicateEvaluationOutcome.Satisfied : SemanticPredicateEvaluationOutcome.Rejected;",
             "return _fallback.Evaluate(context);");
         AssertSourceContainsInOrder(
             source,
@@ -2471,6 +2475,11 @@ public class Antlr4GeneratedEmbeddedCodeTests
             "public ParserActionExecutionOutcome Execute(ParserActionExecutionContext context)",
             "&& string.Equals(context.ActionCode, \" ParserActions++; \", global::System.StringComparison.Ordinal)",
             "_executionContext.__Action_start_0_2_1(context);",
+            "return ParserActionExecutionOutcome.Executed;",
+            "&& string.Equals(context.ActionCode, \" ParserActions += 10; \", global::System.StringComparison.Ordinal)",
+            "&& context.AlternativeIndex == 1",
+            "&& context.ElementIndex == 2",
+            "_executionContext.__Action_start_1_2_3(context);",
             "return ParserActionExecutionOutcome.Executed;",
             "return _fallback.Execute(context);");
         AssertSourceContainsInOrder(
@@ -2480,6 +2489,11 @@ public class Antlr4GeneratedEmbeddedCodeTests
             "&& string.Equals(context.ActionCode, \" LexerActions++; \", global::System.StringComparison.Ordinal)",
             "_executionContext.__LexerAction_A_0_2_1(context, result);",
             "return LexerActionExecutionOutcome.Executed;",
+            "&& string.Equals(context.ActionCode, \" LexerActions += 10; \", global::System.StringComparison.Ordinal)",
+            "&& context.AlternativeIndex == 0",
+            "&& context.ElementIndex == 2",
+            "_executionContext.__LexerAction_B_0_2_3(context, result);",
+            "return LexerActionExecutionOutcome.Executed;",
             "return _fallback.Execute(context, result);");
         AssertSourceContainsInOrder(
             source,
@@ -2487,6 +2501,10 @@ public class Antlr4GeneratedEmbeddedCodeTests
             "public LexerPredicateEvaluationOutcome Evaluate(LexerPredicateEvaluationContext context)",
             "&& string.Equals(context.PredicateCode, \" LexerEnabled \", global::System.StringComparison.Ordinal)",
             "return _executionContext.__LexerPredicate_A_0_0_0(context) ? LexerPredicateEvaluationOutcome.True : LexerPredicateEvaluationOutcome.False;",
+            "&& string.Equals(context.PredicateCode, \" true \", global::System.StringComparison.Ordinal)",
+            "&& context.AlternativeIndex == 0",
+            "&& context.ElementIndex == 0",
+            "return _executionContext.__LexerPredicate_B_0_0_2(context) ? LexerPredicateEvaluationOutcome.True : LexerPredicateEvaluationOutcome.False;",
             "return _fallback.Evaluate(context);");
     }
 
