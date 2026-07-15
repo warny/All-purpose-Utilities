@@ -7126,9 +7126,28 @@ public class Antlr4GeneratedEmbeddedCodeTests
     {
         int start = source.IndexOf(signatureFragment, StringComparison.Ordinal);
         Assert.IsTrue(start >= 0, $"Signature not found: {signatureFragment}");
-        int nextSummary = source.IndexOf("    /// <summary>", start + signatureFragment.Length, StringComparison.Ordinal);
-        Assert.IsTrue(nextSummary >= 0, $"End marker not found after: {signatureFragment}");
-        return source.Substring(start, nextSummary - start);
+
+        int openBrace = source.IndexOf('{', start + signatureFragment.Length);
+        Assert.IsTrue(openBrace >= 0, $"Opening brace not found after: {signatureFragment}");
+
+        int depth = 0;
+        for (int index = openBrace; index < source.Length; index++)
+        {
+            if (source[index] == '{')
+            {
+                depth++;
+            }
+            else if (source[index] == '}')
+            {
+                depth--;
+                if (depth == 0)
+                {
+                    return source.Substring(start, index - start + 1);
+                }
+            }
+        }
+
+        return source.Substring(start);
     }
 
     /// <summary>
