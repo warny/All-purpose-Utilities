@@ -1181,7 +1181,7 @@ public sealed class ParserEngine
         }
 
         var span = ComputeSpan(startToken, context, startPos);
-        return new ParserNode(span, startToken?.ModeName ?? "DEFAULT_MODE", rule, children);
+        return new QuantifierNode(span, startToken?.ModeName ?? "DEFAULT_MODE", rule, children);
     }
 
     /// <summary>
