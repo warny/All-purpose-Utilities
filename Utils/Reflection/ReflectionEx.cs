@@ -28,14 +28,33 @@ public static class ReflectionEx
         };
 
     /// <summary>
-    /// Retrieves the interfaces that are directly implemented by the type, excluding those inherited from base types.
+    /// Retrieves the interfaces that are directly implemented by the type, excluding those inherited from base types
+    /// or from other directly implemented interfaces.
     /// </summary>
+    /// <remarks>
+    /// For class types the method subtracts the interfaces already exposed by the base class.
+    /// For interface types it subtracts the interfaces that are transitively inherited through any parent interface,
+    /// retaining only the interfaces declared directly on <paramref name="type"/> itself.
+    /// </remarks>
     /// <param name="type">The type to check for directly implemented interfaces.</param>
-    /// <returns>An enumerable of directly implemented interfaces.</returns>
+    /// <returns>An enumerable of directly implemented interfaces, in the order returned by reflection.</returns>
     public static IEnumerable<Type> GetDirectInterfaces(this Type type)
-        => type.BaseType == null
-        ? []
-        : type.GetInterfaces().Except(type.BaseType.GetInterfaces());
+    {
+        if (!type.IsInterface)
+        {
+            return type.BaseType == null
+                ? []
+                : type.GetInterfaces().Except(type.BaseType.GetInterfaces());
+        }
+
+        // For interface types BaseType is always null. Subtract the interfaces that are already
+        // exposed transitively through any of the immediate parent interfaces, so only the direct
+        // parents remain.
+        Type[] allInterfaces = type.GetInterfaces();
+        var transitivelyInherited = new HashSet<Type>(
+            allInterfaces.SelectMany(i => i.GetInterfaces()));
+        return allInterfaces.Except(transitivelyInherited);
+    }
 
     /// <summary>
     /// Retrieves the type hierarchy starting from the given type, along with the directly implemented interfaces at each level.
