@@ -240,4 +240,159 @@ public class ParserEngineParseTreeShapeTests
         Assert.IsInstanceOfType<QuantifierNode>(nav.RawChildren[1],
             "The second child must be a QuantifierNode.");
     }
+
+    // ═══════════════════════════════════════════════════════════════
+    // QuantifierNode — + and * quantifiers
+    // Grammar: statement : keyword item+ ;  (or item*)
+    //   keyword : WORD ;
+    //   item    : COMMA WORD ;
+    // ═══════════════════════════════════════════════════════════════
+
+    private static readonly CompiledGrammar PlusGrammar = Antlr4GrammarConverter.Compile("""
+        grammar PlusTest;
+        statement : keyword item+ ;
+        keyword   : WORD ;
+        item      : COMMA WORD ;
+        COMMA     : ',' ;
+        WORD      : ('a'..'z')+ ;
+        WS        : (' ' | '\t')+ -> skip ;
+        """);
+
+    private static readonly CompiledGrammar StarGrammar = Antlr4GrammarConverter.Compile("""
+        grammar StarTest;
+        statement : keyword item* ;
+        keyword   : WORD ;
+        item      : COMMA WORD ;
+        COMMA     : ',' ;
+        WORD      : ('a'..'z')+ ;
+        WS        : (' ' | '\t')+ -> skip ;
+        """);
+
+    [TestMethod]
+    public void QuantifierNode_Plus_Children_YieldsAllRepetitions()
+    {
+        // "hello ,a ,b ,c" → keyword("hello"), item+([item(",a"), item(",b"), item(",c")])
+        var nav = new ParseTreeNavigator(PlusGrammar.Parse("hello ,a ,b ,c"));
+        var items = nav.Children("item").ToList();
+        Assert.AreEqual(3, items.Count, "Children must yield all three item repetitions.");
+        Assert.AreEqual("item", items[0].RuleName);
+        Assert.AreEqual("item", items[2].RuleName);
+    }
+
+    [TestMethod]
+    public void QuantifierNode_Plus_TryChild_FindsFirstItem()
+    {
+        var nav = new ParseTreeNavigator(PlusGrammar.Parse("hello ,a ,b ,c"));
+        var item = nav.TryChild("item");
+        Assert.IsNotNull(item, "TryChild must find the first item through the + quantifier wrapper.");
+        Assert.AreEqual("item", item!.RuleName);
+    }
+
+    [TestMethod]
+    public void QuantifierNode_Star_TryChild_ReturnsNull_WhenZeroItems()
+    {
+        // "hello" → keyword("hello"), item*([] empty)
+        var nav = new ParseTreeNavigator(StarGrammar.Parse("hello"));
+        Assert.IsNull(nav.TryChild("item"), "TryChild must return null when * matches zero times.");
+    }
+
+    [TestMethod]
+    public void QuantifierNode_Star_Children_YieldsEmpty_WhenZeroItems()
+    {
+        var nav = new ParseTreeNavigator(StarGrammar.Parse("hello"));
+        Assert.AreEqual(0, nav.Children("item").Count(), "Children must yield nothing when * matches zero times.");
+    }
+
+    [TestMethod]
+    public void QuantifierNode_Star_Children_YieldsAll_WhenMultiple()
+    {
+        // "hello ,x ,y" → keyword("hello"), item*([item(",x"), item(",y")])
+        var nav = new ParseTreeNavigator(StarGrammar.Parse("hello ,x ,y"));
+        var items = nav.Children("item").ToList();
+        Assert.AreEqual(2, items.Count, "Children must yield both * repetitions.");
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // QuantifierNode — grouped sequence (a b)?
+    // Grammar: statement : keyword (item sep)? ;
+    //   The QuantifierNode wraps a synthetic ParserNode(statement, [item, sep]).
+    // ═══════════════════════════════════════════════════════════════
+
+    private static readonly CompiledGrammar GroupedGrammar = Antlr4GrammarConverter.Compile("""
+        grammar GroupedTest;
+        statement : keyword (item sep)? ;
+        keyword   : WORD ;
+        item      : WORD ;
+        sep       : COMMA ;
+        COMMA     : ',' ;
+        WORD      : ('a'..'z')+ ;
+        WS        : (' ' | '\t')+ -> skip ;
+        """);
+
+    [TestMethod]
+    public void QuantifierNode_GroupedSequence_TryChild_FindsItem()
+    {
+        // "hello world ," → keyword("hello"), (item sep)?→[item("world"), sep(",")]
+        var nav = new ParseTreeNavigator(GroupedGrammar.Parse("hello world ,"));
+        var item = nav.TryChild("item");
+        Assert.IsNotNull(item, "TryChild must find 'item' through (item sep)? group wrapper.");
+        Assert.AreEqual("item", item!.RuleName);
+    }
+
+    [TestMethod]
+    public void QuantifierNode_GroupedSequence_TryChild_FindsSep()
+    {
+        var nav = new ParseTreeNavigator(GroupedGrammar.Parse("hello world ,"));
+        var sep = nav.TryChild("sep");
+        Assert.IsNotNull(sep, "TryChild must find 'sep' through (item sep)? group wrapper.");
+        Assert.AreEqual("sep", sep!.RuleName);
+    }
+
+    [TestMethod]
+    public void QuantifierNode_GroupedSequence_TryChild_ReturnsNull_WhenGroupAbsent()
+    {
+        var nav = new ParseTreeNavigator(GroupedGrammar.Parse("hello"));
+        Assert.IsNull(nav.TryChild("item"), "TryChild must return null when the optional group is absent.");
+        Assert.IsNull(nav.TryChild("sep"),  "TryChild must return null when the optional group is absent.");
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // QuantifierNode — direct child ordering (issue: suffix? suffix)
+    // Grammar: statement : item? item ;
+    //   With two words "hello world":
+    //     item? → QuantifierNode(statement, [item("hello")])
+    //     item  → item("world")  ← direct child
+    //   TryChild("item") must return the DIRECT child ("world"), not the optional one.
+    //   Children("item") must yield the direct child first.
+    // ═══════════════════════════════════════════════════════════════
+
+    private static readonly CompiledGrammar OrderingGrammar = Antlr4GrammarConverter.Compile("""
+        grammar OrderingTest;
+        statement : item? item ;
+        item      : WORD ;
+        WORD      : ('a'..'z')+ ;
+        WS        : (' ' | '\t')+ -> skip ;
+        """);
+
+    [TestMethod]
+    public void QuantifierNode_DirectChildFirst_TryChild_ReturnsMandatoryItem()
+    {
+        // QuantifierNode wraps the optional "hello"; "world" is the mandatory direct child.
+        var nav = new ParseTreeNavigator(OrderingGrammar.Parse("hello world"));
+        var item = nav.TryChild("item");
+        Assert.IsNotNull(item);
+        // Navigate into item → its only child is a LexerNode with the token text.
+        Assert.AreEqual("world", item![0].Token!.Text,
+            "TryChild must prefer the direct child over the QuantifierNode wrapper content.");
+    }
+
+    [TestMethod]
+    public void QuantifierNode_DirectChildFirst_Children_DirectBeforeWrapper()
+    {
+        var nav = new ParseTreeNavigator(OrderingGrammar.Parse("hello world"));
+        var texts = nav.Children("item").Select(n => n[0].Token!.Text).ToList();
+        Assert.AreEqual(2, texts.Count);
+        Assert.AreEqual("world", texts[0], "Direct child must come first.");
+        Assert.AreEqual("hello", texts[1], "Wrapper content must come second.");
+    }
 }
