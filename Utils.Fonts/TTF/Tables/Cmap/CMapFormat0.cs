@@ -42,7 +42,7 @@ public class CMapFormat0 : CMapFormatBase
     /// Gets the total length (in bytes) of this CMap format.
     /// This format is always 262 bytes long.
     /// </summary>
-    public override short Length => 262;
+    public override int Length => 262;
 
     /// <summary>
     /// Gets or sets the 256-byte mapping table.
@@ -97,7 +97,7 @@ public class CMapFormat0 : CMapFormatBase
     public override void WriteData(Writer data)
     {
         data.Write<Int16>(Format);
-        data.Write<Int16>(Length);
+        data.Write<Int16>((short)Length);
         data.Write<Int16>(Language);
         data.Write<byte[]>(MapBytes);
     }

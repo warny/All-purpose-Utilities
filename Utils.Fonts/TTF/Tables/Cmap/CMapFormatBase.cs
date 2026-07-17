@@ -22,7 +22,7 @@ public abstract class CMapFormatBase
     /// <summary>
     /// Gets the length (in bytes) of the CMap format data.
     /// </summary>
-    public abstract short Length { get; }
+    public abstract int Length { get; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CMapFormatBase"/> class.
