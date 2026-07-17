@@ -227,5 +227,56 @@ public class BaseDecoderStreamTests
         decoder.Close();
         Assert.ThrowsException<ObjectDisposedException>(() => decoder.Write('Q'));
     }
+
+    // ---- Close() state coherence after FormatException ----
+
+    [TestMethod]
+    public void Close_InvalidPadding_ThrowsFormatException()
+    {
+        using var ms = new MemoryStream();
+        var decoder = new BaseDecoderStream(ms, Bases.Base64);
+        decoder.Write("TQ="); // only 1 '=' where 2 are required
+        Assert.ThrowsException<FormatException>(() => decoder.Close());
+    }
+
+    [TestMethod]
+    public void Close_AfterFormatException_WriteThrowsObjectDisposedException()
+    {
+        using var ms = new MemoryStream();
+        var decoder = new BaseDecoderStream(ms, Bases.Base64);
+        decoder.Write("TQ=");
+        try { decoder.Close(); } catch (FormatException) { }
+        // The instance is permanently condemned; any subsequent write must be rejected.
+        Assert.ThrowsException<ObjectDisposedException>(() => decoder.Write('Q'),
+            "Write after a failed Close must throw ObjectDisposedException");
+    }
+
+    [TestMethod]
+    public void Close_CalledTwiceAfterFailure_SecondCallIsNoop()
+    {
+        using var ms = new MemoryStream();
+        var decoder = new BaseDecoderStream(ms, Bases.Base64);
+        decoder.Write("TQ=");
+        try { decoder.Close(); } catch (FormatException) { }
+        // Must not throw on the second call
+        decoder.Close();
+    }
+
+    private class TrackingStream : MemoryStream
+    {
+        public bool WasFlushed { get; private set; }
+        public override void Flush() { WasFlushed = true; base.Flush(); }
+    }
+
+    [TestMethod]
+    public void Close_FlushesUnderlyingStream_EvenWhenFormatExceptionThrown()
+    {
+        var tracking = new TrackingStream();
+        var decoder = new BaseDecoderStream(tracking, Bases.Base64);
+        decoder.Write("TQ="); // will cause FormatException on Close
+        try { decoder.Close(); } catch (FormatException) { }
+        Assert.IsTrue(tracking.WasFlushed,
+            "Underlying stream must be flushed even when Close() throws FormatException");
+    }
 }
 

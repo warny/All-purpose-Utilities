@@ -115,48 +115,61 @@ public class BaseDecoderStream : TextWriter
 
     /// <summary>
     /// Finalizes the decoding process and flushes remaining bits.
-    /// Calling this method more than once is safe; subsequent calls are no-ops.
+    /// After the first call (successful or not) the instance is permanently condemned:
+    /// any subsequent <see cref="Write(char)"/> call throws <see cref="ObjectDisposedException"/>.
+    /// A second call to <see cref="Close"/> is always a no-op.
+    /// TextWriter resources are released even when a <see cref="FormatException"/> is thrown.
     /// </summary>
     /// <exception cref="FormatException">
-    /// Thrown in strict mode when the input length is incomplete or trailing bits are non-zero.
+    /// Thrown in strict mode when the input length is incomplete, trailing bits are non-zero,
+    /// or the padding count does not match the expected value.
     /// </exception>
     public override void Close()
     {
         if (_closed)
             return;
+        // Condemn immediately so that any Write() after Close() — regardless of whether
+        // the validation below succeeds — throws ObjectDisposedException.
         _closed = true;
 
-        if (dataLength > 0)
+        try
         {
-            int targetLength = (int)Math.Floor(sourceLength * BaseDescriptor.BitsWidth / 8d);
-            if (actualTargetLength > targetLength)
+            if (dataLength > 0)
             {
-                if (strict)
+                int targetLength = (int)Math.Floor(sourceLength * BaseDescriptor.BitsWidth / 8d);
+                if (actualTargetLength > targetLength)
                 {
-                    // Verify trailing bits are zero
-                    int trailingBits = dataLength;
-                    int mask = (1 << trailingBits) - 1;
-                    if ((currentValue & mask) != 0)
-                        throw new FormatException("Non-zero trailing bits in final quantum.");
-                }
+                    if (strict)
+                    {
+                        // Verify trailing bits are zero
+                        int trailingBits = dataLength;
+                        int mask = (1 << trailingBits) - 1;
+                        if ((currentValue & mask) != 0)
+                            throw new FormatException("Non-zero trailing bits in final quantum.");
+                    }
 
-                // Align remaining bits and write the last byte
-                currentValue <<= BaseDescriptor.BitsWidth;
-                dataLength += BaseDescriptor.BitsWidth - 8;
-                Stream.WriteByte((byte)((currentValue >> dataLength) & 0xFF));
+                    // Align remaining bits and write the last byte
+                    currentValue <<= BaseDescriptor.BitsWidth;
+                    dataLength += BaseDescriptor.BitsWidth - 8;
+                    Stream.WriteByte((byte)((currentValue >> dataLength) & 0xFF));
+                }
+            }
+
+            // Strict: validate the exact number of padding characters
+            if (strict && BaseDescriptor.Filler.HasValue && BaseDescriptor.FillerMod > 0)
+            {
+                int expectedFillerCount = (BaseDescriptor.FillerMod - (sourceLength % BaseDescriptor.FillerMod)) % BaseDescriptor.FillerMod;
+                if (fillerCount != expectedFillerCount)
+                    throw new FormatException($"Expected {expectedFillerCount} padding character(s) but received {fillerCount}.");
             }
         }
-
-        // Strict: validate the exact number of padding characters
-        if (strict && BaseDescriptor.Filler.HasValue && BaseDescriptor.FillerMod > 0)
+        finally
         {
-            int expectedFillerCount = (BaseDescriptor.FillerMod - (sourceLength % BaseDescriptor.FillerMod)) % BaseDescriptor.FillerMod;
-            if (fillerCount != expectedFillerCount)
-                throw new FormatException($"Expected {expectedFillerCount} padding character(s) but received {fillerCount}.");
+            // Always release TextWriter resources and flush the underlying stream,
+            // even when a FormatException is thrown during validation.
+            Flush();
+            base.Close();
         }
-
-        Flush();
-        base.Close();
     }
 
     /// <inheritdoc />
