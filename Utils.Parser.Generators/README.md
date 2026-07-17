@@ -424,9 +424,7 @@ Generated C# preserves embedded parser code by default through `NoOpParserEmbedd
 
 Generated/source-generator emission applies the embedded-code transformer before emitting parser `@header`, parser `@footer`, rule `@init`, rule `@after`, inline parser actions, and semantic predicates where those locations are supported. The standard source generator uses the no-op transformer; direct emitter APIs can supply a custom transformer for tests or specialized tooling.
 
-Internally, the flow is explicit: collection produces `RawEmbeddedCode`, transformation and validation produce `TransformedEmbeddedCode`, classification produces `GeneratedEmbeddedCodeBody`, and injection is owned by `CSharpEmbeddedCodeInjector`. Raw hook text remains available for diagnostics and auditing but is never consumed by a C# emitter. A hook that has not completed transformation is rejected before any generated source is written.
-
-Internally, raw code and its strongly typed transformation context cross the shared transformation-and-validation boundary exactly once. The resulting `TransformedEmbeddedCode` is then classified as a predicate expression/fragment or action fragment by `GeneratedEmbeddedCodeBody` and written only by `CSharpEmbeddedCodeInjector`. This generator-specific tail does not construct runtime expressions or invoke an expression compiler.
+Internally, collection produces `RawEmbeddedCode`, which crosses the shared transformation-and-validation boundary exactly once with its strongly typed context. The resulting `TransformedEmbeddedCode` is classified as a predicate expression/fragment or action fragment by `GeneratedEmbeddedCodeBody` and written only by `CSharpEmbeddedCodeInjector`. Raw hook text remains available for diagnostics and auditing but is never consumed by a C# emitter, and a hook that has not completed transformation is rejected before any generated source is written. This generator-specific tail does not construct runtime expressions or invoke an expression compiler.
 
 ### Optional C# transformer lexer action attributes
 
