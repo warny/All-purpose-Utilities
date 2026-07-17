@@ -193,5 +193,28 @@ public class BaseDecoderStreamTests
         var comparer = EnumerableEqualityComparer<byte>.Default;
         Assert.IsTrue(comparer.Equals(new byte[] { 0x41, 0x42 }, result));
     }
+
+    // ---- item 12: idempotence de Close ----
+
+    [TestMethod]
+    public void DecoderClose_IsIdempotent_NoDuplicateOutput()
+    {
+        using var stream = new MemoryStream();
+        var decoder = new BaseDecoderStream(stream, Bases.Base64, strict: false);
+        decoder.Write("QUJD"); // ABC
+        decoder.Close();
+        long afterFirst = stream.Length;
+        decoder.Close(); // second call must be a no-op
+        Assert.AreEqual(afterFirst, stream.Length, "Second Close must not write extra bytes");
+    }
+
+    [TestMethod]
+    public void DecoderWrite_AfterClose_Throws()
+    {
+        using var stream = new MemoryStream();
+        var decoder = new BaseDecoderStream(stream, Bases.Base64);
+        decoder.Close();
+        Assert.ThrowsException<ObjectDisposedException>(() => decoder.Write('Q'));
+    }
 }
 

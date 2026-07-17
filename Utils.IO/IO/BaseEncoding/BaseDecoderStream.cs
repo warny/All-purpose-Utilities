@@ -33,6 +33,7 @@ public class BaseDecoderStream : TextWriter
 
     // Strict-mode state: track filler characters seen
     private bool fillerStarted;
+    private bool _closed;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BaseDecoderStream"/> class.
@@ -58,12 +59,14 @@ public class BaseDecoderStream : TextWriter
     /// Writes a single base character to the decoder.
     /// </summary>
     /// <param name="value">The encoded character.</param>
+    /// <exception cref="ObjectDisposedException">Thrown when writing after the decoder is closed.</exception>
     /// <exception cref="FormatException">
     /// Thrown in strict mode when <paramref name="value"/> is not a valid alphabet character,
     /// or padding appears in an illegal position.
     /// </exception>
     public override void Write(char value)
     {
+        ObjectDisposedException.ThrowIf(_closed, this);
         // Separator / whitespace: always ignored
         if (BaseDescriptor.Separator.Contains(value) || value == ' ')
             return;
@@ -112,12 +115,17 @@ public class BaseDecoderStream : TextWriter
 
     /// <summary>
     /// Finalizes the decoding process and flushes remaining bits.
+    /// Calling this method more than once is safe; subsequent calls are no-ops.
     /// </summary>
     /// <exception cref="FormatException">
     /// Thrown in strict mode when the input length is incomplete or trailing bits are non-zero.
     /// </exception>
     public override void Close()
     {
+        if (_closed)
+            return;
+        _closed = true;
+
         if (dataLength > 0)
         {
             int targetLength = (int)Math.Floor(sourceLength * BaseDescriptor.BitsWidth / 8d);
@@ -151,6 +159,7 @@ public class BaseDecoderStream : TextWriter
         }
 
         Flush();
+        base.Close();
     }
 
     /// <inheritdoc />
