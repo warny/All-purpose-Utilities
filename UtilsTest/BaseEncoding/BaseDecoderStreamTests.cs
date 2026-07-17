@@ -278,5 +278,30 @@ public class BaseDecoderStreamTests
         Assert.IsTrue(tracking.WasFlushed,
             "Underlying stream must be flushed even when Close() throws FormatException");
     }
+
+    // Stream that throws IOException when Flush is called (simulates a failing underlying device)
+    private class FailOnFlushStream : MemoryStream
+    {
+        public bool ShouldFailOnFlush { get; set; }
+        public override void Flush()
+        {
+            if (ShouldFailOnFlush) throw new IOException("Simulated flush failure");
+            base.Flush();
+        }
+    }
+
+    [TestMethod]
+    public void Close_FormatExceptionNotMaskedByFlushException()
+    {
+        // When both the format validation and the subsequent Flush fail, the FormatException
+        // must remain the observable exception — not the IOException from Flush.
+        var stream = new FailOnFlushStream();
+        var decoder = new BaseDecoderStream(stream, Bases.Base64);
+        decoder.Write("TQ="); // invalid: 1 padding where 2 are required
+        stream.ShouldFailOnFlush = true;
+
+        Assert.ThrowsException<FormatException>(() => decoder.Close(),
+            "FormatException from validation must not be replaced by the IOException from Flush");
+    }
 }
 

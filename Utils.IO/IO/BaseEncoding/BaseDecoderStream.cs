@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Runtime.ExceptionServices;
 using System.Text;
 using Utils.Objects;
 
@@ -132,6 +133,9 @@ public class BaseDecoderStream : TextWriter
         // the validation below succeeds — throws ObjectDisposedException.
         _closed = true;
 
+        // Capture the validation exception so that cleanup exceptions from Flush/Close
+        // cannot mask the original format error.
+        ExceptionDispatchInfo? validationError = null;
         try
         {
             if (dataLength > 0)
@@ -163,13 +167,25 @@ public class BaseDecoderStream : TextWriter
                     throw new FormatException($"Expected {expectedFillerCount} padding character(s) but received {fillerCount}.");
             }
         }
+        catch (Exception ex)
+        {
+            validationError = ExceptionDispatchInfo.Capture(ex);
+        }
         finally
         {
-            // Always release TextWriter resources and flush the underlying stream,
-            // even when a FormatException is thrown during validation.
-            Flush();
-            base.Close();
+            try
+            {
+                Flush();
+                base.Close();
+            }
+            catch when (validationError is not null)
+            {
+                // A cleanup exception must not replace the original validation error.
+            }
         }
+
+        // Re-throw outside the finally so the original stack trace is preserved.
+        validationError?.Throw();
     }
 
     /// <inheritdoc />
