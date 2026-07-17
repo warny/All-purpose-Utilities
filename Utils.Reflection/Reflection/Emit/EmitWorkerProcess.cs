@@ -53,10 +53,10 @@ internal sealed class EmitWorkerProcess : IDisposable
     private readonly System.IO.StreamReader reader;
     private readonly System.IO.StreamWriter writer;
     private readonly object writeLock = new();
-    private readonly ConcurrentDictionary<int, TaskCompletionSource<WorkerResponse>> pending = new();
+    private readonly ConcurrentDictionary<long, TaskCompletionSource<WorkerResponse>> pending = new();
     private readonly Task readerLoop;
     private readonly TimeSpan callTimeout;
-    private int nextId;
+    private long nextId;
     private volatile Exception? connectionFault;
     private bool disposed;
 
@@ -459,7 +459,7 @@ internal sealed class EmitWorkerProcess : IDisposable
 
     private void FailAllPending(Exception fault)
     {
-        foreach (int id in pending.Keys)
+        foreach (long id in pending.Keys)
         {
             if (pending.TryRemove(id, out TaskCompletionSource<WorkerResponse>? completion))
             {
