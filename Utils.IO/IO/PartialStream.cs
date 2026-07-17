@@ -18,53 +18,57 @@ namespace Utils.IO;
 public class PartialStream : Stream
 {
     private readonly Stream baseStream;
-    private readonly long startOffset;  // The absolute position in baseStream where this partial segment begins
-    private long partialLength;         // The maximum accessible length in this partial segment
-    private long partialPosition;       // The current position within this partial segment
+    private readonly object syncLock = new object();
+    private readonly long startOffset;
+    private long partialLength;
+    private long partialPosition;
 
     /// <summary>
     /// Creates a new partial stream starting at the base stream's current position.
-    /// The length of this partial stream is specified by <paramref name="length"/>.
     /// </summary>
     /// <param name="baseStream">The underlying stream to read from or write to.</param>
-    /// <param name="length">The length (in bytes) of the accessible segment.</param>
+    /// <param name="length">The length (in bytes) of the accessible segment. Must be non-negative.</param>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="baseStream"/> is null.</exception>
     /// <exception cref="ArgumentException">Thrown if the <paramref name="baseStream"/> cannot seek.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown if <paramref name="length"/> is negative.</exception>
     public PartialStream(Stream baseStream, long length)
     {
+        ArgumentNullException.ThrowIfNull(baseStream);
+        if (!baseStream.CanSeek)
+            throw new ArgumentException("The underlying stream must support seeking.", nameof(baseStream));
+        if (length < 0)
+            throw new ArgumentOutOfRangeException(nameof(length), "Length must be non-negative.");
+
         this.baseStream = baseStream;
         this.startOffset = baseStream.Position;
         this.partialLength = length;
         this.partialPosition = 0;
-        EnsureSeekable();
     }
 
     /// <summary>
     /// Creates a new partial stream starting at a specified position in the base stream.
-    /// The length of this partial stream is specified by <paramref name="length"/>.
     /// </summary>
     /// <param name="baseStream">The underlying stream to read from or write to.</param>
-    /// <param name="position">The position in <paramref name="baseStream"/> at which to start.</param>
-    /// <param name="length">The length (in bytes) of the accessible segment.</param>
+    /// <param name="position">The absolute position in <paramref name="baseStream"/> at which to start. Must be non-negative.</param>
+    /// <param name="length">The length (in bytes) of the accessible segment. Must be non-negative.</param>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="baseStream"/> is null.</exception>
     /// <exception cref="ArgumentException">Thrown if the <paramref name="baseStream"/> cannot seek.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown if <paramref name="position"/> or <paramref name="length"/> is negative, or if their sum overflows.</exception>
     public PartialStream(Stream baseStream, long position, long length)
     {
+        ArgumentNullException.ThrowIfNull(baseStream);
+        if (!baseStream.CanSeek)
+            throw new ArgumentException("The underlying stream must support seeking.", nameof(baseStream));
+        if (position < 0)
+            throw new ArgumentOutOfRangeException(nameof(position), "Position must be non-negative.");
+        if (length < 0)
+            throw new ArgumentOutOfRangeException(nameof(length), "Length must be non-negative.");
+        checked { _ = position + length; }  // overflow guard
+
         this.baseStream = baseStream;
         this.startOffset = position;
         this.partialLength = length;
         this.partialPosition = 0;
-        EnsureSeekable();
-    }
-
-    /// <summary>
-    /// Checks if the underlying stream is seekable; throws an exception otherwise.
-    /// </summary>
-    /// <exception cref="ArgumentException">Thrown if the underlying stream is not seekable.</exception>
-    private void EnsureSeekable()
-    {
-        if (!baseStream.CanSeek)
-        {
-            throw new ArgumentException("The underlying stream must support seeking.");
-        }
     }
 
     /// <summary>
@@ -89,26 +93,18 @@ public class PartialStream : Stream
     public override long Length => partialLength;
 
     /// <summary>
-    /// Gets or sets the position within this partial stream. If set beyond
-    /// the bounds of the partial stream, it will be clamped to [0..Length].
+    /// Gets or sets the position within this partial stream. Must be in [0, <see cref="Length"/>].
     /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the value is negative or exceeds <see cref="Length"/>.</exception>
     public override long Position
     {
         get => partialPosition;
         set
         {
-            if (value < 0)
-            {
-                partialPosition = 0;
-            }
-            else if (value > partialLength)
-            {
-                partialPosition = partialLength;
-            }
-            else
-            {
-                partialPosition = value;
-            }
+            if (value < 0 || value > partialLength)
+                throw new ArgumentOutOfRangeException(nameof(value),
+                    $"Position must be in [0, {partialLength}].");
+            partialPosition = value;
         }
     }
 
@@ -133,38 +129,28 @@ public class PartialStream : Stream
     /// or if the read is constrained by the partial stream length.</returns>
     public override int Read(byte[] buffer, int offset, int count)
     {
-        lock (baseStream)
+        Stream.ValidateBufferArguments(buffer, offset, count);
+        lock (syncLock)
         {
-            // Temporarily store the original position of the underlying stream
             long originalBasePosition = baseStream.Position;
-
-            // Move to the corresponding absolute position in the underlying stream
-            baseStream.Position = startOffset + partialPosition;
-
-            // Calculate how many bytes we can actually read without exceeding partialLength
-            long maxReadable = partialLength - partialPosition;
-            if (maxReadable <= 0)
+            try
             {
-                // Already at or beyond the partial range
+                long maxReadable = partialLength - partialPosition;
+                if (maxReadable <= 0)
+                    return 0;
+
+                if (count > maxReadable)
+                    count = (int)maxReadable;
+
+                baseStream.Position = startOffset + partialPosition;
+                int bytesRead = baseStream.Read(buffer, offset, count);
+                partialPosition += bytesRead;
+                return bytesRead;
+            }
+            finally
+            {
                 baseStream.Position = originalBasePosition;
-                return 0;
             }
-
-            if (count > maxReadable)
-            {
-                count = (int)maxReadable;
-            }
-
-            // Perform the read
-            int bytesRead = baseStream.Read(buffer, offset, count);
-
-            // Advance the partial stream position
-            partialPosition += bytesRead;
-
-            // Restore underlying stream position
-            baseStream.Position = originalBasePosition;
-
-            return bytesRead;
         }
     }
 
@@ -176,25 +162,19 @@ public class PartialStream : Stream
     /// <returns>The new position within this partial stream.</returns>
     public override long Seek(long offset, SeekOrigin origin)
     {
-        long newPosition;
-        switch (origin)
+        long newPosition = origin switch
         {
-            case SeekOrigin.Begin:
-                newPosition = offset;
-                break;
-            case SeekOrigin.Current:
-                newPosition = partialPosition + offset;
-                break;
-            case SeekOrigin.End:
-                newPosition = partialLength + offset;
-                break;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(origin), "Invalid seek origin.");
-        }
+            SeekOrigin.Begin => offset,
+            SeekOrigin.Current => partialPosition + offset,
+            SeekOrigin.End => partialLength + offset,
+            _ => throw new ArgumentOutOfRangeException(nameof(origin), "Invalid seek origin.")
+        };
 
-        // Clamp within [0..partialLength]
-        if (newPosition < 0) newPosition = 0;
-        if (newPosition > partialLength) newPosition = partialLength;
+        if (newPosition < 0)
+            throw new IOException("An attempt was made to seek before the beginning of the stream.");
+        if (newPosition > partialLength)
+            throw new ArgumentOutOfRangeException(nameof(offset),
+                "Seek would position past the end of the partial stream.");
 
         partialPosition = newPosition;
         return partialPosition;
@@ -205,15 +185,14 @@ public class PartialStream : Stream
     /// but changes the maximum accessible range of this partial view.
     /// </summary>
     /// <param name="value">The desired length of this partial stream.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown if <paramref name="value"/> is negative.</exception>
     public override void SetLength(long value)
     {
-        // Clamp current position if necessary
-        if (partialPosition > value)
-        {
-            partialPosition = value;
-        }
-
+        if (value < 0)
+            throw new ArgumentOutOfRangeException(nameof(value), "Length must be non-negative.");
         partialLength = value;
+        if (partialPosition > partialLength)
+            partialPosition = partialLength;
     }
 
     /// <summary>
@@ -227,26 +206,24 @@ public class PartialStream : Stream
     /// the <see cref="Length"/> of the partial stream.</exception>
     public override void Write(byte[] buffer, int offset, int count)
     {
-        lock (baseStream)
+        Stream.ValidateBufferArguments(buffer, offset, count);
+        if (partialPosition + count > partialLength)
+            throw new ArgumentOutOfRangeException(nameof(count),
+                "Attempted to write beyond the bounds of the partial stream.");
+
+        lock (syncLock)
         {
             long originalBasePosition = baseStream.Position;
-
-            baseStream.Position = startOffset + partialPosition;
-
-            // Ensure we do not exceed the partial stream length
-            if (partialPosition + count > partialLength)
+            try
             {
-                throw new ArgumentOutOfRangeException(nameof(count),
-                    "Attempted to write beyond the bounds of the partial stream.");
+                baseStream.Position = startOffset + partialPosition;
+                baseStream.Write(buffer, offset, count);
+                partialPosition += count;
             }
-
-            baseStream.Write(buffer, offset, count);
-
-            // Advance the partial position
-            partialPosition += count;
-
-            // Restore underlying stream position
-            baseStream.Position = originalBasePosition;
+            finally
+            {
+                baseStream.Position = originalBasePosition;
+            }
         }
     }
 

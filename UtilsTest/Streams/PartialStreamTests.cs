@@ -24,6 +24,8 @@ public class PartialStreamTests
         public override void Write(byte[] buffer, int offset, int count) => _inner.Write(buffer, offset, count);
     }
 
+    // ---- existing tests (unchanged) ----
+
     [TestMethod]
     public void ConstructorThrowsWhenStreamNotSeekable()
     {
@@ -73,5 +75,106 @@ public class PartialStreamTests
         using MemoryStream baseStream = new MemoryStream(new byte[10]);
         PartialStream ps = new PartialStream(baseStream, 0, 5);
         Assert.ThrowsException<ArgumentOutOfRangeException>(() => ps.Write(new byte[6], 0, 6));
+    }
+
+    // ---- item 3: base position restored on failure paths ----
+
+    [TestMethod]
+    public void Read_BasePositionRestoredAfterArgumentException()
+    {
+        using var ms = new MemoryStream(new byte[20]);
+        ms.Position = 7;
+        var ps = new PartialStream(ms, 0, 10);
+        // Pass a bad offset so ValidateBufferArguments throws before any seek
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => ps.Read(new byte[4], -1, 2));
+        Assert.AreEqual(7, ms.Position, "base position must be unchanged after failed Read");
+    }
+
+    [TestMethod]
+    public void Write_BasePositionRestoredAfterBoundsViolation()
+    {
+        using var ms = new MemoryStream(new byte[20]);
+        ms.Position = 5;
+        var ps = new PartialStream(ms, 0, 3);
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => ps.Write(new byte[5], 0, 5));
+        Assert.AreEqual(5, ms.Position, "base position must be unchanged after failed Write");
+    }
+
+    // ---- item 4: constructor validation ----
+
+    [TestMethod]
+    public void ConstructorThrowsWhenStreamIsNull()
+    {
+        Assert.ThrowsException<ArgumentNullException>(() => new PartialStream(null!, 10));
+        Assert.ThrowsException<ArgumentNullException>(() => new PartialStream(null!, 0, 10));
+    }
+
+    [TestMethod]
+    public void ConstructorThrowsForNegativeLength()
+    {
+        using var ms = new MemoryStream(new byte[20]);
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new PartialStream(ms, -1));
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new PartialStream(ms, 0, -1));
+    }
+
+    [TestMethod]
+    public void ConstructorThrowsForNegativePosition()
+    {
+        using var ms = new MemoryStream(new byte[20]);
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new PartialStream(ms, -5, 10));
+    }
+
+    [TestMethod]
+    public void ConstructorThrowsForPositionLengthOverflow()
+    {
+        using var ms = new MemoryStream(new byte[20]);
+        Assert.ThrowsException<OverflowException>(
+            () => new PartialStream(ms, long.MaxValue, 1));
+    }
+
+    // ---- item 4: Position setter throws instead of clamping ----
+
+    [TestMethod]
+    public void PositionSetterThrowsForNegativeValue()
+    {
+        using var ms = new MemoryStream(new byte[20]);
+        var ps = new PartialStream(ms, 0, 10);
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => ps.Position = -1);
+    }
+
+    [TestMethod]
+    public void PositionSetterThrowsForValueBeyondLength()
+    {
+        using var ms = new MemoryStream(new byte[20]);
+        var ps = new PartialStream(ms, 0, 10);
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => ps.Position = 11);
+    }
+
+    // ---- item 4: Seek throws instead of clamping ----
+
+    [TestMethod]
+    public void SeekThrowsBeforeBeginning()
+    {
+        using var ms = new MemoryStream(new byte[20]);
+        var ps = new PartialStream(ms, 0, 10);
+        Assert.ThrowsException<IOException>(() => ps.Seek(-1, SeekOrigin.Begin));
+    }
+
+    [TestMethod]
+    public void SeekThrowsPastEnd()
+    {
+        using var ms = new MemoryStream(new byte[20]);
+        var ps = new PartialStream(ms, 0, 10);
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => ps.Seek(11, SeekOrigin.Begin));
+    }
+
+    // ---- item 4: SetLength rejects negative ----
+
+    [TestMethod]
+    public void SetLengthThrowsForNegativeValue()
+    {
+        using var ms = new MemoryStream(new byte[20]);
+        var ps = new PartialStream(ms, 0, 10);
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => ps.SetLength(-1));
     }
 }
