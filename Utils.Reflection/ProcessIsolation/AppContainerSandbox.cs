@@ -358,11 +358,22 @@ internal sealed class AppContainerSandbox : IProcessContainer
             LimitFlags = WindowsNativeMethods.JOB_OBJECT_LIMIT.KillOnJobClose,
         };
 
-        WindowsNativeMethods.SetInformationJobObject(
+        if (!WindowsNativeMethods.SetInformationJobObject(
             job,
             WindowsNativeMethods.JOBOBJECTINFOCLASS.JobObjectBasicLimitInformation,
             ref basicLimits,
-            Marshal.SizeOf<WindowsNativeMethods.JOBOBJECT_BASIC_LIMIT_INFORMATION>());
+            Marshal.SizeOf<WindowsNativeMethods.JOBOBJECT_BASIC_LIMIT_INFORMATION>()))
+        {
+            // KillOnJobClose is the primary safety net that terminates the worker when this
+            // process exits. If it cannot be configured, the Job Object must not be used —
+            // failing closed is safer than returning a sandbox without lifecycle guarantees.
+            int error = Marshal.GetLastWin32Error();
+            WindowsNativeMethods.CloseHandle(job);
+            Trace.TraceWarning(
+                $"AppContainerSandbox: SetInformationJobObject(KillOnJobClose) failed with Win32 error {error}. " +
+                "Sandbox creation aborted.");
+            return IntPtr.Zero;
+        }
 
         var uiRestrictions = new WindowsNativeMethods.JOBOBJECT_BASIC_UI_RESTRICTIONS
         {
@@ -377,11 +388,22 @@ internal sealed class AppContainerSandbox : IProcessContainer
                 WindowsNativeMethods.JOB_OBJECT_UILIMIT.ExitWindows,
         };
 
-        WindowsNativeMethods.SetInformationJobObject(
+        if (!WindowsNativeMethods.SetInformationJobObject(
             job,
             WindowsNativeMethods.JOBOBJECTINFOCLASS.JobObjectBasicUIRestrictions,
             ref uiRestrictions,
-            Marshal.SizeOf<WindowsNativeMethods.JOBOBJECT_BASIC_UI_RESTRICTIONS>());
+            Marshal.SizeOf<WindowsNativeMethods.JOBOBJECT_BASIC_UI_RESTRICTIONS>()))
+        {
+            // UI restrictions failing is less critical than KillOnJobClose, but still a
+            // configuration gap. Close the handle and report it so the caller can fall back
+            // to an unsandboxed process rather than silently accepting reduced isolation.
+            int error = Marshal.GetLastWin32Error();
+            WindowsNativeMethods.CloseHandle(job);
+            Trace.TraceWarning(
+                $"AppContainerSandbox: SetInformationJobObject(UIRestrictions) failed with Win32 error {error}. " +
+                "Sandbox creation aborted.");
+            return IntPtr.Zero;
+        }
 
         return job;
     }
