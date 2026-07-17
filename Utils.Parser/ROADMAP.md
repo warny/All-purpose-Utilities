@@ -204,9 +204,21 @@ Implemented for generated hook-method emission:
 - Explicit wrappers `EmitPredicateHook(...)`, `EmitActionHook(...)`, `EmitLexerPredicateHook(...)`, and `EmitLexerActionHook(...)` remain as the four readable selection points and delegate to the shared emitter.
 - Lifecycle hooks remain separate because they use `LifecycleHook`, `ParserRuleLifecycleContext`, lifecycle phases, `internal` visibility, and lifecycle-specific locals rather than `EmbeddedCodeHookOwner` / `EmbeddedCodeHookKind`.
 
+Implemented for the transformation boundary:
+
+- the internal `EmbeddedCodeTransformationPipeline.TransformAndValidate(...)` owns the common,
+  target-independent raw-code transformation and result validation step;
+- generated C# and runtime expression preparation consume the same validated
+  `TransformedEmbeddedCode` boundary while constructing their specialized contexts explicitly;
+- `GeneratedEmbeddedCodeBody` and `CSharpEmbeddedCodeInjector` remain generator-only, while
+  `ExpressionEmbeddedCodePreparer` and `IExpressionCompiler` retain runtime symbol, lambda, and
+  compilation ownership;
+- architecture guards prohibit a parallel direct transformer path and prohibit target dependencies
+  in the common pipeline.
+
 Still planned:
 
-- keep points 9, 10, and 11 open for the broader embedded-code pipeline, `EmittedCode` naming, and public preparer documentation work.
+- keep point 10 open for `EmittedCode` naming and point 11 open for public preparer documentation work.
 
 The refactor must continue to keep the following differences explicit: parser left recursion, alternative priority ordering, lexer modes, quantifier and negation index semantics, generated names, transformation locations, runtime context types, method signatures, success results, and fallback calls. These differences must not be hidden behind a single `isLexer` flag or scattered parser/lexer switches inside a shared engine.
 

@@ -11,7 +11,7 @@ namespace UtilsTest.Parser;
 [TestClass]
 public sealed class EmbeddedCodeTransformerArchitectureTests
 {
-    private static readonly string CentralServiceRelativePath = Path.Combine("Utils.Parser.Diagnostics", "EmbeddedCode", "EmbeddedCodeText.cs");
+    private static readonly string CentralPipelineRelativePath = Path.Combine("Utils.Parser.Diagnostics", "EmbeddedCode", "EmbeddedCodeText.cs");
 
     /// <summary>
     /// Ensures production parser code does not bypass the central embedded-code transformation service.
@@ -68,9 +68,9 @@ public sealed class EmbeddedCodeTransformerArchitectureTests
         const string source = """
             namespace Utils.Parser.Diagnostics.EmbeddedCode;
 
-            public static class ParserEmbeddedCodeTransformationService
+            internal static class EmbeddedCodeTransformationPipeline
             {
-                public static void TransformOrThrow(IParserEmbeddedCodeTransformer transformer, ParserEmbeddedCodeTransformationContext context)
+                internal static void TransformAndValidate(IParserEmbeddedCodeTransformer transformer, ParserEmbeddedCodeTransformationContext context)
                 {
                     transformer.Transform(context);
                 }
@@ -82,11 +82,41 @@ public sealed class EmbeddedCodeTransformerArchitectureTests
             }
             """;
 
-        string[] violations = FindForbiddenDirectTransformCalls(CentralServiceRelativePath, source)
+        string[] violations = FindForbiddenDirectTransformCalls(CentralPipelineRelativePath, source)
             .Select(static occurrence => occurrence.ToString())
             .ToArray();
 
-        CollectionAssert.AreEqual(new[] { $"{CentralServiceRelativePath}:12: transformer.Transform(context)" }, violations);
+        CollectionAssert.AreEqual(new[] { $"{CentralPipelineRelativePath}:12: transformer.Transform(context)" }, violations);
+    }
+
+    /// <summary>
+    /// Ensures the common boundary stops at validated transformed code and both targets enter it directly.
+    /// </summary>
+    [TestMethod]
+    public void EmbeddedCodeTransformationPipeline_IsInternalTargetIndependentAndShared()
+    {
+        string repositoryRoot = FindRepositoryRoot();
+        string pipelineSource = File.ReadAllText(Path.Combine(repositoryRoot, CentralPipelineRelativePath));
+        CompilationUnitSyntax pipelineRoot = CSharpSyntaxTree.ParseText(pipelineSource).GetCompilationUnitRoot();
+        ClassDeclarationSyntax pipeline = pipelineRoot.DescendantNodes().OfType<ClassDeclarationSyntax>()
+            .Single(static type => type.Identifier.ValueText == "EmbeddedCodeTransformationPipeline");
+        MethodDeclarationSyntax entry = pipeline.Members.OfType<MethodDeclarationSyntax>()
+            .Single(static method => method.Identifier.ValueText == "TransformAndValidate");
+
+        Assert.IsTrue(pipeline.Modifiers.Any(SyntaxKind.InternalKeyword));
+        Assert.AreEqual("TransformedEmbeddedCode", entry.ReturnType.ToString());
+        CollectionAssert.AreEqual(
+            new[] { "IParserEmbeddedCodeTransformer", "RawEmbeddedCode", "ParserEmbeddedCodeTransformationContext", "ParserEmbeddedCodeTransformationFailureContext" },
+            entry.ParameterList.Parameters.Select(static parameter => parameter.Type!.ToString()).ToArray());
+        Assert.IsFalse(pipeline.DescendantNodes().OfType<IdentifierNameSyntax>().Any(static identifier =>
+            identifier.Identifier.ValueText is "StringBuilder" or "CSharpEmbeddedCodeInjector" or "IExpressionCompiler"));
+        Assert.IsFalse(pipeline.DescendantNodes().OfType<InvocationExpressionSyntax>().Any(static invocation =>
+            invocation.Expression.ToString().Contains("Lambda", StringComparison.Ordinal)));
+
+        string generatorSource = File.ReadAllText(Path.Combine(repositoryRoot, "Utils.Parser.Generators", "Internal", "GrammarEmitter.ExecutionContext.Hooks.cs"));
+        string runtimeSource = File.ReadAllText(Path.Combine(repositoryRoot, "Utils.Parser.Expressions", "ExpressionEmbeddedCodePreparer.cs"));
+        Assert.AreEqual(1, CountPipelineCalls(generatorSource));
+        Assert.AreEqual(1, CountPipelineCalls(runtimeSource));
     }
 
     /// <summary>
@@ -669,7 +699,7 @@ public sealed class EmbeddedCodeTransformerArchitectureTests
     private static IEnumerable<SourceOccurrence> FindForbiddenDirectTransformCalls(string relativePath, string source)
     {
         return FindDirectTransformCalls(relativePath, source)
-            .Where(static occurrence => !IsCentralServiceOccurrence(occurrence));
+            .Where(static occurrence => !IsCentralPipelineOccurrence(occurrence));
     }
 
     /// <summary>
@@ -705,12 +735,26 @@ public sealed class EmbeddedCodeTransformerArchitectureTests
     /// </summary>
     /// <param name="occurrence">Source occurrence to classify.</param>
     /// <returns><see langword="true" /> when the occurrence is allowed.</returns>
-    private static bool IsCentralServiceOccurrence(SourceOccurrence occurrence)
+    private static bool IsCentralPipelineOccurrence(SourceOccurrence occurrence)
     {
-        return occurrence.RelativePath == CentralServiceRelativePath
-            && occurrence.EnclosingTypeName == "ParserEmbeddedCodeTransformationService"
-            && occurrence.EnclosingMethodName == "TransformOrThrow"
+        return occurrence.RelativePath == CentralPipelineRelativePath
+            && occurrence.EnclosingTypeName == "EmbeddedCodeTransformationPipeline"
+            && occurrence.EnclosingMethodName == "TransformAndValidate"
             && occurrence.ReceiverExpression == "transformer";
+    }
+
+    /// <summary>
+    /// Counts calls to the common transformation boundary in one source file.
+    /// </summary>
+    /// <param name="source">C# source to inspect.</param>
+    /// <returns>The number of calls to the common boundary.</returns>
+    private static int CountPipelineCalls(string source)
+    {
+        CompilationUnitSyntax root = CSharpSyntaxTree.ParseText(source).GetCompilationUnitRoot();
+        return root.DescendantNodes().OfType<InvocationExpressionSyntax>().Count(static invocation =>
+            invocation.Expression is MemberAccessExpressionSyntax member
+            && member.Expression.ToString() == "EmbeddedCodeTransformationPipeline"
+            && member.Name.Identifier.ValueText == "TransformAndValidate");
     }
 
     /// <summary>

@@ -118,7 +118,7 @@ public sealed class ExpressionEmbeddedCodePreparer : IEmbeddedCodePreparer<Prepa
     {
         try
         {
-            return ParserEmbeddedCodeTransformationService.TransformOrThrow(
+            return EmbeddedCodeTransformationPipeline.TransformAndValidate(
                 _transformer,
                 source.RawCode,
                 new ParserEmbeddedCodeTransformationContext
