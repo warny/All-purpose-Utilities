@@ -6,32 +6,28 @@ audits précédents : exploration large puis vérification manuelle de chaque pi
 concrète avant de la retenir. Contrairement aux audits précédents (Fonts, Mathematics), ce passage
 n'a pas révélé de bug fonctionnel sévère confirmé — plusieurs pistes prometteuses se sont révélées
 fausses après une trace complète (voir section dédiée). Ce qui reste est surtout un manque de tests
-et deux points cosmétiques mineurs. Aucune proposition ci-dessous n'est encore corrigée.
+et deux points cosmétiques mineurs.
 
 ## Incohérences mineures
 
 ### 1. `FieldMap.Name` peut être `null` malgré son type non-nullable
+**✅ Corrigé (2026-07-17).** `Name` et `FieldAttribute` typés en `string?` / `FieldAttribute?`.
+
 `Utils.Data/FieldMap.cs:56,73`. Le constructeur `FieldMap(member, index)` assigne `Name = null`
-(commentaire : "Name is not used when mapping by index"), mais la propriété est déclarée
+(commentaire : "Name is not used when mapping by index"), mais la propriété était déclarée
 `internal string Name { get; }` (type non-nullable, le projet n'a pas `<Nullable>` activé donc pas
-d'avertissement de compilation). En pratique, ce n'est **pas exploité en bug actif** aujourd'hui :
-`getValue` pour ce constructeur utilise toujours `record.GetValue(Index)`, jamais `Name`, et ce
-constructeur à 2 paramètres (`member, index`) n'est d'ailleurs appelé nulle part dans la base de code
-actuelle (seul le constructeur à 1 paramètre est utilisé par `DataUtils.GetFieldsOrProperties`). Le
-risque est latent : un futur appelant qui lirait `.Name` pour du diagnostic/logging après un mapping
-par index obtiendrait `null` sans avertissement de type.
-**Fix proposé** : soit typer `Name` en `string?` pour refléter honnêtement le contrat, soit
-documenter explicitement dans le commentaire XML que `Name` peut être `null` quand le mapping se fait
-par index.
-**Sévérité** : cosmétique / dette de documentation (aucun bug actif constaté).
+d'avertissement de compilation). En pratique, ce n'est **pas exploité en bug actif** : `getValue`
+pour ce constructeur utilise toujours `record.GetValue(Index)`, jamais `Name`, et ce constructeur à
+2 paramètres (`member, index`) n'est d'ailleurs appelé nulle part dans la base de code actuelle.
+Le risque est latent : un futur appelant qui lirait `.Name` pour du diagnostic/logging après un
+mapping par index obtiendrait `null` sans avertissement de type.
 
 ### 2. `DbConnectionExtentions.cs` — typo dans le nom de fichier
-`Utils.Data/DbConnectionExtentions.cs`. Le fichier s'appelle "Extentions" (faute d'orthographe) alors
-que la classe qu'il contient est correctement nommée `DbConnectionExtensions`. Sans impact
-fonctionnel (C# ne requiert pas que le nom de fichier corresponde au nom de la classe), mais
-incohérent avec le reste du projet (`DbCommandExtensions.cs` est bien orthographié).
-**Fix proposé** : renommer le fichier en `DbConnectionExtensions.cs`.
-**Sévérité** : cosmétique.
+**✅ Corrigé (2026-07-17).** Fichier renommé en `DbConnectionExtensions.cs` via `git mv`.
+
+Le fichier s'appelait "Extentions" (faute d'orthographe) alors que la classe qu'il contient est
+correctement nommée `DbConnectionExtensions`. Sans impact fonctionnel, mais incohérent avec
+`DbCommandExtensions.cs`.
 
 ## Manque de tests
 
