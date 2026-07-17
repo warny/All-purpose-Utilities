@@ -1,4 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Utils.Parser.Bootstrap;
 using Utils.Parser.Runtime;
 using static UtilsTest.Parser.TestInfrastructure.ParserEngineTestHelpers;
 
@@ -163,5 +164,80 @@ public class ParserEngineParseTreeShapeTests
         StringAssert.Contains(leaf.ToString(), "LexerNode");
     }
 
+    // ═══════════════════════════════════════════════════════════════
+    // QuantifierNode — TryChild / Children navigation through wrappers
+    // ═══════════════════════════════════════════════════════════════
 
+    // Grammar used by these tests:
+    //   statement : keyword suffix? ;
+    //   keyword   : WORD ;
+    //   suffix    : COMMA WORD ;
+    // When suffix is present the parser produces:
+    //   statement
+    //   ├─ keyword
+    //   └─ QuantifierNode(statement)  ← quantifier wrapper for suffix?
+    //        └─ suffix
+    private static readonly CompiledGrammar OptionalGrammar = Antlr4GrammarConverter.Compile("""
+        grammar OptionalTest;
+        statement : keyword suffix? ;
+        keyword   : WORD ;
+        suffix    : COMMA WORD ;
+        COMMA     : ',' ;
+        WORD      : ('a'..'z')+ ;
+        WS        : (' ' | '\t')+ -> skip ;
+        """);
+
+    [TestMethod]
+    public void QuantifierNode_TryChild_FindsOptionalChild_WhenPresent()
+    {
+        // nav IS statement (the root rule of OptionalGrammar)
+        var nav = new ParseTreeNavigator(OptionalGrammar.Parse("hello, world"));
+        var suffix = nav.TryChild("suffix");
+        Assert.IsNotNull(suffix, "TryChild must find 'suffix' through the QuantifierNode wrapper.");
+        Assert.AreEqual("suffix", suffix!.RuleName);
+    }
+
+    [TestMethod]
+    public void QuantifierNode_TryChild_ReturnsNull_WhenOptionalChildAbsent()
+    {
+        var nav = new ParseTreeNavigator(OptionalGrammar.Parse("hello"));
+        Assert.IsNull(nav.TryChild("suffix"), "TryChild must return null when the optional child is absent.");
+    }
+
+    [TestMethod]
+    public void QuantifierNode_TryChild_FindsDirectChild_Unchanged()
+    {
+        var nav = new ParseTreeNavigator(OptionalGrammar.Parse("hello, world"));
+        var keyword = nav.TryChild("keyword");
+        Assert.IsNotNull(keyword, "TryChild must still find direct children.");
+        Assert.AreEqual("keyword", keyword!.RuleName);
+    }
+
+    [TestMethod]
+    public void QuantifierNode_Children_YieldsOptionalChild_WhenPresent()
+    {
+        var nav = new ParseTreeNavigator(OptionalGrammar.Parse("hello, world"));
+        var suffixes = nav.Children("suffix").ToList();
+        Assert.AreEqual(1, suffixes.Count, "Children must yield the optional child through the QuantifierNode wrapper.");
+        Assert.AreEqual("suffix", suffixes[0].RuleName);
+    }
+
+    [TestMethod]
+    public void QuantifierNode_Children_YieldsEmpty_WhenOptionalChildAbsent()
+    {
+        var nav = new ParseTreeNavigator(OptionalGrammar.Parse("hello"));
+        var suffixes = nav.Children("suffix").ToList();
+        Assert.AreEqual(0, suffixes.Count, "Children must yield nothing when the optional child is absent.");
+    }
+
+    [TestMethod]
+    public void QuantifierNode_ExistingIndexNavigation_StillWorks()
+    {
+        // nav IS statement — children: [keyword_node, QuantifierNode(statement, [suffix_node])]
+        var nav = new ParseTreeNavigator(OptionalGrammar.Parse("hello, world"));
+        Assert.AreEqual(2, nav.RawChildren!.Count,
+            "The QuantifierNode wrapper must still appear as a direct child (integer index navigation unchanged).");
+        Assert.IsInstanceOfType<QuantifierNode>(nav.RawChildren[1],
+            "The second child must be a QuantifierNode.");
+    }
 }

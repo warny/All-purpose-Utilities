@@ -46,6 +46,30 @@ public record ParserNode(
 ) : ParseNode(Span, ModeName, Rule);
 
 /// <summary>
+/// A synthetic wrapper node produced by a quantifier (<c>?</c>, <c>*</c>, <c>+</c>)
+/// that appears as one element inside a sequence.
+/// Contains one child per repetition of the quantifier's body.
+/// The <see cref="ParseNode.Rule"/> is the owning parser rule (same as the enclosing sequence).
+/// </summary>
+/// <remarks>
+/// This type is a subtype of <see cref="ParserNode"/> so that it integrates transparently
+/// with existing rule-name handlers and integer-index navigation.
+/// Name-based navigation (<see cref="ParseTreeNavigator.TryChild(string)"/>,
+/// <see cref="ParseTreeNavigator.Children(string)"/>) looks <em>through</em> these wrappers
+/// to expose the inner named rule nodes directly.
+/// </remarks>
+public record QuantifierNode(
+    /// <inheritdoc/>
+    SourceSpan Span,
+    /// <inheritdoc/>
+    string ModeName,
+    /// <inheritdoc/>
+    Rule Rule,
+    /// <summary>One child per matched repetition of the quantifier body.</summary>
+    IReadOnlyList<ParseNode> Children
+) : ParserNode(Span, ModeName, Rule, Children);
+
+/// <summary>
 /// A synthetic node inserted when parsing fails at a given position.
 /// An error node is never thrown as an exception; it is always embedded in the tree
 /// so that partial results remain accessible.

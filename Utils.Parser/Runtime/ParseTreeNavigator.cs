@@ -95,37 +95,47 @@ public sealed class ParseTreeNavigator
         return new ParseTreeNavigator(children[index]);
     }
 
-    // ── Navigation by rule name (direct children) ────────────────────
+    // ── Navigation by rule name (direct children + quantifier wrappers) ─────────
 
     /// <summary>
-    /// Navigates to the first direct child whose rule name equals
-    /// <paramref name="ruleName"/>.
+    /// Navigates to the first child whose rule name equals <paramref name="ruleName"/>.
+    /// Direct children are searched first; <see cref="QuantifierNode"/> wrappers are
+    /// then searched one level deep so that optional or repeated grammar elements
+    /// (<c>rule?</c>, <c>rule*</c>, <c>rule+</c>) are reachable by name.
     /// </summary>
     /// <param name="ruleName">Rule name to search for.</param>
     /// <returns>A new navigator wrapping the matching child.</returns>
     /// <exception cref="InvalidOperationException">
-    /// Thrown when no matching direct child is found or the current node is not a
+    /// Thrown when no matching child is found or the current node is not a
     /// <see cref="ParserNode"/>.
     /// </exception>
     public ParseTreeNavigator Child(string ruleName)
     {
         return TryChild(ruleName)
             ?? throw new InvalidOperationException(
-                $"No direct child with rule name '{ruleName}' found under '{RuleName}'.");
+                $"No child with rule name '{ruleName}' found under '{RuleName}'.");
     }
 
     /// <summary>
-    /// Navigates to the first direct child whose rule name equals
-    /// <paramref name="ruleName"/>, or returns <c>null</c> when none is found or the
-    /// current node is not a <see cref="ParserNode"/>.
+    /// Navigates to the first child whose rule name equals <paramref name="ruleName"/>,
+    /// or returns <c>null</c> when none is found or the current node is not a
+    /// <see cref="ParserNode"/>.
+    /// Direct children are searched first; <see cref="QuantifierNode"/> wrappers are
+    /// then searched one level deep.
     /// </summary>
     public ParseTreeNavigator? TryChild(string ruleName)
     {
         var children = (Node as ParserNode)?.Children;
         if (children is null) return null;
         foreach (var child in children)
+        {
             if (child.Rule.Name == ruleName)
                 return new ParseTreeNavigator(child);
+            if (child is QuantifierNode qn)
+                foreach (var inner in qn.Children)
+                    if (inner.Rule.Name == ruleName)
+                        return new ParseTreeNavigator(inner);
+        }
         return null;
     }
 
@@ -144,8 +154,11 @@ public sealed class ParseTreeNavigator
     }
 
     /// <summary>
-    /// Returns navigators for all direct children whose rule name equals
+    /// Returns navigators for all children whose rule name equals
     /// <paramref name="ruleName"/>.
+    /// Direct children are yielded first; <see cref="QuantifierNode"/> wrappers are
+    /// then searched one level deep so that optional or repeated grammar elements
+    /// are reachable by name.
     /// Returns an empty sequence when the current node is not a <see cref="ParserNode"/>
     /// or no matching child exists.
     /// </summary>
@@ -154,8 +167,14 @@ public sealed class ParseTreeNavigator
         var children = (Node as ParserNode)?.Children;
         if (children is null) yield break;
         foreach (var child in children)
+        {
             if (child.Rule.Name == ruleName)
                 yield return new ParseTreeNavigator(child);
+            else if (child is QuantifierNode qn)
+                foreach (var inner in qn.Children)
+                    if (inner.Rule.Name == ruleName)
+                        yield return new ParseTreeNavigator(inner);
+        }
     }
 
     // ── Descendants (depth-first) ────────────────────────────────────
