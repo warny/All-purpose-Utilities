@@ -4,44 +4,55 @@ using System.IO;
 namespace Utils.IO;
 
 /// <summary>
-/// A write-only buffering stream that defers writing to a target stream until 
-/// <see cref="Validate"/> is called. Data written to this stream is held in an 
-/// internal buffer. When <see cref="Validate"/> is invoked, the buffered data is 
-/// flushed into the underlying target stream. If <see cref="Discard"/> is called, 
+/// A write-only buffering stream that defers writing to a target stream until
+/// <see cref="Validate"/> is called. Data written to this stream is held in an
+/// internal buffer. When <see cref="Validate"/> is invoked, the buffered data is
+/// flushed into the underlying target stream. If <see cref="Discard"/> is called,
 /// the buffered data is discarded without being written to the target.
-/// 
+///
 /// <remarks>
-/// This class does not support reading or seeking. After you finish all writes, 
-/// you can either commit them by calling <see cref="Validate"/> or discard them 
-/// via <see cref="Discard"/>. The underlying stream is not closed or disposed 
-/// automatically when this stream is disposed (override <see cref="Dispose(bool)"/> 
-/// if you need that behavior).
+/// <para>This class does not support reading or seeking.</para>
+/// <para><b>Atomicity:</b> <see cref="Validate"/> is not atomic on arbitrary streams.
+/// If the target throws mid-write, some bytes may already have been written.
+/// For seekable targets the stream position is rolled back on failure, making
+/// retry safe. For non-seekable targets the partial write is irrecoverable;
+/// callers should treat the target as corrupted if <see cref="Validate"/> throws.</para>
+/// <para>The underlying stream is not closed or disposed automatically when this
+/// stream is disposed.</para>
 /// </remarks>
 /// </summary>
 public class StreamValidator : Stream
 {
-    /// <summary>
-    /// Internal buffer to accumulate data before validation.
-    /// </summary>
-    private byte[] buffer = new byte[65536];
+    /// <summary>Default internal buffer size.</summary>
+    private const int DefaultInitialCapacity = 65536;
 
-    /// <summary>
-    /// Number of valid bytes in <see cref="buffer"/>.
-    /// </summary>
+    /// <summary>Internal buffer to accumulate data before validation.</summary>
+    private byte[] buffer;
+
+    /// <summary>Number of valid bytes in <see cref="buffer"/>.</summary>
     private int length;
 
-    /// <summary>
-    /// The underlying target stream to which data is ultimately written on validation.
-    /// </summary>
+    /// <summary>The underlying target stream to which data is ultimately written on validation.</summary>
     private readonly Stream target;
+
+    /// <summary>Maximum number of bytes that may be buffered.</summary>
+    private readonly int maxBufferSize;
 
     /// <summary>
     /// Creates a new instance of <see cref="StreamValidator"/> wrapping the specified target stream.
     /// </summary>
     /// <param name="target">The underlying stream where validated data will be written.</param>
-    public StreamValidator(Stream target)
+    /// <param name="maxBufferSize">
+    /// Maximum number of bytes that may be buffered before a <see cref="InvalidOperationException"/> is thrown.
+    /// Defaults to <see cref="int.MaxValue"/> (no practical limit).
+    /// </param>
+    public StreamValidator(Stream target, int maxBufferSize = int.MaxValue)
     {
         this.target = target ?? throw new ArgumentNullException(nameof(target));
+        if (maxBufferSize <= 0)
+            throw new ArgumentOutOfRangeException(nameof(maxBufferSize), "maxBufferSize must be positive.");
+        this.maxBufferSize = maxBufferSize;
+        buffer = new byte[Math.Min(DefaultInitialCapacity, maxBufferSize)];
     }
 
     /// <summary>
@@ -88,10 +99,30 @@ public class StreamValidator : Stream
 
     /// <summary>
     /// Commits the currently buffered data to the underlying target stream and then clears the buffer.
+    /// For seekable targets, the write is rolled back on failure so the caller can retry safely.
+    /// For non-seekable targets, a partial write is irrecoverable; see class remarks.
     /// </summary>
+    /// <exception cref="IOException">Propagated from the target stream on write failure.</exception>
     public void Validate()
     {
-        if (length > 0)
+        if (length == 0)
+            return;
+
+        if (target.CanSeek)
+        {
+            long savedPosition = target.Position;
+            try
+            {
+                target.Write(buffer, 0, length);
+                length = 0;
+            }
+            catch
+            {
+                target.Position = savedPosition;
+                throw;
+            }
+        }
+        else
         {
             target.Write(buffer, 0, length);
             length = 0;
@@ -139,21 +170,26 @@ public class StreamValidator : Stream
     /// <param name="count">The number of bytes to write.</param>
     public override void Write(byte[] buffer, int offset, int count)
     {
-        if (buffer == null) throw new ArgumentNullException(nameof(buffer));
-        if (offset < 0 || offset > buffer.Length) throw new ArgumentOutOfRangeException(nameof(offset));
-        if (count < 0 || offset + count > buffer.Length) throw new ArgumentOutOfRangeException(nameof(count));
+        Stream.ValidateBufferArguments(buffer, offset, count);
 
-        int nextPosition = this.length + count;
+        int nextPosition = checked(this.length + count);
+        if (nextPosition > maxBufferSize)
+            throw new InvalidOperationException(
+                $"Buffer limit of {maxBufferSize} bytes would be exceeded.");
 
-        // Expand internal buffer if needed
         if (nextPosition > this.buffer.Length)
         {
-            int newLength = this.buffer.Length;
-            while (newLength < nextPosition)
+            int newCapacity = this.buffer.Length;
+            while (newCapacity < nextPosition)
             {
-                newLength *= 2;  // grow by doubling
+                newCapacity = checked(newCapacity * 2);
+                if (newCapacity > maxBufferSize)
+                {
+                    newCapacity = maxBufferSize;
+                    break;
+                }
             }
-            byte[] newBuffer = new byte[newLength];
+            byte[] newBuffer = new byte[newCapacity];
             Array.Copy(this.buffer, newBuffer, this.length);
             this.buffer = newBuffer;
         }
