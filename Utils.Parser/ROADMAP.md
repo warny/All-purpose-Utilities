@@ -224,13 +224,15 @@ Completed for the hook phase model:
 - the shared pipeline produces validated `TransformedEmbeddedCode` through an explicit immutable transition;
 - generated-code targets consume only the transformed phase, and the former ambiguous hook member has been removed.
 
-Still planned:
+The [2026-07 embedded-code architecture audit](./DONE-2026-07-17.md) is complete. All technical
+findings 1–13, including items 8–11 in this refactor sequence, have been addressed. Item 14 remains
+an ongoing documentation maintenance rule for future pipeline changes. Future parser evolution must
+be recorded separately rather than appended to the completed audit unless a regression invalidates
+one of its conclusions.
 
-- keep point 11 open for public preparer documentation work.
+Future work must continue to keep the following differences explicit: parser left recursion, alternative priority ordering, lexer modes, quantifier and negation index semantics, generated names, transformation locations, runtime context types, method signatures, success results, and fallback calls. These differences must not be hidden behind a single `isLexer` flag or scattered parser/lexer switches inside a shared engine.
 
-The refactor must continue to keep the following differences explicit: parser left recursion, alternative priority ordering, lexer modes, quantifier and negation index semantics, generated names, transformation locations, runtime context types, method signatures, success results, and fallback calls. These differences must not be hidden behind a single `isLexer` flag or scattered parser/lexer switches inside a shared engine.
-
-Each remaining step must preserve generated C# shape, hook order, indexes, transformer invocation count and order, fallback behavior, diagnostics, public API, parser authority, and lexer/runtime semantics. Each step should be delivered as a separate PR or, at minimum, as a separate auditable change.
+Any future step must preserve generated C# shape, hook order, indexes, transformer invocation count and order, fallback behavior, diagnostics, public API, parser authority, and lexer/runtime semantics. Each step should be delivered as a separate PR or, at minimum, as a separate auditable change.
 
 ## Roadmap phases
 
