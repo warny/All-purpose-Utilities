@@ -67,4 +67,33 @@ public sealed class UtilsParserSqlQueryParserTests
         Assert.AreEqual(SqlQueryGrammar.StringSyntaxName, attribute.Syntax);
         CollectionAssert.AreEqual(new object[] { typeof(SqlQueryGrammar) }, attribute.Arguments.ToArray());
     }
+
+    [TestMethod]
+    public void ParseSelectWithFrom_ExtractsFromSegment()
+    {
+        SqlQuery query = SqlQueryAnalyzer.Parse("SELECT a FROM t");
+
+        var statement = (SqlSelectStatement)query.RootStatement;
+        Assert.IsNotNull(statement.From, "FROM segment must not be null");
+        Assert.AreEqual("t", statement.From!.ToSql().Trim());
+    }
+
+    [TestMethod]
+    public void ParseSelectWithFromAndWhere_ExtractsBothSegments()
+    {
+        SqlQuery query = SqlQueryAnalyzer.Parse("SELECT a FROM t WHERE x = 1");
+
+        var statement = (SqlSelectStatement)query.RootStatement;
+        Assert.IsNotNull(statement.From, "FROM segment must not be null");
+        Assert.IsNotNull(statement.Where, "WHERE segment must not be null");
+    }
+
+    [TestMethod]
+    public void ParseSelectDistinct_IsDistinctTrue()
+    {
+        SqlQuery query = SqlQueryAnalyzer.Parse("SELECT DISTINCT a FROM t");
+
+        var statement = (SqlSelectStatement)query.RootStatement;
+        Assert.IsTrue(statement.IsDistinct);
+    }
 }
