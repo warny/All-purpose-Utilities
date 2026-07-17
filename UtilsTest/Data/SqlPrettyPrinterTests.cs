@@ -17,6 +17,9 @@ public sealed class SqlPrettyPrinterTests
 
     // ---- Inline mode ----
 
+    /// <summary>
+    /// Verifies that inline mode produces a single-line string with no line breaks.
+    /// </summary>
     [TestMethod]
     public void Inline_DoesNotAddNewlines()
     {
@@ -28,6 +31,9 @@ public sealed class SqlPrettyPrinterTests
 
     // ---- Prefixed mode: SELECT column list ----
 
+    /// <summary>
+    /// Verifies that prefixed mode places the comma at the start of each subsequent line for a two-column SELECT.
+    /// </summary>
     [TestMethod]
     public void Prefixed_TwoColumns_CommaAtLineStart()
     {
@@ -39,6 +45,9 @@ public sealed class SqlPrettyPrinterTests
         Assert.AreEqual(expected, result);
     }
 
+    /// <summary>
+    /// Verifies that prefixed mode places the comma at the start of each subsequent line for a three-column SELECT.
+    /// </summary>
     [TestMethod]
     public void Prefixed_ThreeColumns_AllCommasAtLineStart()
     {
@@ -53,6 +62,9 @@ public sealed class SqlPrettyPrinterTests
 
     // ---- Prefixed mode: SELECT with FROM and WHERE ----
 
+    /// <summary>
+    /// Verifies that prefixed mode places FROM and WHERE each on its own line.
+    /// </summary>
     [TestMethod]
     public void Prefixed_WithFromAndWhere_ClausesOnOwnLines()
     {
@@ -66,6 +78,9 @@ public sealed class SqlPrettyPrinterTests
         Assert.AreEqual(expected, result);
     }
 
+    /// <summary>
+    /// Verifies that prefixed mode indents GROUP BY items.
+    /// </summary>
     [TestMethod]
     public void Prefixed_GroupBy_ItemsIndented()
     {
@@ -79,6 +94,9 @@ public sealed class SqlPrettyPrinterTests
         Assert.AreEqual(expected, result);
     }
 
+    /// <summary>
+    /// Verifies that prefixed mode places the comma at the start of each subsequent GROUP BY item.
+    /// </summary>
     [TestMethod]
     public void Prefixed_GroupByWithTwoItems_CommaAtLineStart()
     {
@@ -94,6 +112,9 @@ public sealed class SqlPrettyPrinterTests
         Assert.AreEqual(expected, result);
     }
 
+    /// <summary>
+    /// Verifies that prefixed mode places the comma at the start of each subsequent ORDER BY item.
+    /// </summary>
     [TestMethod]
     public void Prefixed_OrderByWithTwoItems_CommaAtLineStart()
     {
@@ -108,6 +129,9 @@ public sealed class SqlPrettyPrinterTests
         Assert.AreEqual(expected, result);
     }
 
+    /// <summary>
+    /// Verifies that prefixed mode places a JOIN clause on its own line.
+    /// </summary>
     [TestMethod]
     public void Prefixed_Join_JoinOnOwnLine()
     {
@@ -122,10 +146,12 @@ public sealed class SqlPrettyPrinterTests
 
     // ---- Prefixed mode: UPDATE statement ----
 
+    /// <summary>
+    /// Verifies that prefixed mode indents SET items in an UPDATE statement.
+    /// </summary>
     [TestMethod]
     public void Prefixed_UpdateWithSet_SetItemsIndented()
     {
-        // The grammar extracts SET but not WHERE for UPDATE; WHERE is verified separately.
         string result = Format("UPDATE t SET a = 1, b = 2", Prefixed4);
         const string expected =
             "UPDATE t\n" +
@@ -135,6 +161,9 @@ public sealed class SqlPrettyPrinterTests
         Assert.AreEqual(expected, result);
     }
 
+    /// <summary>
+    /// Verifies that prefixed mode places WHERE on its own line in an UPDATE statement.
+    /// </summary>
     [TestMethod]
     public void Prefixed_UpdateWithSetAndWhere_WhereOnOwnLine()
     {
@@ -150,6 +179,9 @@ public sealed class SqlPrettyPrinterTests
 
     // ---- Prefixed mode: IndentSize variation ----
 
+    /// <summary>
+    /// Verifies that prefixed mode applies the configured indent size to comma placement.
+    /// </summary>
     [TestMethod]
     public void Prefixed_IndentSize2_CommaAtCorrectDepth()
     {
@@ -165,6 +197,9 @@ public sealed class SqlPrettyPrinterTests
 
     // ---- Suffixed mode: SELECT column list ----
 
+    /// <summary>
+    /// Verifies that suffixed mode places the comma at the end of each line for a two-column SELECT.
+    /// </summary>
     [TestMethod]
     public void Suffixed_TwoColumns_CommaAtLineEnd()
     {
@@ -176,6 +211,9 @@ public sealed class SqlPrettyPrinterTests
         Assert.AreEqual(expected, result);
     }
 
+    /// <summary>
+    /// Verifies that suffixed mode places the comma at the end of each line for a three-column SELECT.
+    /// </summary>
     [TestMethod]
     public void Suffixed_ThreeColumns_AllCommasAtLineEnd()
     {
@@ -190,6 +228,9 @@ public sealed class SqlPrettyPrinterTests
 
     // ---- Suffixed mode: SELECT with FROM and WHERE ----
 
+    /// <summary>
+    /// Verifies that suffixed mode indents the FROM table and places WHERE on its own line.
+    /// </summary>
     [TestMethod]
     public void Suffixed_WithFromAndWhere_FromTableIndented()
     {
@@ -204,6 +245,9 @@ public sealed class SqlPrettyPrinterTests
         Assert.AreEqual(expected, result);
     }
 
+    /// <summary>
+    /// Verifies that suffixed mode places the comma at the end of each GROUP BY item.
+    /// </summary>
     [TestMethod]
     public void Suffixed_GroupByWithTwoItems_CommaAtLineEnd()
     {
@@ -220,6 +264,9 @@ public sealed class SqlPrettyPrinterTests
         Assert.AreEqual(expected, result);
     }
 
+    /// <summary>
+    /// Verifies that suffixed mode appends JOIN to the table line and starts the joined table on the next line.
+    /// </summary>
     [TestMethod]
     public void Suffixed_Join_RelationAndJoinOnSameLine()
     {

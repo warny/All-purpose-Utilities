@@ -68,6 +68,9 @@ public sealed class UtilsParserSqlQueryParserTests
         CollectionAssert.AreEqual(new object[] { typeof(SqlQueryGrammar) }, attribute.Arguments.ToArray());
     }
 
+    /// <summary>
+    /// Verifies that a SELECT with a FROM clause produces a non-null <see cref="SqlSelectStatement.From"/> segment.
+    /// </summary>
     [TestMethod]
     public void ParseSelectWithFrom_ExtractsFromSegment()
     {
@@ -78,6 +81,9 @@ public sealed class UtilsParserSqlQueryParserTests
         Assert.AreEqual("t", statement.From!.ToSql().Trim());
     }
 
+    /// <summary>
+    /// Verifies that a SELECT with FROM and WHERE produces non-null segments for both clauses.
+    /// </summary>
     [TestMethod]
     public void ParseSelectWithFromAndWhere_ExtractsBothSegments()
     {
@@ -88,6 +94,9 @@ public sealed class UtilsParserSqlQueryParserTests
         Assert.IsNotNull(statement.Where, "WHERE segment must not be null");
     }
 
+    /// <summary>
+    /// Verifies that DISTINCT is correctly detected when the keyword is present.
+    /// </summary>
     [TestMethod]
     public void ParseSelectDistinct_IsDistinctTrue()
     {
