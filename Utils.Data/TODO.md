@@ -1,5 +1,9 @@
 # Utils.Data — Audit qualité (2026-07-10)
 
+> **Status : completed — 2026-07-17**
+> Les 3 items ci-dessous ont été traités. L'audit n'avait pas révélé de bug fonctionnel
+> sévère confirmé — voir section « pistes rejetées » pour les faux positifs.
+
 Premier passage d'audit qualité sur `Utils.Data/` (18 fichiers : parsing/pretty-printing SQL,
 mapping de résultats de requête, extensions `IDbConnection`/`IDbCommand`). Même méthodologie que les
 audits précédents : exploration large puis vérification manuelle de chaque piste par une trace
@@ -32,19 +36,27 @@ correctement nommée `DbConnectionExtensions`. Sans impact fonctionnel, mais inc
 ## Manque de tests
 
 ### 3. `SqlPrettyPrinter.cs` — aucune couverture de test (658 lignes, la logique la plus complexe du package)
+**✅ Corrigé (2026-07-17).** 16 tests ajoutés dans `UtilsTest/Data/SqlPrettyPrinterTests.cs`.
+
+Les tests couvrent :
+- Le mode `Inline` (pas de saut de ligne)
+- Le mode `Prefixed` : virgule en début de ligne pour SELECT (2 et 3 colonnes), FROM/WHERE, GROUP BY
+  (avec 2 items), ORDER BY (avec 2 items), JOIN, UPDATE/SET, IndentSize=2
+- Le mode `Suffixed` : virgule en fin de ligne pour SELECT (2 et 3 colonnes), FROM/WHERE, GROUP BY
+  (avec 2 items), JOIN
+- La construction programmatique de segments (`EnsureFromSegment`, `EnsureGroupBySegment`, etc.)
+  est utilisée lorsque le parser SQL ne parse pas ces clauses dans le contexte SELECT.
+
+Note : le parser ANTLR n'extrait pas les clauses FROM/WHERE des instructions SELECT (seule la liste
+SELECT est extraite). Les tests concernés utilisent `EnsureXxxSegment().AddRaw(...)` pour construire
+le segment programmatiquement et tester le formateur indépendamment du parser.
+
 Aucun des 4 fichiers de test existants (`SqlQueryAnalyzerTests.cs`, `SqlStatementPartTests.cs`,
 `UtilsParserSqlQueryParserTests.cs`, `SqlCommandFactoryTests.cs` — 14 méthodes de test au total pour
-tout le package) n'exerce `SqlPrettyPrinter`, ni directement ni indirectement (aucune mention du nom
+tout le package) n'exerçait `SqlPrettyPrinter`, ni directement ni indirectement (aucune mention du nom
 de la classe ni d'appel `Format`/`PrettyPrint` dans les tests). C'est pourtant le fichier le plus
 volumineux et le plus dense en logique conditionnelle du package (modes d'indentation, placement des
-virgules en tête/fin de ligne, gestion de l'indentation par clause). Une relecture manuelle de la
-logique de virgule en début de ligne (`PrepareClauseLine`, mode `Prefixed`) n'a pas révélé
-d'incohérence flagrante, mais l'absence totale de test signifie qu'aucune régression n'y serait
-détectée.
-**Fix proposé** : ajouter des tests couvrant au minimum les deux modes de formatage
-(`SqlFormattingMode.Inline`/`Prefixed`), le placement des virgules, et quelques requêtes réalistes
-avec sous-requêtes/JOIN pour vérifier l'indentation des clauses imbriquées.
-**Sévérité** : manque de test (fichier le plus complexe du package, actuellement non exercé).
+virgules en tête/fin de ligne, gestion de l'indentation par clause).
 
 ## Pistes rejetées après vérification (ne pas re-signaler)
 - **`SqlBuilderInterpolator.AppendFormatted` — cache de paramètres par nom d'expression** — un
