@@ -85,14 +85,33 @@ public static class ReflectionEx
     }
 
     /// <summary>
-    /// Get types given the specified predicate
+    /// Gets types from <paramref name="assembly"/> matching <paramref name="filter"/>.
     /// </summary>
-    /// <param name="assembly">Assembly to load types from</param>
-    /// <param name="filter">Filter to apply to types</param>
-    /// <returns><see cref="IEnumerable{Type}"/> of <see cref="Type"/> that match the given <paramref name="filter"/></returns>
-    public static IEnumerable<Type> GetTypes(this Assembly assembly, Func<Type, bool> filter)
+    /// <param name="assembly">Assembly to enumerate types from.</param>
+    /// <param name="filter">Predicate applied to each type.</param>
+    /// <param name="loadErrors">
+    /// When not <see langword="null"/>, type-load failures are collected here instead of thrown,
+    /// and any successfully loadable types are still returned (tolerant mode).
+    /// When <see langword="null"/> (default), a <see cref="ReflectionTypeLoadException"/> from the
+    /// underlying <see cref="Assembly.GetTypes"/> call propagates to the caller (strict mode).
+    /// </param>
+    /// <returns>Types from <paramref name="assembly"/> that satisfy <paramref name="filter"/>.</returns>
+    public static IEnumerable<Type> GetTypes(this Assembly assembly, Func<Type, bool> filter,
+        ICollection<Exception>? loadErrors = null)
     {
-        Type[] types = assembly.GetTypes();
+        Type[] types;
+        try
+        {
+            types = assembly.GetTypes();
+        }
+        catch (ReflectionTypeLoadException ex) when (loadErrors is not null)
+        {
+            foreach (Exception? loaderEx in ex.LoaderExceptions)
+            {
+                if (loaderEx is not null) loadErrors.Add(loaderEx);
+            }
+            types = ex.Types.Where(t => t is not null).ToArray()!;
+        }
 
         foreach (var type in types.Where(filter))
         {
@@ -101,16 +120,23 @@ public static class ReflectionEx
     }
 
     /// <summary>
-    /// Get types given the specified predicate
+    /// Gets types from each assembly in <paramref name="assemblies"/> matching <paramref name="filter"/>.
     /// </summary>
-    /// <param name="assemblies">Assemblies to load types from</param>
-    /// <param name="filter">Filter to apply to types</param>
-    /// <returns><see cref="IEnumerable{Type}"/> of <see cref="Type"/> that match the given <paramref name="filter"/></returns>
-    public static IEnumerable<Type> GetTypes(this IEnumerable<Assembly> assemblies, Func<Type, bool> filter)
+    /// <param name="assemblies">Assemblies to enumerate types from.</param>
+    /// <param name="filter">Predicate applied to each type.</param>
+    /// <param name="loadErrors">
+    /// When not <see langword="null"/>, per-assembly type-load failures are collected here and
+    /// the successfully loadable types from each assembly are still returned (tolerant mode).
+    /// When <see langword="null"/> (default), any <see cref="ReflectionTypeLoadException"/> propagates
+    /// immediately (strict mode).
+    /// </param>
+    /// <returns>Types from all assemblies that satisfy <paramref name="filter"/>.</returns>
+    public static IEnumerable<Type> GetTypes(this IEnumerable<Assembly> assemblies, Func<Type, bool> filter,
+        ICollection<Exception>? loadErrors = null)
     {
         foreach (var assembly in assemblies)
         {
-            foreach (var type in assembly.GetTypes(filter))
+            foreach (var type in assembly.GetTypes(filter, loadErrors))
             {
                 yield return type;
             }

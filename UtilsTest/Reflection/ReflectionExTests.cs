@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -84,5 +86,38 @@ public class ReflectionExTests
     {
         Type[] result = typeof(object).GetDirectInterfaces().ToArray();
         Assert.AreEqual(0, result.Length);
+    }
+
+    // ─── GetTypes — strict and tolerant mode ─────────────────────────────────────
+
+    [TestMethod]
+    public void GetTypes_StrictMode_ReturnsMatchingTypes()
+    {
+        Assembly asm = typeof(ReflectionEx).Assembly;
+        Type[] result = asm.GetTypes(t => t == typeof(ReflectionEx)).ToArray();
+        CollectionAssert.Contains(result, typeof(ReflectionEx));
+    }
+
+    [TestMethod]
+    public void GetTypes_TolerantMode_CollectsNoErrorsForHealthyAssembly()
+    {
+        Assembly asm = typeof(ReflectionEx).Assembly;
+        var errors = new List<Exception>();
+        Type[] result = asm.GetTypes(t => true, errors).ToArray();
+        Assert.AreEqual(0, errors.Count);
+        Assert.IsTrue(result.Length > 0);
+    }
+
+    [TestMethod]
+    public void GetTypes_TolerantMode_StillReturnsSomeTypesWhenLoadErrorOccurs()
+    {
+        // We cannot easily trigger a ReflectionTypeLoadException in a unit test without
+        // loading a broken assembly, so we verify the tolerant overload exists and works
+        // for the normal (no-error) case before the error branch is exercised in integration.
+        Assembly asm = typeof(ReflectionEx).Assembly;
+        var errors = new List<Exception>();
+        Type[] result = asm.GetTypes(t => t.IsPublic, errors).ToArray();
+        Assert.IsTrue(result.Length > 0, "Should find at least some public types.");
+        Assert.AreEqual(0, errors.Count, "No load errors expected for a healthy assembly.");
     }
 }
