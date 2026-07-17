@@ -312,6 +312,22 @@ public class ParserEngineParseTreeShapeTests
         Assert.AreEqual(2, items.Count, "Children must yield both * repetitions.");
     }
 
+    [TestMethod]
+    public void QuantifierNode_Children_NoDuplication_WhenNavigatedByIndex()
+    {
+        // Navigate by integer index to the QuantifierNode child of statement,
+        // then call Children("item"). Must yield exactly 3, not 6.
+        // Regression guard for the double-enumeration bug where pass 1 and
+        // SearchQuantifierContentAll both yielded the same direct items.
+        var nav = new ParseTreeNavigator(PlusGrammar.Parse("hello ,a ,b ,c"));
+        var quantifierNav = nav[1]; // statement[1] = QuantifierNode wrapping item+
+        Assert.IsInstanceOfType<QuantifierNode>(quantifierNav.Node,
+            "Child at index 1 must be a QuantifierNode.");
+        var items = quantifierNav.Children("item").ToList();
+        Assert.AreEqual(3, items.Count,
+            "Children must yield exactly 3 items — not 6 (no double-counting).");
+    }
+
     // ═══════════════════════════════════════════════════════════════
     // QuantifierNode — grouped sequence (a b)?
     // Grammar: statement : keyword (item sep)? ;

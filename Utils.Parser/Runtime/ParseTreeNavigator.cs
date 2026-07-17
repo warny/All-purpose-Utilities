@@ -130,16 +130,20 @@ public sealed class ParseTreeNavigator
         var children = (Node as ParserNode)?.Children;
         if (children is null) return null;
 
+        var ownerRuleName = Node.Rule.Name;
+
+        // When the current node IS a QuantifierNode, delegate to the recursive search.
+        // It finds direct items, nested quantifiers, and grouped-sequence wrappers
+        // without a redundant first scan.
+        if (Node is QuantifierNode)
+            return SearchQuantifierContent(children, ruleName, ownerRuleName);
+
         // Pass 1 — direct named children have priority over wrapper contents.
         foreach (var child in children)
             if (child.Rule.Name == ruleName)
                 return new ParseTreeNavigator(child);
 
-        // Pass 2 — search inside QuantifierNode wrappers.
-        var ownerRuleName = Node.Rule.Name;
-        if (Node is QuantifierNode)
-            return SearchQuantifierContent(children, ruleName, ownerRuleName);
-
+        // Pass 2 — search inside each QuantifierNode child.
         foreach (var child in children)
             if (child is QuantifierNode childQn)
             {
@@ -178,13 +182,11 @@ public sealed class ParseTreeNavigator
         var children = (Node as ParserNode)?.Children;
         if (children is null) yield break;
 
-        // Pass 1 — direct named children.
-        foreach (var child in children)
-            if (child.Rule.Name == ruleName)
-                yield return new ParseTreeNavigator(child);
-
-        // Pass 2 — QuantifierNode wrapper contents.
         var ownerRuleName = Node.Rule.Name;
+
+        // When the current node IS a QuantifierNode, delegate entirely to the recursive
+        // search. This avoids double-counting: pass 1 would yield direct children and
+        // SearchQuantifierContentAll would yield them a second time.
         if (Node is QuantifierNode)
         {
             foreach (var nav in SearchQuantifierContentAll(children, ruleName, ownerRuleName))
@@ -192,6 +194,12 @@ public sealed class ParseTreeNavigator
             yield break;
         }
 
+        // Pass 1 — direct named children.
+        foreach (var child in children)
+            if (child.Rule.Name == ruleName)
+                yield return new ParseTreeNavigator(child);
+
+        // Pass 2 — search inside each QuantifierNode child.
         foreach (var child in children)
             if (child is QuantifierNode childQn)
                 foreach (var nav in SearchQuantifierContentAll(childQn.Children, ruleName, childQn.Rule.Name))
