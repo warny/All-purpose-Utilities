@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Frozen;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text.Json;
 using System.Threading;
@@ -31,7 +33,12 @@ internal static class EmitWorkerHost
     /// </summary>
     /// <param name="Instance">The emitted mapping instance (an <see cref="Utils.Reflection.LibraryMapper"/> subclass).</param>
     /// <param name="InterfaceType">Interface the instance was mapped from, used to resolve method tokens on <see cref="WorkerRequestKind.Call"/>.</param>
-    private readonly record struct LoadedInterface(object Instance, Type InterfaceType);
+    /// <param name="AllowedMethodTokens">
+    /// Frozen set of metadata tokens for every method declared by (or inherited into) <paramref name="InterfaceType"/>,
+    /// computed once at load time. <see cref="HandleCall"/> rejects any <see cref="WorkerRequest.MethodMetadataToken"/>
+    /// not in this set so the worker cannot be directed to invoke arbitrary methods from the same module.
+    /// </param>
+    private readonly record struct LoadedInterface(object Instance, Type InterfaceType, FrozenSet<int> AllowedMethodTokens);
 
     /// <summary>
     /// Runs the request/response loop until a <see cref="WorkerRequestKind.Shutdown"/> request is
@@ -179,8 +186,9 @@ internal static class EmitWorkerHost
             request.CallingConvention);
 #pragma warning restore UTILSREFL001
 
+        FrozenSet<int> allowedTokens = interfaceType.GetMethods().Select(m => m.MetadataToken).ToFrozenSet();
         int handle = Interlocked.Increment(ref nextHandleBox[0]);
-        loaded[handle] = new LoadedInterface(nativeInstance, interfaceType);
+        loaded[handle] = new LoadedInterface(nativeInstance, interfaceType, allowedTokens);
 
         return new WorkerResponse { Id = request.Id, Success = true, Handle = handle };
     }
@@ -227,11 +235,45 @@ internal static class EmitWorkerHost
     }
 
     /// <summary>
+    /// Validates that <paramref name="token"/> belongs to the interface contract by checking it
+    /// against the frozen allowlist computed at load time.
+    /// </summary>
+    /// <remarks>
+    /// Exposed as <see langword="internal"/> so it can be unit-tested without instantiating the
+    /// private <c>LoadedInterface</c> record. Production callers go through
+    /// <see cref="HandleCall"/>, which delegates here before calling <c>Module.ResolveMethod</c>.
+    /// </remarks>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when <paramref name="token"/> is not in <paramref name="allowedTokens"/>, i.e. it
+    /// does not belong to the interface contract loaded by the prior <c>Load</c> request.
+    /// </exception>
+    internal static void ValidateMethodToken(Type interfaceType, FrozenSet<int> allowedTokens, int token)
+    {
+        if (!allowedTokens.Contains(token))
+        {
+            throw new InvalidOperationException(
+                $"Call request token 0x{token:X8} does not belong to " +
+                $"interface '{interfaceType.FullName}'. " +
+                "Only methods declared by the loaded interface contract may be invoked.");
+        }
+    }
+
+    /// <summary>
     /// Resolves the requested interface method by metadata token and invokes it on the native
     /// mapping instance, round-tripping arguments and the return value as JSON.
     /// </summary>
+    /// <remarks>
+    /// The metadata token in the request is validated against the frozen allowlist built at load time
+    /// (<see cref="LoadedInterface.AllowedMethodTokens"/>) by <see cref="ValidateMethodToken"/>. A
+    /// token that is not in the allowlist is rejected before <c>Module.ResolveMethod</c> is ever
+    /// called, preventing the worker from being directed to invoke arbitrary methods from the same
+    /// module (for example, private helpers or static constructors from the interface's assembly that
+    /// were not part of the interface contract).
+    /// </remarks>
     private static WorkerResponse HandleCall(LoadedInterface loadedInterface, WorkerRequest request)
     {
+        ValidateMethodToken(loadedInterface.InterfaceType, loadedInterface.AllowedMethodTokens, request.MethodMetadataToken);
+
         var method = (MethodInfo)loadedInterface.InterfaceType.Module.ResolveMethod(request.MethodMetadataToken);
         ParameterInfo[] parameters = method.GetParameters();
         string?[] argumentsJson = request.ArgumentsJson ?? [];

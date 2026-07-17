@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Frozen;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 
@@ -147,5 +149,51 @@ public class EmitWorkerProtocolTests
 
         Assert.ThrowsException<InvalidOperationException>(
             () => EmitWorkerHost.Run(input, output));
+    }
+
+    // ─── Item 38: method token restricted to loaded interface ────────────────────
+
+    /// <summary>Minimal interface used only to supply real metadata tokens for token-restriction tests.</summary>
+    private interface ITokenTestContract
+    {
+        int Compute(int a, int b);
+    }
+
+    /// <summary>
+    /// A Call request whose <see cref="WorkerRequest.MethodMetadataToken"/> does not appear in the
+    /// loaded interface's method set must be rejected before <c>Module.ResolveMethod</c> is invoked,
+    /// preventing the worker from being directed to call arbitrary methods in the same module.
+    /// </summary>
+    [TestMethod]
+    public void ValidateMethodToken_RejectsTokenOutsideInterfaceContract()
+    {
+        FrozenSet<int> allowedTokens = typeof(ITokenTestContract)
+            .GetMethods()
+            .Select(m => m.MetadataToken)
+            .ToFrozenSet();
+
+        // 0x06ABCDEF is a syntactically valid method token that is not in ITokenTestContract.
+        const int foreignToken = 0x06ABCDEF;
+
+        var ex = Assert.ThrowsException<InvalidOperationException>(
+            () => EmitWorkerHost.ValidateMethodToken(typeof(ITokenTestContract), allowedTokens, foreignToken));
+
+        // The error message should contain the token so it can be correlated in logs.
+        StringAssert.Contains(ex.Message, "0x06ABCDEF",
+            "The error message should include the rejected token value.");
+    }
+
+    [TestMethod]
+    public void ValidateMethodToken_AcceptsTokenFromInterface()
+    {
+        FrozenSet<int> allowedTokens = typeof(ITokenTestContract)
+            .GetMethods()
+            .Select(m => m.MetadataToken)
+            .ToFrozenSet();
+
+        int validToken = typeof(ITokenTestContract).GetMethod(nameof(ITokenTestContract.Compute))!.MetadataToken;
+
+        // Must not throw — a valid interface method token is accepted.
+        EmitWorkerHost.ValidateMethodToken(typeof(ITokenTestContract), allowedTokens, validToken);
     }
 }
