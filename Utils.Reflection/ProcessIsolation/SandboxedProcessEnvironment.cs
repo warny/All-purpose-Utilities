@@ -15,14 +15,9 @@ namespace Utils.Reflection.ProcessIsolation;
 internal static class SandboxedProcessEnvironment
 {
     /// <summary>
-    /// Environment variable names copied through verbatim, beyond the <c>DOTNET_</c>/<c>CORECLR_</c>
-    /// prefixes handled separately. These are needed for the child process (and, for a self-hosted
-    /// Emit worker, the .NET runtime within it) to start up and behave correctly, not to access any
-    /// secret. Mixes Unix names (<c>PATH</c>, <c>HOME</c>, <c>USER</c>, ...) and their Windows
-    /// counterparts/Windows-only requirements (<c>TEMP</c>, <c>USERNAME</c>, <c>SystemRoot</c>, ...):
-    /// matching is case-insensitive (see <see cref="IsAllowed"/>), and a name irrelevant to the current
-    /// platform simply never appears in <see cref="Environment.GetEnvironmentVariables"/> there, so
-    /// listing both costs nothing per platform.
+    /// Environment variable names copied through verbatim to the sandboxed child process.
+    /// These are needed for the process (and the .NET runtime within it) to start up and operate
+    /// correctly, but do not grant access to secrets or allow code injection.
     /// </summary>
     /// <remarks>
     /// <c>SystemRoot</c>/<c>windir</c>/<c>TEMP</c>/<c>ComSpec</c> are effectively required for a Windows
@@ -37,6 +32,24 @@ internal static class SandboxedProcessEnvironment
     {
         "PATH", "HOME", "TMPDIR", "LANG", "LC_ALL", "USER", "LOGNAME", "TERM",
         "TEMP", "TMP", "USERNAME", "SystemRoot", "windir", "ComSpec",
+    };
+
+    /// <summary>
+    /// Explicit allowlist of <c>DOTNET_</c>-prefixed variables that the worker legitimately needs.
+    /// Using a named allowlist instead of a blanket prefix match prevents startup hooks
+    /// (<c>DOTNET_STARTUP_HOOKS</c>), profilers (<c>DOTNET_EnableProfiling</c> / <c>CORECLR_PROFILER*</c>),
+    /// additional dependency paths (<c>DOTNET_ADDITIONAL_DEPS</c>), and diagnostic suspension
+    /// (<c>DOTNET_DiagnosticPorts</c>) from being inherited by the sandboxed worker.
+    /// </summary>
+    private static readonly HashSet<string> AllowedDotnetNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        // Runtime location / version selection
+        "DOTNET_ROOT", "DOTNET_ROOT(x86)", "DOTNET_MULTILEVEL_LOOKUP",
+        "DOTNET_CLI_HOME", "DOTNET_NOLOGO",
+        // Shared framework override (needed in some self-contained / FDD deployments)
+        "DOTNET_SHARED_STORE",
+        // Roll-forward policy used by the host
+        "DOTNET_ROLL_FORWARD",
     };
 
     /// <summary>
@@ -105,6 +118,5 @@ internal static class SandboxedProcessEnvironment
 
     private static bool IsAllowed(string name) =>
         AllowedExactNames.Contains(name) ||
-        name.StartsWith("DOTNET_", StringComparison.OrdinalIgnoreCase) ||
-        name.StartsWith("CORECLR_", StringComparison.OrdinalIgnoreCase);
+        AllowedDotnetNames.Contains(name);
 }

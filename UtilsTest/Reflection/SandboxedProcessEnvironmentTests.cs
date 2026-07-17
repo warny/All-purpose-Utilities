@@ -48,21 +48,80 @@ public class SandboxedProcessEnvironmentTests
     }
 
     [TestMethod]
-    public void ApplyMinimalEnvironment_KeepsDotNetPrefixedVariables()
+    public void ApplyMinimalEnvironment_KeepsAllowlistedDotnetVariable()
     {
-        const string dotnetVariableName = "DOTNET_TEST_VARIABLE";
-        Environment.SetEnvironmentVariable(dotnetVariableName, "1");
+        // DOTNET_ROOT is in the named allowlist — it should survive.
+        const string allowedName = "DOTNET_ROOT";
+        string? originalValue = Environment.GetEnvironmentVariable(allowedName);
+        Environment.SetEnvironmentVariable(allowedName, "/usr/share/dotnet");
         try
         {
             var psi = new ProcessStartInfo("dummy");
-
             SandboxedProcessEnvironment.ApplyMinimalEnvironment(psi);
-
-            Assert.IsTrue(psi.EnvironmentVariables.ContainsKey(dotnetVariableName));
+            Assert.IsTrue(psi.EnvironmentVariables.ContainsKey(allowedName));
         }
         finally
         {
-            Environment.SetEnvironmentVariable(dotnetVariableName, null);
+            Environment.SetEnvironmentVariable(allowedName, originalValue);
+        }
+    }
+
+    [TestMethod]
+    public void ApplyMinimalEnvironment_BlocksInjectionCapableDotnetVariables()
+    {
+        // DOTNET_STARTUP_HOOKS allows code injection into the runtime startup path and must
+        // not be forwarded to the sandboxed worker.
+        const string dangerousName = "DOTNET_STARTUP_HOOKS";
+        Environment.SetEnvironmentVariable(dangerousName, "/evil/hook.dll");
+        try
+        {
+            var psi = new ProcessStartInfo("dummy");
+            _ = psi.EnvironmentVariables[dangerousName]; // force copy
+            SandboxedProcessEnvironment.ApplyMinimalEnvironment(psi);
+            Assert.IsFalse(psi.EnvironmentVariables.ContainsKey(dangerousName),
+                "DOTNET_STARTUP_HOOKS must be blocked to prevent code injection into the worker.");
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(dangerousName, null);
+        }
+    }
+
+    [TestMethod]
+    public void ApplyMinimalEnvironment_BlocksProfilerVariables()
+    {
+        const string profilerName = "CORECLR_PROFILER";
+        Environment.SetEnvironmentVariable(profilerName, "{some-clsid}");
+        try
+        {
+            var psi = new ProcessStartInfo("dummy");
+            _ = psi.EnvironmentVariables[profilerName];
+            SandboxedProcessEnvironment.ApplyMinimalEnvironment(psi);
+            Assert.IsFalse(psi.EnvironmentVariables.ContainsKey(profilerName),
+                "CORECLR_PROFILER must be blocked to prevent loading an arbitrary profiler in the worker.");
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(profilerName, null);
+        }
+    }
+
+    [TestMethod]
+    public void ApplyMinimalEnvironment_BlocksArbitraryDotnetPrefixedVariables()
+    {
+        const string arbitraryName = "DOTNET_TEST_VARIABLE_NOT_IN_ALLOWLIST";
+        Environment.SetEnvironmentVariable(arbitraryName, "1");
+        try
+        {
+            var psi = new ProcessStartInfo("dummy");
+            _ = psi.EnvironmentVariables[arbitraryName];
+            SandboxedProcessEnvironment.ApplyMinimalEnvironment(psi);
+            Assert.IsFalse(psi.EnvironmentVariables.ContainsKey(arbitraryName),
+                "Arbitrary DOTNET_-prefixed variables not in the allowlist must be blocked.");
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(arbitraryName, null);
         }
     }
 
@@ -157,20 +216,21 @@ public class SandboxedProcessEnvironmentTests
     }
 
     [TestMethod]
-    public void ApplyMinimalEnvironment_KeepsDotNetPrefixedVariables_CaseInsensitively()
+    public void ApplyMinimalEnvironment_AllowsAllowlistedDotnetNames_CaseInsensitively()
     {
-        const string lowerCasePrefixedName = "dotnet_test_lowercase_prefix";
-        Environment.SetEnvironmentVariable(lowerCasePrefixedName, "1");
+        // The allowlist comparison is case-insensitive; dotnet_root must match DOTNET_ROOT.
+        const string lowerCaseName = "dotnet_root";
+        string? originalValue = Environment.GetEnvironmentVariable(lowerCaseName);
+        Environment.SetEnvironmentVariable(lowerCaseName, "/usr/share/dotnet");
         try
         {
             var psi = new ProcessStartInfo("dummy");
             SandboxedProcessEnvironment.ApplyMinimalEnvironment(psi);
-
-            Assert.IsTrue(psi.EnvironmentVariables.ContainsKey(lowerCasePrefixedName));
+            Assert.IsTrue(psi.EnvironmentVariables.ContainsKey(lowerCaseName));
         }
         finally
         {
-            Environment.SetEnvironmentVariable(lowerCasePrefixedName, null);
+            Environment.SetEnvironmentVariable(lowerCaseName, originalValue);
         }
     }
 
