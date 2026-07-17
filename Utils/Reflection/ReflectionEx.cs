@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.IO;
+using System.Reflection;
 using Utils.Files;
 
 namespace Utils.Reflection;
@@ -143,20 +144,37 @@ public static class ReflectionEx
         }
     }
 
+    private static readonly HashSet<string> ManagedAssemblyExtensions =
+        new(StringComparer.OrdinalIgnoreCase) { ".dll", ".exe" };
+
     /// <summary>
-    /// Loads all assemblies located in the specified directory.
+    /// Loads managed assemblies from the directory identified by <paramref name="path"/>.
     /// </summary>
-    /// <param name="path">The path that contains the assemblies to load.</param>
-    /// <param name="raiseError">True to rethrow load exceptions; false to ignore invalid assemblies.</param>
-    /// <returns>A sequence of assemblies loaded from the directory.</returns>
+    /// <remarks>
+    /// Only files with a <c>.dll</c> or <c>.exe</c> extension are probed; other files are silently
+    /// skipped. Each candidate is loaded with <see cref="Assembly.LoadFrom(string)"/>, which resolves
+    /// the canonical on-disk path and avoids the identity mismatch that <c>Assembly.Load(string)</c>
+    /// causes when called with a file path instead of an assembly display name.
+    /// </remarks>
+    /// <param name="path">Directory path (may include wildcards) to enumerate.</param>
+    /// <param name="raiseError">
+    /// <see langword="true"/> to rethrow any exception thrown while loading an individual file;
+    /// <see langword="false"/> (default) to skip files that cannot be loaded.
+    /// </param>
+    /// <returns>A sequence of successfully loaded assemblies.</returns>
     public static IEnumerable<Assembly> LoadAssemblies(string path, bool raiseError = false)
     {
         foreach (var file in PathUtils.EnumerateFiles(path))
         {
+            if (!ManagedAssemblyExtensions.Contains(Path.GetExtension(file)))
+            {
+                continue;
+            }
+
             Assembly assembly;
             try
             {
-                assembly = Assembly.Load(file);
+                assembly = Assembly.LoadFrom(file);
             }
             catch
             {

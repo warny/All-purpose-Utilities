@@ -120,4 +120,26 @@ public class ReflectionExTests
         Assert.IsTrue(result.Length > 0, "Should find at least some public types.");
         Assert.AreEqual(0, errors.Count, "No load errors expected for a healthy assembly.");
     }
+
+    // ─── LoadAssemblies ──────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void LoadAssemblies_NonExistentDirectory_ReturnsEmpty()
+    {
+        // PathUtils.EnumerateFiles returns an empty sequence for non-existent paths without
+        // throwing; LoadAssemblies inherits that behaviour.
+        string nonExistent = System.IO.Path.Combine(
+            System.IO.Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        Assembly[] result = ReflectionEx.LoadAssemblies(nonExistent).ToArray();
+        Assert.AreEqual(0, result.Length);
+    }
+
+    [TestMethod]
+    public void LoadAssemblies_LoadsCurrentAssemblyDll()
+    {
+        // The test assembly's directory must contain at least one .dll that can be loaded.
+        string dir = System.IO.Path.GetDirectoryName(typeof(ReflectionExTests).Assembly.Location)!;
+        Assembly[] loaded = ReflectionEx.LoadAssemblies(dir + "/*.dll").ToArray();
+        Assert.IsTrue(loaded.Length > 0, "Expected at least one assembly from the test output directory.");
+    }
 }
