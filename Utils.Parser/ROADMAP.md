@@ -169,27 +169,48 @@ Every API-changing PR must include:
 
 ## Parser/lexer specialization refactor direction
 
-Several generator paths currently share a similar global algorithm while still carrying real parser/lexer variation points. This direction is validated for future refactorings, but it is not implemented as a single completed architecture yet. The affected areas include embedded-hook collection, runtime dispatcher generation, generated hook-method emission, and other parser/lexer-specific construction or emission paths.
+Several generator paths share a similar global algorithm while still carrying real parser/lexer variation points. The composition-based direction remains active and is now implemented for embedded-hook collection and runtime dispatcher emission and generated hook-method emission.
 
-The target model is incremental and composition-based:
+Implemented for embedded-hook collection:
 
-1. a common engine owns the stable traversal, ordering, accumulation, validation, and invariant checks;
-2. parser and lexer strategies own only the true variation points;
-3. small immutable traversal context values carry changing state such as alternative and element indexes;
-4. immutable emission descriptors carry declarative generation differences such as generated class names, method names, context type names, implemented interfaces, success expressions, fallback expressions, transformation locations, prefixes, and signatures;
-5. explicit parser and lexer wrappers remain responsible for choosing the appropriate strategy or descriptor.
+- `EmbeddedHookCollector` owns the common collection algorithm: collection creation, strategy-provided rule/root traversal, recursive traversal of common `G4Content` node shapes, hook accumulation, and ordered transformation through the existing `TransformEmbeddedCode(...)` boundary.
+- `IEmbeddedHookCollectionStrategy` defines the parser/lexer variation points used by the collector.
+- `ParserEmbeddedHookCollectionStrategy` owns parser rule enumeration, priority ordering, direct-left-recursive root preparation, parser quantifier/negation index semantics, parser method-name prefixes, parser transformation locations, and `EmbeddedCodeHook.CreateParser(...)`.
+- `LexerEmbeddedHookCollectionStrategy` owns lexer rule enumeration across the default rule list and extra modes, source-order alternative traversal, lexer quantifier/negation index semantics, lexer method-name prefixes, lexer transformation locations, and `EmbeddedCodeHook.CreateLexer(...)`.
+- `HookTraversalPosition` is the immutable value that carries alternative and element indexes, including the historical `-1` sentinels, through recursive traversal.
+- Explicit wrappers `CollectEmbeddedCodeHooks(...)` and `CollectLexerEmbeddedCodeHooks(...)` remain as the parser/lexer selection points and delegate to the shared collector.
 
-The refactor must keep the following differences explicit: parser left recursion, alternative priority ordering, lexer modes, quantifier and negation index semantics, generated names, transformation locations, runtime context types, method signatures, success results, and fallback calls. These differences must not be hidden behind a single `isLexer` flag or scattered parser/lexer switches inside a shared engine.
+Invariants now locked by tests and architecture guards:
 
-Incremental plan:
+- parser and lexer hook collection share one recursive collector rather than two duplicated traversals;
+- parser and lexer runtime dispatchers share one emitter rather than four duplicated dispatcher bodies;
+- parser and lexer generated hook methods share one method emitter rather than four duplicated method bodies;
+- parser left recursion remains in parser-specific root preparation;
+- lexer modes remain in lexer-specific rule enumeration;
+- hook method names, owner/kind categories, indexes, sentinels, source order, priority order, and transformation locations are preserved;
+- each hook is transformed once, in final collection order, through the existing centralized transformation boundary;
+- no `isLexer` / `isPredicate` parameter, broad inheritance hierarchy, or public strategy/collector/dispatcher/method-emitter API is introduced.
 
-- introduce a shared embedded-hook collection engine;
-- add parser and lexer collection strategies;
-- introduce a shared runtime dispatcher emitter where descriptors or targeted strategies can preserve real differences;
-- introduce a shared generated hook-method emitter for genuinely common hook bodies and signatures;
-- add Roslyn architecture guards that prevent duplicated algorithms, hidden parser/lexer switches, accidental public contracts, and behavioral drift.
+Implemented for runtime dispatcher emission:
 
-Each step must preserve generated C# shape, hook order, indexes, transformer invocation count and order, fallback behavior, diagnostics, public API, parser authority, and lexer/runtime semantics. Each step should be delivered as a separate PR or, at minimum, as a separate auditable change.
+- `EmbeddedHookDispatcherEmitter` owns the common generated dispatcher algorithm: generated class and method emission, stable hook iteration, owner/kind validation, rule/code/alternative/element comparisons, hook invocation, success return, and fallback return.
+- `EmbeddedHookDispatcherDescriptor` owns immutable declarative differences for parser predicates, parser actions, lexer predicates, and lexer actions, including interfaces, context types, return types, signatures, code-property names, success expressions, invocation arguments, and fallback expressions.
+- Explicit wrappers `EmitSemanticPredicateEvaluator(...)`, `EmitParserActionExecutor(...)`, `EmitLexerPredicateEvaluator(...)`, and `EmitLexerActionExecutor(...)` remain as the four readable selection points and delegate to the shared emitter.
+
+Implemented for generated hook-method emission:
+
+- `EmbeddedHookMethodEmitter` owns the common generated hook-method algorithm: owner/kind validation, body classification, XML summary, signature, braces, optional parser context locals, centralized `EmitGeneratedEmbeddedCodeBody(...)`, and final spacing.
+- `EmbeddedHookMethodDescriptor` owns immutable declarative differences for parser predicates, parser actions, lexer predicates, and lexer actions, including owner, kind, return type, parameters, XML summary, context-local profile, and `ForPredicate(...)` / `ForAction(...)` body factory.
+- Explicit wrappers `EmitPredicateHook(...)`, `EmitActionHook(...)`, `EmitLexerPredicateHook(...)`, and `EmitLexerActionHook(...)` remain as the four readable selection points and delegate to the shared emitter.
+- Lifecycle hooks remain separate because they use `LifecycleHook`, `ParserRuleLifecycleContext`, lifecycle phases, `internal` visibility, and lifecycle-specific locals rather than `EmbeddedCodeHookOwner` / `EmbeddedCodeHookKind`.
+
+Still planned:
+
+- keep points 9, 10, and 11 open for the broader embedded-code pipeline, `EmittedCode` naming, and public preparer documentation work.
+
+The refactor must continue to keep the following differences explicit: parser left recursion, alternative priority ordering, lexer modes, quantifier and negation index semantics, generated names, transformation locations, runtime context types, method signatures, success results, and fallback calls. These differences must not be hidden behind a single `isLexer` flag or scattered parser/lexer switches inside a shared engine.
+
+Each remaining step must preserve generated C# shape, hook order, indexes, transformer invocation count and order, fallback behavior, diagnostics, public API, parser authority, and lexer/runtime semantics. Each step should be delivered as a separate PR or, at minimum, as a separate auditable change.
 
 ## Roadmap phases
 

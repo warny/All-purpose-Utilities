@@ -253,46 +253,161 @@ générale parser/lexer, le pipeline global, le renommage de `EmittedCode` et la
 runtime demeurent des chantiers séparés.
 
 ### 8. Introduire des moteurs communs avec stratégies parser/lexer spécialisées
-Plusieurs zones de `GrammarEmitter` répètent un algorithme global comparable, notamment la collecte
-des hooks embarqués, la propagation des indices, la sélection des emplacements de transformation, les
-conventions de nommage, la génération des dispatchers runtime et la génération des méthodes de hooks.
+**Partiellement corrigé.**
 
-**Direction architecturale retenue** : appliquer une composition explicite plutôt qu'une hiérarchie
-abstraite surchargée :
+#### 8a. Collecte des hooks — corrigé
 
-1. un moteur commun porte l'ordre des opérations, le parcours stable, l'accumulation des résultats,
-   les invariants et les validations communes ;
-2. une stratégie parser ou lexer fournit uniquement les différences réelles ;
-3. un petit contexte immuable transporte l'état variable du parcours, par exemple l'index
-   d'alternative et l'index d'élément ;
-4. un descripteur immuable est préféré à une interface comportementale lorsque les différences sont
-   purement déclaratives, par exemple noms générés, signatures, types de contexte, expressions de
-   succès ou fallbacks ;
-5. des wrappers parser et lexer explicites choisissent la stratégie ou le descripteur approprié.
+La collecte des hooks embarqués parser et lexer est désormais mutualisée par le moteur commun privé
+`EmbeddedHookCollector`. Ce moteur porte la création de la collection, le parcours récursif stable des
+nœuds `G4Alternation`, `G4Alternative`, `G4Sequence`, `G4Quantifier`, `G4Negation` et
+`G4EmbeddedAction`, l'accumulation des hooks, puis la transformation ordonnée de chaque hook une seule
+fois via `TransformEmbeddedCode(...)`.
 
-Les différences à préserver restent visibles : règles parser contre lexer, modes lexer supplémentaires,
-ordre source contre ordre de priorité, récursion gauche parser, alternatives de base et queues
-récursives, indexation des quantificateurs et négations, préfixes de noms générés,
-`ParserEmbeddedCodeLocation`, types de contextes runtime, signatures avec ou sans
-`LexerActionExecutionResult`, types et valeurs de retour, appels de fallback, conventions de nommage,
-ordre des hooks et source C# générée. Le moteur commun ne doit pas contenir un booléen `isLexer` ni
-des `switch` parser/lexer dispersés.
+Les différences réelles restent concentrées dans deux stratégies privées :
 
-Découpage proposé, à réaliser dans des PR distinctes ou au minimum dans des changements séparés et
-auditables :
+- `ParserEmbeddedHookCollectionStrategy` énumère les règles parser, applique l'ordre par priorité,
+  prépare les racines de parcours des règles direct-left-recursive en séparant alternatives de base et
+  queues récursives, conserve les sentinelles historiques `-1`, les règles parser d'indexation des
+  alternatives, séquences, quantificateurs et négations, les préfixes `__Predicate` / `__Action`, les
+  localisations `SemanticPredicate` / `InlineAction`, et la fabrique typée `EmbeddedCodeHook.CreateParser(...)` ;
+- `LexerEmbeddedHookCollectionStrategy` énumère les règles lexer de `DEFAULT_MODE` puis les modes
+  supplémentaires, conserve l'ordre source, garde les index lexer historiques pour alternatives,
+  séquences, quantificateurs et négations, les préfixes `__LexerPredicate` / `__LexerAction`, les
+  localisations `LexerSemanticPredicate` / `LexerInlineAction`, et la fabrique typée
+  `EmbeddedCodeHook.CreateLexer(...)`.
 
-- **8a — moteur commun de collecte des hooks** : extraire uniquement l'algorithme stable de parcours et
-  d'accumulation ;
-- **8b — stratégies parser et lexer de collecte** : isoler les règles parser/lexer réelles sans
-  réimplémenter le parcours complet ;
-- **8c — émission commune des dispatchers** : utiliser des descripteurs immuables ou des stratégies
-  ciblées pour les différences de signature, contexte, résultat et fallback ;
-- **8d — émission commune des méthodes de hooks et garde-fous architecturaux** : factoriser les corps
-  réellement communs et verrouiller l'absence de retour à la duplication avec des tests Roslyn.
+Le contexte immuable `HookTraversalPosition` transporte explicitement `AlternativeIndex` et
+`ElementIndex`, y compris les sentinelles `-1`, sans collection mutable ni état global. Les racines de
+parcours sont transmises par `HookTraversalRoot`, ce qui laisse la récursion gauche au périmètre parser
+spécialisé et les modes lexer au périmètre lexer spécialisé. Les wrappers lisibles
+`CollectEmbeddedCodeHooks(...)` et `CollectLexerEmbeddedCodeHooks(...)` sont conservés, mais ils ne
+contiennent plus de `switch` sur `G4Content`, de récursion, de création directe de hooks, de
+transformation directe ni de logique d'indexation.
 
-Chaque étape doit préserver strictement la forme du C# généré, l'ordre des hooks, les indices, le
-nombre et l'ordre d'appel au transformer, les diagnostics, les fallbacks, l'API publique, l'autorité du
-parser et la sémantique lexer/runtime.
+Aucun booléen `isLexer`, aucune classe de base extensive et aucune nouvelle API publique n'ont été
+introduits. La source C# générée est préservée par les tests existants de source générée et par les
+tests d'invariants de transformation. Le garde-fou Roslyn
+`GrammarEmitterEmbeddedCodeHookCollection_UsesSharedCollectorAndStrategies` vérifie la délégation des
+wrappers, l'existence du moteur et des stratégies, l'absence de parcours dupliqués, l'absence de
+paramètre `bool isLexer`, la centralisation de la transformation, l'utilisation de `CreateParser(...)`
+et `CreateLexer(...)`, le portage de la récursion gauche par la stratégie parser, le portage des modes
+lexer par la stratégie lexer, et la présence du contexte immuable d'indices.
+
+Tests ajoutés ou renforcés :
+
+- `EmbeddedCodeTransformerArchitectureTests.GrammarEmitterEmbeddedCodeHookCollection_UsesSharedCollectorAndStrategies` ;
+- tests existants de caractérisation `Antlr4GeneratedEmbeddedCodeTests` couvrant parser non récursif,
+  parser récursif gauche, lexer, grammaires combinées, noms de méthodes, dispatchers, corps transformés
+  et stabilité de la source générée ;
+- tests existants `EmbeddedCodeTransformationInvariantTests` couvrant ordre, nombre d'appels au
+  transformer, localisations, noms de règles, code brut et absence de double transformation.
+
+#### 8b. Dispatchers runtime — corrigé
+
+L'émission des dispatchers runtime parser et lexer est désormais mutualisée par le moteur privé
+`EmbeddedHookDispatcherEmitter`. Ce moteur porte l'algorithme stable : déclaration de la classe
+générée, signature de la méthode de dispatch, boucle ordonnée sur les hooks déjà sélectionnés,
+validation des discriminants `Owner` et `Kind`, comparaisons dans l'ordre historique
+`Rule.Name`, code brut (`PredicateCode` ou `ActionCode`), `AlternativeIndex`, `ElementIndex`, appel de
+la méthode de hook, retour de succès et retour de fallback. Aucun tri supplémentaire n'est introduit ;
+l'ordre reste celui des listes `predicates`, `actions`, `lexerActions` et `lexerPredicates` produites par
+la collecte existante.
+
+Les différences déclaratives sont concentrées dans le descripteur immuable privé
+`EmbeddedHookDispatcherDescriptor`, qui expose explicitement les quatre configurations constantes :
+
+- `ParserPredicate` pour `GeneratedSemanticPredicateEvaluator` / `ISemanticPredicateEvaluator`,
+  `SemanticPredicateEvaluationContext`, `SemanticPredicateEvaluationOutcome`, succès
+  `Satisfied`/`Rejected` et fallback `_fallback.Evaluate(context)` ;
+- `ParserAction` pour `GeneratedParserActionExecutor` / `IParserActionExecutor`,
+  `ParserActionExecutionContext`, `ParserActionExecutionOutcome.Executed` et fallback
+  `_fallback.Execute(context)` ;
+- `LexerPredicate` pour `GeneratedLexerPredicateEvaluator` / `ILexerPredicateEvaluator`,
+  `LexerPredicateEvaluationContext`, `LexerPredicateEvaluationOutcome.True`/`False` et fallback
+  `_fallback.Evaluate(context)` ;
+- `LexerAction` pour `GeneratedLexerActionExecutor` / `ILexerActionExecutor`,
+  `LexerActionExecutionContext` avec `LexerActionExecutionResult`,
+  `LexerActionExecutionOutcome.Executed` et fallback `_fallback.Execute(context, result)`.
+
+Les wrappers explicites `EmitSemanticPredicateEvaluator(...)`, `EmitParserActionExecutor(...)`,
+`EmitLexerPredicateEvaluator(...)` et `EmitLexerActionExecutor(...)` sont conservés comme points de
+lecture parser/lexer et prédicat/action ; ils sélectionnent seulement le descripteur correspondant et
+délèguent au moteur commun. Aucune stratégie comportementale supplémentaire n'a été nécessaire : les
+différences constatées sont les types, signatures, propriétés de code, expressions de succès, arguments
+d'appel et fallbacks, donc elles restent décrites par données. Aucun paramètre `isLexer` ou
+`isPredicate`, aucun gros `switch` de domaine et aucune nouvelle API publique ne sont introduits.
+
+La source générée est préservée : noms de classes, interfaces, signatures, conditions, ordre des
+conditions, appels `__Predicate...`, `__Action...`, `__LexerPredicate...`, `__LexerAction...`, retours de
+succès et fallbacks restent identiques. Les méthodes de hooks elles-mêmes ne sont pas mutualisées et
+restent explicitement ouvertes pour 8c.
+
+Tests ajoutés ou renforcés :
+
+- `Antlr4GeneratedEmbeddedCodeTests.Emit_CombinedEmbeddedCode_GeneratesEquivalentRuntimeDispatchers`
+  caractérise les quatre dispatchers sur une grammaire combinée avec plusieurs hooks parser et lexer ;
+- `EmbeddedCodeTransformerArchitectureTests.GrammarEmitterEmbeddedHookDispatchers_UseSharedEmitterAndImmutableDescriptors`
+  vérifie par Roslyn la délégation des quatre wrappers, l'absence de boucle et de structure complète
+  dans les wrappers, l'émetteur commun unique, le descripteur immuable privé, l'absence de `isLexer` /
+  `isPredicate`, l'absence de branches parser/lexer dispersées dans l'émetteur, la validation des
+  discriminants `Owner` et `Kind`, les quatre configurations explicites, les fallbacks et le maintien des
+  méthodes de hooks séparées pour 8c.
+
+#### 8c. Méthodes de hooks — corrigé
+
+L'émission des quatre familles de méthodes de hooks générées est désormais mutualisée par le moteur
+privé `EmbeddedHookMethodEmitter`. Ce moteur porte l'algorithme stable : validation typée du hook par
+`Owner` et `Kind`, création du `GeneratedEmbeddedCodeBody`, commentaire XML, signature, accolade
+d'ouverture, préambule éventuel de locaux de contexte, appel centralisé à
+`EmitGeneratedEmbeddedCodeBody(...)`, accolade de fermeture et ligne vide finale. La source générée
+reste préservée : mêmes commentaires XML, mêmes signatures, même indentation, mêmes corps injectés et
+même ordre d'émission.
+
+Les différences déclaratives sont concentrées dans le descripteur immuable privé
+`EmbeddedHookMethodDescriptor`, qui expose explicitement les quatre configurations :
+
+- `ParserPredicate` valide `Parser` / `SemanticPredicate`, émet `private bool`, reçoit
+  `SemanticPredicateEvaluationContext context`, utilise `GeneratedEmbeddedCodeBody.ForPredicate(...)`
+  et conserve les locaux parser predicate (`ruleName`, `inputPosition`, `alternativeIndex`,
+  `elementIndex`, `predicateCode`) ;
+- `ParserAction` valide `Parser` / `InlineAction`, émet `private void`, reçoit
+  `ParserActionExecutionContext context`, utilise `GeneratedEmbeddedCodeBody.ForAction(...)` et
+  conserve les locaux parser action (`ruleName`, `inputPosition`, `alternativeIndex`, `elementIndex`,
+  `actionCode`) ;
+- `LexerPredicate` valide `Lexer` / `SemanticPredicate`, émet `private bool`, reçoit
+  `LexerPredicateEvaluationContext context`, utilise `GeneratedEmbeddedCodeBody.ForPredicate(...)` et
+  ne reçoit aucun local parser ;
+- `LexerAction` valide `Lexer` / `InlineAction`, émet `private void`, reçoit
+  `LexerActionExecutionContext context, LexerActionExecutionResult result`, utilise
+  `GeneratedEmbeddedCodeBody.ForAction(...)`, conserve le paramètre mutable `result` et ne reçoit aucun
+  local parser.
+
+Le profil explicite `EmbeddedHookContextLocalProfile` limite le préambule aux trois cas réels
+(`None`, `ParserPredicate`, `ParserAction`) sans introduire de booléen de domaine. Les wrappers
+`EmitPredicateHook(...)`, `EmitActionHook(...)`, `EmitLexerPredicateHook(...)` et
+`EmitLexerActionHook(...)` restent les points de lecture spécialisés ; ils sélectionnent uniquement le
+descripteur et délèguent au moteur commun. Les hooks lifecycle restent hors périmètre : ils reposent
+sur `LifecycleHook`, une visibilité `internal`, `ParserRuleLifecycleContext`, des locaux et phases
+`@init` / `@after`, sans discriminants `EmbeddedCodeHookOwner` / `EmbeddedCodeHookKind`.
+
+Tests ajoutés ou renforcés :
+
+- `Antlr4GeneratedEmbeddedCodeTests.Emit_CombinedEmbeddedCode_GeneratesStableHookMethodBlocks`
+  caractérise les commentaires, signatures, locaux parser, absence de locaux parser côté lexer,
+  transformation expression/bloc, ordre des familles et conservation du paramètre lexer `result` ;
+- `EmbeddedCodeTransformerArchitectureTests.GrammarEmitterEmbeddedHookMethods_UseSharedEmitterAndImmutableDescriptors`
+  vérifie par Roslyn l'émetteur commun, le descripteur immuable, les quatre configurations explicites,
+  la délégation des wrappers, l'absence d'appels directs interdits dans les wrappers, la validation
+  typée, l'appel unique à `EmitGeneratedEmbeddedCodeBody(...)`, la distinction typée
+  `ForPredicate(...)` / `ForAction(...)`, les profils de locaux explicites, l'absence de `isLexer` /
+  `isPredicate`, et le maintien des hooks lifecycle hors abstraction.
+
+#### 8d. Garde-fous globaux — corrigé
+
+Les garde-fous architecturaux couvrent maintenant la collecte, les dispatchers runtime et les méthodes
+de hooks. Ils vérifient l'absence de réintroduction d'algorithmes parallèles, l'absence de booléens de
+domaine `isLexer` / `isPredicate`, l'absence de nouvelle API publique, la conservation des wrappers
+explicites, la validation typée et la séparation volontaire des hooks lifecycle.
 
 ## Duplications d'intention et lisibilité (priorité moyenne)
 

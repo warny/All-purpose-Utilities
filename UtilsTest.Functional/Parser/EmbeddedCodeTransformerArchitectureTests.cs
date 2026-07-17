@@ -276,6 +276,184 @@ public sealed class EmbeddedCodeTransformerArchitectureTests
     }
 
 
+
+    /// <summary>
+    /// Ensures parser and lexer generated hook collection share one recursive collector with explicit strategies.
+    /// </summary>
+    [TestMethod]
+    public void GrammarEmitterEmbeddedCodeHookCollection_UsesSharedCollectorAndStrategies()
+    {
+        string repositoryRoot = FindRepositoryRoot();
+        string relativePath = NormalizePath(Path.Combine("Utils.Parser.Generators", "Internal", "GrammarEmitter.EmbeddedHooks.cs"));
+        string source = File.ReadAllText(Path.Combine(repositoryRoot, relativePath));
+        SyntaxTree tree = CSharpSyntaxTree.ParseText(source, path: relativePath);
+        CSharpCompilation compilation = CSharpCompilation.Create(
+            "Utils.Parser.Generators.HookCollectorArchitectureScan",
+            [tree],
+            CreateRuntimeReferences(),
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+        SemanticModel semanticModel = compilation.GetSemanticModel(tree);
+        ClassDeclarationSyntax grammarEmitter = tree.GetCompilationUnitRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().Single(static type => type.Identifier.ValueText == "GrammarEmitter");
+        ClassDeclarationSyntax collector = grammarEmitter.DescendantNodes().OfType<ClassDeclarationSyntax>().Single(static type => type.Identifier.ValueText == "EmbeddedHookCollector");
+        InterfaceDeclarationSyntax strategy = grammarEmitter.DescendantNodes().OfType<InterfaceDeclarationSyntax>().Single(static type => type.Identifier.ValueText == "IEmbeddedHookCollectionStrategy");
+        ClassDeclarationSyntax parserStrategy = grammarEmitter.DescendantNodes().OfType<ClassDeclarationSyntax>().Single(static type => type.Identifier.ValueText == "ParserEmbeddedHookCollectionStrategy");
+        ClassDeclarationSyntax lexerStrategy = grammarEmitter.DescendantNodes().OfType<ClassDeclarationSyntax>().Single(static type => type.Identifier.ValueText == "LexerEmbeddedHookCollectionStrategy");
+        StructDeclarationSyntax traversalPosition = grammarEmitter.DescendantNodes().OfType<StructDeclarationSyntax>().Single(static type => type.Identifier.ValueText == "HookTraversalPosition");
+
+        Assert.IsTrue(collector.Modifiers.Any(SyntaxKind.PrivateKeyword));
+        Assert.IsTrue(strategy.Modifiers.Any(SyntaxKind.PrivateKeyword));
+        Assert.IsTrue(parserStrategy.Modifiers.Any(SyntaxKind.PrivateKeyword));
+        Assert.IsTrue(lexerStrategy.Modifiers.Any(SyntaxKind.PrivateKeyword));
+        Assert.IsTrue(traversalPosition.Modifiers.Any(SyntaxKind.ReadOnlyKeyword));
+        CollectionAssert.AreEquivalent(new[] { "AlternativeIndex", "ElementIndex" }, traversalPosition.Members.OfType<PropertyDeclarationSyntax>().Select(static property => property.Identifier.ValueText).Where(static name => name is "AlternativeIndex" or "ElementIndex").ToArray());
+
+        MethodDeclarationSyntax parserWrapper = grammarEmitter.Members.OfType<MethodDeclarationSyntax>().Single(static method => method.Identifier.ValueText == "CollectEmbeddedCodeHooks");
+        MethodDeclarationSyntax lexerWrapper = grammarEmitter.Members.OfType<MethodDeclarationSyntax>().Single(static method => method.Identifier.ValueText == "CollectLexerEmbeddedCodeHooks");
+        AssertWrapperDelegatesToCollector(parserWrapper, "ParserEmbeddedHookCollectionStrategy", semanticModel);
+        AssertWrapperDelegatesToCollector(lexerWrapper, "LexerEmbeddedHookCollectionStrategy", semanticModel);
+        Assert.AreEqual(0, parserWrapper.DescendantNodes().OfType<SwitchStatementSyntax>().Count());
+        Assert.AreEqual(0, lexerWrapper.DescendantNodes().OfType<SwitchStatementSyntax>().Count());
+
+        MethodDeclarationSyntax[] recursiveVisitors = collector.Members.OfType<MethodDeclarationSyntax>()
+            .Where(method => method.DescendantNodes().OfType<InvocationExpressionSyntax>().Any(invocation => invocation.ToString().StartsWith("VisitContent(", StringComparison.Ordinal)))
+            .ToArray();
+        CollectionAssert.AreEqual(new[] { "Collect", "VisitAlternative", "VisitContent", "VisitSequence" }, recursiveVisitors.Select(static method => method.Identifier.ValueText).OrderBy(static name => name, StringComparer.Ordinal).ToArray());
+        MethodDeclarationSyntax sharedVisitor = collector.Members.OfType<MethodDeclarationSyntax>().Single(static method => method.Identifier.ValueText == "VisitContent");
+        Assert.AreEqual(1, sharedVisitor.DescendantNodes().OfType<SwitchStatementSyntax>().Count(), "Only the shared collector should switch over G4Content node shapes.");
+
+        string[] removedCollectors = ["CollectRuleEmbeddedCodeHooks", "CollectLeftRecursiveTailEmbeddedCodeHooks", "CollectAlternativeEmbeddedCodeHooks", "CollectSequenceEmbeddedCodeHooks"];
+        foreach (string removedCollector in removedCollectors)
+        {
+            Assert.IsFalse(grammarEmitter.DescendantNodes().OfType<MethodDeclarationSyntax>().Any(method => method.Identifier.ValueText == removedCollector), $"{removedCollector} must not remain as a duplicated traversal method.");
+        }
+
+        Assert.IsFalse(grammarEmitter.DescendantNodes().OfType<ParameterSyntax>().Any(parameter => parameter.Identifier.ValueText == "isLexer" && parameter.Type is PredefinedTypeSyntax predefined && predefined.Keyword.IsKind(SyntaxKind.BoolKeyword)));
+        Assert.IsFalse(collector.DescendantNodes().OfType<MemberAccessExpressionSyntax>().Any(member => member.ToString() is "EmbeddedCodeHookOwner.Parser" or "EmbeddedCodeHookOwner.Lexer"), "The shared collector must not branch on parser/lexer owners.");
+        Assert.IsTrue(parserStrategy.DescendantNodes().OfType<InvocationExpressionSyntax>().Any(invocation => invocation.ToString().StartsWith("EmbeddedCodeHook.CreateParser", StringComparison.Ordinal)));
+        Assert.IsTrue(lexerStrategy.DescendantNodes().OfType<InvocationExpressionSyntax>().Any(invocation => invocation.ToString().StartsWith("EmbeddedCodeHook.CreateLexer", StringComparison.Ordinal)));
+        Assert.IsTrue(parserStrategy.DescendantNodes().OfType<InvocationExpressionSyntax>().Any(invocation => invocation.ToString().StartsWith("StartsWithRuleRef", StringComparison.Ordinal)), "Parser left-recursion preparation must stay in the parser strategy.");
+        Assert.IsTrue(lexerStrategy.DescendantNodes().OfType<MemberAccessExpressionSyntax>().Any(member => member.ToString() == "grammar.ExtraModes"), "Lexer mode traversal must stay in the lexer strategy.");
+        Assert.AreEqual(1, collector.DescendantNodes().OfType<InvocationExpressionSyntax>().Count(invocation => invocation.ToString().StartsWith("TransformEmbeddedCode", StringComparison.Ordinal)), "Hook transformation must stay centralized in the shared collector.");
+    }
+
+    /// <summary>
+    /// Ensures parser and lexer runtime hook dispatchers share one emitter while keeping four explicit descriptor-backed wrappers.
+    /// </summary>
+    [TestMethod]
+    public void GrammarEmitterEmbeddedHookDispatchers_UseSharedEmitterAndImmutableDescriptors()
+    {
+        string repositoryRoot = FindRepositoryRoot();
+        string relativePath = NormalizePath(Path.Combine("Utils.Parser.Generators", "Internal", "GrammarEmitter.ExecutionContext.Policy.cs"));
+        string source = File.ReadAllText(Path.Combine(repositoryRoot, relativePath));
+        SyntaxTree tree = CSharpSyntaxTree.ParseText(source, path: relativePath);
+        CSharpCompilation compilation = CSharpCompilation.Create(
+            "Utils.Parser.Generators.DispatcherArchitectureScan",
+            [tree],
+            CreateRuntimeReferences(),
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+        SemanticModel semanticModel = compilation.GetSemanticModel(tree);
+        ClassDeclarationSyntax grammarEmitter = tree.GetCompilationUnitRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().Single(static type => type.Identifier.ValueText == "GrammarEmitter");
+        ClassDeclarationSyntax emitter = grammarEmitter.DescendantNodes().OfType<ClassDeclarationSyntax>().Single(static type => type.Identifier.ValueText == "EmbeddedHookDispatcherEmitter");
+        StructDeclarationSyntax descriptor = grammarEmitter.DescendantNodes().OfType<StructDeclarationSyntax>().Single(static type => type.Identifier.ValueText == "EmbeddedHookDispatcherDescriptor");
+
+        Assert.IsTrue(emitter.Modifiers.Any(SyntaxKind.PrivateKeyword));
+        Assert.IsTrue(descriptor.Modifiers.Any(SyntaxKind.PrivateKeyword));
+        Assert.IsTrue(descriptor.Modifiers.Any(SyntaxKind.ReadOnlyKeyword));
+        CollectionAssert.AreEquivalent(new[] { "ParserPredicate", "ParserAction", "LexerPredicate", "LexerAction" }, descriptor.Members.OfType<FieldDeclarationSyntax>().SelectMany(static field => field.Declaration.Variables).Select(static variable => variable.Identifier.ValueText).ToArray());
+
+        string[] wrapperNames = ["EmitSemanticPredicateEvaluator", "EmitParserActionExecutor", "EmitLexerPredicateEvaluator", "EmitLexerActionExecutor"];
+        foreach (string wrapperName in wrapperNames)
+        {
+            MethodDeclarationSyntax wrapper = grammarEmitter.Members.OfType<MethodDeclarationSyntax>().Single(method => method.Identifier.ValueText == wrapperName);
+            InvocationExpressionSyntax invocation = wrapper.DescendantNodes().OfType<InvocationExpressionSyntax>().Single();
+            IMethodSymbol? symbol = semanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol;
+            Assert.AreEqual("Emit", symbol?.Name);
+            Assert.AreEqual("EmbeddedHookDispatcherEmitter", symbol?.ContainingType.Name);
+            Assert.AreEqual(0, wrapper.DescendantNodes().OfType<ForEachStatementSyntax>().Count(), $"{wrapperName} must not loop over hooks.");
+            Assert.AreEqual(0, wrapper.DescendantNodes().OfType<IfStatementSyntax>().Count(), $"{wrapperName} must not emit dispatcher conditions.");
+        }
+
+        MethodDeclarationSyntax sharedEmit = emitter.Members.OfType<MethodDeclarationSyntax>().Single(static method => method.Identifier.ValueText == "Emit");
+        Assert.AreEqual(1, sharedEmit.DescendantNodes().OfType<ForEachStatementSyntax>().Count(statement => statement.Expression.ToString() == "hooks"), "Only the shared emitter should iterate over runtime dispatcher hooks.");
+        Assert.IsTrue(sharedEmit.DescendantNodes().OfType<InvocationExpressionSyntax>().Any(invocation => invocation.ToString().StartsWith("ValidateEmbeddedCodeHook", StringComparison.Ordinal)), "The shared emitter must keep Owner and Kind validation.");
+        Assert.IsTrue(sharedEmit.DescendantNodes().OfType<MemberAccessExpressionSyntax>().Any(member => member.ToString() == "descriptor.Owner"));
+        Assert.IsTrue(sharedEmit.DescendantNodes().OfType<MemberAccessExpressionSyntax>().Any(member => member.ToString() == "descriptor.Kind"));
+        Assert.AreEqual(0, sharedEmit.DescendantNodes().OfType<SwitchStatementSyntax>().Count());
+        Assert.AreEqual(0, sharedEmit.DescendantNodes().OfType<MemberAccessExpressionSyntax>().Count(member => member.ToString() is "EmbeddedCodeHookOwner.Parser" or "EmbeddedCodeHookOwner.Lexer"));
+        Assert.AreEqual(0, sharedEmit.DescendantNodes().OfType<MemberAccessExpressionSyntax>().Count(member => member.ToString() is "EmbeddedCodeHookKind.SemanticPredicate" or "EmbeddedCodeHookKind.InlineAction"));
+        Assert.IsFalse(grammarEmitter.DescendantNodes().OfType<ParameterSyntax>().Any(parameter => parameter.Identifier.ValueText is "isLexer" or "isPredicate"));
+        Assert.AreEqual(4, descriptor.DescendantNodes().OfType<LiteralExpressionSyntax>().Count(literal => literal.Token.ValueText.Contains("_fallback.", StringComparison.Ordinal)), "Each descriptor-backed dispatcher must keep a fallback expression.");
+        Assert.AreEqual(4, descriptor.DescendantNodes().OfType<MemberAccessExpressionSyntax>().Count(member => member.ToString() is "EmbeddedCodeHookOwner.Parser" or "EmbeddedCodeHookOwner.Lexer"));
+        Assert.AreEqual(4, descriptor.DescendantNodes().OfType<MemberAccessExpressionSyntax>().Count(member => member.ToString() is "EmbeddedCodeHookKind.SemanticPredicate" or "EmbeddedCodeHookKind.InlineAction"));
+
+        string[] hookMethodEmitters = ["EmitPredicateHook", "EmitActionHook", "EmitLexerPredicateHook", "EmitLexerActionHook"];
+        foreach (string hookMethodEmitter in hookMethodEmitters)
+        {
+            Assert.IsTrue(grammarEmitter.Members.OfType<MethodDeclarationSyntax>().Any(method => method.Identifier.ValueText == hookMethodEmitter), $"{hookMethodEmitter} must remain separate until TODO 8c is addressed.");
+        }
+    }
+
+
+
+    /// <summary>
+    /// Ensures generated hook methods use one shared method emitter with immutable descriptors.
+    /// </summary>
+    [TestMethod]
+    public void GrammarEmitterEmbeddedHookMethods_UseSharedEmitterAndImmutableDescriptors()
+    {
+        string repositoryRoot = FindRepositoryRoot();
+        string relativePath = NormalizePath(Path.Combine("Utils.Parser.Generators", "Internal", "GrammarEmitter.ExecutionContext.Policy.cs"));
+        string source = File.ReadAllText(Path.Combine(repositoryRoot, relativePath));
+        SyntaxTree tree = CSharpSyntaxTree.ParseText(source, path: relativePath);
+        CSharpCompilation compilation = CSharpCompilation.Create(
+            "Utils.Parser.Generators.HookMethodArchitectureScan",
+            [tree],
+            CreateRuntimeReferences(),
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+        SemanticModel semanticModel = compilation.GetSemanticModel(tree);
+        ClassDeclarationSyntax grammarEmitter = tree.GetCompilationUnitRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().Single(static type => type.Identifier.ValueText == "GrammarEmitter");
+        ClassDeclarationSyntax emitter = grammarEmitter.DescendantNodes().OfType<ClassDeclarationSyntax>().Single(static type => type.Identifier.ValueText == "EmbeddedHookMethodEmitter");
+        StructDeclarationSyntax descriptor = grammarEmitter.DescendantNodes().OfType<StructDeclarationSyntax>().Single(static type => type.Identifier.ValueText == "EmbeddedHookMethodDescriptor");
+        EnumDeclarationSyntax profile = grammarEmitter.DescendantNodes().OfType<EnumDeclarationSyntax>().Single(static type => type.Identifier.ValueText == "EmbeddedHookContextLocalProfile");
+
+        Assert.IsTrue(emitter.Modifiers.Any(SyntaxKind.PrivateKeyword));
+        Assert.IsTrue(descriptor.Modifiers.Any(SyntaxKind.PrivateKeyword));
+        Assert.IsTrue(descriptor.Modifiers.Any(SyntaxKind.ReadOnlyKeyword));
+        CollectionAssert.AreEquivalent(new[] { "ParserPredicate", "ParserAction", "LexerPredicate", "LexerAction" }, descriptor.Members.OfType<PropertyDeclarationSyntax>().Where(static property => property.Modifiers.Any(SyntaxKind.StaticKeyword)).Select(static property => property.Identifier.ValueText).ToArray());
+        CollectionAssert.AreEquivalent(new[] { "None", "ParserPredicate", "ParserAction" }, profile.Members.Select(static member => member.Identifier.ValueText).ToArray());
+
+        string[] wrapperNames = ["EmitPredicateHook", "EmitActionHook", "EmitLexerPredicateHook", "EmitLexerActionHook"];
+        string[] forbiddenCalls = ["ValidateEmbeddedCodeHook", "ForPredicate", "ForAction", "EmitContextLocals", "EmitGeneratedEmbeddedCodeBody", "AppendLine"];
+        foreach (string wrapperName in wrapperNames)
+        {
+            MethodDeclarationSyntax wrapper = grammarEmitter.Members.OfType<MethodDeclarationSyntax>().Single(method => method.Identifier.ValueText == wrapperName);
+            InvocationExpressionSyntax invocation = wrapper.DescendantNodes().OfType<InvocationExpressionSyntax>().Single();
+            IMethodSymbol? symbol = semanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol;
+            Assert.AreEqual("Emit", symbol?.Name);
+            Assert.AreEqual("EmbeddedHookMethodEmitter", symbol?.ContainingType.Name);
+            foreach (InvocationExpressionSyntax call in wrapper.DescendantNodes().OfType<InvocationExpressionSyntax>())
+            {
+                string callText = call.Expression.ToString();
+                Assert.IsFalse(forbiddenCalls.Any(callText.Contains), $"{wrapperName} must not directly call {callText}.");
+            }
+        }
+
+        MethodDeclarationSyntax sharedEmit = emitter.Members.OfType<MethodDeclarationSyntax>().Single(static method => method.Identifier.ValueText == "Emit");
+        Assert.IsTrue(sharedEmit.DescendantNodes().OfType<InvocationExpressionSyntax>().Any(invocation => invocation.ToString().StartsWith("ValidateEmbeddedCodeHook", StringComparison.Ordinal)), "The shared method emitter must keep Owner and Kind validation.");
+        Assert.AreEqual(1, sharedEmit.DescendantNodes().OfType<InvocationExpressionSyntax>().Count(invocation => invocation.ToString().StartsWith("EmitGeneratedEmbeddedCodeBody", StringComparison.Ordinal)), "The shared method emitter must centralize generated body emission.");
+        Assert.IsTrue(sharedEmit.DescendantNodes().OfType<MemberAccessExpressionSyntax>().Any(member => member.ToString() == "descriptor.Owner"));
+        Assert.IsTrue(sharedEmit.DescendantNodes().OfType<MemberAccessExpressionSyntax>().Any(member => member.ToString() == "descriptor.Kind"));
+        Assert.AreEqual(0, sharedEmit.DescendantNodes().OfType<MemberAccessExpressionSyntax>().Count(member => member.ToString() is "EmbeddedCodeHookOwner.Parser" or "EmbeddedCodeHookOwner.Lexer"));
+        Assert.AreEqual(0, sharedEmit.DescendantNodes().OfType<MemberAccessExpressionSyntax>().Count(member => member.ToString() is "EmbeddedCodeHookKind.SemanticPredicate" or "EmbeddedCodeHookKind.InlineAction"));
+        Assert.AreEqual(0, sharedEmit.DescendantNodes().OfType<SwitchStatementSyntax>().Count(statement => statement.Expression.ToString().Contains("Owner", StringComparison.Ordinal) || statement.Expression.ToString().Contains("Kind", StringComparison.Ordinal)));
+        Assert.IsFalse(grammarEmitter.DescendantNodes().OfType<ParameterSyntax>().Any(parameter => parameter.Identifier.ValueText is "isLexer" or "isPredicate"));
+        Assert.AreEqual(2, descriptor.DescendantNodes().OfType<MemberAccessExpressionSyntax>().Count(member => member.ToString() == "GeneratedEmbeddedCodeBody.ForPredicate"));
+        Assert.AreEqual(2, descriptor.DescendantNodes().OfType<MemberAccessExpressionSyntax>().Count(member => member.ToString() == "GeneratedEmbeddedCodeBody.ForAction"));
+        Assert.AreEqual(4, descriptor.DescendantNodes().OfType<MemberAccessExpressionSyntax>().Count(member => member.ToString() is "EmbeddedCodeHookOwner.Parser" or "EmbeddedCodeHookOwner.Lexer"));
+        Assert.AreEqual(4, descriptor.DescendantNodes().OfType<MemberAccessExpressionSyntax>().Count(member => member.ToString() is "EmbeddedCodeHookKind.SemanticPredicate" or "EmbeddedCodeHookKind.InlineAction"));
+        Assert.IsTrue(grammarEmitter.Members.OfType<MethodDeclarationSyntax>().Any(static method => method.Identifier.ValueText == "EmitLifecycleHookMethod"), "Lifecycle hooks must remain outside the embedded hook method abstraction.");
+    }
+
     /// <summary>
     /// Asserts that a specialized symbol wrapper delegates directly to the shared runtime symbol builder.
     /// </summary>
@@ -287,6 +465,21 @@ public sealed class EmbeddedCodeTransformerArchitectureTests
         Assert.AreEqual("BuildRuntimeContextSymbols", (semanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol)?.Name);
     }
 
+
+
+    /// <summary>
+    /// Asserts that an embedded hook collection wrapper delegates to the shared collector with the expected strategy singleton.
+    /// </summary>
+    /// <param name="wrapper">Wrapper method declaration to inspect.</param>
+    /// <param name="expectedStrategyTypeName">Expected strategy type name.</param>
+    /// <param name="semanticModel">Semantic model used to resolve the collector invocation.</param>
+    private static void AssertWrapperDelegatesToCollector(MethodDeclarationSyntax wrapper, string expectedStrategyTypeName, SemanticModel semanticModel)
+    {
+        InvocationExpressionSyntax invocation = wrapper.DescendantNodes().OfType<InvocationExpressionSyntax>().Single();
+        Assert.AreEqual("Collect", (semanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol)?.Name);
+        ArgumentSyntax strategyArgument = invocation.ArgumentList.Arguments.Last();
+        Assert.AreEqual($"{expectedStrategyTypeName}.Instance", strategyArgument.Expression.ToString());
+    }
     /// <summary>
     /// Finds the repository root from the functional test output folder.
     /// </summary>
