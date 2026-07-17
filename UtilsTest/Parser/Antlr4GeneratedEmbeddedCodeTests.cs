@@ -6320,7 +6320,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
 
         Assert.IsNull(emitterType.GetNestedType("LexerEmbeddedCodeHook", BindingFlags.NonPublic));
         Assert.AreEqual(typeof(RawEmbeddedCode), hookType.GetProperty("RawCode", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.PropertyType);
-        Assert.AreEqual(typeof(TransformedEmbeddedCode), hookType.GetProperty("EmittedCode", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.PropertyType);
+        Assert.AreEqual(typeof(TransformedEmbeddedCode), hookType.GetProperty("TransformedCode", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.PropertyType);
         Assert.AreEqual(ownerType, hookType.GetProperty("Owner", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.PropertyType);
         Assert.AreEqual(kindType, hookType.GetProperty("Kind", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.PropertyType);
         string[] expectedOwners = ["Parser", "Lexer"];
@@ -6366,28 +6366,29 @@ public class Antlr4GeneratedEmbeddedCodeTests
     }
 
     /// <summary>
-    /// Ensures transformed hook code cannot be read before the transformation phase assigns it.
+    /// Ensures an untransformed hook fails before the method emitter writes partial source.
     /// </summary>
     [TestMethod]
-    public void EmbeddedCodeHookTypes_WhenEmittedCodeIsReadBeforeTransformation_Throws()
+    public void EmbeddedCodeHookTypes_WhenUntransformedHookIsEmitted_ThrowsBeforeWritingSource()
     {
-        Type hookType = typeof(GrammarEmitter).GetNestedType("EmbeddedCodeHook", BindingFlags.NonPublic)!;
-        Type kindType = typeof(GrammarEmitter).GetNestedType("EmbeddedCodeHookKind", BindingFlags.NonPublic)!;
+        Type emitterType = typeof(GrammarEmitter);
+        Type hookType = emitterType.GetNestedType("EmbeddedCodeHook", BindingFlags.NonPublic)!;
+        Type kindType = emitterType.GetNestedType("EmbeddedCodeHookKind", BindingFlags.NonPublic)!;
+        Type methodEmitterType = emitterType.GetNestedType("EmbeddedHookMethodEmitter", BindingFlags.NonPublic)!;
+        Type descriptorType = emitterType.GetNestedType("EmbeddedHookMethodDescriptor", BindingFlags.NonPublic)!;
         object hook = InvokeHookFactory(hookType, "CreateParser", "start", "RAW_ACTION;", Enum.Parse(kindType, "InlineAction"), 0, 0, "__Action_start_0_0_0");
+        object descriptor = descriptorType.GetProperty("ParserAction", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)!.GetValue(null)!;
+        var source = new System.Text.StringBuilder();
 
-        var property = hookType.GetProperty("EmittedCode", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!;
-        try
-        {
-            _ = property.GetValue(hook);
-            Assert.Fail("Reading untransformed emitted code should fail.");
-        }
-        catch (TargetInvocationException exception)
-        {
-            Assert.IsInstanceOfType(exception.InnerException, typeof(InvalidOperationException));
-        }
-        catch (InvalidOperationException)
-        {
-        }
+        TargetInvocationException exception = Assert.ThrowsException<TargetInvocationException>(() =>
+            methodEmitterType.GetMethod("Emit", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)!.Invoke(null, [source, hook, descriptor]));
+
+        Assert.IsInstanceOfType<InvalidOperationException>(exception.InnerException);
+        StringAssert.Contains(exception.InnerException.Message, "__Action_start_0_0_0");
+        StringAssert.Contains(exception.InnerException.Message, "has not been transformed");
+        Assert.AreEqual(0, source.Length);
+        Assert.AreEqual("RAW_ACTION;", ((RawEmbeddedCode)hookType.GetProperty("RawCode", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.GetValue(hook)!).Text);
+        Assert.IsNull(hookType.GetProperty("TransformedCode", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.GetValue(hook));
     }
 
     /// <summary>
