@@ -122,7 +122,7 @@ public class GlyphSimple : GlyphBase
         }
 
         // Read contour end points and adjust them (TTF spec: end point index + 1).
-        var contourEndPoints = data.ReadArray<short>(NumContours, true)
+        var contourEndPoints = data.ReadArray<short>(NumContours)
                                    .Select(nc => nc + 1)
                                    .ToArray();
         int numPoints = contourEndPoints[contourEndPoints.Length - 1];

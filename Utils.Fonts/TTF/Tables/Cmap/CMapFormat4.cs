@@ -328,7 +328,7 @@ public class CMapFormat4 : CMapFormatBase
             int size = endCodes[i] - startCodes[i] + 1;
             data.Push();
             data.Seek(offset, SeekOrigin.Begin);
-            var map = data.ReadArray<short>(size, true);
+            var map = data.ReadArray<short>(size);
             data.Pop();
             AddSegment((char)startCodes[i], (char)endCodes[i], map);
         }

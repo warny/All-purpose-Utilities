@@ -102,6 +102,7 @@ public class BaseEncoderStream : Stream
     private int value;
     private int shift;
     private int dataWidth;
+    private bool _closed;
 
     /// <summary>
     /// Encodes the provided byte buffer and writes the resulting characters.
@@ -109,8 +110,10 @@ public class BaseEncoderStream : Stream
     /// <param name="buffer">Source buffer.</param>
     /// <param name="offset">Index of the first byte to read.</param>
     /// <param name="count">Number of bytes to read.</param>
+    /// <exception cref="ObjectDisposedException">Thrown when writing after the stream is closed.</exception>
     public override void Write(byte[] buffer, int offset, int count)
     {
+        ObjectDisposedException.ThrowIf(_closed, this);
         int end = offset + count;
         for (int idx = offset; idx < end; idx++)
         {
@@ -128,7 +131,8 @@ public class BaseEncoderStream : Stream
                 if (MaxDataWidth != -1)
                 {
                     dataWidth++;
-                    if (dataWidth > MaxDataWidth)
+                    // wrap when the next symbol would exceed the configured width
+                    if (dataWidth >= MaxDataWidth)
                     {
                         dataWidth = 0;
                         TargetWriter.Write(BaseDescriptor.Separator);
@@ -141,9 +145,14 @@ public class BaseEncoderStream : Stream
 
     /// <summary>
     /// Finalizes the encoding process, writing remaining bits and padding.
+    /// Calling this method more than once is safe; subsequent calls are no-ops.
     /// </summary>
     public override void Close()
     {
+        if (_closed)
+            return;
+        _closed = true;
+
         if (shift > 0)
         {
             var charIndex = (value << (Depth - shift)) & Mask;

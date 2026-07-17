@@ -59,7 +59,7 @@ public class PostTableTests
         WriteHeader(w, 0x20000);
         w.Write<short>(1);     // one custom glyph name
         w.Write<short>(258);   // glyphNameIndex[0] -> first custom name (index >= 258)
-        w.WriteVariableLengthString("MyGlyph", System.Text.Encoding.ASCII, bigEndian: true, sizeLength: 1);
+        w.WriteVariableLengthString("MyGlyph", System.Text.Encoding.ASCII, sizeLength: 1);
 
         var table = NewTable();
         table.ReadData(MakeReader(ms.ToArray()));

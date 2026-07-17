@@ -155,12 +155,12 @@ public class LocaTable : TrueTypeTable, IEnumerable<LocaRecord>
         if (IsLongFormat)
         {
             // Read GlyphCount + 1 offsets, each stored as an int.
-            offsets = data.ReadArray<int>(GlyphCount + 1, true);
+            offsets = data.ReadArray<int>(GlyphCount + 1);
         }
         else
         {
             // Read GlyphCount + 1 offsets, each stored as a short, and convert to long format.
-            var temp = data.ReadArray<short>(GlyphCount + 1, true);
+            var temp = data.ReadArray<short>(GlyphCount + 1);
             offsets = temp.Select(o => o << 1).ToArray();
         }
     }

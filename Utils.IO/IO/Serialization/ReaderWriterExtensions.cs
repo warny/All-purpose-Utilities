@@ -40,34 +40,16 @@ public static class ReaderWriterExtensions
     }
 
     /// <summary>
-    /// Reads an array of values from the reader.
+    /// Reads an array of values from the reader using the reader's configured endianness.
     /// </summary>
     /// <typeparam name="T">Type of elements to read.</typeparam>
     /// <param name="reader">The reader to read from.</param>
     /// <param name="count">Number of elements to read.</param>
-    /// <param name="bigEndian">Whether numeric values are stored in big-endian order.</param>
-    public static T[] ReadArray<T>(this Reader reader, int count, bool bigEndian = false)
+    public static T[] ReadArray<T>(this Reader reader, int count)
     {
         var result = new T[count];
         for (int i = 0; i < count; i++)
-        {
-            if (bigEndian)
-            {
-                result[i] = typeof(T) switch
-                {
-                    Type t when t == typeof(short) => (T)(object)reader.Read<Int16>(),
-                    Type t when t == typeof(ushort) => (T)(object)reader.Read<UInt16>(),
-                    Type t when t == typeof(int) => (T)(object)reader.Read<Int32>(),
-                    Type t when t == typeof(uint) => (T)(object)reader.Read<UInt32>(),
-                    Type t when t == typeof(long) => (T)(object)reader.Read<Int64>(),
-                    _ => reader.Read<T>()
-                };
-            }
-            else
-            {
-                result[i] = reader.Read<T>();
-            }
-        }
+            result[i] = reader.Read<T>();
         return result;
     }
 
@@ -168,14 +150,13 @@ public static class ReaderWriterExtensions
     }
 
     /// <summary>
-    /// Writes a length-prefixed string to the writer.
+    /// Writes a length-prefixed string to the writer using the writer's configured endianness.
     /// </summary>
     /// <param name="writer">The writer to write to.</param>
     /// <param name="value">String value to write.</param>
     /// <param name="encoding">Encoding of the string.</param>
-    /// <param name="bigEndian">Whether the length is stored in big-endian order.</param>
-    /// <param name="sizeLength">Number of bytes used to store the length.</param>
-    public static void WriteVariableLengthString(this Writer writer, string value, Encoding encoding, bool bigEndian = false, int sizeLength = sizeof(int))
+    /// <param name="sizeLength">Number of bytes used to store the length prefix (1, 2, or 4).</param>
+    public static void WriteVariableLengthString(this Writer writer, string value, Encoding encoding, int sizeLength = sizeof(int))
     {
         var bytes = encoding.GetBytes(value);
         switch (sizeLength)

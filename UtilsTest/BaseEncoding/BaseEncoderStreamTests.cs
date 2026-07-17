@@ -137,5 +137,47 @@ public class BaseEncoderStreamTests
         stream.Close();
         Assert.AreEqual(target, stringWriter.ToString());
     }
+
+    // ---- item 12: idempotence de Close ----
+
+    [TestMethod]
+    public void EncoderClose_IsIdempotent_NoDuplicateOutput()
+    {
+        byte[] source = { 0x41, 0x42 };
+        var sw = new StringWriter();
+        var stream = new BaseEncoderStream(sw, Bases.Base64);
+        stream.Write(source, 0, source.Length);
+        stream.Close();
+        string after1 = sw.ToString();
+        stream.Close(); // second close must be a no-op
+        string after2 = sw.ToString();
+        Assert.AreEqual(after1, after2, "Second Close must not emit extra output");
+    }
+
+    [TestMethod]
+    public void EncoderWrite_AfterClose_Throws()
+    {
+        var sw = new StringWriter();
+        var stream = new BaseEncoderStream(sw, Bases.Base64);
+        stream.Close();
+        Assert.ThrowsException<ObjectDisposedException>(() => stream.Write(new byte[] { 1 }, 0, 1));
+    }
+
+    // ---- item 13: off-by-one du wrapping ----
+
+    [TestMethod]
+    public void LineWrapping_ExactWidth_DoesNotExceedLimit()
+    {
+        // With maxDataWidth=4, each line should have exactly 4 chars
+        byte[] source = new byte[6]; // encodes to 8 base64 chars (without padding)
+        var sw = new StringWriter();
+        var stream = new BaseEncoderStream(sw, Bases.Base16, maxDataWidth: 4);
+        stream.Write(source, 0, source.Length);
+        stream.Close();
+        string output = sw.ToString();
+        string[] lines = output.Split(System.Environment.NewLine, System.StringSplitOptions.RemoveEmptyEntries);
+        foreach (var line in lines)
+            Assert.IsTrue(line.Length <= 4, $"Line '{line}' exceeds maxDataWidth=4");
+    }
 }
 

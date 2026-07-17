@@ -28,7 +28,7 @@ public class RawWriter
         WriteSingle, WriteDouble, WriteDecimal, WriteHalf,
         WriteBigInteger, WriteUInt128, WriteInt128, WriteComplex,
         WriteDateTime, WriteDate, WriteTime, WriteTimeSpan,
-        WriteString,
+        WriteString, WriteChar,
         WriteGuid, WriteBool
     ];
 
@@ -179,20 +179,29 @@ public class RawWriter
         WriteDouble(writer, value.Imaginary);
     }
 
-    /// <summary>Writes a string prefixed with its length.</summary>
+    /// <summary>Writes a string prefixed with its encoded byte-length as a 32-bit integer.</summary>
     public void WriteString(IWriter writer, string value)
     {
         var data = Encoding.GetBytes(value);
-        writer.Write(data.Length);
+        WriteInt(writer, data.Length);
         writer.WriteBytes(data);
     }
 
-    /// <summary>Writes a single character.</summary>
+    /// <summary>Writes a single character as a 2-byte UTF-16 code unit, respecting <see cref="BigEndian"/>.</summary>
     public void WriteChar(IWriter writer, char value)
     {
-        var data = Encoding.GetBytes(new[] { value });
-        WriteByte(writer, (byte)data.Length);
-        writer.WriteBytes(data);
+        Span<byte> bytes = stackalloc byte[sizeof(char)];
+        if (BigEndian)
+        {
+            bytes[0] = (byte)(value >> 8);
+            bytes[1] = (byte)(value & 0xFF);
+        }
+        else
+        {
+            bytes[0] = (byte)(value & 0xFF);
+            bytes[1] = (byte)(value >> 8);
+        }
+        writer.WriteBytes(bytes);
     }
 
     /// <summary>Writes a <see cref="DateTime"/> value.</summary>
@@ -204,8 +213,8 @@ public class RawWriter
     /// <summary>Writes a <see cref="DateOnly"/> value.</summary>
     public void WriteDate(IWriter writer, DateOnly value) => WriteInt(writer, (int)(value.ToDateTime(TimeOnly.MinValue) - DateTime.MinValue).TotalDays);
 
-    /// <summary>Writes a <see cref="TimeSpan"/> value.</summary>
-    public void WriteTimeSpan(IWriter writer, TimeSpan value) => WriteDouble(writer, value.TotalMicroseconds);
+    /// <summary>Writes a <see cref="TimeSpan"/> value as a 64-bit tick count.</summary>
+    public void WriteTimeSpan(IWriter writer, TimeSpan value) => WriteLong(writer, value.Ticks);
 
     /// <summary>Writes a <see cref="Guid"/>.</summary>
     public void WriteGuid(IWriter writer, Guid value) => writer.WriteBytes(value.ToByteArray());

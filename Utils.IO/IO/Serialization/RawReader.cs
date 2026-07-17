@@ -173,11 +173,13 @@ public class RawReader
         return Encoding.GetString(bytes);
     }
 
-    /// <summary>Reads a single character.</summary>
+    /// <summary>Reads a single character as a 2-byte UTF-16 code unit, respecting <see cref="BigEndian"/>.</summary>
     public char ReadChar(IReader reader)
     {
         byte[] bytes = reader.ReadBytes(sizeof(char));
-        return BitConverter.ToChar(bytes);
+        return BigEndian
+            ? (char)((bytes[0] << 8) | bytes[1])
+            : (char)(bytes[0] | (bytes[1] << 8));
     }
 
     // Miscellaneous reading methods

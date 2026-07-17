@@ -305,6 +305,32 @@ public class CommandResponseClient : IDisposable
     }
 
     /// <summary>
+    /// Reads one response line from <paramref name="reader"/>, enforcing <see cref="MaxLineLength"/>
+    /// incrementally rather than after the full line has been buffered, so a peer cannot exhaust
+    /// memory with a single oversized line. Returns <see langword="null"/> on EOF.
+    /// </summary>
+    /// <exception cref="InvalidDataException">Thrown when the line exceeds <see cref="MaxLineLength"/>.</exception>
+    private string? ReadLimitedLine(StreamReader reader)
+    {
+        var sb = new System.Text.StringBuilder(256);
+        int ch;
+        while ((ch = reader.Read()) != -1)
+        {
+            char c = (char)ch;
+            if (c == '\n')
+            {
+                if (sb.Length > 0 && sb[sb.Length - 1] == '\r')
+                    sb.Length--;
+                return sb.ToString();
+            }
+            sb.Append(c);
+            if (MaxLineLength > 0 && sb.Length > MaxLineLength)
+                throw new InvalidDataException($"Incoming response line exceeded MaxLineLength ({MaxLineLength}).");
+        }
+        return sb.Length == 0 ? null : sb.ToString();
+    }
+
+    /// <summary>
     /// Listens for responses from the server on a dedicated thread and enqueues them for processing.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
@@ -321,22 +347,21 @@ public class CommandResponseClient : IDisposable
                 string? line;
                 try
                 {
-                    line = _reader.ReadLine();
+                    line = ReadLimitedLine(_reader);
                 }
                 catch (IOException ex) when (ex.InnerException is SocketException se && se.SocketErrorCode == SocketError.TimedOut)
                 {
                     // Exit the loop when no data is received within the read timeout.
                     break;
                 }
-
-                if (line is null)
+                catch (InvalidDataException)
                 {
+                    Logger?.LogWarning("Incoming response line exceeded MaxLineLength ({MaxLineLength}); disconnecting.", MaxLineLength);
                     break;
                 }
 
-                if (MaxLineLength > 0 && line.Length > MaxLineLength)
+                if (line is null)
                 {
-                    Logger?.LogWarning("Incoming response line exceeded MaxLineLength ({MaxLineLength}); disconnecting.", MaxLineLength);
                     break;
                 }
 
