@@ -12,11 +12,15 @@ namespace Utils.IO;
 ///
 /// <remarks>
 /// <para>This class does not support reading or seeking.</para>
-/// <para><b>Atomicity:</b> <see cref="Validate"/> is not atomic on arbitrary streams.
-/// If the target throws mid-write, some bytes may already have been written.
-/// For seekable targets the stream position is rolled back on failure, making
-/// retry safe. For non-seekable targets the partial write is irrecoverable;
-/// callers should treat the target as corrupted if <see cref="Validate"/> throws.</para>
+/// <para><b>Atomicity:</b> <see cref="Validate"/> is not atomic. If the underlying
+/// target throws mid-write, some bytes may already have been written.
+/// For seekable targets, only the stream <em>position</em> is restored on failure;
+/// the content and length of the target may already have been partially modified.
+/// The internal buffer is preserved after a failed <see cref="Validate"/> so the
+/// caller can decide whether to call <see cref="Discard"/> or to retry (bearing in
+/// mind that the target content is in an indeterminate state after a partial write).
+/// For non-seekable targets a partial write is irrecoverable; callers should treat
+/// the target as corrupted if <see cref="Validate"/> throws.</para>
 /// <para>The underlying stream is not closed or disposed automatically when this
 /// stream is disposed.</para>
 /// </remarks>
@@ -99,9 +103,11 @@ public class StreamValidator : Stream
 
     /// <summary>
     /// Commits the currently buffered data to the underlying target stream and then clears the buffer.
-    /// For seekable targets, the write is rolled back on failure so the caller can retry safely.
+    /// For seekable targets, only the stream position is restored on failure; the target content
+    /// may already have been partially modified. The internal buffer is preserved so the caller can
+    /// call <see cref="Discard"/> or decide whether a retry is appropriate for its use case.
     /// For non-seekable targets, a partial write is irrecoverable; see class remarks.
-    /// </summary>
+    ///</summary>
     /// <exception cref="IOException">Propagated from the target stream on write failure.</exception>
     public void Validate()
     {
