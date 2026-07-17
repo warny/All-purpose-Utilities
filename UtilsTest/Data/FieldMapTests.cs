@@ -19,6 +19,12 @@ public sealed class FieldMapTests
         public string Value { get; set; } = string.Empty;
     }
 
+    /// <summary>
+    /// Creates a property-or-field descriptor for the specified property of
+    /// <see cref="TestRow"/>.
+    /// </summary>
+    /// <param name="propertyName">The name of the property to retrieve.</param>
+    /// <returns>A descriptor for the requested property.</returns>
     private static PropertyOrFieldInfo MemberOf(string propertyName)
         => new(typeof(TestRow).GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance)!);
 

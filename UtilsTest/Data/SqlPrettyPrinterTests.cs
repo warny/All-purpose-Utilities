@@ -12,6 +12,13 @@ public sealed class SqlPrettyPrinterTests
     private static readonly SqlFormattingOptions Prefixed4 = new(SqlFormattingMode.Prefixed, 4);
     private static readonly SqlFormattingOptions Suffixed4 = new(SqlFormattingMode.Suffixed, 4);
 
+    /// <summary>
+    /// Parses and formats the specified SQL text using the provided formatting options,
+    /// normalizing line endings to <c>\n</c>.
+    /// </summary>
+    /// <param name="sql">The SQL text to parse and format.</param>
+    /// <param name="options">The formatting options to apply.</param>
+    /// <returns>The formatted SQL with normalized line endings.</returns>
     private static string Format(string sql, SqlFormattingOptions options)
         => SqlQueryAnalyzer.Parse(sql).ToSql(options).Replace("\r\n", "\n");
 
