@@ -179,11 +179,11 @@ public class RawWriter
         WriteDouble(writer, value.Imaginary);
     }
 
-    /// <summary>Writes a string prefixed with its length.</summary>
+    /// <summary>Writes a string prefixed with its encoded byte-length as a 32-bit integer.</summary>
     public void WriteString(IWriter writer, string value)
     {
         var data = Encoding.GetBytes(value);
-        writer.Write(data.Length);
+        WriteInt(writer, data.Length);
         writer.WriteBytes(data);
     }
 

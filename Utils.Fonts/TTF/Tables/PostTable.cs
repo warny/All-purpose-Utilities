@@ -208,7 +208,7 @@ public class PostTable : TrueTypeTable
             }
             for (int i = 0; i < glyphNames.Length; i++)
             {
-                data.WriteVariableLengthString(glyphNames[i], Encoding.Default, bigEndian: true, sizeLength: 1);
+                data.WriteVariableLengthString(glyphNames[i], Encoding.Default, sizeLength: 1);
             }
         }
 
