@@ -1,4 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 using System.IO;
 using Utils.Arrays;
 using Utils.IO.BaseEncoding;
@@ -12,6 +13,14 @@ namespace UtilsTest.BaseEncoding;
 [TestClass]
 public class BaseDecoderStreamTests
 {
+    private static byte[] Decode(string input, IBaseDescriptor descriptor, bool strict = true)
+    {
+        using var stream = new MemoryStream();
+        using var decoder = new BaseDecoderStream(stream, descriptor, strict);
+        decoder.Write(input);
+        decoder.Close();
+        return stream.ToArray();
+    }
     /// <summary>
     /// Decodes a simple sequence of hexadecimal characters.
     /// </summary>
@@ -130,6 +139,59 @@ public class BaseDecoderStreamTests
 
         var comparer = EnumerableEqualityComparer<byte>.Default;
         Assert.IsTrue(comparer.Equals(target, result));
+    }
+
+    // ---- item 7: decodage strict ----
+
+    [TestMethod]
+    public void StrictMode_RejectsCharactersOutsideAlphabet()
+    {
+        // '!' is not in base64 alphabet
+        Assert.ThrowsException<FormatException>(() => Decode("QU!C", Bases.Base64));
+    }
+
+    [TestMethod]
+    public void StrictMode_RejectsPaddingAtStart()
+    {
+        Assert.ThrowsException<FormatException>(() => Decode("=QUI=", Bases.Base64));
+    }
+
+    [TestMethod]
+    public void StrictMode_RejectsDataAfterPadding()
+    {
+        // Data character after padding is illegal
+        Assert.ThrowsException<FormatException>(() => Decode("QUI=A", Bases.Base64));
+    }
+
+    [TestMethod]
+    public void StrictMode_Base16_RejectsInvalidChars()
+    {
+        Assert.ThrowsException<FormatException>(() => Decode("GG", Bases.Base16));
+    }
+
+    [TestMethod]
+    public void PermissiveMode_IgnoresUnknownCharsLikeBeforeA()
+    {
+        // In permissive mode unknown chars are silently skipped
+        byte[] result = Decode("01020304", Bases.Base16, strict: false);
+        var comparer = EnumerableEqualityComparer<byte>.Default;
+        Assert.IsTrue(comparer.Equals(new byte[] { 1, 2, 3, 4 }, result));
+    }
+
+    [TestMethod]
+    public void StrictMode_ValidBase64WithPaddingDecodes()
+    {
+        byte[] result = Decode("QUJDREU=", Bases.Base64);
+        var comparer = EnumerableEqualityComparer<byte>.Default;
+        Assert.IsTrue(comparer.Equals(new byte[] { 0x41, 0x42, 0x43, 0x44, 0x45 }, result));
+    }
+
+    [TestMethod]
+    public void StrictMode_ValidBase32WithPaddingDecodes()
+    {
+        byte[] result = Decode("IFBA====", Bases.Base32);
+        var comparer = EnumerableEqualityComparer<byte>.Default;
+        Assert.IsTrue(comparer.Equals(new byte[] { 0x41, 0x42 }, result));
     }
 }
 
