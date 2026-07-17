@@ -18,7 +18,6 @@ namespace Utils.IO;
 public class PartialStream : Stream
 {
     private readonly Stream baseStream;
-    private readonly object syncLock = new object();
     private readonly long startOffset;
     private long partialLength;
     private long partialPosition;
@@ -130,7 +129,7 @@ public class PartialStream : Stream
     public override int Read(byte[] buffer, int offset, int count)
     {
         Stream.ValidateBufferArguments(buffer, offset, count);
-        lock (syncLock)
+        lock (baseStream)
         {
             long originalBasePosition = baseStream.Position;
             try
@@ -211,7 +210,7 @@ public class PartialStream : Stream
             throw new ArgumentOutOfRangeException(nameof(count),
                 "Attempted to write beyond the bounds of the partial stream.");
 
-        lock (syncLock)
+        lock (baseStream)
         {
             long originalBasePosition = baseStream.Position;
             try
