@@ -113,7 +113,7 @@ internal sealed class UtilsParserSqlQueryParser
     /// </summary>
     private WithClause ParseWithClause(ParserNode withClauseNode, IReadOnlyList<Token> tokens)
     {
-        bool isRecursive = withClauseNode.Children.OfType<LexerNode>().Any(node => node.Rule.Name == "RECURSIVE");
+        bool isRecursive = new ParseTreeNavigator(withClauseNode).TryChild("RECURSIVE") != null;
         var definitions = GetChildren(withClauseNode, "cteDefinition")
             .Select(node => ParseCteDefinition(node, tokens))
             .ToList();
@@ -156,7 +156,7 @@ internal sealed class UtilsParserSqlQueryParser
         var limitSegment = BuildOptionalSegment(selectNode, tokens, "limitClause", "clauseElements", "Limit");
         var offsetSegment = BuildOptionalSegment(selectNode, tokens, "offsetClause", "clauseElements", "Offset");
         var tailSegment = BuildSetOperatorSegment(selectNode, tokens);
-        bool isDistinct = selectNode.Children.OfType<LexerNode>().Any(node => node.Rule.Name == "DISTINCT");
+        bool isDistinct = new ParseTreeNavigator(selectNode).TryChild("DISTINCT") != null;
 
         return new SqlSelectStatement(
             selectSegment,
@@ -322,7 +322,7 @@ internal sealed class UtilsParserSqlQueryParser
     /// </summary>
     private static ParserNode? GetOptionalChild(ParserNode node, string ruleName)
     {
-        return node.Children.OfType<ParserNode>().FirstOrDefault(child => child.Rule.Name == ruleName);
+        return new ParseTreeNavigator(node).TryChild(ruleName)?.Node as ParserNode;
     }
 
     /// <summary>
@@ -335,10 +335,10 @@ internal sealed class UtilsParserSqlQueryParser
     }
 
     /// <summary>
-    /// Gets all direct parser children that match the specified rule name.
+    /// Gets all parser children that match the specified rule name, including inside quantifier wrappers.
     /// </summary>
     private static IEnumerable<ParserNode> GetChildren(ParserNode node, string ruleName)
     {
-        return node.Children.OfType<ParserNode>().Where(child => child.Rule.Name == ruleName);
+        return new ParseTreeNavigator(node).Children(ruleName).Select(n => n.Node).OfType<ParserNode>();
     }
 }
