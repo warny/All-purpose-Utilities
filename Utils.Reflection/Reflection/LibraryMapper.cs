@@ -78,13 +78,11 @@ namespace Utils.Reflection
         /// <param name="callingConvention">The calling convention of the functions.</param>
         /// <param name="loadTimeout">
         /// Maximum time to wait for the worker to load <paramref name="dllPath"/> and emit the mapping
-        /// class before giving up and killing it. Defaults to 30 seconds when <see langword="null"/>.
+        /// class. Defaults to 30 seconds when <see langword="null"/>.
         /// </param>
         /// <param name="callTimeout">
         /// Maximum time to wait for the worker's response to each native call forwarded through the
-        /// returned proxy before giving up and killing it. Defaults to 30 seconds when
-        /// <see langword="null"/>. A hung native call inside the worker would otherwise block the
-        /// calling thread indefinitely, with no way to recover.
+        /// returned proxy. Defaults to 30 seconds when <see langword="null"/>.
         /// </param>
         /// <returns>A proxy implementing <typeparamref name="TInterface"/> that forwards every call to the isolated worker.</returns>
         /// <exception cref="NotSupportedException">
@@ -93,7 +91,13 @@ namespace Utils.Reflection
         /// <exception cref="TimeoutException">
         /// Thrown by this method (initial load) or by the returned proxy's members (subsequent calls)
         /// when the worker does not respond within <paramref name="loadTimeout"/>/<paramref name="callTimeout"/>.
-        /// The worker is killed and the proxy becomes unusable when this happens.
+        /// <para>
+        /// <b>Important:</b> a per-call timeout abandons only the timed-out request on the host side;
+        /// the worker process is <em>not</em> killed and remains usable for subsequent calls. The native
+        /// call inside the worker continues to execute on its own thread until it finishes, and the
+        /// eventual response is silently discarded. Callers must treat the outcome of a timed-out call
+        /// as indeterminate and should not assume any side effect was or was not applied.
+        /// </para>
         /// </exception>
         public static TInterface Emit<TInterface>(
             string dllPath, CallingConvention callingConvention,
