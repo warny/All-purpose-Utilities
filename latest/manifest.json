@@ -12206,6 +12206,20 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Parser.Runtime.QuantifierNode.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Parser.Runtime.QuantifierNode.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Parser.Runtime.QuantifierNode",
+      "Summary": "<p sourcefile=\"api/Utils.Parser.Runtime.QuantifierNode.yml\" sourcestartlinenumber=\"1\">A synthetic wrapper node produced by a quantifier (<code>?</code>, <code>*</code>, <code>+</code>)\nthat appears as one element inside a sequence.\nContains one child per repetition of the quantifier's body.\nThe <xref href=\"Utils.Parser.Runtime.ParseNode.Rule\" data-throw-if-not-resolved=\"false\"></xref> is the owning parser rule (same as the enclosing sequence).</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.Parser.Runtime.RuntimeObservationJsonWriter.yml",
       "output": {
         ".html": {

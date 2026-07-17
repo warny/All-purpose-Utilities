@@ -449,6 +449,14 @@ Declared parameter types are metadata only and are not validated by this policy.
 </dd>
     </dl>
     <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.QuantifierNode.html">QuantifierNode</a></dt>
+      <dd><p>A synthetic wrapper node produced by a quantifier (<code>?</code>, <code>*</code>, <code>+</code>)
+that appears as one element inside a sequence.
+Contains one child per repetition of the quantifier's body.
+The <a class="xref" href="Utils.Parser.Runtime.ParseNode.html#Utils_Parser_Runtime_ParseNode_Rule">Rule</a> is the owning parser rule (same as the enclosing sequence).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
       <dt><a class="xref" href="Utils.Parser.Runtime.RuntimeObservationJsonWriter.html">RuntimeObservationJsonWriter</a></dt>
       <dd><p>Serializes runtime observations to deterministic JSON arrays for tooling experiments.</p>
 </dd>

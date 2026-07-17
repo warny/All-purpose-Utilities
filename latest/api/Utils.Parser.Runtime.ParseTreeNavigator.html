@@ -610,11 +610,14 @@ out of range.</p>
 
   <h3 id="Utils_Parser_Runtime_ParseTreeNavigator_Child_System_String_" data-uid="Utils.Parser.Runtime.ParseTreeNavigator.Child(System.String)">
   Child(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeNavigator.cs/#L110"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeNavigator.cs/#L113"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Navigates to the first direct child whose rule name equals
-<code class="paramref">ruleName</code>.</p>
+  <div class="markdown level1 summary"><p>Navigates to the first child whose rule name equals <code class="paramref">ruleName</code>.
+Direct children are searched first; <a class="xref" href="Utils.Parser.Runtime.QuantifierNode.html">QuantifierNode</a> wrappers are
+then searched recursively so that optional or repeated grammar elements
+(<code>rule?</code>, <code>rule*</code>, <code>rule+</code>) and grouped sequences
+(<code>(a b)?</code>) are reachable by name.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -646,7 +649,7 @@ out of range.</p>
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a></dt>
-    <dd><p>Thrown when no matching direct child is found or the current node is not a
+    <dd><p>Thrown when no matching child is found or the current node is not a
 <a class="xref" href="Utils.Parser.Runtime.ParserNode.html">ParserNode</a>.</p>
 </dd>
   </dl>
@@ -657,7 +660,7 @@ out of range.</p>
 
   <h3 id="Utils_Parser_Runtime_ParseTreeNavigator_Children" data-uid="Utils.Parser.Runtime.ParseTreeNavigator.Children">
   Children()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeNavigator.cs/#L138"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeNavigator.cs/#L163"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns navigators for all direct children of the current node.
@@ -690,11 +693,14 @@ Returns an empty sequence when the current node is not a <a class="xref" href="U
 
   <h3 id="Utils_Parser_Runtime_ParseTreeNavigator_Children_System_String_" data-uid="Utils.Parser.Runtime.ParseTreeNavigator.Children(System.String)">
   Children(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeNavigator.cs/#L152"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeNavigator.cs/#L180"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Returns navigators for all direct children whose rule name equals
+  <div class="markdown level1 summary"><p>Returns navigators for all children whose rule name equals
 <code class="paramref">ruleName</code>.
+Direct children are yielded first; <a class="xref" href="Utils.Parser.Runtime.QuantifierNode.html">QuantifierNode</a> wrapper contents
+are then enumerated (recursively for grouped sequences) so that optional or
+repeated grammar elements are reachable by name.
 Returns an empty sequence when the current node is not a <a class="xref" href="Utils.Parser.Runtime.ParserNode.html">ParserNode</a>
 or no matching child exists.</p>
 </div>
@@ -730,7 +736,7 @@ or no matching child exists.</p>
 
   <h3 id="Utils_Parser_Runtime_ParseTreeNavigator_Descendant_System_String_" data-uid="Utils.Parser.Runtime.ParseTreeNavigator.Descendant(System.String)">
   Descendant(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeNavigator.cs/#L191"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeNavigator.cs/#L239"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Navigates to the first descendant whose rule name equals
@@ -774,7 +780,7 @@ or no matching child exists.</p>
 
   <h3 id="Utils_Parser_Runtime_ParseTreeNavigator_Descendants" data-uid="Utils.Parser.Runtime.ParseTreeNavigator.Descendants">
   Descendants()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeNavigator.cs/#L167"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeNavigator.cs/#L215"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns navigators for every descendant of the current node in depth-first
@@ -807,7 +813,7 @@ pre-order (the current node itself is excluded).</p>
 
   <h3 id="Utils_Parser_Runtime_ParseTreeNavigator_Descendants_System_String_" data-uid="Utils.Parser.Runtime.ParseTreeNavigator.Descendants(System.String)">
   Descendants(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeNavigator.cs/#L181"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeNavigator.cs/#L229"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns navigators for every descendant whose rule name equals
@@ -845,7 +851,7 @@ pre-order (the current node itself is excluded).</p>
 
   <h3 id="Utils_Parser_Runtime_ParseTreeNavigator_ToString" data-uid="Utils.Parser.Runtime.ParseTreeNavigator.ToString">
   ToString()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeNavigator.cs/#L214"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeNavigator.cs/#L262"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns a string that represents the current object.</p>
@@ -917,12 +923,15 @@ index is out of range.</p>
 
   <h3 id="Utils_Parser_Runtime_ParseTreeNavigator_TryChild_System_String_" data-uid="Utils.Parser.Runtime.ParseTreeNavigator.TryChild(System.String)">
   TryChild(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeNavigator.cs/#L122"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeNavigator.cs/#L128"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Navigates to the first direct child whose rule name equals
-<code class="paramref">ruleName</code>, or returns <code>null</code> when none is found or the
-current node is not a <a class="xref" href="Utils.Parser.Runtime.ParserNode.html">ParserNode</a>.</p>
+  <div class="markdown level1 summary"><p>Navigates to the first child whose rule name equals <code class="paramref">ruleName</code>,
+or returns <code>null</code> when none is found or the current node is not a
+<a class="xref" href="Utils.Parser.Runtime.ParserNode.html">ParserNode</a>.
+Direct children have priority; <a class="xref" href="Utils.Parser.Runtime.QuantifierNode.html">QuantifierNode</a> wrapper contents are
+searched only when no direct match exists. Grouped-sequence frames inside a
+<a class="xref" href="Utils.Parser.Runtime.QuantifierNode.html">QuantifierNode</a> are traversed recursively.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -956,7 +965,7 @@ current node is not a <a class="xref" href="Utils.Parser.Runtime.ParserNode.html
 
   <h3 id="Utils_Parser_Runtime_ParseTreeNavigator_TryDescendant_System_String_" data-uid="Utils.Parser.Runtime.ParseTreeNavigator.TryDescendant(System.String)">
   TryDescendant(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeNavigator.cs/#L200"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeNavigator.cs/#L248"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Navigates to the first descendant whose rule name equals
@@ -998,7 +1007,7 @@ current node is not a <a class="xref" href="Utils.Parser.Runtime.ParserNode.html
 
   <h3 id="Utils_Parser_Runtime_ParseTreeNavigator_op_Implicit_Utils_Parser_Runtime_ParseNode__Utils_Parser_Runtime_ParseTreeNavigator" data-uid="Utils.Parser.Runtime.ParseTreeNavigator.op_Implicit(Utils.Parser.Runtime.ParseNode)~Utils.Parser.Runtime.ParseTreeNavigator">
   implicit operator ParseTreeNavigator(ParseNode)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeNavigator.cs/#L206"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeNavigator.cs/#L254"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Wraps a <a class="xref" href="Utils.Parser.Runtime.ParseNode.html">ParseNode</a> in a new navigator.</p>
@@ -1035,7 +1044,7 @@ current node is not a <a class="xref" href="Utils.Parser.Runtime.ParserNode.html
 
   <h3 id="Utils_Parser_Runtime_ParseTreeNavigator_op_Implicit_Utils_Parser_Runtime_ParseTreeNavigator__Utils_Parser_Runtime_ParseNode" data-uid="Utils.Parser.Runtime.ParseTreeNavigator.op_Implicit(Utils.Parser.Runtime.ParseTreeNavigator)~Utils.Parser.Runtime.ParseNode">
   implicit operator ParseNode(ParseTreeNavigator)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeNavigator.cs/#L209"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeNavigator.cs/#L257"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Unwraps the underlying <a class="xref" href="Utils.Parser.Runtime.ParseNode.html">ParseNode</a>.</p>
