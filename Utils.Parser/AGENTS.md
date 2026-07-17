@@ -114,7 +114,7 @@ Dynamic embedded code must be transformed before being passed to the existing co
 ## Embedded-code documentation rule
 
 This is an ongoing maintenance rule, not a completed one-time audit task. Every future change to
-embedded-code behavior or architectural boundaries must update:
+embedded-code behavior or architectural boundaries must review and assess:
 
 - `Utils.Parser/ROADMAP.md`
 - `docs/parser/ANTLRCompatibility.md`
@@ -123,8 +123,8 @@ embedded-code behavior or architectural boundaries must update:
 - `docs/parser/Antlr4CompatibilityMatrix.md`
 - `Utils.Parser.Generators/README.md`
 
-Each affected PR must explicitly identify the documentation files it updated or justify why each
-listed document did not require a change.
+Each affected PR must update the documents impacted by the change, explicitly identify those
+updates, and justify why each other reviewed document did not require modification.
 
 ## Runtime safety rules
 
