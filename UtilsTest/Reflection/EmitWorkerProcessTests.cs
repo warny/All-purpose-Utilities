@@ -1,8 +1,12 @@
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Reflection;
+using System.Security.Principal;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
+using Utils.Reflection.ProcessIsolation;
 using Utils.Reflection.Reflection.Emit;
 
 namespace UtilsTest.Reflection;
@@ -63,5 +67,50 @@ public class EmitWorkerProcessTests
     public void DefaultCallTimeout_Is30Seconds()
     {
         Assert.AreEqual(TimeSpan.FromSeconds(30), EmitWorkerProcess.DefaultCallTimeout);
+    }
+
+    // ─── Item 37: fail-closed sandbox fallback ───────────────────────────────────
+
+    /// <summary>
+    /// The previous implementation swallowed any exception from <c>sandbox.StartProcess</c> and
+    /// silently relaunched the worker as an unsandboxed child process. This test verifies that a
+    /// sandbox launch failure now propagates, so the caller cannot inadvertently receive an
+    /// unsandboxed process when a sandbox was requested.
+    /// </summary>
+    [TestMethod]
+    public void StartWorkerProcess_SandboxLaunchFailure_PropagatesException()
+    {
+        MethodInfo method = typeof(EmitWorkerProcess)
+            .GetMethod("StartWorkerProcess", BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.DeclaredOnly)
+            ?? throw new InvalidOperationException("Reflection: StartWorkerProcess not found.");
+
+        IProcessContainer throwingContainer = new ThrowingProcessContainer();
+        object?[] args = { "dummy.exe", "test-pipe", throwingContainer };
+
+        var wrapped = Assert.ThrowsException<TargetInvocationException>(() => method.Invoke(null, args));
+
+        Assert.IsInstanceOfType<InvalidOperationException>(wrapped.InnerException,
+            "Sandbox launch failure must propagate as InvalidOperationException, not be swallowed.");
+
+        // Verify the sandbox ref was NOT cleared to null — the old fallback code nulled it out;
+        // the new code lets the exception propagate without touching the container reference.
+        Assert.IsNotNull(args[2], "Sandbox reference must not be cleared on failure (fail-closed contract).");
+    }
+
+    /// <summary>Stub container that always throws to simulate a failed sandbox launch.</summary>
+    private sealed class ThrowingProcessContainer : IProcessContainer
+    {
+        public Process StartProcess(string executablePath, IEnumerable<string> arguments)
+            => throw new InvalidOperationException("Simulated sandbox launch failure.");
+
+        public void GrantDirectoryReadAccess(string directoryPath) { }
+
+        public bool TryGetSecurityIdentifier(out SecurityIdentifier? securityIdentifier)
+        {
+            securityIdentifier = null;
+            return false;
+        }
+
+        public void Dispose() { }
     }
 }

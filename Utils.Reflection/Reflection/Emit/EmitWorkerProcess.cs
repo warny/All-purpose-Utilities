@@ -506,31 +506,46 @@ internal sealed class EmitWorkerProcess : IDisposable
     }
 
     /// <summary>
-    /// Starts the worker process inside the sandbox when available, falling back to a plain child
-    /// process (and disabling the sandbox for the caller) if the container fails to launch it.
+    /// Starts the worker process inside the sandbox when one is available (returned by
+    /// <see cref="ProcessContainerFactory.TryCreate"/>), or as a plain child process when no sandbox
+    /// could be created for the current platform/configuration.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// When a sandbox <em>was</em> created but its <see cref="IProcessContainer.StartProcess"/> call
+    /// fails, the method now throws rather than falling back silently to an unsandboxed process.
+    /// Previously the exception was swallowed and the worker was relaunched without isolation, giving
+    /// the caller no indication that the security boundary had been crossed.
+    /// </para>
+    /// <para>
+    /// When <see cref="ProcessContainerFactory.TryCreate"/> returns <see langword="null"/> (no sandbox
+    /// is available on the current platform or configuration), the worker is started without isolation
+    /// from the start. This path does not represent a failure — it is the expected behaviour on
+    /// platforms where no process container is implemented.
+    /// </para>
+    /// </remarks>
     private static Process StartWorkerProcess(string exePath, string pipeName, ref IProcessContainer? sandbox)
     {
         string[] arguments = BuildWorkerArguments(exePath, pipeName);
 
         if (sandbox is not null)
         {
-            try
-            {
-                return sandbox.StartProcess(exePath, arguments);
-            }
-            catch
-            {
-                sandbox.Dispose();
-                sandbox = null;
-            }
+            // A sandbox was successfully created. Any failure to launch the process inside it is
+            // treated as fatal: falling back silently would let an arbitrarily-permissioned process
+            // run as if it were sandboxed, defeating the isolation contract.
+            return sandbox.StartProcess(exePath, arguments);
         }
 
+        // No sandbox available for this platform/configuration — start as a plain child process.
+        // This is expected on platforms without an implemented process container (e.g. Linux when
+        // bwrap is not installed); it is not a fallback from a sandbox failure.
         var psi = new ProcessStartInfo(exePath)
         {
             UseShellExecute = false,
             CreateNoWindow = true,
         };
+
+        SandboxedProcessEnvironment.ApplyMinimalEnvironment(psi);
 
         foreach (string argument in arguments)
         {
