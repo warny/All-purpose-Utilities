@@ -164,8 +164,8 @@ public class PartialStream : Stream
         long newPosition = origin switch
         {
             SeekOrigin.Begin => offset,
-            SeekOrigin.Current => partialPosition + offset,
-            SeekOrigin.End => partialLength + offset,
+            SeekOrigin.Current => checked(partialPosition + offset),
+            SeekOrigin.End => checked(partialLength + offset),
             _ => throw new ArgumentOutOfRangeException(nameof(origin), "Invalid seek origin.")
         };
 
@@ -206,7 +206,7 @@ public class PartialStream : Stream
     public override void Write(byte[] buffer, int offset, int count)
     {
         Stream.ValidateBufferArguments(buffer, offset, count);
-        if (partialPosition + count > partialLength)
+        if (count > partialLength - partialPosition)
             throw new ArgumentOutOfRangeException(nameof(count),
                 "Attempted to write beyond the bounds of the partial stream.");
 

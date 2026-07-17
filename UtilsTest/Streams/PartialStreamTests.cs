@@ -177,4 +177,65 @@ public class PartialStreamTests
         var ps = new PartialStream(ms, 0, 10);
         Assert.ThrowsException<ArgumentOutOfRangeException>(() => ps.SetLength(-1));
     }
+
+    // ---- arithmetic overflow near long.MaxValue ----
+
+    // A seekable stream backed by no real storage; Position and Length are purely virtual.
+    // Used to test boundary arithmetic without allocating gigabytes of memory.
+    private class VirtualSeekableStream : Stream
+    {
+        private long _position;
+        public VirtualSeekableStream(long position = 0) => _position = position;
+        public override bool CanRead  => true;
+        public override bool CanSeek  => true;
+        public override bool CanWrite => true;
+        public override long Length   => long.MaxValue;
+        public override long Position { get => _position; set => _position = value; }
+        public override void Flush() { }
+        public override int  Read(byte[] buffer, int offset, int count) => count;
+        public override long Seek(long offset, SeekOrigin origin) { _position = offset; return _position; }
+        public override void SetLength(long value) { }
+        public override void Write(byte[] buffer, int offset, int count) { }
+    }
+
+    [TestMethod]
+    public void Write_BoundsCheckDoesNotOverflow_NearMaxValue()
+    {
+        // partialLength = long.MaxValue - 2; position set to the very end
+        // With the old check (partialPosition + count > partialLength), the left-hand side
+        // overflows to a large negative value when count is positive, bypassing the guard.
+        // The new check (count > partialLength - partialPosition) is immune to this overflow.
+        var vs = new VirtualSeekableStream();
+        long bigLength = long.MaxValue - 2;
+        var ps = new PartialStream(vs, 0, bigLength);
+        ps.Position = bigLength; // at the very end of the segment
+
+        // count=5 exceeds the zero remaining bytes; must throw even though old arithmetic overflowed
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => ps.Write(new byte[5], 0, 5),
+            "Write past the end must be rejected even when partialPosition + count overflows");
+    }
+
+    [TestMethod]
+    public void Seek_Current_OverflowThrows()
+    {
+        var vs = new VirtualSeekableStream();
+        var ps = new PartialStream(vs, 0, long.MaxValue - 1);
+        ps.Position = long.MaxValue / 2;
+        // offset so large that partialPosition + offset overflows long
+        Assert.ThrowsException<OverflowException>(
+            () => ps.Seek(long.MaxValue, SeekOrigin.Current),
+            "Arithmetic overflow in SeekOrigin.Current must propagate as OverflowException");
+    }
+
+    [TestMethod]
+    public void Seek_End_OverflowThrows()
+    {
+        var vs = new VirtualSeekableStream();
+        var ps = new PartialStream(vs, 0, long.MaxValue - 1);
+        // offset so large that partialLength + offset overflows long
+        Assert.ThrowsException<OverflowException>(
+            () => ps.Seek(long.MaxValue, SeekOrigin.End),
+            "Arithmetic overflow in SeekOrigin.End must propagate as OverflowException");
+    }
 }
