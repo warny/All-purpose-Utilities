@@ -24,4 +24,13 @@
         <ProjectReference Include="..\Utils.Parser.Source\Utils.Parser.Source.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+            <_Parameter1>Utils.Parser.Generators</_Parameter1>
+        </AssemblyAttribute>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+            <_Parameter1>Utils.Parser.Expressions</_Parameter1>
+        </AssemblyAttribute>
+    </ItemGroup>
+
 </Project>

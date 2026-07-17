@@ -53,6 +53,8 @@ The preparer:
 - returns `PreservedNotCompiled` for `EmbeddedCodeTarget.SourceGeneratorCSharp`, because C# source-generation hooks belong to `Utils.Parser.Generators`;
 - never executes predicates or actions during preparation.
 
+Internally, preparation first crosses the same transformation-and-validation boundary as generated C# and receives a validated `TransformedEmbeddedCode`. Only then does this package build runtime symbol expressions and the specialized lambda and invoke the supplied `IExpressionCompiler`. Lexer hooks are not supported by this runtime path and are not synthesized by the shared boundary.
+
 Contextual symbols (`ruleName`, `inputPosition`, `alternativeIndex`, `elementIndex`) are filtered through `EmbeddedCodePreparationContext.SupportedSymbols` before compilation. Supported symbols are represented as reads from the runtime context parameter when compiling prepared artifacts, so they are not captured as fixed preparation-time constants. Expressions that reference a symbol excluded from `SupportedSymbols` fail through the configured compiler and are returned as `CompilationFailed` results.
 
 ## Runtime status
@@ -171,4 +173,3 @@ Lexer actions, lexer predicates, grammar members/`@members`, `@init`, `@after`, 
 Parser embedded-code discovery now has a shared metadata model in `Utils.Parser.EmbeddedCode`. `EmbeddedCodeRuntimeDiscovery` walks a `ParserDefinition` and emits `EmbeddedCodeRuntimeEntry` values with the raw source, `EmbeddedCodeKind`, owning rule name, runtime-compatible alternative and element indexes, a runtime key for executable entries, and an explicit `EmbeddedCodeUnsupportedReason` for skipped entries. The metadata mirrors the existing parser runtime indexing rules for priority-ordered alternatives, single-item alternatives, sequences, quantifier inner parsing, negation probes, and direct-left-recursive base/tail alternatives. It is metadata only: it does not compile source, generate C#, execute actions, or change `ParserEngine` behavior.
 
 The expression-backed prepared registry consumes this shared discovery result before invoking its preparer. Unsupported constructs such as grammar actions, `@init`, `@after`, lexer actions/predicates, and non-inline parser actions remain non-executable, but they now carry explicit skip reasons. Invalid C# in a source-generator-supported hook remains a Roslyn compilation error rather than a custom parser diagnostic.
-

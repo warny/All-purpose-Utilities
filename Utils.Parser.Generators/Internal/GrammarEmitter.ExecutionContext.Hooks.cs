@@ -46,7 +46,7 @@ internal static partial class GrammarEmitter
         G4Grammar grammar,
         G4Rule? rule)
     {
-        return ParserEmbeddedCodeTransformationService.TransformOrThrow(
+        return EmbeddedCodeTransformationPipeline.TransformAndValidate(
             transformer,
             code,
             new ParserEmbeddedCodeTransformationContext
