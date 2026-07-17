@@ -23,7 +23,52 @@ Available surfaces:
 - `ExpressionSemanticPredicateEvaluator` remains the current runtime adapter from `IExpressionCompiler` to `ISemanticPredicateEvaluator`.
 - `ExpressionParserActionExecutor` remains the current runtime adapter from `IExpressionCompiler` to `IParserActionExecutor`.
 
-## Preparing artifacts
+## Supported runtime compilation facade
+
+`ExpressionEmbeddedCodePreparer` is the single supported `omy.Utils.Parser.Expressions` entry point for
+transforming, compiling, and materializing executable parser embedded code before runtime execution. It
+implements `IEmbeddedCodePreparer<PreparedExpressionSemanticPredicate, PreparedExpressionParserAction>`,
+coordinates a caller-supplied `IExpressionCompiler`, and optionally coordinates a caller-supplied
+`IParserEmbeddedCodeTransformer` (the no-op transformer is the default). It does not replace the compiler:
+it directs that compiler within the supported preparation pipeline.
+
+The complete preparation path is:
+
+```text
+EmbeddedCodeSource
+→ validation of kind and target
+→ EmbeddedCodeTransformationPipeline
+→ TransformedEmbeddedCode
+→ runtime-bound symbol expressions
+→ IExpressionCompiler
+→ specialized CLR lambda
+→ prepared artifact
+```
+
+| Source | Runtime context | Delegate | Prepared artifact |
+| --- | --- | --- | --- |
+| `SemanticPredicate` | `SemanticPredicateEvaluationContext` | `Func<SemanticPredicateEvaluationContext, bool>` | `PreparedExpressionSemanticPredicate` |
+| `ParserInlineAction` | `ParserActionExecutionContext` | `Action<ParserActionExecutionContext>` | `PreparedExpressionParserAction` |
+
+The facade normalizes outcomes as follows:
+
+| Condition | Preparation status |
+| --- | --- |
+| The method receives the wrong embedded-code category | `Unsupported` |
+| The target is `SourceGeneratorCSharp` rather than `RuntimeInlineExpression` | `PreservedNotCompiled` |
+| Transformation, expression compilation, or delegate materialization fails | `CompilationFailed` |
+| A specialized prepared artifact is produced | `Success` (`EmbeddedCodePreparationStatus.Succeeded`) |
+
+Only parser semantic predicates and inline parser actions are supported. Lexer predicates, lexer actions,
+grammar actions, `@init`, `@after`, non-inline parser actions, and every other category that is not compatible
+with runtime-inline preparation remain unsupported. The facade does not generate C# source, replace the source
+generator, execute embedded code during preparation, capture preparation-time runtime values, or decide the
+parser's global execution strategy. Generated C# remains a separate `Utils.Parser.Generators` path.
+
+### Minimal preparation example
+
+The following uses the real public preparation contracts; `GetExpressionCompiler()` represents the caller's
+selection of an existing `IExpressionCompiler` implementation.
 
 ```csharp
 IExpressionCompiler compiler = GetExpressionCompiler();
@@ -40,7 +85,8 @@ var context = new EmbeddedCodePreparationContext(
     ruleName: "value",
     languageOrCompilerIdentity: "custom-expression-language");
 
-var result = preparer.PrepareSemanticPredicate(source, context);
+EmbeddedCodePreparationResult<PreparedExpressionSemanticPredicate> result =
+    preparer.PrepareSemanticPredicate(source, context);
 ```
 
 The preparer:
@@ -173,3 +219,7 @@ Lexer actions, lexer predicates, grammar members/`@members`, `@init`, `@after`, 
 Parser embedded-code discovery now has a shared metadata model in `Utils.Parser.EmbeddedCode`. `EmbeddedCodeRuntimeDiscovery` walks a `ParserDefinition` and emits `EmbeddedCodeRuntimeEntry` values with the raw source, `EmbeddedCodeKind`, owning rule name, runtime-compatible alternative and element indexes, a runtime key for executable entries, and an explicit `EmbeddedCodeUnsupportedReason` for skipped entries. The metadata mirrors the existing parser runtime indexing rules for priority-ordered alternatives, single-item alternatives, sequences, quantifier inner parsing, negation probes, and direct-left-recursive base/tail alternatives. It is metadata only: it does not compile source, generate C#, execute actions, or change `ParserEngine` behavior.
 
 The expression-backed prepared registry consumes this shared discovery result before invoking its preparer. Unsupported constructs such as grammar actions, `@init`, `@after`, lexer actions/predicates, and non-inline parser actions remain non-executable, but they now carry explicit skip reasons. Invalid C# in a source-generator-supported hook remains a Roslyn compilation error rather than a custom parser diagnostic.
+
+## API documentation
+
+See the [versioned API documentation for `omy.Utils.Parser.Expressions` 0.1.0](https://warny.github.io/All-purpose-Utilities/v0.1.0/).

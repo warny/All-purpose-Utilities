@@ -466,12 +466,33 @@ Cette correction est interne au générateur : elle ne modifie ni la source C# g
 comportement runtime, ni les diagnostics, ni les API publiques.
 
 ### 11. Documenter `ExpressionEmbeddedCodePreparer` comme façade unique de compilation runtime
-La classe transforme le texte, appelle `IExpressionCompiler`, construit une lambda CLR puis produit
-l'artefact préparé. Son rôle dépasse donc une simple préparation de métadonnées.
 
-**Fix proposé** : préciser dans sa documentation et dans le README du projet qu'elle constitue la
-façade supportée pour la compilation runtime du code embarqué, afin d'éviter l'introduction future
-d'un pipeline de compilation parallèle.
+**Corrigé.** `ExpressionEmbeddedCodePreparer` est désormais documentée comme l'unique façade supportée
+pour la compilation runtime du code embarqué parser. Cette portée ne signifie pas qu'elle est l'unique
+utilisatrice globale de `IExpressionCompiler` : le compilateur reste un composant générique injecté par
+l'appelant et orienté par la façade pour ce pipeline de préparation précis.
+
+La façade prend en charge uniquement `SemanticPredicate` et `ParserInlineAction` pour la cible
+`RuntimeInlineExpression`. Le chemin complet est explicite : `EmbeddedCodeSource`, validation de la
+catégorie et de la cible, `EmbeddedCodeTransformationPipeline.TransformAndValidate(...)`,
+`TransformedEmbeddedCode`, construction des expressions de symboles liées au contexte runtime, appel
+unique à `IExpressionCompiler.Compile(...)`, puis lambda CLR spécialisée. Les prédicats produisent un
+`Func<SemanticPredicateEvaluationContext, bool>` encapsulé dans
+`PreparedExpressionSemanticPredicate`; les actions produisent un
+`Action<ParserActionExecutionContext>` encapsulé dans `PreparedExpressionParserAction`.
+
+Les résultats restent normalisés en `Unsupported`, `PreservedNotCompiled`, `CompilationFailed` ou
+`Success`. Les hooks lexer, actions de grammaire, `@init`, `@after` et autres catégories hors du chemin
+parser runtime-inline restent non supportés. La façade ne génère pas de C#, ne remplace pas le source
+generator et n'exécute ni ne capture les valeurs runtime pendant la préparation.
+
+Les tests de caractérisation vérifient le texte transformé, les symboles runtime, l'appel unique du
+transformateur et du compilateur, l'absence d'appel de ces dépendances pour les catégories ou cibles
+non supportées, et l'absence d'exécution à la préparation. Un garde-fou sémantique Roslyn verrouille
+l'interface et les membres publics existants, le pipeline partagé, le champ compilateur commun, les
+deux constructions d'artefacts et de lambdas spécialisées, l'indépendance du générateur C# et
+l'absence d'une seconde façade ou d'un pipeline combinant transformation, compilation et artefacts.
+Aucun comportement, diagnostic, artefact préparé ou API publique n'a été ajouté ou modifié.
 
 ## Garde-fous et contrôles (priorité basse)
 

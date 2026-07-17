@@ -658,7 +658,21 @@ The runtime currently remains conservative and deterministic. Metadata-rich infr
 
 ## Embedded-code transformation boundary
 
-**Status: in progress.**
+**Status: complete.**
+
+The audit sequence represented by items 8 through 11 is complete. Parser and lexer generated-code
+transformation share the upstream pipeline, and the raw (`RawEmbeddedCode`) and validated transformed
+(`TransformedEmbeddedCode`) phases are explicit. Generated C# and runtime-inline expressions remain
+separate targets after that common boundary: generated code continues through
+`GeneratedEmbeddedCodeBody` and `CSharpEmbeddedCodeInjector`, while
+`ExpressionEmbeddedCodePreparer` is the supported runtime parser embedded-code preparation facade.
+
+`IExpressionCompiler` remains caller-supplied and independently reusable; the facade coordinates it
+only for prepared runtime-inline parser predicates and actions. A semantic Roslyn architecture guard
+prevents another production component from combining the shared transformation pipeline, expression
+compilation, specialized embedded-code lambdas, and prepared parser artifacts. This consolidation is
+documentation and test enforcement only: no public API, diagnostics, generated source, or runtime
+behavior changed.
 
 Parser embedded-code handling is centered on preservation plus an explicit `IParserEmbeddedCodeTransformer` extension point. Embedded grammar text is carried as `RawEmbeddedCode`, transformed through `ParserEmbeddedCodeTransformationService.TransformOrThrow(...)`, and consumed by emitters or expression compilers only as `TransformedEmbeddedCode`. The default transformer is no-op, `$...` rewriting is no longer a core parser/generator responsibility, and dynamic expression-backed preparation transforms code before using the existing compiler/preparer mechanism. Future target-language transformers must remain isolated from parser runtime authority and must not introduce a second compiler abstraction.
 
