@@ -96,7 +96,12 @@ Classes
 </h3>
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.Parser.Expressions.ExpressionEmbeddedCodePreparer.html">ExpressionEmbeddedCodePreparer</a></dt>
-      <dd><p>Prepares runtime-inline embedded parser code by compiling expression-backed artifacts with an explicit expression compiler.</p>
+      <dd><p>Provides the supported runtime-inline compilation facade for embedded parser semantic predicates and inline actions.
+It validates and transforms embedded source through the shared transformation pipeline, builds expressions that read
+runtime symbols from the delegate context, delegates expression compilation to <a class="xref" href="Utils.Expressions.IExpressionCompiler.html">IExpressionCompiler</a>,
+and materializes specialized CLR lambdas in strongly typed prepared artifacts. Preparation does not execute the
+embedded code or capture runtime values. This facade does not generate C# source, replace the source generator,
+compile lexer hooks, or select the parser's overall execution strategy.</p>
 </dd>
     </dl>
     <dl class="jumplist">

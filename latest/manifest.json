@@ -10130,7 +10130,7 @@
       "Uid": null,
       "IsMRef": true,
       "Title": "Utils.Parser.Expressions.ExpressionEmbeddedCodePreparer",
-      "Summary": "<p sourcefile=\"api/Utils.Parser.Expressions.ExpressionEmbeddedCodePreparer.yml\" sourcestartlinenumber=\"1\">Prepares runtime-inline embedded parser code by compiling expression-backed artifacts with an explicit expression compiler.</p>\n"
+      "Summary": "<p sourcefile=\"api/Utils.Parser.Expressions.ExpressionEmbeddedCodePreparer.yml\" sourcestartlinenumber=\"1\">Provides the supported runtime-inline compilation facade for embedded parser semantic predicates and inline actions.\nIt validates and transforms embedded source through the shared transformation pipeline, builds expressions that read\nruntime symbols from the delegate context, delegates expression compilation to <xref href=\"Utils.Expressions.IExpressionCompiler\" data-throw-if-not-resolved=\"false\"></xref>,\nand materializes specialized CLR lambdas in strongly typed prepared artifacts. Preparation does not execute the\nembedded code or capture runtime values. This facade does not generate C# source, replace the source generator,\ncompile lexer hooks, or select the parser's overall execution strategy.</p>\n"
     },
     {
       "type": "ManagedReference",

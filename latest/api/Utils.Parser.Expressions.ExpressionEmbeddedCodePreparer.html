@@ -6,7 +6,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="title" content="Class ExpressionEmbeddedCodePreparer | omy.Utils Documentation ">
       
-      <meta name="description" content="Prepares runtime-inline embedded parser code by compiling expression-backed artifacts with an explicit expression compiler.">
+      <meta name="description" content="Provides the supported runtime-inline compilation facade for embedded parser semantic predicates and inline actions. It validates and transforms embedded source through the shared transformation pipeline, builds expressions that read runtime symbols from the delegate context, delegates expression compilation to , and materializes specialized CLR lambdas in strongly typed prepared artifacts. Preparation does not execute the embedded code or capture runtime values. This facade does not generate C# source, replace the source generator, compile lexer hooks, or select the parser&#39;s overall execution strategy.">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Parser_Expressions_ExpressionEmbeddedCodePreparer" data-uid="Utils.Parser.Expressions.ExpressionEmbeddedCodePreparer" class="text-break">
-Class ExpressionEmbeddedCodePreparer  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Expressions/ExpressionEmbeddedCodePreparer.cs/#L13"><i class="bi bi-code-slash"></i></a>
+Class ExpressionEmbeddedCodePreparer  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Expressions/ExpressionEmbeddedCodePreparer.cs/#L18"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -97,7 +97,12 @@ Class ExpressionEmbeddedCodePreparer  <a class="header-action link-secondary" ti
   <dl><dt>Assembly</dt><dd>Utils.Parser.Expressions.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Prepares runtime-inline embedded parser code by compiling expression-backed artifacts with an explicit expression compiler.</p>
+  <div class="markdown summary"><p>Provides the supported runtime-inline compilation facade for embedded parser semantic predicates and inline actions.
+It validates and transforms embedded source through the shared transformation pipeline, builds expressions that read
+runtime symbols from the delegate context, delegates expression compilation to <a class="xref" href="Utils.Expressions.IExpressionCompiler.html">IExpressionCompiler</a>,
+and materializes specialized CLR lambdas in strongly typed prepared artifacts. Preparation does not execute the
+embedded code or capture runtime values. This facade does not generate C# source, replace the source generator,
+compile lexer hooks, or select the parser's overall execution strategy.</p>
 </div>
   <div class="markdown conceptual"></div>
 
@@ -251,10 +256,10 @@ Class ExpressionEmbeddedCodePreparer  <a class="header-action link-secondary" ti
 
   <h3 id="Utils_Parser_Expressions_ExpressionEmbeddedCodePreparer__ctor_Utils_Expressions_IExpressionCompiler_Utils_Parser_Diagnostics_EmbeddedCode_IParserEmbeddedCodeTransformer_" data-uid="Utils.Parser.Expressions.ExpressionEmbeddedCodePreparer.#ctor(Utils.Expressions.IExpressionCompiler,Utils.Parser.Diagnostics.EmbeddedCode.IParserEmbeddedCodeTransformer)">
   ExpressionEmbeddedCodePreparer(IExpressionCompiler, IParserEmbeddedCodeTransformer?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Expressions/ExpressionEmbeddedCodePreparer.cs/#L24"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Expressions/ExpressionEmbeddedCodePreparer.cs/#L35"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Initializes a new expression-backed embedded-code preparer.</p>
+  <div class="markdown level1 summary"><p>Initializes the supported expression-backed runtime preparation facade.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -265,10 +270,12 @@ Class ExpressionEmbeddedCodePreparer  <a class="header-action link-secondary" ti
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>compiler</code> <a class="xref" href="Utils.Expressions.IExpressionCompiler.html">IExpressionCompiler</a></dt>
-    <dd><p>Expression compiler selected by the caller.</p>
+    <dd><p>Required caller-supplied compiler that converts validated transformed text into an expression tree. It is not
+called for unsupported categories or non-runtime targets and is called exactly once for each supported preparation.</p>
 </dd>
     <dt><code>embeddedCodeTransformer</code> <a class="xref" href="Utils.Parser.Diagnostics.EmbeddedCode.IParserEmbeddedCodeTransformer.html">IParserEmbeddedCodeTransformer</a></dt>
-    <dd><p>Optional transformer applied before compiler invocation.</p>
+    <dd><p>Optional transformer run through <span class="xref">Utils.Parser.Diagnostics.EmbeddedCode.EmbeddedCodeTransformationPipeline</span> before compiler invocation;
+<a class="xref" href="Utils.Parser.Diagnostics.EmbeddedCode.NoOpParserEmbeddedCodeTransformer.html#Utils_Parser_Diagnostics_EmbeddedCode_NoOpParserEmbeddedCodeTransformer_Instance">Instance</a> is used when no transformer is supplied.</p>
 </dd>
   </dl>
 
@@ -297,10 +304,11 @@ Class ExpressionEmbeddedCodePreparer  <a class="header-action link-secondary" ti
 
   <h3 id="Utils_Parser_Expressions_ExpressionEmbeddedCodePreparer_PrepareParserAction_Utils_Parser_EmbeddedCode_EmbeddedCodeSource_Utils_Parser_EmbeddedCode_EmbeddedCodePreparationContext_" data-uid="Utils.Parser.Expressions.ExpressionEmbeddedCodePreparer.PrepareParserAction(Utils.Parser.EmbeddedCode.EmbeddedCodeSource,Utils.Parser.EmbeddedCode.EmbeddedCodePreparationContext)">
   PrepareParserAction(EmbeddedCodeSource, EmbeddedCodePreparationContext)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Expressions/ExpressionEmbeddedCodePreparer.cs/#L73"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Expressions/ExpressionEmbeddedCodePreparer.cs/#L113"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Prepares inline parser action source without executing it.</p>
+  <div class="markdown level1 summary"><p>Prepares an <a class="xref" href="Utils.Parser.EmbeddedCode.EmbeddedCodeKind.html#Utils_Parser_EmbeddedCode_EmbeddedCodeKind_ParserInlineAction">ParserInlineAction</a> for the
+<a class="xref" href="Utils.Parser.EmbeddedCode.EmbeddedCodeTarget.html#Utils_Parser_EmbeddedCode_EmbeddedCodeTarget_RuntimeInlineExpression">RuntimeInlineExpression</a> target without executing it.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -311,17 +319,24 @@ Class ExpressionEmbeddedCodePreparer  <a class="header-action link-secondary" ti
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>source</code> <a class="xref" href="Utils.Parser.EmbeddedCode.EmbeddedCodeSource.html">EmbeddedCodeSource</a></dt>
-    <dd><p>Raw embedded-code source and metadata for an inline parser action.</p>
+    <dd><p>Raw inline parser-action source and its parser metadata.</p>
 </dd>
     <dt><code>context</code> <a class="xref" href="Utils.Parser.EmbeddedCode.EmbeddedCodePreparationContext.html">EmbeddedCodePreparationContext</a></dt>
-    <dd><p>Explicit preparation context selected by the caller.</p>
+    <dd><p>Preparation context that selects the runtime target and allowed contextual symbols.</p>
 </dd>
   </dl>
 
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="Utils.Parser.EmbeddedCode.EmbeddedCodePreparationResult-1.html">EmbeddedCodePreparationResult</a>&lt;<a class="xref" href="Utils.Parser.Expressions.PreparedExpressionParserAction.html">PreparedExpressionParserAction</a>&gt;</dt>
-    <dd><p>Preparation result containing an artifact or metadata that explains why no artifact was produced.</p>
+    <dd><p><a class="xref" href="Utils.Parser.EmbeddedCode.EmbeddedCodePreparationStatus.html#Utils_Parser_EmbeddedCode_EmbeddedCodePreparationStatus_Unsupported">Unsupported</a> for another category,
+<a class="xref" href="Utils.Parser.EmbeddedCode.EmbeddedCodePreparationStatus.html#Utils_Parser_EmbeddedCode_EmbeddedCodePreparationStatus_PreservedNotCompiled">PreservedNotCompiled</a> for another target,
+<a class="xref" href="Utils.Parser.EmbeddedCode.EmbeddedCodePreparationStatus.html#Utils_Parser_EmbeddedCode_EmbeddedCodePreparationStatus_CompilationFailed">CompilationFailed</a> after a transformation or compilation failure, or
+<a class="xref" href="Utils.Parser.EmbeddedCode.EmbeddedCodePreparationStatus.html#Utils_Parser_EmbeddedCode_EmbeddedCodePreparationStatus_Succeeded">Succeeded</a> with a <a class="xref" href="Utils.Parser.Expressions.PreparedExpressionParserAction.html">PreparedExpressionParserAction</a>
+containing an <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.action-1">Action&lt;T&gt;</a> over <a class="xref" href="Utils.Parser.Runtime.ParserActionExecutionContext.html">ParserActionExecutionContext</a>.
+The shared pipeline transforms the source before runtime-bound symbol expressions are passed to the compiler.
+A non-<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.void">void</a> expression is normalized to an action whose value is ignored, and the resulting delegate
+is not invoked during preparation.</p>
 </dd>
   </dl>
 
@@ -339,10 +354,11 @@ Class ExpressionEmbeddedCodePreparer  <a class="header-action link-secondary" ti
 
   <h3 id="Utils_Parser_Expressions_ExpressionEmbeddedCodePreparer_PrepareSemanticPredicate_Utils_Parser_EmbeddedCode_EmbeddedCodeSource_Utils_Parser_EmbeddedCode_EmbeddedCodePreparationContext_" data-uid="Utils.Parser.Expressions.ExpressionEmbeddedCodePreparer.PrepareSemanticPredicate(Utils.Parser.EmbeddedCode.EmbeddedCodeSource,Utils.Parser.EmbeddedCode.EmbeddedCodePreparationContext)">
   PrepareSemanticPredicate(EmbeddedCodeSource, EmbeddedCodePreparationContext)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Expressions/ExpressionEmbeddedCodePreparer.cs/#L31"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Expressions/ExpressionEmbeddedCodePreparer.cs/#L56"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Prepares semantic predicate source without evaluating it.</p>
+  <div class="markdown level1 summary"><p>Prepares a <a class="xref" href="Utils.Parser.EmbeddedCode.EmbeddedCodeKind.html#Utils_Parser_EmbeddedCode_EmbeddedCodeKind_SemanticPredicate">SemanticPredicate</a> for the
+<a class="xref" href="Utils.Parser.EmbeddedCode.EmbeddedCodeTarget.html#Utils_Parser_EmbeddedCode_EmbeddedCodeTarget_RuntimeInlineExpression">RuntimeInlineExpression</a> target without evaluating it.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -353,17 +369,23 @@ Class ExpressionEmbeddedCodePreparer  <a class="header-action link-secondary" ti
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>source</code> <a class="xref" href="Utils.Parser.EmbeddedCode.EmbeddedCodeSource.html">EmbeddedCodeSource</a></dt>
-    <dd><p>Raw embedded-code source and metadata for a semantic predicate.</p>
+    <dd><p>Raw semantic-predicate source and its parser metadata.</p>
 </dd>
     <dt><code>context</code> <a class="xref" href="Utils.Parser.EmbeddedCode.EmbeddedCodePreparationContext.html">EmbeddedCodePreparationContext</a></dt>
-    <dd><p>Explicit preparation context selected by the caller.</p>
+    <dd><p>Preparation context that selects the runtime target and allowed contextual symbols.</p>
 </dd>
   </dl>
 
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="Utils.Parser.EmbeddedCode.EmbeddedCodePreparationResult-1.html">EmbeddedCodePreparationResult</a>&lt;<a class="xref" href="Utils.Parser.Expressions.PreparedExpressionSemanticPredicate.html">PreparedExpressionSemanticPredicate</a>&gt;</dt>
-    <dd><p>Preparation result containing an artifact or metadata that explains why no artifact was produced.</p>
+    <dd><p><a class="xref" href="Utils.Parser.EmbeddedCode.EmbeddedCodePreparationStatus.html#Utils_Parser_EmbeddedCode_EmbeddedCodePreparationStatus_Unsupported">Unsupported</a> for another category,
+<a class="xref" href="Utils.Parser.EmbeddedCode.EmbeddedCodePreparationStatus.html#Utils_Parser_EmbeddedCode_EmbeddedCodePreparationStatus_PreservedNotCompiled">PreservedNotCompiled</a> for another target,
+<a class="xref" href="Utils.Parser.EmbeddedCode.EmbeddedCodePreparationStatus.html#Utils_Parser_EmbeddedCode_EmbeddedCodePreparationStatus_CompilationFailed">CompilationFailed</a> after a transformation or compilation failure, or
+<a class="xref" href="Utils.Parser.EmbeddedCode.EmbeddedCodePreparationStatus.html#Utils_Parser_EmbeddedCode_EmbeddedCodePreparationStatus_Succeeded">Succeeded</a> with a <a class="xref" href="Utils.Parser.Expressions.PreparedExpressionSemanticPredicate.html">PreparedExpressionSemanticPredicate</a>
+containing a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.func-2">Func&lt;T, TResult&gt;</a> over <a class="xref" href="Utils.Parser.Runtime.SemanticPredicateEvaluationContext.html">SemanticPredicateEvaluationContext</a>.
+The shared pipeline transforms the source before runtime-bound symbol expressions are passed to the compiler;
+the resulting delegate is not invoked during preparation.</p>
 </dd>
   </dl>
 
@@ -381,7 +403,7 @@ Class ExpressionEmbeddedCodePreparer  <a class="header-action link-secondary" ti
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Expressions/ExpressionEmbeddedCodePreparer.cs/#L13" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser.Expressions/ExpressionEmbeddedCodePreparer.cs/#L18" class="edit-link">Edit this page</a>
         </div>
 
 
