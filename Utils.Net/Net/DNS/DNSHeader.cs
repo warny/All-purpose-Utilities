@@ -222,7 +222,7 @@ public class DNSHeader : DNSElement
     public byte ReservedFlags
     {
         get => (byte)(Flags & DNSConstants.ReservedZ);
-        set => Flags = (ushort)((Flags | ~DNSConstants.ReservedZ) & (value & DNSConstants.ReservedZ));
+        set => Flags = (ushort)((Flags & ~DNSConstants.ReservedZ) | (value & DNSConstants.ReservedZ));
     }
 
     /// <summary>
@@ -234,7 +234,7 @@ public class DNSHeader : DNSElement
     public DNSError ErrorCode
     {
         get => (DNSError)(Flags & DNSConstants.Error);
-        set => Flags = (ushort)((Flags | ~DNSConstants.Error) & ((ushort)value & DNSConstants.Error));
+        set => Flags = (ushort)((Flags & ~DNSConstants.Error) | ((ushort)value & DNSConstants.Error));
     }
 
     /// <summary>

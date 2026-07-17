@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Net;
 using System.Net.Sockets;
@@ -15,40 +16,60 @@ public class IcmpUtils
     /// <summary>
     /// Sends an ICMP Echo Request (ping) with a random payload and verifies the response.
     /// </summary>
-    public static async Task<int> SendEchoRequestAsync(IPAddress destination, int size = 32, int timeout = 1000)
+    public static async Task<int> SendEchoRequestAsync(IPAddress destination, int size = 32, int timeout = 1000, CancellationToken cancellationToken = default)
     {
         IcmpPacket packet = new()
         {
-            PacketType = destination.AddressFamily == AddressFamily.InterNetwork ? IcmpPacketType.IcmpV4EchoReply : IcmpPacketType.IcmpV6EchoRequest
+            PacketType = destination.AddressFamily == AddressFamily.InterNetwork ? IcmpPacketType.IcmpV4EchoRequest : IcmpPacketType.IcmpV6EchoRequest
         };
         packet.CreateRandomPayload(size);
 
-        return await SendEchoRequestAsync(destination, packet, timeout).ConfigureAwait(false);
+        return await SendEchoRequestAsync(destination, packet, timeout, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Sends an ICMP Echo Request (ping) with a custom packet and verifies the response.
     /// </summary>
-    public static async Task<int> SendEchoRequestAsync(IPAddress destination, IcmpPacket packet, int timeout = 1000)
+    public static async Task<int> SendEchoRequestAsync(IPAddress destination, IcmpPacket packet, int timeout = 1000, CancellationToken cancellationToken = default)
     {
+        using CancellationTokenSource timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutCts.CancelAfter(timeout);
+        CancellationToken linkedToken = timeoutCts.Token;
+
         using Socket socket = new Socket(
             destination.AddressFamily,
             SocketType.Raw,
             destination.AddressFamily == AddressFamily.InterNetwork ? ProtocolType.Icmp : ProtocolType.IcmpV6);
 
-        socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveTimeout, timeout);
-        await socket.ConnectAsync(destination, 0).ConfigureAwait(false);
+        await socket.ConnectAsync(destination, 0, linkedToken).ConfigureAwait(false);
 
         byte[] requestBytes = packet.ToBytes();
-        await socket.SendAsync(requestBytes).ConfigureAwait(false);
+        await socket.SendAsync(requestBytes, linkedToken).ConfigureAwait(false);
 
         DateTime startTime = DateTime.UtcNow;
-        byte[] responseBuffer = new byte[requestBytes.Length]; // Expect same length
+        // IPv4 raw sockets include a 20-byte IP header before the ICMP payload;
+        // allocate a generous buffer and parse only the bytes actually received.
+        byte[] responseBuffer = new byte[65535];
 
         try
         {
-            await socket.ReceiveAsync(responseBuffer).ConfigureAwait(false);
-            IcmpPacket responsePacket = IcmpPacket.ReadPacket(responseBuffer);
+            int received = await socket.ReceiveAsync(responseBuffer, linkedToken).ConfigureAwait(false);
+
+            // For IPv4, read the actual IP header length from the IHL field (bits 3–0 of byte 0).
+            // The header can be 20–60 bytes when options are present; hardcoding 20 is incorrect.
+            int icmpOffset = 0;
+            if (destination.AddressFamily == AddressFamily.InterNetwork)
+            {
+                if (received < 1) throw new IcmpException("ICMP response too short.");
+                icmpOffset = (responseBuffer[0] & 0x0F) * 4;
+                if (icmpOffset < 20 || icmpOffset > received)
+                    throw new IcmpException($"ICMP response has invalid IPv4 header length ({icmpOffset} bytes).");
+            }
+            if (received <= icmpOffset)
+            {
+                throw new IcmpException("ICMP response too short.");
+            }
+            IcmpPacket responsePacket = IcmpPacket.ReadPacket(responseBuffer[icmpOffset..received]);
 
             // Verify response type
             var expectedReplyType = destination.AddressFamily == AddressFamily.InterNetwork ? IcmpPacketType.IcmpV4EchoReply : IcmpPacketType.IcmpV6EchoReply;
@@ -63,24 +84,27 @@ public class IcmpUtils
         }
         catch (SocketException)
         {
-            return -1; // Timeout
+            return -1; // Timeout or network error
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return -1; // Timeout elapsed
         }
     }
 
     /// <summary>
     /// Performs a traceroute to a specified destination.
     /// </summary>
-    public static async Task<IEnumerable<TracerouteHop>> TracerouteAsync(IPAddress destination, int maxHops = 30, int timeout = 1000)
+    public static async Task<IEnumerable<TracerouteHop>> TracerouteAsync(IPAddress destination, int maxHops = 30, int timeout = 1000, CancellationToken cancellationToken = default)
     {
         List<TracerouteHop> hops = new();
 
         bool isIPv4 = destination.AddressFamily == AddressFamily.InterNetwork;
         using Socket socket = new Socket(destination.AddressFamily, SocketType.Raw, isIPv4 ? ProtocolType.Icmp : ProtocolType.IcmpV6);
-        socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveTimeout, timeout);
 
         for (int ttl = 1; ttl <= maxHops; ttl++)
         {
-            TracerouteHop hop = await GetTracerouteHopAsync(destination, isIPv4, socket, ttl).ConfigureAwait(false);
+            TracerouteHop hop = await GetTracerouteHopAsync(destination, isIPv4, socket, ttl, timeout, cancellationToken).ConfigureAwait(false);
             hops.Add(hop);
             if (hop.IsFinalDestination) break;
         }
@@ -91,12 +115,16 @@ public class IcmpUtils
     /// <summary>
     /// Gets a hop in a traceroute to a specified destination.
     /// </summary>
-    private static async Task<TracerouteHop> GetTracerouteHopAsync(IPAddress destination, bool isIPv4, Socket socket, int ttl)
+    private static async Task<TracerouteHop> GetTracerouteHopAsync(IPAddress destination, bool isIPv4, Socket socket, int ttl, int timeout, CancellationToken cancellationToken)
     {
+        using CancellationTokenSource timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutCts.CancelAfter(timeout);
+        CancellationToken linkedToken = timeoutCts.Token;
+
         socket.SetSocketOption(isIPv4 ? SocketOptionLevel.IP : SocketOptionLevel.IPv6,
             SocketOptionName.IpTimeToLive, ttl);
 
-        await socket.ConnectAsync(destination, 0).ConfigureAwait(false);
+        await socket.ConnectAsync(destination, 0, linkedToken).ConfigureAwait(false);
 
         IcmpPacket packet = new()
         {
@@ -105,14 +133,24 @@ public class IcmpUtils
         packet.CreateRandomPayload(4);
 
         byte[] icmpPacket = packet.ToBytes();
-        await socket.SendAsync(icmpPacket).ConfigureAwait(false);
+        await socket.SendAsync(icmpPacket, linkedToken).ConfigureAwait(false);
 
         DateTime startTime = DateTime.UtcNow;
-        byte[] responseBuffer = new byte[64];
+        byte[] responseBuffer = new byte[65535];
 
         try
         {
-            await socket.ReceiveAsync(responseBuffer).ConfigureAwait(false);
+            int received = await socket.ReceiveAsync(responseBuffer, linkedToken).ConfigureAwait(false);
+            // For IPv4, read the actual IP header length from the IHL field.
+            int icmpOffset = 0;
+            if (isIPv4)
+            {
+                if (received < 1) return new TracerouteHop(ttl, null, -1, false, false);
+                icmpOffset = (responseBuffer[0] & 0x0F) * 4;
+                if (icmpOffset < 20 || icmpOffset > received) return new TracerouteHop(ttl, null, -1, false, false);
+            }
+            if (received <= icmpOffset) return new TracerouteHop(ttl, null, -1, false, false);
+            responseBuffer = responseBuffer[icmpOffset..received];
             TimeSpan rtt = DateTime.UtcNow - startTime;
             IcmpPacket response = IcmpPacket.ReadPacket(responseBuffer);
 
@@ -126,6 +164,10 @@ public class IcmpUtils
         catch (SocketException)
         {
             return new TracerouteHop(ttl, null, -1, false, false);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return new TracerouteHop(ttl, null, -1, false, false); // Hop timeout
         }
     }
 

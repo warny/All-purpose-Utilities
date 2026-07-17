@@ -1,6 +1,7 @@
 using System;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Utils.Net;
@@ -16,19 +17,20 @@ public static class EchoClient
     /// <param name="host">Hostname or IP address of the Echo server.</param>
     /// <param name="port">TCP port of the Echo service, default is 7.</param>
     /// <param name="message">Message to send.</param>
+    /// <param name="cancellationToken">Cancellation token applied to the connect and read operations.</param>
     /// <returns>Echoed message returned by the server.</returns>
-    public static async Task<string> EchoAsync(string host, int port, string message)
+    public static async Task<string> EchoAsync(string host, int port, string message, CancellationToken cancellationToken = default)
     {
         using TcpClient client = new();
-        await client.ConnectAsync(host, port).ConfigureAwait(false);
+        await client.ConnectAsync(host, port, cancellationToken).ConfigureAwait(false);
         NetworkStream stream = client.GetStream();
         byte[] data = Encoding.ASCII.GetBytes(message);
-        await stream.WriteAsync(data).ConfigureAwait(false);
+        await stream.WriteAsync(data, cancellationToken).ConfigureAwait(false);
         byte[] buffer = new byte[data.Length];
         int bytesRead = 0;
         while (bytesRead < data.Length)
         {
-            int read = await stream.ReadAsync(buffer.AsMemory(bytesRead)).ConfigureAwait(false);
+            int read = await stream.ReadAsync(buffer.AsMemory(bytesRead), cancellationToken).ConfigureAwait(false);
             if (read == 0)
             {
                 break;
@@ -43,9 +45,10 @@ public static class EchoClient
     /// </summary>
     /// <param name="host">Hostname or IP address of the Echo server.</param>
     /// <param name="message">Message to send.</param>
+    /// <param name="cancellationToken">Cancellation token applied to the connect and read operations.</param>
     /// <returns>Echoed message returned by the server.</returns>
-    public static Task<string> EchoAsync(string host, string message)
+    public static Task<string> EchoAsync(string host, string message, CancellationToken cancellationToken = default)
     {
-        return EchoAsync(host, 7, message);
+        return EchoAsync(host, 7, message, cancellationToken);
     }
 }
