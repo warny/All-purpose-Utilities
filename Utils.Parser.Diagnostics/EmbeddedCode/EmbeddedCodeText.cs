@@ -162,6 +162,31 @@ public static class ParserEmbeddedCodeTransformationService
         RawEmbeddedCode rawCode,
         ParserEmbeddedCodeTransformationContext context,
         ParserEmbeddedCodeTransformationFailureContext failureContext)
+        => EmbeddedCodeTransformationPipeline.TransformAndValidate(transformer, rawCode, context, failureContext);
+}
+
+/// <summary>
+/// Defines the shared transformation boundary between raw embedded code and target-specific handling.
+/// The pipeline starts with a typed raw value and parser transformation context, invokes the transformer
+/// exactly once, validates its result and diagnostics, and stops after producing transformed code. C# body
+/// classification and injection remain generator concerns, while symbol construction, lambda creation, and
+/// compilation remain responsibilities of the expression preparer and its compiler.
+/// </summary>
+internal static class EmbeddedCodeTransformationPipeline
+{
+    /// <summary>
+    /// Transforms one raw fragment and validates that the resulting artifact can be handed to a target.
+    /// </summary>
+    /// <param name="transformer">Transformer selected by the caller.</param>
+    /// <param name="rawCode">Typed raw embedded code that has not yet reached a target.</param>
+    /// <param name="context">Strongly typed parser transformation context.</param>
+    /// <param name="failureContext">Structured metadata used to preserve deterministic failures.</param>
+    /// <returns>Validated transformed code ready for target-specific classification or compilation.</returns>
+    internal static TransformedEmbeddedCode TransformAndValidate(
+        IParserEmbeddedCodeTransformer transformer,
+        RawEmbeddedCode rawCode,
+        ParserEmbeddedCodeTransformationContext context,
+        ParserEmbeddedCodeTransformationFailureContext failureContext)
     {
         if (transformer is null) throw new ArgumentNullException(nameof(transformer));
         if (rawCode is null) throw new ArgumentNullException(nameof(rawCode));

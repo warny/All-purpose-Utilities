@@ -95,6 +95,17 @@ public class CommandResponseServer : IDisposable
     }
 
     /// <summary>
+    /// Registers a command handler (backward-compatible overload without cancellation token).
+    /// </summary>
+    /// <param name="command">Command name.</param>
+    /// <param name="handler">Handler invoked when the command is received.</param>
+    /// <param name="requiredContexts">Contexts required for the command to execute.</param>
+    public void RegisterCommand(string command, Func<CommandContext, string[], Task<IEnumerable<ServerResponse>>> handler, params string[] requiredContexts)
+    {
+        RegisterCommand(command, (ctx, args, _) => handler(ctx, args), requiredContexts);
+    }
+
+    /// <summary>
     /// Adds a context to the server.
     /// </summary>
     /// <param name="context">Context to add.</param>

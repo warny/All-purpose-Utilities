@@ -412,16 +412,32 @@ explicites, la validation typée et la séparation volontaire des hooks lifecycl
 ## Duplications d'intention et lisibilité (priorité moyenne)
 
 ### 9. Clarifier la frontière entre préparation, transformation, injection et compilation
-Plusieurs composants participent à une même intention sans pipeline central explicite :
-`TransformEmbeddedCode`, `TransformSource`, `GeneratedEmbeddedCodeBody`, les méthodes `Emit...` et
-`ExpressionEmbeddedCodePreparer`.
+**Corrigé.** Le noyau interne `EmbeddedCodeTransformationPipeline.TransformAndValidate(...)`, placé
+dans l'assembly `netstandard2.0` de diagnostics partagée, reçoit un `RawEmbeddedCode`, un
+`IParserEmbeddedCodeTransformer`, un `ParserEmbeddedCodeTransformationContext` fortement typé et les
+métadonnées d'échec. Il appelle le transformer exactement une fois, centralise les validations des
+arguments, du résultat nul, des diagnostics bloquants et du code transformé nul, puis remet un
+`TransformedEmbeddedCode` validé. L'ancien service public délègue au noyau afin de préserver l'API.
 
-**Fix proposé** : formaliser le pipeline suivant :
+La frontière s'arrête strictement à cet artefact : elle ne connaît ni `StringBuilder`, ni injection,
+ni expression, ni lambda, ni compilation. Le générateur construit son contexte enrichi (règle,
+déclarations et labels), appelle le noyau, conserve la distinction parser/lexer et predicate/action,
+puis classe le résultat via `GeneratedEmbeddedCodeBody.ForPredicate(...)` ou `ForAction(...)` et
+délègue exclusivement à `CSharpEmbeddedCodeInjector`. Le chemin runtime, limité aux prédicats et
+actions parser, construit son contexte dans `ExpressionEmbeddedCodePreparer`, appelle le même noyau,
+construit ensuite les symboles et la lambda spécialisés, et conserve l'appel à
+`IExpressionCompiler.Compile(...)`.
 
-1. création du contexte de transformation ;
-2. transformation et validation ;
-3. remise du code transformé à une cible unique ;
-4. injection C# via `CSharpEmbeddedCodeInjector` ou compilation via `IExpressionCompiler`.
+Les tests de caractérisation couvrent les quatre catégories générées et les deux catégories runtime,
+les contextes et textes bruts exacts, l'appel unique, les échecs de transformation, la classification,
+l'injection, la compilation unique et la réutilisation d'artefacts avec plusieurs contextes runtime.
+Le garde-fou Roslyn `EmbeddedCodeTransformerArchitectureTests` interdit les appels directs parallèles
+au transformer et vérifie que le noyau est interne, commun aux deux cibles, retourne le type transformé
+et ne dépend d'aucun détail de cible. `CSharpEmbeddedCodeInjectorArchitectureTests` maintient la
+frontière d'injection. Aucune API publique ni aucun comportement observable n'a été modifié.
+
+Les points 10 (`EmbeddedCodeHook.EmittedCode`) et 11 (statut documenté de la façade runtime) restent
+explicitement ouverts.
 
 ### 10. Renommer ou supprimer l'état ambigu `EmittedCode`
 `EmittedCode` est initialisé avec le code brut avant d'être remplacé par le code transformé. Son nom

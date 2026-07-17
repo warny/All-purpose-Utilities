@@ -424,6 +424,8 @@ Generated C# preserves embedded parser code by default through `NoOpParserEmbedd
 
 Generated/source-generator emission applies the embedded-code transformer before emitting parser `@header`, parser `@footer`, rule `@init`, rule `@after`, inline parser actions, and semantic predicates where those locations are supported. The standard source generator uses the no-op transformer; direct emitter APIs can supply a custom transformer for tests or specialized tooling.
 
+Internally, raw code and its strongly typed transformation context cross the shared transformation-and-validation boundary exactly once. The resulting `TransformedEmbeddedCode` is then classified as a predicate expression/fragment or action fragment by `GeneratedEmbeddedCodeBody` and written only by `CSharpEmbeddedCodeInjector`. This generator-specific tail does not construct runtime expressions or invoke an expression compiler.
+
 ### Optional C# transformer lexer action attributes
 
 Generated C# can opt into a narrow lexer inline-action attribute rewrite set through `CSharpAntlrStyleParserEmbeddedCodeTransformer`. The default/no-op transformer preserves lexer `$...` syntax unchanged. This rewrite applies only to lexer inline actions, not parser actions, lexer predicates, or runtime-inline execution.

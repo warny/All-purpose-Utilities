@@ -2,25 +2,33 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Utils.IO;
 
 /// <summary>
 /// A writable-only stream that copies written data to multiple target streams simultaneously.
-/// 
+///
 /// This class implements both <see cref="Stream"/> and <see cref="IList{Stream}"/> so that
 /// the set of target streams can be dynamically modified at runtime. Note that no concurrency
 /// control is provided; if multiple threads write concurrently, external locking may be needed.
-/// 
-/// Reading and seeking are not supported. 
+///
+/// Reading and seeking are not supported.
 /// Calling <see cref="Write(byte[], int, int)"/> will broadcast the provided data to all
 /// underlying streams in the targets collection.
-/// 
+///
 /// <remarks>
+/// <b>Best-effort fan-out:</b> <see cref="Write"/> and <see cref="Flush"/> attempt the operation
+/// on every target stream even if earlier ones throw. All exceptions are collected and rethrown as
+/// an <see cref="AggregateException"/> so no target is silently skipped.
+/// This means targets that were reached before a failure already hold the written data while later
+/// ones may not — callers that need strict all-or-nothing semantics must manage this externally.
+/// <para>
 /// By default, disposing this object does not dispose any of the contained streams. If the
 /// parameter <see cref="T:closeAllTargetsOnDispose"/> is <see langword="true"/> when constructing
 /// this class, all target streams will be disposed when <see cref="IDisposable.Dispose()"/>
 /// is called.
+/// </para>
 /// </remarks>
 /// </summary>
 public class StreamCopier : Stream, IList<Stream>
@@ -103,16 +111,19 @@ public class StreamCopier : Stream, IList<Stream>
     }
 
     /// <summary>
-    /// Flushes all target streams. This does not close or dispose them
-    /// (unless <see cref="closeAllTargetsOnDispose"/> is true and <see cref="IDisposable.Dispose()"/> is called).
+    /// Flushes all target streams, collecting any exceptions. If any flush fails, an
+    /// <see cref="AggregateException"/> is thrown after all streams have been attempted.
     /// </summary>
     public override void Flush()
     {
-        // We call Flush on each target to ensure any buffered data is written.
+        List<Exception>? errors = null;
         foreach (Stream s in _targets)
         {
-            s.Flush();
+            try { s.Flush(); }
+            catch (Exception ex) { (errors ??= []).Add(ex); }
         }
+        if (errors is not null)
+            throw new AggregateException("One or more target streams failed to flush.", errors);
     }
 
     /// <inheritdoc />
@@ -134,18 +145,24 @@ public class StreamCopier : Stream, IList<Stream>
     }
 
     /// <summary>
-    /// Writes the specified buffer range to all target streams.
+    /// Writes the specified buffer range to all target streams. Every stream is attempted even if
+    /// earlier ones throw; all exceptions are collected and rethrown as an <see cref="AggregateException"/>.
     /// </summary>
-    /// <param name="buffer">An array of bytes. This method copies <paramref name="count"/> bytes from <paramref name="buffer"/> to the target streams.</param>
+    /// <param name="buffer">An array of bytes.</param>
     /// <param name="offset">The zero-based byte offset in <paramref name="buffer"/> at which to begin copying bytes.</param>
     /// <param name="count">The number of bytes to write.</param>
     public override void Write(byte[] buffer, int offset, int count)
     {
-        // Forward the write to all underlying target streams
-        foreach (Stream s in _targets)
+        List<Exception>? errors = null;
+        // Snapshot to guard against concurrent modification
+        Stream[] snapshot = [.. _targets];
+        foreach (Stream s in snapshot)
         {
-            s.Write(buffer, offset, count);
+            try { s.Write(buffer, offset, count); }
+            catch (Exception ex) { (errors ??= []).Add(ex); }
         }
+        if (errors is not null)
+            throw new AggregateException("One or more target streams failed to write.", errors);
     }
 
     /// <summary>
@@ -204,8 +221,13 @@ public class StreamCopier : Stream, IList<Stream>
     /// Inserts a stream at the specified index.
     /// </summary>
     /// <param name="index">The zero-based index at which <paramref name="item"/> should be inserted.</param>
-    /// <param name="item">The stream to insert.</param>
-    public void Insert(int index, Stream item) => _targets.Insert(index, item);
+    /// <param name="item">The stream to insert. Must not be null.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="item"/> is null.</exception>
+    public void Insert(int index, Stream item)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        _targets.Insert(index, item);
+    }
 
     /// <summary>
     /// Removes the stream at the specified index.
@@ -216,8 +238,13 @@ public class StreamCopier : Stream, IList<Stream>
     /// <summary>
     /// Adds a stream to the end of the list of targets.
     /// </summary>
-    /// <param name="item">The stream to add.</param>
-    public void Add(Stream item) => _targets.Add(item);
+    /// <param name="item">The stream to add. Must not be null.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="item"/> is null.</exception>
+    public void Add(Stream item)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        _targets.Add(item);
+    }
 
     /// <summary>
     /// Removes all streams from the targets list.

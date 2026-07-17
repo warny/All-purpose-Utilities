@@ -11,22 +11,24 @@ namespace Utils.IO;
 public static class StreamUtils
 {
     /// <summary>
-    /// Reads exactly <paramref name="length"/> bytes from the given <see cref="Stream"/> 
+    /// Reads exactly <paramref name="length"/> bytes from the given <see cref="Stream"/>
     /// and returns them in a byte array.
+    /// When <paramref name="raiseException"/> is <see langword="false"/> and the stream ends early,
+    /// only the bytes actually read are returned (no zero-padding).
     /// </summary>
     /// <param name="s">The source <see cref="Stream"/> to read from.</param>
     /// <param name="length">The number of bytes to read from the stream.</param>
     /// <param name="raiseException">
     /// If <see langword="true"/> and fewer than <paramref name="length"/> bytes could be read,
     /// throws an <see cref="EndOfStreamException"/>.
+    /// If <see langword="false"/>, returns only the bytes that were actually read.
     /// </param>
     /// <returns>
-    /// A byte array containing up to <paramref name="length"/> bytes read from the stream.  
-    /// If <paramref name="raiseException"/> is <see langword="false"/> and the stream ends, 
-    /// the returned array might be partially uninitialized for the remainder.
+    /// A byte array of exactly <paramref name="length"/> bytes when successful, or a shorter array
+    /// when <paramref name="raiseException"/> is <see langword="false"/> and the stream ends early.
     /// </returns>
     /// <exception cref="EndOfStreamException">
-    /// Thrown if <paramref name="raiseException"/> is <see langword="true"/> and the stream ends before 
+    /// Thrown if <paramref name="raiseException"/> is <see langword="true"/> and the stream ends before
     /// <paramref name="length"/> bytes could be read.
     /// </exception>
     public static byte[] ReadBytes(this Stream s, int length, bool raiseException = false)
@@ -38,10 +40,10 @@ public static class StreamUtils
             int bytesRead = s.Read(buffer, totalRead, length - totalRead);
             if (bytesRead == 0)
             {
-                // No more data available (EOF)
                 if (raiseException)
                     throw new EndOfStreamException($"Could not read the requested {length} bytes from the stream.");
-                break;
+                // Return only the bytes actually read — no zero-padding
+                return buffer[..totalRead];
             }
             totalRead += bytesRead;
         }
@@ -53,21 +55,25 @@ public static class StreamUtils
     /// and returns it as a byte array.
     /// </summary>
     /// <param name="s">The source <see cref="Stream"/> to read from.</param>
-    /// <returns>A byte array containing the entire remaining content of the stream.</returns>
-    public static byte[] ReadToEnd(this Stream s)
+    /// <param name="maxBytes">
+    /// Optional maximum number of bytes to read. Throws <see cref="InvalidOperationException"/>
+    /// if the stream contains more data than this limit. <see langword="null"/> means no limit.
+    /// </param>
+    /// <exception cref="InvalidOperationException">Thrown when <paramref name="maxBytes"/> is exceeded.</exception>
+    public static byte[] ReadToEnd(this Stream s, int? maxBytes = null)
     {
         const int bufferSize = 4096;
         byte[] buffer = new byte[bufferSize];
 
-        using (var ms = new MemoryStream())
+        using var ms = new MemoryStream();
+        int bytesRead;
+        while ((bytesRead = s.Read(buffer, 0, buffer.Length)) > 0)
         {
-            int bytesRead;
-            while ((bytesRead = s.Read(buffer, 0, buffer.Length)) > 0)
-            {
-                ms.Write(buffer, 0, bytesRead);
-            }
-            return ms.ToArray();
+            if (maxBytes.HasValue && ms.Length + bytesRead > maxBytes.Value)
+                throw new InvalidOperationException($"Stream exceeds the maximum allowed size of {maxBytes.Value} bytes.");
+            ms.Write(buffer, 0, bytesRead);
         }
+        return ms.ToArray();
     }
 
     /// <summary>
@@ -81,6 +87,7 @@ public static class StreamUtils
     {
         if (source == null) throw new ArgumentNullException(nameof(source));
         if (destination == null) throw new ArgumentNullException(nameof(destination));
+        if (bufferSize <= 0) throw new ArgumentOutOfRangeException(nameof(bufferSize), "Buffer size must be positive.");
         if (!source.CanRead) throw new NotSupportedException("Source stream is not readable.");
         if (!destination.CanWrite) throw new NotSupportedException("Destination stream is not writable.");
 

@@ -225,14 +225,14 @@ public class CMapFormat4 : CMapFormatBase
     }
 
     /// <inheritdoc/>
-    public override short Length
+    public override int Length
     {
         get
         {
             int num = 16;
             num += segments.Count * 8;
             num += segments.Sum(s => s.Length);
-            return (short)num;
+            return num;
         }
     }
 
@@ -328,7 +328,7 @@ public class CMapFormat4 : CMapFormatBase
             int size = endCodes[i] - startCodes[i] + 1;
             data.Push();
             data.Seek(offset, SeekOrigin.Begin);
-            var map = data.ReadArray<short>(size, true);
+            var map = data.ReadArray<short>(size);
             data.Pop();
             AddSegment((char)startCodes[i], (char)endCodes[i], map);
         }
@@ -338,7 +338,7 @@ public class CMapFormat4 : CMapFormatBase
     public override void WriteData(Writer data)
     {
         data.Write<Int16>(Format);
-        data.Write<Int16>(Length);
+        data.Write<UInt16>((ushort)Length);
         data.Write<Int16>(Language);
         // segCountX2 stores 2 * segCount, not segCount / 2.
         data.Write<Int16>((short)(SegmentCount << 1));
