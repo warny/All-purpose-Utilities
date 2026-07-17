@@ -116,10 +116,17 @@ control is provided; if multiple threads write concurrently, external locking ma
 Calling <a class="xref" href="Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_Write_System_Byte___System_Int32_System_Int32_">Write(byte[], int, int)</a> will broadcast the provided data to all
 underlying streams in the targets collection.</p>
 <remarks>
+<b>Best-effort fan-out:</b> <a class="xref" href="Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_Write_System_Byte___System_Int32_System_Int32_">Write(byte[], int, int)</a> and <a class="xref" href="Utils.IO.StreamCopier.html#Utils_IO_StreamCopier_Flush">Flush()</a> attempt the operation
+on every target stream even if earlier ones throw. All exceptions are collected and rethrown as
+an <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.aggregateexception">AggregateException</a> so no target is silently skipped.
+This means targets that were reached before a failure already hold the written data while later
+ones may not — callers that need strict all-or-nothing semantics must manage this externally.
+<p>
 By default, disposing this object does not dispose any of the contained streams. If the
 parameter <span class="xref">closeAllTargetsOnDispose</span> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when constructing
 this class, all target streams will be disposed when <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.idisposable.dispose">Dispose()</a>
 is called.
+</p>
 </remarks>
 </dd>
     </dl>
@@ -136,11 +143,18 @@ internal buffer. When <a class="xref" href="Utils.IO.StreamValidator.html#Utils_
 flushed into the underlying target stream. If <a class="xref" href="Utils.IO.StreamValidator.html#Utils_IO_StreamValidator_Discard">Discard()</a> is called,
 the buffered data is discarded without being written to the target.</p>
 <remarks>
-This class does not support reading or seeking. After you finish all writes, 
-you can either commit them by calling <a class="xref" href="Utils.IO.StreamValidator.html#Utils_IO_StreamValidator_Validate">Validate()</a> or discard them 
-via <a class="xref" href="Utils.IO.StreamValidator.html#Utils_IO_StreamValidator_Discard">Discard()</a>. The underlying stream is not closed or disposed 
-automatically when this stream is disposed (override <a class="xref" href="Utils.IO.StreamValidator.html#Utils_IO_StreamValidator_Dispose_System_Boolean_">Dispose(bool)</a> 
-if you need that behavior).
+<p>This class does not support reading or seeking.</p>
+<p><b>Atomicity:</b> <a class="xref" href="Utils.IO.StreamValidator.html#Utils_IO_StreamValidator_Validate">Validate()</a> is not atomic. If the underlying
+target throws mid-write, some bytes may already have been written.
+For seekable targets, only the stream <em>position</em> is restored on failure;
+the content and length of the target may already have been partially modified.
+The internal buffer is preserved after a failed <a class="xref" href="Utils.IO.StreamValidator.html#Utils_IO_StreamValidator_Validate">Validate()</a> so the
+caller can decide whether to call <a class="xref" href="Utils.IO.StreamValidator.html#Utils_IO_StreamValidator_Discard">Discard()</a> or to retry (bearing in
+mind that the target content is in an indeterminate state after a partial write).
+For non-seekable targets a partial write is irrecoverable; callers should treat
+the target as corrupted if <a class="xref" href="Utils.IO.StreamValidator.html#Utils_IO_StreamValidator_Validate">Validate()</a> throws.</p>
+<p>The underlying stream is not closed or disposed automatically when this
+stream is disposed.</p>
 </remarks>
 </dd>
     </dl>

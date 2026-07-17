@@ -96,7 +96,10 @@ Classes
 </h3>
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.IO.BaseEncoding.BaseDecoderStream.html">BaseDecoderStream</a></dt>
-      <dd><p>Writes base-encoded characters and produces binary output to an underlying <a class="xref" href="Utils.IO.BaseEncoding.BaseDecoderStream.html#Utils_IO_BaseEncoding_BaseDecoderStream_Stream">Stream</a>.</p>
+      <dd><p>Writes base-encoded characters and produces binary output to an underlying <a class="xref" href="Utils.IO.BaseEncoding.BaseDecoderStream.html#Utils_IO_BaseEncoding_BaseDecoderStream_Stream">Stream</a>.
+By default the decoder operates in strict mode: characters outside the alphabet, misplaced
+padding and incomplete symbol groups are rejected. Pass <code class="paramref">strict</code> = false
+to revert to the original permissive behaviour.</p>
 </dd>
     </dl>
     <dl class="jumplist">

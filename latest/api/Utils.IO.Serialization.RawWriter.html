@@ -383,7 +383,7 @@ Each method writes a value using the supplied <a class="xref" href="Utils.IO.Ser
 
   <h3 id="Utils_IO_Serialization_RawWriter_WriteBool_Utils_IO_Serialization_IWriter_System_Boolean_" data-uid="Utils.IO.Serialization.RawWriter.WriteBool(Utils.IO.Serialization.IWriter,System.Boolean)">
   WriteBool(IWriter, bool)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/RawWriter.cs/#L214"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/RawWriter.cs/#L223"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Writes a boolean value.</p>
@@ -524,7 +524,7 @@ Each method writes a value using the supplied <a class="xref" href="Utils.IO.Ser
   <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/RawWriter.cs/#L191"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Writes a single character.</p>
+  <div class="markdown level1 summary"><p>Writes a single character as a 2-byte UTF-16 code unit, respecting <a class="xref" href="Utils.IO.Serialization.RawWriter.html#Utils_IO_Serialization_RawWriter_BigEndian">BigEndian</a>.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -589,7 +589,7 @@ Each method writes a value using the supplied <a class="xref" href="Utils.IO.Ser
 
   <h3 id="Utils_IO_Serialization_RawWriter_WriteDate_Utils_IO_Serialization_IWriter_System_DateOnly_" data-uid="Utils.IO.Serialization.RawWriter.WriteDate(Utils.IO.Serialization.IWriter,System.DateOnly)">
   WriteDate(IWriter, DateOnly)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/RawWriter.cs/#L205"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/RawWriter.cs/#L214"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Writes a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.dateonly">DateOnly</a> value.</p>
@@ -623,7 +623,7 @@ Each method writes a value using the supplied <a class="xref" href="Utils.IO.Ser
 
   <h3 id="Utils_IO_Serialization_RawWriter_WriteDateTime_Utils_IO_Serialization_IWriter_System_DateTime_" data-uid="Utils.IO.Serialization.RawWriter.WriteDateTime(Utils.IO.Serialization.IWriter,System.DateTime)">
   WriteDateTime(IWriter, DateTime)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/RawWriter.cs/#L199"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/RawWriter.cs/#L208"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Writes a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a> value.</p>
@@ -725,7 +725,7 @@ Each method writes a value using the supplied <a class="xref" href="Utils.IO.Ser
 
   <h3 id="Utils_IO_Serialization_RawWriter_WriteGuid_Utils_IO_Serialization_IWriter_System_Guid_" data-uid="Utils.IO.Serialization.RawWriter.WriteGuid(Utils.IO.Serialization.IWriter,System.Guid)">
   WriteGuid(IWriter, Guid)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/RawWriter.cs/#L211"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/RawWriter.cs/#L220"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Writes a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.guid">Guid</a>.</p>
@@ -1042,7 +1042,7 @@ Each method writes a value using the supplied <a class="xref" href="Utils.IO.Ser
   <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/RawWriter.cs/#L183"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Writes a string prefixed with its length.</p>
+  <div class="markdown level1 summary"><p>Writes a string prefixed with its encoded byte-length as a 32-bit integer.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -1073,7 +1073,7 @@ Each method writes a value using the supplied <a class="xref" href="Utils.IO.Ser
 
   <h3 id="Utils_IO_Serialization_RawWriter_WriteTime_Utils_IO_Serialization_IWriter_System_TimeOnly_" data-uid="Utils.IO.Serialization.RawWriter.WriteTime(Utils.IO.Serialization.IWriter,System.TimeOnly)">
   WriteTime(IWriter, TimeOnly)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/RawWriter.cs/#L202"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/RawWriter.cs/#L211"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Writes a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.timeonly">TimeOnly</a> value.</p>
@@ -1107,10 +1107,10 @@ Each method writes a value using the supplied <a class="xref" href="Utils.IO.Ser
 
   <h3 id="Utils_IO_Serialization_RawWriter_WriteTimeSpan_Utils_IO_Serialization_IWriter_System_TimeSpan_" data-uid="Utils.IO.Serialization.RawWriter.WriteTimeSpan(Utils.IO.Serialization.IWriter,System.TimeSpan)">
   WriteTimeSpan(IWriter, TimeSpan)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/RawWriter.cs/#L208"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/RawWriter.cs/#L217"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Writes a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.timespan">TimeSpan</a> value.</p>
+  <div class="markdown level1 summary"><p>Writes a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.timespan">TimeSpan</a> value as a 64-bit tick count.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 

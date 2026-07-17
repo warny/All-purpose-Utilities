@@ -155,17 +155,17 @@ Class ReaderWriterExtensions  <a class="header-action link-secondary" title="Vie
 
   <a id="Utils_IO_Serialization_ReaderWriterExtensions_ReadArray_" data-uid="Utils.IO.Serialization.ReaderWriterExtensions.ReadArray*"></a>
 
-  <h3 id="Utils_IO_Serialization_ReaderWriterExtensions_ReadArray__1_Utils_IO_Serialization_Reader_System_Int32_System_Boolean_" data-uid="Utils.IO.Serialization.ReaderWriterExtensions.ReadArray``1(Utils.IO.Serialization.Reader,System.Int32,System.Boolean)">
-  ReadArray&lt;T&gt;(Reader, int, bool)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriterExtensions.cs/#L49"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_IO_Serialization_ReaderWriterExtensions_ReadArray__1_Utils_IO_Serialization_Reader_System_Int32_" data-uid="Utils.IO.Serialization.ReaderWriterExtensions.ReadArray``1(Utils.IO.Serialization.Reader,System.Int32)">
+  ReadArray&lt;T&gt;(Reader, int)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriterExtensions.cs/#L48"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Reads an array of values from the reader.</p>
+  <div class="markdown level1 summary"><p>Reads an array of values from the reader using the reader's configured endianness.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static T[] ReadArray&lt;T&gt;(this Reader reader, int count, bool bigEndian = false)</code></pre>
+    <pre><code class="lang-csharp hljs">public static T[] ReadArray&lt;T&gt;(this Reader reader, int count)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
@@ -175,9 +175,6 @@ Class ReaderWriterExtensions  <a class="header-action link-secondary" title="Vie
 </dd>
     <dt><code>count</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
     <dd><p>Number of elements to read.</p>
-</dd>
-    <dt><code>bigEndian</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
-    <dd><p>Whether numeric values are stored in big-endian order.</p>
 </dd>
   </dl>
 
@@ -252,7 +249,7 @@ Class ReaderWriterExtensions  <a class="header-action link-secondary" title="Vie
 
   <h3 id="Utils_IO_Serialization_ReaderWriterExtensions_ReadSLEB128_Utils_IO_Serialization_IReader_" data-uid="Utils.IO.Serialization.ReaderWriterExtensions.ReadSLEB128(Utils.IO.Serialization.IReader)">
   ReadSLEB128(IReader)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriterExtensions.cs/#L116"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriterExtensions.cs/#L98"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads a signed LEB128-encoded integer from the reader.</p>
@@ -297,7 +294,7 @@ Class ReaderWriterExtensions  <a class="header-action link-secondary" title="Vie
 
   <h3 id="Utils_IO_Serialization_ReaderWriterExtensions_ReadULEB128_Utils_IO_Serialization_IReader_" data-uid="Utils.IO.Serialization.ReaderWriterExtensions.ReadULEB128(Utils.IO.Serialization.IReader)">
   ReadULEB128(IReader)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriterExtensions.cs/#L94"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriterExtensions.cs/#L76"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads an unsigned LEB128-encoded integer from the reader.</p>
@@ -386,7 +383,7 @@ Class ReaderWriterExtensions  <a class="header-action link-secondary" title="Vie
 
   <h3 id="Utils_IO_Serialization_ReaderWriterExtensions_WriteFixedLengthString_Utils_IO_Serialization_Writer_System_String_System_Int32_System_Text_Encoding_" data-uid="Utils.IO.Serialization.ReaderWriterExtensions.WriteFixedLengthString(Utils.IO.Serialization.Writer,System.String,System.Int32,System.Text.Encoding)">
   WriteFixedLengthString(Writer, string, int, Encoding)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriterExtensions.cs/#L81"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriterExtensions.cs/#L63"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Writes a fixed-length string using the provided encoding. The string is padded with zero bytes if necessary.</p>
@@ -428,7 +425,7 @@ Class ReaderWriterExtensions  <a class="header-action link-secondary" title="Vie
 
   <h3 id="Utils_IO_Serialization_ReaderWriterExtensions_WriteSLEB128_Utils_IO_Serialization_IWriter_System_Int64_" data-uid="Utils.IO.Serialization.ReaderWriterExtensions.WriteSLEB128(Utils.IO.Serialization.IWriter,System.Int64)">
   WriteSLEB128(IWriter, long)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriterExtensions.cs/#L156"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriterExtensions.cs/#L138"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Writes a signed LEB128-encoded integer to the writer.</p>
@@ -464,7 +461,7 @@ Class ReaderWriterExtensions  <a class="header-action link-secondary" title="Vie
 
   <h3 id="Utils_IO_Serialization_ReaderWriterExtensions_WriteULEB128_Utils_IO_Serialization_IWriter_System_UInt64_" data-uid="Utils.IO.Serialization.ReaderWriterExtensions.WriteULEB128(Utils.IO.Serialization.IWriter,System.UInt64)">
   WriteULEB128(IWriter, ulong)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriterExtensions.cs/#L139"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriterExtensions.cs/#L121"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Writes an unsigned LEB128-encoded integer to the writer.</p>
@@ -498,17 +495,17 @@ Class ReaderWriterExtensions  <a class="header-action link-secondary" title="Vie
 
   <a id="Utils_IO_Serialization_ReaderWriterExtensions_WriteVariableLengthString_" data-uid="Utils.IO.Serialization.ReaderWriterExtensions.WriteVariableLengthString*"></a>
 
-  <h3 id="Utils_IO_Serialization_ReaderWriterExtensions_WriteVariableLengthString_Utils_IO_Serialization_Writer_System_String_System_Text_Encoding_System_Boolean_System_Int32_" data-uid="Utils.IO.Serialization.ReaderWriterExtensions.WriteVariableLengthString(Utils.IO.Serialization.Writer,System.String,System.Text.Encoding,System.Boolean,System.Int32)">
-  WriteVariableLengthString(Writer, string, Encoding, bool, int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriterExtensions.cs/#L178"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_IO_Serialization_ReaderWriterExtensions_WriteVariableLengthString_Utils_IO_Serialization_Writer_System_String_System_Text_Encoding_System_Int32_" data-uid="Utils.IO.Serialization.ReaderWriterExtensions.WriteVariableLengthString(Utils.IO.Serialization.Writer,System.String,System.Text.Encoding,System.Int32)">
+  WriteVariableLengthString(Writer, string, Encoding, int)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/Serialization/ReaderWriterExtensions.cs/#L159"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Writes a length-prefixed string to the writer.</p>
+  <div class="markdown level1 summary"><p>Writes a length-prefixed string to the writer using the writer's configured endianness.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static void WriteVariableLengthString(this Writer writer, string value, Encoding encoding, bool bigEndian = false, int sizeLength = 4)</code></pre>
+    <pre><code class="lang-csharp hljs">public static void WriteVariableLengthString(this Writer writer, string value, Encoding encoding, int sizeLength = 4)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
@@ -522,11 +519,8 @@ Class ReaderWriterExtensions  <a class="header-action link-secondary" title="Vie
     <dt><code>encoding</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.text.encoding">Encoding</a></dt>
     <dd><p>Encoding of the string.</p>
 </dd>
-    <dt><code>bigEndian</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
-    <dd><p>Whether the length is stored in big-endian order.</p>
-</dd>
     <dt><code>sizeLength</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
-    <dd><p>Number of bytes used to store the length.</p>
+    <dd><p>Number of bytes used to store the length prefix (1, 2, or 4).</p>
 </dd>
   </dl>
 

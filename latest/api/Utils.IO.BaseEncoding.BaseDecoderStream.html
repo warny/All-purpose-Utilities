@@ -6,7 +6,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="title" content="Class BaseDecoderStream | omy.Utils Documentation ">
       
-      <meta name="description" content="Writes base-encoded characters and produces binary output to an underlying .">
+      <meta name="description" content="Writes base-encoded characters and produces binary output to an underlying . By default the decoder operates in strict mode: characters outside the alphabet, misplaced padding and incomplete symbol groups are rejected. Pass strict = false to revert to the original permissive behaviour.">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_IO_BaseEncoding_BaseDecoderStream" data-uid="Utils.IO.BaseEncoding.BaseDecoderStream" class="text-break">
-Class BaseDecoderStream  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseDecoderStream.cs/#L12"><i class="bi bi-code-slash"></i></a>
+Class BaseDecoderStream  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseDecoderStream.cs/#L16"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -97,7 +97,10 @@ Class BaseDecoderStream  <a class="header-action link-secondary" title="View sou
   <dl><dt>Assembly</dt><dd>Utils.IO.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Writes base-encoded characters and produces binary output to an underlying <a class="xref" href="Utils.IO.BaseEncoding.BaseDecoderStream.html#Utils_IO_BaseEncoding_BaseDecoderStream_Stream">Stream</a>.</p>
+  <div class="markdown summary"><p>Writes base-encoded characters and produces binary output to an underlying <a class="xref" href="Utils.IO.BaseEncoding.BaseDecoderStream.html#Utils_IO_BaseEncoding_BaseDecoderStream_Stream">Stream</a>.
+By default the decoder operates in strict mode: characters outside the alphabet, misplaced
+padding and incomplete symbol groups are rejected. Pass <code class="paramref">strict</code> = false
+to revert to the original permissive behaviour.</p>
 </div>
   <div class="markdown conceptual"></div>
 
@@ -447,9 +450,9 @@ Class BaseDecoderStream  <a class="header-action link-secondary" title="View sou
 
   <a id="Utils_IO_BaseEncoding_BaseDecoderStream__ctor_" data-uid="Utils.IO.BaseEncoding.BaseDecoderStream.#ctor*"></a>
 
-  <h3 id="Utils_IO_BaseEncoding_BaseDecoderStream__ctor_System_IO_Stream_Utils_IO_BaseEncoding_IBaseDescriptor_" data-uid="Utils.IO.BaseEncoding.BaseDecoderStream.#ctor(System.IO.Stream,Utils.IO.BaseEncoding.IBaseDescriptor)">
-  BaseDecoderStream(Stream, IBaseDescriptor)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseDecoderStream.cs/#L39"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_IO_BaseEncoding_BaseDecoderStream__ctor_System_IO_Stream_Utils_IO_BaseEncoding_IBaseDescriptor_System_Boolean_" data-uid="Utils.IO.BaseEncoding.BaseDecoderStream.#ctor(System.IO.Stream,Utils.IO.BaseEncoding.IBaseDescriptor,System.Boolean)">
+  BaseDecoderStream(Stream, IBaseDescriptor, bool)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseDecoderStream.cs/#L48"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.IO.BaseEncoding.BaseDecoderStream.html">BaseDecoderStream</a> class.</p>
@@ -457,7 +460,7 @@ Class BaseDecoderStream  <a class="header-action link-secondary" title="View sou
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public BaseDecoderStream(Stream stream, IBaseDescriptor baseDescriptor)</code></pre>
+    <pre><code class="lang-csharp hljs">public BaseDecoderStream(Stream stream, IBaseDescriptor baseDescriptor, bool strict = true)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
@@ -467,6 +470,10 @@ Class BaseDecoderStream  <a class="header-action link-secondary" title="View sou
 </dd>
     <dt><code>baseDescriptor</code> <a class="xref" href="Utils.IO.BaseEncoding.IBaseDescriptor.html">IBaseDescriptor</a></dt>
     <dd><p>Descriptor defining the base alphabet.</p>
+</dd>
+    <dt><code>strict</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p>When <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> (default), malformed input throws <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.formatexception">FormatException</a>.
+When <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>, filler characters are silently ignored everywhere (legacy behaviour).</p>
 </dd>
   </dl>
 
@@ -521,7 +528,7 @@ Class BaseDecoderStream  <a class="header-action link-secondary" title="View sou
 
   <h3 id="Utils_IO_BaseEncoding_BaseDecoderStream_Encoding" data-uid="Utils.IO.BaseEncoding.BaseDecoderStream.Encoding">
   Encoding
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseDecoderStream.cs/#L27"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseDecoderStream.cs/#L28"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>When overridden in a derived class, returns the character encoding in which the output is written.</p>
@@ -554,7 +561,7 @@ Class BaseDecoderStream  <a class="header-action link-secondary" title="View sou
 
   <h3 id="Utils_IO_BaseEncoding_BaseDecoderStream_Stream" data-uid="Utils.IO.BaseEncoding.BaseDecoderStream.Stream">
   Stream
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseDecoderStream.cs/#L17"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseDecoderStream.cs/#L19"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the target binary stream.</p>
@@ -590,10 +597,14 @@ Class BaseDecoderStream  <a class="header-action link-secondary" title="View sou
 
   <h3 id="Utils_IO_BaseEncoding_BaseDecoderStream_Close" data-uid="Utils.IO.BaseEncoding.BaseDecoderStream.Close">
   Close()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseDecoderStream.cs/#L78"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseDecoderStream.cs/#L128"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Finalizes the decoding process and flushes remaining bits.</p>
+  <div class="markdown level1 summary"><p>Finalizes the decoding process and flushes remaining bits.
+After the first call (successful or not) the instance is permanently condemned:
+any subsequent <a class="xref" href="Utils.IO.BaseEncoding.BaseDecoderStream.html#Utils_IO_BaseEncoding_BaseDecoderStream_Write_System_Char_">Write(char)</a> call throws <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.objectdisposedexception">ObjectDisposedException</a>.
+A second call to <a class="xref" href="Utils.IO.BaseEncoding.BaseDecoderStream.html#Utils_IO_BaseEncoding_BaseDecoderStream_Close">Close()</a> is always a no-op.
+TextWriter resources are released even when a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.formatexception">FormatException</a> is thrown.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -610,6 +621,13 @@ Class BaseDecoderStream  <a class="header-action link-secondary" title="View sou
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.formatexception">FormatException</a></dt>
+    <dd><p>Thrown in strict mode when the input length is incomplete, trailing bits are non-zero,
+or the padding count does not match the expected value.</p>
+</dd>
+  </dl>
 
 
 
@@ -617,7 +635,7 @@ Class BaseDecoderStream  <a class="header-action link-secondary" title="View sou
 
   <h3 id="Utils_IO_BaseEncoding_BaseDecoderStream_Flush" data-uid="Utils.IO.BaseEncoding.BaseDecoderStream.Flush">
   Flush()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseDecoderStream.cs/#L96"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseDecoderStream.cs/#L192"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Clears all buffers for the current writer and causes any buffered data to be written to the underlying device.</p>
@@ -644,7 +662,7 @@ Class BaseDecoderStream  <a class="header-action link-secondary" title="View sou
 
   <h3 id="Utils_IO_BaseEncoding_BaseDecoderStream_Write_System_Char_" data-uid="Utils.IO.BaseEncoding.BaseDecoderStream.Write(System.Char)">
   Write(char)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseDecoderStream.cs/#L53"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseDecoderStream.cs/#L68"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Writes a single base character to the decoder.</p>
@@ -670,6 +688,16 @@ Class BaseDecoderStream  <a class="header-action link-secondary" title="View sou
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.objectdisposedexception">ObjectDisposedException</a></dt>
+    <dd><p>Thrown when writing after the decoder is closed.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.formatexception">FormatException</a></dt>
+    <dd><p>Thrown in strict mode when <code class="paramref">value</code> is not a valid alphabet character,
+or padding appears in an illegal position.</p>
+</dd>
+  </dl>
 
 
 
@@ -677,7 +705,7 @@ Class BaseDecoderStream  <a class="header-action link-secondary" title="View sou
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseDecoderStream.cs/#L12" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/BaseEncoding/BaseDecoderStream.cs/#L16" class="edit-link">Edit this page</a>
         </div>
 
 

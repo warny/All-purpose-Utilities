@@ -157,7 +157,7 @@ Class StreamUtils  <a class="header-action link-secondary" title="View source" h
 
   <h3 id="Utils_IO_StreamUtils_CopyToStream_System_IO_Stream_System_IO_Stream_System_Int32_" data-uid="Utils.IO.StreamUtils.CopyToStream(System.IO.Stream,System.IO.Stream,System.Int32)">
   CopyToStream(Stream, Stream, int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamUtils.cs/#L80"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamUtils.cs/#L86"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Copies all remaining data from the current <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a> to the specified
@@ -197,7 +197,7 @@ destination <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.
 
   <h3 id="Utils_IO_StreamUtils_ReadAllText_System_IO_Stream_System_Text_Encoding_" data-uid="Utils.IO.StreamUtils.ReadAllText(System.IO.Stream,System.Text.Encoding)">
   ReadAllText(Stream, Encoding)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamUtils.cs/#L118"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamUtils.cs/#L125"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads all remaining bytes from the given <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a> as text
@@ -240,7 +240,7 @@ using the specified <a class="xref" href="https://learn.microsoft.com/dotnet/api
 
   <h3 id="Utils_IO_StreamUtils_ReadBlock_System_IO_Stream_System_Byte___" data-uid="Utils.IO.StreamUtils.ReadBlock(System.IO.Stream,System.Byte[])">
   ReadBlock(Stream, byte[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamUtils.cs/#L206"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamUtils.cs/#L213"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads and returns the next &quot;block&quot; from the stream, delimited by the specified byte sequence.
@@ -295,11 +295,13 @@ If EOF is reached before finding the delimiter, returns all remaining data (whic
 
   <h3 id="Utils_IO_StreamUtils_ReadBytes_System_IO_Stream_System_Int32_System_Boolean_" data-uid="Utils.IO.StreamUtils.ReadBytes(System.IO.Stream,System.Int32,System.Boolean)">
   ReadBytes(Stream, int, bool)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamUtils.cs/#L32"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamUtils.cs/#L34"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads exactly <code class="paramref">length</code> bytes from the given <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a>
-and returns them in a byte array.</p>
+and returns them in a byte array.
+When <code class="paramref">raiseException</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> and the stream ends early,
+only the bytes actually read are returned (no zero-padding).</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -317,16 +319,16 @@ and returns them in a byte array.</p>
 </dd>
     <dt><code>raiseException</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
     <dd><p>If <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> and fewer than <code class="paramref">length</code> bytes could be read,
-throws an <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.endofstreamexception">EndOfStreamException</a>.</p>
+throws an <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.endofstreamexception">EndOfStreamException</a>.
+If <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>, returns only the bytes that were actually read.</p>
 </dd>
   </dl>
 
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
-    <dd><p>A byte array containing up to <code class="paramref">length</code> bytes read from the stream.<br>
-If <code class="paramref">raiseException</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> and the stream ends,
-the returned array might be partially uninitialized for the remainder.</p>
+    <dd><p>A byte array of exactly <code class="paramref">length</code> bytes when successful, or a shorter array
+when <code class="paramref">raiseException</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> and the stream ends early.</p>
 </dd>
   </dl>
 
@@ -351,7 +353,7 @@ the returned array might be partially uninitialized for the remainder.</p>
 
   <h3 id="Utils_IO_StreamUtils_ReadLines_System_IO_Stream_System_Text_Encoding_" data-uid="Utils.IO.StreamUtils.ReadLines(System.IO.Stream,System.Text.Encoding)">
   ReadLines(Stream, Encoding)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamUtils.cs/#L172"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamUtils.cs/#L179"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads line-by-line from a text-based stream until EOF.
@@ -393,9 +395,9 @@ The stream is read lazily; re-iterating this enumerable will not re-read the str
 
   <a id="Utils_IO_StreamUtils_ReadToEnd_" data-uid="Utils.IO.StreamUtils.ReadToEnd*"></a>
 
-  <h3 id="Utils_IO_StreamUtils_ReadToEnd_System_IO_Stream_" data-uid="Utils.IO.StreamUtils.ReadToEnd(System.IO.Stream)">
-  ReadToEnd(Stream)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamUtils.cs/#L57"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_IO_StreamUtils_ReadToEnd_System_IO_Stream_System_Nullable_System_Int32__" data-uid="Utils.IO.StreamUtils.ReadToEnd(System.IO.Stream,System.Nullable{System.Int32})">
+  ReadToEnd(Stream, int?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamUtils.cs/#L63"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads all remaining data from the given <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a> until EOF
@@ -404,7 +406,7 @@ and returns it as a byte array.</p>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static byte[] ReadToEnd(this Stream s)</code></pre>
+    <pre><code class="lang-csharp hljs">public static byte[] ReadToEnd(this Stream s, int? maxBytes = null)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
@@ -412,13 +414,16 @@ and returns it as a byte array.</p>
     <dt><code>s</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a></dt>
     <dd><p>The source <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a> to read from.</p>
 </dd>
+    <dt><code>maxBytes</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a>?</dt>
+    <dd><p>Optional maximum number of bytes to read. Throws <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a>
+if the stream contains more data than this limit. <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> means no limit.</p>
+</dd>
   </dl>
 
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
-    <dd><p>A byte array containing the entire remaining content of the stream.</p>
-</dd>
+    <dd></dd>
   </dl>
 
 
@@ -428,6 +433,12 @@ and returns it as a byte array.</p>
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a></dt>
+    <dd><p>Thrown when <code class="paramref">maxBytes</code> is exceeded.</p>
+</dd>
+  </dl>
 
 
 
@@ -435,7 +446,7 @@ and returns it as a byte array.</p>
 
   <h3 id="Utils_IO_StreamUtils_ReadToMemoryStream_System_IO_Stream_" data-uid="Utils.IO.StreamUtils.ReadToMemoryStream(System.IO.Stream)">
   ReadToMemoryStream(Stream)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamUtils.cs/#L101"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamUtils.cs/#L108"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads all remaining data from the current <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a>
@@ -475,7 +486,7 @@ and returns a new <a class="xref" href="https://learn.microsoft.com/dotnet/api/s
 
   <h3 id="Utils_IO_StreamUtils_WriteAllText_System_IO_Stream_System_String_System_Text_Encoding_" data-uid="Utils.IO.StreamUtils.WriteAllText(System.IO.Stream,System.String,System.Text.Encoding)">
   WriteAllText(Stream, string, Encoding)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamUtils.cs/#L148"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamUtils.cs/#L155"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Writes the specified text to the stream using the given <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.text.encoding">Encoding</a>.</p>
@@ -514,7 +525,7 @@ and returns a new <a class="xref" href="https://learn.microsoft.com/dotnet/api/s
 
   <h3 id="Utils_IO_StreamUtils_WriteBytes_System_IO_Stream_System_Byte___" data-uid="Utils.IO.StreamUtils.WriteBytes(System.IO.Stream,System.Byte[])">
   WriteBytes(Stream, byte[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamUtils.cs/#L132"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.IO/IO/StreamUtils.cs/#L139"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Writes the specified data to the stream.</p>

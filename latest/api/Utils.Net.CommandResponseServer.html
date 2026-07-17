@@ -291,7 +291,7 @@ Class CommandResponseServer  <a class="header-action link-secondary" title="View
 
   <h3 id="Utils_Net_CommandResponseServer_Completion" data-uid="Utils.Net.CommandResponseServer.Completion">
   Completion
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L181"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L192"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a task that completes when the server stops processing commands.</p>
@@ -460,7 +460,7 @@ Default is 8192 bytes (8 KiB).</p>
 
   <h3 id="Utils_Net_CommandResponseServer_AddContext_System_String_" data-uid="Utils.Net.CommandResponseServer.AddContext(System.String)">
   AddContext(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L101"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L112"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Adds a context to the server.</p>
@@ -493,7 +493,7 @@ Default is 8192 bytes (8 KiB).</p>
 
   <h3 id="Utils_Net_CommandResponseServer_CloseAfterResponse" data-uid="Utils.Net.CommandResponseServer.CloseAfterResponse">
   CloseAfterResponse()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L176"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L187"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Requests that the server close the connection after the current response has been sent.
@@ -529,7 +529,7 @@ response before it reaches the client.</p>
 
   <h3 id="Utils_Net_CommandResponseServer_Dispose" data-uid="Utils.Net.CommandResponseServer.Dispose">
   Dispose()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L431"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L442"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Releases server resources.</p>
@@ -556,7 +556,7 @@ response before it reaches the client.</p>
 
   <h3 id="Utils_Net_CommandResponseServer_HasContext_System_String_" data-uid="Utils.Net.CommandResponseServer.HasContext(System.String)">
   HasContext(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L122"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L133"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether the specified context is active.</p>
@@ -595,7 +595,7 @@ response before it reaches the client.</p>
 
   <h3 id="Utils_Net_CommandResponseServer_RedactLineForLog_System_String_" data-uid="Utils.Net.CommandResponseServer.RedactLineForLog(System.String)">
   RedactLineForLog(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L192"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L203"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns a loggable (redacted) representation of a line received from the client.
@@ -673,11 +673,50 @@ Override in a protocol-aware subclass to log more detail for lines that are know
 
 
 
+  <a id="Utils_Net_CommandResponseServer_RegisterCommand_" data-uid="Utils.Net.CommandResponseServer.RegisterCommand*"></a>
+
+  <h3 id="Utils_Net_CommandResponseServer_RegisterCommand_System_String_System_Func_Utils_Net_CommandContext_System_String___System_Threading_Tasks_Task_System_Collections_Generic_IEnumerable_Utils_Net_ServerResponse____System_String___" data-uid="Utils.Net.CommandResponseServer.RegisterCommand(System.String,System.Func{Utils.Net.CommandContext,System.String[],System.Threading.Tasks.Task{System.Collections.Generic.IEnumerable{Utils.Net.ServerResponse}}},System.String[])">
+  RegisterCommand(string, Func&lt;CommandContext, string[], Task&lt;IEnumerable&lt;ServerResponse&gt;&gt;&gt;, params string[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L103"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Registers a command handler (backward-compatible overload without cancellation token).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void RegisterCommand(string command, Func&lt;CommandContext, string[], Task&lt;IEnumerable&lt;ServerResponse&gt;&gt;&gt; handler, params string[] requiredContexts)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>command</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Command name.</p>
+</dd>
+    <dt><code>handler</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.func-3">Func</a>&lt;<a class="xref" href="Utils.Net.CommandContext.html">CommandContext</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>[], <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<a class="xref" href="Utils.Net.ServerResponse.html">ServerResponse</a>&gt;&gt;&gt;</dt>
+    <dd><p>Handler invoked when the command is received.</p>
+</dd>
+    <dt><code>requiredContexts</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>[]</dt>
+    <dd><p>Contexts required for the command to execute.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
   <a id="Utils_Net_CommandResponseServer_RemoveContext_" data-uid="Utils.Net.CommandResponseServer.RemoveContext*"></a>
 
   <h3 id="Utils_Net_CommandResponseServer_RemoveContext_System_String_" data-uid="Utils.Net.CommandResponseServer.RemoveContext(System.String)">
   RemoveContext(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L111"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L122"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Removes a context from the server.</p>
@@ -710,7 +749,7 @@ Override in a protocol-aware subclass to log more detail for lines that are know
 
   <h3 id="Utils_Net_CommandResponseServer_SendResponseAsync_Utils_Net_ServerResponse_" data-uid="Utils.Net.CommandResponseServer.SendResponseAsync(Utils.Net.ServerResponse)">
   SendResponseAsync(ServerResponse)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L219"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L230"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Sends an unsolicited response to the client.</p>
@@ -748,7 +787,7 @@ Override in a protocol-aware subclass to log more detail for lines that are know
 
   <h3 id="Utils_Net_CommandResponseServer_StartAsync_System_IO_Stream_System_Boolean_System_Threading_CancellationToken_" data-uid="Utils.Net.CommandResponseServer.StartAsync(System.IO.Stream,System.Boolean,System.Threading.CancellationToken)">
   StartAsync(Stream, bool, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L134"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L145"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Starts processing commands using the specified stream.</p>
