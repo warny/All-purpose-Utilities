@@ -254,7 +254,7 @@ Class CommandResponseServer  <a class="header-action link-secondary" title="View
 
   <h3 id="Utils_Net_CommandResponseServer__ctor_System_Func_Utils_Net_ServerResponse_System_String__" data-uid="Utils.Net.CommandResponseServer.#ctor(System.Func{Utils.Net.ServerResponse,System.String})">
   CommandResponseServer(Func&lt;ServerResponse, string&gt;?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L47"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L64"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Net.CommandResponseServer.html">CommandResponseServer</a> class.</p>
@@ -291,7 +291,7 @@ Class CommandResponseServer  <a class="header-action link-secondary" title="View
 
   <h3 id="Utils_Net_CommandResponseServer_Completion" data-uid="Utils.Net.CommandResponseServer.Completion">
   Completion
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L137"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L181"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a task that completes when the server stops processing commands.</p>
@@ -323,7 +323,7 @@ Class CommandResponseServer  <a class="header-action link-secondary" title="View
 
   <h3 id="Utils_Net_CommandResponseServer_Logger" data-uid="Utils.Net.CommandResponseServer.Logger">
   Logger
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L35"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L52"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the logger used to trace server activity.</p>
@@ -351,11 +351,45 @@ Class CommandResponseServer  <a class="header-action link-secondary" title="View
 
 
 
+  <a id="Utils_Net_CommandResponseServer_MaxCommandQueueDepth_" data-uid="Utils.Net.CommandResponseServer.MaxCommandQueueDepth*"></a>
+
+  <h3 id="Utils_Net_CommandResponseServer_MaxCommandQueueDepth" data-uid="Utils.Net.CommandResponseServer.MaxCommandQueueDepth">
+  MaxCommandQueueDepth
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L42"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the maximum number of commands that may wait in the command queue before
+the server closes the session to prevent unbounded memory consumption.
+Default is 1000. Set to 0 to disable.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int MaxCommandQueueDepth { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <a id="Utils_Net_CommandResponseServer_MaxConsecutiveErrors_" data-uid="Utils.Net.CommandResponseServer.MaxConsecutiveErrors*"></a>
 
   <h3 id="Utils_Net_CommandResponseServer_MaxConsecutiveErrors" data-uid="Utils.Net.CommandResponseServer.MaxConsecutiveErrors">
   MaxConsecutiveErrors
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L41"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L58"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the number of consecutive error responses allowed before the server shuts down.
@@ -384,6 +418,40 @@ A value of <code>0</code> disables automatic shutdown.</p>
 
 
 
+  <a id="Utils_Net_CommandResponseServer_MaxLineLength_" data-uid="Utils.Net.CommandResponseServer.MaxLineLength*"></a>
+
+  <h3 id="Utils_Net_CommandResponseServer_MaxLineLength" data-uid="Utils.Net.CommandResponseServer.MaxLineLength">
+  MaxLineLength
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L35"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the maximum number of bytes allowed in a single incoming command line.
+Lines longer than this limit cause the session to close with a 500 error.
+Default is 8192 bytes (8 KiB).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int MaxLineLength { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <h2 class="section" id="methods">Methods
 </h2>
 
@@ -392,7 +460,7 @@ A value of <code>0</code> disables automatic shutdown.</p>
 
   <h3 id="Utils_Net_CommandResponseServer_AddContext_System_String_" data-uid="Utils.Net.CommandResponseServer.AddContext(System.String)">
   AddContext(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L84"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L101"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Adds a context to the server.</p>
@@ -421,11 +489,47 @@ A value of <code>0</code> disables automatic shutdown.</p>
 
 
 
+  <a id="Utils_Net_CommandResponseServer_CloseAfterResponse_" data-uid="Utils.Net.CommandResponseServer.CloseAfterResponse*"></a>
+
+  <h3 id="Utils_Net_CommandResponseServer_CloseAfterResponse" data-uid="Utils.Net.CommandResponseServer.CloseAfterResponse">
+  CloseAfterResponse()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L176"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Requests that the server close the connection after the current response has been sent.
+Safe to call from within a command handler.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void CloseAfterResponse()</code></pre>
+  </div>
+
+
+
+
+
+
+
+
+
+  <h4 class="section" id="Utils_Net_CommandResponseServer_CloseAfterResponse_remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>The flag is checked in <code>ProcessQueueAsync</code> immediately after ALL response lines for
+the current command have been flushed to the stream. This guarantees the final response
+is received by the peer before the TCP session is torn down.
+Handlers must NOT call <a class="xref" href="Utils.Net.CommandResponseServer.html#Utils_Net_CommandResponseServer_Dispose">Dispose()</a> or cancel the listen token directly: those
+would race with <code>ProcessQueueAsync</code>'s write lock and risk dropping the in-flight
+response before it reaches the client.</p>
+</div>
+
+
+
+
   <a id="Utils_Net_CommandResponseServer_Dispose_" data-uid="Utils.Net.CommandResponseServer.Dispose*"></a>
 
   <h3 id="Utils_Net_CommandResponseServer_Dispose" data-uid="Utils.Net.CommandResponseServer.Dispose">
   Dispose()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L277"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L431"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Releases server resources.</p>
@@ -452,7 +556,7 @@ A value of <code>0</code> disables automatic shutdown.</p>
 
   <h3 id="Utils_Net_CommandResponseServer_HasContext_System_String_" data-uid="Utils.Net.CommandResponseServer.HasContext(System.String)">
   HasContext(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L105"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L122"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether the specified context is active.</p>
@@ -487,11 +591,54 @@ A value of <code>0</code> disables automatic shutdown.</p>
 
 
 
+  <a id="Utils_Net_CommandResponseServer_RedactLineForLog_" data-uid="Utils.Net.CommandResponseServer.RedactLineForLog*"></a>
+
+  <h3 id="Utils_Net_CommandResponseServer_RedactLineForLog_System_String_" data-uid="Utils.Net.CommandResponseServer.RedactLineForLog(System.String)">
+  RedactLineForLog(string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L192"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns a loggable (redacted) representation of a line received from the client.
+The default implementation logs only the verb (first space-separated word) to avoid
+accidentally exposing secret-bearing lines such as AUTH continuations, PASS arguments
+or Base64-encoded credential payloads.
+Override in a protocol-aware subclass to log more detail for lines that are known safe.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected virtual string RedactLineForLog(string line)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>line</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Raw line received from the client.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>A string safe to write to the log.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
   <a id="Utils_Net_CommandResponseServer_RegisterCommand_" data-uid="Utils.Net.CommandResponseServer.RegisterCommand*"></a>
 
-  <h3 id="Utils_Net_CommandResponseServer_RegisterCommand_System_String_System_Func_Utils_Net_CommandContext_System_String___System_Threading_Tasks_Task_System_Collections_Generic_IEnumerable_Utils_Net_ServerResponse____System_String___" data-uid="Utils.Net.CommandResponseServer.RegisterCommand(System.String,System.Func{Utils.Net.CommandContext,System.String[],System.Threading.Tasks.Task{System.Collections.Generic.IEnumerable{Utils.Net.ServerResponse}}},System.String[])">
-  RegisterCommand(string, Func&lt;CommandContext, string[], Task&lt;IEnumerable&lt;ServerResponse&gt;&gt;&gt;, params string[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L74"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_Net_CommandResponseServer_RegisterCommand_System_String_System_Func_Utils_Net_CommandContext_System_String___System_Threading_CancellationToken_System_Threading_Tasks_Task_System_Collections_Generic_IEnumerable_Utils_Net_ServerResponse____System_String___" data-uid="Utils.Net.CommandResponseServer.RegisterCommand(System.String,System.Func{Utils.Net.CommandContext,System.String[],System.Threading.CancellationToken,System.Threading.Tasks.Task{System.Collections.Generic.IEnumerable{Utils.Net.ServerResponse}}},System.String[])">
+  RegisterCommand(string, Func&lt;CommandContext, string[], CancellationToken, Task&lt;IEnumerable&lt;ServerResponse&gt;&gt;&gt;, params string[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L91"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Registers a command handler.</p>
@@ -499,7 +646,7 @@ A value of <code>0</code> disables automatic shutdown.</p>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public void RegisterCommand(string command, Func&lt;CommandContext, string[], Task&lt;IEnumerable&lt;ServerResponse&gt;&gt;&gt; handler, params string[] requiredContexts)</code></pre>
+    <pre><code class="lang-csharp hljs">public void RegisterCommand(string command, Func&lt;CommandContext, string[], CancellationToken, Task&lt;IEnumerable&lt;ServerResponse&gt;&gt;&gt; handler, params string[] requiredContexts)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
@@ -507,7 +654,7 @@ A value of <code>0</code> disables automatic shutdown.</p>
     <dt><code>command</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
     <dd><p>Command name.</p>
 </dd>
-    <dt><code>handler</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.func-3">Func</a>&lt;<a class="xref" href="Utils.Net.CommandContext.html">CommandContext</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>[], <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<a class="xref" href="Utils.Net.ServerResponse.html">ServerResponse</a>&gt;&gt;&gt;</dt>
+    <dt><code>handler</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.func-4">Func</a>&lt;<a class="xref" href="Utils.Net.CommandContext.html">CommandContext</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>[], <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<a class="xref" href="Utils.Net.ServerResponse.html">ServerResponse</a>&gt;&gt;&gt;</dt>
     <dd><p>Handler invoked when the command is received.</p>
 </dd>
     <dt><code>requiredContexts</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>[]</dt>
@@ -530,7 +677,7 @@ A value of <code>0</code> disables automatic shutdown.</p>
 
   <h3 id="Utils_Net_CommandResponseServer_RemoveContext_System_String_" data-uid="Utils.Net.CommandResponseServer.RemoveContext(System.String)">
   RemoveContext(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L94"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L111"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Removes a context from the server.</p>
@@ -563,7 +710,7 @@ A value of <code>0</code> disables automatic shutdown.</p>
 
   <h3 id="Utils_Net_CommandResponseServer_SendResponseAsync_Utils_Net_ServerResponse_" data-uid="Utils.Net.CommandResponseServer.SendResponseAsync(Utils.Net.ServerResponse)">
   SendResponseAsync(ServerResponse)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L143"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L219"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Sends an unsolicited response to the client.</p>
@@ -601,7 +748,7 @@ A value of <code>0</code> disables automatic shutdown.</p>
 
   <h3 id="Utils_Net_CommandResponseServer_StartAsync_System_IO_Stream_System_Boolean_System_Threading_CancellationToken_" data-uid="Utils.Net.CommandResponseServer.StartAsync(System.IO.Stream,System.Boolean,System.Threading.CancellationToken)">
   StartAsync(Stream, bool, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L113"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L134"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Starts processing commands using the specified stream.</p>
@@ -638,6 +785,13 @@ A value of <code>0</code> disables automatic shutdown.</p>
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a></dt>
+    <dd><p>Thrown when the server is already running. <a class="xref" href="Utils.Net.CommandResponseServer.html">CommandResponseServer</a> instances
+are single-use; create a new instance for each incoming connection.</p>
+</dd>
+  </dl>
 
 
 
@@ -648,7 +802,7 @@ A value of <code>0</code> disables automatic shutdown.</p>
 
   <h3 id="Utils_Net_CommandResponseServer_CommandReceived" data-uid="Utils.Net.CommandResponseServer.CommandReceived">
   CommandReceived
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L66"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseServer.cs/#L83"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Occurs when a command is received from the client. The handler must return the responses to send.
@@ -657,7 +811,7 @@ Returning an empty sequence results in no response being written to the client.<
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public event Func&lt;string, Task&lt;IEnumerable&lt;ServerResponse&gt;&gt;&gt;? CommandReceived</code></pre>
+    <pre><code class="lang-csharp hljs">public event Func&lt;string, CancellationToken, Task&lt;IEnumerable&lt;ServerResponse&gt;&gt;&gt;? CommandReceived</code></pre>
   </div>
 
 
@@ -667,7 +821,7 @@ Returning an empty sequence results in no response being written to the client.<
 
   <h4 class="section">Event Type</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.func-2">Func</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<a class="xref" href="Utils.Net.ServerResponse.html">ServerResponse</a>&gt;&gt;&gt;</dt>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.func-3">Func</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<a class="xref" href="Utils.Net.ServerResponse.html">ServerResponse</a>&gt;&gt;&gt;</dt>
     <dd></dd>
   </dl>
 

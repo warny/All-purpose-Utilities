@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Net_EchoClient" data-uid="Utils.Net.EchoClient" class="text-break">
-Class EchoClient  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/EchoClient.cs/#L11"><i class="bi bi-code-slash"></i></a>
+Class EchoClient  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/EchoClient.cs/#L12"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -155,9 +155,9 @@ Class EchoClient  <a class="header-action link-secondary" title="View source" hr
 
   <a id="Utils_Net_EchoClient_EchoAsync_" data-uid="Utils.Net.EchoClient.EchoAsync*"></a>
 
-  <h3 id="Utils_Net_EchoClient_EchoAsync_System_String_System_Int32_System_String_" data-uid="Utils.Net.EchoClient.EchoAsync(System.String,System.Int32,System.String)">
-  EchoAsync(string, int, string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/EchoClient.cs/#L20"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_Net_EchoClient_EchoAsync_System_String_System_Int32_System_String_System_Threading_CancellationToken_" data-uid="Utils.Net.EchoClient.EchoAsync(System.String,System.Int32,System.String,System.Threading.CancellationToken)">
+  EchoAsync(string, int, string, CancellationToken)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/EchoClient.cs/#L22"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Sends a message to an Echo server and returns the echoed response.</p>
@@ -165,7 +165,7 @@ Class EchoClient  <a class="header-action link-secondary" title="View source" hr
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static Task&lt;string&gt; EchoAsync(string host, int port, string message)</code></pre>
+    <pre><code class="lang-csharp hljs">public static Task&lt;string&gt; EchoAsync(string host, int port, string message, CancellationToken cancellationToken = default)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
@@ -178,6 +178,9 @@ Class EchoClient  <a class="header-action link-secondary" title="View source" hr
 </dd>
     <dt><code>message</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
     <dd><p>Message to send.</p>
+</dd>
+    <dt><code>cancellationToken</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></dt>
+    <dd><p>Cancellation token applied to the connect and read operations.</p>
 </dd>
   </dl>
 
@@ -200,9 +203,9 @@ Class EchoClient  <a class="header-action link-secondary" title="View source" hr
 
   <a id="Utils_Net_EchoClient_EchoAsync_" data-uid="Utils.Net.EchoClient.EchoAsync*"></a>
 
-  <h3 id="Utils_Net_EchoClient_EchoAsync_System_String_System_String_" data-uid="Utils.Net.EchoClient.EchoAsync(System.String,System.String)">
-  EchoAsync(string, string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/EchoClient.cs/#L47"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_Net_EchoClient_EchoAsync_System_String_System_String_System_Threading_CancellationToken_" data-uid="Utils.Net.EchoClient.EchoAsync(System.String,System.String,System.Threading.CancellationToken)">
+  EchoAsync(string, string, CancellationToken)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/EchoClient.cs/#L50"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Sends a message to an Echo server on the default port (7) and returns the echoed response.</p>
@@ -210,7 +213,7 @@ Class EchoClient  <a class="header-action link-secondary" title="View source" hr
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static Task&lt;string&gt; EchoAsync(string host, string message)</code></pre>
+    <pre><code class="lang-csharp hljs">public static Task&lt;string&gt; EchoAsync(string host, string message, CancellationToken cancellationToken = default)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
@@ -220,6 +223,9 @@ Class EchoClient  <a class="header-action link-secondary" title="View source" hr
 </dd>
     <dt><code>message</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
     <dd><p>Message to send.</p>
+</dd>
+    <dt><code>cancellationToken</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></dt>
+    <dd><p>Cancellation token applied to the connect and read operations.</p>
 </dd>
   </dl>
 
@@ -244,7 +250,7 @@ Class EchoClient  <a class="header-action link-secondary" title="View source" hr
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/EchoClient.cs/#L11" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/EchoClient.cs/#L12" class="edit-link">Edit this page</a>
         </div>
 
 

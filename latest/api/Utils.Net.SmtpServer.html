@@ -251,7 +251,7 @@ Class SmtpServer  <a class="header-action link-secondary" title="View source" hr
 
   <h3 id="Utils_Net_SmtpServer__ctor_Utils_Net_ISmtpMessageStore_System_Func_System_String_System_Boolean__Utils_Net_ISmtpAuthenticator_" data-uid="Utils.Net.SmtpServer.#ctor(Utils.Net.ISmtpMessageStore,System.Func{System.String,System.Boolean},Utils.Net.ISmtpAuthenticator)">
   SmtpServer(ISmtpMessageStore, Func&lt;string, bool&gt;?, ISmtpAuthenticator?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpServer.cs/#L32"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpServer.cs/#L58"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Net.SmtpServer.html">SmtpServer</a> class.</p>
@@ -268,7 +268,9 @@ Class SmtpServer  <a class="header-action link-secondary" title="View source" hr
     <dd><p>Store used to persist received messages.</p>
 </dd>
     <dt><code>isLocalDomain</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.func-2">Func</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a>&gt;</dt>
-    <dd><p>Function used to determine if a domain is local and does not require relaying.</p>
+    <dd><p>Function used to determine if a domain is local and does not require relaying.
+When <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>, all non-authenticated recipients are rejected (fail-closed).
+Pass an explicit predicate to allow delivery to specific local domains.</p>
 </dd>
     <dt><code>authenticator</code> <a class="xref" href="Utils.Net.ISmtpAuthenticator.html">ISmtpAuthenticator</a></dt>
     <dd><p>Optional authenticator used to validate credentials.</p>
@@ -294,7 +296,7 @@ Class SmtpServer  <a class="header-action link-secondary" title="View source" hr
 
   <h3 id="Utils_Net_SmtpServer_Completion" data-uid="Utils.Net.SmtpServer.Completion">
   Completion
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpServer.cs/#L68"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpServer.cs/#L100"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a task that completes when the server stops processing commands.</p>
@@ -322,6 +324,105 @@ Class SmtpServer  <a class="header-action link-secondary" title="View source" hr
 
 
 
+  <a id="Utils_Net_SmtpServer_MaxAuthAttempts_" data-uid="Utils.Net.SmtpServer.MaxAuthAttempts*"></a>
+
+  <h3 id="Utils_Net_SmtpServer_MaxAuthAttempts" data-uid="Utils.Net.SmtpServer.MaxAuthAttempts">
+  MaxAuthAttempts
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpServer.cs/#L46"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the maximum number of failed authentication attempts allowed per connection
+before the session is terminated. Default is 5. Set to 0 to disable.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int MaxAuthAttempts { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_SmtpServer_MaxDataChars_" data-uid="Utils.Net.SmtpServer.MaxDataChars*"></a>
+
+  <h3 id="Utils_Net_SmtpServer_MaxDataChars" data-uid="Utils.Net.SmtpServer.MaxDataChars">
+  MaxDataChars
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpServer.cs/#L34"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the maximum total number of characters accepted in a single SMTP DATA body.
+Default is 10 MiB worth of characters. Set to 0 to disable.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int MaxDataChars { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_SmtpServer_MaxDataLines_" data-uid="Utils.Net.SmtpServer.MaxDataLines*"></a>
+
+  <h3 id="Utils_Net_SmtpServer_MaxDataLines" data-uid="Utils.Net.SmtpServer.MaxDataLines">
+  MaxDataLines
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpServer.cs/#L40"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the maximum number of lines accepted in a single SMTP DATA body.
+Default is 100 000. Set to 0 to disable.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int MaxDataLines { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <h2 class="section" id="methods">Methods
 </h2>
 
@@ -330,7 +431,7 @@ Class SmtpServer  <a class="header-action link-secondary" title="View source" hr
 
   <h3 id="Utils_Net_SmtpServer_Dispose" data-uid="Utils.Net.SmtpServer.Dispose">
   Dispose()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpServer.cs/#L73"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpServer.cs/#L105"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Releases the resources used by the server.</p>
@@ -355,9 +456,9 @@ Class SmtpServer  <a class="header-action link-secondary" title="View source" hr
 
   <a id="Utils_Net_SmtpServer_StartAsync_" data-uid="Utils.Net.SmtpServer.StartAsync*"></a>
 
-  <h3 id="Utils_Net_SmtpServer_StartAsync_System_IO_Stream_System_Boolean_System_Threading_CancellationToken_" data-uid="Utils.Net.SmtpServer.StartAsync(System.IO.Stream,System.Boolean,System.Threading.CancellationToken)">
-  StartAsync(Stream, bool, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpServer.cs/#L59"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_Net_SmtpServer_StartAsync_System_IO_Stream_System_Boolean_System_Boolean_System_Threading_CancellationToken_" data-uid="Utils.Net.SmtpServer.StartAsync(System.IO.Stream,System.Boolean,System.Boolean,System.Threading.CancellationToken)">
+  StartAsync(Stream, bool, bool, CancellationToken)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpServer.cs/#L90"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Starts the SMTP server and sends the greeting line.</p>
@@ -365,7 +466,7 @@ Class SmtpServer  <a class="header-action link-secondary" title="View source" hr
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public Task StartAsync(Stream stream, bool leaveOpen = false, CancellationToken cancellationToken = default)</code></pre>
+    <pre><code class="lang-csharp hljs">public Task StartAsync(Stream stream, bool leaveOpen = false, bool isTls = false, CancellationToken cancellationToken = default)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
@@ -375,6 +476,11 @@ Class SmtpServer  <a class="header-action link-secondary" title="View source" hr
 </dd>
     <dt><code>leaveOpen</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
     <dd><p>True to leave the stream open when disposing the server.</p>
+</dd>
+    <dt><code>isTls</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p>Set to <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when <code class="paramref">stream</code> is already protected by TLS.
+When <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> (the default), the server will not advertise or accept AUTH
+to prevent credentials from being transmitted in cleartext.</p>
 </dd>
     <dt><code>cancellationToken</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></dt>
     <dd><p>Cancellation token.</p>

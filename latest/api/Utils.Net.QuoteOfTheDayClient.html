@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Net_QuoteOfTheDayClient" data-uid="Utils.Net.QuoteOfTheDayClient" class="text-break">
-Class QuoteOfTheDayClient  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/QuoteOfTheDayClient.cs/#L11"><i class="bi bi-code-slash"></i></a>
+Class QuoteOfTheDayClient  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/QuoteOfTheDayClient.cs/#L13"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -149,29 +149,71 @@ Class QuoteOfTheDayClient  <a class="header-action link-secondary" title="View s
 
 
 
+  <h2 class="section" id="fields">Fields
+</h2>
+
+
+
+  <h3 id="Utils_Net_QuoteOfTheDayClient_MaxResponseBytes" data-uid="Utils.Net.QuoteOfTheDayClient.MaxResponseBytes">
+  MaxResponseBytes
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/QuoteOfTheDayClient.cs/#L19"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Maximum number of bytes accepted from the server before the connection is closed.
+RFC 865 does not mandate a limit; this cap prevents memory exhaustion from a rogue peer.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public const int MaxResponseBytes = 65536</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
   <h2 class="section" id="methods">Methods
 </h2>
 
 
   <a id="Utils_Net_QuoteOfTheDayClient_GetQuoteAsync_" data-uid="Utils.Net.QuoteOfTheDayClient.GetQuoteAsync*"></a>
 
-  <h3 id="Utils_Net_QuoteOfTheDayClient_GetQuoteAsync_System_String_" data-uid="Utils.Net.QuoteOfTheDayClient.GetQuoteAsync(System.String)">
-  GetQuoteAsync(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/QuoteOfTheDayClient.cs/#L34"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_Net_QuoteOfTheDayClient_GetQuoteAsync_System_String_System_Int32_System_Threading_CancellationToken_" data-uid="Utils.Net.QuoteOfTheDayClient.GetQuoteAsync(System.String,System.Int32,System.Threading.CancellationToken)">
+  GetQuoteAsync(string, int, CancellationToken)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/QuoteOfTheDayClient.cs/#L31"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Retrieves a quote from a Quote of the Day server on the default port (17).</p>
+  <div class="markdown level1 summary"><p>Retrieves a quote from a Quote of the Day server.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static Task&lt;string&gt; GetQuoteAsync(string host)</code></pre>
+    <pre><code class="lang-csharp hljs">public static Task&lt;string&gt; GetQuoteAsync(string host, int port, CancellationToken cancellationToken = default)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>host</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
     <dd><p>Hostname or IP address of the Quote server.</p>
+</dd>
+    <dt><code>port</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>TCP port of the Quote service, default is 17.</p>
+</dd>
+    <dt><code>cancellationToken</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></dt>
+    <dd><p>Cancellation token applied to the connect and read operations.</p>
 </dd>
   </dl>
 
@@ -189,22 +231,28 @@ Class QuoteOfTheDayClient  <a class="header-action link-secondary" title="View s
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.invaliddataexception">InvalidDataException</a></dt>
+    <dd><p>Thrown when the server sends more than <a class="xref" href="Utils.Net.QuoteOfTheDayClient.html#Utils_Net_QuoteOfTheDayClient_MaxResponseBytes">MaxResponseBytes</a> bytes.</p>
+</dd>
+  </dl>
 
 
 
   <a id="Utils_Net_QuoteOfTheDayClient_GetQuoteAsync_" data-uid="Utils.Net.QuoteOfTheDayClient.GetQuoteAsync*"></a>
 
-  <h3 id="Utils_Net_QuoteOfTheDayClient_GetQuoteAsync_System_String_System_Int32_" data-uid="Utils.Net.QuoteOfTheDayClient.GetQuoteAsync(System.String,System.Int32)">
-  GetQuoteAsync(string, int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/QuoteOfTheDayClient.cs/#L19"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_Net_QuoteOfTheDayClient_GetQuoteAsync_System_String_System_Threading_CancellationToken_" data-uid="Utils.Net.QuoteOfTheDayClient.GetQuoteAsync(System.String,System.Threading.CancellationToken)">
+  GetQuoteAsync(string, CancellationToken)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/QuoteOfTheDayClient.cs/#L56"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Retrieves a quote from a Quote of the Day server.</p>
+  <div class="markdown level1 summary"><p>Retrieves a quote from a Quote of the Day server on the default port (17).</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static Task&lt;string&gt; GetQuoteAsync(string host, int port)</code></pre>
+    <pre><code class="lang-csharp hljs">public static Task&lt;string&gt; GetQuoteAsync(string host, CancellationToken cancellationToken = default)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
@@ -212,8 +260,8 @@ Class QuoteOfTheDayClient  <a class="header-action link-secondary" title="View s
     <dt><code>host</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
     <dd><p>Hostname or IP address of the Quote server.</p>
 </dd>
-    <dt><code>port</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
-    <dd><p>TCP port of the Quote service, default is 17.</p>
+    <dt><code>cancellationToken</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></dt>
+    <dd><p>Cancellation token applied to the connect and read operations.</p>
 </dd>
   </dl>
 
@@ -238,7 +286,7 @@ Class QuoteOfTheDayClient  <a class="header-action link-secondary" title="View s
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/QuoteOfTheDayClient.cs/#L11" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/QuoteOfTheDayClient.cs/#L13" class="edit-link">Edit this page</a>
         </div>
 
 

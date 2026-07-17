@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Net_TimeProtocolClient" data-uid="Utils.Net.TimeProtocolClient" class="text-break">
-Class TimeProtocolClient  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/TimeProtocolClient.cs/#L11"><i class="bi bi-code-slash"></i></a>
+Class TimeProtocolClient  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/TimeProtocolClient.cs/#L12"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -155,23 +155,29 @@ Class TimeProtocolClient  <a class="header-action link-secondary" title="View so
 
   <a id="Utils_Net_TimeProtocolClient_GetTimeAsync_" data-uid="Utils.Net.TimeProtocolClient.GetTimeAsync*"></a>
 
-  <h3 id="Utils_Net_TimeProtocolClient_GetTimeAsync_System_String_" data-uid="Utils.Net.TimeProtocolClient.GetTimeAsync(System.String)">
-  GetTimeAsync(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/TimeProtocolClient.cs/#L46"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_Net_TimeProtocolClient_GetTimeAsync_System_String_System_Int32_System_Threading_CancellationToken_" data-uid="Utils.Net.TimeProtocolClient.GetTimeAsync(System.String,System.Int32,System.Threading.CancellationToken)">
+  GetTimeAsync(string, int, CancellationToken)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/TimeProtocolClient.cs/#L23"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Retrieves the current time from a Time protocol server on the default port (37).</p>
+  <div class="markdown level1 summary"><p>Retrieves the current time from a Time protocol server.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static Task&lt;DateTime&gt; GetTimeAsync(string host)</code></pre>
+    <pre><code class="lang-csharp hljs">public static Task&lt;DateTime&gt; GetTimeAsync(string host, int port, CancellationToken cancellationToken = default)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>host</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
     <dd><p>Hostname or IP address of the Time server.</p>
+</dd>
+    <dt><code>port</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>TCP port of the Time service, default is 37.</p>
+</dd>
+    <dt><code>cancellationToken</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></dt>
+    <dd><p>Cancellation token applied to the connect and read operations.</p>
 </dd>
   </dl>
 
@@ -194,17 +200,17 @@ Class TimeProtocolClient  <a class="header-action link-secondary" title="View so
 
   <a id="Utils_Net_TimeProtocolClient_GetTimeAsync_" data-uid="Utils.Net.TimeProtocolClient.GetTimeAsync*"></a>
 
-  <h3 id="Utils_Net_TimeProtocolClient_GetTimeAsync_System_String_System_Int32_" data-uid="Utils.Net.TimeProtocolClient.GetTimeAsync(System.String,System.Int32)">
-  GetTimeAsync(string, int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/TimeProtocolClient.cs/#L21"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_Net_TimeProtocolClient_GetTimeAsync_System_String_System_Threading_CancellationToken_" data-uid="Utils.Net.TimeProtocolClient.GetTimeAsync(System.String,System.Threading.CancellationToken)">
+  GetTimeAsync(string, CancellationToken)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/TimeProtocolClient.cs/#L49"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Retrieves the current time from a Time protocol server.</p>
+  <div class="markdown level1 summary"><p>Retrieves the current time from a Time protocol server on the default port (37).</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static Task&lt;DateTime&gt; GetTimeAsync(string host, int port)</code></pre>
+    <pre><code class="lang-csharp hljs">public static Task&lt;DateTime&gt; GetTimeAsync(string host, CancellationToken cancellationToken = default)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
@@ -212,8 +218,8 @@ Class TimeProtocolClient  <a class="header-action link-secondary" title="View so
     <dt><code>host</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
     <dd><p>Hostname or IP address of the Time server.</p>
 </dd>
-    <dt><code>port</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
-    <dd><p>TCP port of the Time service, default is 37.</p>
+    <dt><code>cancellationToken</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></dt>
+    <dd><p>Cancellation token applied to the connect and read operations.</p>
 </dd>
   </dl>
 
@@ -238,7 +244,7 @@ Class TimeProtocolClient  <a class="header-action link-secondary" title="View so
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/TimeProtocolClient.cs/#L11" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/TimeProtocolClient.cs/#L12" class="edit-link">Edit this page</a>
         </div>
 
 

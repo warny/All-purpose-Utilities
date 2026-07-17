@@ -262,7 +262,7 @@ Class CommandResponseClient  <a class="header-action link-secondary" title="View
 
   <h3 id="Utils_Net_CommandResponseClient__ctor" data-uid="Utils.Net.CommandResponseClient.#ctor">
   CommandResponseClient()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L43"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L58"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Net.CommandResponseClient.html">CommandResponseClient</a> class.</p>
@@ -293,7 +293,7 @@ Class CommandResponseClient  <a class="header-action link-secondary" title="View
 
   <h3 id="Utils_Net_CommandResponseClient_DefaultPort" data-uid="Utils.Net.CommandResponseClient.DefaultPort">
   DefaultPort
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L96"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L114"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Default port used by the protocol.</p>
@@ -325,10 +325,13 @@ Class CommandResponseClient  <a class="header-action link-secondary" title="View
 
   <h3 id="Utils_Net_CommandResponseClient_IsConnected" data-uid="Utils.Net.CommandResponseClient.IsConnected">
   IsConnected
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L91"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L109"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets a value indicating whether the client is still connected.</p>
+  <div class="markdown level1 summary"><p>Gets a value indicating whether the client is currently connected.
+Returns <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> on a newly constructed instance that has not yet called
+<a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_ConnectAsync_System_String_System_Int32_System_Threading_CancellationToken_">ConnectAsync(string, int, CancellationToken)</a>, and returns
+<a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> again once the connection has been closed or disposed.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -357,7 +360,7 @@ Class CommandResponseClient  <a class="header-action link-secondary" title="View
 
   <h3 id="Utils_Net_CommandResponseClient_ListenTimeout" data-uid="Utils.Net.CommandResponseClient.ListenTimeout">
   ListenTimeout
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L75"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L90"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the timeout applied to read operations in the listener loop.</p>
@@ -389,7 +392,7 @@ Class CommandResponseClient  <a class="header-action link-secondary" title="View
 
   <h3 id="Utils_Net_CommandResponseClient_Logger" data-uid="Utils.Net.CommandResponseClient.Logger">
   Logger
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L38"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L53"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the logger used to trace client activity.</p>
@@ -417,11 +420,79 @@ Class CommandResponseClient  <a class="header-action link-secondary" title="View
 
 
 
+  <a id="Utils_Net_CommandResponseClient_MaxLineLength_" data-uid="Utils.Net.CommandResponseClient.MaxLineLength*"></a>
+
+  <h3 id="Utils_Net_CommandResponseClient_MaxLineLength" data-uid="Utils.Net.CommandResponseClient.MaxLineLength">
+  MaxLineLength
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L41"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the maximum number of bytes allowed in a single incoming response line.
+Lines longer than this limit cause the listener loop to disconnect.
+Default is 8192 bytes (8 KiB). Set to 0 to disable the check.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int MaxLineLength { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_CommandResponseClient_MaxResponseCount_" data-uid="Utils.Net.CommandResponseClient.MaxResponseCount*"></a>
+
+  <h3 id="Utils_Net_CommandResponseClient_MaxResponseCount" data-uid="Utils.Net.CommandResponseClient.MaxResponseCount">
+  MaxResponseCount
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L48"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the maximum number of response lines that <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_SendCommandAsync_System_String_System_Threading_CancellationToken_">SendCommandAsync(string, CancellationToken)</a> will
+accumulate for a single command before throwing <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.invaliddataexception">InvalidDataException</a>.
+Default is 10 000. Set to 0 to disable the check.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int MaxResponseCount { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <a id="Utils_Net_CommandResponseClient_NoOpCommand_" data-uid="Utils.Net.CommandResponseClient.NoOpCommand*"></a>
 
   <h3 id="Utils_Net_CommandResponseClient_NoOpCommand" data-uid="Utils.Net.CommandResponseClient.NoOpCommand">
   NoOpCommand
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L53"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L68"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the command sent during inactivity to keep the connection alive.</p>
@@ -453,7 +524,7 @@ Class CommandResponseClient  <a class="header-action link-secondary" title="View
 
   <h3 id="Utils_Net_CommandResponseClient_NoOpInterval" data-uid="Utils.Net.CommandResponseClient.NoOpInterval">
   NoOpInterval
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L62"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L77"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the time to wait before sending a no-op command. Set to <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.timeout.infinitetimespan">InfiniteTimeSpan</a> to disable.</p>
@@ -489,7 +560,7 @@ Class CommandResponseClient  <a class="header-action link-secondary" title="View
 
   <h3 id="Utils_Net_CommandResponseClient_ConnectAsync_System_IO_Stream_System_Boolean_System_Threading_CancellationToken_" data-uid="Utils.Net.CommandResponseClient.ConnectAsync(System.IO.Stream,System.Boolean,System.Threading.CancellationToken)">
   ConnectAsync(Stream, bool, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L119"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L137"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Uses the provided bidirectional <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a> for communication.</p>
@@ -533,7 +604,7 @@ Class CommandResponseClient  <a class="header-action link-secondary" title="View
 
   <h3 id="Utils_Net_CommandResponseClient_ConnectAsync_System_String_System_Int32_System_Threading_CancellationToken_" data-uid="Utils.Net.CommandResponseClient.ConnectAsync(System.String,System.Int32,System.Threading.CancellationToken)">
   ConnectAsync(string, int, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L104"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L122"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Connects to the specified host and port using a TCP connection.</p>
@@ -577,7 +648,7 @@ Class CommandResponseClient  <a class="header-action link-secondary" title="View
 
   <h3 id="Utils_Net_CommandResponseClient_DisconnectAsync_System_String_System_Nullable_System_TimeSpan__System_Threading_CancellationToken_" data-uid="Utils.Net.CommandResponseClient.DisconnectAsync(System.String,System.Nullable{System.TimeSpan},System.Threading.CancellationToken)">
   DisconnectAsync(string?, TimeSpan?, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L399"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L479"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Disconnects from the server, optionally sending a termination command.</p>
@@ -621,7 +692,7 @@ Class CommandResponseClient  <a class="header-action link-secondary" title="View
 
   <h3 id="Utils_Net_CommandResponseClient_Dispose" data-uid="Utils.Net.CommandResponseClient.Dispose">
   Dispose()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L443"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L523"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Releases the client resources.</p>
@@ -648,7 +719,7 @@ Class CommandResponseClient  <a class="header-action link-secondary" title="View
 
   <h3 id="Utils_Net_CommandResponseClient_Finalize" data-uid="Utils.Net.CommandResponseClient.Finalize">
   ~CommandResponseClient()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L475"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L555"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Deconstruct the client.</p>
@@ -675,7 +746,7 @@ Class CommandResponseClient  <a class="header-action link-secondary" title="View
 
   <h3 id="Utils_Net_CommandResponseClient_OnConnect_System_IO_Stream_System_Boolean_System_Threading_CancellationToken_" data-uid="Utils.Net.CommandResponseClient.OnConnect(System.IO.Stream,System.Boolean,System.Threading.CancellationToken)">
   OnConnect(Stream, bool, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L154"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L174"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Called after the client has attached to the provided <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a>.</p>
@@ -720,7 +791,7 @@ Class CommandResponseClient  <a class="header-action link-secondary" title="View
 
   <h3 id="Utils_Net_CommandResponseClient_ParseResponseLine_System_String_" data-uid="Utils.Net.CommandResponseClient.ParseResponseLine(System.String)">
   ParseResponseLine(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L356"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L436"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Parses a single response line. The default implementation expects a three-digit
@@ -761,7 +832,7 @@ with a numeric code are treated as raw text payloads.</p>
 
   <h3 id="Utils_Net_CommandResponseClient_ReadAsync_System_Threading_CancellationToken_" data-uid="Utils.Net.CommandResponseClient.ReadAsync(System.Threading.CancellationToken)">
   ReadAsync(CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L216"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L240"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads and returns responses that have been received without sending a command.</p>
@@ -802,11 +873,53 @@ with a numeric code are treated as raw text payloads.</p>
 
 
 
+  <a id="Utils_Net_CommandResponseClient_RedactCommandForLog_" data-uid="Utils.Net.CommandResponseClient.RedactCommandForLog*"></a>
+
+  <h3 id="Utils_Net_CommandResponseClient_RedactCommandForLog_System_String_" data-uid="Utils.Net.CommandResponseClient.RedactCommandForLog(System.String)">
+  RedactCommandForLog(string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L393"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns a loggable (redacted) representation of a command before it is sent.
+The default implementation logs only the verb (first space-separated word) to avoid
+accidentally exposing secret-bearing arguments such as AUTH credentials or PASS values.
+Override in a protocol subclass to log more detail for commands that are known to be safe.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected virtual string RedactCommandForLog(string command)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>command</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Command about to be sent.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>A string safe to write to the log.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
   <a id="Utils_Net_CommandResponseClient_ResetKeepAlive_" data-uid="Utils.Net.CommandResponseClient.ResetKeepAlive*"></a>
 
   <h3 id="Utils_Net_CommandResponseClient_ResetKeepAlive" data-uid="Utils.Net.CommandResponseClient.ResetKeepAlive">
   ResetKeepAlive()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L435"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L515"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Resets the keep alive timer.</p>
@@ -829,11 +942,51 @@ with a numeric code are treated as raw text payloads.</p>
 
 
 
+  <a id="Utils_Net_CommandResponseClient_SanitizeForLog_" data-uid="Utils.Net.CommandResponseClient.SanitizeForLog*"></a>
+
+  <h3 id="Utils_Net_CommandResponseClient_SanitizeForLog_System_String_System_Int32_" data-uid="Utils.Net.CommandResponseClient.SanitizeForLog(System.String,System.Int32)">
+  SanitizeForLog(string, int)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L405"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Replaces control characters with '?' and truncates the value to
+<code class="paramref">maxLength</code> characters to prevent log injection or flooding.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected static string SanitizeForLog(string value, int maxLength = 100)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>value</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+    <dt><code>maxLength</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
   <a id="Utils_Net_CommandResponseClient_SendCommandAsync_" data-uid="Utils.Net.CommandResponseClient.SendCommandAsync*"></a>
 
   <h3 id="Utils_Net_CommandResponseClient_SendCommandAsync_System_String_System_Threading_CancellationToken_" data-uid="Utils.Net.CommandResponseClient.SendCommandAsync(System.String,System.Threading.CancellationToken)">
   SendCommandAsync(string, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L166"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L186"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Sends a command and collects responses until a response with at least completion severity is received.</p>
@@ -881,7 +1034,7 @@ with a numeric code are treated as raw text payloads.</p>
 
   <h3 id="Utils_Net_CommandResponseClient_SendLinesAsync_System_Collections_Generic_IEnumerable_System_String__System_Threading_CancellationToken_" data-uid="Utils.Net.CommandResponseClient.SendLinesAsync(System.Collections.Generic.IEnumerable{System.String},System.Threading.CancellationToken)">
   SendLinesAsync(IEnumerable&lt;string&gt;, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L246"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L270"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Sends raw lines to the server without waiting for a response.</p>
@@ -928,7 +1081,7 @@ with a numeric code are treated as raw text payloads.</p>
 
   <h3 id="Utils_Net_CommandResponseClient_SplitCodeAndMessage_System_String_" data-uid="Utils.Net.CommandResponseClient.SplitCodeAndMessage(System.String)">
   SplitCodeAndMessage(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L341"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L421"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Splits a response line into the status code and the remaining text.</p>
@@ -963,6 +1116,49 @@ with a numeric code are treated as raw text payloads.</p>
 
 
 
+  <a id="Utils_Net_CommandResponseClient_ValidateCommandArgument_" data-uid="Utils.Net.CommandResponseClient.ValidateCommandArgument*"></a>
+
+  <h3 id="Utils_Net_CommandResponseClient_ValidateCommandArgument_System_String_System_String_" data-uid="Utils.Net.CommandResponseClient.ValidateCommandArgument(System.String,System.String)">
+  ValidateCommandArgument(string, string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L375"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Validates that <code class="paramref">value</code> does not contain CR, LF or NUL characters,
+which would allow an attacker to inject additional protocol commands.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected static void ValidateCommandArgument(string value, string paramName)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>value</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>String to validate.</p>
+</dd>
+    <dt><code>paramName</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Parameter name used in the exception message.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when <code class="paramref">value</code> contains <code>\r</code>, <code>\n</code> or <code>\0</code>.</p>
+</dd>
+  </dl>
+
+
+
   <h2 class="section" id="events">Events
 </h2>
 
@@ -970,7 +1166,7 @@ with a numeric code are treated as raw text payloads.</p>
 
   <h3 id="Utils_Net_CommandResponseClient_UnsolicitedResponseReceived" data-uid="Utils.Net.CommandResponseClient.UnsolicitedResponseReceived">
   UnsolicitedResponseReceived
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L48"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/CommandResponseClient.cs/#L63"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Occurs when a response is received from the server.</p>

@@ -361,10 +361,10 @@ Class DNSPacketReader  <a class="header-action link-secondary" title="View sourc
 
   <h3 id="Utils_Net_DNS_DNSPacketReader_Read_System_Byte___" data-uid="Utils.Net.DNS.DNSPacketReader.Read(System.Byte[])">
   Read(byte[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/DNS/DNSPacketReader.cs/#L288"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/DNS/DNSPacketReader.cs/#L329"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Reads a DNS datagram represented as a byte array and returns the parsed header.</p>
+  <div class="markdown level1 summary"><p>Parses DNS data from the supplied input.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -375,14 +375,14 @@ Class DNSPacketReader  <a class="header-action link-secondary" title="View sourc
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>datas</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
-    <dd><p>The datagram content to parse.</p>
+    <dd><p>The input instance to read from.</p>
 </dd>
   </dl>
 
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="Utils.Net.DNS.DNSHeader.html">DNSHeader</a></dt>
-    <dd><p>The populated <a class="xref" href="Utils.Net.DNS.DNSHeader.html">DNSHeader</a> representing the packet.</p>
+    <dd><p>The DNS header extracted from the input.</p>
 </dd>
   </dl>
 
@@ -400,7 +400,7 @@ Class DNSPacketReader  <a class="header-action link-secondary" title="View sourc
 
   <h3 id="Utils_Net_DNS_DNSPacketReader_Read_System_IO_Stream_" data-uid="Utils.Net.DNS.DNSPacketReader.Read(System.IO.Stream)">
   Read(Stream)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/DNS/DNSPacketReader.cs/#L304"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/DNS/DNSPacketReader.cs/#L349"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads a DNS datagram from the provided stream and returns the parsed header.</p>

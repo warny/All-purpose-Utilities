@@ -129,6 +129,12 @@ Class SmtpClient  <a class="header-action link-secondary" title="View source" hr
     <dt>Inherited Members</dt>
     <dd>
     <div>
+      <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_MaxLineLength">CommandResponseClient.MaxLineLength</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_MaxResponseCount">CommandResponseClient.MaxResponseCount</a>
+    </div>
+    <div>
       <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_Logger">CommandResponseClient.Logger</a>
     </div>
     <div>
@@ -160,6 +166,15 @@ Class SmtpClient  <a class="header-action link-secondary" title="View source" hr
     </div>
     <div>
       <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_SendLinesAsync_System_Collections_Generic_IEnumerable_System_String__System_Threading_CancellationToken_">CommandResponseClient.SendLinesAsync(IEnumerable&lt;string&gt;, CancellationToken)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_ValidateCommandArgument_System_String_System_String_">CommandResponseClient.ValidateCommandArgument(string, string)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_RedactCommandForLog_System_String_">CommandResponseClient.RedactCommandForLog(string)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_SanitizeForLog_System_String_System_Int32_">CommandResponseClient.SanitizeForLog(string, int)</a>
     </div>
     <div>
       <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_SplitCodeAndMessage_System_String_">CommandResponseClient.SplitCodeAndMessage(string)</a>
@@ -511,7 +526,7 @@ accidental credential usage on unencrypted channels.</p>
 
   <h3 id="Utils_Net_SmtpClient_ExpnAsync_System_String_System_Threading_CancellationToken_" data-uid="Utils.Net.SmtpClient.ExpnAsync(System.String,System.Threading.CancellationToken)">
   ExpnAsync(string, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L145"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L148"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Sends the EXPN command to expand a mailing list.</p>
@@ -553,7 +568,7 @@ accidental credential usage on unencrypted channels.</p>
 
   <h3 id="Utils_Net_SmtpClient_HeloAsync_System_String_System_Threading_CancellationToken_" data-uid="Utils.Net.SmtpClient.HeloAsync(System.String,System.Threading.CancellationToken)">
   HeloAsync(string, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L121"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L122"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Sends the HELO command.</p>
@@ -594,7 +609,7 @@ accidental credential usage on unencrypted channels.</p>
 
   <h3 id="Utils_Net_SmtpClient_HelpAsync_System_String_System_Threading_CancellationToken_" data-uid="Utils.Net.SmtpClient.HelpAsync(System.String,System.Threading.CancellationToken)">
   HelpAsync(string?, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L166"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L170"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Sends the HELP command optionally for a specific subject.</p>
@@ -681,7 +696,7 @@ accidental credential usage on unencrypted channels.</p>
 
   <h3 id="Utils_Net_SmtpClient_ParseResponseLine_System_String_" data-uid="Utils.Net.SmtpClient.ParseResponseLine(System.String)">
   ParseResponseLine(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L232"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L239"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Parses a single response line using SMTP semantics where a hyphen after the status code
@@ -721,7 +736,7 @@ indicates that more lines will follow.</p>
 
   <h3 id="Utils_Net_SmtpClient_QuitAsync_System_Threading_CancellationToken_" data-uid="Utils.Net.SmtpClient.QuitAsync(System.Threading.CancellationToken)">
   QuitAsync(CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L221"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L228"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Sends the QUIT command and closes the connection.</p>
@@ -759,7 +774,7 @@ indicates that more lines will follow.</p>
 
   <h3 id="Utils_Net_SmtpClient_SendMailAsync_System_String_System_Collections_Generic_IEnumerable_System_String__System_String_System_Threading_CancellationToken_" data-uid="Utils.Net.SmtpClient.SendMailAsync(System.String,System.Collections.Generic.IEnumerable{System.String},System.String,System.Threading.CancellationToken)">
   SendMailAsync(string, IEnumerable&lt;string&gt;, string, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L189"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L194"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Sends a mail message.</p>
@@ -806,7 +821,7 @@ indicates that more lines will follow.</p>
 
   <h3 id="Utils_Net_SmtpClient_VrfyAsync_System_String_System_Threading_CancellationToken_" data-uid="Utils.Net.SmtpClient.VrfyAsync(System.String,System.Threading.CancellationToken)">
   VrfyAsync(string, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L132"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/SmtpClient.cs/#L134"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Sends the VRFY command to verify an address.</p>

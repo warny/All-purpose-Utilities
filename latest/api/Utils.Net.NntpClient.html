@@ -129,6 +129,12 @@ Class NntpClient  <a class="header-action link-secondary" title="View source" hr
     <dt>Inherited Members</dt>
     <dd>
     <div>
+      <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_MaxLineLength">CommandResponseClient.MaxLineLength</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_MaxResponseCount">CommandResponseClient.MaxResponseCount</a>
+    </div>
+    <div>
       <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_Logger">CommandResponseClient.Logger</a>
     </div>
     <div>
@@ -160,6 +166,15 @@ Class NntpClient  <a class="header-action link-secondary" title="View source" hr
     </div>
     <div>
       <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_SendLinesAsync_System_Collections_Generic_IEnumerable_System_String__System_Threading_CancellationToken_">CommandResponseClient.SendLinesAsync(IEnumerable&lt;string&gt;, CancellationToken)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_ValidateCommandArgument_System_String_System_String_">CommandResponseClient.ValidateCommandArgument(string, string)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_RedactCommandForLog_System_String_">CommandResponseClient.RedactCommandForLog(string)</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_SanitizeForLog_System_String_System_Int32_">CommandResponseClient.SanitizeForLog(string, int)</a>
     </div>
     <div>
       <a class="xref" href="Utils.Net.CommandResponseClient.html#Utils_Net_CommandResponseClient_SplitCodeAndMessage_System_String_">CommandResponseClient.SplitCodeAndMessage(string)</a>
@@ -300,7 +315,7 @@ Class NntpClient  <a class="header-action link-secondary" title="View source" hr
 
   <h3 id="Utils_Net_NntpClient__ctor" data-uid="Utils.Net.NntpClient.#ctor">
   NntpClient()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NntpClient.cs/#L19"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NntpClient.cs/#L31"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Net.NntpClient.html">NntpClient</a> class.</p>
@@ -331,7 +346,7 @@ Class NntpClient  <a class="header-action link-secondary" title="View source" hr
 
   <h3 id="Utils_Net_NntpClient_DefaultPort" data-uid="Utils.Net.NntpClient.DefaultPort">
   DefaultPort
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NntpClient.cs/#L24"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NntpClient.cs/#L36"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Default port used by the protocol.</p>
@@ -359,6 +374,72 @@ Class NntpClient  <a class="header-action link-secondary" title="View source" hr
 
 
 
+  <a id="Utils_Net_NntpClient_MaxMultilineChars_" data-uid="Utils.Net.NntpClient.MaxMultilineChars*"></a>
+
+  <h3 id="Utils_Net_NntpClient_MaxMultilineChars" data-uid="Utils.Net.NntpClient.MaxMultilineChars">
+  MaxMultilineChars
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NntpClient.cs/#L26"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the maximum total number of characters accepted across all lines in a single
+NNTP multi-line response. Default is 10 MiB worth of characters. Set to 0 to disable.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int MaxMultilineChars { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_NntpClient_MaxMultilineLines_" data-uid="Utils.Net.NntpClient.MaxMultilineLines*"></a>
+
+  <h3 id="Utils_Net_NntpClient_MaxMultilineLines" data-uid="Utils.Net.NntpClient.MaxMultilineLines">
+  MaxMultilineLines
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NntpClient.cs/#L20"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the maximum number of lines accepted in a single NNTP multi-line response.
+Default is 100 000. Set to 0 to disable.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int MaxMultilineLines { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <h2 class="section" id="methods">Methods
 </h2>
 
@@ -367,7 +448,7 @@ Class NntpClient  <a class="header-action link-secondary" title="View source" hr
 
   <h3 id="Utils_Net_NntpClient_ArticleAsync_System_Int32_System_Threading_CancellationToken_" data-uid="Utils.Net.NntpClient.ArticleAsync(System.Int32,System.Threading.CancellationToken)">
   ArticleAsync(int, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NntpClient.cs/#L79"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NntpClient.cs/#L92"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Retrieves the full text of an article.</p>
@@ -409,7 +490,7 @@ Class NntpClient  <a class="header-action link-secondary" title="View source" hr
 
   <h3 id="Utils_Net_NntpClient_BodyAsync_System_Int32_System_Threading_CancellationToken_" data-uid="Utils.Net.NntpClient.BodyAsync(System.Int32,System.Threading.CancellationToken)">
   BodyAsync(int, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NntpClient.cs/#L195"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NntpClient.cs/#L209"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Retrieves only the body of an article.</p>
@@ -451,7 +532,7 @@ Class NntpClient  <a class="header-action link-secondary" title="View source" hr
 
   <h3 id="Utils_Net_NntpClient_GroupAsync_System_String_System_Threading_CancellationToken_" data-uid="Utils.Net.NntpClient.GroupAsync(System.String,System.Threading.CancellationToken)">
   GroupAsync(string, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NntpClient.cs/#L62"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NntpClient.cs/#L74"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Selects the specified newsgroup.</p>
@@ -493,7 +574,7 @@ Class NntpClient  <a class="header-action link-secondary" title="View source" hr
 
   <h3 id="Utils_Net_NntpClient_HeaderAsync_System_Int32_System_Threading_CancellationToken_" data-uid="Utils.Net.NntpClient.HeaderAsync(System.Int32,System.Threading.CancellationToken)">
   HeaderAsync(int, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NntpClient.cs/#L168"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NntpClient.cs/#L182"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Retrieves only the headers of an article.</p>
@@ -535,7 +616,7 @@ Class NntpClient  <a class="header-action link-secondary" title="View source" hr
 
   <h3 id="Utils_Net_NntpClient_ListAsync_System_Threading_CancellationToken_" data-uid="Utils.Net.NntpClient.ListAsync(System.Threading.CancellationToken)">
   ListAsync(CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NntpClient.cs/#L105"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NntpClient.cs/#L118"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Lists available newsgroups.</p>
@@ -574,7 +655,7 @@ Class NntpClient  <a class="header-action link-secondary" title="View source" hr
 
   <h3 id="Utils_Net_NntpClient_NewGroupsAsync_System_DateTime_System_Threading_CancellationToken_" data-uid="Utils.Net.NntpClient.NewGroupsAsync(System.DateTime,System.Threading.CancellationToken)">
   NewGroupsAsync(DateTime, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NntpClient.cs/#L128"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NntpClient.cs/#L141"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Retrieves groups created after the specified time.</p>
@@ -616,7 +697,7 @@ Class NntpClient  <a class="header-action link-secondary" title="View source" hr
 
   <h3 id="Utils_Net_NntpClient_NewNewsAsync_System_String_System_DateTime_System_Threading_CancellationToken_" data-uid="Utils.Net.NntpClient.NewNewsAsync(System.String,System.DateTime,System.Threading.CancellationToken)">
   NewNewsAsync(string, DateTime, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NntpClient.cs/#L144"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NntpClient.cs/#L157"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Retrieves article numbers newer than the given time from the specified group.</p>
@@ -661,7 +742,7 @@ Class NntpClient  <a class="header-action link-secondary" title="View source" hr
 
   <h3 id="Utils_Net_NntpClient_NextAsync_System_Threading_CancellationToken_" data-uid="Utils.Net.NntpClient.NextAsync(System.Threading.CancellationToken)">
   NextAsync(CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NntpClient.cs/#L237"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NntpClient.cs/#L251"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Moves to the next article in the selected group.</p>
@@ -700,7 +781,7 @@ Class NntpClient  <a class="header-action link-secondary" title="View source" hr
 
   <h3 id="Utils_Net_NntpClient_OnConnect_System_IO_Stream_System_Boolean_System_Threading_CancellationToken_" data-uid="Utils.Net.NntpClient.OnConnect(System.IO.Stream,System.Boolean,System.Threading.CancellationToken)">
   OnConnect(Stream, bool, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NntpClient.cs/#L33"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NntpClient.cs/#L45"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Executes NNTP specific initialization when a connection is established.</p>
@@ -745,7 +826,7 @@ Class NntpClient  <a class="header-action link-secondary" title="View source" hr
 
   <h3 id="Utils_Net_NntpClient_ParseResponseLine_System_String_" data-uid="Utils.Net.NntpClient.ParseResponseLine(System.String)">
   ParseResponseLine(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NntpClient.cs/#L45"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NntpClient.cs/#L57"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Parses NNTP response lines, treating non-numeric data lines as preliminary responses.</p>
@@ -784,7 +865,7 @@ Class NntpClient  <a class="header-action link-secondary" title="View source" hr
 
   <h3 id="Utils_Net_NntpClient_PostAsync_System_String_System_Threading_CancellationToken_" data-uid="Utils.Net.NntpClient.PostAsync(System.String,System.Threading.CancellationToken)">
   PostAsync(string, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NntpClient.cs/#L253"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NntpClient.cs/#L267"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Posts a new article to the current group.</p>
@@ -825,7 +906,7 @@ Class NntpClient  <a class="header-action link-secondary" title="View source" hr
 
   <h3 id="Utils_Net_NntpClient_QuitAsync_System_Threading_CancellationToken_" data-uid="Utils.Net.NntpClient.QuitAsync(System.Threading.CancellationToken)">
   QuitAsync(CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NntpClient.cs/#L285"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NntpClient.cs/#L299"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Sends the QUIT command and closes the connection.</p>
@@ -863,7 +944,7 @@ Class NntpClient  <a class="header-action link-secondary" title="View source" hr
 
   <h3 id="Utils_Net_NntpClient_StatAsync_System_Int32_System_Threading_CancellationToken_" data-uid="Utils.Net.NntpClient.StatAsync(System.Int32,System.Threading.CancellationToken)">
   StatAsync(int, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NntpClient.cs/#L222"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NntpClient.cs/#L236"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Retrieves article status information without returning content.</p>

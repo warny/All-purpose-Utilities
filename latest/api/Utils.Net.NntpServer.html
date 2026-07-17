@@ -249,9 +249,9 @@ Class NntpServer  <a class="header-action link-secondary" title="View source" hr
 
   <a id="Utils_Net_NntpServer__ctor_" data-uid="Utils.Net.NntpServer.#ctor*"></a>
 
-  <h3 id="Utils_Net_NntpServer__ctor_Utils_Net_INntpArticleStore_" data-uid="Utils.Net.NntpServer.#ctor(Utils.Net.INntpArticleStore)">
-  NntpServer(INntpArticleStore)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NntpServer.cs/#L26"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_Net_NntpServer__ctor_Utils_Net_INntpArticleStore_System_Func_System_Boolean__" data-uid="Utils.Net.NntpServer.#ctor(Utils.Net.INntpArticleStore,System.Func{System.Boolean})">
+  NntpServer(INntpArticleStore, Func&lt;bool&gt;?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NntpServer.cs/#L45"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Net.NntpServer.html">NntpServer</a> class.</p>
@@ -259,13 +259,18 @@ Class NntpServer  <a class="header-action link-secondary" title="View source" hr
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public NntpServer(INntpArticleStore store)</code></pre>
+    <pre><code class="lang-csharp hljs">public NntpServer(INntpArticleStore store, Func&lt;bool&gt;? isPostingAllowed = null)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>store</code> <a class="xref" href="Utils.Net.INntpArticleStore.html">INntpArticleStore</a></dt>
     <dd><p>Article data provider.</p>
+</dd>
+    <dt><code>isPostingAllowed</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.func-1">Func</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a>&gt;</dt>
+    <dd><p>Predicate evaluated each time a POST command is received.
+When <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>, posting is disabled for all sessions (fail-closed).
+Pass an explicit predicate to enable posting under specific conditions.</p>
 </dd>
   </dl>
 
@@ -288,7 +293,7 @@ Class NntpServer  <a class="header-action link-secondary" title="View source" hr
 
   <h3 id="Utils_Net_NntpServer_Completion" data-uid="Utils.Net.NntpServer.Completion">
   Completion
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NntpServer.cs/#L59"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NntpServer.cs/#L82"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a task that completes when the server stops processing commands.</p>
@@ -316,6 +321,72 @@ Class NntpServer  <a class="header-action link-secondary" title="View source" hr
 
 
 
+  <a id="Utils_Net_NntpServer_MaxPostChars_" data-uid="Utils.Net.NntpServer.MaxPostChars*"></a>
+
+  <h3 id="Utils_Net_NntpServer_MaxPostChars" data-uid="Utils.Net.NntpServer.MaxPostChars">
+  MaxPostChars
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NntpServer.cs/#L28"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the maximum total number of characters accepted in a single NNTP POST body.
+Default is 10 MiB worth of characters. Set to 0 to disable.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int MaxPostChars { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Net_NntpServer_MaxPostLines_" data-uid="Utils.Net.NntpServer.MaxPostLines*"></a>
+
+  <h3 id="Utils_Net_NntpServer_MaxPostLines" data-uid="Utils.Net.NntpServer.MaxPostLines">
+  MaxPostLines
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NntpServer.cs/#L34"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the maximum number of lines accepted in a single NNTP POST body.
+Default is 100 000. Set to 0 to disable.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int MaxPostLines { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <h2 class="section" id="methods">Methods
 </h2>
 
@@ -324,7 +395,7 @@ Class NntpServer  <a class="header-action link-secondary" title="View source" hr
 
   <h3 id="Utils_Net_NntpServer_Dispose" data-uid="Utils.Net.NntpServer.Dispose">
   Dispose()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NntpServer.cs/#L64"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NntpServer.cs/#L87"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Releases the resources used by the server.</p>
@@ -351,10 +422,11 @@ Class NntpServer  <a class="header-action link-secondary" title="View source" hr
 
   <h3 id="Utils_Net_NntpServer_StartAsync_System_IO_Stream_System_Boolean_System_Threading_CancellationToken_" data-uid="Utils.Net.NntpServer.StartAsync(System.IO.Stream,System.Boolean,System.Threading.CancellationToken)">
   StartAsync(Stream, bool, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NntpServer.cs/#L50"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/NntpServer.cs/#L71"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Starts the NNTP server using the specified stream and sends the greeting line.</p>
+  <div class="markdown level1 summary"><p>Starts the NNTP server using the specified stream and sends the greeting line.
+The greeting code reflects whether posting is currently allowed (200 = allowed, 201 = read-only).</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 

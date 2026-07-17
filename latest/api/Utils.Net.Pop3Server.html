@@ -251,7 +251,7 @@ Class Pop3Server  <a class="header-action link-secondary" title="View source" hr
 
   <h3 id="Utils_Net_Pop3Server__ctor_Utils_Net_IPop3Mailbox_" data-uid="Utils.Net.Pop3Server.#ctor(Utils.Net.IPop3Mailbox)">
   Pop3Server(IPop3Mailbox)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Server.cs/#L24"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Server.cs/#L32"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Net.Pop3Server.html">Pop3Server</a> class.</p>
@@ -288,7 +288,7 @@ Class Pop3Server  <a class="header-action link-secondary" title="View source" hr
 
   <h3 id="Utils_Net_Pop3Server_Completion" data-uid="Utils.Net.Pop3Server.Completion">
   Completion
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Server.cs/#L58"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Server.cs/#L66"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a task that completes when the server stops processing commands.</p>
@@ -316,6 +316,39 @@ Class Pop3Server  <a class="header-action link-secondary" title="View source" hr
 
 
 
+  <a id="Utils_Net_Pop3Server_MaxAuthAttempts_" data-uid="Utils.Net.Pop3Server.MaxAuthAttempts*"></a>
+
+  <h3 id="Utils_Net_Pop3Server_MaxAuthAttempts" data-uid="Utils.Net.Pop3Server.MaxAuthAttempts">
+  MaxAuthAttempts
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Server.cs/#L26"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the maximum number of failed authentication attempts allowed per connection
+before the session is terminated. Default is 5. Set to 0 to disable.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int MaxAuthAttempts { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <h2 class="section" id="methods">Methods
 </h2>
 
@@ -324,7 +357,7 @@ Class Pop3Server  <a class="header-action link-secondary" title="View source" hr
 
   <h3 id="Utils_Net_Pop3Server_Dispose" data-uid="Utils.Net.Pop3Server.Dispose">
   Dispose()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Server.cs/#L63"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Server.cs/#L71"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Releases the resources used by the server.</p>
@@ -351,7 +384,7 @@ Class Pop3Server  <a class="header-action link-secondary" title="View source" hr
 
   <h3 id="Utils_Net_Pop3Server_StartAsync_System_IO_Stream_System_Boolean_System_Threading_CancellationToken_" data-uid="Utils.Net.Pop3Server.StartAsync(System.IO.Stream,System.Boolean,System.Threading.CancellationToken)">
   StartAsync(Stream, bool, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Server.cs/#L48"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Net/Net/Pop3Server.cs/#L56"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Starts the POP3 server using the specified stream and sends the greeting line.</p>
