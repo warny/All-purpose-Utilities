@@ -113,10 +113,35 @@ public sealed class EmbeddedCodeTransformerArchitectureTests
         Assert.IsFalse(pipeline.DescendantNodes().OfType<InvocationExpressionSyntax>().Any(static invocation =>
             invocation.Expression.ToString().Contains("Lambda", StringComparison.Ordinal)));
 
-        string generatorSource = File.ReadAllText(Path.Combine(repositoryRoot, "Utils.Parser.Generators", "Internal", "GrammarEmitter.ExecutionContext.Hooks.cs"));
-        string runtimeSource = File.ReadAllText(Path.Combine(repositoryRoot, "Utils.Parser.Expressions", "ExpressionEmbeddedCodePreparer.cs"));
-        Assert.AreEqual(1, CountPipelineCalls(generatorSource));
-        Assert.AreEqual(1, CountPipelineCalls(runtimeSource));
+        IReadOnlyList<SourceScan> scans = CreateProductionParserScans(repositoryRoot);
+        Assert.AreEqual(1, CountPipelineCalls(scans, "Utils.Parser.Generators/Internal/GrammarEmitter.ExecutionContext.Hooks.cs"));
+        Assert.AreEqual(1, CountPipelineCalls(scans, "Utils.Parser.Expressions/ExpressionEmbeddedCodePreparer.cs"));
+    }
+
+    /// <summary>
+    /// Ensures semantic pipeline-call counting recognizes type aliases and static imports.
+    /// </summary>
+    [TestMethod]
+    public void PipelineCallScan_WhenAliasOrStaticImportIsUsed_CountsBothCalls()
+    {
+        IReadOnlyList<SourceScan> scans = CreateSamplePipelineScans(
+            """
+            using Pipeline = Utils.Parser.Diagnostics.EmbeddedCode.EmbeddedCodeTransformationPipeline;
+            using static Utils.Parser.Diagnostics.EmbeddedCode.EmbeddedCodeTransformationPipeline;
+
+            namespace Sample;
+
+            internal static class Caller
+            {
+                internal static void Execute()
+                {
+                    Pipeline.TransformAndValidate();
+                    TransformAndValidate();
+                }
+            }
+            """);
+
+        Assert.AreEqual(2, CountPipelineCalls(scans, "Caller.cs"));
     }
 
     /// <summary>
@@ -602,6 +627,35 @@ public sealed class EmbeddedCodeTransformerArchitectureTests
     }
 
     /// <summary>
+    /// Creates semantic scans for pipeline calls expressed through aliases or static imports.
+    /// </summary>
+    /// <param name="callerSource">Caller source containing the invocation forms to inspect.</param>
+    /// <returns>Semantic scans containing the pipeline contract and caller.</returns>
+    private static IReadOnlyList<SourceScan> CreateSamplePipelineScans(string callerSource)
+    {
+        SyntaxTree pipelineTree = CSharpSyntaxTree.ParseText(
+            """
+            namespace Utils.Parser.Diagnostics.EmbeddedCode;
+
+            internal static class EmbeddedCodeTransformationPipeline
+            {
+                internal static object TransformAndValidate() => new();
+            }
+            """,
+            path: CentralPipelineRelativePath);
+        SyntaxTree callerTree = CSharpSyntaxTree.ParseText(callerSource, path: "Caller.cs");
+        CSharpCompilation compilation = CSharpCompilation.Create(
+            "Utils.Parser.EmbeddedCodeTransformer.SamplePipelineScan",
+            [pipelineTree, callerTree],
+            CreateRuntimeReferences(),
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+        return new[] { pipelineTree, callerTree }
+            .Select(tree => new SourceScan(tree.FilePath, tree, compilation.GetSemanticModel(tree)))
+            .ToArray();
+    }
+
+    /// <summary>
     /// Finds forbidden direct <c>IExpressionCompiler.Compile(...)</c> calls inside embedded-code preparer implementations.
     /// </summary>
     /// <param name="scans">Semantic source scans to inspect.</param>
@@ -744,17 +798,25 @@ public sealed class EmbeddedCodeTransformerArchitectureTests
     }
 
     /// <summary>
-    /// Counts calls to the common transformation boundary in one source file.
+    /// Counts calls to the common transformation boundary in one source file using resolved method symbols.
     /// </summary>
-    /// <param name="source">C# source to inspect.</param>
+    /// <param name="scans">Semantic scans containing the pipeline declaration and callers.</param>
+    /// <param name="relativePath">Relative path of the caller to inspect.</param>
     /// <returns>The number of calls to the common boundary.</returns>
-    private static int CountPipelineCalls(string source)
+    private static int CountPipelineCalls(IReadOnlyList<SourceScan> scans, string relativePath)
     {
-        CompilationUnitSyntax root = CSharpSyntaxTree.ParseText(source).GetCompilationUnitRoot();
-        return root.DescendantNodes().OfType<InvocationExpressionSyntax>().Count(static invocation =>
-            invocation.Expression is MemberAccessExpressionSyntax member
-            && member.Expression.ToString() == "EmbeddedCodeTransformationPipeline"
-            && member.Name.Identifier.ValueText == "TransformAndValidate");
+        Compilation compilation = scans[0].SemanticModel.Compilation;
+        INamedTypeSymbol? pipelineType = compilation.GetTypeByMetadataName("Utils.Parser.Diagnostics.EmbeddedCode.EmbeddedCodeTransformationPipeline");
+        IMethodSymbol? pipelineMethod = pipelineType?.GetMembers("TransformAndValidate").OfType<IMethodSymbol>().SingleOrDefault();
+        if (pipelineMethod is null)
+        {
+            Assert.Fail("The embedded-code transformation pipeline entry point was not resolved by the architecture scan.");
+        }
+
+        SourceScan scan = scans.Single(candidate => NormalizePath(candidate.RelativePath) == NormalizePath(relativePath));
+        return scan.Tree.GetCompilationUnitRoot().DescendantNodes().OfType<InvocationExpressionSyntax>().Count(invocation =>
+            scan.SemanticModel.GetSymbolInfo(invocation).Symbol is IMethodSymbol method
+            && SymbolEqualityComparer.Default.Equals(method.OriginalDefinition, pipelineMethod));
     }
 
     /// <summary>
