@@ -31,8 +31,8 @@ public class BaseDecoderStream : TextWriter
     private int sourceLength;
     private int actualTargetLength;
 
-    // Strict-mode state: track filler characters seen
-    private bool fillerStarted;
+    // Strict-mode state: count filler characters seen so the count can be validated at Close()
+    private int fillerCount;
     private bool _closed;
 
     /// <summary>
@@ -80,13 +80,13 @@ public class BaseDecoderStream : TextWriter
                     throw new FormatException("This encoding does not use padding characters.");
                 if (dataLength == 0 && sourceLength == 0)
                     throw new FormatException("Padding character at start of input.");
-                fillerStarted = true;
+                fillerCount++;
             }
             // Permissive mode: ignore filler everywhere (legacy behaviour)
             return;
         }
 
-        if (strict && fillerStarted)
+        if (strict && fillerCount > 0)
             throw new FormatException("Data character encountered after padding.");
 
         sourceLength++;
@@ -147,15 +147,12 @@ public class BaseDecoderStream : TextWriter
             }
         }
 
-        // Strict: validate padding when the descriptor requires it
+        // Strict: validate the exact number of padding characters
         if (strict && BaseDescriptor.Filler.HasValue && BaseDescriptor.FillerMod > 0)
         {
             int expectedFillerCount = (BaseDescriptor.FillerMod - (sourceLength % BaseDescriptor.FillerMod)) % BaseDescriptor.FillerMod;
-            // We cannot count exactly how many fillers were received (they were silently dropped),
-            // but we CAN validate that the source length is consistent with a correctly padded input.
-            // The total padded length must be a multiple of FillerMod.
-            if ((sourceLength + expectedFillerCount) % BaseDescriptor.FillerMod != 0)
-                throw new FormatException("Input length is not consistent with required padding.");
+            if (fillerCount != expectedFillerCount)
+                throw new FormatException($"Expected {expectedFillerCount} padding character(s) but received {fillerCount}.");
         }
 
         Flush();

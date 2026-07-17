@@ -194,6 +194,17 @@ public class BaseDecoderStreamTests
         Assert.IsTrue(comparer.Equals(new byte[] { 0x41, 0x42 }, result));
     }
 
+    [TestMethod]
+    public void StrictMode_Base64_RejectsIncorrectPaddingCount()
+    {
+        // "TQ=" has only 1 filler where 2 are required for a 2-symbol group
+        Assert.ThrowsException<FormatException>(() => Decode("TQ=", Bases.Base64));
+        // "TQ==" (2 fillers) is the correct form and must decode successfully
+        byte[] result = Decode("TQ==", Bases.Base64);
+        Assert.AreEqual(1, result.Length);
+        Assert.AreEqual(0x4D, result[0]); // 'M'
+    }
+
     // ---- item 12: idempotence de Close ----
 
     [TestMethod]
