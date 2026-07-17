@@ -65,13 +65,12 @@ public class FieldMap
     /// <summary>
     /// Gets the associated <see cref="FieldAttribute"/> for this mapping, if available.
     /// </summary>
-    internal FieldAttribute? FieldAttribute { get; }
+    internal FieldAttribute FieldAttribute { get; }
 
     /// <summary>
-    /// Gets the name of the field in the data record being mapped.
-    /// <c>null</c> when the mapping is done by index.
+    /// Gets the name of the field in the data record being mapped, if available.
     /// </summary>
-    internal string? Name { get; }
+    internal string Name { get; }
 
     /// <summary>
     /// Gets the index of the field in the data record being mapped, or -1 if not using an index.
