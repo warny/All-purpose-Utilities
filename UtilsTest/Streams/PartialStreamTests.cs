@@ -127,9 +127,33 @@ public class PartialStreamTests
     [TestMethod]
     public void ConstructorThrowsForPositionLengthOverflow()
     {
+        // The two-argument constructor validates startOffset + length at construction time.
         using var ms = new MemoryStream(new byte[20]);
-        Assert.ThrowsException<OverflowException>(
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
             () => new PartialStream(ms, long.MaxValue, 1));
+    }
+
+    [TestMethod]
+    public void Constructor1_ThrowsWhenCurrentPositionPlusLengthOverflows()
+    {
+        // The one-argument constructor reads baseStream.Position as startOffset and
+        // must validate that startOffset + length fits in a long.
+        var vs = new VirtualSeekableStream(long.MaxValue);
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => new PartialStream(vs, 1),
+            "startOffset(=long.MaxValue) + length(=1) must be rejected");
+    }
+
+    [TestMethod]
+    public void SetLength_ThrowsWhenRangeWouldOverflow()
+    {
+        // startOffset = 1, so setting partialLength = long.MaxValue would make
+        // startOffset + partialLength overflow — must be rejected.
+        var vs = new VirtualSeekableStream();
+        var ps = new PartialStream(vs, 1, 5);
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => ps.SetLength(long.MaxValue),
+            "startOffset(=1) + newLength(=long.MaxValue) must be rejected");
     }
 
     // ---- item 4: Position setter throws instead of clamping ----

@@ -22,6 +22,16 @@ public class PartialStream : Stream
     private long partialLength;
     private long partialPosition;
 
+    // Verifies that startOffset + length <= long.MaxValue so that any absolute position
+    // within the segment (startOffset + partialPosition, with partialPosition <= partialLength)
+    // can never overflow a long.
+    private static void ValidateRange(long startOffset, long length, string lengthParamName)
+    {
+        if (length > long.MaxValue - startOffset)
+            throw new ArgumentOutOfRangeException(lengthParamName,
+                "The partial stream range exceeds the maximum representable stream position.");
+    }
+
     /// <summary>
     /// Creates a new partial stream starting at the base stream's current position.
     /// </summary>
@@ -29,7 +39,7 @@ public class PartialStream : Stream
     /// <param name="length">The length (in bytes) of the accessible segment. Must be non-negative.</param>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="baseStream"/> is null.</exception>
     /// <exception cref="ArgumentException">Thrown if the <paramref name="baseStream"/> cannot seek.</exception>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown if <paramref name="length"/> is negative.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown if <paramref name="length"/> is negative or if the current stream position plus <paramref name="length"/> would overflow a <see langword="long"/>.</exception>
     public PartialStream(Stream baseStream, long length)
     {
         ArgumentNullException.ThrowIfNull(baseStream);
@@ -38,8 +48,11 @@ public class PartialStream : Stream
         if (length < 0)
             throw new ArgumentOutOfRangeException(nameof(length), "Length must be non-negative.");
 
+        long position = baseStream.Position;
+        ValidateRange(position, length, nameof(length));
+
         this.baseStream = baseStream;
-        this.startOffset = baseStream.Position;
+        this.startOffset = position;
         this.partialLength = length;
         this.partialPosition = 0;
     }
@@ -52,7 +65,7 @@ public class PartialStream : Stream
     /// <param name="length">The length (in bytes) of the accessible segment. Must be non-negative.</param>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="baseStream"/> is null.</exception>
     /// <exception cref="ArgumentException">Thrown if the <paramref name="baseStream"/> cannot seek.</exception>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown if <paramref name="position"/> or <paramref name="length"/> is negative, or if their sum overflows.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown if <paramref name="position"/> or <paramref name="length"/> is negative, or if their sum would overflow a <see langword="long"/>.</exception>
     public PartialStream(Stream baseStream, long position, long length)
     {
         ArgumentNullException.ThrowIfNull(baseStream);
@@ -62,7 +75,7 @@ public class PartialStream : Stream
             throw new ArgumentOutOfRangeException(nameof(position), "Position must be non-negative.");
         if (length < 0)
             throw new ArgumentOutOfRangeException(nameof(length), "Length must be non-negative.");
-        checked { _ = position + length; }  // overflow guard
+        ValidateRange(position, length, nameof(length));
 
         this.baseStream = baseStream;
         this.startOffset = position;
@@ -184,11 +197,12 @@ public class PartialStream : Stream
     /// but changes the maximum accessible range of this partial view.
     /// </summary>
     /// <param name="value">The desired length of this partial stream.</param>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown if <paramref name="value"/> is negative.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown if <paramref name="value"/> is negative or if <c>startOffset + value</c> would overflow a <see langword="long"/>.</exception>
     public override void SetLength(long value)
     {
         if (value < 0)
             throw new ArgumentOutOfRangeException(nameof(value), "Length must be non-negative.");
+        ValidateRange(startOffset, value, nameof(value));
         partialLength = value;
         if (partialPosition > partialLength)
             partialPosition = partialLength;
