@@ -427,11 +427,14 @@ internal sealed class EmitWorkerProcess : IDisposable
                 {
                     response = JsonSerializer.Deserialize<WorkerResponse>(line);
                 }
-                catch (JsonException)
+                catch (JsonException ex)
                 {
-                    // A malformed line should never happen with a well-behaved worker; ignore it rather
-                    // than tearing down every in-flight request over a single corrupted message.
-                    continue;
+                    // A malformed response line indicates framing corruption, which breaks the
+                    // correlated request/response protocol. Treat it as fatal so the caller learns
+                    // immediately rather than waiting for an individual per-request timeout.
+                    throw new InvalidOperationException(
+                        "The isolated Emit worker sent a response line that could not be deserialized. " +
+                        "The connection is now unusable.", ex);
                 }
 
                 if (response is not null && pending.TryRemove(response.Id, out TaskCompletionSource<WorkerResponse>? completion))

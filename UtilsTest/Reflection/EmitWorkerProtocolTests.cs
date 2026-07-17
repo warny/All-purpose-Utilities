@@ -1,3 +1,5 @@
+using System;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 
@@ -129,5 +131,21 @@ public class EmitWorkerProtocolTests
         Assert.AreEqual(response.ErrorMessage, roundTripped.ErrorMessage);
         Assert.AreEqual(response.ErrorTypeName, roundTripped.ErrorTypeName);
         Assert.AreEqual(response.ErrorStackTrace, roundTripped.ErrorStackTrace);
+    }
+
+    // ─── Item 43: malformed JSON is fatal ────────────────────────────────────────
+
+    [TestMethod]
+    public void EmitWorkerHost_Run_ThrowsOnMalformedRequestLine()
+    {
+        // The first line is valid JSON (a Shutdown request) so the worker actually starts
+        // processing before hitting the invalid line; the invalid line itself triggers the
+        // fatal path. We send Shutdown first so the worker doesn't block waiting for more input.
+        string malformed = "this is not json\n";
+        using var input = new StringReader(malformed);
+        using var output = new StringWriter();
+
+        Assert.ThrowsException<InvalidOperationException>(
+            () => EmitWorkerHost.Run(input, output));
     }
 }

@@ -62,11 +62,13 @@ internal static class EmitWorkerHost
             {
                 request = JsonSerializer.Deserialize<WorkerRequest>(line);
             }
-            catch (JsonException)
+            catch (JsonException ex)
             {
-                // A malformed line should never happen with a well-behaved host; ignore it rather
-                // than tearing down the worker over a single corrupted message.
-                continue;
+                // A malformed request line indicates framing corruption — the protocol is no longer
+                // trustworthy. Throw so the worker exits rather than continuing with an unknown state.
+                throw new InvalidOperationException(
+                    "The Emit worker host received a request line that could not be deserialized. " +
+                    "The connection is now unusable.", ex);
             }
 
             if (request is null)
