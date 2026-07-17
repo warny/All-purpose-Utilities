@@ -18,6 +18,7 @@ public class CommandResponseServer : IDisposable
     private Stream? _stream;
     private StreamReader? _reader;
     private StreamWriter? _writer;
+    private readonly SemaphoreSlim _writeLock = new(1, 1);
     private CancellationTokenSource? _listenTokenSource;
     private Thread? _listenThread;
     private Task? _processTask;
@@ -25,9 +26,25 @@ public class CommandResponseServer : IDisposable
     private readonly SemaphoreSlim _commandSignal = new(0);
     private bool _leaveOpen;
     private readonly Dictionary<string, CommandRegistration> _handlers = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Gets or sets the maximum number of bytes allowed in a single incoming command line.
+    /// Lines longer than this limit cause the session to close with a 500 error.
+    /// Default is 8192 bytes (8 KiB).
+    /// </summary>
+    public int MaxLineLength { get; set; } = 8192;
+
+    /// <summary>
+    /// Gets or sets the maximum number of commands that may wait in the command queue before
+    /// the server closes the session to prevent unbounded memory consumption.
+    /// Default is 1000. Set to 0 to disable.
+    /// </summary>
+    public int MaxCommandQueueDepth { get; set; } = 1000;
+
     private readonly HashSet<string> _contexts = new();
     private readonly Func<ServerResponse, string> _formatter;
     private int _errorCount;
+    private volatile bool _closeAfterResponse;
 
     /// <summary>
     /// Gets or sets the logger used to trace server activity.
@@ -63,7 +80,7 @@ public class CommandResponseServer : IDisposable
     /// Occurs when a command is received from the client. The handler must return the responses to send.
     /// Returning an empty sequence results in no response being written to the client.
     /// </summary>
-    public event Func<string, Task<IEnumerable<ServerResponse>>>? CommandReceived;
+    public event Func<string, CancellationToken, Task<IEnumerable<ServerResponse>>>? CommandReceived;
 
     /// <summary>
     /// Registers a command handler.
@@ -71,7 +88,7 @@ public class CommandResponseServer : IDisposable
     /// <param name="command">Command name.</param>
     /// <param name="handler">Handler invoked when the command is received.</param>
     /// <param name="requiredContexts">Contexts required for the command to execute.</param>
-    public void RegisterCommand(string command, Func<CommandContext, string[], Task<IEnumerable<ServerResponse>>> handler, params string[] requiredContexts)
+    public void RegisterCommand(string command, Func<CommandContext, string[], CancellationToken, Task<IEnumerable<ServerResponse>>> handler, params string[] requiredContexts)
     {
         _handlers[command] = new CommandRegistration(handler, requiredContexts);
         Logger?.LogDebug("Command registered: {Command}", command);
@@ -110,10 +127,23 @@ public class CommandResponseServer : IDisposable
     /// <param name="stream">Bi-directional stream connected to the client.</param>
     /// <param name="leaveOpen">True to leave the stream open when disposing the server.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the server is already running. <see cref="CommandResponseServer"/> instances
+    /// are single-use; create a new instance for each incoming connection.
+    /// </exception>
     public Task StartAsync(Stream stream, bool leaveOpen = false, CancellationToken cancellationToken = default)
     {
+        if (_listenThread is not null)
+        {
+            throw new InvalidOperationException(
+                "This server instance is already running or has already been used. " +
+                "Create a new instance for each incoming connection.");
+        }
         _stream = stream;
         _leaveOpen = leaveOpen;
+        _contexts.Clear();
+        while (_commandQueue.TryDequeue(out _)) { }
+        _errorCount = 0;
         _reader = new StreamReader(stream, Encoding.ASCII, false, 1024, true);
         _writer = new StreamWriter(stream, Encoding.ASCII, 1024, true)
         {
@@ -132,29 +162,108 @@ public class CommandResponseServer : IDisposable
     }
 
     /// <summary>
+    /// Requests that the server close the connection after the current response has been sent.
+    /// Safe to call from within a command handler.
+    /// </summary>
+    /// <remarks>
+    /// The flag is checked in <c>ProcessQueueAsync</c> immediately after ALL response lines for
+    /// the current command have been flushed to the stream. This guarantees the final response
+    /// is received by the peer before the TCP session is torn down.
+    /// Handlers must NOT call <see cref="Dispose"/> or cancel the listen token directly: those
+    /// would race with <c>ProcessQueueAsync</c>'s write lock and risk dropping the in-flight
+    /// response before it reaches the client.
+    /// </remarks>
+    public void CloseAfterResponse() => _closeAfterResponse = true;
+
+    /// <summary>
     /// Gets a task that completes when the server stops processing commands.
     /// </summary>
     public Task Completion => _processTask ?? Task.CompletedTask;
 
     /// <summary>
+    /// Returns a loggable (redacted) representation of a line received from the client.
+    /// The default implementation logs only the verb (first space-separated word) to avoid
+    /// accidentally exposing secret-bearing lines such as AUTH continuations, PASS arguments
+    /// or Base64-encoded credential payloads.
+    /// Override in a protocol-aware subclass to log more detail for lines that are known safe.
+    /// </summary>
+    /// <param name="line">Raw line received from the client.</param>
+    /// <returns>A string safe to write to the log.</returns>
+    protected virtual string RedactLineForLog(string line)
+    {
+        int space = line.IndexOf(' ');
+        string verb = space >= 0 ? line[..space] : line;
+        string suffix = space >= 0 ? " [...]" : string.Empty;
+        return SanitizeForLog(verb) + suffix;
+    }
+
+    /// <summary>
+    /// Replaces control characters with '?' and truncates the value to
+    /// <paramref name="maxLength"/> characters to prevent log injection or flooding.
+    /// </summary>
+    private static string SanitizeForLog(string value, int maxLength = 100)
+    {
+        bool truncated = value.Length > maxLength;
+        ReadOnlySpan<char> source = truncated ? value.AsSpan(0, maxLength) : value.AsSpan();
+        char[] chars = new char[truncated ? maxLength + 3 : source.Length];
+        for (int i = 0; i < source.Length; i++)
+            chars[i] = source[i] < 0x20 || source[i] == 0x7F ? '?' : source[i];
+        if (truncated) { chars[maxLength] = '.'; chars[maxLength + 1] = '.'; chars[maxLength + 2] = '.'; }
+        return new string(chars);
+    }
+
+    /// <summary>
     /// Sends an unsolicited response to the client.
     /// </summary>
     /// <param name="response">Response to send.</param>
-    public Task SendResponseAsync(ServerResponse response)
+    public async Task SendResponseAsync(ServerResponse response)
     {
         if (_writer is null)
         {
             throw new InvalidOperationException("Server is not started.");
         }
         string line = _formatter(response);
-        Logger?.LogInformation("Sending: {Line}", line);
-        return _writer.WriteLineAsync(line);
+        Logger?.LogDebug("Sending: {Line}", line);
+        await _writeLock.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            await _writer.WriteLineAsync(line).ConfigureAwait(false);
+        }
+        finally
+        {
+            _writeLock.Release();
+        }
     }
 
     /// <summary>
     /// Listens for commands from the client on a dedicated thread and enqueues them for processing.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
+    /// <summary>
+    /// Reads one line from <paramref name="reader"/>, enforcing <see cref="MaxLineLength"/> during
+    /// the read rather than after the full line has been buffered. Returns <see langword="null"/> on EOF.
+    /// </summary>
+    /// <exception cref="InvalidDataException">Thrown when the line exceeds <see cref="MaxLineLength"/>.</exception>
+    private string? ReadLimitedLine(StreamReader reader)
+    {
+        var sb = new StringBuilder(256);
+        int ch;
+        while ((ch = reader.Read()) != -1)
+        {
+            char c = (char)ch;
+            if (c == '\n')
+            {
+                if (sb.Length > 0 && sb[sb.Length - 1] == '\r')
+                    sb.Length--;
+                return sb.ToString();
+            }
+            sb.Append(c);
+            if (MaxLineLength > 0 && sb.Length > MaxLineLength)
+                throw new InvalidDataException($"Incoming line exceeded MaxLineLength ({MaxLineLength}).");
+        }
+        return sb.Length == 0 ? null : sb.ToString();
+    }
+
     private void ListenLoop(CancellationToken cancellationToken)
     {
         if (_reader is null)
@@ -165,13 +274,29 @@ public class CommandResponseServer : IDisposable
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                string? command = _reader.ReadLine();
+                string? command;
+                try
+                {
+                    command = ReadLimitedLine(_reader);
+                }
+                catch (InvalidDataException)
+                {
+                    Logger?.LogWarning("Incoming line exceeded MaxLineLength ({MaxLineLength}); closing session.", MaxLineLength);
+                    _listenTokenSource?.Cancel();
+                    break;
+                }
                 if (command is null)
                 {
                     _listenTokenSource?.Cancel();
                     break;
                 }
-                Logger?.LogInformation("Received: {Command}", command);
+                if (MaxCommandQueueDepth > 0 && _commandQueue.Count >= MaxCommandQueueDepth)
+                {
+                    Logger?.LogWarning("Command queue depth exceeded MaxCommandQueueDepth ({MaxCommandQueueDepth}); closing session.", MaxCommandQueueDepth);
+                    _listenTokenSource?.Cancel();
+                    break;
+                }
+                Logger?.LogDebug("Received: {Command}", RedactLineForLog(command));
                 _commandQueue.Enqueue(command);
                 _commandSignal.Release();
             }
@@ -225,7 +350,15 @@ public class CommandResponseServer : IDisposable
                     if (registration.RequiredContexts.All(_contexts.Contains))
                     {
                         CommandContext ctx = new(_contexts);
-                        responses = await registration.Handler(ctx, args).ConfigureAwait(false);
+                        try
+                        {
+                            responses = await registration.Handler(ctx, args, cancellationToken).ConfigureAwait(false);
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger?.LogError(ex, "Handler for {Verb} threw an unhandled exception", verb);
+                            responses = [new ServerResponse("500", ResponseSeverity.PermanentNegative, "Internal server error")];
+                        }
                     }
                     else
                     {
@@ -234,17 +367,38 @@ public class CommandResponseServer : IDisposable
                 }
                 else if (CommandReceived is not null)
                 {
-                    responses = await CommandReceived.Invoke(command).ConfigureAwait(false);
+                    try
+                    {
+                        responses = await CommandReceived.Invoke(command, cancellationToken).ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger?.LogError(ex, "CommandReceived handler threw an unhandled exception for command {Verb}", verb);
+                        responses = [new ServerResponse("500", ResponseSeverity.PermanentNegative, "Internal server error")];
+                    }
                 }
                 responses ??= [new ServerResponse("502", ResponseSeverity.PermanentNegative, "Command not implemented")];
                 List<ServerResponse> responseList = responses.ToList();
-                foreach (ServerResponse response in responseList)
+                await _writeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+                try
                 {
-                    string line = _formatter(response);
-                    Logger?.LogInformation("Sending: {Line}", line);
-                    await _writer.WriteLineAsync(line).ConfigureAwait(false);
+                    foreach (ServerResponse response in responseList)
+                    {
+                        string line = _formatter(response);
+                        Logger?.LogDebug("Sending: {Line}", line);
+                        await _writer.WriteLineAsync(line).ConfigureAwait(false);
+                    }
+                }
+                finally
+                {
+                    _writeLock.Release();
                 }
 
+                if (_closeAfterResponse)
+                {
+                    await (_listenTokenSource?.CancelAsync() ?? Task.CompletedTask).ConfigureAwait(false);
+                    break;
+                }
                 if (responseList.Count > 0 && MaxConsecutiveErrors > 0)
                 {
                     ResponseSeverity finalSeverity = responseList[^1].Severity;
@@ -294,6 +448,7 @@ public class CommandResponseServer : IDisposable
         }
         _listenTokenSource?.Dispose();
         _commandSignal.Dispose();
+        _writeLock.Dispose();
         Logger?.LogInformation("Server stopped");
     }
 
@@ -301,7 +456,7 @@ public class CommandResponseServer : IDisposable
     /// Represents a registered command handler.
     /// </summary>
     private sealed record CommandRegistration(
-        Func<CommandContext, string[], Task<IEnumerable<ServerResponse>>> Handler,
+        Func<CommandContext, string[], CancellationToken, Task<IEnumerable<ServerResponse>>> Handler,
         IReadOnlyCollection<string> RequiredContexts);
 }
 

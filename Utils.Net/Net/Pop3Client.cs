@@ -15,6 +15,18 @@ public class Pop3Client : CommandResponseClient
     private string? _timestamp;
 
     /// <summary>
+    /// Gets or sets the maximum number of lines accepted in a single POP3 multi-line response.
+    /// Default is 100 000. Set to 0 to disable.
+    /// </summary>
+    public int MaxMultilineLines { get; set; } = 100_000;
+
+    /// <summary>
+    /// Gets or sets the maximum total number of characters accepted across all lines in a single
+    /// POP3 multi-line response. Default is 10 MiB worth of characters. Set to 0 to disable.
+    /// </summary>
+    public int MaxMultilineChars { get; set; } = 10 * 1024 * 1024;
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="Pop3Client"/> class.
     /// </summary>
     public Pop3Client()
@@ -54,6 +66,8 @@ public class Pop3Client : CommandResponseClient
     [Obsolete("POP3 USER/PASS authentication can expose credentials on unencrypted connections. Use a TLS-protected stream or a stronger mechanism.", false)]
     public async Task AuthenticateAsync(string user, string password, CancellationToken cancellationToken = default)
     {
+        ValidateCommandArgument(user, nameof(user));
+        ValidateCommandArgument(password, nameof(password));
         await EnsureOkAsync(await SendCommandAsync($"USER {user}", cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
         await EnsureOkAsync(await SendCommandAsync($"PASS {password}", cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
     }
@@ -64,8 +78,15 @@ public class Pop3Client : CommandResponseClient
     /// <param name="user">User name.</param>
     /// <param name="password">Password.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
+    /// <remarks>
+    /// APOP uses MD5, which is cryptographically broken. It provides no meaningful protection
+    /// against an active attacker who can observe or modify the challenge. Use a TLS-protected
+    /// stream with USER/PASS or a modern SASL mechanism regardless of authentication method.
+    /// </remarks>
+    [Obsolete("APOP relies on MD5, which is cryptographically broken. Use a TLS-protected transport instead.", false)]
     public async Task AuthenticateApopAsync(string user, string password, CancellationToken cancellationToken = default)
     {
+        ValidateCommandArgument(user, nameof(user));
         if (_timestamp is null)
         {
             throw new InvalidOperationException("Server greeting did not contain APOP timestamp");
@@ -258,6 +279,7 @@ public class Pop3Client : CommandResponseClient
     private async Task<IReadOnlyList<string>> ReadMultilineAsync(CancellationToken cancellationToken)
     {
         List<string> lines = new();
+        int totalChars = 0;
         while (true)
         {
             IReadOnlyList<ServerResponse> batch = await ReadAsync(cancellationToken).ConfigureAwait(false);
@@ -269,6 +291,11 @@ public class Pop3Client : CommandResponseClient
                     return lines;
                 }
                 lines.Add(line);
+                if (MaxMultilineLines > 0 && lines.Count > MaxMultilineLines)
+                    throw new InvalidDataException($"POP3 multi-line response exceeded the line limit of {MaxMultilineLines}.");
+                totalChars += line.Length;
+                if (MaxMultilineChars > 0 && totalChars > MaxMultilineChars)
+                    throw new InvalidDataException($"POP3 multi-line response exceeded the character limit of {MaxMultilineChars}.");
             }
         }
     }

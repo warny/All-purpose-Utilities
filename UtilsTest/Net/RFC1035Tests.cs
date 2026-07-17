@@ -139,7 +139,7 @@ namespace UtilsTest.Net
                 0x00, 0x0F,         // 0x24 Answer Type (15, MX)
                 0x00, 0x01,         // 0x26 Answer Class (1, IN)
                 0x00, 0x00, 0x0E, 0x10, // 0x28 Time to Live (3600 seconds)
-                0x00, 0x15,         // 0x2C Data Length (21 bytes)
+                0x00, 0x08,         // 0x2C Data Length (8 bytes: 2 priority + 4 label + 2 pointer)
                 0x00, 0x05,         // 0x2E Priority (5)
                 // Nom de serveur pour mx1.example.com
                 0x03, 0x6D, 0x78, 0x31, // 0x30 mx1
@@ -150,7 +150,7 @@ namespace UtilsTest.Net
                 0x00, 0x0F,         // 0x38 Answer Type (15, MX)
                 0x00, 0x01,         // 0x3A Answer Class (1, IN)
                 0x00, 0x00, 0x0E, 0x10, // 0x3C Time to Live (3600 seconds)
-                0x00, 0x15,         // 0x40 Data Length (21 bytes)
+                0x00, 0x08,         // 0x40 Data Length (8 bytes: 2 priority + 4 label + 2 pointer)
                 0x00, 0x0A,         // 0x42 Priority (10)
                 // Nom de serveur pour mx2.example.com
                 0x03, 0x6D, 0x78, 0x32, // 0x44 mx2

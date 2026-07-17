@@ -14,6 +14,18 @@ namespace Utils.Net;
 public class NntpClient : CommandResponseClient
 {
     /// <summary>
+    /// Gets or sets the maximum number of lines accepted in a single NNTP multi-line response.
+    /// Default is 100 000. Set to 0 to disable.
+    /// </summary>
+    public int MaxMultilineLines { get; set; } = 100_000;
+
+    /// <summary>
+    /// Gets or sets the maximum total number of characters accepted across all lines in a single
+    /// NNTP multi-line response. Default is 10 MiB worth of characters. Set to 0 to disable.
+    /// </summary>
+    public int MaxMultilineChars { get; set; } = 10 * 1024 * 1024;
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="NntpClient"/> class.
     /// </summary>
     public NntpClient()
@@ -61,6 +73,7 @@ public class NntpClient : CommandResponseClient
     /// <returns>Tuple containing article count, first article number and last article number.</returns>
     public async Task<(int articleCount, int firstArticle, int lastArticle)> GroupAsync(string group, CancellationToken cancellationToken = default)
     {
+        ValidateCommandArgument(group, nameof(group));
         IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"GROUP {group}", cancellationToken).ConfigureAwait(false);
         await EnsureCompletionAsync(responses).ConfigureAwait(false);
         string[] parts = responses[0].Message?.Split(' ', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
@@ -143,6 +156,7 @@ public class NntpClient : CommandResponseClient
     /// <returns>Collection of article numbers.</returns>
     public async Task<IReadOnlyList<int>> NewNewsAsync(string group, DateTime sinceUtc, CancellationToken cancellationToken = default)
     {
+        ValidateCommandArgument(group, nameof(group));
         string date = sinceUtc.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
         string time = sinceUtc.ToString("HHmmss", CultureInfo.InvariantCulture);
         IReadOnlyList<ServerResponse> responses = await SendCommandAsync($"NEWNEWS {group} {date} {time}", cancellationToken).ConfigureAwait(false);
@@ -308,6 +322,7 @@ public class NntpClient : CommandResponseClient
     private async Task<IReadOnlyList<string>> ReadMultilineAsync(CancellationToken cancellationToken)
     {
         List<string> lines = new();
+        int totalChars = 0;
         while (true)
         {
             IReadOnlyList<ServerResponse> batch = await ReadAsync(cancellationToken).ConfigureAwait(false);
@@ -319,6 +334,11 @@ public class NntpClient : CommandResponseClient
                     return lines;
                 }
                 lines.Add(line);
+                if (MaxMultilineLines > 0 && lines.Count > MaxMultilineLines)
+                    throw new InvalidDataException($"NNTP multi-line response exceeded the line limit of {MaxMultilineLines}.");
+                totalChars += line.Length;
+                if (MaxMultilineChars > 0 && totalChars > MaxMultilineChars)
+                    throw new InvalidDataException($"NNTP multi-line response exceeded the character limit of {MaxMultilineChars}.");
             }
         }
     }

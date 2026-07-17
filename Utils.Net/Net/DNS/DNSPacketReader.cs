@@ -182,25 +182,29 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
 
         public byte ReadByte()
         {
-            if (Context != null) { Context.BytesLeft--; }
+            if (Context != null && Position >= Context.RDataEnd)
+                throw new InvalidDataException($"DNS RDATA reader attempted to read beyond the declared RDLength boundary (position {Position}, RDataEnd {Context.RDataEnd}).");
+            if (Position >= Datagram.Length)
+                throw new InvalidDataException($"DNS datagram ended unexpectedly at position {Position}.");
             return Datagram[Position++];
         }
 
         public byte[] ReadBytes()
         {
             if (Context == null) throw new InvalidOperationException("ReadBytes requires an active RData context. Call BeginRData first.");
-            var length = Context.BytesLeft;
+            int length = Context.RDataEnd - Position;
             return ReadBytes(length);
         }
 
         public byte[] ReadBytes(int length)
         {
+            if (Context != null && Position + length > Context.RDataEnd)
+                throw new InvalidDataException($"DNS RDATA reader attempted to read {length} bytes but only {Context.RDataEnd - Position} byte(s) remain within the declared RDLength boundary.");
             if (Position + length > Datagram.Length)
                 throw new InvalidDataException($"Attempted to read {length} bytes at position {Position}, but the datagram is only {Datagram.Length} bytes.");
             byte[] result = new byte[length];
             Array.Copy(Datagram, Position, result, 0, length);
             Position += length;
-            if (Context != null) { Context.BytesLeft -= length; }
             return result;
         }
 
@@ -228,46 +232,79 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
         {
             if (depth > MaxDomainNameDepth)
                 throw new InvalidDataException("DNS domain name exceeds maximum depth — possible compression pointer loop.");
-            bool restorePosition = position != this.Position;
-            int temp = this.Position;
+
+            // Save the sequential cursor and RDATA context before potentially following
+            // a compression pointer to a different datagram offset.
+            // Why Context = null: domain name labels may appear anywhere in the datagram;
+            // the RDATA window must not constrain label reads that cross its boundary
+            // (e.g. a compression pointer target that lies before rdataStart).
+            // Why movedCursor: only recursive calls that moved the cursor to a pointer target
+            // should restore it; the outer call keeps the cursor advanced past what it consumed.
+            int savedPosition = this.Position;
+            bool movedCursor = position != savedPosition;
             this.Position = position;
-            var context = Context;
+            var savedContext = Context;
             Context = null;
-            ushort length = ReadByte();
-            if (length == 0) return null;
-            if ((length & 0xC0) != 0)
+
+            try
             {
-                ushort p = (ushort)(((length & 0x3F) << 8) | ReadByte());
-                if (PositionsStrings.TryGetValue(p, out string s))
+                ushort length = ReadByte();
+                if (length == 0) return null;
+                if ((length & 0xC0) == 0xC0)
                 {
-                    if (restorePosition) this.Position = temp;
-                    Context = context;
-                    return s;
+                    // Compression pointer: two high bits both set (RFC 1035 §4.1.4).
+                    ushort p = (ushort)(((length & 0x3F) << 8) | ReadByte());
+                    // After reading the two pointer bytes the sequential cursor must
+                    // advance to just past those two bytes — not to the pointer target.
+                    int afterPointer = this.Position;
+                    if (PositionsStrings.TryGetValue(p, out string? cached))
+                    {
+                        return cached;
+                    }
+                    // Recurse into the pointer target with a fresh sequential cursor.
+                    this.Position = p;
+                    var resolved = ReadDomainName(p, depth + 1);
+                    // Restore the sequential cursor to just after the two pointer bytes.
+                    this.Position = afterPointer;
+                    return resolved;
+                }
+                else if ((length & 0xC0) != 0)
+                {
+                    // Label type 01 or 10 — reserved, reject.
+                    throw new InvalidDataException($"DNS label with reserved type bits 0x{length & 0xC0:X2} at offset {position}.");
                 }
                 else
                 {
-                    var rs = ReadDomainName(p, depth + 1);
-                    Context = context;
-                    return rs;
+                    // Labels are raw octets (RFC 1035); Latin-1 maps each byte 0x00–0xFF
+                    // to the same code point, preserving the raw content without throwing
+                    // on byte sequences that would be invalid UTF-8.
+                    DNSDomainName s = Encoding.Latin1.GetString(ReadBytes(length));
+                    var next = ReadDomainName(this.Position, depth + 1);
+                    s = s.Append(next);
+                    // RFC 1035 §2.3.4: total name length must not exceed 255 bytes on the
+                    // wire, which corresponds to 253 characters in presentation form.
+                    if (s.Value.Length > 253)
+                        throw new InvalidDataException($"DNS domain name exceeds the 253-character presentation limit ({s.Value.Length} chars).");
+                    PositionsStrings[(ushort)position] = s;
+                    return s;
                 }
             }
-            else
+            finally
             {
-                DNSDomainName s = Encoding.UTF8.GetString(ReadBytes(length));
-                var next = ReadDomainName(this.Position, depth + 1);
-                s = s.Append(next);
-                if (restorePosition) this.Position = temp;
-                PositionsStrings[(ushort)position] = s;
-                Context = context;
-                return s;
+                // Restore the RDATA context unconditionally (label reads must not
+                // accidentally inherit the null context outside this call frame).
+                // Only restore the sequential cursor for recursive pointer-following calls
+                // (movedCursor == true); the outer call's cursor stays at the position just
+                // past the last byte it consumed in the datagram.
+                Context = savedContext;
+                if (movedCursor) this.Position = savedPosition;
             }
-
         }
 
         public string ReadString()
         {
             if (Context == null) throw new InvalidOperationException("ReadString requires an active RData context. Call BeginRData first.");
-            return ReadString(Context.BytesLeft);
+            return ReadString(Context.RDataEnd - Position);
         }
 
         public string ReadString(int length) => Encoding.UTF8.GetString(ReadBytes(length));
@@ -276,7 +313,8 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
     private sealed class Context
     {
         public int Length { get; init; }
-        public int BytesLeft { get; set; }
+        // Absolute datagram offset one past the last RDATA byte.
+        public int RDataEnd { get; init; }
     }
 
 
@@ -285,8 +323,15 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
     /// </summary>
     /// <param name="datas">The datagram content to parse.</param>
     /// <returns>The populated <see cref="DNSHeader"/> representing the packet.</returns>
+    // DNS header is 12 bytes (ID + Flags + 4 × 2-byte counts).
+    private const int DnsHeaderLength = 12;
+
     public DNSHeader Read(byte[] datas)
     {
+        if (datas.Length < DnsHeaderLength)
+        {
+            throw new InvalidDataException($"DNS datagram too short ({datas.Length} bytes); minimum is {DnsHeaderLength} bytes.");
+        }
         Datas datasStructure = new Datas()
         {
             Datagram = datas,
@@ -303,9 +348,18 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
     /// <returns>The populated <see cref="DNSHeader"/> representing the packet.</returns>
     public DNSHeader Read(Stream datas)
     {
-        var datagram = new byte[512];
-        var length = datas.Read(datagram, 0, 512);
+        var buffer = new byte[512];
+        var length = datas.Read(buffer, 0, 512);
 
+        if (length < DnsHeaderLength)
+        {
+            throw new InvalidDataException($"DNS datagram too short ({length} bytes); minimum is {DnsHeaderLength} bytes.");
+        }
+
+        // Trim the array to the actual received length so that ReadByte / ReadBytes
+        // cannot silently advance into zero-filled uninitialized tail bytes.
+        var datagram = new byte[length];
+        Array.Copy(buffer, datagram, length);
 
         Datas datasStructure = new Datas()
         {
@@ -331,7 +385,9 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
         for (int i = 0; i < count; i++)
         {
             var requestRecord = ReadRequestRecord(datas);
-            requestRecord.Type = requestClassNames[requestRecord.RequestType];
+            requestRecord.Type = requestClassNames.TryGetValue(requestRecord.RequestType, out string? typeName)
+                ? typeName
+                : requestRecord.RequestType.ToString();
             requests.Add(requestRecord);
         }
     }
@@ -348,14 +404,42 @@ public class DNSPacketReader : IDNSReader<byte[]>, IDNSReader<Stream>
     private DNSResponseRecord ReadResponse(Datas datas)
     {
         var responseRecord = ReadResponseRecord(datas);
+        int rdataStart = datas.Position;
         datas.Context = new Context
         {
-            BytesLeft = responseRecord.RDLength,
-            Length = responseRecord.RDLength
+            Length = responseRecord.RDLength,
+            RDataEnd = rdataStart + responseRecord.RDLength
         };
-        Debug.WriteLine($"Read record {requestClassNames[responseRecord.Class]}. Length = {responseRecord.RDLength}");
-        var responseDetail = readers[(responseRecord.Class, responseRecord.ClassId)](datas);
-        responseRecord.RData = responseDetail;
+        string recordTypeName = requestClassNames.TryGetValue(responseRecord.Class, out string? rtn) ? rtn : responseRecord.Class.ToString();
+        Debug.WriteLine($"Read record {recordTypeName}. Length = {responseRecord.RDLength}");
+        if (readers.TryGetValue((responseRecord.Class, responseRecord.ClassId), out var reader))
+        {
+            responseRecord.RData = reader(datas);
+            int consumed = datas.Position - rdataStart;
+            if (consumed > responseRecord.RDLength)
+                throw new InvalidDataException($"DNS record reader for {recordTypeName} consumed {consumed} bytes but RDLength is only {responseRecord.RDLength}.");
+            if (consumed < responseRecord.RDLength)
+            {
+                // The record reader consumed fewer bytes than the wire-format RDLength declares.
+                // This is valid per RFC 1035 §3.2.1: new record types may append optional trailing
+                // fields that older parsers do not understand. If we left the cursor at datas.Position
+                // the next record header would be parsed at the wrong offset and the rest of the
+                // response would be corrupt. Forcing the cursor to rdataStart + RDLength keeps
+                // every subsequent record header aligned with what the sender intended.
+                // Note: consumed > RDLength is always a hard error (reader violated its contract).
+                datas.Context = null;
+                datas.Position = rdataStart + responseRecord.RDLength;
+            }
+        }
+        else
+        {
+            // Unknown or unsupported record type: consume the RDATA bytes to keep the parser in sync,
+            // leave RData as null so the caller can still process surrounding records.
+            if (responseRecord.RDLength > 0)
+            {
+                datas.ReadBytes(responseRecord.RDLength);
+            }
+        }
         datas.Context = null;
         return responseRecord;
     }

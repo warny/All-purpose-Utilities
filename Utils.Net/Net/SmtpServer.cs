@@ -19,21 +19,47 @@ public sealed class SmtpServer : IDisposable
     private string? _from;
     private readonly List<string> _recipients = new();
     private readonly List<string> _dataLines = new();
+    private int _dataChars;
     private string? _loginUser;
     private bool _isAuthenticated;
     private bool _canRelay;
+    private bool _isTls;
+    private int _failedAuthCount;
+    private bool _authLocked;
+
+    /// <summary>
+    /// Gets or sets the maximum total number of characters accepted in a single SMTP DATA body.
+    /// Default is 10 MiB worth of characters. Set to 0 to disable.
+    /// </summary>
+    public int MaxDataChars { get; set; } = 10 * 1024 * 1024;
+
+    /// <summary>
+    /// Gets or sets the maximum number of lines accepted in a single SMTP DATA body.
+    /// Default is 100 000. Set to 0 to disable.
+    /// </summary>
+    public int MaxDataLines { get; set; } = 100_000;
+
+    /// <summary>
+    /// Gets or sets the maximum number of failed authentication attempts allowed per connection
+    /// before the session is terminated. Default is 5. Set to 0 to disable.
+    /// </summary>
+    public int MaxAuthAttempts { get; set; } = 5;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SmtpServer"/> class.
     /// </summary>
     /// <param name="store">Store used to persist received messages.</param>
-    /// <param name="isLocalDomain">Function used to determine if a domain is local and does not require relaying.</param>
+    /// <param name="isLocalDomain">
+    /// Function used to determine if a domain is local and does not require relaying.
+    /// When <see langword="null"/>, all non-authenticated recipients are rejected (fail-closed).
+    /// Pass an explicit predicate to allow delivery to specific local domains.
+    /// </param>
     /// <param name="authenticator">Optional authenticator used to validate credentials.</param>
     public SmtpServer(ISmtpMessageStore store, Func<string, bool>? isLocalDomain = null, ISmtpAuthenticator? authenticator = null)
     {
         _store = store;
         _authenticator = authenticator;
-        _isLocalDomain = isLocalDomain ?? (_ => true);
+        _isLocalDomain = isLocalDomain ?? (_ => false);
         _server = new CommandResponseServer(SmtpFormatter);
         _server.RegisterCommand("EHLO", HandleEhlo);
         _server.RegisterCommand("HELO", HandleHelo);
@@ -55,9 +81,15 @@ public sealed class SmtpServer : IDisposable
     /// </summary>
     /// <param name="stream">Stream connected to the client.</param>
     /// <param name="leaveOpen">True to leave the stream open when disposing the server.</param>
+    /// <param name="isTls">
+    /// Set to <see langword="true"/> when <paramref name="stream"/> is already protected by TLS.
+    /// When <see langword="false"/> (the default), the server will not advertise or accept AUTH
+    /// to prevent credentials from being transmitted in cleartext.
+    /// </param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    public async Task StartAsync(Stream stream, bool leaveOpen = false, CancellationToken cancellationToken = default)
+    public async Task StartAsync(Stream stream, bool leaveOpen = false, bool isTls = false, CancellationToken cancellationToken = default)
     {
+        _isTls = isTls;
         await _server.StartAsync(stream, leaveOpen, cancellationToken).ConfigureAwait(false);
         await _server.SendResponseAsync(new ServerResponse("220", ResponseSeverity.Completion, "ready")).ConfigureAwait(false);
     }
@@ -81,14 +113,14 @@ public sealed class SmtpServer : IDisposable
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
     /// <returns>Responses to send.</returns>
-    private Task<IEnumerable<ServerResponse>> HandleEhlo(CommandContext ctx, string[] args)
+    private Task<IEnumerable<ServerResponse>> HandleEhlo(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
         ctx.Add("GREETED");
         List<ServerResponse> responses = new()
         {
             new ServerResponse("250", ResponseSeverity.Preliminary, "Hello")
         };
-        if (_authenticator is not null)
+        if (_authenticator is not null && _isTls)
         {
             responses.Add(new ServerResponse("250", ResponseSeverity.Preliminary, "AUTH PLAIN LOGIN"));
         }
@@ -102,7 +134,7 @@ public sealed class SmtpServer : IDisposable
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
     /// <returns>Responses to send.</returns>
-    private Task<IEnumerable<ServerResponse>> HandleHelo(CommandContext ctx, string[] args)
+    private Task<IEnumerable<ServerResponse>> HandleHelo(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
         ctx.Add("GREETED");
         return Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("250", ResponseSeverity.Completion, "Hello") });
@@ -114,9 +146,14 @@ public sealed class SmtpServer : IDisposable
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
     /// <returns>Responses to send.</returns>
-    private Task<IEnumerable<ServerResponse>> HandleMail(CommandContext ctx, string[] args)
+    private Task<IEnumerable<ServerResponse>> HandleMail(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
-        _from = ExtractAddress(args);
+        // Null reverse-path (<>) is explicitly allowed for bounce messages.
+        if (!TryParseSmtpPath(args, allowNullPath: true, out string? from))
+        {
+            return Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("501", ResponseSeverity.PermanentNegative, "Malformed MAIL FROM path") });
+        }
+        _from = from ?? string.Empty;
         _recipients.Clear();
         ctx.Add("MAIL");
         ctx.Remove("RCPT");
@@ -129,11 +166,15 @@ public sealed class SmtpServer : IDisposable
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
     /// <returns>Responses to send.</returns>
-    private async Task<IEnumerable<ServerResponse>> HandleAuth(CommandContext ctx, string[] args)
+    private async Task<IEnumerable<ServerResponse>> HandleAuth(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
-        if (_authenticator is null)
+        if (_authenticator is null || !_isTls)
         {
             return new[] { new ServerResponse("502", ResponseSeverity.PermanentNegative, "Auth not supported") };
+        }
+        if (_authLocked)
+        {
+            return new[] { new ServerResponse("535", ResponseSeverity.PermanentNegative, "Too many authentication failures — bye") };
         }
         if (args.Length == 0)
         {
@@ -159,13 +200,21 @@ public sealed class SmtpServer : IDisposable
             int secondNull = credentials.IndexOf('\0', 1);
             string user = secondNull > 0 ? credentials[1..secondNull] : string.Empty;
             string password = secondNull > 0 && secondNull < credentials.Length - 1 ? credentials[(secondNull + 1)..] : string.Empty;
-            SmtpAuthenticationResult result = await _authenticator.AuthenticateAsync(user, password).ConfigureAwait(false);
+            SmtpAuthenticationResult result = await _authenticator.AuthenticateAsync(user, password, cancellationToken).ConfigureAwait(false);
             if (result.IsAuthenticated)
             {
+                _failedAuthCount = 0;
                 _isAuthenticated = true;
                 _canRelay = result.CanRelay;
                 ctx.Add("AUTH");
                 return new[] { new ServerResponse("235", ResponseSeverity.Completion, "Authenticated") };
+            }
+            _failedAuthCount++;
+            if (MaxAuthAttempts > 0 && _failedAuthCount >= MaxAuthAttempts)
+            {
+                _authLocked = true;
+                _server.CloseAfterResponse();
+                return new[] { new ServerResponse("535", ResponseSeverity.PermanentNegative, "Too many authentication failures — bye") };
             }
             return new[] { new ServerResponse("535", ResponseSeverity.PermanentNegative, "Authentication failed") };
         }
@@ -185,7 +234,7 @@ public sealed class SmtpServer : IDisposable
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
     /// <returns>Responses to send.</returns>
-    private static Task<IEnumerable<ServerResponse>> HandleVrfy(CommandContext ctx, string[] args)
+    private static Task<IEnumerable<ServerResponse>> HandleVrfy(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
         return Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("252", ResponseSeverity.Completion, "Cannot VRFY user") });
     }
@@ -196,7 +245,7 @@ public sealed class SmtpServer : IDisposable
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
     /// <returns>Responses to send.</returns>
-    private static Task<IEnumerable<ServerResponse>> HandleExpn(CommandContext ctx, string[] args)
+    private static Task<IEnumerable<ServerResponse>> HandleExpn(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
         return Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("252", ResponseSeverity.Completion, "Cannot EXPN list") });
     }
@@ -207,7 +256,7 @@ public sealed class SmtpServer : IDisposable
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
     /// <returns>Responses to send.</returns>
-    private static Task<IEnumerable<ServerResponse>> HandleHelp(CommandContext ctx, string[] args)
+    private static Task<IEnumerable<ServerResponse>> HandleHelp(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
         return Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("214", ResponseSeverity.Completion, "No help available") });
     }
@@ -218,9 +267,12 @@ public sealed class SmtpServer : IDisposable
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
     /// <returns>Responses to send.</returns>
-    private Task<IEnumerable<ServerResponse>> HandleRcpt(CommandContext ctx, string[] args)
+    private Task<IEnumerable<ServerResponse>> HandleRcpt(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
-        string address = ExtractAddress(args);
+        if (!TryParseSmtpPath(args, allowNullPath: false, out string? address) || address is null)
+        {
+            return Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("501", ResponseSeverity.PermanentNegative, "Malformed RCPT TO path") });
+        }
         string domain = string.Empty;
         int at = address.IndexOf('@');
         if (at >= 0 && at < address.Length - 1)
@@ -242,9 +294,10 @@ public sealed class SmtpServer : IDisposable
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
     /// <returns>Responses to send.</returns>
-    private Task<IEnumerable<ServerResponse>> HandleData(CommandContext ctx, string[] args)
+    private Task<IEnumerable<ServerResponse>> HandleData(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
         _dataLines.Clear();
+        _dataChars = 0;
         ctx.Add("DATA");
         return Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("354", ResponseSeverity.Intermediate, "Start mail input") });
     }
@@ -255,7 +308,7 @@ public sealed class SmtpServer : IDisposable
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
     /// <returns>Responses to send.</returns>
-    private Task<IEnumerable<ServerResponse>> HandleRset(CommandContext ctx, string[] args)
+    private Task<IEnumerable<ServerResponse>> HandleRset(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
         _from = null;
         _recipients.Clear();
@@ -272,7 +325,7 @@ public sealed class SmtpServer : IDisposable
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
     /// <returns>Responses to send.</returns>
-    private static Task<IEnumerable<ServerResponse>> HandleNoOp(CommandContext ctx, string[] args)
+    private static Task<IEnumerable<ServerResponse>> HandleNoOp(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
         return Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("250", ResponseSeverity.Completion, "OK") });
     }
@@ -283,7 +336,7 @@ public sealed class SmtpServer : IDisposable
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
     /// <returns>Responses to send.</returns>
-    private static Task<IEnumerable<ServerResponse>> HandleQuit(CommandContext ctx, string[] args)
+    private static Task<IEnumerable<ServerResponse>> HandleQuit(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
         return Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("221", ResponseSeverity.Completion, "Bye") });
     }
@@ -293,14 +346,14 @@ public sealed class SmtpServer : IDisposable
     /// </summary>
     /// <param name="line">Line received from the client.</param>
     /// <returns>Responses to send, or <see langword="null"/> if the line was not handled.</returns>
-    private async Task<IEnumerable<ServerResponse>> HandleSpecialLinesAsync(string line)
+    private async Task<IEnumerable<ServerResponse>> HandleSpecialLinesAsync(string line, CancellationToken cancellationToken)
     {
-        IEnumerable<ServerResponse>? responses = await HandleAuthLoginAsync(line).ConfigureAwait(false);
+        IEnumerable<ServerResponse>? responses = await HandleAuthLoginAsync(line, cancellationToken).ConfigureAwait(false);
         if (responses is not null)
         {
             return responses;
         }
-        responses = await HandleDataLinesAsync(line).ConfigureAwait(false);
+        responses = await HandleDataLinesAsync(line, cancellationToken).ConfigureAwait(false);
         return responses;
     }
 
@@ -309,7 +362,7 @@ public sealed class SmtpServer : IDisposable
     /// </summary>
     /// <param name="line">Line received from the client.</param>
     /// <returns>Responses to send.</returns>
-    private async Task<IEnumerable<ServerResponse>> HandleAuthLoginAsync(string line)
+    private async Task<IEnumerable<ServerResponse>> HandleAuthLoginAsync(string line, CancellationToken cancellationToken)
     {
         if (_server.HasContext("AUTH-LOGIN-USER"))
         {
@@ -344,14 +397,22 @@ public sealed class SmtpServer : IDisposable
             _server.RemoveContext("AUTH-LOGIN-PASS");
             if (_authenticator is not null && _loginUser is not null)
             {
-                SmtpAuthenticationResult result = await _authenticator.AuthenticateAsync(_loginUser, password).ConfigureAwait(false);
+                SmtpAuthenticationResult result = await _authenticator.AuthenticateAsync(_loginUser, password, cancellationToken).ConfigureAwait(false);
                 if (result.IsAuthenticated)
                 {
+                    _failedAuthCount = 0;
                     _isAuthenticated = true;
                     _canRelay = result.CanRelay;
                     _server.AddContext("AUTH");
                     return new[] { new ServerResponse("235", ResponseSeverity.Completion, "Authenticated") };
                 }
+            }
+            _failedAuthCount++;
+            if (MaxAuthAttempts > 0 && _failedAuthCount >= MaxAuthAttempts)
+            {
+                _authLocked = true;
+                _server.CloseAfterResponse();
+                return new[] { new ServerResponse("535", ResponseSeverity.PermanentNegative, "Too many authentication failures — bye") };
             }
             return new[] { new ServerResponse("535", ResponseSeverity.PermanentNegative, "Authentication failed") };
         }
@@ -363,7 +424,7 @@ public sealed class SmtpServer : IDisposable
     /// </summary>
     /// <param name="line">Line received from the client.</param>
     /// <returns>Responses to send.</returns>
-    private async Task<IEnumerable<ServerResponse>> HandleDataLinesAsync(string line)
+    private async Task<IEnumerable<ServerResponse>> HandleDataLinesAsync(string line, CancellationToken cancellationToken)
     {
         if (_server.HasContext("DATA"))
         {
@@ -372,7 +433,7 @@ public sealed class SmtpServer : IDisposable
                 _server.RemoveContext("DATA");
                 string data = string.Join("\r\n", _dataLines);
                 SmtpMessage message = new(_from ?? string.Empty, new List<string>(_recipients), data);
-                await _store.StoreAsync(message).ConfigureAwait(false);
+                await _store.StoreAsync(message, cancellationToken).ConfigureAwait(false);
                 _from = null;
                 _recipients.Clear();
                 _dataLines.Clear();
@@ -381,6 +442,21 @@ public sealed class SmtpServer : IDisposable
 
             string processed = line.StartsWith("..", StringComparison.Ordinal) ? line[1..] : line;
             _dataLines.Add(processed);
+            _dataChars += processed.Length;
+            if (MaxDataLines > 0 && _dataLines.Count > MaxDataLines)
+            {
+                _server.RemoveContext("DATA");
+                _dataLines.Clear();
+                _dataChars = 0;
+                return new[] { new ServerResponse("552", ResponseSeverity.PermanentNegative, "Message body too long (line limit exceeded)") };
+            }
+            if (MaxDataChars > 0 && _dataChars > MaxDataChars)
+            {
+                _server.RemoveContext("DATA");
+                _dataLines.Clear();
+                _dataChars = 0;
+                return new[] { new ServerResponse("552", ResponseSeverity.PermanentNegative, "Message body too long (size limit exceeded)") };
+            }
             return Array.Empty<ServerResponse>();
         }
 
@@ -388,20 +464,68 @@ public sealed class SmtpServer : IDisposable
     }
 
     /// <summary>
-    /// Extracts an address from command arguments.
+    /// Parses a strict SMTP path from command arguments (RFC 5321).
+    /// Paths must be enclosed in angle brackets. The null reverse-path <c>&lt;&gt;</c> is
+    /// accepted only when <paramref name="allowNullPath"/> is <see langword="true"/>.
+    /// Source routes are stripped. Local-part is limited to 64 characters, domain to 255,
+    /// and the full address to 254 characters.
     /// </summary>
-    /// <param name="args">Command arguments.</param>
-    /// <returns>Extracted address.</returns>
-    private static string ExtractAddress(string[] args)
+    /// <param name="args">Space-split command arguments (everything after the verb).</param>
+    /// <param name="allowNullPath">Whether <c>&lt;&gt;</c> (null reverse-path) is valid.</param>
+    /// <param name="address">
+    /// When the method returns <see langword="true"/>, contains the extracted address,
+    /// or <see langword="null"/> for the null reverse-path.
+    /// </param>
+    /// <returns><see langword="true"/> if the path is syntactically valid.</returns>
+    private static bool TryParseSmtpPath(string[] args, bool allowNullPath, out string? address)
     {
-        if (args.Length == 0)
+        address = null;
+        if (args.Length == 0) return false;
+
+        // Rejoin tokens in case a space appears between "FROM:" and "<addr>".
+        string argString = string.Join(" ", args);
+
+        int lt = argString.IndexOf('<');
+        int gt = lt >= 0 ? argString.IndexOf('>', lt + 1) : -1;
+        if (lt < 0 || gt <= lt) return false;
+
+        string path = argString[(lt + 1)..gt];
+
+        // Null reverse-path.
+        if (path.Length == 0)
         {
-            return string.Empty;
+            if (!allowNullPath) return false;
+            address = null;
+            return true;
         }
-        string value = args[0];
-        int start = value.IndexOf('<');
-        int end = value.IndexOf('>');
-        return start >= 0 && end > start ? value[(start + 1)..end] : value;
+
+        // Strip source routes ("@route1,@route2:localpart@domain" → "localpart@domain").
+        int colon = path.IndexOf(':');
+        int firstAt = path.IndexOf('@');
+        if (colon >= 0 && (firstAt < 0 || colon < firstAt))
+        {
+            path = path[(colon + 1)..];
+        }
+
+        // Reject control characters and whitespace.
+        foreach (char c in path)
+        {
+            if (c <= 0x20 || c == 0x7F) return false;
+        }
+
+        // Must contain exactly one '@' and both parts must be non-empty.
+        int at = path.IndexOf('@');
+        if (at <= 0 || at == path.Length - 1) return false;
+        if (path.IndexOf('@', at + 1) >= 0) return false;
+
+        string localPart = path[..at];
+        string domain = path[(at + 1)..];
+
+        // RFC 5321 limits.
+        if (localPart.Length > 64 || domain.Length > 255 || path.Length > 254) return false;
+
+        address = path;
+        return true;
     }
 
     /// <summary>

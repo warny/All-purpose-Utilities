@@ -29,12 +29,12 @@ public class CommandResponseServerTests
         {
             using TcpClient serverClient = await listener.AcceptTcpClientAsync();
             using CommandResponseServer server = new();
-            server.RegisterCommand("LOGIN", (ctx, args) =>
+            server.RegisterCommand("LOGIN", (ctx, args, ct) =>
             {
                 ctx.Add("AUTH");
                 return Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("200", ResponseSeverity.Completion, "OK") });
             });
-            server.RegisterCommand("LIST", (ctx, args) =>
+            server.RegisterCommand("LIST", (ctx, args, ct) =>
                 Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("200", ResponseSeverity.Completion, "Listed") }),
                 "AUTH");
             await server.StartAsync(serverClient.GetStream());
@@ -68,7 +68,7 @@ public class CommandResponseServerTests
         {
             using TcpClient serverClient = await listener.AcceptTcpClientAsync();
             using CommandResponseServer server = new() { Logger = logger };
-            server.RegisterCommand("PING", (ctx, args) => Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("200", ResponseSeverity.Completion, "Pong") }));
+            server.RegisterCommand("PING", (ctx, args, ct) => Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("200", ResponseSeverity.Completion, "Pong") }));
             await server.StartAsync(serverClient.GetStream());
             await server.Completion;
             listener.Stop();
@@ -114,6 +114,91 @@ public class CommandResponseServerTests
     }
 
     /// <summary>
+    /// Ensures that <see cref="CommandResponseServer.CloseAfterResponse"/> causes the server to
+    /// send the response produced by the handler and then immediately close the session.
+    /// The client must receive the response and then observe EOF on the next read.
+    /// </summary>
+    [TestMethod]
+    public async Task CloseAfterResponse_SendsResponseThenClosesSession()
+    {
+        TcpListener listener = new(IPAddress.Loopback, 0);
+        listener.Start();
+        int port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        Task serverTask = Task.Run(async () =>
+        {
+            using TcpClient serverClient = await listener.AcceptTcpClientAsync();
+            using CommandResponseServer server = new();
+            // The handler calls CloseAfterResponse() before returning its response.
+            // The close must happen AFTER the response is flushed (not during the handler),
+            // so the client receives "200 Closing" before the TCP FIN.
+            server.RegisterCommand("QUIT", (ctx, args, ct) =>
+            {
+                server.CloseAfterResponse();
+                return Task.FromResult<IEnumerable<ServerResponse>>(
+                    new[] { new ServerResponse("200", ResponseSeverity.Completion, "Closing") });
+            });
+            await server.StartAsync(serverClient.GetStream());
+            await server.Completion;
+            listener.Stop();
+        });
+
+        using TcpClient client = new();
+        await client.ConnectAsync(IPAddress.Loopback, port);
+        using System.IO.StreamReader reader = new(client.GetStream(), System.Text.Encoding.ASCII, false, 1024, true);
+        using StreamWriter writer = new(client.GetStream(), System.Text.Encoding.ASCII, 1024, true)
+            { NewLine = "\r\n", AutoFlush = true };
+
+        await writer.WriteLineAsync("QUIT");
+
+        string? response = await reader.ReadLineAsync();
+        Assert.IsNotNull(response, "The handler's response must be delivered before close");
+        Assert.IsTrue(response!.StartsWith("200"), $"Expected 200 Closing, got: {response}");
+
+        // Session must be closed: next read returns EOF.
+        string? eof = await reader.ReadLineAsync();
+        Assert.IsNull(eof, "Expected EOF after CloseAfterResponse, but got: " + eof);
+
+        await serverTask;
+    }
+
+    /// <summary>
+    /// Ensures that receiving a line longer than <see cref="CommandResponseServer.MaxLineLength"/>
+    /// causes the server to close the session without sending a response.
+    /// The client must observe EOF immediately after the oversized line.
+    /// </summary>
+    [TestMethod]
+    public async Task MaxLineLength_ClosesSessionWithoutResponse()
+    {
+        TcpListener listener = new(IPAddress.Loopback, 0);
+        listener.Start();
+        int port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        Task serverTask = Task.Run(async () =>
+        {
+            using TcpClient serverClient = await listener.AcceptTcpClientAsync();
+            // MaxLineLength = 10 so any command longer than 10 chars terminates the session.
+            using CommandResponseServer server = new() { MaxLineLength = 10 };
+            await server.StartAsync(serverClient.GetStream());
+            await server.Completion;
+            listener.Stop();
+        });
+
+        using TcpClient client = new();
+        await client.ConnectAsync(IPAddress.Loopback, port);
+        using System.IO.StreamReader reader = new(client.GetStream(), System.Text.Encoding.ASCII, false, 1024, true);
+        using StreamWriter writer = new(client.GetStream(), System.Text.Encoding.ASCII, 1024, true)
+            { NewLine = "\r\n", AutoFlush = true };
+
+        // This 25-character line exceeds MaxLineLength=10.
+        await writer.WriteLineAsync("TOOLONG_COMMAND_IS_REJECTED");
+
+        // The server closes without writing any response; the client observes EOF.
+        string? eof = await reader.ReadLineAsync();
+        Assert.IsNull(eof, "Expected EOF after MaxLineLength violation, but got: " + eof);
+
+        await serverTask;
+    }
+
+    /// <summary>
     /// Ensures that handlers can return no responses.
     /// </summary>
     [TestMethod]
@@ -126,7 +211,7 @@ public class CommandResponseServerTests
         {
             using TcpClient serverClient = await listener.AcceptTcpClientAsync();
             using CommandResponseServer server = new();
-            server.CommandReceived += _ => Task.FromResult<IEnumerable<ServerResponse>>(System.Array.Empty<ServerResponse>());
+            server.CommandReceived += (_, ct) => Task.FromResult<IEnumerable<ServerResponse>>(System.Array.Empty<ServerResponse>());
             await server.StartAsync(serverClient.GetStream());
             await server.Completion;
             listener.Stop();

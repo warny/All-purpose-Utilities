@@ -40,7 +40,7 @@ namespace UtilsTest.Net
                 0x00, 0x23, // Type (2 bytes)
                 0x00, 0x01, // Class (2 bytes)
                 0x00, 0x00, 0x00, 0x64, // TTL: 100 seconds
-                0x00, 0x3B, // RD Length (2 bytes) 59 bytes
+                0x00, 0x43, // RD Length (2 bytes) 67 bytes: 2+2+2+10+30+21
 
                 0x00, 0x14, // Priority (2 bytes) 20
                 0x00, 0x01, // Weight (2 bytes)// 1

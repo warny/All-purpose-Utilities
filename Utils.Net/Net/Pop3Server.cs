@@ -16,6 +16,14 @@ public sealed class Pop3Server : IDisposable
     private string? _user;
     private string? _timestamp;
     private readonly HashSet<int> _deleted = new();
+    private int _failedAuthCount;
+    private bool _authLocked;
+
+    /// <summary>
+    /// Gets or sets the maximum number of failed authentication attempts allowed per connection
+    /// before the session is terminated. Default is 5. Set to 0 to disable.
+    /// </summary>
+    public int MaxAuthAttempts { get; set; } = 5;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Pop3Server"/> class.
@@ -84,8 +92,9 @@ public sealed class Pop3Server : IDisposable
     /// </summary>
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Responses to send.</returns>
-    private Task<IEnumerable<ServerResponse>> HandleUser(CommandContext ctx, string[] args)
+    private Task<IEnumerable<ServerResponse>> HandleUser(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
         _user = args.Length > 0 ? args[0] : string.Empty;
         ctx.Add("USER");
@@ -97,16 +106,27 @@ public sealed class Pop3Server : IDisposable
     /// </summary>
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Responses to send.</returns>
-    private async Task<IEnumerable<ServerResponse>> HandlePass(CommandContext ctx, string[] args)
+    private async Task<IEnumerable<ServerResponse>> HandlePass(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
+        if (_authLocked)
+            return new[] { new ServerResponse("-ERR", ResponseSeverity.PermanentNegative, "Too many authentication failures — bye") };
         string password = args.Length > 0 ? args[0] : string.Empty;
-        bool ok = await _mailbox.AuthenticateAsync(_user ?? string.Empty, password).ConfigureAwait(false);
+        bool ok = await _mailbox.AuthenticateAsync(_user ?? string.Empty, password, cancellationToken).ConfigureAwait(false);
         if (ok)
         {
+            _failedAuthCount = 0;
             ctx.Remove("USER");
             ctx.Add("AUTH");
             return new[] { new ServerResponse("+OK", ResponseSeverity.Completion, "authentication successful") };
+        }
+        _failedAuthCount++;
+        if (MaxAuthAttempts > 0 && _failedAuthCount >= MaxAuthAttempts)
+        {
+            _authLocked = true;
+            _server.CloseAfterResponse();
+            return new[] { new ServerResponse("-ERR", ResponseSeverity.PermanentNegative, "Too many authentication failures — bye") };
         }
         return new[] { new ServerResponse("-ERR", ResponseSeverity.PermanentNegative, "authentication failed") };
     }
@@ -116,10 +136,11 @@ public sealed class Pop3Server : IDisposable
     /// </summary>
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Responses to send.</returns>
-    private async Task<IEnumerable<ServerResponse>> HandleStat(CommandContext ctx, string[] args)
+    private async Task<IEnumerable<ServerResponse>> HandleStat(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
-        IReadOnlyDictionary<int, int> list = await _mailbox.ListAsync().ConfigureAwait(false);
+        IReadOnlyDictionary<int, int> list = await _mailbox.ListAsync(cancellationToken).ConfigureAwait(false);
         int total = 0;
         int count = 0;
         foreach (KeyValuePair<int, int> pair in list)
@@ -139,10 +160,11 @@ public sealed class Pop3Server : IDisposable
     /// </summary>
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Responses to send.</returns>
-    private async Task<IEnumerable<ServerResponse>> HandleList(CommandContext ctx, string[] args)
+    private async Task<IEnumerable<ServerResponse>> HandleList(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
-        IReadOnlyDictionary<int, int> list = await _mailbox.ListAsync().ConfigureAwait(false);
+        IReadOnlyDictionary<int, int> list = await _mailbox.ListAsync(cancellationToken).ConfigureAwait(false);
         if (args.Length > 0 && int.TryParse(args[0], out int id))
         {
             if (!
@@ -171,19 +193,20 @@ public sealed class Pop3Server : IDisposable
     /// </summary>
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Responses to send.</returns>
-    private async Task<IEnumerable<ServerResponse>> HandleRetr(CommandContext ctx, string[] args)
+    private async Task<IEnumerable<ServerResponse>> HandleRetr(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
         if (args.Length == 0 || !int.TryParse(args[0], out int id))
         {
             return new[] { new ServerResponse("-ERR", ResponseSeverity.PermanentNegative, "invalid id") };
         }
-        IReadOnlyDictionary<int, int> list = await _mailbox.ListAsync().ConfigureAwait(false);
+        IReadOnlyDictionary<int, int> list = await _mailbox.ListAsync(cancellationToken).ConfigureAwait(false);
         if (_deleted.Contains(id) || !list.ContainsKey(id))
         {
             return new[] { new ServerResponse("-ERR", ResponseSeverity.PermanentNegative, "no such message") };
         }
-        string message = await _mailbox.RetrieveAsync(id).ConfigureAwait(false);
+        string message = await _mailbox.RetrieveAsync(id, cancellationToken).ConfigureAwait(false);
         List<ServerResponse> responses = new() { new ServerResponse("+OK", ResponseSeverity.Preliminary, "message follows") };
         using StringReader reader = new(message);
         string? line;
@@ -204,14 +227,15 @@ public sealed class Pop3Server : IDisposable
     /// </summary>
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Responses to send.</returns>
-    private async Task<IEnumerable<ServerResponse>> HandleDele(CommandContext ctx, string[] args)
+    private async Task<IEnumerable<ServerResponse>> HandleDele(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
         if (args.Length == 0 || !int.TryParse(args[0], out int id))
         {
             return new[] { new ServerResponse("-ERR", ResponseSeverity.PermanentNegative, "invalid id") };
         }
-        IReadOnlyDictionary<int, int> list = await _mailbox.ListAsync().ConfigureAwait(false);
+        IReadOnlyDictionary<int, int> list = await _mailbox.ListAsync(cancellationToken).ConfigureAwait(false);
         if (_deleted.Contains(id) || !list.ContainsKey(id))
         {
             return new[] { new ServerResponse("-ERR", ResponseSeverity.PermanentNegative, "no such message") };
@@ -225,8 +249,9 @@ public sealed class Pop3Server : IDisposable
     /// </summary>
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Responses to send.</returns>
-    private Task<IEnumerable<ServerResponse>> HandleNoOp(CommandContext ctx, string[] args)
+    private Task<IEnumerable<ServerResponse>> HandleNoOp(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
         return Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("+OK", ResponseSeverity.Completion, string.Empty) });
     }
@@ -236,8 +261,9 @@ public sealed class Pop3Server : IDisposable
     /// </summary>
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Responses to send.</returns>
-    private Task<IEnumerable<ServerResponse>> HandleRset(CommandContext ctx, string[] args)
+    private Task<IEnumerable<ServerResponse>> HandleRset(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
         _deleted.Clear();
         return Task.FromResult<IEnumerable<ServerResponse>>(new[] { new ServerResponse("+OK", ResponseSeverity.Completion, string.Empty) });
@@ -248,8 +274,9 @@ public sealed class Pop3Server : IDisposable
     /// </summary>
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Responses to send.</returns>
-    private Task<IEnumerable<ServerResponse>> HandleCapa(CommandContext ctx, string[] args)
+    private Task<IEnumerable<ServerResponse>> HandleCapa(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
         List<ServerResponse> responses = new()
         {
@@ -267,10 +294,11 @@ public sealed class Pop3Server : IDisposable
     /// </summary>
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Responses to send.</returns>
-    private async Task<IEnumerable<ServerResponse>> HandleUidl(CommandContext ctx, string[] args)
+    private async Task<IEnumerable<ServerResponse>> HandleUidl(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
-        IReadOnlyDictionary<int, string> list = await _mailbox.ListUidsAsync().ConfigureAwait(false);
+        IReadOnlyDictionary<int, string> list = await _mailbox.ListUidsAsync(cancellationToken).ConfigureAwait(false);
         if (args.Length > 0 && int.TryParse(args[0], out int id))
         {
             if (!_deleted.Contains(id) && list.TryGetValue(id, out string uid))
@@ -297,20 +325,31 @@ public sealed class Pop3Server : IDisposable
     /// </summary>
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Responses to send.</returns>
-    private async Task<IEnumerable<ServerResponse>> HandleApop(CommandContext ctx, string[] args)
+    private async Task<IEnumerable<ServerResponse>> HandleApop(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
+        if (_authLocked)
+            return new[] { new ServerResponse("-ERR", ResponseSeverity.PermanentNegative, "Too many authentication failures — bye") };
         if (_timestamp is null || args.Length < 2)
         {
             return new[] { new ServerResponse("-ERR", ResponseSeverity.PermanentNegative, "invalid arguments") };
         }
         string user = args[0];
         string digest = args[1];
-        bool ok = await _mailbox.AuthenticateApopAsync(user, _timestamp, digest).ConfigureAwait(false);
+        bool ok = await _mailbox.AuthenticateApopAsync(user, _timestamp, digest, cancellationToken).ConfigureAwait(false);
         if (ok)
         {
+            _failedAuthCount = 0;
             ctx.Add("AUTH");
             return new[] { new ServerResponse("+OK", ResponseSeverity.Completion, "authentication successful") };
+        }
+        _failedAuthCount++;
+        if (MaxAuthAttempts > 0 && _failedAuthCount >= MaxAuthAttempts)
+        {
+            _authLocked = true;
+            _server.CloseAfterResponse();
+            return new[] { new ServerResponse("-ERR", ResponseSeverity.PermanentNegative, "Too many authentication failures — bye") };
         }
         return new[] { new ServerResponse("-ERR", ResponseSeverity.PermanentNegative, "authentication failed") };
     }
@@ -320,12 +359,13 @@ public sealed class Pop3Server : IDisposable
     /// </summary>
     /// <param name="ctx">Command context.</param>
     /// <param name="args">Command arguments.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Responses to send.</returns>
-    private async Task<IEnumerable<ServerResponse>> HandleQuit(CommandContext ctx, string[] args)
+    private async Task<IEnumerable<ServerResponse>> HandleQuit(CommandContext ctx, string[] args, CancellationToken cancellationToken)
     {
         foreach (int id in _deleted)
         {
-            await _mailbox.DeleteAsync(id).ConfigureAwait(false);
+            await _mailbox.DeleteAsync(id, cancellationToken).ConfigureAwait(false);
         }
         _deleted.Clear();
         return new[] { new ServerResponse("+OK", ResponseSeverity.Completion, "bye") };

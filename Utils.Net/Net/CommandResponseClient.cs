@@ -29,8 +29,23 @@ public class CommandResponseClient : IDisposable
     private TimeSpan _noOpInterval = Timeout.InfiniteTimeSpan;
     private string _noOpCommand = "NOOP";
     private bool _leaveOpen;
+    private bool _everConnected;
     private bool _disconnected;
     private TimeSpan _listenTimeout = Timeout.InfiniteTimeSpan;
+
+    /// <summary>
+    /// Gets or sets the maximum number of bytes allowed in a single incoming response line.
+    /// Lines longer than this limit cause the listener loop to disconnect.
+    /// Default is 8192 bytes (8 KiB). Set to 0 to disable the check.
+    /// </summary>
+    public int MaxLineLength { get; set; } = 8192;
+
+    /// <summary>
+    /// Gets or sets the maximum number of response lines that <see cref="SendCommandAsync"/> will
+    /// accumulate for a single command before throwing <see cref="InvalidDataException"/>.
+    /// Default is 10 000. Set to 0 to disable the check.
+    /// </summary>
+    public int MaxResponseCount { get; set; } = 10_000;
 
     /// <summary>
     /// Gets or sets the logger used to trace client activity.
@@ -86,9 +101,12 @@ public class CommandResponseClient : IDisposable
     }
 
     /// <summary>
-    /// Gets a value indicating whether the client is still connected.
+    /// Gets a value indicating whether the client is currently connected.
+    /// Returns <see langword="false"/> on a newly constructed instance that has not yet called
+    /// <see cref="ConnectAsync(string,int,System.Threading.CancellationToken)"/>, and returns
+    /// <see langword="false"/> again once the connection has been closed or disposed.
     /// </summary>
-    public bool IsConnected => !_disconnected;
+    public bool IsConnected => _everConnected && !_disconnected;
 
     /// <summary>
     /// Default port used by the protocol.
@@ -135,6 +153,8 @@ public class CommandResponseClient : IDisposable
         {
             IsBackground = true
         };
+        _everConnected = true;
+        _disconnected = false;
         _listenThread.Start();
         Logger?.LogInformation("Client connected to stream");
         if (_noOpInterval != Timeout.InfiniteTimeSpan)
@@ -178,7 +198,7 @@ public class CommandResponseClient : IDisposable
                 throw new IOException("Connection closed.");
             }
             DrainPendingResponses();
-            Logger?.LogInformation("Sending: {Command}", command);
+            Logger?.LogDebug("Sending: {Command}", RedactCommandForLog(command));
             await _writer.WriteLineAsync(command).ConfigureAwait(false);
             List<ServerResponse> responses = new();
             while (true)
@@ -193,6 +213,10 @@ public class CommandResponseClient : IDisposable
                     continue;
                 }
                 responses.Add(response);
+                if (MaxResponseCount > 0 && responses.Count > MaxResponseCount)
+                {
+                    throw new InvalidDataException($"Server sent more than {MaxResponseCount} response lines for a single command.");
+                }
                 if (response.Severity >= ResponseSeverity.Completion || response.Severity == ResponseSeverity.Unknown)
                 {
                     break;
@@ -310,8 +334,14 @@ public class CommandResponseClient : IDisposable
                     break;
                 }
 
+                if (MaxLineLength > 0 && line.Length > MaxLineLength)
+                {
+                    Logger?.LogWarning("Incoming response line exceeded MaxLineLength ({MaxLineLength}); disconnecting.", MaxLineLength);
+                    break;
+                }
+
                 ServerResponse response = ParseResponseLine(line);
-                Logger?.LogInformation("Received: {Code} {Message}", response.Code, response.Message);
+                Logger?.LogDebug("Received: {Code} {Message}", SanitizeForLog(response.Code, 10), SanitizeForLog(response.Message ?? string.Empty, 200));
                 _responseQueue.Enqueue(response);
                 _responseSignal.Release();
                 UnsolicitedResponseReceived?.Invoke(response);
@@ -331,6 +361,56 @@ public class CommandResponseClient : IDisposable
             _responseSignal.Release();
             Logger?.LogWarning("Listener thread terminated");
         }
+    }
+
+    /// <summary>
+    /// Validates that <paramref name="value"/> does not contain CR, LF or NUL characters,
+    /// which would allow an attacker to inject additional protocol commands.
+    /// </summary>
+    /// <param name="value">String to validate.</param>
+    /// <param name="paramName">Parameter name used in the exception message.</param>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="value"/> contains <c>\r</c>, <c>\n</c> or <c>\0</c>.
+    /// </exception>
+    protected static void ValidateCommandArgument(string value, string paramName)
+    {
+        if (value.AsSpan().IndexOfAny('\r', '\n', '\0') >= 0)
+        {
+            throw new ArgumentException(
+                "Command argument must not contain CR, LF or NUL characters.",
+                paramName);
+        }
+    }
+
+    /// <summary>
+    /// Returns a loggable (redacted) representation of a command before it is sent.
+    /// The default implementation logs only the verb (first space-separated word) to avoid
+    /// accidentally exposing secret-bearing arguments such as AUTH credentials or PASS values.
+    /// Override in a protocol subclass to log more detail for commands that are known to be safe.
+    /// </summary>
+    /// <param name="command">Command about to be sent.</param>
+    /// <returns>A string safe to write to the log.</returns>
+    protected virtual string RedactCommandForLog(string command)
+    {
+        int space = command.IndexOf(' ');
+        string verb = space >= 0 ? command[..space] : command;
+        string suffix = space >= 0 ? " [...]" : string.Empty;
+        return SanitizeForLog(verb) + suffix;
+    }
+
+    /// <summary>
+    /// Replaces control characters with '?' and truncates the value to
+    /// <paramref name="maxLength"/> characters to prevent log injection or flooding.
+    /// </summary>
+    protected static string SanitizeForLog(string value, int maxLength = 100)
+    {
+        bool truncated = value.Length > maxLength;
+        ReadOnlySpan<char> source = truncated ? value.AsSpan(0, maxLength) : value.AsSpan();
+        char[] chars = new char[truncated ? maxLength + 3 : source.Length];
+        for (int i = 0; i < source.Length; i++)
+            chars[i] = source[i] < 0x20 || source[i] == 0x7F ? '?' : source[i];
+        if (truncated) { chars[maxLength] = '.'; chars[maxLength + 1] = '.'; chars[maxLength + 2] = '.'; }
+        return new string(chars);
     }
 
     /// <summary>
