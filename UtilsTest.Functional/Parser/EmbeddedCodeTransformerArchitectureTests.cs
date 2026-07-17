@@ -184,6 +184,133 @@ public sealed class EmbeddedCodeTransformerArchitectureTests
         StringAssert.StartsWith(violations[0], "Utils.Parser.Expressions/OtherEmbeddedCodePreparer.cs:10: compiler.Compile(\"raw\")");
     }
 
+    /// <summary>
+    /// Ensures the supported runtime embedded-code facade remains the sole production component that combines the
+    /// shared transformation pipeline, expression compilation, specialized lambdas, and prepared parser artifacts.
+    /// </summary>
+    [TestMethod]
+    public void ExpressionEmbeddedCodePreparer_IsOnlySupportedRuntimeEmbeddedCodeCompilationFacade()
+    {
+        string repositoryRoot = FindRepositoryRoot();
+        IReadOnlyList<SourceScan> scans = CreateProductionParserScans(repositoryRoot);
+        Compilation compilation = scans[0].SemanticModel.Compilation;
+        INamedTypeSymbol preparerType = compilation.GetTypeByMetadataName("Utils.Parser.Expressions.ExpressionEmbeddedCodePreparer")!;
+        INamedTypeSymbol preparerContract = compilation.GetTypeByMetadataName("Utils.Parser.EmbeddedCode.IEmbeddedCodePreparer`2")!;
+        INamedTypeSymbol predicateArtifact = compilation.GetTypeByMetadataName("Utils.Parser.Expressions.PreparedExpressionSemanticPredicate")!;
+        INamedTypeSymbol actionArtifact = compilation.GetTypeByMetadataName("Utils.Parser.Expressions.PreparedExpressionParserAction")!;
+        INamedTypeSymbol compilerContract = compilation.GetTypeByMetadataName("Utils.Expressions.IExpressionCompiler")!;
+        INamedTypeSymbol pipelineType = compilation.GetTypeByMetadataName("Utils.Parser.Diagnostics.EmbeddedCode.EmbeddedCodeTransformationPipeline")!;
+
+        Assert.IsTrue(preparerType.IsSealed);
+        INamedTypeSymbol implementedContract = preparerType.AllInterfaces.Single(candidate =>
+            SymbolEqualityComparer.Default.Equals(candidate.OriginalDefinition, preparerContract));
+        Assert.IsTrue(SymbolEqualityComparer.Default.Equals(implementedContract.TypeArguments[0], predicateArtifact));
+        Assert.IsTrue(SymbolEqualityComparer.Default.Equals(implementedContract.TypeArguments[1], actionArtifact));
+        CollectionAssert.AreEquivalent(
+            new[] { "PrepareParserAction", "PrepareSemanticPredicate" },
+            preparerType.GetMembers().OfType<IMethodSymbol>()
+                .Where(static method => method.DeclaredAccessibility == Accessibility.Public && method.MethodKind == MethodKind.Ordinary)
+                .Select(static method => method.Name)
+                .ToArray());
+        Assert.AreEqual(1, preparerType.InstanceConstructors.Count(static constructor => constructor.DeclaredAccessibility == Accessibility.Public));
+
+        SourceScan facadeScan = scans.Single(scan => scan.RelativePath == "Utils.Parser.Expressions/ExpressionEmbeddedCodePreparer.cs");
+        ClassDeclarationSyntax facadeDeclaration = facadeScan.Tree.GetCompilationUnitRoot().DescendantNodes()
+            .OfType<ClassDeclarationSyntax>()
+            .Single(static type => type.Identifier.ValueText == "ExpressionEmbeddedCodePreparer");
+        IFieldSymbol compilerField = preparerType.GetMembers("_compiler").OfType<IFieldSymbol>().Single();
+        MethodDeclarationSyntax transformSource = facadeDeclaration.Members.OfType<MethodDeclarationSyntax>()
+            .Single(static method => method.Identifier.ValueText == "TransformSource");
+        Assert.AreEqual(1, transformSource.DescendantNodes().OfType<InvocationExpressionSyntax>().Count(invocation =>
+            facadeScan.SemanticModel.GetSymbolInfo(invocation).Symbol is IMethodSymbol method
+            && SymbolEqualityComparer.Default.Equals(method.ContainingType, pipelineType)));
+
+        foreach (string methodName in new[] { "PrepareSemanticPredicate", "PrepareParserAction" })
+        {
+            MethodDeclarationSyntax method = facadeDeclaration.Members.OfType<MethodDeclarationSyntax>()
+                .Single(candidate => candidate.Identifier.ValueText == methodName);
+            Assert.AreEqual(1, method.DescendantNodes().OfType<InvocationExpressionSyntax>().Count(invocation =>
+                facadeScan.SemanticModel.GetSymbolInfo(invocation).Symbol is IMethodSymbol called
+                && SymbolEqualityComparer.Default.Equals(called.ContainingType, preparerType)
+                && called.Name == "TransformSource"));
+            InvocationExpressionSyntax compilerCall = method.DescendantNodes().OfType<InvocationExpressionSyntax>().Single(invocation =>
+                invocation.Expression is MemberAccessExpressionSyntax access
+                && access.Name.Identifier.ValueText == "Compile"
+                && facadeScan.SemanticModel.GetSymbolInfo(access.Expression).Symbol is IFieldSymbol receiver
+                && SymbolEqualityComparer.Default.Equals(receiver, compilerField));
+            Assert.IsTrue(compilerCall.Expression is MemberAccessExpressionSyntax memberAccess
+                && facadeScan.SemanticModel.GetSymbolInfo(memberAccess.Expression).Symbol is IFieldSymbol receiver
+                && SymbolEqualityComparer.Default.Equals(receiver, compilerField));
+        }
+
+        INamedTypeSymbol[] matchingPreparers = scans.SelectMany(scan => scan.Tree.GetCompilationUnitRoot().DescendantNodes().OfType<ClassDeclarationSyntax>()
+                .Select(type => scan.SemanticModel.GetDeclaredSymbol(type)))
+            .OfType<INamedTypeSymbol>()
+            .Where(type => type.AllInterfaces.Any(candidate => SymbolEqualityComparer.Default.Equals(candidate, implementedContract)))
+            .ToArray();
+        CollectionAssert.AreEqual(new[] { preparerType.ToDisplayString() }, matchingPreparers.Select(static type => type.ToDisplayString()).ToArray());
+
+        foreach (INamedTypeSymbol artifactType in new[] { predicateArtifact, actionArtifact })
+        {
+            string[] constructors = scans.SelectMany(scan => scan.Tree.GetCompilationUnitRoot().DescendantNodes().OfType<ObjectCreationExpressionSyntax>()
+                    .Where(creation => SymbolEqualityComparer.Default.Equals((facadeScan.SemanticModel.Compilation.GetSemanticModel(scan.Tree).GetSymbolInfo(creation).Symbol as IMethodSymbol)?.ContainingType, artifactType))
+                    .Select(creation => GetEnclosingTypeName(creation)))
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
+            CollectionAssert.AreEqual(new[] { "ExpressionEmbeddedCodePreparer" }, constructors);
+        }
+
+        string[] specializedLambdaOwners = scans.SelectMany(scan => scan.Tree.GetCompilationUnitRoot().DescendantNodes().OfType<InvocationExpressionSyntax>()
+                .Where(invocation => invocation.Expression is MemberAccessExpressionSyntax
+                    {
+                        Expression: IdentifierNameSyntax expressionType,
+                        Name: GenericNameSyntax { Identifier.ValueText: "Lambda", TypeArgumentList.Arguments.Count: 1 } lambda
+                    }
+                    && scan.SemanticModel.GetSymbolInfo(expressionType).Symbol is INamedTypeSymbol containingType
+                    && containingType.ToDisplayString() == "System.Linq.Expressions.Expression"
+                    && lambda.TypeArgumentList.Arguments[0].ToString() is
+                        "Func<SemanticPredicateEvaluationContext, bool>" or
+                        "Action<ParserActionExecutionContext>")
+                .Select(GetEnclosingTypeName))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        CollectionAssert.AreEqual(new[] { "ExpressionEmbeddedCodePreparer" }, specializedLambdaOwners);
+
+        foreach (SourceScan scan in scans.Where(static scan => scan.RelativePath.StartsWith("Utils.Parser.Generators/", StringComparison.Ordinal)))
+        {
+            Assert.IsFalse(scan.Tree.GetCompilationUnitRoot().DescendantNodes().OfType<IdentifierNameSyntax>().Any(identifier =>
+                scan.SemanticModel.GetSymbolInfo(identifier).Symbol is INamedTypeSymbol type
+                && (SymbolEqualityComparer.Default.Equals(type, preparerType) || SymbolEqualityComparer.Default.Equals(type, compilerContract))));
+        }
+
+        string[] forbiddenFacadeDependencies = facadeDeclaration.DescendantNodes().OfType<IdentifierNameSyntax>()
+            .Select(identifier => facadeScan.SemanticModel.GetSymbolInfo(identifier).Symbol)
+            .OfType<INamedTypeSymbol>()
+            .Where(static type => type.Name is "StringBuilder" or "GeneratedEmbeddedCodeBody" or "CSharpEmbeddedCodeInjector")
+            .Select(static type => type.ToDisplayString())
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        CollectionAssert.AreEqual(Array.Empty<string>(), forbiddenFacadeDependencies);
+
+        string[] parallelPipelines = scans.SelectMany(scan => scan.Tree.GetCompilationUnitRoot().DescendantNodes().OfType<TypeDeclarationSyntax>()
+                .Where(type => scan.SemanticModel.GetDeclaredSymbol(type) is INamedTypeSymbol symbol && !SymbolEqualityComparer.Default.Equals(symbol, preparerType))
+                .Where(type => type.DescendantNodes().OfType<IdentifierNameSyntax>()
+                    .Select(identifier => scan.SemanticModel.GetSymbolInfo(identifier).Symbol)
+                    .OfType<INamedTypeSymbol>()
+                    .Any(type => SymbolEqualityComparer.Default.Equals(type, pipelineType)))
+                .Where(type => type.DescendantNodes().OfType<IdentifierNameSyntax>()
+                    .Select(identifier => scan.SemanticModel.GetSymbolInfo(identifier).Symbol)
+                    .OfType<INamedTypeSymbol>()
+                    .Any(type => SymbolEqualityComparer.Default.Equals(type, compilerContract)))
+                .Where(type => type.DescendantNodes().OfType<IdentifierNameSyntax>()
+                    .Select(identifier => scan.SemanticModel.GetSymbolInfo(identifier).Symbol)
+                    .OfType<INamedTypeSymbol>()
+                    .Any(type => SymbolEqualityComparer.Default.Equals(type, predicateArtifact) || SymbolEqualityComparer.Default.Equals(type, actionArtifact)))
+                .Select(static type => type.Identifier.ValueText))
+            .ToArray();
+        CollectionAssert.AreEqual(Array.Empty<string>(), parallelPipelines);
+    }
+
 
 
     /// <summary>

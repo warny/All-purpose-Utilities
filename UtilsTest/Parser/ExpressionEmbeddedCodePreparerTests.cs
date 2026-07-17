@@ -52,7 +52,8 @@ public class ExpressionEmbeddedCodePreparerTests
     public void PrepareSemanticPredicate_WhenTransformerProvided_CompilerReceivesTransformedCode()
     {
         var compiler = new FakeExpressionCompiler();
-        var preparer = new ExpressionEmbeddedCodePreparer(compiler, new ReplaceRuntimeCodeTransformer());
+        var transformer = new ReplaceRuntimeCodeTransformer();
+        var preparer = new ExpressionEmbeddedCodePreparer(compiler, transformer);
 
         var result = preparer.PrepareSemanticPredicate(
             CreateSource("__TOKEN_PREDICATE__", EmbeddedCodeKind.SemanticPredicate),
@@ -61,6 +62,30 @@ public class ExpressionEmbeddedCodePreparerTests
         Assert.AreEqual(EmbeddedCodePreparationStatus.Succeeded, result.Status);
         Assert.AreEqual("true", compiler.LastContent);
         Assert.AreNotEqual("__TOKEN_PREDICATE__", compiler.LastContent);
+        Assert.AreEqual(1, transformer.Count);
+        Assert.AreEqual(1, compiler.CompileCount);
+        Assert.IsNotNull(compiler.LastSymbols);
+        AssertSymbolSet(compiler.LastSymbols, typeof(SemanticPredicateEvaluationContext));
+    }
+
+    [DataTestMethod]
+    [DataRow(nameof(ExpressionEmbeddedCodePreparer.PrepareSemanticPredicate), EmbeddedCodeKind.ParserInlineAction, EmbeddedCodeTarget.RuntimeInlineExpression)]
+    [DataRow(nameof(ExpressionEmbeddedCodePreparer.PrepareSemanticPredicate), EmbeddedCodeKind.SemanticPredicate, EmbeddedCodeTarget.SourceGeneratorCSharp)]
+    [DataRow(nameof(ExpressionEmbeddedCodePreparer.PrepareParserAction), EmbeddedCodeKind.SemanticPredicate, EmbeddedCodeTarget.RuntimeInlineExpression)]
+    [DataRow(nameof(ExpressionEmbeddedCodePreparer.PrepareParserAction), EmbeddedCodeKind.ParserInlineAction, EmbeddedCodeTarget.SourceGeneratorCSharp)]
+    public void PrepareRuntimeArtifact_WhenKindOrTargetIsUnsupported_DoesNotInvokeDependencies(
+        string prepareMethodName,
+        EmbeddedCodeKind kind,
+        EmbeddedCodeTarget target)
+    {
+        var compiler = new FakeExpressionCompiler();
+        var transformer = new CountingTransformer();
+        var preparer = new ExpressionEmbeddedCodePreparer(compiler, transformer);
+
+        InvokePrepare(preparer, prepareMethodName, CreateSource("true", kind), CreateContext(target));
+
+        Assert.AreEqual(0, transformer.Count);
+        Assert.AreEqual(0, compiler.CompileCount);
     }
 
     [TestMethod]
@@ -843,9 +868,13 @@ public class ExpressionEmbeddedCodePreparerTests
     /// </summary>
     private sealed class ReplaceRuntimeCodeTransformer : IParserEmbeddedCodeTransformer
     {
+        /// <summary>Gets the number of transform calls.</summary>
+        public int Count { get; private set; }
+
         /// <inheritdoc />
         public ParserEmbeddedCodeTransformationResult Transform(ParserEmbeddedCodeTransformationContext context)
         {
+            Count++;
             return new ParserEmbeddedCodeTransformationResult { Code = context.Code.Replace("__TOKEN__", "increment").Replace("__TOKEN_PREDICATE__", "true") };
         }
     }

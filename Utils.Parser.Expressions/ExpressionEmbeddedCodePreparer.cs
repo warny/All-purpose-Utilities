@@ -8,7 +8,12 @@ using Utils.Parser.Runtime;
 namespace Utils.Parser.Expressions;
 
 /// <summary>
-/// Prepares runtime-inline embedded parser code by compiling expression-backed artifacts with an explicit expression compiler.
+/// Provides the supported runtime-inline compilation facade for embedded parser semantic predicates and inline actions.
+/// It validates and transforms embedded source through the shared transformation pipeline, builds expressions that read
+/// runtime symbols from the delegate context, delegates expression compilation to <see cref="IExpressionCompiler"/>,
+/// and materializes specialized CLR lambdas in strongly typed prepared artifacts. Preparation does not execute the
+/// embedded code or capture runtime values. This facade does not generate C# source, replace the source generator,
+/// compile lexer hooks, or select the parser's overall execution strategy.
 /// </summary>
 public sealed class ExpressionEmbeddedCodePreparer : IEmbeddedCodePreparer<PreparedExpressionSemanticPredicate, PreparedExpressionParserAction>
 {
@@ -16,10 +21,16 @@ public sealed class ExpressionEmbeddedCodePreparer : IEmbeddedCodePreparer<Prepa
     private readonly IParserEmbeddedCodeTransformer _transformer;
 
     /// <summary>
-    /// Initializes a new expression-backed embedded-code preparer.
+    /// Initializes the supported expression-backed runtime preparation facade.
     /// </summary>
-    /// <param name="compiler">Expression compiler selected by the caller.</param>
-    /// <param name="embeddedCodeTransformer">Optional transformer applied before compiler invocation.</param>
+    /// <param name="compiler">
+    /// Required caller-supplied compiler that converts validated transformed text into an expression tree. It is not
+    /// called for unsupported categories or non-runtime targets and is called exactly once for each supported preparation.
+    /// </param>
+    /// <param name="embeddedCodeTransformer">
+    /// Optional transformer run through <see cref="EmbeddedCodeTransformationPipeline"/> before compiler invocation;
+    /// <see cref="NoOpParserEmbeddedCodeTransformer.Instance"/> is used when no transformer is supplied.
+    /// </param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="compiler"/> is <c>null</c>.</exception>
     public ExpressionEmbeddedCodePreparer(IExpressionCompiler compiler, IParserEmbeddedCodeTransformer? embeddedCodeTransformer = null)
     {
@@ -27,7 +38,21 @@ public sealed class ExpressionEmbeddedCodePreparer : IEmbeddedCodePreparer<Prepa
         _transformer = embeddedCodeTransformer ?? NoOpParserEmbeddedCodeTransformer.Instance;
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Prepares a <see cref="EmbeddedCodeKind.SemanticPredicate"/> for the
+    /// <see cref="EmbeddedCodeTarget.RuntimeInlineExpression"/> target without evaluating it.
+    /// </summary>
+    /// <param name="source">Raw semantic-predicate source and its parser metadata.</param>
+    /// <param name="context">Preparation context that selects the runtime target and allowed contextual symbols.</param>
+    /// <returns>
+    /// <see cref="EmbeddedCodePreparationStatus.Unsupported"/> for another category,
+    /// <see cref="EmbeddedCodePreparationStatus.PreservedNotCompiled"/> for another target,
+    /// <see cref="EmbeddedCodePreparationStatus.CompilationFailed"/> after a transformation or compilation failure, or
+    /// <see cref="EmbeddedCodePreparationStatus.Succeeded"/> with a <see cref="PreparedExpressionSemanticPredicate"/>
+    /// containing a <see cref="Func{T, TResult}"/> over <see cref="SemanticPredicateEvaluationContext"/>.
+    /// The shared pipeline transforms the source before runtime-bound symbol expressions are passed to the compiler;
+    /// the resulting delegate is not invoked during preparation.
+    /// </returns>
     public EmbeddedCodePreparationResult<PreparedExpressionSemanticPredicate> PrepareSemanticPredicate(
         EmbeddedCodeSource source,
         EmbeddedCodePreparationContext context)
@@ -69,7 +94,22 @@ public sealed class ExpressionEmbeddedCodePreparer : IEmbeddedCodePreparer<Prepa
         }
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Prepares an <see cref="EmbeddedCodeKind.ParserInlineAction"/> for the
+    /// <see cref="EmbeddedCodeTarget.RuntimeInlineExpression"/> target without executing it.
+    /// </summary>
+    /// <param name="source">Raw inline parser-action source and its parser metadata.</param>
+    /// <param name="context">Preparation context that selects the runtime target and allowed contextual symbols.</param>
+    /// <returns>
+    /// <see cref="EmbeddedCodePreparationStatus.Unsupported"/> for another category,
+    /// <see cref="EmbeddedCodePreparationStatus.PreservedNotCompiled"/> for another target,
+    /// <see cref="EmbeddedCodePreparationStatus.CompilationFailed"/> after a transformation or compilation failure, or
+    /// <see cref="EmbeddedCodePreparationStatus.Succeeded"/> with a <see cref="PreparedExpressionParserAction"/>
+    /// containing an <see cref="Action{T}"/> over <see cref="ParserActionExecutionContext"/>.
+    /// The shared pipeline transforms the source before runtime-bound symbol expressions are passed to the compiler.
+    /// A non-<see cref="Void"/> expression is normalized to an action whose value is ignored, and the resulting delegate
+    /// is not invoked during preparation.
+    /// </returns>
     public EmbeddedCodePreparationResult<PreparedExpressionParserAction> PrepareParserAction(
         EmbeddedCodeSource source,
         EmbeddedCodePreparationContext context)
@@ -108,12 +148,14 @@ public sealed class ExpressionEmbeddedCodePreparer : IEmbeddedCodePreparer<Prepa
     }
 
     /// <summary>
-    /// Applies the configured transformer before invoking the expression compiler.
+    /// Adapts the runtime facade to the shared transformation-and-validation pipeline without compiling source.
+    /// It supplies <see cref="ParserEmbeddedCodeTransformationPath.RuntimeCompilation"/> failure metadata and converts
+    /// the common transformation exception to the public Expressions-package compatibility exception.
     /// </summary>
     /// <param name="source">Original embedded-code source.</param>
     /// <param name="context">Runtime preparation context that supplies grammar metadata.</param>
     /// <param name="location">Embedded-code location represented by the source.</param>
-    /// <returns>Transformed source text to pass to the compiler.</returns>
+    /// <returns>Validated transformed source to pass to the compiler.</returns>
     private TransformedEmbeddedCode TransformSource(EmbeddedCodeSource source, EmbeddedCodePreparationContext context, ParserEmbeddedCodeLocation location)
     {
         try
@@ -151,7 +193,8 @@ public sealed class ExpressionEmbeddedCodePreparer : IEmbeddedCodePreparer<Prepa
     }
 
     /// <summary>
-    /// Builds symbol expressions that read semantic predicate values from the runtime context parameter.
+    /// Builds symbol expressions that read semantic predicate values from the runtime context parameter at execution
+    /// time rather than capturing values during preparation.
     /// </summary>
     /// <param name="runtimeContext">Runtime context parameter used by the compiled predicate delegate.</param>
     /// <param name="supportedSymbols">Contextual symbols that the preparation context allows this compiler invocation to expose.</param>
@@ -162,7 +205,8 @@ public sealed class ExpressionEmbeddedCodePreparer : IEmbeddedCodePreparer<Prepa
         BuildRuntimeContextSymbols(runtimeContext, supportedSymbols);
 
     /// <summary>
-    /// Builds symbol expressions that read parser action values from the runtime context parameter.
+    /// Builds symbol expressions that read parser action values from the runtime context parameter at execution time
+    /// rather than capturing values during preparation.
     /// </summary>
     /// <param name="runtimeContext">Runtime context parameter used by the compiled action delegate.</param>
     /// <param name="supportedSymbols">Contextual symbols that the preparation context allows this compiler invocation to expose.</param>
@@ -173,7 +217,9 @@ public sealed class ExpressionEmbeddedCodePreparer : IEmbeddedCodePreparer<Prepa
         BuildRuntimeContextSymbols(runtimeContext, supportedSymbols);
 
     /// <summary>
-    /// Builds symbol expressions that read shared runtime values from a predicate or action context parameter.
+    /// Builds symbol expressions for <c>ruleName</c>, <c>inputPosition</c>, <c>alternativeIndex</c>, and
+    /// <c>elementIndex</c> that read shared runtime values from a predicate or action context parameter. No runtime value
+    /// is captured while the artifact is prepared.
     /// </summary>
     /// <param name="runtimeContext">Runtime context parameter used by the compiled artifact delegate.</param>
     /// <param name="supportedSymbols">Contextual symbols that the preparation context allows this compiler invocation to expose.</param>
