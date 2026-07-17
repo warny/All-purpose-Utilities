@@ -1,7 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using Utils.Objects;
 
 namespace Utils.Reflection;
@@ -12,21 +12,46 @@ namespace Utils.Reflection;
 public static class TypeEx
 {
     /// <summary>
-    /// Checks if <paramref name="toBeAssigned"/> can be assigned from <paramref name="toAssign"/>.
-    /// For numeric types, this also checks size compatibility when both types are numbers.
+    /// Maps each numeric type to the set of numeric types it can implicitly receive, matching
+    /// the C# implicit numeric conversion table (§10.2.3 of the C# spec).
     /// </summary>
-    /// <param name="toBeAssigned">The type to be assigned to.</param>
-    /// <param name="toAssign">The type to be assigned.</param>
-    /// <returns>True if <paramref name="toAssign"/> can be assigned to <paramref name="toBeAssigned"/>; otherwise, false.</returns>
+    private static readonly Dictionary<Type, HashSet<Type>> ImplicitNumericConversions = new()
+    {
+        [typeof(short)]   = [typeof(sbyte), typeof(byte)],
+        [typeof(ushort)]  = [typeof(byte)],
+        [typeof(int)]     = [typeof(sbyte), typeof(byte), typeof(short), typeof(ushort), typeof(char)],
+        [typeof(uint)]    = [typeof(byte), typeof(ushort), typeof(char)],
+        [typeof(long)]    = [typeof(sbyte), typeof(byte), typeof(short), typeof(ushort), typeof(int), typeof(uint), typeof(char)],
+        [typeof(ulong)]   = [typeof(byte), typeof(ushort), typeof(uint), typeof(char)],
+        [typeof(float)]   = [typeof(sbyte), typeof(byte), typeof(short), typeof(ushort), typeof(int), typeof(uint), typeof(long), typeof(ulong), typeof(char)],
+        [typeof(double)]  = [typeof(sbyte), typeof(byte), typeof(short), typeof(ushort), typeof(int), typeof(uint), typeof(long), typeof(ulong), typeof(float), typeof(char)],
+        [typeof(decimal)] = [typeof(sbyte), typeof(byte), typeof(short), typeof(ushort), typeof(int), typeof(uint), typeof(long), typeof(ulong), typeof(char)],
+    };
+
+    /// <summary>
+    /// Checks if <paramref name="toAssign"/> can be implicitly assigned to a variable of type
+    /// <paramref name="toBeAssigned"/>.
+    /// </summary>
+    /// <remarks>
+    /// For numeric types, only the implicit numeric conversions defined by the C# specification are
+    /// accepted. <c>uint → int</c> or <c>long → int</c> are therefore rejected even though they share
+    /// the same storage size.  Use <see cref="Type.IsAssignableFrom"/> when CLR assignability — rather
+    /// than C# implicit conversion — is the intended check.
+    /// </remarks>
+    /// <param name="toBeAssigned">Target type of the assignment.</param>
+    /// <param name="toAssign">Source type of the assignment.</param>
+    /// <returns>
+    /// <see langword="true"/> if a C# implicit conversion exists from <paramref name="toAssign"/> to
+    /// <paramref name="toBeAssigned"/>, or if the CLR considers <paramref name="toAssign"/> directly
+    /// assignable to <paramref name="toBeAssigned"/>.
+    /// </returns>
     public static bool IsAssignableFromEx(this Type toBeAssigned, Type toAssign)
     {
-        if (toBeAssigned.In(Types.Number) && toAssign.In(Types.Number))
-        {
-            // If it's a floating point number, allow assignment.
-            if (toBeAssigned.In(Types.FloatingPointNumber)) return true;
+        if (toBeAssigned == toAssign) return true;
 
-            // For other numbers, compare their sizes using Marshal.
-            return Marshal.SizeOf(toBeAssigned) >= Marshal.SizeOf(toAssign);
+        if (ImplicitNumericConversions.TryGetValue(toBeAssigned, out HashSet<Type>? sources))
+        {
+            return sources.Contains(toAssign);
         }
 
         return toBeAssigned.IsAssignableFrom(toAssign);
