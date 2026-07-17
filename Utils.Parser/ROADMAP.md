@@ -216,9 +216,15 @@ Implemented for the transformation boundary:
 - architecture guards prohibit a parallel direct transformer path and prohibit target dependencies
   in the common pipeline.
 
+Completed for the hook phase model:
+
+- collected parser and lexer hooks retain grammar text as `RawEmbeddedCode`;
+- the shared pipeline produces validated `TransformedEmbeddedCode` through an explicit immutable transition;
+- generated-code targets consume only the transformed phase, and the former ambiguous hook member has been removed.
+
 Still planned:
 
-- keep point 10 open for `EmittedCode` naming and point 11 open for public preparer documentation work.
+- keep point 11 open for public preparer documentation work.
 
 The refactor must continue to keep the following differences explicit: parser left recursion, alternative priority ordering, lexer modes, quantifier and negation index semantics, generated names, transformation locations, runtime context types, method signatures, success results, and fallback calls. These differences must not be hidden behind a single `isLexer` flag or scattered parser/lexer switches inside a shared engine.
 

@@ -107,7 +107,10 @@ internal static partial class GrammarEmitter
                 for (int index = firstHookIndex; index < hooks.Count; index++)
                 {
                     EmbeddedCodeHook hook = hooks[index];
-                    hook.EmittedCode = TransformEmbeddedCode(transformer, hook.RawCode, _strategy.GetLocation(hook.Kind), grammar, _strategy.GetTransformationRule(rule));
+                    hooks[index] = hook with
+                    {
+                        TransformedCode = TransformEmbeddedCode(transformer, hook.RawCode, _strategy.GetLocation(hook.Kind), grammar, _strategy.GetTransformationRule(rule))
+                    };
                 }
             }
 
@@ -550,10 +553,8 @@ internal static partial class GrammarEmitter
     /// <summary>
     /// Metadata for one generated parser or lexer embedded-code hook.
     /// </summary>
-    private sealed class EmbeddedCodeHook
+    private sealed record EmbeddedCodeHook
     {
-        private TransformedEmbeddedCode? _emittedCode;
-
         /// <summary>
         /// Initializes generated embedded-code hook metadata after validating common invariants.
         /// </summary>
@@ -622,12 +623,8 @@ internal static partial class GrammarEmitter
         /// <summary>Gets the raw embedded source code without ANTLR braces.</summary>
         public RawEmbeddedCode RawCode { get; }
 
-        /// <summary>Gets the transformed C# source emitted into the hook method.</summary>
-        public TransformedEmbeddedCode EmittedCode
-        {
-            get => _emittedCode ?? throw new InvalidOperationException("Embedded code has not been transformed yet.");
-            set => _emittedCode = value ?? throw new ArgumentNullException(nameof(value));
-        }
+        /// <summary>Gets the validated transformed C# source, or <c>null</c> before transformation.</summary>
+        public TransformedEmbeddedCode? TransformedCode { get; init; }
 
         /// <summary>Gets a value indicating whether the hook is a semantic predicate.</summary>
         public bool IsPredicate => Kind == EmbeddedCodeHookKind.SemanticPredicate;

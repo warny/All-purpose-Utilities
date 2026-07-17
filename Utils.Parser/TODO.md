@@ -15,7 +15,7 @@ non traitées, sauf mention contraire.
 ### 1. Introduire une représentation typée du code transformé
 **Corrigé.** Le pipeline distingue désormais `RawEmbeddedCode` et `TransformedEmbeddedCode` dans
 `Utils.Parser.Diagnostics.EmbeddedCode`. `EmbeddedCodeSource` expose le texte source sous forme de
-`RawEmbeddedCode`, les hooks générés conservent le code brut dans `RawCode`, et leur `EmittedCode`
+`RawEmbeddedCode`, les hooks générés conservent le code brut dans `RawCode`, et leur `TransformedCode`
 est un `TransformedEmbeddedCode` rempli uniquement après l'appel à `IParserEmbeddedCodeTransformer`.
 `GrammarEmitter.TransformEmbeddedCode` et `ExpressionEmbeddedCodePreparer.TransformSource` passent par
 `ParserEmbeddedCodeTransformationService.TransformOrThrow`, qui exécute le transformer, valide les diagnostics
@@ -32,7 +32,7 @@ Tests ajoutés :
 - `Antlr4GeneratedEmbeddedCodeTests.Emit_WhenTransformerReplacesParserPredicateAndAction_RawCodeDoesNotAppearInGeneratedHookBodies` ;
 - `Antlr4GeneratedEmbeddedCodeTests.Emit_WhenTransformerReplacesLexerHook_RawCodeDoesNotAppearInGeneratedHookBodies` ;
 - `Antlr4GeneratedEmbeddedCodeTests.EmbeddedCodeHookTypes_UseTypedRawAndTransformedCodeFields` ;
-- `Antlr4GeneratedEmbeddedCodeTests.EmbeddedCodeHookTypes_WhenEmittedCodeIsReadBeforeTransformation_Throws`.
+- `Antlr4GeneratedEmbeddedCodeTests.EmbeddedCodeHookTypes_WhenUntransformedHookIsEmitted_ThrowsBeforeWritingSource`.
 
 ### 2. Centraliser l'appel au transformer et la validation des diagnostics
 **Corrigé.** `ParserEmbeddedCodeTransformationService.TransformOrThrow` est désormais la frontière
@@ -178,7 +178,7 @@ par cette correction.
 **Corrigé.** Les hooks parser et lexer générés sont désormais représentés par un seul type interne
 `GrammarEmitter.EmbeddedCodeHook`. L'ancien type `LexerEmbeddedCodeHook` a été supprimé. Le type
 commun conserve le code brut dans `RawEmbeddedCode RawCode` et le code transformé prêt à l'émission
-dans `TransformedEmbeddedCode EmittedCode`, sans remplacer ces frontières typées par des chaînes.
+dans `TransformedEmbeddedCode? TransformedCode`, sans remplacer ces frontières typées par des chaînes.
 
 La distinction de domaine est explicite grâce à deux discriminants internes :
 
@@ -189,8 +189,8 @@ Les quatre catégories sont donc couvertes sans booléen ambigu comme état prin
 action inline parser, prédicat lexer et action inline lexer. La construction passe par les fabriques
 `CreateParser(...)` et `CreateLexer(...)`, qui valident le nom de règle, le code brut, les indices
 acceptés (`-1` comme sentinelle historique ou valeur positive/nulle), le nom de méthode générée et les
-valeurs d'enum. La lecture de `EmittedCode` avant transformation continue d'échouer, et l'affectation
-d'un code transformé nul reste rejetée.
+valeurs d'enum. Le résultat transformé reste absent avant la transition immuable, et le point d’accès unique des
+émetteurs rejette explicitement cet état avant toute écriture de source.
 
 Les producteurs parser et lexer restent séparés : `CollectEmbeddedCodeHooks(...)` conserve les règles
 d'indexation parser, notamment les traitements de séquences, quantificateurs, négations et récursion
@@ -208,7 +208,7 @@ Tests ajoutés ou renforcés :
 - `EmbeddedCodeTransformerArchitectureTests.GrammarEmitterEmbeddedCodeHooks_UseSingleCommonHookModel`.
 
 Les points 7 à 11 restent hors périmètre : construction des symboles runtime, mutualisation générale
-des parcours récursifs, formalisation globale du pipeline, renommage complet de `EmittedCode` et
+des parcours récursifs, formalisation globale du pipeline, clarification de l’état brut/transformé et
 documentation de la façade runtime ne sont pas traités par cette correction.
 
 ### 7. Factoriser la construction des symboles d'expressions
@@ -249,7 +249,7 @@ Tests ajoutés ou renforcés :
   nouveau contrat public n'a été introduit.
 
 Les points 8 à 11 restent hors périmètre du code de production de cette correction : la mutualisation
-générale parser/lexer, le pipeline global, le renommage de `EmittedCode` et la documentation de façade
+générale parser/lexer, le pipeline global, la clarification de l’état brut/transformé et la documentation de façade
 runtime demeurent des chantiers séparés.
 
 ### 8. Introduire des moteurs communs avec stratégies parser/lexer spécialisées
@@ -436,16 +436,34 @@ au transformer et vérifie que le noyau est interne, commun aux deux cibles, ret
 et ne dépend d'aucun détail de cible. `CSharpEmbeddedCodeInjectorArchitectureTests` maintient la
 frontière d'injection. Aucune API publique ni aucun comportement observable n'a été modifié.
 
-Les points 10 (`EmbeddedCodeHook.EmittedCode`) et 11 (statut documenté de la façade runtime) restent
-explicitement ouverts.
+Le point 10 est corrigé ci-dessous. Le point 11 (statut documenté de la façade runtime) reste
+explicitement ouvert.
 
-### 10. Renommer ou supprimer l'état ambigu `EmittedCode`
-`EmittedCode` est initialisé avec le code brut avant d'être remplacé par le code transformé. Son nom
-indique pourtant qu'il est déjà prêt pour l'émission.
+### 10. Distinguer explicitement les états brut et transformé
+**Corrigé.** Le modèle interne unique `EmbeddedCodeHook` est désormais un record immuable qui conserve
+le texte collecté dans `RawEmbeddedCode RawCode` et expose séparément
+`TransformedEmbeddedCode? TransformedCode`. Les fabriques parser et lexer créent uniquement l’état
+brut. Le collecteur effectue ensuite une transition explicite par expression `with`, après l’unique
+appel à `EmbeddedCodeTransformationPipeline.TransformAndValidate(...)`; le code brut n’est ni écrasé
+ni reconstruit.
 
-**Fix proposé** : remplacer ce membre par `RawCode` et `TransformedCode`, ce dernier étant absent tant
-que la transformation n'a pas été effectuée, ou construire directement les hooks dans un état
-transformé valide.
+Les quatre émetteurs parser/lexer délèguent toujours à `EmbeddedHookMethodEmitter`. Avant toute écriture
+dans le `StringBuilder`, cet émetteur obtient le résultat par le point d’accès central
+`RequireTransformedCode(...)`. Un hook encore brut provoque une `InvalidOperationException`
+déterministe mentionnant le nom de méthode concerné : aucun fallback vers `RawCode` et aucune source
+partielle ne sont possibles. `GeneratedEmbeddedCodeBody.ForPredicate(...)` et `ForAction(...)`
+continuent ainsi de recevoir exclusivement un `TransformedEmbeddedCode` validé.
+
+Le code brut est volontairement conservé après transformation pour les diagnostics, l’audit du flux
+et les tests d’invariant. `LifecycleHook` n’a pas été modifié : il ne représente qu’un état déjà
+transformé et ne portait donc pas la même ambiguïté. Les tests unitaires caractérisent la collecte
+brute, la conservation du texte et l’échec d’émission avant transformation. Les garde-fous Roslyn
+vérifient les types des deux propriétés, l’absence de noms de remplacement ambigus, la transition par
+le pipeline commun, le point d’accès de phase unique, les entrées typées de
+`GeneratedEmbeddedCodeBody` et l’absence de lecture de `RawCode.Text` par les émetteurs.
+
+Cette correction est interne au générateur : elle ne modifie ni la source C# générée, ni le
+comportement runtime, ni les diagnostics, ni les API publiques.
 
 ### 11. Documenter `ExpressionEmbeddedCodePreparer` comme façade unique de compilation runtime
 La classe transforme le texte, appelle `IExpressionCompiler`, construit une lambda CLR puis produit

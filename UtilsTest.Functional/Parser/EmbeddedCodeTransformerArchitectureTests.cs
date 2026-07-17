@@ -285,7 +285,10 @@ public sealed class EmbeddedCodeTransformerArchitectureTests
         string[] expectedKinds = ["SemanticPredicate", "InlineAction"];
         CollectionAssert.AreEquivalent(expectedKinds, kindType.GetMembers().OfType<IFieldSymbol>().Where(static field => field.HasConstantValue).Select(static field => field.Name).ToArray());
         Assert.AreEqual("Utils.Parser.Diagnostics.EmbeddedCode.RawEmbeddedCode", hookType.GetMembers("RawCode").OfType<IPropertySymbol>().Single().Type.ToDisplayString());
-        Assert.AreEqual("Utils.Parser.Diagnostics.EmbeddedCode.TransformedEmbeddedCode", hookType.GetMembers("EmittedCode").OfType<IPropertySymbol>().Single().Type.ToDisplayString());
+        Assert.AreEqual("Utils.Parser.Diagnostics.EmbeddedCode.TransformedEmbeddedCode?", hookType.GetMembers("TransformedCode").OfType<IPropertySymbol>().Single().Type.ToDisplayString());
+        Assert.AreEqual(NullableAnnotation.Annotated, hookType.GetMembers("TransformedCode").OfType<IPropertySymbol>().Single().NullableAnnotation);
+        string[] forbiddenCodeMembers = ["EmittedCode", "ProcessedCode", "FinalCode", "PreparedCode", "ReadyCode"];
+        Assert.IsFalse(hookType.GetMembers().Any(member => forbiddenCodeMembers.Contains(member.Name, StringComparer.Ordinal)));
         Assert.AreEqual(ownerType, hookType.GetMembers("Owner").OfType<IPropertySymbol>().Single().Type, SymbolEqualityComparer.Default);
         Assert.AreEqual(kindType, hookType.GetMembers("Kind").OfType<IPropertySymbol>().Single().Type, SymbolEqualityComparer.Default);
 
@@ -495,6 +498,10 @@ public sealed class EmbeddedCodeTransformerArchitectureTests
 
         MethodDeclarationSyntax sharedEmit = emitter.Members.OfType<MethodDeclarationSyntax>().Single(static method => method.Identifier.ValueText == "Emit");
         Assert.IsTrue(sharedEmit.DescendantNodes().OfType<InvocationExpressionSyntax>().Any(invocation => invocation.ToString().StartsWith("ValidateEmbeddedCodeHook", StringComparison.Ordinal)), "The shared method emitter must keep Owner and Kind validation.");
+        Assert.AreEqual(1, sharedEmit.DescendantNodes().OfType<InvocationExpressionSyntax>().Count(invocation => invocation.ToString().StartsWith("RequireTransformedCode", StringComparison.Ordinal)), "The shared emitter must validate the phase through one central accessor.");
+        MethodDeclarationSyntax phaseGuard = emitter.Members.OfType<MethodDeclarationSyntax>().Single(static method => method.Identifier.ValueText == "RequireTransformedCode");
+        Assert.IsTrue(phaseGuard.DescendantNodes().OfType<MemberAccessExpressionSyntax>().Any(member => member.ToString() == "hook.TransformedCode"));
+        Assert.IsFalse(emitter.DescendantNodes().OfType<MemberAccessExpressionSyntax>().Any(member => member.ToString() == "hook.RawCode.Text"), "Hook emitters must never read raw code text.");
         Assert.AreEqual(1, sharedEmit.DescendantNodes().OfType<InvocationExpressionSyntax>().Count(invocation => invocation.ToString().StartsWith("EmitGeneratedEmbeddedCodeBody", StringComparison.Ordinal)), "The shared method emitter must centralize generated body emission.");
         Assert.IsTrue(sharedEmit.DescendantNodes().OfType<MemberAccessExpressionSyntax>().Any(member => member.ToString() == "descriptor.Owner"));
         Assert.IsTrue(sharedEmit.DescendantNodes().OfType<MemberAccessExpressionSyntax>().Any(member => member.ToString() == "descriptor.Kind"));

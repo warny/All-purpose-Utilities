@@ -477,7 +477,8 @@ internal static partial class GrammarEmitter
         public static void Emit(StringBuilder sb, EmbeddedCodeHook hook, EmbeddedHookMethodDescriptor descriptor)
         {
             ValidateEmbeddedCodeHook(hook, descriptor.Owner, descriptor.Kind);
-            GeneratedEmbeddedCodeBody body = descriptor.CreateBody(hook.EmittedCode);
+            TransformedEmbeddedCode transformedCode = RequireTransformedCode(hook);
+            GeneratedEmbeddedCodeBody body = descriptor.CreateBody(transformedCode);
 
             sb.AppendLine(descriptor.CreateSummary(hook));
             sb.AppendLine($"    private {descriptor.ReturnTypeName} {hook.MethodName}({descriptor.Parameters})");
@@ -486,6 +487,17 @@ internal static partial class GrammarEmitter
             EmitGeneratedEmbeddedCodeBody(sb, body, 2);
             sb.AppendLine("    }");
             sb.AppendLine();
+        }
+
+        /// <summary>
+        /// Gets validated transformed code and rejects collected hooks before any source is written.
+        /// </summary>
+        /// <param name="hook">Hook that must have completed the transformation pipeline.</param>
+        /// <returns>The validated transformed hook body.</returns>
+        private static TransformedEmbeddedCode RequireTransformedCode(EmbeddedCodeHook hook)
+        {
+            return hook.TransformedCode
+                ?? throw new InvalidOperationException($"Embedded code hook '{hook.MethodName}' has not been transformed and cannot be emitted.");
         }
 
         /// <summary>
