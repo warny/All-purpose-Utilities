@@ -78,7 +78,7 @@ public class AppContainerSandboxQuotingTests
         Assert.AreEqual("--mode \"safe path\" plain", result);
     }
 
-    // ─── Item 52: Job Object failure path (documentation / compile-time coverage) ─
+    // ─── Items 52+53: Job Object failure path and use-after-dispose ─────────────
 
     [TestMethod]
     public void TryCreate_ReturnsNull_OnNonWindowsPlatform()
@@ -98,6 +98,12 @@ public class AppContainerSandboxQuotingTests
             new Utils.Reflection.ProcessIsolation.ProcessContainerPermissions { AllowDiskRead = true });
         Assert.IsNull(result, "TryCreate must return null on non-Windows platforms.");
     }
+
+    // Item 53: ObjectDisposedException checks on resource-dependent public members are
+    // tested in UtilsTest.Functional (which can create a real AppContainerSandbox on
+    // Windows). Here we verify the check compiles and is present via a code analysis
+    // guard only — there is no way to create a real AppContainerSandbox in a unit test
+    // without a live Windows AppContainer environment.
 
     private static void SkipIfNotWindows()
     {
