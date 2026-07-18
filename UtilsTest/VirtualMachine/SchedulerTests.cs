@@ -621,4 +621,18 @@ public class SchedulerTests
         scheduler.AddProcess(Ctx(0x00), Proc()); // different instance — must succeed
         Assert.AreEqual(2, scheduler.Processes.Count);
     }
+
+    [TestMethod]
+    public void AddProcess_NullProcessor_WithDuplicateContext_ThrowsArgumentNullException()
+    {
+        // processor null must be rejected before the duplicate-context check so that
+        // the caller receives ArgumentNullException, not ArgumentException.
+        var scheduler = new Scheduler<DefaultContext>();
+        var ctx = Ctx(0x00);
+        scheduler.AddProcess(ctx, Proc());
+
+        var ex = Assert.ThrowsException<ArgumentNullException>(
+            () => scheduler.AddProcess(ctx, null!));
+        Assert.AreEqual("processor", ex.ParamName);
+    }
 }

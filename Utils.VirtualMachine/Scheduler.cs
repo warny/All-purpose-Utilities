@@ -66,6 +66,7 @@ public class Scheduler<T> where T : Context
     public ScheduledProcess<T> AddProcess(T context, VirtualProcessor<T> processor, int priority = 0, string? name = null)
     {
         ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(processor);
         if (_processes.Any(p => ReferenceEquals(p.Context, context)))
             throw new ArgumentException(
                 "The supplied context is already registered with this scheduler. " +
