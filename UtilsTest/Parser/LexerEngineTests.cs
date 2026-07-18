@@ -977,4 +977,304 @@ public class LexerEngineTests
         Assert.AreEqual("HIDDEN", tokens[0].Channel,
             "Command from a successful quantifier iteration must be applied.");
     }
+    [TestMethod]
+    public void LexerEmbeddedCode_PredicateFalseRejectsOnlyCurrentPathAndDoesNotExecuteRejectedAction()
+    {
+        var trace = new List<string>();
+        var definition = CreateLexerDefinition(
+            CreateRule("A", 0, Alt(Seq(Lit("a"), Action("rejected"), new ValidatingPredicate("reject")))),
+            CreateRule("B", 1, Alt(Seq(Lit("a"), Action("accepted")))),
+            CreateRule("C", 2, Alt(Lit("b"))));
+        var policy = CreateLexerPolicy(new TraceLexerActionExecutor(trace), new MapLexerPredicateEvaluator(("reject", LexerPredicateEvaluationOutcome.False)));
+
+        var tokens = Tokenize(definition, "ab", policy);
+
+        CollectionAssert.AreEqual(new[] { "B", "C" }, tokens.Select(static token => token.RuleName).ToArray());
+        CollectionAssert.AreEqual(new[] { "accepted" }, trace);
+    }
+
+    [TestMethod]
+    public void LexerEmbeddedCode_LosingRuleActionsAreNotExecutedForLongestMatchOrEqualLengthPriority()
+    {
+        var trace = new List<string>();
+        var definition = CreateLexerDefinition(
+            CreateRule("SHORT", 0, Alt(Seq(Lit("a"), Action("short")))),
+            CreateRule("LONG", 1, Alt(Seq(Lit("ab"), Action("long")))),
+            CreateRule("FIRST", 2, Alt(Seq(new CharSetMatch(new HashSet<char> { 'x' }, false), Action("first")))),
+            CreateRule("SECOND", 3, Alt(Seq(new CharSetMatch(new HashSet<char> { 'x' }, false), Action("second")))));
+        var policy = CreateLexerPolicy(new TraceLexerActionExecutor(trace));
+
+        var tokens = Tokenize(definition, "abx", policy);
+
+        CollectionAssert.AreEqual(new[] { "LONG", "FIRST" }, tokens.Select(static token => token.RuleName).ToArray());
+        CollectionAssert.AreEqual(new[] { "long", "first" }, trace);
+    }
+
+    [TestMethod]
+    public void LexerEmbeddedCode_RejectedAlternativeAndFailedSequenceActionsAreDiscarded()
+    {
+        var trace = new List<string>();
+        var definition = CreateLexerDefinition(
+            CreateRule("ALT", 0,
+                Alt(Seq(Lit("a"), Action("rejected-alt"), Lit("x"))),
+                Alt(Seq(Lit("a"), Action("accepted-alt"), Lit("b")))),
+            CreateRule("SEQ", 1, Alt(Seq(Lit("c"), Action("failed-sequence"), Lit("x")))),
+            CreateRule("C", 2, Alt(Seq(Lit("c"), Action("accepted-c")))));
+        var policy = CreateLexerPolicy(new TraceLexerActionExecutor(trace));
+
+        var tokens = Tokenize(definition, "abc", policy);
+
+        CollectionAssert.AreEqual(new[] { "ALT", "C" }, tokens.Select(static token => token.RuleName).ToArray());
+        CollectionAssert.AreEqual(new[] { "accepted-alt", "accepted-c" }, trace);
+    }
+
+    [TestMethod]
+    public void LexerEmbeddedCode_FailedQuantifierIterationActionsAreDiscarded()
+    {
+        var trace = new List<string>();
+        var definition = CreateLexerDefinition(
+            CreateRule("A", 0, Alt(Seq(
+                new Quantifier(Seq(Action("rejected-iteration"), Lit("x")), 0, null),
+                Lit("a"),
+                Action("accepted")))));
+        var policy = CreateLexerPolicy(new TraceLexerActionExecutor(trace));
+
+        var tokens = Tokenize(definition, "a", policy);
+
+        Assert.AreEqual(1, tokens.Count);
+        Assert.AreEqual("A", tokens[0].RuleName);
+        CollectionAssert.AreEqual(new[] { "accepted" }, trace);
+    }
+
+    [TestMethod]
+    public void LexerEmbeddedCode_AcceptedTokenActionsShareResultInSourceOrderAndLastWritesWinBeforeCommands()
+    {
+        var trace = new List<string>();
+        var definition = CreateLexerDefinitionWithModes(
+            [
+                CreateRule("A", 0, Alt(Seq(
+                    Lit("a"),
+                    Action("first"),
+                    Action("type:B"),
+                    Action("channel:HIDDEN"),
+                    Action("mode:SECOND"),
+                    Action("type:C"),
+                    Action("channel:SPECIAL"),
+                    Action("mode:THIRD")))),
+                CreateRule("B", 1, Alt(Lit("b"))),
+                CreateRule("C", 2, Alt(Lit("c"))),
+                CreateRule("D", 3, Alt(Lit("d"))),
+                CreateRule("E", 4, Alt(Lit("e"))),
+                CreateRule("S", 5, Alt(Lit("s"))),
+                CreateRule("T", 6, Alt(Lit("t")))
+            ],
+            [
+                new LexerMode("SECOND", [CreateRule("SECOND_X", 7, Alt(Lit("x")))]),
+                new LexerMode("THIRD", [CreateRule("THIRD_X", 8, Alt(Lit("x")))])
+            ],
+            new HashSet<string>(StringComparer.Ordinal) { "DEFAULT_CHANNEL", "HIDDEN", "SPECIAL" });
+        var policy = CreateLexerPolicy(new TraceLexerActionExecutor(trace));
+
+        var tokens = Tokenize(definition, "ax", policy);
+
+        Assert.AreEqual(2, tokens.Count);
+        Assert.AreEqual("C", tokens[0].RuleName);
+        Assert.AreEqual("SPECIAL", tokens[0].Channel);
+        Assert.AreEqual("THIRD_X", tokens[1].RuleName);
+        CollectionAssert.AreEqual(new[] { "first", "type:B", "channel:HIDDEN", "mode:SECOND", "type:C", "channel:SPECIAL", "mode:THIRD" }, trace);
+    }
+
+    [TestMethod]
+    public void LexerEmbeddedCode_EachAcceptedTokenReceivesFreshActionResult()
+    {
+        var definition = CreateLexerDefinition(
+            CreateRule("A", 0, Alt(Seq(Lit("a"), Action("channel:HIDDEN")))),
+            CreateRule("B", 1, Alt(Seq(Lit("b"), Action("noop")))));
+        var policy = CreateLexerPolicy(new TraceLexerActionExecutor([]));
+
+        var tokens = Tokenize(definition, "ab", policy);
+
+        Assert.AreEqual("HIDDEN", tokens[0].Channel);
+        Assert.AreEqual("DEFAULT_CHANNEL", tokens[1].Channel);
+    }
+
+    [TestMethod]
+    public void LexerEmbeddedCode_CommandsRemainAuthoritativeAfterActionResultWrites()
+    {
+        var definition = CreateLexerDefinitionWithModes(
+            [
+                CreateRule("TYPE", 0, Alt(Seq(Lit("a"), Action("type:A"), new LexerCommand(LexerCommandType.Type, "B")))),
+                CreateRule("CHANNEL", 1, Alt(Seq(Lit("b"), Action("channel:AUX"), new LexerCommand(LexerCommandType.Channel, "HIDDEN")))),
+                CreateRule("MODE", 2, Alt(Seq(Lit("c"), Action("mode:SECOND"), new LexerCommand(LexerCommandType.Mode, "THIRD")))),
+                CreateRule("THIRD_TOKEN", 3, Alt(Lit("d"))),
+                CreateRule("B", 4, Alt(Lit("z")))
+            ],
+            [new LexerMode("SECOND", []), new LexerMode("THIRD", [CreateRule("THIRD_TOKEN", 3, Alt(Lit("d")))])],
+            new HashSet<string>(StringComparer.Ordinal) { "DEFAULT_CHANNEL", "HIDDEN", "AUX" });
+        var policy = CreateLexerPolicy(new TraceLexerActionExecutor([]));
+
+        var tokens = Tokenize(definition, "abcd", policy);
+
+        CollectionAssert.AreEqual(new[] { "B", "CHANNEL", "MODE", "THIRD_TOKEN" }, tokens.Select(static token => token.RuleName).ToArray());
+        Assert.AreEqual("HIDDEN", tokens[1].Channel);
+    }
+
+    [TestMethod]
+    public void LexerEmbeddedCode_ModeWriteDoesNotChangeStackDepthAndLaterPopRestoresPreviousMode()
+    {
+        var definition = CreateLexerDefinitionWithModes(
+            [
+                CreateRule("OPEN", 0, Alt(Seq(Lit("a"), new LexerCommand(LexerCommandType.PushMode, "SECOND")))),
+                CreateRule("DEFAULT_TOKEN", 1, Alt(Lit("d")))
+            ],
+            [
+                new LexerMode("SECOND", [CreateRule("SWITCH", 2, Alt(Seq(Lit("b"), Action("mode:THIRD"))))]),
+                new LexerMode("THIRD", [CreateRule("CLOSE", 3, Alt(Seq(Lit("c"), new LexerCommand(LexerCommandType.PopMode, null))))])
+            ]);
+        var policy = CreateLexerPolicy(new TraceLexerActionExecutor([]));
+
+        var tokens = Tokenize(definition, "abcd", policy);
+
+        CollectionAssert.AreEqual(new[] { "OPEN", "SWITCH", "CLOSE", "DEFAULT_TOKEN" }, tokens.Select(static token => token.RuleName).ToArray());
+    }
+
+    [TestMethod]
+    public void LexerEmbeddedCode_SkipExecutesAcceptedActionButEmitsNoToken()
+    {
+        var trace = new List<string>();
+        var definition = CreateLexerDefinition(
+            CreateRule("SKIPPED", 0, Alt(Seq(Lit("a"), Action("skipped-action"), new LexerCommand(LexerCommandType.Skip, null)))),
+            CreateRule("B", 1, Alt(Lit("b"))));
+        var policy = CreateLexerPolicy(new TraceLexerActionExecutor(trace));
+
+        var tokens = Tokenize(definition, "ab", policy);
+
+        CollectionAssert.AreEqual(new[] { "B" }, tokens.Select(static token => token.RuleName).ToArray());
+        CollectionAssert.AreEqual(new[] { "skipped-action" }, trace);
+    }
+
+    [TestMethod]
+    public void LexerEmbeddedCode_MoreExecutesChunkActionsImmediatelyAndUsesSeparateResults()
+    {
+        var trace = new List<string>();
+        var definition = CreateLexerDefinition(
+            CreateRule("M", 0, Alt(Seq(Lit("m"), Action("channel:HIDDEN"), Action("more-chunk"), new LexerCommand(LexerCommandType.More, null)))),
+            CreateRule("A", 1, Alt(Seq(Lit("a"), Action("final-chunk")))));
+        var policy = CreateLexerPolicy(new TraceLexerActionExecutor(trace));
+
+        var tokens = Tokenize(definition, "ma", policy);
+
+        Assert.AreEqual(1, tokens.Count);
+        Assert.AreEqual("A", tokens[0].RuleName);
+        Assert.AreEqual("ma", tokens[0].Text);
+        Assert.AreEqual("DEFAULT_CHANNEL", tokens[0].Channel);
+        CollectionAssert.AreEqual(new[] { "channel:HIDDEN", "more-chunk", "final-chunk" }, trace);
+    }
+
+    /// <summary>Tokenizes deterministic lexer input with a supplied runtime feature policy.</summary>
+    private static List<Token> Tokenize(ParserDefinition definition, string input, ParserRuntimeFeaturePolicy policy)
+    {
+        var lexer = new LexerEngine(definition, policy);
+        using var reader = new StringReader(input);
+        return lexer.Tokenize(reader).ToList();
+    }
+
+    /// <summary>Creates a parser definition containing only lexer rules for characterization tests.</summary>
+    private static ParserDefinition CreateLexerDefinition(params IEnumerable<Rule> defaultRules)
+    {
+        return CreateLexerDefinitionWithModes(defaultRules.ToArray(), [], new HashSet<string>(StringComparer.Ordinal) { "DEFAULT_CHANNEL", "HIDDEN" });
+    }
+
+    /// <summary>Creates a parser definition containing lexer modes and declared channels for characterization tests.</summary>
+    private static ParserDefinition CreateLexerDefinitionWithModes(IEnumerable<Rule> defaultRules, IReadOnlyList<LexerMode> extraModes, IReadOnlySet<string>? channels = null)
+    {
+        LexerMode defaultMode = new("DEFAULT_MODE", defaultRules.ToArray());
+        LexerMode[] modes = [defaultMode, .. extraModes];
+        Dictionary<string, Rule> allRules = modes.SelectMany(static mode => mode.Rules).GroupBy(static rule => rule.Name).ToDictionary(static group => group.Key, static group => group.First(), StringComparer.Ordinal);
+        return new ParserDefinition("LexerCharacterization", GrammarType.Lexer, null, [], [], modes, new HashSet<string>(StringComparer.Ordinal), channels ?? new HashSet<string>(StringComparer.Ordinal) { "DEFAULT_CHANNEL", "HIDDEN" }, [], [], null)
+        {
+            AllRules = allRules
+        };
+    }
+
+    /// <summary>Creates a lexer runtime policy with deterministic predicate and action handlers.</summary>
+    private static ParserRuntimeFeaturePolicy CreateLexerPolicy(ILexerActionExecutor actionExecutor, ILexerPredicateEvaluator? predicateEvaluator = null)
+    {
+        return ParserRuntimeFeaturePolicy.Default with
+        {
+            LexerActionExecutor = actionExecutor,
+            LexerPredicateEvaluator = predicateEvaluator ?? DefaultLexerPredicateEvaluator.Instance
+        };
+    }
+
+    /// <summary>Creates a lexer rule with one or more alternatives.</summary>
+    private static Rule CreateRule(string name, int order, params IEnumerable<Alternative> alternatives)
+    {
+        return new Rule(name, order, false, new Alternation(alternatives.ToArray()), Kind: RuleKind.Lexer);
+    }
+
+    /// <summary>Creates one lexer alternative for the supplied content.</summary>
+    private static Alternative Alt(RuleContent content)
+    {
+        return new Alternative(0, Associativity.Left, content);
+    }
+
+    /// <summary>Creates one ordered lexer sequence.</summary>
+    private static Sequence Seq(params IEnumerable<RuleContent> items)
+    {
+        return new Sequence(items.ToArray());
+    }
+
+    /// <summary>Creates a literal lexer match.</summary>
+    private static LiteralMatch Lit(string value)
+    {
+        return new LiteralMatch(value);
+    }
+
+    /// <summary>Creates an observable lexer inline action occurrence.</summary>
+    private static EmbeddedAction Action(string code)
+    {
+        return new EmbeddedAction(code, ActionContext.Alternative, ActionPosition.Inline, []);
+    }
+
+    /// <summary>Deterministic lexer action executor that records action order and applies simple result writes.</summary>
+    private sealed class TraceLexerActionExecutor(List<string> trace) : ILexerActionExecutor
+    {
+        /// <summary>Executes a simple trace action and optional result write.</summary>
+        public LexerActionExecutionOutcome Execute(LexerActionExecutionContext context, LexerActionExecutionResult result)
+        {
+            trace.Add(context.ActionCode);
+            string[] parts = context.ActionCode.Split(':', 2);
+            if (parts.Length == 2)
+            {
+                switch (parts[0])
+                {
+                    case "type":
+                        result.TokenType = parts[1];
+                        break;
+                    case "channel":
+                        result.Channel = parts[1];
+                        break;
+                    case "mode":
+                        result.Mode = parts[1];
+                        break;
+                }
+            }
+
+            return LexerActionExecutionOutcome.Executed;
+        }
+    }
+
+    /// <summary>Deterministic lexer predicate evaluator backed by explicit predicate-code outcomes.</summary>
+    private sealed class MapLexerPredicateEvaluator(params (string Code, LexerPredicateEvaluationOutcome Outcome)[] outcomes) : ILexerPredicateEvaluator
+    {
+        private readonly Dictionary<string, LexerPredicateEvaluationOutcome> _outcomes = outcomes.ToDictionary(static item => item.Code, static item => item.Outcome, StringComparer.Ordinal);
+
+        /// <summary>Evaluates a known predicate code or treats unknown predicates as true.</summary>
+        public LexerPredicateEvaluationOutcome Evaluate(LexerPredicateEvaluationContext context)
+        {
+            return _outcomes.TryGetValue(context.PredicateCode, out LexerPredicateEvaluationOutcome outcome) ? outcome : LexerPredicateEvaluationOutcome.True;
+        }
+    }
+
 }
