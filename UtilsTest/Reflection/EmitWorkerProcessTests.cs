@@ -69,6 +69,23 @@ public class EmitWorkerProcessTests
         Assert.AreEqual(TimeSpan.FromSeconds(30), EmitWorkerProcess.DefaultCallTimeout);
     }
 
+    // ─── Item 41: worker retirement after abandoned calls ────────────────────────
+
+    [TestMethod]
+    public void MaxAbandonedCalls_IsPositive()
+    {
+        Assert.IsTrue(EmitWorkerProcess.MaxAbandonedCalls > 0,
+            "MaxAbandonedCalls must be positive so the retirement threshold is reachable.");
+    }
+
+    [TestMethod]
+    public void MaxAbandonedCalls_IsSmallEnoughToRetireUnreliableWorker()
+    {
+        // A very large threshold would never actually protect against state accumulation.
+        Assert.IsTrue(EmitWorkerProcess.MaxAbandonedCalls <= 20,
+            "MaxAbandonedCalls should be low enough to retire a consistently slow worker promptly.");
+    }
+
     // ─── Item 37: fail-closed sandbox fallback ───────────────────────────────────
 
     /// <summary>

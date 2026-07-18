@@ -41,6 +41,14 @@ internal sealed class EmitWorkerProcess : IDisposable
     internal static readonly TimeSpan DefaultCallTimeout = TimeSpan.FromSeconds(30);
 
     /// <summary>
+    /// Number of abandoned calls (requests that timed out while still executing inside the worker)
+    /// after which this worker is retired: <see cref="connectionFault"/> is set and all future
+    /// callers receive <see cref="InvalidOperationException"/> instead of being sent to a process
+    /// whose accumulated side effects are unknown.
+    /// </summary>
+    internal const int MaxAbandonedCalls = 5;
+
+    /// <summary>
     /// Timeout for the graceful <see cref="WorkerRequestKind.Shutdown"/> handshake in
     /// <see cref="Dispose"/>. Short and non-configurable: a slow shutdown response falls back to
     /// <see cref="KillSilently"/> regardless, so there is nothing to gain from waiting longer.
@@ -57,6 +65,7 @@ internal sealed class EmitWorkerProcess : IDisposable
     private readonly Task readerLoop;
     private readonly TimeSpan callTimeout;
     private long nextId;
+    private int abandonedCallCount;
     private volatile Exception? connectionFault;
     private bool disposed;
 
@@ -353,10 +362,17 @@ internal sealed class EmitWorkerProcess : IDisposable
     /// simply finds no matching pending entry once it eventually arrives and is silently dropped, rather
     /// than being misread as the response to a different, still-pending request. (Before requests were
     /// individually correlated, any single timeout had to assume the worst and kill the whole worker; see
-    /// the superseded <c>PoisonAfterTimeout</c> note in <c>Utils.Reflection/TODO.md</c> item 28/34.) The
-    /// worker-side native call behind a timed-out request keeps running to completion on its own
+    /// the superseded <c>PoisonAfterTimeout</c> note in <c>Utils.Reflection/TODO.md</c> item 28/34.)
+    /// </para>
+    /// <para>
+    /// The worker-side native call behind a timed-out request keeps running to completion on its own
     /// thread-pool thread inside the worker (see <see cref="EmitWorkerHost.Run"/>) — abandoned, not
-    /// cancelled — until it finishes and its answer is dropped for lack of a listener.
+    /// cancelled — until it finishes and its answer is dropped for lack of a listener. The outcome is
+    /// therefore <em>indeterminate</em>: side effects may or may not have occurred. Each abandoned call
+    /// increments <see cref="abandonedCallCount"/>; when that counter reaches <see cref="MaxAbandonedCalls"/>
+    /// the worker is retired (<see cref="connectionFault"/> is set and all in-flight requests are failed)
+    /// so that callers do not continue sending work to a process whose cumulative state has become
+    /// unknowable.
     /// </para>
     /// </remarks>
     /// <param name="request">Request to send.</param>
@@ -388,6 +404,21 @@ internal sealed class EmitWorkerProcess : IDisposable
             if (pending.TryRemove(request.Id, out TaskCompletionSource<WorkerResponse>? timedOut))
             {
                 timedOut.TrySetCanceled(timeoutSource.Token);
+
+                // The native call is still running inside the worker — its result is indeterminate.
+                // After MaxAbandonedCalls, retire the worker so callers do not continue sending work
+                // to a process whose accumulated side-effect state has become unknowable.
+                int count = Interlocked.Increment(ref abandonedCallCount);
+                if (count >= MaxAbandonedCalls && connectionFault is null)
+                {
+                    var retirementFault = new InvalidOperationException(
+                        $"The isolated Emit worker has been retired after {count} abandoned calls " +
+                        "(requests that timed out while the worker was still processing them). " +
+                        "The outcome of each abandoned call is indeterminate.");
+
+                    connectionFault = retirementFault;
+                    FailAllPending(retirementFault);
+                }
             }
         });
 
