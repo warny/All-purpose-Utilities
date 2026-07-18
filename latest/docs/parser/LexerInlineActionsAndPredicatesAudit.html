@@ -151,17 +151,19 @@ A : { IsModeEnabled() }? 'a' | 'b' ;
 </ul>
 <p>The current generated-C# opt-in regression suite covers the already-supported runtime command/mode subset listed above. It confirms that accepted actions run before accepted commands, predicates reject only the current path, and commands from rejected paths are not applied. Read-only <code>$type</code>, <code>$channel</code>, and <code>$mode</code> actions read passive <code>LexerActionExecutionContext.TokenType</code>, <code>Channel</code>, and <code>Mode</code> values before <code>type(...)</code>, <code>channel(...)</code>, <code>mode(...)</code>, <code>pushMode(...)</code>, or <code>popMode</code> affect emitted tokens or later tokenization. This does not add advanced ANTLR mode/channel/command semantics beyond what the runtime already supports.</p>
 <h2 id="rollback-and-side-effect-risks">Rollback and side-effect risks</h2>
-<p>Lexer inline actions and predicates introduce risks that are separate from parser rollback:</p>
+<p>Lexer inline actions and predicates have boundaries distinct from parser rollback:</p>
 <ul>
-<li>A lexer action could run during a tokenization attempt that is later abandoned.</li>
-<li>External side effects from a lexer action may not be rollback-safe.</li>
-<li>Parser rollback and lexer rollback are different concerns and must not be conflated.</li>
-<li>Parser memoization currently does not imply that a future lexer execution state is captured, restored, or hashed correctly.</li>
-<li>A future design may require a separate lexer state model for input position, mode stack, command effects, pending token decisions, and generated execution state.</li>
-<li>There is currently no general action buffering or replay mechanism for lexer actions.</li>
-<li>There is currently no general rollback mechanism for external side effects.</li>
+<li>predicates execute during path exploration, but expose no supported mutation result; <code>false</code> rejects only the current path and <code>true</code> continues it;</li>
+<li>lexer <code>$...</code> writes in predicates are forbidden, so a rejected predicate commits no runtime-managed lexer mutation;</li>
+<li>arbitrary effects performed by user predicate code are external and are not promised to roll back;</li>
+<li>action occurrences are collected while matching, but rejected paths never execute them;</li>
+<li>only the accepted token's actions execute, sharing one fresh, acceptance-local <code>LexerActionExecutionResult</code>;</li>
+<li>later action assignments replace earlier assignments to the same result property, preserving the tested last-write-wins behavior;</li>
+<li>result requests are applied before accepted commands, which remain authoritative;</li>
+<li>there is no general action buffering, replay, lexer snapshot manager, or external-effect rollback.</li>
 </ul>
-<p>Any future implementation must state which side effects are parser-managed, lexer-managed, or external and non-rollback-safe.</p>
+<p>Lexer-owned operational state is split by lifetime rather than one persistent bucket. Persistent <code>LexerEngine</code> fields cover the current mode, mode stack, <code>more</code> accumulation, and associated <code>more</code> start position between token recognitions. A tokenization session owns the <code>TextReaderBuffer</code> and current input position, the emitted-token collection, and the per-call extension invocation contexts. Attempt- and acceptance-local values include best-match data, collected commands and action occurrences, token/chunk construction data, and the accepted token's <code>LexerActionExecutionResult</code>. Parser memoization and <code>IParserExecutionStateManager</code> do not capture, restore, or hash those lexer categories. Reusing the parser manager or adding a generic <code>isLexer</code> switch would conflate two different execution models. A lexer-specific state contract should be considered only in a separate PR backed by a concrete need.</p>
+<p>Mutable fields and objects injected through <code>@lexer::members</code> belong to the generated execution context. Delayed action execution prevents rejected alternatives from running those actions, but does not make accepted user code transactional. I/O, shared-service mutation, changes to unmanaged objects, later exceptions, <code>skip</code>, and eventual parser failure remain outside rollback guarantees.</p>
 <h2 id="source-generator-path-versus-runtime-inline-path">Source-generator path versus runtime-inline path</h2>
 <p>Any future support should start as an explicitly enabled source-generator C# feature. It must not make default runtime parsing execute lexer code.</p>
 <p>The runtime-inline expression path remains separate. Lexer execution must not add C# target-language logic to the parser core, <code>ParserEngine</code>, <code>ParserRuntimeFeaturePolicy</code>, runtime frames, or the grammar model. The generator must not depend on a Roslyn semantic model for deciding lexer action or predicate behavior. This audit does not introduce a new compiler API.</p>
