@@ -106,12 +106,13 @@ class BigEndianMachine : VirtualProcessor<DefaultContext>
 ## Cooperative scheduler
 
 `Scheduler<T>` runs multiple processes concurrently using cooperative, priority-based time-slicing.
-Each `Step()` call advances the highest-priority ready process by one quantum.
+Each `Step()` call advances **all** ready processes in descending priority order, giving each one up
+to `quantumSteps` instructions before moving to the next.
 
 ```csharp
 using Utils.VirtualMachine;
 
-var scheduler = new Scheduler<DefaultContext>(quantum: 10);
+var scheduler = new Scheduler<DefaultContext>(quantumSteps: 10);
 
 // Add processes; optional name aids diagnostics.
 var p1 = scheduler.AddProcess(ctx1, machine1, priority: 1, name: "worker-A");
@@ -124,7 +125,7 @@ scheduler.Run();
 await scheduler.RunAsync(cancellationToken);
 
 Console.WriteLine(p1.Name);      // "worker-A"
-Console.WriteLine(p1.State);     // ProcessState.Finished
+Console.WriteLine(p1.State);     // ProcessState.Terminated
 ```
 
 ## Structured control flow (CallStack / ControlFlow)
