@@ -75,7 +75,7 @@
 
 <h2 id="purpose">Purpose</h2>
 <p>This document records the design boundary for ANTLR-style rule arguments, rule parameters, rule returns, labels, rollback, and generated-C# opt-in integration in <code>Utils.Parser</code>.</p>
-<p>The current PR is documentation/design only. It must not change <code>Parse(...)</code>, must not add target-language C# evaluation to <code>ParserEngine</code>, and must not implement automatic <code>callee[expr]</code> evaluation or ANTLR-compatible generated parser signatures.</p>
+<p>This document is now a durable state and design reference. The explicit literal-binding runtime policy subset is implemented, while <code>Parse(...)</code> remains conservative, <code>ParserEngine</code> remains target-language neutral, and automatic arbitrary <code>callee[expr]</code> evaluation plus ANTLR-compatible generated parser signatures remain out of scope.</p>
 <p>The plan separates four surfaces that are easy to confuse:</p>
 <ul>
 <li>runtime standard behavior: conservative <code>Parse(...)</code> and the default runtime policy;</li>
@@ -121,6 +121,7 @@
 <p>Runtime opt-in is available only through explicit caller-installed policies. Existing policies include:</p>
 <ul>
 <li><code>PositionalLiteralRuleCallExecutionPolicy</code>;</li>
+<li><code>NamedLiteralRuleCallExecutionPolicy</code>;</li>
 <li><code>TypedPositionalLiteralRuleCallExecutionPolicy</code>;</li>
 <li><code>TypedNamedLiteralRuleCallExecutionPolicy</code>.</li>
 </ul>
@@ -137,6 +138,63 @@
 <li>any accepted values must be written through the managed pending-seed mechanism rather than through external side effects.</li>
 </ul>
 <p>These policies are useful compatibility adapters, not a full ANTLR argument model.</p>
+<h2 id="literal-policy-subset-status">Literal policy subset status</h2>
+<table>
+<thead>
+<tr>
+<th>Area</th>
+<th>Status</th>
+<th>Boundary</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Untyped positional literals</td>
+<td>Realized</td>
+<td>Exact arity by declaration order; declared types and defaults are ignored.</td>
+</tr>
+<tr>
+<td>Untyped named literals</td>
+<td>Realized</td>
+<td>Exact ordinal declared-name coverage; argument order is irrelevant; defaults are ignored.</td>
+</tr>
+<tr>
+<td>Typed positional literals</td>
+<td>Realized</td>
+<td>Allowlisted conversion with trailing omission satisfied only by supported simple defaults.</td>
+</tr>
+<tr>
+<td>Typed named literals</td>
+<td>Realized</td>
+<td>Allowlisted conversion with omitted names satisfied only by supported simple defaults.</td>
+</tr>
+<tr>
+<td>Default runtime behavior</td>
+<td>Explicitly limited</td>
+<td>No binding unless a caller installs a policy.</td>
+</tr>
+<tr>
+<td>Runtime batching</td>
+<td>Realized</td>
+<td>One atomic managed seed batch after complete validation.</td>
+</tr>
+<tr>
+<td>Rollback and memoization</td>
+<td>Realized</td>
+<td>Managed seeds participate in rollback and effective bound values participate in generated state keys.</td>
+</tr>
+<tr>
+<td>Generated-C# opt-in</td>
+<td>Explicitly limited</td>
+<td>Generated helper/policy paths may opt in; conservative generated <code>Parse(...)</code> remains unchanged.</td>
+</tr>
+<tr>
+<td>Arbitrary ANTLR/C# semantics</td>
+<td>Future separately justified</td>
+<td>No expression evaluation, references to parameters/locals/labels/returns, user types, generated typed signatures, automatic returns, or full ANTLR compatibility.</td>
+</tr>
+</tbody>
+</table>
 <h2 id="generated-c-opt-in-behavior">Generated-C# opt-in behavior</h2>
 <p>Generated C# already exposes helper APIs that let embedded code seed parameters manually and inspect call-site metadata. Relevant helpers include:</p>
 <ul>
@@ -288,55 +346,29 @@
 <li>bind the result into assignment/list labels when applicable.</li>
 </ol>
 <p>This model is for a future generated-C# opt-in implementation only. It is not the default runtime behavior and is not a <code>Parse(...)</code> feature.</p>
-<h2 id="proposed-implementation-phases">Proposed implementation phases</h2>
-<h3 id="phase-a--docsdesign-only">Phase A — docs/design only</h3>
+<h2 id="implementation-status-groups">Implementation status groups</h2>
+<h3 id="completed-milestones">Completed milestones</h3>
 <ul>
-<li>Scope: add this design/audit document and align compatibility, matrix, roadmap, and generator README wording.</li>
-<li>Non-goals: no runtime behavior changes, no generated binding, no tests beyond documentation review.</li>
-<li>Expected tests: not run for documentation-only changes unless examples/snippets are made compilable and need verification.</li>
-<li>Docs to update: this document, <code>docs/parser/INDEX.md</code>, compatibility docs, roadmap, generator README as needed.</li>
-<li>Merge criteria: boundaries are explicit; no wording implies automatic <code>callee[expr]</code> evaluation or typed returns.</li>
+<li>Documentation and compatibility boundaries are established in this document, the compatibility reference, the compatibility matrix, the roadmap, and the generator README.</li>
+<li>Runtime metadata preservation for rule parameters, returns, locals, labels, and raw call arguments is implemented.</li>
+<li>Explicit runtime literal policies cover untyped positional, untyped named, typed positional, and typed named binding.</li>
+<li>Generated-C# simple positional literal binding is implemented only for its documented opt-in path; it keeps exact arity, limited literal conversion, one atomic seed batch, conservative generated <code>Parse(...)</code>, and unchanged public parser method signatures.</li>
+<li>Raw argument splitters, named argument splitting, duplicate/empty/unsupported forms, mapper failure behavior, policy exceptions, rollback, and state-key edge cases are covered by deterministic tests across the runtime and generated-C# suites.</li>
+<li>Current-rule returns and labeled child result/return helpers are stabilized for the explicit generated-C# helper surface, including present-null versus absent semantics, rollback, and memoization restoration boundaries.</li>
 </ul>
-<h3 id="phase-b--generated-c-simple-positional-argument-binding">Phase B — generated-C# simple positional argument binding</h3>
+<h3 id="current-bounded-behavior">Current bounded behavior</h3>
 <ul>
-<li>Scope: generated-C# opt-in support for simple positional <code>callee[expr]</code> binding where expressions are deliberately limited and evaluated in the generated caller context.</li>
-<li>Non-goals: no <code>Parse(...)</code> change, no public ANTLR-compatible rule signatures, no arbitrary target-language model, no named binding unless explicitly scoped.</li>
-<li>Expected tests: deterministic generated-C# tests for one-argument and multi-argument success, failed arity, unsupported expression, rollback-safe seeds, and conservative <code>Parse(...)</code> unchanged.</li>
-<li>Docs to update: this document, compatibility reference, matrix, generator README, roadmap.</li>
-<li>Merge criteria: all-or-none seed validation; no target-language C# logic in <code>ParserEngine</code>; transformer boundaries preserved.</li>
+<li>Runtime literal binding is opt-in only and never selected by the default runtime policy.</li>
+<li>Generated-C# binding is opt-in only and limited to the documented generated policy/helper path; runtime-inline <code>Parse(...)</code> remains metadata-only.</li>
+<li>Accepted literal-policy calls validate the complete call before submitting one atomic managed pending-seed batch.</li>
+<li>Unsupported syntax and conversion cases fail before mutation, either silently in <code>IgnoreCall</code> mode or through <code>ParserRuleCallBindingException</code> in <code>Throw</code> mode.</li>
+<li>Return and label support remains explicit helper-based state, not ANTLR-compatible generated context fields or public rule signatures.</li>
 </ul>
-<h3 id="phase-c--argument-edge-case-tests">Phase C — argument edge-case tests</h3>
+<h3 id="future-separately-designed-extensions">Future separately designed extensions</h3>
 <ul>
-<li>Scope: harden raw argument splitting, unsupported forms, nested syntax, named/positional separation, duplicate handling, and diagnostics/exception behavior for the selected opt-in path.</li>
-<li>Non-goals: no new semantics outside the Phase B feature envelope.</li>
-<li>Expected tests: deterministic unit tests for nested brackets, strings, escapes, empty/missing arguments, duplicate names, mapper failures, and memoization keys.</li>
-<li>Docs to update: compatibility reference and matrix edge-case notes.</li>
-<li>Merge criteria: edge cases are either supported with tests or rejected/documented deterministically.</li>
-</ul>
-<h3 id="phase-d--returns--labels-stabilization">Phase D — returns / labels stabilization</h3>
-<ul>
-<li>Scope: stabilize generated-C# helper use around captured returns, assignment/list labels, present-null vs absent semantics, and memoization hashing constraints.</li>
-<li>Non-goals: no typed generated return fields, no bare label variables, no automatic parent return assignment.</li>
-<li>Expected tests: generated-C# opt-in tests for child returns after <code>@after</code>, assignment/list label projections, rollback, memoization hit restoration, and unsupported return object behavior.</li>
-<li>Docs to update: embedded-code docs, compatibility reference, matrix, generator README, roadmap.</li>
-<li>Merge criteria: successful child calls snapshot returns consistently and failed alternatives do not leak stale labeled results.</li>
-</ul>
-<h3 id="phase-e--arguments--returns-integration">Phase E — arguments + returns integration</h3>
-<ul>
-<li>Scope: integrate generated-C# opt-in argument binding with return and label access so caller-evaluated arguments, child returns, and labels compose predictably.</li>
-<li>Non-goals: no full ANTLR attribute model, no runtime-inline lexer execution, no external side-effect rollback, no conservative <code>Parse(...)</code> changes.</li>
-<li>Expected tests: end-to-end generated-C# opt-in scenarios covering argument evaluation before child entry, child parameter visibility, return capture after <code>@after</code>, label binding, rollback, and memoization.</li>
-<li>Docs to update: all parser compatibility docs, generator README, roadmap, and this plan's status notes.</li>
-<li>Merge criteria: evaluation order matches the target model and unsupported forms remain deterministic.</li>
-</ul>
-<h2 id="documentation-impact-checklist">Documentation impact checklist</h2>
-<ul>
-<li><code>docs/parser/INDEX.md</code> must link this document.</li>
-<li><code>docs/parser/ANTLRCompatibility.md</code> must distinguish metadata, explicit runtime policies, generated-C# helpers, and unsupported automatic binding.</li>
-<li><code>docs/parser/Antlr4CompatibilityMatrix.md</code> must keep rule parameters, rule arguments, returns, labels, and embedded-code attribute rows aligned with this plan.</li>
-<li><code>Utils.Parser/ROADMAP.md</code> must mention ANTLR rule arguments and returns integration as progressive work.</li>
-<li><code>Utils.Parser.Generators/README.md</code> must not imply helper APIs are automatic ANTLR argument binding.</li>
-<li>PR descriptions for future phases must state whether behavior, diagnostics, runtime metadata, public API shape, or test strategy changed.</li>
+<li>General argument and return integration remains future work when it requires arbitrary expression evaluation, parameter/return/local/label references inside argument clauses, mixed positional/named syntax, policy composition, user-defined types, arrays, generics, enums, Roslyn/general C# resolution, generated typed rule signatures, automatic parent-return propagation, lexer execution, or full ANTLR compatibility.</li>
+<li>Any future extension must update this document, <code>docs/parser/ANTLRCompatibility.md</code>, <code>docs/parser/Antlr4CompatibilityMatrix.md</code>, <code>Utils.Parser/ROADMAP.md</code>, <code>Utils.Parser.Generators/README.md</code>, and <code>docs/parser/INDEX.md</code> when materially changed.</li>
+<li>Future PR descriptions must state whether behavior, diagnostics, runtime metadata, public API shape, or test strategy changed.</li>
 </ul>
 <h3 id="generated-c-explicit-simple-positional-rule-call-binding">Generated-C# explicit simple positional rule-call binding</h3>
 <p>Generated parsers can explicitly install a generated-C#-only rule-call policy for <code>ParseWithEmbeddedCode(...)</code> when generation enables simple positional rule-argument binding. When a parser rule call supplies raw positional arguments, the generated policy first requires the raw positional argument count to exactly match the declared target-rule parameter count, including zero-parameter target rules; an explicit empty argument list such as <code>child[]</code> is therefore valid only when the target declares zero parameters. This generated-C# automatic boundary is stricter than the reusable typed runtime policy: declared parameter defaults are not consumed to satisfy omitted generated-C# call-site arguments. After exact arity passes, the generated policy converts supported simple literals and submits one atomic managed seed batch to the existing invocation-frame parameter store. The conservative generated <code>Parse(...)</code> path remains unchanged and does not execute this binding path.</p>
