@@ -72,7 +72,11 @@ internal static class EmitWorkerHost
         var loaded = new ConcurrentDictionary<int, LoadedInterface>();
         var nextHandleBox = new int[1];
         var writeLock = new object();
-        var dispatched = new ConcurrentBag<Task>();
+        // Only active (not-yet-completed) tasks are kept. Each task removes itself via a
+        // continuation so the dictionary stays bounded — a long-lived worker that processes
+        // many requests never accumulates references to completed tasks.
+        var activeTasks = new ConcurrentDictionary<int, Task>();
+        int nextTaskId = 0;
         using var concurrencyLimit = new SemaphoreSlim(MaxConcurrency, MaxConcurrency);
 
         string? line;
@@ -99,7 +103,7 @@ internal static class EmitWorkerHost
 
             if (request.Kind == WorkerRequestKind.Shutdown)
             {
-                DrainDispatched(dispatched);
+                DrainDispatched(activeTasks);
                 WriteResponse(output, writeLock, new WorkerResponse { Id = request.Id, Success = true });
                 return;
             }
@@ -109,7 +113,9 @@ internal static class EmitWorkerHost
             concurrencyLimit.Wait();
 
             WorkerRequest dispatchedRequest = request;
-            dispatched.Add(Task.Run(() =>
+            int taskId = Interlocked.Increment(ref nextTaskId);
+
+            Task task = Task.Run(() =>
             {
                 try
                 {
@@ -119,27 +125,36 @@ internal static class EmitWorkerHost
                 {
                     concurrencyLimit.Release();
                 }
-            }));
+            });
+
+            // Register before attaching the removal continuation so the entry is always present
+            // when the continuation fires, even if the task completes extremely quickly.
+            activeTasks[taskId] = task;
+            _ = task.ContinueWith(
+                _ => activeTasks.TryRemove(taskId, out _),
+                TaskContinuationOptions.ExecuteSynchronously);
         }
 
         // The input ended without an explicit Shutdown request (for example, the host's side of the
         // pipe closed abruptly). Still give already-dispatched requests a chance to finish and write
         // their response before returning, for the same reason the Shutdown path below does — otherwise
         // a request dispatched just before the last line was read could be silently dropped.
-        DrainDispatched(dispatched);
+        DrainDispatched(activeTasks);
     }
 
     /// <summary>
-    /// Best-effort: waits for every request dispatched so far to finish (and write its response) before
+    /// Best-effort: waits for every still-active request to finish (and write its response) before
     /// <see cref="Run"/> returns, so requests already in flight are not silently abandoned. Not a hard
     /// guarantee — a request that is itself stuck is bounded by <see cref="EmitWorkerProcess.SendAndReceive"/>'s
     /// per-request timeout on the host side, not by this drain, and can still be abandoned here.
     /// </summary>
-    private static void DrainDispatched(ConcurrentBag<Task> dispatched)
+    private static void DrainDispatched(ConcurrentDictionary<int, Task> activeTasks)
     {
         try
         {
-            Task.WaitAll([.. dispatched], TimeSpan.FromSeconds(5));
+            Task[] snapshot = [.. activeTasks.Values];
+            if (snapshot.Length > 0)
+                Task.WaitAll(snapshot, TimeSpan.FromSeconds(5));
         }
         catch
         {
