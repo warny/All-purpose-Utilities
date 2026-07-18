@@ -3939,11 +3939,11 @@ public class Antlr4GeneratedEmbeddedCodeTests
     {
         const string grammar = """
             grammar P;
-            @members { public int Seen; }
-            start @after { Seen = (int)GetRequiredLabeledRuleCallReturn(context, "c", "value"); } : c=child ;
+            @members { public bool ReturnLeaked = true; }
+            start @after { ReturnLeaked = TryGetLabeledRuleCallReturn(context, "c", "value", out _); } : c=child ;
             child returns [int value]
                 : A { $value = 1; } B
-                | A { $value = 2; }
+                | A
                 ;
             A : 'a' ;
             B : 'b' ;
@@ -3954,7 +3954,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
         ParseNode result = InvokeParseWithContext(assembly, "a", executionContext);
 
         Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
-        Assert.AreEqual(2, ReadInstanceIntField(executionContext, "Seen"));
+        Assert.IsFalse(ReadInstanceBoolField(executionContext, "ReturnLeaked"));
     }
 
     /// <summary>Ensures memoization restores transformed current-rule returns without re-executing the child action.</summary>
@@ -3965,7 +3965,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
             grammar P;
             @members {
                 public int Seen;
-                public int WriteCount;
+                public static int ExecutionCount;
             }
             start
             @after {
@@ -3976,7 +3976,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
                 ;
             child returns [int value]
             @after {
-                WriteCount++;
+                ExecutionCount++;
                 $value = 42;
             }
                 : A
@@ -3990,7 +3990,7 @@ public class Antlr4GeneratedEmbeddedCodeTests
         ParseNode result = InvokeParseWithContext(assembly, "a", executionContext);
 
         Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
-        Assert.AreEqual(1, ReadInstanceIntField(executionContext, "WriteCount"));
+        Assert.AreEqual(1, ReadIntField(assembly, "ExecutionCount"));
         Assert.AreEqual(42, ReadInstanceIntField(executionContext, "Seen"));
     }
 
