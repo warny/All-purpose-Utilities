@@ -41,6 +41,14 @@ internal static class EmitWorkerHost
     private readonly record struct LoadedInterface(object Instance, Type InterfaceType, FrozenSet<int> AllowedMethodTokens);
 
     /// <summary>
+    /// Maximum number of requests that may be executing concurrently inside a single worker
+    /// process. When this limit is reached, the reader loop blocks (backs up into the OS pipe
+    /// buffer) rather than dispatching another <see cref="Task.Run"/>, preventing a fast
+    /// producer from exhausting the thread pool or allocating unbounded native resources.
+    /// </summary>
+    internal const int MaxConcurrency = 64;
+
+    /// <summary>
     /// Runs the request/response loop until a <see cref="WorkerRequestKind.Shutdown"/> request is
     /// received or the input stream ends.
     /// </summary>
@@ -51,6 +59,11 @@ internal static class EmitWorkerHost
     /// <see cref="WorkerRequestKind.Call"/>/<see cref="WorkerRequestKind.Unload"/> request for that
     /// instance, so several unrelated interfaces can share one worker process without their calls being
     /// misrouted to each other.
+    /// <para>
+    /// Concurrency is bounded to <see cref="MaxConcurrency"/> by a <see cref="SemaphoreSlim"/>:
+    /// when the limit is reached the reader loop blocks on <c>Wait()</c>, which backs pressure
+    /// up into the OS named-pipe buffer instead of spawning unbounded thread-pool tasks.
+    /// </para>
     /// </remarks>
     /// <param name="input">Reader for incoming JSON-line requests.</param>
     /// <param name="output">Writer for outgoing JSON-line responses.</param>
@@ -60,6 +73,7 @@ internal static class EmitWorkerHost
         var nextHandleBox = new int[1];
         var writeLock = new object();
         var dispatched = new ConcurrentBag<Task>();
+        using var concurrencyLimit = new SemaphoreSlim(MaxConcurrency, MaxConcurrency);
 
         string? line;
         while ((line = ProtocolFraming.ReadBoundedLine(input)) is not null)
@@ -90,8 +104,22 @@ internal static class EmitWorkerHost
                 return;
             }
 
+            // Acquire the semaphore BEFORE Task.Run so the reader loop blocks (backs up into the
+            // OS pipe buffer) rather than enqueuing an unbounded number of thread-pool tasks.
+            concurrencyLimit.Wait();
+
             WorkerRequest dispatchedRequest = request;
-            dispatched.Add(Task.Run(() => ProcessRequest(dispatchedRequest, loaded, nextHandleBox, output, writeLock)));
+            dispatched.Add(Task.Run(() =>
+            {
+                try
+                {
+                    ProcessRequest(dispatchedRequest, loaded, nextHandleBox, output, writeLock);
+                }
+                finally
+                {
+                    concurrencyLimit.Release();
+                }
+            }));
         }
 
         // The input ended without an explicit Shutdown request (for example, the host's side of the

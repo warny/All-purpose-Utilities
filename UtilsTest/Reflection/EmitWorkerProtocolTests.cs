@@ -151,6 +151,17 @@ public class EmitWorkerProtocolTests
             () => EmitWorkerHost.Run(input, output));
     }
 
+    // ─── Item 40: bounded concurrent dispatch ────────────────────────────────────
+
+    [TestMethod]
+    public void MaxConcurrency_IsPositiveAndReasonable()
+    {
+        // Verify the constant exists, is positive, and is within the range a real worker would use.
+        Assert.IsTrue(EmitWorkerHost.MaxConcurrency > 0);
+        Assert.IsTrue(EmitWorkerHost.MaxConcurrency <= 1024,
+            "MaxConcurrency should be well below typical thread-pool sizes to prevent starvation.");
+    }
+
     // ─── Item 39: bounded protocol line reader ───────────────────────────────────
 
     [TestMethod]
