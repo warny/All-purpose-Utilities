@@ -634,12 +634,19 @@ The runtime currently remains conservative and deterministic. Metadata-rich infr
 
 ### Incremental parser rule-call execution policy
 
-**Status: in progress.**
+**Status: complete for the explicit literal-binding policy subset; future extensions require separate design.**
 
-- `PositionalLiteralRuleCallExecutionPolicy` and the separate `NamedLiteralRuleCallExecutionPolicy` are available as explicit opt-ins while the default remains metadata-only; they are not combined automatically.
-- The positional policy binds exact-arity values by declaration order. The named policy consumes the existing `NamedRawArguments` split for `name: literal` and `name = literal`, matches exact ordinal names independently of order, and requires exact declared-name coverage. Duplicate raw names inherit splitter last-wins semantics. The untyped policies continue to ignore defaults and require exact arity/coverage. Partial untyped binding, mixed syntax, declared-type validation/conversion in untyped policies, and arbitrary expressions remain unsupported.
-- Binding validates the full call and applies all values through one rollback-managed, all-or-none pending child seed batch; the frame-manager contract forbids partial acceptance and reports when the complete batch cannot be retained. Generated state-aware memoization deterministically includes the supported literal values (`null`, `bool`, `int`, `long`, `double`, `string`, and `char`) so different bound values cannot reuse stale child state. Historical arbitrary explicit seeds remain accepted; non-hashable objects conservatively force volatile state keys instead of aborting parsing or claiming safe reuse.
-- Typed validation is available only through the separate `TypedPositionalLiteralRuleCallExecutionPolicy` and `TypedNamedLiteralRuleCallExecutionPolicy`. They may consume conservatively preserved simple-literal parameter defaults: positional omission is trailing-only, named omission may occur in any order, explicit values override defaults, and complete effective values precede one atomic seed batch. General optional/default expressions, return/label semantics, policy composition, and broader expression semantics remain future separately reviewed phases. Lexer execution and ANTLR-complete argument semantics remain out of scope.
+Completed subset:
+
+- Four separate explicit opt-in policies are available: untyped positional, untyped named, typed positional, and typed named literal binding. None is installed by `ParserRuntimeFeaturePolicy.Default`, and they are not combined automatically.
+- Untyped positional binding requires exact arity by declaration order; untyped named binding requires exact ordinal declared-name coverage independent of argument order. Untyped policies ignore declared types and defaults.
+- Typed positional and typed named policies enforce allowlisted runtime conversion, consume only required simple-literal defaults, submit converted effective values, and preserve the same explicit opt-in boundary.
+- Every successful policy validates the whole call before one rollback-managed, all-or-none pending child seed batch. `IgnoreCall` leaves invalid calls unbound, `Throw` raises `ParserRuleCallBindingException`, and a frame manager that cannot retain the batch is not retried.
+- Managed seed rollback, state-aware memoization, ordinary calls, and right-hand recursive references are covered for the explicit literal subset.
+
+Future extensions requiring separate design:
+
+- mixed positional/named syntax, policy composition, arbitrary expressions, parameter/return/local/label references inside arguments, user-defined types, arrays, generics, enums, Roslyn or general C# resolution, generated typed rule signatures, automatic return propagation, lexer execution, and full ANTLR compatibility.
 
 
 ### Explicit typed literal rule-call binding

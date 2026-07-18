@@ -4,7 +4,7 @@
 
 This document records the design boundary for ANTLR-style rule arguments, rule parameters, rule returns, labels, rollback, and generated-C# opt-in integration in `Utils.Parser`.
 
-The current PR is documentation/design only. It must not change `Parse(...)`, must not add target-language C# evaluation to `ParserEngine`, and must not implement automatic `callee[expr]` evaluation or ANTLR-compatible generated parser signatures.
+This document is now a durable state and design reference. The explicit literal-binding runtime policy subset is implemented, while `Parse(...)` remains conservative, `ParserEngine` remains target-language neutral, and automatic arbitrary `callee[expr]` evaluation plus ANTLR-compatible generated parser signatures remain out of scope.
 
 The plan separates four surfaces that are easy to confuse:
 
@@ -55,6 +55,7 @@ The default runtime remains conservative:
 Runtime opt-in is available only through explicit caller-installed policies. Existing policies include:
 
 - `PositionalLiteralRuleCallExecutionPolicy`;
+- `NamedLiteralRuleCallExecutionPolicy`;
 - `TypedPositionalLiteralRuleCallExecutionPolicy`;
 - `TypedNamedLiteralRuleCallExecutionPolicy`.
 
@@ -71,6 +72,20 @@ Their intended boundary is narrow:
 - any accepted values must be written through the managed pending-seed mechanism rather than through external side effects.
 
 These policies are useful compatibility adapters, not a full ANTLR argument model.
+
+## Literal policy subset status
+
+| Area | Status | Boundary |
+| --- | --- | --- |
+| Untyped positional literals | Realized | Exact arity by declaration order; declared types and defaults are ignored. |
+| Untyped named literals | Realized | Exact ordinal declared-name coverage; argument order is irrelevant; defaults are ignored. |
+| Typed positional literals | Realized | Allowlisted conversion with trailing omission satisfied only by supported simple defaults. |
+| Typed named literals | Realized | Allowlisted conversion with omitted names satisfied only by supported simple defaults. |
+| Default runtime behavior | Explicitly limited | No binding unless a caller installs a policy. |
+| Runtime batching | Realized | One atomic managed seed batch after complete validation. |
+| Rollback and memoization | Realized | Managed seeds participate in rollback and effective bound values participate in generated state keys. |
+| Generated-C# opt-in | Explicitly limited | Generated helper/policy paths may opt in; conservative generated `Parse(...)` remains unchanged. |
+| Arbitrary ANTLR/C# semantics | Future separately justified | No expression evaluation, references to parameters/locals/labels/returns, user types, generated typed signatures, automatic returns, or full ANTLR compatibility. |
 
 ## Generated-C# opt-in behavior
 
@@ -241,56 +256,30 @@ A future functional PR may add a generated-C# opt-in path for `callee[expr]`. Th
 
 This model is for a future generated-C# opt-in implementation only. It is not the default runtime behavior and is not a `Parse(...)` feature.
 
-## Proposed implementation phases
+## Implementation status groups
 
-### Phase A — docs/design only
+### Completed milestones
 
-- Scope: add this design/audit document and align compatibility, matrix, roadmap, and generator README wording.
-- Non-goals: no runtime behavior changes, no generated binding, no tests beyond documentation review.
-- Expected tests: not run for documentation-only changes unless examples/snippets are made compilable and need verification.
-- Docs to update: this document, `docs/parser/INDEX.md`, compatibility docs, roadmap, generator README as needed.
-- Merge criteria: boundaries are explicit; no wording implies automatic `callee[expr]` evaluation or typed returns.
+- Documentation and compatibility boundaries are established in this document, the compatibility reference, the compatibility matrix, the roadmap, and the generator README.
+- Runtime metadata preservation for rule parameters, returns, locals, labels, and raw call arguments is implemented.
+- Explicit runtime literal policies cover untyped positional, untyped named, typed positional, and typed named binding.
+- Generated-C# simple positional literal binding is implemented only for its documented opt-in path; it keeps exact arity, limited literal conversion, one atomic seed batch, conservative generated `Parse(...)`, and unchanged public parser method signatures.
+- Raw argument splitters, named argument splitting, duplicate/empty/unsupported forms, mapper failure behavior, policy exceptions, rollback, and state-key edge cases are covered by deterministic tests across the runtime and generated-C# suites.
+- Current-rule returns and labeled child result/return helpers are stabilized for the explicit generated-C# helper surface, including present-null versus absent semantics, rollback, and memoization restoration boundaries.
 
-### Phase B — generated-C# simple positional argument binding
+### Current bounded behavior
 
-- Scope: generated-C# opt-in support for simple positional `callee[expr]` binding where expressions are deliberately limited and evaluated in the generated caller context.
-- Non-goals: no `Parse(...)` change, no public ANTLR-compatible rule signatures, no arbitrary target-language model, no named binding unless explicitly scoped.
-- Expected tests: deterministic generated-C# tests for one-argument and multi-argument success, failed arity, unsupported expression, rollback-safe seeds, and conservative `Parse(...)` unchanged.
-- Docs to update: this document, compatibility reference, matrix, generator README, roadmap.
-- Merge criteria: all-or-none seed validation; no target-language C# logic in `ParserEngine`; transformer boundaries preserved.
+- Runtime literal binding is opt-in only and never selected by the default runtime policy.
+- Generated-C# binding is opt-in only and limited to the documented generated policy/helper path; runtime-inline `Parse(...)` remains metadata-only.
+- Accepted literal-policy calls validate the complete call before submitting one atomic managed pending-seed batch.
+- Unsupported syntax and conversion cases fail before mutation, either silently in `IgnoreCall` mode or through `ParserRuleCallBindingException` in `Throw` mode.
+- Return and label support remains explicit helper-based state, not ANTLR-compatible generated context fields or public rule signatures.
 
-### Phase C — argument edge-case tests
+### Future separately designed extensions
 
-- Scope: harden raw argument splitting, unsupported forms, nested syntax, named/positional separation, duplicate handling, and diagnostics/exception behavior for the selected opt-in path.
-- Non-goals: no new semantics outside the Phase B feature envelope.
-- Expected tests: deterministic unit tests for nested brackets, strings, escapes, empty/missing arguments, duplicate names, mapper failures, and memoization keys.
-- Docs to update: compatibility reference and matrix edge-case notes.
-- Merge criteria: edge cases are either supported with tests or rejected/documented deterministically.
-
-### Phase D — returns / labels stabilization
-
-- Scope: stabilize generated-C# helper use around captured returns, assignment/list labels, present-null vs absent semantics, and memoization hashing constraints.
-- Non-goals: no typed generated return fields, no bare label variables, no automatic parent return assignment.
-- Expected tests: generated-C# opt-in tests for child returns after `@after`, assignment/list label projections, rollback, memoization hit restoration, and unsupported return object behavior.
-- Docs to update: embedded-code docs, compatibility reference, matrix, generator README, roadmap.
-- Merge criteria: successful child calls snapshot returns consistently and failed alternatives do not leak stale labeled results.
-
-### Phase E — arguments + returns integration
-
-- Scope: integrate generated-C# opt-in argument binding with return and label access so caller-evaluated arguments, child returns, and labels compose predictably.
-- Non-goals: no full ANTLR attribute model, no runtime-inline lexer execution, no external side-effect rollback, no conservative `Parse(...)` changes.
-- Expected tests: end-to-end generated-C# opt-in scenarios covering argument evaluation before child entry, child parameter visibility, return capture after `@after`, label binding, rollback, and memoization.
-- Docs to update: all parser compatibility docs, generator README, roadmap, and this plan's status notes.
-- Merge criteria: evaluation order matches the target model and unsupported forms remain deterministic.
-
-## Documentation impact checklist
-
-- `docs/parser/INDEX.md` must link this document.
-- `docs/parser/ANTLRCompatibility.md` must distinguish metadata, explicit runtime policies, generated-C# helpers, and unsupported automatic binding.
-- `docs/parser/Antlr4CompatibilityMatrix.md` must keep rule parameters, rule arguments, returns, labels, and embedded-code attribute rows aligned with this plan.
-- `Utils.Parser/ROADMAP.md` must mention ANTLR rule arguments and returns integration as progressive work.
-- `Utils.Parser.Generators/README.md` must not imply helper APIs are automatic ANTLR argument binding.
-- PR descriptions for future phases must state whether behavior, diagnostics, runtime metadata, public API shape, or test strategy changed.
+- General argument and return integration remains future work when it requires arbitrary expression evaluation, parameter/return/local/label references inside argument clauses, mixed positional/named syntax, policy composition, user-defined types, arrays, generics, enums, Roslyn/general C# resolution, generated typed rule signatures, automatic parent-return propagation, lexer execution, or full ANTLR compatibility.
+- Any future extension must update this document, `docs/parser/ANTLRCompatibility.md`, `docs/parser/Antlr4CompatibilityMatrix.md`, `Utils.Parser/ROADMAP.md`, `Utils.Parser.Generators/README.md`, and `docs/parser/INDEX.md` when materially changed.
+- Future PR descriptions must state whether behavior, diagnostics, runtime metadata, public API shape, or test strategy changed.
 
 
 ### Generated-C# explicit simple positional rule-call binding
