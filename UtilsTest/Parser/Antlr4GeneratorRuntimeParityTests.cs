@@ -1,8 +1,11 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Parser.Bootstrap;
 using Utils.Parser.Diagnostics;
+using Utils.Parser.Diagnostics.EmbeddedCode;
+using Utils.Parser.EmbeddedCode;
 using Utils.Parser.Generators.Internal;
 using Utils.Parser.Model;
+using Utils.Parser.Resolution;
 
 namespace UtilsTest.Parser;
 
@@ -175,6 +178,79 @@ public class Antlr4GeneratorRuntimeParityTests
         Assert.AreEqual(runtime.ParserRuleReferenceCount, generator.ParserRuleReferenceCount);
     }
 
+    /// <summary>Verifies structural embedded-code descriptor parity for ordinary parser traversal.</summary>
+    [TestMethod]
+    public void Parity_EmbeddedCodeDescriptors_OrdinaryParserTraversalMatchesRuntimeDiscovery()
+    {
+        const string grammar = """
+            grammar EmbeddedParity;
+
+            start
+                : { Single(); }
+                | 'a' { Same(); } { Ready() }?
+                | ('b' { Quantified(); })*
+                | ~'d' { Blocked() }?
+                | 'c' { Same(); }
+                ;
+
+            ID : ('a'..'z')+ ;
+            """;
+
+        CollectionAssert.AreEqual(ProjectRuntimeEmbeddedHooks(grammar), ProjectGeneratorEmbeddedHooks(grammar));
+    }
+
+    /// <summary>Verifies structural embedded-code descriptor parity for a constructed negation probe with embedded code.</summary>
+    [TestMethod]
+    public void Parity_EmbeddedCodeDescriptors_NegationProbeMatchesRuntimeDiscovery()
+    {
+        ParserDefinition runtimeDefinition = CreateNegationRuntimeDefinition();
+        G4Grammar generatorGrammar = CreateNegationGeneratorGrammar();
+
+        CollectionAssert.AreEqual(ProjectRuntimeEmbeddedHooks(runtimeDefinition), ProjectGeneratorEmbeddedHooks(generatorGrammar));
+        Assert.IsTrue(runtimeDefinition.ParserRules.Select(rule => rule.Content).Any(ContainsEmbeddedCodeInsideRuntimeNegation));
+        Assert.IsTrue(generatorGrammar.ParserRules.Select(rule => rule.Content).Any(ContainsEmbeddedCodeInsideGeneratorNegation));
+    }
+
+    /// <summary>Verifies structural embedded-code descriptor parity after direct-left-recursion resolution.</summary>
+    [TestMethod]
+    public void Parity_EmbeddedCodeDescriptors_DirectLeftRecursionMatchesResolvedRuntimeDiscovery()
+    {
+        const string grammar = """
+            grammar LeftRecursiveEmbeddedParity;
+
+            expr
+                : expr '+' { Add(); } expr
+                | expr '*' { Multiply(); } { CanMultiply() }? expr
+                | { FirstBase(); } ID
+                | { SecondBase(); } INT
+                ;
+
+            ID : ('a'..'z')+ ;
+            INT : ('0'..'9')+ ;
+            """;
+
+        CollectionAssert.AreEqual(ProjectRuntimeEmbeddedHooks(grammar), ProjectGeneratorEmbeddedHooks(grammar));
+    }
+
+    /// <summary>Verifies structural embedded-code descriptor parity for default and additional lexer modes.</summary>
+    [TestMethod]
+    public void Parity_EmbeddedCodeDescriptors_LexerModesAndNestedContentMatchRuntimeDiscovery()
+    {
+        const string grammar = """
+            lexer grammar LexerEmbeddedParity;
+
+            A : { Enabled() }? 'a' { OnA(); };
+            B : ('b' { OnB(); })+;
+
+            mode EXTRA;
+
+            C : 'c' { OnC(); };
+            D : { ExtraEnabled() }? 'd';
+            """;
+
+        CollectionAssert.AreEqual(ProjectRuntimeEmbeddedHooks(grammar), ProjectGeneratorEmbeddedHooks(grammar));
+    }
+
     [TestMethod]
     public void RuntimeAndGenerator_Diagnostics_ImportParity()
     {
@@ -342,6 +418,231 @@ public class Antlr4GeneratorRuntimeParityTests
             $"Generator diagnostics count {diagnostics.Count} is lower than expected minimum {minimumGeneratorDiagnostics}.");
     }
 
+    /// <summary>Projects comparable runtime discovery entries to common embedded hook snapshots.</summary>
+    /// <param name="grammarText">ANTLR grammar source parsed through the runtime path.</param>
+    /// <returns>Comparable runtime embedded hook snapshots in native discovery order.</returns>
+    private static EmbeddedHookSnapshot[] ProjectRuntimeEmbeddedHooks(string grammarText)
+    {
+        var diagnostics = new DiagnosticBag();
+        var unresolved = Antlr4GrammarConverter.ParseUnresolved(grammarText, diagnostics);
+        AssertNoUnexpectedDiagnostics(diagnostics, "Runtime parse");
+        var definition = RuleResolver.Resolve(unresolved, diagnostics);
+        AssertNoUnexpectedDiagnostics(diagnostics, "Runtime resolution");
+
+        return EmbeddedCodeRuntimeDiscovery.Discover(definition).Entries
+            .Where(IsComparableEmbeddedHook)
+            .Select(ToRuntimeSnapshot)
+            .ToArray();
+    }
+
+
+    /// <summary>Projects comparable runtime discovery entries from an already-built definition.</summary>
+    /// <param name="definition">Runtime parser definition to inspect.</param>
+    /// <returns>Comparable runtime embedded hook snapshots in native discovery order.</returns>
+    private static EmbeddedHookSnapshot[] ProjectRuntimeEmbeddedHooks(ParserDefinition definition)
+    {
+        return EmbeddedCodeRuntimeDiscovery.Discover(definition).Entries
+            .Where(IsComparableEmbeddedHook)
+            .Select(ToRuntimeSnapshot)
+            .ToArray();
+    }
+
+    /// <summary>Projects generator embedded hooks to common embedded hook snapshots.</summary>
+    /// <param name="grammarText">ANTLR grammar source parsed through the generator path.</param>
+    /// <returns>Comparable generator embedded hook snapshots in native collection order.</returns>
+    private static EmbeddedHookSnapshot[] ProjectGeneratorEmbeddedHooks(string grammarText)
+    {
+        var diagnostics = new DiagnosticBag();
+        var grammar = new G4Parser(new G4Tokenizer(grammarText).Tokenize(), diagnostics).Parse();
+        AssertNoUnexpectedDiagnostics(diagnostics, "Generator parse");
+        var parserHooks = GrammarEmitter.CollectEmbeddedCodeHooks(grammar, NoOpParserEmbeddedCodeTransformer.Instance);
+        var lexerHooks = GrammarEmitter.CollectLexerEmbeddedCodeHooks(grammar, NoOpParserEmbeddedCodeTransformer.Instance);
+
+        return parserHooks.Concat(lexerHooks)
+            .Select(ToGeneratorSnapshot)
+            .ToArray();
+    }
+
+
+    /// <summary>Projects generator embedded hooks from an already-built generator grammar.</summary>
+    /// <param name="grammar">Generator grammar model to inspect.</param>
+    /// <returns>Comparable generator embedded hook snapshots in native collection order.</returns>
+    private static EmbeddedHookSnapshot[] ProjectGeneratorEmbeddedHooks(G4Grammar grammar)
+    {
+        var parserHooks = GrammarEmitter.CollectEmbeddedCodeHooks(grammar, NoOpParserEmbeddedCodeTransformer.Instance);
+        var lexerHooks = GrammarEmitter.CollectLexerEmbeddedCodeHooks(grammar, NoOpParserEmbeddedCodeTransformer.Instance);
+
+        return parserHooks.Concat(lexerHooks)
+            .Select(ToGeneratorSnapshot)
+            .ToArray();
+    }
+
+    /// <summary>Creates a runtime parser definition with embedded code inside a negation probe.</summary>
+    /// <returns>Parser definition whose single hook is nested under <see cref="Negation" />.</returns>
+    private static ParserDefinition CreateNegationRuntimeDefinition()
+    {
+        var rule = CreateParserRule("start", new Negation(new ValidatingPredicate("Blocked()")));
+        return new ParserDefinition("NegationParity", GrammarType.Combined, null, [], [], [], [rule], rule);
+    }
+
+    /// <summary>Creates a generator grammar with embedded code inside a negation probe.</summary>
+    /// <returns>Generator grammar whose single hook is nested under <see cref="G4Negation" />.</returns>
+    private static G4Grammar CreateNegationGeneratorGrammar()
+    {
+        var alternative = new G4Alternative { Priority = 0 };
+        alternative.Items.Add(new G4Negation { Inner = new G4EmbeddedAction { Code = "Blocked()", IsPredicate = true } });
+
+        var rule = new G4Rule { Name = "start" };
+        rule.Content.Alternatives.Add(alternative);
+
+        var grammar = new G4Grammar { Name = "NegationParity", Kind = G4GrammarKind.Combined };
+        grammar.ParserRules.Add(rule);
+        return grammar;
+    }
+
+    /// <summary>Creates a parser rule around supplied content.</summary>
+    /// <param name="name">Rule name.</param>
+    /// <param name="content">Rule content or full alternation.</param>
+    /// <returns>A parser rule.</returns>
+    private static Rule CreateParserRule(string name, RuleContent content)
+    {
+        var alternation = content as Alternation ?? new Alternation([new Alternative(0, Associativity.Left, content)]);
+        return new Rule(name, 0, false, alternation, Kind: RuleKind.Parser);
+    }
+
+    /// <summary>Determines whether a runtime discovery entry belongs to the structural parity scope.</summary>
+    /// <param name="entry">Runtime discovery entry to classify.</param>
+    /// <returns><see langword="true" /> when the entry participates in generator/runtime hook parity.</returns>
+    private static bool IsComparableEmbeddedHook(EmbeddedCodeRuntimeEntry entry)
+    {
+        if (entry.IsRuntimeExecutable)
+        {
+            return entry.Kind is EmbeddedCodeKind.SemanticPredicate or EmbeddedCodeKind.ParserInlineAction;
+        }
+
+        return entry.Kind is EmbeddedCodeKind.LexerAction or EmbeddedCodeKind.LexerPredicate;
+    }
+
+    /// <summary>Converts one runtime discovery entry to a common embedded hook snapshot.</summary>
+    /// <param name="entry">Runtime discovery entry to convert.</param>
+    /// <returns>Common embedded hook snapshot.</returns>
+    private static EmbeddedHookSnapshot ToRuntimeSnapshot(EmbeddedCodeRuntimeEntry entry)
+    {
+        string owner = entry.Kind is EmbeddedCodeKind.LexerAction or EmbeddedCodeKind.LexerPredicate ? "Lexer" : "Parser";
+        string kind = entry.Kind is EmbeddedCodeKind.SemanticPredicate or EmbeddedCodeKind.LexerPredicate ? "SemanticPredicate" : "InlineAction";
+        return new EmbeddedHookSnapshot(owner, kind, entry.RuleName ?? string.Empty, TrimCode(entry.Source.SourceText), entry.AlternativeIndex, entry.ElementIndex);
+    }
+
+    /// <summary>Converts one generator hook to a common embedded hook snapshot.</summary>
+    /// <param name="hook">Generator hook to convert.</param>
+    /// <returns>Common embedded hook snapshot.</returns>
+    private static EmbeddedHookSnapshot ToGeneratorSnapshot(GrammarEmitter.EmbeddedCodeHook hook)
+    {
+        return new EmbeddedHookSnapshot(
+            hook.Owner.ToString(),
+            hook.Kind.ToString(),
+            hook.RuleName,
+            TrimCode(hook.RawCode.Text),
+            NormalizeGeneratorIndex(hook.AlternativeIndex),
+            NormalizeGeneratorIndex(hook.ElementIndex));
+    }
+
+    /// <summary>Normalizes generator sentinel indexes to the runtime nullable-index representation.</summary>
+    /// <param name="index">Generator hook index, where negative values indicate absence.</param>
+    /// <returns>Nullable index used by common snapshots.</returns>
+    private static int? NormalizeGeneratorIndex(int index) => index < 0 ? null : index;
+
+
+    /// <summary>Determines whether runtime content contains embedded code directly or indirectly inside negation.</summary>
+    /// <param name="content">Runtime grammar content to inspect.</param>
+    /// <returns><see langword="true" /> when any negation subtree contains embedded code.</returns>
+    private static bool ContainsEmbeddedCodeInsideRuntimeNegation(RuleContent content)
+    {
+        return content switch
+        {
+            Negation negation => ContainsRuntimeEmbeddedCode(negation.Inner),
+            Alternation alternation => alternation.Alternatives.Any(ContainsEmbeddedCodeInsideRuntimeNegation),
+            Alternative alternative => ContainsEmbeddedCodeInsideRuntimeNegation(alternative.Content),
+            Sequence sequence => sequence.Items.Any(ContainsEmbeddedCodeInsideRuntimeNegation),
+            Quantifier quantifier => ContainsEmbeddedCodeInsideRuntimeNegation(quantifier.Inner),
+            _ => false,
+        };
+    }
+
+    /// <summary>Determines whether runtime content contains comparable embedded code.</summary>
+    /// <param name="content">Runtime grammar content to inspect.</param>
+    /// <returns><see langword="true" /> when comparable embedded code is present.</returns>
+    private static bool ContainsRuntimeEmbeddedCode(RuleContent content)
+    {
+        return content switch
+        {
+            ValidatingPredicate => true,
+            EmbeddedAction { Context: ActionContext.Alternative, Position: ActionPosition.Inline } => true,
+            Alternation alternation => alternation.Alternatives.Any(ContainsRuntimeEmbeddedCode),
+            Alternative alternative => ContainsRuntimeEmbeddedCode(alternative.Content),
+            Sequence sequence => sequence.Items.Any(ContainsRuntimeEmbeddedCode),
+            Quantifier quantifier => ContainsRuntimeEmbeddedCode(quantifier.Inner),
+            Negation negation => ContainsRuntimeEmbeddedCode(negation.Inner),
+            _ => false,
+        };
+    }
+
+    /// <summary>Determines whether generator content contains embedded code directly or indirectly inside negation.</summary>
+    /// <param name="content">Generator grammar content to inspect.</param>
+    /// <returns><see langword="true" /> when any negation subtree contains embedded code.</returns>
+    private static bool ContainsEmbeddedCodeInsideGeneratorNegation(G4Content content)
+    {
+        return content switch
+        {
+            G4Negation negation => ContainsGeneratorEmbeddedCode(negation.Inner),
+            G4Alternation alternation => alternation.Alternatives.Any(ContainsEmbeddedCodeInsideGeneratorNegation),
+            G4Alternative alternative => alternative.Items.Any(ContainsEmbeddedCodeInsideGeneratorNegation),
+            G4Sequence sequence => sequence.Items.Any(ContainsEmbeddedCodeInsideGeneratorNegation),
+            G4Quantifier quantifier => ContainsEmbeddedCodeInsideGeneratorNegation(quantifier.Inner),
+            _ => false,
+        };
+    }
+
+    /// <summary>Determines whether generator content contains embedded code.</summary>
+    /// <param name="content">Generator grammar content to inspect.</param>
+    /// <returns><see langword="true" /> when embedded code is present.</returns>
+    private static bool ContainsGeneratorEmbeddedCode(G4Content content)
+    {
+        return content switch
+        {
+            G4EmbeddedAction => true,
+            G4Alternation alternation => alternation.Alternatives.Any(ContainsGeneratorEmbeddedCode),
+            G4Alternative alternative => alternative.Items.Any(ContainsGeneratorEmbeddedCode),
+            G4Sequence sequence => sequence.Items.Any(ContainsGeneratorEmbeddedCode),
+            G4Quantifier quantifier => ContainsGeneratorEmbeddedCode(quantifier.Inner),
+            G4Negation negation => ContainsGeneratorEmbeddedCode(negation.Inner),
+            _ => false,
+        };
+    }
+
+    /// <summary>Fails when parse or resolution diagnostics contain unexpected errors.</summary>
+    /// <param name="diagnostics">Diagnostics collected by a parser or resolver path.</param>
+    /// <param name="path">Human-readable path name included in assertion output.</param>
+    private static void AssertNoUnexpectedDiagnostics(DiagnosticBag diagnostics, string path)
+    {
+        ParserDiagnostic[] errors = diagnostics
+            .Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
+            .ToArray();
+
+        Assert.AreEqual(
+            0,
+            errors.Length,
+            $"{path} produced unexpected diagnostics: {string.Join(Environment.NewLine, errors.Select(FormatDiagnostic))}");
+    }
+
+    /// <summary>Formats one diagnostic for assertion failure output.</summary>
+    /// <param name="diagnostic">Diagnostic to format.</param>
+    /// <returns>Compact diagnostic details.</returns>
+    private static string FormatDiagnostic(ParserDiagnostic diagnostic)
+    {
+        return $"{diagnostic.Code} {diagnostic.Severity} at {diagnostic.Location?.Line}:{diagnostic.Location?.Column} span {diagnostic.Span?.Start}+{diagnostic.Span?.Length}: {diagnostic.Message}";
+    }
+
     private sealed record DiagnosticSnapshot(
         string Code,
         DiagnosticSeverity Severity,
@@ -349,6 +650,15 @@ public class Antlr4GeneratorRuntimeParityTests
         int? Column,
         int? SpanStart,
         int? SpanLength);
+
+    /// <summary>Common structural projection for runtime discovery entries and generator hooks.</summary>
+    private sealed record EmbeddedHookSnapshot(
+        string Owner,
+        string Kind,
+        string RuleName,
+        string SourceText,
+        int? AlternativeIndex,
+        int? ElementIndex);
 
     private sealed record RuntimeFacts(
         string Name,
