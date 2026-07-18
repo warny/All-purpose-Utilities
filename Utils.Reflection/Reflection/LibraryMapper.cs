@@ -16,9 +16,13 @@ namespace Utils.Reflection
     /// </summary>
     public abstract class LibraryMapper : IDisposable
     {
-        private IntPtr dllHandle; // Handle to the loaded DLL
+        private IntPtr dllHandle;
+        private bool disposed;
 
         private static readonly Type ExternalAttributeType = typeof(ExternalAttribute);
+
+        /// <summary>Indicates whether this mapper instance has been disposed.</summary>
+        public bool IsDisposed => disposed;
 
         /// <summary>
         /// Diagnostic ID reported by APIs that compile and load caller-controlled interface metadata
@@ -365,10 +369,37 @@ namespace Utils.Reflection
         /// <inheritdoc/>
         protected virtual void Dispose(bool disposing)
         {
+            if (disposed) return;
+            disposed = true;
+
+            // Clear mapped delegate fields and properties before freeing the DLL so that any
+            // post-Dispose access to these members yields null rather than a stale function
+            // pointer into freed memory. Note that external copies of delegate references stored
+            // by the caller before disposal remain stale — this is unavoidable.
+            ClearMappedDelegates();
+
             if (dllHandle != IntPtr.Zero)
             {
                 NativeLibrary.Free(dllHandle);
                 dllHandle = IntPtr.Zero;
+            }
+        }
+
+        /// <summary>
+        /// Sets every <see cref="ExternalAttribute"/>-decorated property and field back to
+        /// <see langword="null"/> so post-Dispose reads return null rather than a function
+        /// pointer into freed native memory.
+        /// </summary>
+        private void ClearMappedDelegates()
+        {
+            foreach (MemberInfo member in GetType().GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+            {
+                if (member.GetCustomAttributes(ExternalAttributeType, inherit: true).Length == 0) continue;
+
+                if (member is PropertyInfo prop && prop.CanWrite)
+                    prop.SetValue(this, null);
+                else if (member is FieldInfo field)
+                    field.SetValue(this, null);
             }
         }
 
