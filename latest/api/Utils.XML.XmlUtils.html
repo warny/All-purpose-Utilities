@@ -157,10 +157,10 @@ Class XmlUtils  <a class="header-action link-secondary" title="View source" href
 
   <h3 id="Utils_XML_XmlUtils_GetXPath_System_Xml_XmlElement_" data-uid="Utils.XML.XmlUtils.GetXPath(System.Xml.XmlElement)">
   GetXPath(XmlElement)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Xml/XmlUtils.cs/#L121"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Xml/XmlUtils.cs/#L153"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets the XPath for the given XmlElement, including indexes for repeated elements at the same level.</p>
+  <div class="markdown level1 summary"><p>Gets the XPath expression that uniquely identifies the given <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.xml.xmlelement">XmlElement</a>.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -171,14 +171,15 @@ Class XmlUtils  <a class="header-action link-secondary" title="View source" href
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>element</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.xml.xmlelement">XmlElement</a></dt>
-    <dd><p>The XmlElement for which to generate the XPath.</p>
+    <dd><p>The element for which to generate the XPath.</p>
 </dd>
   </dl>
 
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>The XPath string for the given XmlElement.</p>
+    <dd><p>A non-empty XPath string such as <code>/root/parent/child[2]</code>. Positional predicates are
+included whenever another sibling with the same name exists before or after this element.</p>
 </dd>
   </dl>
 
@@ -188,6 +189,20 @@ Class XmlUtils  <a class="header-action link-secondary" title="View source" href
 
 
 
+  <h4 class="section" id="Utils_XML_XmlUtils_GetXPath_System_Xml_XmlElement__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><remarks>
+<p>
+Generated paths use <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.xml.xmlnode.name">Name</a>, which includes any document-specific namespace
+prefix (e.g. <code>/ns:root/ns:child</code>). The returned XPath can only be evaluated correctly
+when the same prefix-to-URI mappings are registered in an <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.xml.xmlnamespacemanager">XmlNamespaceManager</a>
+used at evaluation time.
+</p>
+<p>
+Elements that have a sibling with the same qualified name — either before or after — always
+include a positional predicate (e.g. <code>/root/item[1]</code>) to uniquely identify the node.
+</p>
+</remarks>
+</div>
 
 
 
@@ -196,11 +211,10 @@ Class XmlUtils  <a class="header-action link-secondary" title="View source" href
 
   <h3 id="Utils_XML_XmlUtils_GetXPath_System_Xml_XmlNode_" data-uid="Utils.XML.XmlUtils.GetXPath(System.Xml.XmlNode)">
   GetXPath(XmlNode)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Xml/XmlUtils.cs/#L89"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Xml/XmlUtils.cs/#L128"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets the XPath for the given XML node, including indexes for repeated elements at the same level.
-Attributes are represented as <code>/@name</code> appended to their owner element path.</p>
+  <div class="markdown level1 summary"><p>Gets the XPath expression that uniquely identifies the given XML node in its document.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -218,7 +232,8 @@ Attributes are represented as <code>/@name</code> appended to their owner elemen
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>The XPath string for the given node.</p>
+    <dd><p>A non-empty XPath string for <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.xml.xmldocument">XmlDocument</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.xml.xmlelement">XmlElement</a>, and
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.xml.xmlattribute">XmlAttribute</a> nodes. The document root returns <code>&quot;/&quot;</code>.</p>
 </dd>
   </dl>
 
@@ -228,50 +243,27 @@ Attributes are represented as <code>/@name</code> appended to their owner elemen
 
 
 
-
-
-
-
-  <a id="Utils_XML_XmlUtils_ReadChildElements_" data-uid="Utils.XML.XmlUtils.ReadChildElements*"></a>
-
-  <h3 id="Utils_XML_XmlUtils_ReadChildElements_System_Xml_XmlReader_" data-uid="Utils.XML.XmlUtils.ReadChildElements(System.Xml.XmlReader)">
-  ReadChildElements(XmlReader)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Xml/XmlUtils.cs/#L18"><i class="bi bi-code-slash"></i></a>
-  </h3>
-
-  <div class="markdown level1 summary"><p>Reads and yields the immediate child elements of the current element in the XML reader.</p>
+  <h4 class="section" id="Utils_XML_XmlUtils_GetXPath_System_Xml_XmlNode__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>
+Generated paths use <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.xml.xmlnode.name">Name</a>, which includes any document-specific namespace
+prefix (e.g. <code>/ns:root/ns:child</code>). The returned XPath can only be evaluated correctly
+when the same prefix-to-URI mappings are registered in an <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.xml.xmlnamespacemanager">XmlNamespaceManager</a>
+used at evaluation time.
+</p>
+<p>
+Elements that have a sibling with the same qualified name — either before or after — always
+include a positional predicate (e.g. <code>/root/item[1]</code>) to uniquely identify the node.
+</p>
 </div>
-  <div class="markdown level1 conceptual"></div>
-
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;XmlReader&gt; ReadChildElements(this XmlReader reader)</code></pre>
-  </div>
-
-  <h4 class="section">Parameters</h4>
-  <dl class="parameters">
-    <dt><code>reader</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.xml.xmlreader">XmlReader</a></dt>
-    <dd><p>The XML reader positioned at the parent element.</p>
-</dd>
-  </dl>
-
-  <h4 class="section">Returns</h4>
-  <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.xml.xmlreader">XmlReader</a>&gt;</dt>
-    <dd><p>An enumerable collection of child elements represented by the XML reader.</p>
-</dd>
-  </dl>
-
-
-
-
-
-
-
 
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a></dt>
-    <dd><p>Thrown when the reader is not positioned at an element node.</p>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">node</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a></dt>
+    <dd><p>Thrown for node kinds that do not have a meaningful unique XPath representation, such as
+text, comment, processing-instruction, CDATA, and entity-reference nodes.</p>
 </dd>
   </dl>
 
@@ -280,16 +272,16 @@ Attributes are represented as <code>/@name</code> appended to their owner elemen
   <a id="Utils_XML_XmlUtils_ReadChildElements_" data-uid="Utils.XML.XmlUtils.ReadChildElements*"></a>
 
   <h3 id="Utils_XML_XmlUtils_ReadChildElements_System_Xml_XmlReader_System_String_" data-uid="Utils.XML.XmlUtils.ReadChildElements(System.Xml.XmlReader,System.String)">
-  ReadChildElements(XmlReader, string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Xml/XmlUtils.cs/#L54"><i class="bi bi-code-slash"></i></a>
+  ReadChildElements(XmlReader, string?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Xml/XmlUtils.cs/#L46"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Reads and yields the immediate child elements of the current element in the XML reader with a specific name.</p>
+  <div class="markdown level1 summary"><p>Reads and yields the immediate child elements of the current element in the XML reader.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;XmlReader&gt; ReadChildElements(this XmlReader reader, string elementName)</code></pre>
+    <pre><code class="lang-csharp hljs">public static IEnumerable&lt;XmlReader&gt; ReadChildElements(this XmlReader reader, string? elementName = null)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
@@ -298,14 +290,18 @@ Attributes are represented as <code>/@name</code> appended to their owner elemen
     <dd><p>The XML reader positioned at the parent element.</p>
 </dd>
     <dt><code>elementName</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>The name of the child element to filter and return.</p>
+    <dd><p>Optional name filter. When specified, only child elements with this qualified name are yielded.
+When <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>, all immediate child elements are yielded.</p>
 </dd>
   </dl>
 
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.xml.xmlreader">XmlReader</a>&gt;</dt>
-    <dd><p>An enumerable collection of child elements with the specified name.</p>
+    <dd><p>An enumerable sequence yielding an isolated <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.xml.xmlreader">XmlReader</a> sub-reader for each
+immediate child element. The sub-reader is managed by the iterator: partially consumed
+sub-readers are drained automatically when the enumerator advances to the next child,
+so consumers need not read or skip remaining content before the next iteration.</p>
 </dd>
   </dl>
 
@@ -315,9 +311,28 @@ Attributes are represented as <code>/@name</code> appended to their owner elemen
 
 
 
+  <h4 class="section" id="Utils_XML_XmlUtils_ReadChildElements_System_Xml_XmlReader_System_String__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>
+Depth-based tracking ensures that only elements at exactly one level below the starting
+element are yielded, regardless of element names at any depth. An empty parent element
+(<code>&lt;parent /&gt;</code>) yields no children without advancing the outer reader past sibling
+elements.
+</p>
+<p>
+<b>Reader-state contract:</b> each yielded reader is an independent sub-reader created by
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.xml.xmlreader.readsubtree">ReadSubtree()</a>. When the iterator advances to the next sibling,
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.xml.xmlreader.dispose#system-xml-xmlreader-dispose">Dispose()</a> is called on the previous sub-reader, which reads through
+any unconsumed content and positions the outer reader immediately after the child's closing
+tag. The consumer must not advance the outer reader directly; only the sub-reader should be
+used to read the child's content.
+</p>
+</div>
 
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">reader</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a></dt>
     <dd><p>Thrown when the reader is not positioned at an element node.</p>
 </dd>

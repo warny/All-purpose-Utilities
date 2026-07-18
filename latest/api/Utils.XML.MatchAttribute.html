@@ -6,7 +6,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="title" content="Class MatchAttribute | omy.Utils Documentation ">
       
-      <meta name="description" content="Attribute for associating a method with a specific XPath expression. When the driver encounters a node matching , it invokes the method tagged with this attribute.">
+      <meta name="description" content="Attribute for associating a method with a specific XPath expression. When the processor encounters a node matching , it invokes the method tagged with this attribute.">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_XML_MatchAttribute" data-uid="Utils.XML.MatchAttribute" class="text-break">
-Class MatchAttribute  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Xml/XmlDataProcessor.cs/#L418"><i class="bi bi-code-slash"></i></a>
+Class MatchAttribute  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Xml/XmlDataProcessor.cs/#L694"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -98,7 +98,7 @@ Class MatchAttribute  <a class="header-action link-secondary" title="View source
   </div>
 
   <div class="markdown summary"><p>Attribute for associating a method with a specific XPath expression.
-When the driver encounters a node matching <a class="xref" href="Utils.XML.MatchAttribute.html#Utils_XML_MatchAttribute_XPathExpression">XPathExpression</a>,
+When the processor encounters a node matching <a class="xref" href="Utils.XML.MatchAttribute.html#Utils_XML_MatchAttribute_XPathExpression">XPathExpression</a>,
 it invokes the method tagged with this attribute.</p>
 </div>
   <div class="markdown conceptual"></div>
@@ -345,9 +345,9 @@ public sealed class MatchAttribute : Attribute</code></pre>
 
 
   <h2 id="Utils_XML_MatchAttribute_remarks">Remarks</h2>
-  <div class="markdown level0 remarks"><p>Associates an XPath expression with a method.
-Multiple attributes can be placed on the same method
-to match multiple expressions.</p>
+  <div class="markdown level0 remarks"><p>Multiple attributes can be placed on the same method to match multiple expressions.
+The attribute value is validated at declaration time: null, empty, and whitespace-only
+strings are rejected immediately.</p>
 </div>
 
 
@@ -359,11 +359,11 @@ to match multiple expressions.</p>
 
   <h3 id="Utils_XML_MatchAttribute__ctor_System_String_" data-uid="Utils.XML.MatchAttribute.#ctor(System.String)">
   MatchAttribute(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Xml/XmlDataProcessor.cs/#L418"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Xml/XmlDataProcessor.cs/#L694"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Attribute for associating a method with a specific XPath expression.
-When the driver encounters a node matching <a class="xref" href="Utils.XML.MatchAttribute.html#Utils_XML_MatchAttribute_XPathExpression">XPathExpression</a>,
+When the processor encounters a node matching <a class="xref" href="Utils.XML.MatchAttribute.html#Utils_XML_MatchAttribute_XPathExpression">XPathExpression</a>,
 it invokes the method tagged with this attribute.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
@@ -375,7 +375,7 @@ it invokes the method tagged with this attribute.</p>
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>xPathExpression</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>The XPath expression to match against.</p>
+    <dd><p>The XPath expression to match against. Must not be null, empty, or whitespace.</p>
 </dd>
   </dl>
 
@@ -387,11 +387,17 @@ it invokes the method tagged with this attribute.</p>
 
 
   <h4 class="section" id="Utils_XML_MatchAttribute__ctor_System_String__remarks">Remarks</h4>
-  <div class="markdown level1 remarks"><p>Associates an XPath expression with a method.
-Multiple attributes can be placed on the same method
-to match multiple expressions.</p>
+  <div class="markdown level1 remarks"><p>Multiple attributes can be placed on the same method to match multiple expressions.
+The attribute value is validated at declaration time: null, empty, and whitespace-only
+strings are rejected immediately.</p>
 </div>
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when <code class="paramref">xPathExpression</code> is null, empty, or whitespace.</p>
+</dd>
+  </dl>
 
 
 
@@ -403,7 +409,7 @@ to match multiple expressions.</p>
 
   <h3 id="Utils_XML_MatchAttribute_XPathExpression" data-uid="Utils.XML.MatchAttribute.XPathExpression">
   XPathExpression
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Xml/XmlDataProcessor.cs/#L424"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Xml/XmlDataProcessor.cs/#L700"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>The XPath expression used to match XML nodes.</p>
@@ -428,6 +434,12 @@ to match multiple expressions.</p>
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when <code class="paramref">xPathExpression</code> is null, empty, or whitespace.</p>
+</dd>
+  </dl>
 
 
 
@@ -435,7 +447,7 @@ to match multiple expressions.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Xml/XmlDataProcessor.cs/#L418" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Xml/XmlDataProcessor.cs/#L694" class="edit-link">Edit this page</a>
         </div>
 
 
