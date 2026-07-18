@@ -49,8 +49,17 @@ public class ControlFlowStack
     /// <param name="startAddress">Address of the TRY instruction.</param>
     /// <param name="catchAddress">Address of the catch handler, or <see langword="null"/>.</param>
     /// <param name="finallyAddress">Address of the finally block, or <see langword="null"/>.</param>
+    /// <exception cref="ArgumentException">
+    /// Thrown when both <paramref name="catchAddress"/> and <paramref name="finallyAddress"/> are <see langword="null"/>.
+    /// An exception block with no handler is unreachable and indicates malformed bytecode.
+    /// </exception>
     public void PushException(int startAddress, int? catchAddress, int? finallyAddress)
-        => _blocks.Push(new ExceptionBlock(startAddress, catchAddress, finallyAddress));
+    {
+        if (catchAddress is null && finallyAddress is null)
+            throw new ArgumentException(
+                "An exception block must have at least one handler: catchAddress or finallyAddress must be non-null.");
+        _blocks.Push(new ExceptionBlock(startAddress, catchAddress, finallyAddress));
+    }
 
     /// <summary>
     /// Closes the innermost open block. Called at ENDIF, ENDLOOP, or ENDTRY.
@@ -243,8 +252,11 @@ public class ControlFlowStack
                 }
                 else
                 {
+                    // CatchAddress is guaranteed non-null here: PushException enforces that at
+                    // least one of CatchAddress/FinallyAddress is set, so if FinallyAddress is
+                    // absent then CatchAddress must be present.
                     ex.Phase = ExceptionBlockPhase.Catch;
-                    context.InstructionPointer = ex.CatchAddress!.Value;
+                    context.InstructionPointer = ex.CatchAddress.GetValueOrDefault();
                 }
                 return true;
             }
