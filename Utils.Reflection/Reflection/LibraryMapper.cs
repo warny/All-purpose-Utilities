@@ -5,6 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO.Pipes;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 using Utils.Reflection.Reflection.Emit;
 
@@ -364,13 +365,28 @@ namespace Utils.Reflection
                 throw;
             }
 
-            // Commit phase: every export resolved and delegate constructed successfully; assign all.
-            foreach ((MemberInfo member, Delegate value) in pending)
+            // Commit phase: every export resolved and delegate constructed; assign all or roll back.
+            try
             {
-                if (member is PropertyInfo propInfo)
-                    propInfo.SetValue(obj, value);
-                else if (member is FieldInfo fieldInfo)
-                    fieldInfo.SetValue(obj, value);
+                foreach ((MemberInfo member, Delegate value) in pending)
+                {
+                    if (member is PropertyInfo propInfo)
+                        propInfo.SetValue(obj, value);
+                    else if (member is FieldInfo fieldInfo)
+                        fieldInfo.SetValue(obj, value);
+                }
+            }
+            catch (Exception ex)
+            {
+                // A setter threw mid-commit — partially assigned state. Roll back and free the DLL.
+                obj.ClearMappedDelegatesBestEffort();
+                NativeLibrary.Free(obj.dllHandle);
+                obj.dllHandle = IntPtr.Zero;
+                // prop.SetValue wraps user exceptions in TargetInvocationException; unwrap to expose
+                // the original cause directly, as we do elsewhere in this assembly.
+                if (ex is TargetInvocationException { InnerException: { } inner })
+                    ExceptionDispatchInfo.Capture(inner).Throw();
+                throw;
             }
         }
 
@@ -391,34 +407,50 @@ namespace Utils.Reflection
             if (disposed) return;
             disposed = true;
 
-            // Clear mapped delegate fields and properties before freeing the DLL so that any
-            // post-Dispose access to these members yields null rather than a stale function
-            // pointer into freed memory. Note that external copies of delegate references stored
-            // by the caller before disposal remain stale — this is unavoidable.
-            ClearMappedDelegates();
-
-            if (dllHandle != IntPtr.Zero)
+            try
             {
-                NativeLibrary.Free(dllHandle);
-                dllHandle = IntPtr.Zero;
+                // Clear mapped delegate fields and properties only during an explicit Dispose call.
+                // The finalizer must never invoke arbitrary setters: they may throw, access managed
+                // objects in an indeterminate state, or prevent NativeLibrary.Free from running.
+                if (disposing)
+                {
+                    ClearMappedDelegatesBestEffort();
+                }
+            }
+            finally
+            {
+                if (dllHandle != IntPtr.Zero)
+                {
+                    NativeLibrary.Free(dllHandle);
+                    dllHandle = IntPtr.Zero;
+                }
             }
         }
 
         /// <summary>
         /// Sets every <see cref="ExternalAttribute"/>-decorated property and field back to
         /// <see langword="null"/> so post-Dispose reads return null rather than a function
-        /// pointer into freed native memory.
+        /// pointer into freed native memory. Exceptions thrown by individual setters are
+        /// swallowed so that all members are attempted and the caller's <c>finally</c>
+        /// block (which frees the native handle) always runs.
         /// </summary>
-        private void ClearMappedDelegates()
+        internal void ClearMappedDelegatesBestEffort()
         {
             foreach (MemberInfo member in GetType().GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
             {
                 if (member.GetCustomAttributes(ExternalAttributeType, inherit: true).Length == 0) continue;
 
-                if (member is PropertyInfo prop && prop.CanWrite)
-                    prop.SetValue(this, null);
-                else if (member is FieldInfo field)
-                    field.SetValue(this, null);
+                try
+                {
+                    if (member is PropertyInfo prop && prop.CanWrite)
+                        prop.SetValue(this, null);
+                    else if (member is FieldInfo field)
+                        field.SetValue(this, null);
+                }
+                catch
+                {
+                    // Best-effort: continue to the next member even if this setter throws.
+                }
             }
         }
 
