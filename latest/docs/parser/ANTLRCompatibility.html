@@ -81,9 +81,34 @@
 Use this file for implementation-oriented usage guidance when behavior differs from standard ANTLR4.</p>
 </blockquote>
 <blockquote>
-<p>Rule arguments and returns integration plan: see <a href="RuleArgumentsAndReturnsPlan.html"><code>RuleArgumentsAndReturnsPlan.md</code></a> for the design split between conservative runtime behavior, explicit runtime policies, generated-C# opt-in helpers, metadata-only facts, rollback boundaries, and future generated-C# argument binding phases. In short, rule parameters are parsed as metadata, rule-call raw arguments are preserved, manual/explicit runtime policy support exists for limited literals, generated-C# automatic ANTLR-style argument binding is not implemented, return metadata and managed return snapshots exist, and ANTLR-style return access remains partial and opt-in.</p>
+<p>Rule arguments and returns integration plan: see <a href="RuleArgumentsAndReturnsPlan.html"><code>RuleArgumentsAndReturnsPlan.md</code></a> for the design split between conservative runtime behavior, explicit runtime policies, generated-C# opt-in helpers, metadata-only facts, rollback boundaries, and the generated-C# positional binding boundary. In short, rule parameters are parsed as metadata, rule-call raw arguments are preserved, manual/explicit runtime policy support exists for limited literals, generated C# emitted with <code>enableGeneratedRuleArgumentBinding</code> performs narrow exact-arity positional simple-literal binding on <code>ParseWithEmbeddedCode(...)</code> overloads without a <code>basePolicy</code>, the overload with <code>basePolicy</code> preserves the caller rule-call policy, return metadata and managed return snapshots exist, and ANTLR-style return access remains partial and opt-in.</p>
 </blockquote>
 <hr>
+<h2 id="generated-c-positional-rule-call-argument-binding">Generated-C# positional rule-call argument binding</h2>
+<p>Generated parsers emitted with <code>enableGeneratedRuleArgumentBinding</code> expose three distinct surfaces for <code>callee[...]</code> rule-call arguments. The normal AdditionalFiles source-generator entry point currently leaves that emitter flag disabled, so consumers of the shipped generator get metadata/helper behavior only unless generation explicitly enables the flag.</p>
+<table>
+<thead>
+<tr>
+<th>Surface</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Parse(...)</code></td>
+<td>Metadata only; no generated embedded-code hooks and no argument binding are executed.</td>
+</tr>
+<tr>
+<td><code>ParseWithEmbeddedCode(...)</code> without <code>basePolicy</code></td>
+<td>When emitted with the generation flag enabled, installs the generated-C# rule-call wrapper, requires exact positional arity, converts supported simple literals through the typed positional literal policy, and submits one managed seed batch.</td>
+</tr>
+<tr>
+<td><code>ParseWithEmbeddedCode(input, executionContext, basePolicy)</code></td>
+<td>Preserves the caller's <code>RuleCallExecutionPolicy</code>; generated-C# automatic argument binding is deliberately disabled.</td>
+</tr>
+</tbody>
+</table>
+<p>When generated, the automatic generated-C# subset is intentionally narrower than ANTLR4: positional only, simple literals only, allowlisted declared target types only, exact arity only, no omitted/default argument consumption, no named or mixed arguments, no arbitrary expressions, no generated ANTLR rule signatures, and no <code>Parse(...)</code> behavior change. The generated wrapper delegates conversion to <code>TypedPositionalLiteralRuleCallExecutionPolicy</code> with throwing failures, so invalid bindings fail before child lifecycle hooks observe partial seeds. Managed seeds participate in the existing generated execution-context rollback and state-aware memoization boundaries.</p>
 <h2 id="compatibility-level-estimate">Compatibility level estimate</h2>
 <p>This project should not claim full ANTLR4 compatibility. A practical estimate is:</p>
 <ul>
@@ -93,7 +118,7 @@ Use this file for implementation-oriented usage guidance when behavior differs f
 </ul>
 <p>These numbers are approximate maintenance guidance, not a formal conformance score.</p>
 <p>The runtime supports common grammar forms, lexer modes, commands, project imports, token vocabularies, direct left recursion with limits, semantic predicates/actions through explicit opt-in paths, and bounded generated-C# lexer action/predicate support.</p>
-<p>The project still intentionally does not support full ANTLR target-language semantics, full attribute syntax, automatic typed parameters/returns/locals/labels, lexer predicate attributes, runtime-inline lexer execution, adaptive LL prediction, general action buffering/replay, full external side-effect rollback, or full ANTLR-generated API parity.</p>
+<p>The project still intentionally does not support full ANTLR target-language semantics, full attribute syntax, full automatic typed parameters/returns/locals/labels beyond the documented generated-C# positional literal subset, lexer predicate attributes, runtime-inline lexer execution, adaptive LL prediction, general action buffering/replay, full external side-effect rollback, or full ANTLR-generated API parity.</p>
 <hr>
 <h2 id="supported--full-runtime-support">Supported — full runtime support</h2>
 <p>These features work as in standard ANTLR4.</p>
