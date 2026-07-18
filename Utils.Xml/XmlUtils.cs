@@ -56,33 +56,77 @@ public static class XmlUtils
         // Fix #1: capture depth to use reader.Depth instead of name-based tracking.
         int parentDepth = reader.Depth;
 
-        while (reader.Read())
+        bool needsRead = true;
+
+        while (true)
         {
-            // Stop when the matching end element at the parent depth is reached.
+            if (needsRead && !reader.Read())
+            {
+                yield break;
+            }
+
+            needsRead = true;
+
+            // Stop when the parent's EndElement is reached.
             if (reader.NodeType == XmlNodeType.EndElement && reader.Depth == parentDepth)
             {
                 break;
             }
 
-            // Yield direct children only; skip deeper descendants automatically.
-            if (reader.NodeType == XmlNodeType.Element && reader.Depth == parentDepth + 1)
+            // Only process direct children at depth == parentDepth + 1.
+            if (reader.NodeType != XmlNodeType.Element || reader.Depth != parentDepth + 1)
             {
-                if (elementName == null || reader.Name == elementName)
-                {
-                    yield return reader;
+                continue;
+            }
 
-                    // Fix #3: if the consumer did not advance past this child, skip it so the
-                    // outer loop stays on track.
-                    if (reader.NodeType == XmlNodeType.Element && reader.Depth == parentDepth + 1)
-                    {
-                        reader.Skip();
-                    }
-                }
-                else
+            if (elementName != null && reader.Name != elementName)
+            {
+                // Wrong name: skip the subtree so we don't accidentally yield its descendants.
+                // After Skip(), the reader is positioned on the node that follows the child's
+                // end element. Set needsRead=false so the outer loop re-evaluates this position
+                // rather than calling Read() again.
+                reader.Skip();
+                needsRead = false;
+                continue;
+            }
+
+            // Fix #3: record the child's qualified name and whether it is self-closing before
+            // yielding so we can detect whether the consumer advanced the reader after the yield.
+            string childName = reader.Name;
+            bool childIsEmpty = reader.IsEmptyElement;
+
+            yield return reader;
+
+            // After yield, the consumer may or may not have consumed the child's content:
+            //
+            // Case A — self-closing element (<foo />): reader.Read() in the outer loop will
+            //   correctly advance to the following node. Nothing to do here.
+            //
+            // Case B — consumer did not read any content (reader is still on the child's start
+            //   element): reader.NodeType == Element, reader.Depth == parentDepth+1, and
+            //   reader.Name == childName. Call Skip() to jump past the child's end element.
+            //   After Skip(), reader is on the node that follows the child; set needsRead=false.
+            //
+            // Case C — consumer read into or past the child's content (reader moved away from
+            //   the start element): do not call Skip(). Re-evaluate the current reader position
+            //   by setting needsRead=false, which causes the outer loop to check the current
+            //   node without calling Read() first.
+            if (!childIsEmpty)
+            {
+                bool stillOnStartElement =
+                    reader.NodeType == XmlNodeType.Element
+                    && reader.Depth == parentDepth + 1
+                    && reader.Name == childName;
+
+                if (stillOnStartElement)
                 {
-                    // Wrong name: skip the subtree so we don't accidentally yield its descendants.
+                    // Case B: consumer did nothing — skip past the child's subtree.
                     reader.Skip();
                 }
+
+                // After Skip() (Case B) or after consumer advanced (Case C), re-evaluate the
+                // current position without calling Read() first.
+                needsRead = false;
             }
         }
     }

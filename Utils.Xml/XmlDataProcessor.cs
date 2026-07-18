@@ -83,8 +83,10 @@ public abstract class XmlDataProcessor
 
     /// <summary>
     /// Maximum dispatch depth before a <see cref="InvalidOperationException"/> is raised.
+    /// A low value prevents stack overflow under recursive dispatch patterns while still
+    /// allowing reasonable handler call chains.
     /// </summary>
-    private const int MaxDispatchDepth = 100;
+    private const int MaxDispatchDepth = 20;
 
     /// <summary>
     /// Initializes the <see cref="XmlDataProcessor"/>, sets up namespace management, and prepares method
