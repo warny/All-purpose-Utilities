@@ -982,7 +982,7 @@ public class LexerEngineTests
     {
         var trace = new List<string>();
         var definition = CreateLexerDefinition(
-            CreateRule("A", 0, Alt(Seq(new ValidatingPredicate("reject"), Lit("a"), Action("rejected")))),
+            CreateRule("A", 0, Alt(Seq(Lit("a"), Action("rejected"), new ValidatingPredicate("reject")))),
             CreateRule("B", 1, Alt(Seq(Lit("a"), Action("accepted")))),
             CreateRule("C", 2, Alt(Lit("b"))));
         var policy = CreateLexerPolicy(new TraceLexerActionExecutor(trace), new MapLexerPredicateEvaluator(("reject", LexerPredicateEvaluationOutcome.False)));
@@ -1029,6 +1029,24 @@ public class LexerEngineTests
     }
 
     [TestMethod]
+    public void LexerEmbeddedCode_FailedQuantifierIterationActionsAreDiscarded()
+    {
+        var trace = new List<string>();
+        var definition = CreateLexerDefinition(
+            CreateRule("A", 0, Alt(Seq(
+                new Quantifier(Seq(Action("rejected-iteration"), Lit("x")), 0, null),
+                Lit("a"),
+                Action("accepted")))));
+        var policy = CreateLexerPolicy(new TraceLexerActionExecutor(trace));
+
+        var tokens = Tokenize(definition, "a", policy);
+
+        Assert.AreEqual(1, tokens.Count);
+        Assert.AreEqual("A", tokens[0].RuleName);
+        CollectionAssert.AreEqual(new[] { "accepted" }, trace);
+    }
+
+    [TestMethod]
     public void LexerEmbeddedCode_AcceptedTokenActionsShareResultInSourceOrderAndLastWritesWinBeforeCommands()
     {
         var trace = new List<string>();
@@ -1050,15 +1068,19 @@ public class LexerEngineTests
                 CreateRule("S", 5, Alt(Lit("s"))),
                 CreateRule("T", 6, Alt(Lit("t")))
             ],
-            [new LexerMode("SECOND", []), new LexerMode("THIRD", [])],
+            [
+                new LexerMode("SECOND", [CreateRule("SECOND_X", 7, Alt(Lit("x")))]),
+                new LexerMode("THIRD", [CreateRule("THIRD_X", 8, Alt(Lit("x")))])
+            ],
             new HashSet<string>(StringComparer.Ordinal) { "DEFAULT_CHANNEL", "HIDDEN", "SPECIAL" });
         var policy = CreateLexerPolicy(new TraceLexerActionExecutor(trace));
 
-        var tokens = Tokenize(definition, "a", policy);
+        var tokens = Tokenize(definition, "ax", policy);
 
-        Assert.AreEqual(1, tokens.Count);
+        Assert.AreEqual(2, tokens.Count);
         Assert.AreEqual("C", tokens[0].RuleName);
         Assert.AreEqual("SPECIAL", tokens[0].Channel);
+        Assert.AreEqual("THIRD_X", tokens[1].RuleName);
         CollectionAssert.AreEqual(new[] { "first", "type:B", "channel:HIDDEN", "mode:SECOND", "type:C", "channel:SPECIAL", "mode:THIRD" }, trace);
     }
 
