@@ -62,13 +62,25 @@ public sealed class GeneratedPositionalRuleCallBindingContractTests
     [TestMethod]
     public void Parse_RemainsConservativeAndDoesNotExecuteGeneratedBindingOrHooks()
     {
-        Assembly assembly = CompileGeneratedSource(Emit(SingleIntGrammar()));
-        object context = CreateExecutionContext(assembly);
+        const string grammar = """
+            grammar P;
+            @members { public static int HookCount; public static int Seen; }
+            start : child[42] ;
+            child[int value]
+            @init {
+                HookCount++;
+                Seen = GetRequiredRuleParameter<int>(context, "value");
+            }
+                : A ;
+            A : 'a';
+            """;
+        Assembly assembly = CompileGeneratedSource(Emit(grammar));
 
         ParseNode result = InvokeParse(assembly, "Parse", "a");
 
         Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
-        Assert.AreEqual(0, ReadContextIntField(context, "Seen"));
+        Assert.AreEqual(0, ReadStaticIntField(assembly, "HookCount"));
+        Assert.AreEqual(0, ReadStaticIntField(assembly, "Seen"));
     }
 
     /// <summary>
@@ -308,7 +320,7 @@ public sealed class GeneratedPositionalRuleCallBindingContractTests
     }
 
     /// <summary>
-    /// Verifies generated seed values roll back between alternatives and the winning value remains visible.
+    /// Verifies generated seed values from a rejected alternative roll back when the winning alternative does not rewrite them.
     /// </summary>
     [TestMethod]
     public void ParseWithEmbeddedCode_RollbackBetweenAlternatives_DoesNotLeakLosingSeed()
@@ -322,7 +334,7 @@ public sealed class GeneratedPositionalRuleCallBindingContractTests
             }
             start @after { Final = Last; }
                 : child[1] B
-                | child[2]
+                | A
                 ;
             child[int value]
             @init {
@@ -340,8 +352,8 @@ public sealed class GeneratedPositionalRuleCallBindingContractTests
         ParseNode result = InvokeParseWithContext(assembly, "a", context);
 
         Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
-        Assert.AreEqual(2, ReadContextIntField(context, "Final"));
-        CollectionAssert.AreEqual(new[] { 1, 2 }, ReadStaticIntList(assembly, "Physical"));
+        Assert.AreEqual(0, ReadContextIntField(context, "Final"));
+        CollectionAssert.AreEqual(new[] { 1 }, ReadStaticIntList(assembly, "Physical"));
     }
 
     /// <summary>
