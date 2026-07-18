@@ -216,6 +216,38 @@ namespace UtilsTest.VirtualMachine
                 () => new TestMachine().ExecuteStep(null!));
         }
 
+        // ── Item 48: InstructionAttribute and RegisterInstruction reject empty/whitespace names ──
+
+        [TestMethod]
+        public void InstructionAttribute_EmptyName_ThrowsArgumentException()
+        {
+            Assert.ThrowsException<ArgumentException>(
+                () => new InstructionAttribute("", 0x01));
+        }
+
+        [TestMethod]
+        public void InstructionAttribute_WhitespaceName_ThrowsArgumentException()
+        {
+            Assert.ThrowsException<ArgumentException>(
+                () => new InstructionAttribute("   ", 0x01));
+        }
+
+        [TestMethod]
+        public void RegisterInstruction_EmptyName_ThrowsArgumentException()
+        {
+            var machine = new TestMachine();
+            Assert.ThrowsException<ArgumentException>(
+                () => machine.RegisterInstruction([0xA0], "", _ => { }));
+        }
+
+        [TestMethod]
+        public void RegisterInstruction_WhitespaceName_ThrowsArgumentException()
+        {
+            var machine = new TestMachine();
+            Assert.ThrowsException<ArgumentException>(
+                () => machine.RegisterInstruction([0xA0], "   ", _ => { }));
+        }
+
         // ── CancellationToken ─────────────────────────────────────────────────
 
         [TestMethod]
