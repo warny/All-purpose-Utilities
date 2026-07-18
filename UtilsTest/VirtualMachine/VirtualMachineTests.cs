@@ -258,6 +258,55 @@ namespace UtilsTest.VirtualMachine
             Assert.AreEqual((byte)0x42, ctx2.Stack.Peek());
         }
 
+        // ── Item 3: opcode keys are immutable after registration ──────────────
+
+        [TestMethod]
+        public void RegisterInstruction_MutateSourceArrayAfterRegistration_DispatchUnchanged()
+        {
+            var machine = new TestMachine();
+            bool executed = false;
+            byte[] opcode = [0xAB];
+            machine.RegisterInstruction(opcode, "TEST", _ => executed = true);
+
+            // Mutate the original array — must not affect dispatch.
+            opcode[0] = 0x00;
+
+            var context = new DefaultContext(new byte[] { 0xAB });
+            machine.Execute(context);
+            Assert.IsTrue(executed, "Handler must still dispatch via the original opcode 0xAB.");
+        }
+
+        // ── Item 1: prefix-conflicting opcodes are rejected ───────────────────
+
+        [TestMethod]
+        public void RegisterInstruction_ShorterPrefixConflict_Throws()
+        {
+            // [0x10] already registered; [0x10, 0x20] is rejected because [0x10] is a prefix of it.
+            var machine = new TestMachine(); // TestMachine has [0x10,0x01] and [0x10,0x02]
+            machine.RegisterInstruction([0xAA], "A", _ => { });
+            Assert.ThrowsException<ArgumentException>(
+                () => machine.RegisterInstruction([0xAA, 0x01], "B", _ => { }));
+        }
+
+        [TestMethod]
+        public void RegisterInstruction_LongerPrefixConflict_Throws()
+        {
+            // [0xBB, 0x01] registered first; [0xBB] alone conflicts because it is a prefix.
+            var machine = new TestMachine();
+            machine.RegisterInstruction([0xBB, 0x01], "LONG", _ => { });
+            Assert.ThrowsException<ArgumentException>(
+                () => machine.RegisterInstruction([0xBB], "SHORT", _ => { }));
+        }
+
+        [TestMethod]
+        public void RegisterInstruction_NonPrefixConflict_Succeeds()
+        {
+            // [0xCC] and [0xDD] share no prefix — both should register without error.
+            var machine = new TestMachine();
+            machine.RegisterInstruction([0xCC], "A", _ => { });
+            machine.RegisterInstruction([0xDD], "B", _ => { }); // must not throw
+        }
+
         // ── InvertedReader (endianness swap, zero allocation) ─────────────────
 
         [TestMethod]

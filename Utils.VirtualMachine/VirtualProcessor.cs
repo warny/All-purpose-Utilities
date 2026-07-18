@@ -160,12 +160,44 @@ public abstract class VirtualProcessor<T> where T : Context
 
             foreach (InstructionAttribute attr in instructionAttributes.OfType<InstructionAttribute>())
             {
-                result.Add(attr.Instruction, (attr.Name, instructionDelegate));
-                _maxInstructionSize = Math.Max(_maxInstructionSize, attr.Instruction.Length);
+                // Clone the attribute's opcode into owned immutable storage so that external
+                // mutations of the source array cannot corrupt the dictionary's hash buckets.
+                byte[] ownedOpcode = (byte[])attr.Instruction.Clone();
+                CheckPrefixConflict(result, ownedOpcode);
+                result.Add(ownedOpcode, (attr.Name, instructionDelegate));
+                _maxInstructionSize = Math.Max(_maxInstructionSize, ownedOpcode.Length);
             }
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Throws <see cref="ArgumentException"/> when <paramref name="newOpcode"/> is a proper prefix
+    /// of an already-registered opcode, or when any registered opcode is a proper prefix of
+    /// <paramref name="newOpcode"/>. Prefix ambiguity makes one of the opcodes permanently
+    /// unreachable in the dispatch loop.
+    /// </summary>
+    private static void CheckPrefixConflict(
+        Dictionary<IReadOnlyCollection<byte>, (string Name, InstructionDelegate Handler)> existing,
+        byte[] newOpcode)
+    {
+        foreach (var key in existing.Keys)
+        {
+            var keyList = key.ToList();
+            int minLen = Math.Min(keyList.Count, newOpcode.Length);
+            bool sharedPrefix = true;
+            for (int i = 0; i < minLen; i++)
+            {
+                if (keyList[i] != newOpcode[i]) { sharedPrefix = false; break; }
+            }
+            if (sharedPrefix && keyList.Count != newOpcode.Length)
+                throw new ArgumentException(
+                    $"Opcode [{string.Join(", ", newOpcode.Select(b => $"0x{b:X2}"))}] conflicts with " +
+                    $"already-registered opcode [{string.Join(", ", keyList.Select(b => $"0x{b:X2}"))}]: " +
+                    "one is a proper prefix of the other. Prefix conflicts make the longer opcode unreachable.",
+                    "opcode");
+        }
     }
 
     /// <summary>
@@ -356,10 +388,16 @@ public abstract class VirtualProcessor<T> where T : Context
                 $"An instruction with opcode [{string.Join(", ", opcode.Select(b => $"0x{b:X2}"))}] is already registered.",
                 nameof(opcode));
 
-        InstructionsSet[opcode] = (name ?? string.Empty, ctx => handler(ctx));
-        if (opcode.Length > _maxInstructionSize)
+        // Clone into owned storage so that external mutations of the source array cannot corrupt
+        // dictionary hash buckets or dispatch tables after registration.
+        byte[] ownedOpcode = (byte[])opcode.Clone();
+        if (!overwrite)
+            CheckPrefixConflict(InstructionsSet, ownedOpcode);
+
+        InstructionsSet[ownedOpcode] = (name ?? string.Empty, ctx => handler(ctx));
+        if (ownedOpcode.Length > _maxInstructionSize)
         {
-            _maxInstructionSize = opcode.Length;
+            _maxInstructionSize = ownedOpcode.Length;
             Array.Resize(ref _buffer, _maxInstructionSize);
         }
         RebuildFastLookup();
