@@ -132,7 +132,10 @@ public class VirtualMemory<TAddress> where TAddress : IBinaryInteger<TAddress>
             throw new ArgumentException("The master process cannot be freed.", nameof(process));
         if (!_processes.Remove(process))
             throw new ArgumentException("The process does not belong to this VirtualMemory instance.", nameof(process));
-        foreach (var (virtualPageIndex, _, _) in process.Mappings.ToList())
+        // Snapshot mappings before marking freed, as Mappings checks IsFreed.
+        var mappingKeys = process.Mappings.Select(m => m.VirtualPageIndex).ToList();
+        process.MarkFreed();
+        foreach (var virtualPageIndex in mappingKeys)
             process.UnmapPage(virtualPageIndex);
     }
 }

@@ -324,8 +324,10 @@ public class VirtualMemoryTests
         var proc = mem.CreateProcess();
         mem.MapPage(proc, page0, 0, PageAccess.ReadOnly);
         mem.MapPage(proc, page1, 1, PageAccess.ReadWrite);
+        Assert.AreEqual(2, proc.Mappings.Count());
         mem.FreeProcess(proc);
-        Assert.IsFalse(proc.Mappings.Any());
+        // After free, Mappings is inaccessible; verify via IsFreed instead.
+        Assert.IsTrue(proc.IsFreed);
     }
 
     [TestMethod]
@@ -362,5 +364,62 @@ public class VirtualMemoryTests
     {
         var mem = new VirtualMemory<int>(pageSize: 16);
         Assert.ThrowsException<ArgumentNullException>(() => mem.FreeProcess(null!));
+    }
+
+    // ── Item 25: operations on a freed process throw ObjectDisposedException ──
+
+    [TestMethod]
+    public void FreeProcess_SetsIsFreed()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        var proc = mem.CreateProcess();
+        Assert.IsFalse(proc.IsFreed);
+        mem.FreeProcess(proc);
+        Assert.IsTrue(proc.IsFreed);
+    }
+
+    [TestMethod]
+    public void FreeProcess_Read_AfterFree_Throws()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        var proc = mem.CreateProcess();
+        mem.FreeProcess(proc);
+        Assert.ThrowsException<ObjectDisposedException>(() => proc.Read(0, new byte[1]));
+    }
+
+    [TestMethod]
+    public void FreeProcess_Write_AfterFree_Throws()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        var proc = mem.CreateProcess();
+        mem.FreeProcess(proc);
+        Assert.ThrowsException<ObjectDisposedException>(() => proc.Write(0, new byte[1]));
+    }
+
+    [TestMethod]
+    public void FreeProcess_IsAccessible_AfterFree_Throws()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        var proc = mem.CreateProcess();
+        mem.FreeProcess(proc);
+        Assert.ThrowsException<ObjectDisposedException>(() => proc.IsAccessible(0));
+    }
+
+    [TestMethod]
+    public void FreeProcess_GetAccess_AfterFree_Throws()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        var proc = mem.CreateProcess();
+        mem.FreeProcess(proc);
+        Assert.ThrowsException<ObjectDisposedException>(() => proc.GetAccess(0));
+    }
+
+    [TestMethod]
+    public void FreeProcess_Mappings_AfterFree_Throws()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        var proc = mem.CreateProcess();
+        mem.FreeProcess(proc);
+        Assert.ThrowsException<ObjectDisposedException>(() => proc.Mappings.ToList());
     }
 }
