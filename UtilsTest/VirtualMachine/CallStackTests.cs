@@ -463,4 +463,35 @@ public class CallStackTests
         Assert.ThrowsException<InvalidCastException>(
             () => cs.CurrentFrame.GetLocal<string>("x"));
     }
+
+    // ── Item 26: Call rejects negative return addresses ───────────────────
+
+    [TestMethod]
+    public void CallStack_Call_NegativeAddress_ThrowsArgumentOutOfRangeException()
+    {
+        var cs = new CallStack();
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => cs.Call(-1));
+    }
+
+    [TestMethod]
+    public void SimpleCallStack_Call_NegativeAddress_ThrowsArgumentOutOfRangeException()
+    {
+        var cs = new SimpleCallStack();
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => cs.Call(-1));
+    }
+
+    [TestMethod]
+    public void CallStack_Return_EmptyStack_ReturnsMinusOne()
+    {
+        var cs = new CallStack();
+        Assert.AreEqual(-1, cs.Return());
+    }
+
+    [TestMethod]
+    public void CallStack_Return_AfterCall_ReturnsOriginalAddress()
+    {
+        var cs = new CallStack();
+        cs.Call(42);
+        Assert.AreEqual(42, cs.Return());
+    }
 }
