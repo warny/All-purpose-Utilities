@@ -83,9 +83,19 @@ public sealed class EmitWorkerPool : IDisposable
         int handle = sharedWorker.LoadInterface(
             typeof(TInterface), dllPath, callingConvention, loadTimeout ?? EmitWorkerProcess.DefaultLoadTimeout);
 
-        TInterface proxy = DispatchProxy.Create<TInterface, EmitWorkerProxy>();
-        ((EmitWorkerProxy)(object)proxy).AttachWorker(sharedWorker, handle, ownsWorker: false);
-        return proxy;
+        // If proxy construction or attachment fails after the handle has been allocated, unload
+        // the handle immediately so it is not orphaned on the shared worker.
+        try
+        {
+            TInterface proxy = DispatchProxy.Create<TInterface, EmitWorkerProxy>();
+            ((EmitWorkerProxy)(object)proxy).AttachWorker(sharedWorker, handle, ownsWorker: false);
+            return proxy;
+        }
+        catch
+        {
+            sharedWorker.UnloadInterface(handle);
+            throw;
+        }
     }
 
     private EmitWorkerProcess GetOrStartWorker()

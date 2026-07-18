@@ -46,4 +46,25 @@ public class EmitWorkerProxyTests
         // worker was ever attached (for example if construction failed before AttachWorker ran).
         proxy.Dispose();
     }
+
+    // ─── Item 49: invocation lease prevents concurrent disposal ──────────────────
+
+    [TestMethod]
+    public void Invoke_AfterDispose_ThrowsObjectDisposedException()
+    {
+        // Verify that after Dispose the read lock is immediately available but worker is null,
+        // so subsequent calls throw ObjectDisposedException rather than silently using a dead worker.
+        ITinyInterface proxy = DispatchProxy.Create<ITinyInterface, EmitWorkerProxy>();
+        proxy.Dispose();
+
+        Assert.ThrowsException<ObjectDisposedException>(() => proxy.Foo(1));
+    }
+
+    [TestMethod]
+    public void Dispose_CalledTwice_DoesNotThrow()
+    {
+        ITinyInterface proxy = DispatchProxy.Create<ITinyInterface, EmitWorkerProxy>();
+        proxy.Dispose();
+        proxy.Dispose(); // Must be idempotent.
+    }
 }
