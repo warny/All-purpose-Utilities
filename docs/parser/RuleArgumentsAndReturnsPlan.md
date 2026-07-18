@@ -4,7 +4,7 @@
 
 This document records the design boundary for ANTLR-style rule arguments, rule parameters, rule returns, labels, rollback, and generated-C# opt-in integration in `Utils.Parser`.
 
-The current PR is documentation/design only. It must not change `Parse(...)`, must not add target-language C# evaluation to `ParserEngine`, and must not implement automatic `callee[expr]` evaluation or ANTLR-compatible generated parser signatures.
+This document is now a durable state and design reference. The explicit literal-binding runtime policy subset is implemented, while `Parse(...)` remains conservative, `ParserEngine` remains target-language neutral, and automatic arbitrary `callee[expr]` evaluation plus ANTLR-compatible generated parser signatures remain out of scope.
 
 The plan separates four surfaces that are easy to confuse:
 
@@ -55,6 +55,7 @@ The default runtime remains conservative:
 Runtime opt-in is available only through explicit caller-installed policies. Existing policies include:
 
 - `PositionalLiteralRuleCallExecutionPolicy`;
+- `NamedLiteralRuleCallExecutionPolicy`;
 - `TypedPositionalLiteralRuleCallExecutionPolicy`;
 - `TypedNamedLiteralRuleCallExecutionPolicy`.
 
@@ -71,6 +72,20 @@ Their intended boundary is narrow:
 - any accepted values must be written through the managed pending-seed mechanism rather than through external side effects.
 
 These policies are useful compatibility adapters, not a full ANTLR argument model.
+
+## Literal policy subset status
+
+| Area | Status | Boundary |
+| --- | --- | --- |
+| Untyped positional literals | Realized | Exact arity by declaration order; declared types and defaults are ignored. |
+| Untyped named literals | Realized | Exact ordinal declared-name coverage; argument order is irrelevant; defaults are ignored. |
+| Typed positional literals | Realized | Allowlisted conversion with trailing omission satisfied only by supported simple defaults. |
+| Typed named literals | Realized | Allowlisted conversion with omitted names satisfied only by supported simple defaults. |
+| Default runtime behavior | Explicitly limited | No binding unless a caller installs a policy. |
+| Runtime batching | Realized | One atomic managed seed batch after complete validation. |
+| Rollback and memoization | Realized | Managed seeds participate in rollback and effective bound values participate in generated state keys. |
+| Generated-C# opt-in | Explicitly limited | Generated helper/policy paths may opt in; conservative generated `Parse(...)` remains unchanged. |
+| Arbitrary ANTLR/C# semantics | Future separately justified | No expression evaluation, references to parameters/locals/labels/returns, user types, generated typed signatures, automatic returns, or full ANTLR compatibility. |
 
 ## Generated-C# opt-in behavior
 
