@@ -371,7 +371,7 @@ concurrently from multiple threads.</p>
 
   <h3 id="Utils_VirtualMachine_Scheduler_1_AddProcess__0_Utils_VirtualMachine_VirtualProcessor__0__System_Int32_System_String_" data-uid="Utils.VirtualMachine.Scheduler`1.AddProcess(`0,Utils.VirtualMachine.VirtualProcessor{`0},System.Int32,System.String)">
   AddProcess(T, VirtualProcessor&lt;T&gt;, int, string?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/Scheduler.cs/#L61"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/Scheduler.cs/#L66"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Registers a new process with this scheduler.</p>
@@ -419,6 +419,11 @@ Accessible via <a class="xref" href="Utils.VirtualMachine.ScheduledProcess-1.htm
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
     <dd><p>Thrown when <code class="paramref">context</code> or <code class="paramref">processor</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
 </dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when <code class="paramref">context</code> is already registered with this scheduler. Sharing a
+single context across multiple processes produces contradictory lifecycle states and corrupts
+instruction pointer and stack state.</p>
+</dd>
   </dl>
 
 
@@ -427,11 +432,14 @@ Accessible via <a class="xref" href="Utils.VirtualMachine.ScheduledProcess-1.htm
 
   <h3 id="Utils_VirtualMachine_Scheduler_1_RemoveProcess_System_Int32_" data-uid="Utils.VirtualMachine.Scheduler`1.RemoveProcess(System.Int32)">
   RemoveProcess(int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/Scheduler.cs/#L73"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/Scheduler.cs/#L88"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Removes a process from this scheduler by its identifier.
-No-op if no process with the given <code class="paramref">processId</code> is registered.</p>
+No-op if no process with the given <code class="paramref">processId</code> is registered.
+The process is transitioned to <a class="xref" href="Utils.VirtualMachine.ProcessState.html#Utils_VirtualMachine_ProcessState_Terminated">Terminated</a> before removal so
+that the scheduler's quantum-end cleanup block does not later promote it back to
+<a class="xref" href="Utils.VirtualMachine.ProcessState.html#Utils_VirtualMachine_ProcessState_Ready">Ready</a> when the process removed itself from inside a handler.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -461,7 +469,7 @@ No-op if no process with the given <code class="paramref">processId</code> is re
 
   <h3 id="Utils_VirtualMachine_Scheduler_1_Run_System_Threading_CancellationToken_" data-uid="Utils.VirtualMachine.Scheduler`1.Run(System.Threading.CancellationToken)">
   Run(CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/Scheduler.cs/#L147"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/Scheduler.cs/#L178"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Runs the scheduler until no process remains in the <a class="xref" href="Utils.VirtualMachine.ProcessState.html#Utils_VirtualMachine_ProcessState_Ready">Ready</a>
@@ -503,7 +511,7 @@ Returns immediately when all processes are <a class="xref" href="Utils.VirtualMa
 
   <h3 id="Utils_VirtualMachine_Scheduler_1_RunAsync_System_Threading_CancellationToken_" data-uid="Utils.VirtualMachine.Scheduler`1.RunAsync(System.Threading.CancellationToken)">
   RunAsync(CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/Scheduler.cs/#L164"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/Scheduler.cs/#L196"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Asynchronously runs the scheduler until no process remains in the
@@ -550,7 +558,7 @@ or until cancellation is requested. Yields to the caller between each
 
   <h3 id="Utils_VirtualMachine_Scheduler_1_Step" data-uid="Utils.VirtualMachine.Scheduler`1.Step">
   Step()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/Scheduler.cs/#L88"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/Scheduler.cs/#L106"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Executes one scheduling round: runs every <a class="xref" href="Utils.VirtualMachine.ProcessState.html#Utils_VirtualMachine_ProcessState_Ready">Ready</a> process

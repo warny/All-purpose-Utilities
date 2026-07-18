@@ -13522,6 +13522,20 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.VirtualMachine.ExceptionBlockPhase.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.VirtualMachine.ExceptionBlockPhase.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.VirtualMachine.ExceptionBlockPhase",
+      "Summary": "<p sourcefile=\"api/Utils.VirtualMachine.ExceptionBlockPhase.yml\" sourcestartlinenumber=\"1\">Tracks the lifecycle phase of an <xref href=\"Utils.VirtualMachine.ExceptionBlock\" data-throw-if-not-resolved=\"false\"></xref> so that\n<xref href=\"Utils.VirtualMachine.ControlFlowStack.Throw(Utils.VirtualMachine.Context%2cSystem.Object)\" data-throw-if-not-resolved=\"false\"></xref> can skip blocks whose protected try-region is\nno longer active and avoid re-entering the same handler.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.VirtualMachine.FullContext.yml",
       "output": {
         ".html": {

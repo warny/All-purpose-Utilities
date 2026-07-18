@@ -267,6 +267,13 @@ debugging, profiling, or instruction tracing without subclassing the processor.<
 Enums
 </h3>
     <dl class="jumplist">
+      <dt><a class="xref" href="Utils.VirtualMachine.ExceptionBlockPhase.html">ExceptionBlockPhase</a></dt>
+      <dd><p>Tracks the lifecycle phase of an <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html">ExceptionBlock</a> so that
+<a class="xref" href="Utils.VirtualMachine.ControlFlowStack.html#Utils_VirtualMachine_ControlFlowStack_Throw_Utils_VirtualMachine_Context_System_Object_">Throw(Context, object?)</a> can skip blocks whose protected try-region is
+no longer active and avoid re-entering the same handler.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
       <dt><a class="xref" href="Utils.VirtualMachine.PageAccess.html">PageAccess</a></dt>
       <dd><p>Specifies the access rights for a virtual memory page mapping.</p>
 </dd>

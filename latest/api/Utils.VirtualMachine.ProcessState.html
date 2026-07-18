@@ -226,6 +226,14 @@ Enum ProcessState  <a class="header-action link-secondary" title="View source" h
   <h2 id="fields">Fields
 </h2>
   <dl class="parameters">
+    <dt id="Utils_VirtualMachine_ProcessState_Faulted"><code>Faulted = 4</code></dt>
+  
+  <dd><p>The process encountered an unhandled exception during instruction execution.
+The exception is available via <a class="xref" href="Utils.VirtualMachine.ScheduledProcess-1.html#Utils_VirtualMachine_ScheduledProcess_1_FaultException">FaultException</a>.
+A faulted process will not run again; it is treated the same as
+<a class="xref" href="Utils.VirtualMachine.ProcessState.html#Utils_VirtualMachine_ProcessState_Terminated">Terminated</a> by <a class="xref" href="Utils.VirtualMachine.Scheduler-1.html#Utils_VirtualMachine_Scheduler_1_Run_System_Threading_CancellationToken_">Run(CancellationToken)</a> and
+<a class="xref" href="Utils.VirtualMachine.Scheduler-1.html#Utils_VirtualMachine_Scheduler_1_RunAsync_System_Threading_CancellationToken_">RunAsync(CancellationToken)</a>.</p>
+</dd>
     <dt id="Utils_VirtualMachine_ProcessState_Ready"><code>Ready = 0</code></dt>
   
   <dd><p>The process is eligible to run and will be scheduled in the next <a class="xref" href="Utils.VirtualMachine.Scheduler-1.html#Utils_VirtualMachine_Scheduler_1_Step">Step()</a> call.</p>

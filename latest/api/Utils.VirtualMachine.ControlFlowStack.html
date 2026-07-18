@@ -387,7 +387,7 @@ as a live enumerable. Useful for diagnostics and post-execution assertions.</p>
 
   <h3 id="Utils_VirtualMachine_ControlFlowStack_Break_Utils_VirtualMachine_Context_" data-uid="Utils.VirtualMachine.ControlFlowStack.Break(Utils.VirtualMachine.Context)">
   Break(Context)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L93"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L98"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Handles a BREAK instruction: pops all blocks up to and including the nearest
@@ -413,6 +413,11 @@ the loop's <a class="xref" href="Utils.VirtualMachine.LoopBlock.html#Utils_Virtu
 
 
 
+  <h4 class="section" id="Utils_VirtualMachine_ControlFlowStack_Break_Utils_VirtualMachine_Context__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>The operation is transactional: the loop is located first without mutating the stack.
+The exception is thrown before any block is popped, so the stack remains intact when
+malformed bytecode issues BREAK outside a loop.</p>
+</div>
 
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
@@ -427,7 +432,7 @@ the loop's <a class="xref" href="Utils.VirtualMachine.LoopBlock.html#Utils_Virtu
 
   <h3 id="Utils_VirtualMachine_ControlFlowStack_Continue_Utils_VirtualMachine_Context_" data-uid="Utils.VirtualMachine.ControlFlowStack.Continue(Utils.VirtualMachine.Context)">
   Continue(Context)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L112"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L127"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Handles a CONTINUE instruction: pops all blocks nested inside the nearest
@@ -453,6 +458,11 @@ the loop's <a class="xref" href="Utils.VirtualMachine.LoopBlock.html#Utils_Virtu
 
 
 
+  <h4 class="section" id="Utils_VirtualMachine_ControlFlowStack_Continue_Utils_VirtualMachine_Context__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>The operation is transactional: the loop is located first without mutating the stack.
+The exception is thrown before any block is popped, so the stack remains intact when
+malformed bytecode issues CONTINUE outside a loop.</p>
+</div>
 
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
@@ -467,14 +477,15 @@ the loop's <a class="xref" href="Utils.VirtualMachine.LoopBlock.html#Utils_Virtu
 
   <h3 id="Utils_VirtualMachine_ControlFlowStack_EndFinally_Utils_VirtualMachine_Context_" data-uid="Utils.VirtualMachine.ControlFlowStack.EndFinally(Utils.VirtualMachine.Context)">
   EndFinally(Context)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L146"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L167"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Handles an ENDFINALLY instruction: if a catch handler is pending (stored by a prior
 <a class="xref" href="Utils.VirtualMachine.ControlFlowStack.html#Utils_VirtualMachine_ControlFlowStack_Throw_Utils_VirtualMachine_Context_System_Object_">Throw(Context, object?)</a> call when both <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_CatchAddress">CatchAddress</a> and
 <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_FinallyAddress">FinallyAddress</a> were set), redirects
 <a class="xref" href="Utils.VirtualMachine.Context.html#Utils_VirtualMachine_Context_InstructionPointer">InstructionPointer</a> to that catch handler and clears the pending
-address. When no pending catch is present but an exception is in flight (finally-only
+address, then transitions the block to <a class="xref" href="Utils.VirtualMachine.ExceptionBlockPhase.html#Utils_VirtualMachine_ExceptionBlockPhase_Catch">Catch</a>.
+When no pending catch is present but an exception is in flight (finally-only
 block, or the innermost finally in a nested try), pops the block and propagates the
 exception to the next outer handler by calling <a class="xref" href="Utils.VirtualMachine.ControlFlowStack.html#Utils_VirtualMachine_ControlFlowStack_Throw_Utils_VirtualMachine_Context_System_Object_">Throw(Context, object?)</a> recursively.
 Otherwise, simply pops the block (normal exit from a try/finally without an exception).</p>
@@ -522,7 +533,7 @@ one on this block or an outer one found via propagation);
 
   <h3 id="Utils_VirtualMachine_ControlFlowStack_FindEnclosing__1" data-uid="Utils.VirtualMachine.ControlFlowStack.FindEnclosing``1">
   FindEnclosing&lt;T&gt;()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L171"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L193"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns the nearest enclosing block of type <code class="typeparamref">T</code> without removing it
@@ -765,19 +776,25 @@ Use this overload when the bytecode guarantees the block type (e.g. ENDIF always
 
   <h3 id="Utils_VirtualMachine_ControlFlowStack_Throw_Utils_VirtualMachine_Context_System_Object_" data-uid="Utils.VirtualMachine.ControlFlowStack.Throw(Utils.VirtualMachine.Context,System.Object)">
   Throw(Context, object?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L195"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L223"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Handles a THROW instruction: pops all blocks until the nearest <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html">ExceptionBlock</a>
-is found, stores the thrown value in <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_ThrownValue">ThrownValue</a>, and
-redirects <a class="xref" href="Utils.VirtualMachine.Context.html#Utils_VirtualMachine_Context_InstructionPointer">InstructionPointer</a> according to the following rules:</p>
+whose <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_Phase">Phase</a> is <a class="xref" href="Utils.VirtualMachine.ExceptionBlockPhase.html#Utils_VirtualMachine_ExceptionBlockPhase_Try">Try</a> is found,
+stores the thrown value in <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_ThrownValue">ThrownValue</a>, and redirects
+<a class="xref" href="Utils.VirtualMachine.Context.html#Utils_VirtualMachine_Context_InstructionPointer">InstructionPointer</a> according to the following rules:</p>
 <ul><li>If the block has a finally clause, jumps to <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_FinallyAddress">FinallyAddress</a>
     first. When a catch clause is also present, its address is stored in
     <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_PendingCatchAddress">PendingCatchAddress</a> so the ENDFINALLY handler can jump there
-    after the finally block completes.</li><li>If the block has only a catch clause (no finally), jumps directly to
-    <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_CatchAddress">CatchAddress</a>.</li></ul>
-<p>The <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html">ExceptionBlock</a> remains on the stack so that the handler body can read
-<a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_ThrownValue">ThrownValue</a>; ENDTRY pops it.</p>
+    after the finally block completes. The block transitions to
+    <a class="xref" href="Utils.VirtualMachine.ExceptionBlockPhase.html#Utils_VirtualMachine_ExceptionBlockPhase_Finally">Finally</a>.</li><li>If the block has only a catch clause (no finally), jumps directly to
+    <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_CatchAddress">CatchAddress</a>. The block transitions to
+    <a class="xref" href="Utils.VirtualMachine.ExceptionBlockPhase.html#Utils_VirtualMachine_ExceptionBlockPhase_Catch">Catch</a>.</li></ul>
+<p>Blocks already in <a class="xref" href="Utils.VirtualMachine.ExceptionBlockPhase.html#Utils_VirtualMachine_ExceptionBlockPhase_Finally">Finally</a> or
+<a class="xref" href="Utils.VirtualMachine.ExceptionBlockPhase.html#Utils_VirtualMachine_ExceptionBlockPhase_Catch">Catch</a> are skipped so that a throw from inside a handler
+body propagates to the next outer try scope instead of re-entering the current handler.
+The matched <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html">ExceptionBlock</a> remains on the stack so that the handler body can
+read <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_ThrownValue">ThrownValue</a>; ENDTRY pops it.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 

@@ -450,11 +450,13 @@ Interface INumberReader  <a class="header-action link-secondary" title="View sou
 
   <h3 id="Utils_VirtualMachine_INumberReader_ReadSLEB128_Utils_VirtualMachine_Context_" data-uid="Utils.VirtualMachine.INumberReader.ReadSLEB128(Utils.VirtualMachine.Context)">
   ReadSLEB128(Context)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/INumberReader.cs/#L109"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/INumberReader.cs/#L121"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads a signed LEB128-encoded integer from the supplied <code class="paramref">context</code>.
-LEB128 is byte-order independent; this default implementation delegates to <a class="xref" href="Utils.VirtualMachine.INumberReader.html#Utils_VirtualMachine_INumberReader_ReadByte_Utils_VirtualMachine_Context_">ReadByte(Context)</a>.</p>
+LEB128 is byte-order independent; this default implementation delegates to <a class="xref" href="Utils.VirtualMachine.INumberReader.html#Utils_VirtualMachine_INumberReader_ReadByte_Utils_VirtualMachine_Context_">ReadByte(Context)</a>.
+A 64-bit value requires at most 10 bytes; longer sequences are rejected as malformed.
+The 10th byte must encode only the sign extension (only bits 0 and 6 are meaningful).</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -483,6 +485,12 @@ LEB128 is byte-order independent; this default implementation delegates to <a cl
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.formatexception">FormatException</a></dt>
+    <dd><p>Thrown when the encoding exceeds 10 bytes or the 10th byte carries invalid high-order bits.</p>
+</dd>
+  </dl>
 
 
 
@@ -646,11 +654,13 @@ LEB128 is byte-order independent; this default implementation delegates to <a cl
 
   <h3 id="Utils_VirtualMachine_INumberReader_ReadULEB128_Utils_VirtualMachine_Context_" data-uid="Utils.VirtualMachine.INumberReader.ReadULEB128(Utils.VirtualMachine.Context)">
   ReadULEB128(Context)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/INumberReader.cs/#L88"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/INumberReader.cs/#L93"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads an unsigned LEB128-encoded integer from the supplied <code class="paramref">context</code>.
-LEB128 is byte-order independent; this default implementation delegates to <a class="xref" href="Utils.VirtualMachine.INumberReader.html#Utils_VirtualMachine_INumberReader_ReadByte_Utils_VirtualMachine_Context_">ReadByte(Context)</a>.</p>
+LEB128 is byte-order independent; this default implementation delegates to <a class="xref" href="Utils.VirtualMachine.INumberReader.html#Utils_VirtualMachine_INumberReader_ReadByte_Utils_VirtualMachine_Context_">ReadByte(Context)</a>.
+A 64-bit value requires at most 10 bytes; longer sequences are rejected as malformed.
+The 10th byte must not have payload bits beyond bit 63 (only the low bit is valid).</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -679,6 +689,12 @@ LEB128 is byte-order independent; this default implementation delegates to <a cl
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.formatexception">FormatException</a></dt>
+    <dd><p>Thrown when the encoding exceeds 10 bytes or the 10th byte carries invalid high-order bits.</p>
+</dd>
+  </dl>
 
 
 

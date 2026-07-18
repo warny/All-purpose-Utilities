@@ -283,6 +283,40 @@ Class ScheduledProcess&lt;T&gt;  <a class="header-action link-secondary" title="
 
 
 
+  <a id="Utils_VirtualMachine_ScheduledProcess_1_FaultException_" data-uid="Utils.VirtualMachine.ScheduledProcess`1.FaultException*"></a>
+
+  <h3 id="Utils_VirtualMachine_ScheduledProcess_1_FaultException" data-uid="Utils.VirtualMachine.ScheduledProcess`1.FaultException">
+  FaultException
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ScheduledProcess.cs/#L54"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the exception that caused this process to fault, or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> when
+<a class="xref" href="Utils.VirtualMachine.ScheduledProcess-1.html#Utils_VirtualMachine_ScheduledProcess_1_State">State</a> is not <a class="xref" href="Utils.VirtualMachine.ProcessState.html#Utils_VirtualMachine_ProcessState_Faulted">Faulted</a>.
+Set by <a class="xref" href="Utils.VirtualMachine.Scheduler-1.html">Scheduler&lt;T&gt;</a> when an unhandled exception escapes an instruction handler.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Exception? FaultException { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.exception">Exception</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <a id="Utils_VirtualMachine_ScheduledProcess_1_Name_" data-uid="Utils.VirtualMachine.ScheduledProcess`1.Name*"></a>
 
   <h3 id="Utils_VirtualMachine_ScheduledProcess_1_Name" data-uid="Utils.VirtualMachine.ScheduledProcess`1.Name">
@@ -487,7 +521,7 @@ call and interrupts the quantum when it is <a href="https://learn.microsoft.com/
 
   <h3 id="Utils_VirtualMachine_ScheduledProcess_1_RequestYield" data-uid="Utils.VirtualMachine.ScheduledProcess`1.RequestYield">
   RequestYield()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ScheduledProcess.cs/#L85"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ScheduledProcess.cs/#L94"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Requests a cooperative yield. After the currently executing instruction completes,
@@ -516,7 +550,7 @@ the scheduler ends the quantum early and returns this process to
 
   <h3 id="Utils_VirtualMachine_ScheduledProcess_1_Resume" data-uid="Utils.VirtualMachine.ScheduledProcess`1.Resume">
   Resume()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ScheduledProcess.cs/#L74"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ScheduledProcess.cs/#L83"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Resumes a suspended process, transitioning it to <a class="xref" href="Utils.VirtualMachine.ProcessState.html#Utils_VirtualMachine_ProcessState_Ready">Ready</a>.
@@ -544,13 +578,14 @@ No-op when the process is not in the <a class="xref" href="Utils.VirtualMachine.
 
   <h3 id="Utils_VirtualMachine_ScheduledProcess_1_Suspend" data-uid="Utils.VirtualMachine.ScheduledProcess`1.Suspend">
   Suspend()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ScheduledProcess.cs/#L64"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ScheduledProcess.cs/#L72"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Suspends the process. Transitions <a class="xref" href="Utils.VirtualMachine.ProcessState.html#Utils_VirtualMachine_ProcessState_Ready">Ready</a> or
 <a class="xref" href="Utils.VirtualMachine.ProcessState.html#Utils_VirtualMachine_ProcessState_Running">Running</a> to <a class="xref" href="Utils.VirtualMachine.ProcessState.html#Utils_VirtualMachine_ProcessState_Suspended">Suspended</a>.
-No-op when already <a class="xref" href="Utils.VirtualMachine.ProcessState.html#Utils_VirtualMachine_ProcessState_Suspended">Suspended</a> or
-<a class="xref" href="Utils.VirtualMachine.ProcessState.html#Utils_VirtualMachine_ProcessState_Terminated">Terminated</a>.</p>
+No-op when already <a class="xref" href="Utils.VirtualMachine.ProcessState.html#Utils_VirtualMachine_ProcessState_Suspended">Suspended</a>,
+<a class="xref" href="Utils.VirtualMachine.ProcessState.html#Utils_VirtualMachine_ProcessState_Terminated">Terminated</a>, or <a class="xref" href="Utils.VirtualMachine.ProcessState.html#Utils_VirtualMachine_ProcessState_Faulted">Faulted</a>
+(both terminal states must not be revived via <a class="xref" href="Utils.VirtualMachine.ScheduledProcess-1.html#Utils_VirtualMachine_ScheduledProcess_1_Resume">Resume()</a>).</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
