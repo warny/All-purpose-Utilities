@@ -77,80 +77,63 @@ using var lib = LibraryMapper.Create<MathLib>("math.dll");
 int result = lib.Add(3, 4); // 7
 ```
 
-### Disposal and `[External]` setter constraints
+### `[External]` member constraints
 
-`LibraryMapper.Dispose()` nulls every `[External]`-decorated member before freeing the native handle.
-This is safe and guaranteed when members are **fields** or **auto-properties** — the recommended
-pattern for the vast majority of use cases.
+`LibraryMapper.Dispose()` must be able to set every `[External]`-decorated member to
+`null` unconditionally, so that no stale delegate remains pointing into freed native memory.
+To make this guarantee enforceable, `Create<T>()` rejects any member that cannot be safely
+nulled during the prepare phase — **before** any DLL export is resolved.
 
-If you use a property with a **custom setter body**, two failure scenarios exist:
-
-#### Scenario A — setter refuses `null`
-
-```csharp
-// ⚠ Dangerous: setter rejects null
-public class MyLib : LibraryMapper
-{
-    private Func<int, int>? _fn;
-
-    [External("compute")]
-    public Func<int, int> Compute
-    {
-        get => _fn ?? throw new InvalidOperationException("Not loaded");
-        set => _fn = value ?? throw new ArgumentNullException(nameof(value));
-        //                      ↑ throws when Dispose() tries to clear it
-    }
-}
-```
-
-When `Dispose()` cannot null a member — because the setter throws or silently ignores `null` —
-it **does not free the native handle**. A delegate that still points into a freed DLL causes
-a process crash on the next call; leaking the handle is the safer outcome. The `IsDisposed`
-flag is still set to `true` and the instance must not be used further, but the underlying
-`HMODULE`/`dlopen` handle stays resident in memory until the process exits.
-
-#### Scenario B — setter has a side effect before it throws
+**Allowed:**
 
 ```csharp
-[External("log")]
-public Action<string>? Log
-{
-    set
-    {
-        SomeOtherField = value; // side effect happens first
-        _log = value;           // then maybe throws
-    }
-}
-```
-
-If the setter touches external state before throwing during the commit phase of `Create()`, that
-side effect cannot be rolled back. `Create()` will propagate the exception and free the handle,
-but the external state change has already occurred.
-
-#### Safe patterns
-
-```csharp
-// ✔ Preferred: field — always safely cleared
+// ✔ Field — always settable to null
 [External("compute")]
 public Func<int, int>? Compute;
 
-// ✔ Also safe: auto-property — compiler-generated backing field
+// ✔ Auto-property — compiler-generated backing field, no custom logic
 [External("compute")]
 public Func<int, int>? Compute { get; set; }
+```
 
-// ✔ Safe: setter is trivially writable (no validation, no side effects)
+**Rejected at `Create()` time:**
+
+```csharp
+// ✗ Custom setter body — rejected, even if the assignment looks trivial
 [External("compute")]
 public Func<int, int>? Compute
 {
     get => _compute;
-    set => _compute = value;   // plain assignment — cannot refuse null
+    set => _compute = value;  // ← Create throws InvalidOperationException
 }
 private Func<int, int>? _compute;
+
+// ✗ Setter that refuses null — also rejected
+[External("compute")]
+public Func<int, int> Compute
+{
+    get => _compute ?? throw new InvalidOperationException("Not loaded");
+    set => _compute = value ?? throw new ArgumentNullException(nameof(value));
+}
 ```
 
-> If you need a non-nullable contract at the **caller** level, enforce it through a wrapper
-> method rather than through the setter, so the `[External]` member itself can always accept
-> `null` during disposal.
+`Create<T>()` detects auto-properties by looking for the compiler-generated
+`<PropertyName>k__BackingField` on the declaring type. Any property without that field is
+considered to have a custom setter body and is rejected.
+
+> **Non-nullable contract:** if you need callers to see a non-nullable API, expose it through
+> a wrapper method rather than through the setter of the `[External]` member:
+>
+> ```csharp
+> public class MyLib : LibraryMapper
+> {
+>     [External("compute")]
+>     public Func<int, int>? Compute { get; set; }   // nullable backing member
+>
+>     public int ComputeChecked(int x)               // non-nullable public surface
+>         => (Compute ?? throw new ObjectDisposedException(nameof(MyLib)))(x);
+> }
+> ```
 
 ### Interface emit approach
 

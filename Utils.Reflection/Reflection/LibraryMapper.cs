@@ -5,7 +5,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO.Pipes;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 using Utils.Reflection.Reflection.Emit;
 
@@ -279,11 +278,11 @@ namespace Utils.Reflection
         /// Maps the functions in a DLL to the properties and fields of the provided <see cref="LibraryMapper"/> object.
         /// </summary>
         /// <remarks>
-        /// All exports are resolved and delegates constructed in a preparation phase before any
-        /// member assignment is committed. If preparation fails, the DLL handle is freed immediately.
-        /// If a setter throws during the commit phase, already-assigned members are cleared in best
-        /// effort, the DLL handle is freed, and the exception is rethrown. Side-effects that occur
-        /// inside setters before they throw cannot be rolled back.
+        /// Loading is transactional: all exports are resolved and delegates constructed in a
+        /// preparation phase before any member assignment is committed. If any step fails, the DLL
+        /// handle is freed immediately so no partial state or leaked native resource is left on the
+        /// object. Only fields and auto-properties are accepted as <c>[External]</c> members; custom
+        /// setter bodies are rejected during the preparation phase (see <see cref="IsAutoProperty"/>).
         /// </remarks>
         /// <param name="dllPath">The path to the DLL.</param>
         /// <param name="obj">The object whose members are to be mapped to DLL functions.</param>
@@ -335,11 +334,21 @@ namespace Utils.Reflection
                             $"native function's signature.");
                     }
 
-                    if (member is PropertyInfo prop && !prop.CanWrite)
+                    if (member is PropertyInfo prop)
                     {
-                        throw new InvalidOperationException(
-                            $"Property '{member.Name}' on '{obj.GetType().FullName}' is decorated " +
-                            $"with [External] but has no setter.");
+                        if (!prop.CanWrite)
+                            throw new InvalidOperationException(
+                                $"Property '{member.Name}' on '{obj.GetType().FullName}' is decorated " +
+                                $"with [External] but has no setter.");
+
+                        if (!IsAutoProperty(prop))
+                            throw new InvalidOperationException(
+                                $"Property '{member.Name}' on '{obj.GetType().FullName}' is decorated " +
+                                $"with [External] but has a custom setter body. Only auto-properties " +
+                                $"(compiler-generated backing field) and fields are permitted, because " +
+                                $"Dispose must be able to null them unconditionally. Use a field or an " +
+                                $"auto-property, and enforce any non-nullable contract through a wrapper " +
+                                $"method instead.");
                     }
 
                     Delegate delegateFunction;
@@ -366,30 +375,14 @@ namespace Utils.Reflection
                 throw;
             }
 
-            // Commit phase: every export resolved and delegate constructed; assign all or roll back.
-            try
+            // Commit phase: all members are fields or auto-properties (validated above), so
+            // SetValue cannot throw — assignment is unconditionally safe.
+            foreach ((MemberInfo member, Delegate value) in pending)
             {
-                foreach ((MemberInfo member, Delegate value) in pending)
-                {
-                    if (member is PropertyInfo propInfo)
-                        propInfo.SetValue(obj, value);
-                    else if (member is FieldInfo fieldInfo)
-                        fieldInfo.SetValue(obj, value);
-                }
-            }
-            catch (Exception ex)
-            {
-                // A setter threw mid-commit. The object is being discarded, so any uncleared
-                // delegates become unreachable along with obj — freeing the DLL is safe here
-                // even if TryClearMappedDelegates cannot null every member.
-                obj.TryClearMappedDelegates();
-                NativeLibrary.Free(obj.dllHandle);
-                obj.dllHandle = IntPtr.Zero;
-                // prop.SetValue wraps user exceptions in TargetInvocationException; unwrap to
-                // expose the original cause directly, as we do elsewhere in this assembly.
-                if (ex is TargetInvocationException { InnerException: { } inner })
-                    ExceptionDispatchInfo.Capture(inner).Throw();
-                throw;
+                if (member is PropertyInfo propInfo)
+                    propInfo.SetValue(obj, value);
+                else if (member is FieldInfo fieldInfo)
+                    fieldInfo.SetValue(obj, value);
             }
         }
 
@@ -410,58 +403,52 @@ namespace Utils.Reflection
             if (disposed) return;
             disposed = true;
 
-            if (disposing)
+            try
             {
-                // Try to null every mapped delegate. If any setter refuses to clear (throws or
-                // silently retains the value), do NOT free the native handle: a delegate that
-                // still references freed DLL memory is a use-after-free crash waiting to happen.
-                // A native-handle leak is the lesser of two evils.
-                if (!TryClearMappedDelegates())
-                    return;
+                // Clear mapped delegates only during explicit Dispose, not from the finalizer.
+                // All [External] members are guaranteed to be fields or auto-properties (validated
+                // at Create time), so SetValue(null) is unconditionally safe.
+                if (disposing)
+                    ClearMappedDelegates();
             }
-
-            // Either all delegates were cleared (disposing=true path above) or the finalizer is
-            // running (disposing=false). In the finalizer case, we cannot safely call arbitrary
-            // setters, so the handle is freed unconditionally — the caller's failure to call
-            // Dispose means stale delegates are already the caller's problem.
-            if (dllHandle != IntPtr.Zero)
+            finally
             {
-                NativeLibrary.Free(dllHandle);
-                dllHandle = IntPtr.Zero;
+                if (dllHandle != IntPtr.Zero)
+                {
+                    NativeLibrary.Free(dllHandle);
+                    dllHandle = IntPtr.Zero;
+                }
             }
         }
 
         /// <summary>
-        /// Attempts to set every <see cref="ExternalAttribute"/>-decorated member to
-        /// <see langword="null"/>. Returns <see langword="true"/> when every member was
-        /// successfully cleared, <see langword="false"/> when at least one setter threw
-        /// or otherwise refused the assignment.
+        /// Sets every <see cref="ExternalAttribute"/>-decorated member to <see langword="null"/>
+        /// so post-Dispose reads return <see langword="null"/> instead of a stale function pointer
+        /// into freed native memory.
         /// </summary>
-        /// <remarks>
-        /// When this returns <see langword="false"/>, at least one property may still hold a
-        /// delegate referencing native DLL code. The caller must not free the native handle
-        /// in that case: doing so would leave a stale function pointer that crashes on call.
-        /// </remarks>
-        internal bool TryClearMappedDelegates()
+        private void ClearMappedDelegates()
         {
-            bool allCleared = true;
             foreach (MemberInfo member in GetType().GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
             {
                 if (member.GetCustomAttributes(ExternalAttributeType, inherit: true).Length == 0) continue;
 
-                try
-                {
-                    if (member is PropertyInfo prop && prop.CanWrite)
-                        prop.SetValue(this, null);
-                    else if (member is FieldInfo field)
-                        field.SetValue(this, null);
-                }
-                catch
-                {
-                    allCleared = false;
-                }
+                if (member is PropertyInfo prop && prop.CanWrite)
+                    prop.SetValue(this, null);
+                else if (member is FieldInfo field)
+                    field.SetValue(this, null);
             }
-            return allCleared;
+        }
+
+        /// <summary>
+        /// Returns <see langword="true"/> when <paramref name="prop"/> is a compiler-generated
+        /// auto-property, identified by the presence of a <c>&lt;PropertyName&gt;k__BackingField</c>
+        /// field on its declaring type.
+        /// </summary>
+        private static bool IsAutoProperty(PropertyInfo prop)
+        {
+            string backingFieldName = $"<{prop.Name}>k__BackingField";
+            return (prop.DeclaringType ?? prop.ReflectedType)?
+                .GetField(backingFieldName, BindingFlags.NonPublic | BindingFlags.Instance) is not null;
         }
 
         /// <inheritdoc/>

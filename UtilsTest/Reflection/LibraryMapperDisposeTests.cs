@@ -7,9 +7,8 @@ using Utils.Reflection;
 namespace UtilsTest.Reflection;
 
 /// <summary>
-/// Validates <see cref="LibraryMapper"/>'s disposal behavior, specifically that mapped delegate
-/// fields and properties are cleared on <see cref="LibraryMapper.Dispose"/> so post-Dispose accesses
-/// return <see langword="null"/> instead of a stale function pointer into freed native memory.
+/// Validates <see cref="LibraryMapper"/>'s disposal behavior and the prepare-phase validation
+/// that restricts <c>[External]</c> members to fields and auto-properties.
 /// </summary>
 [TestClass]
 public class LibraryMapperDisposeTests
@@ -73,64 +72,7 @@ public class LibraryMapperDisposeTests
         mapper.Dispose(); // Must not throw on second call.
     }
 
-    private class ThrowingSetterMapper : LibraryMapper
-    {
-        private Action? _fn;
-
-        [External]
-        public Action? NativeFunction
-        {
-            get => _fn;
-            set
-            {
-                _fn = value;
-                if (value == null)
-                    throw new InvalidOperationException("Setter throws when cleared");
-            }
-        }
-    }
-
-    [TestMethod]
-    public void Dispose_WhenSetterThrows_DoesNotPropagateAndCompletesNormally()
-    {
-        var mapper = new ThrowingSetterMapper();
-        mapper.NativeFunction = () => { };
-        Assert.IsNotNull(mapper.NativeFunction, "Pre-condition: property must be set before Dispose.");
-
-        // Dispose must not propagate the setter exception.
-        // The DLL is intentionally not freed when delegates cannot be cleared (no DLL is loaded
-        // here, so there is nothing to leak), but IsDisposed must still be set to true.
-        mapper.Dispose();
-
-        Assert.IsTrue(mapper.IsDisposed, "IsDisposed must be true even when a setter throws during Dispose.");
-    }
-
-    [TestMethod]
-    public void TryClearMappedDelegates_ReturnsFalse_WhenSetterThrows()
-    {
-        var mapper = new ThrowingSetterMapper();
-        mapper.NativeFunction = () => { };
-
-        bool result = mapper.TryClearMappedDelegates();
-
-        Assert.IsFalse(result,
-            "TryClearMappedDelegates must return false when a setter refuses to accept null, " +
-            "so the caller knows the DLL handle cannot be safely freed.");
-    }
-
-    [TestMethod]
-    public void TryClearMappedDelegates_ReturnsTrue_WhenAllMembersCleared()
-    {
-        var mapper = new MapperWithProperty();
-        mapper.NativeFunction = () => { };
-
-        bool result = mapper.TryClearMappedDelegates();
-
-        Assert.IsTrue(result, "TryClearMappedDelegates must return true when all setters accept null.");
-        Assert.IsNull(mapper.NativeFunction, "The property must be null after TryClearMappedDelegates returns true.");
-    }
-
-    // ─── Item 47: transactional loading ─────────────────────────────────────────
+    // ─── Item 47 / review#472: transactional loading + setter validation ─────────
 
     private class MissingExportMapper : LibraryMapper
     {
@@ -147,47 +89,9 @@ public class LibraryMapperDisposeTests
             return;
         }
 
-        // The DLL exists (kernel32.dll) but the export does not. The transactional implementation
-        // must throw EntryPointNotFoundException and free the DLL handle immediately (not leak it
-        // for the finalizer). Verified by the absence of an exception from Create itself.
         Assert.ThrowsException<EntryPointNotFoundException>(
             () => LibraryMapper.Create<MissingExportMapper>("kernel32.dll"),
             "Create must propagate EntryPointNotFoundException when an export is missing.");
-    }
-
-    private class CommitPhaseThrowingMapper : LibraryMapper
-    {
-        private Action? _fn;
-
-        [External("GetCurrentProcessId")]
-        public Action? NativeFunction
-        {
-            get => _fn;
-            set
-            {
-                if (value != null)
-                    throw new InvalidOperationException("Commit setter always throws");
-                _fn = null;
-            }
-        }
-    }
-
-    [TestMethod]
-    public void Create_WhenSetterThrowsDuringCommit_PropagatesExceptionAndRollsBack()
-    {
-        if (!OperatingSystem.IsWindows())
-        {
-            Assert.Inconclusive("Test uses kernel32.dll; skipped on non-Windows.");
-            return;
-        }
-
-        // Setter succeeds during the prepare phase (not called there), fails in the commit phase.
-        // The DLL must be freed and the exception must propagate — no partial state leaked.
-        var ex = Assert.ThrowsException<InvalidOperationException>(
-            () => LibraryMapper.Create<CommitPhaseThrowingMapper>("kernel32.dll"));
-
-        StringAssert.Contains(ex.Message, "Commit setter always throws",
-            "The original setter exception must propagate from Create.");
     }
 
     private class ReadOnlyPropertyMapper : LibraryMapper
@@ -195,7 +99,7 @@ public class LibraryMapperDisposeTests
         private Action? _fn;
 
         [External("GetCurrentProcessId")]
-        public Action? Fn => _fn; // read-only: no setter — validation in prepare phase must catch this
+        public Action? Fn => _fn; // read-only: no setter
     }
 
     [TestMethod]
@@ -207,12 +111,41 @@ public class LibraryMapperDisposeTests
             return;
         }
 
-        // A read-only property decorated with [External] should throw InvalidOperationException
-        // during the prepare phase — before any member is assigned. The DLL must be freed immediately.
         var ex = Assert.ThrowsException<InvalidOperationException>(
             () => LibraryMapper.Create<ReadOnlyPropertyMapper>("kernel32.dll"));
 
         StringAssert.Contains(ex.Message, "no setter",
             "Error message must indicate that the property has no setter.");
+    }
+
+    private class CustomSetterMapper : LibraryMapper
+    {
+        private Action? _fn;
+
+        // Custom setter body — not an auto-property: must be rejected.
+        [External("GetCurrentProcessId")]
+        public Action? NativeFunction
+        {
+            get => _fn;
+            set => _fn = value;
+        }
+    }
+
+    [TestMethod]
+    public void Create_WhenPropertyHasCustomSetterBody_ThrowsInvalidOperationException()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            Assert.Inconclusive("Test uses kernel32.dll; skipped on non-Windows.");
+            return;
+        }
+
+        // A non-auto-property setter cannot be guaranteed to accept null unconditionally,
+        // so Create must reject it in the prepare phase before loading any export.
+        var ex = Assert.ThrowsException<InvalidOperationException>(
+            () => LibraryMapper.Create<CustomSetterMapper>("kernel32.dll"));
+
+        StringAssert.Contains(ex.Message, "custom setter",
+            "Error message must explain that custom setter bodies are not allowed.");
     }
 }
