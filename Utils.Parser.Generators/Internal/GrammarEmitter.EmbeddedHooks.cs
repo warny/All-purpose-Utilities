@@ -43,7 +43,7 @@ internal static partial class GrammarEmitter
     /// <param name="grammar">Parsed grammar AST.</param>
     /// <param name="transformer">Embedded-code transformer used for supported lexer action bodies.</param>
     /// <returns>Deterministic lexer action hook metadata.</returns>
-    private static IReadOnlyList<EmbeddedCodeHook> CollectLexerEmbeddedCodeHooks(G4Grammar grammar, IParserEmbeddedCodeTransformer transformer)
+    internal static IReadOnlyList<EmbeddedCodeHook> CollectLexerEmbeddedCodeHooks(G4Grammar grammar, IParserEmbeddedCodeTransformer transformer)
     {
         return EmbeddedHookCollector.Collect(grammar, transformer, LexerEmbeddedHookCollectionStrategy.Instance);
     }
@@ -54,7 +54,7 @@ internal static partial class GrammarEmitter
     /// <param name="grammar">Parsed grammar AST.</param>
     /// <param name="transformer">Parser embedded-code transformer used for inline action and predicate bodies.</param>
     /// <returns>Deterministic hook metadata for embedded parser code.</returns>
-    private static IReadOnlyList<EmbeddedCodeHook> CollectEmbeddedCodeHooks(G4Grammar grammar, IParserEmbeddedCodeTransformer transformer)
+    internal static IReadOnlyList<EmbeddedCodeHook> CollectEmbeddedCodeHooks(G4Grammar grammar, IParserEmbeddedCodeTransformer transformer)
     {
         return EmbeddedHookCollector.Collect(grammar, transformer, ParserEmbeddedHookCollectionStrategy.Instance);
     }
@@ -529,7 +529,7 @@ internal static partial class GrammarEmitter
     /// <summary>
     /// Identifies the generated embedded-code hook owner.
     /// </summary>
-    private enum EmbeddedCodeHookOwner
+    internal enum EmbeddedCodeHookOwner
     {
         /// <summary>The hook belongs to parser embedded code.</summary>
         Parser,
@@ -541,7 +541,7 @@ internal static partial class GrammarEmitter
     /// <summary>
     /// Identifies the generated embedded-code hook executable category.
     /// </summary>
-    private enum EmbeddedCodeHookKind
+    internal enum EmbeddedCodeHookKind
     {
         /// <summary>The hook evaluates a semantic predicate.</summary>
         SemanticPredicate,
@@ -553,7 +553,7 @@ internal static partial class GrammarEmitter
     /// <summary>
     /// Metadata for one generated parser or lexer embedded-code hook.
     /// </summary>
-    private sealed record EmbeddedCodeHook
+    internal sealed record EmbeddedCodeHook
     {
         /// <summary>
         /// Initializes generated embedded-code hook metadata after validating common invariants.
