@@ -468,13 +468,20 @@ public abstract class VirtualProcessor<T> where T : Context
     /// <summary>
     /// Notifies <see cref="Inspector"/> (when set) before an instruction runs, and additionally
     /// calls <see cref="IVmInspector{T}.OnBreakpoint"/> when the address is in <see cref="Breakpoints"/>.
-    /// Inlined from <see cref="TryDispatch"/> to keep the hot path clean.
+    /// If <see cref="IVmInspector{T}.OnBreakpoint"/> redirects the instruction pointer, this method
+    /// returns without calling <see cref="IVmInspector{T}.BeforeInstruction"/> so that the callback
+    /// does not receive stale instruction metadata for the old address.
     /// </summary>
     private void NotifyInspector(T context, int address, string instructionName)
     {
         if (Inspector is not { } inspector) return;
         if (Breakpoints.Count > 0 && Breakpoints.Contains(address))
+        {
             inspector.OnBreakpoint(context, address, instructionName);
+            // If OnBreakpoint redirected execution, skip BeforeInstruction for the old instruction
+            // so that the callback does not observe contradictory metadata.
+            if (context.InstructionPointer != address) return;
+        }
         inspector.BeforeInstruction(context, address, instructionName);
     }
 }

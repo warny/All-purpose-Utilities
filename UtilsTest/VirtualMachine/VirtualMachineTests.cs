@@ -873,6 +873,28 @@ namespace UtilsTest.VirtualMachine
             Assert.IsTrue(machine.NopExecuted);
         }
 
+        // ── Item 31: OnBreakpoint redirect suppresses BeforeInstruction ──────
+
+        [TestMethod]
+        public void Inspector_OnBreakpoint_Redirect_BeforeInstructionNotCalled()
+        {
+            // When OnBreakpoint changes InstructionPointer, BeforeInstruction must not be called
+            // with stale metadata for the old instruction.
+            var machine = new InspectorMachine();
+            var beforeInstructionCalled = false;
+            machine.Inspector = new DelegateInspector<DefaultContext>(
+                beforeInstruction: (ctx, addr, name) => beforeInstructionCalled = true,
+                onBreakpoint: (ctx, addr, name) => ctx.InstructionPointer = ctx.Data.Length // redirect
+            );
+            machine.Breakpoints.Add(0);
+
+            byte[] program = [0x01]; // single PUSH_A
+            machine.Execute(new DefaultContext(program));
+
+            Assert.IsFalse(beforeInstructionCalled,
+                "BeforeInstruction must not be called when OnBreakpoint has already redirected execution.");
+        }
+
         [TestMethod]
         public void Inspector_RedirectIpInBeforeInstruction_SkipsDispatch()
         {
