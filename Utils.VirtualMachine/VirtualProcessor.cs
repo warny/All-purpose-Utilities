@@ -337,6 +337,7 @@ public abstract class VirtualProcessor<T> where T : Context
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is cancelled.</exception>
     public void Execute(T context, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(context);
         while (context.InstructionPointer >= 0 && context.InstructionPointer < context.Data.Length)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -357,6 +358,7 @@ public abstract class VirtualProcessor<T> where T : Context
     /// <exception cref="VirtualProcessorException">Thrown on an unknown opcode sequence.</exception>
     public bool ExecuteStep(T context)
     {
+        ArgumentNullException.ThrowIfNull(context);
         if (context.InstructionPointer < 0 || context.InstructionPointer >= context.Data.Length) return false;
         OnStep(context);
         TryDispatch(context);

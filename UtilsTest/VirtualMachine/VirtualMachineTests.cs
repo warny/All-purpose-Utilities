@@ -200,6 +200,22 @@ namespace UtilsTest.VirtualMachine
             Assert.IsFalse(machine.ExecuteStep(context));  // EOF
         }
 
+        // ── Null context ──────────────────────────────────────────────────────
+
+        [TestMethod]
+        public void Execute_NullContext_ThrowsArgumentNullException()
+        {
+            Assert.ThrowsException<ArgumentNullException>(
+                () => new TestMachine().Execute(null!));
+        }
+
+        [TestMethod]
+        public void ExecuteStep_NullContext_ThrowsArgumentNullException()
+        {
+            Assert.ThrowsException<ArgumentNullException>(
+                () => new TestMachine().ExecuteStep(null!));
+        }
+
         // ── CancellationToken ─────────────────────────────────────────────────
 
         [TestMethod]
