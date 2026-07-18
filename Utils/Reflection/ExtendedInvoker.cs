@@ -2,6 +2,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.ExceptionServices;
 using Utils.Expressions;
 
 namespace Utils.Reflection;
@@ -34,28 +36,64 @@ public class ExtendedInvoker<TResult> : IEnumerable<Delegate>
     /// <summary>
     /// Attempts to invoke the best matching delegate with the provided arguments.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Null arguments</b> are treated as <c>typeof(object)</c> for overload resolution. Delegates
+    /// that accept a more specific reference type (e.g. <c>Func&lt;string, TResult&gt;</c>) are not
+    /// reachable when the corresponding argument is <see langword="null"/>; register a
+    /// <c>Func&lt;object, TResult&gt;</c> overload to handle the null case.
+    /// </para>
+    /// <para>
+    /// <b>Ambiguity</b>: when two or more registered delegates match with the same specificity
+    /// distance, <see cref="AmbiguousMatchException"/> is thrown rather than silently selecting
+    /// the first registration.
+    /// </para>
+    /// <para>
+    /// <b>Exceptions</b>: if the selected delegate throws, the original exception is rethrown
+    /// directly (not wrapped in <see cref="System.Reflection.TargetInvocationException"/>).
+    /// </para>
+    /// </remarks>
     /// <param name="arguments">An array of arguments for the delegate call.</param>
     /// <param name="result">Receives the invocation result if successful.</param>
     /// <returns><see langword="true"/> if a matching delegate was invoked; otherwise <see langword="false"/>.</returns>
-    public bool TryInvoke(object[] arguments, out TResult result)
+    /// <exception cref="AmbiguousMatchException">
+    /// Thrown when two or more delegates match the arguments with equal specificity.
+    /// </exception>
+    public bool TryInvoke(object?[] arguments, out TResult result)
     {
         arguments ??= [];
         var argumentTypes = arguments.Select(a => a?.GetType() ?? typeof(object));
 
-        var candidate = _delegates
-                .Select(d => new { Delegate = d, Distance = d.Method.CompareParametersAndTypes(null, argumentTypes) })
-                .Where(c => c.Distance >= 0)
-                .OrderBy(c => c.Distance)
-                .FirstOrDefault();
+        var candidates = _delegates
+            .Select(d => new { Delegate = d, Distance = d.Method.CompareParametersAndTypes(null, argumentTypes) })
+            .Where(c => c.Distance >= 0)
+            .OrderBy(c => c.Distance)
+            .ToList();
 
-        if (candidate != null)
+        if (candidates.Count == 0)
         {
-            result = (TResult)candidate.Delegate.DynamicInvoke(arguments);
-            return true;
+            result = default!;
+            return false;
         }
 
-        result = default!;
-        return false;
+        if (candidates.Count >= 2 && candidates[0].Distance == candidates[1].Distance)
+        {
+            throw new AmbiguousMatchException(
+                "Multiple registered delegates match the provided arguments with equal specificity. " +
+                "Use more specific parameter types or remove the ambiguous registration.");
+        }
+
+        try
+        {
+            result = (TResult)candidates[0].Delegate.DynamicInvoke(arguments)!;
+            return true;
+        }
+        catch (TargetInvocationException ex) when (ex.InnerException is not null)
+        {
+            ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
+            result = default!; // unreachable — ExceptionDispatchInfo.Throw() never returns
+            return false;
+        }
     }
 
     /// <summary>
@@ -64,7 +102,10 @@ public class ExtendedInvoker<TResult> : IEnumerable<Delegate>
     /// <param name="arguments">Arguments for the delegate call.</param>
     /// <returns>The result of the invoked delegate.</returns>
     /// <exception cref="MissingMethodException">Thrown when no suitable delegate is registered.</exception>
-    public TResult Invoke(params object[] arguments)
+    /// <exception cref="AmbiguousMatchException">
+    /// Thrown when two or more delegates match the arguments with equal specificity.
+    /// </exception>
+    public TResult Invoke(params object?[] arguments)
     {
         if (TryInvoke(arguments, out var result))
             return result;
