@@ -14,7 +14,14 @@ public sealed class CallFrame
     /// <summary>Gets the instruction-stream offset to resume when this frame is popped.</summary>
     public int ReturnAddress { get; }
 
-    /// <summary>Gets a read-only view of all local variables stored in this frame.</summary>
+    /// <summary>
+    /// Gets a read-only view of all local variables stored in this frame.
+    /// </summary>
+    /// <remarks>
+    /// This is a live view over the internal dictionary, not a snapshot. Enumerating this
+    /// property while the frame is being modified concurrently or re-entrantly is not safe.
+    /// For stable diagnostic snapshots, copy the result: <c>frame.Locals.ToDictionary(...)</c>.
+    /// </remarks>
     public IReadOnlyDictionary<string, object?> Locals => _locals;
 
     internal CallFrame(int returnAddress) => ReturnAddress = returnAddress;
