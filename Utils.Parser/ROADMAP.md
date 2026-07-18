@@ -772,7 +772,7 @@ Non-goals:
 
 **Status: complete.**
 
-The lexer state and transaction boundary is now documented as a design contract. Predicates explore recognition paths without a supported managed mutation surface; actions execute only after token acceptance with a fresh acceptance-local `LexerActionExecutionResult`; bounded `TokenType`, `Channel`, and `Mode` requests are applied before authoritative lexer commands; and persistent `LexerEngine` state remains distinct from parser-managed snapshots and memoization. This completed design phase provides a basis for future characterization tests or narrowly justified runtime work. It does not implement a general lexer snapshot manager, make user effects rollback-safe, add a runtime contract, or change lexer behavior.
+The lexer state and transaction boundary is now documented as a design contract. Predicates explore recognition paths without a supported managed mutation surface; actions execute only after token acceptance with a fresh acceptance-local `LexerActionExecutionResult`; bounded `TokenType`, `Channel`, and `Mode` requests are applied before authoritative lexer commands; and lexer-owned operational state lifetimes remain distinct from parser-managed snapshots and memoization. This completed design phase provides a basis for future characterization tests or narrowly justified runtime work. It does not implement a general lexer snapshot manager, make user effects rollback-safe, add a runtime contract, or change lexer behavior.
 
 
 ### ANTLR rule arguments and returns integration

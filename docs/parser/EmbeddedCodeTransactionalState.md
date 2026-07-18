@@ -119,7 +119,13 @@ The generated-C# opt-in writes request exactly three mutations through that resu
 
 `LexerEngine` applies these requests after all accepted actions and before commands. Commands remain authoritative: `type(...)`, `channel(...)`, and `mode(...)` can replace action requests; `skip` controls emission; `more` controls chunk accumulation; and `pushMode(...)` / `popMode` retain their stack behavior. `$mode = ...` replaces the current mode, like `mode(...)`; it never implies a push or pop.
 
-The persistent lexer state owned by `LexerEngine` includes the current mode and mode stack, `more` text and starting-position accumulation, the current input position, the token/chunk under construction, collected commands and accepted action occurrences, and the match information needed to choose the accepted token. This operational state is not parser transactional state. It must not be routed through `IParserExecutionStateManager`, and a shared manager controlled by a flag such as `isLexer` would obscure the distinct contracts. A future `ILexerExecutionStateManager`, if ever needed, requires a concrete rollback use case and a separate design and implementation PR.
+Lexer state has several distinct lifetimes and must not be described as one persistent snapshot surface:
+
+1. **Persistent state between tokens.** `LexerEngine` owns the current mode, the mode stack, `more` text accumulation, and the associated `more` start position across token recognitions in a tokenization run.
+2. **Tokenization-session state.** A `Tokenize(...)` call owns the `TextReaderBuffer` and its current input position, the emitted-token collection, and extension state needed by that tokenization session. The input position is session-local buffer state, not a persistent `LexerEngine` field.
+3. **Attempt- or acceptance-local state.** Matching and acceptance use local values such as the current best match, collected commands and action occurrences, token/chunk construction data, and the `LexerActionExecutionResult` created after selection for the accepted token.
+
+These lexer-owned operational categories are not parser transactional state. They must not be routed through `IParserExecutionStateManager`, and a shared manager controlled by a flag such as `isLexer` would obscure the distinct contracts. A future `ILexerExecutionStateManager`, if ever needed, requires a concrete rollback use case and a separate design and implementation PR.
 
 Fields and mutable objects declared in `@lexer::members` belong to the generated execution context. The runtime makes no general rollback promise for their mutations. Delaying actions until acceptance limits leaks from rejected alternatives, but an accepted action can still mutate members, shared services, external objects, or perform I/O. A later exception, `skip`, parser failure, or any subsequent operation does not automatically undo those effects. The same limitation applies to arbitrary external effects in predicate code even though predicate attribute writes are forbidden.
 
@@ -269,7 +275,7 @@ Implemented scope:
 
 Status: complete as a documentation-only state model.
 
-The current design distinguishes mutation-free supported predicate evaluation, post-acceptance action-result staging, persistent `LexerEngine` state, and non-transactional user effects. It intentionally introduces no lexer state manager, snapshot infrastructure, action replay, or runtime behavior. Any future state contract requires a concrete need and a separate PR.
+The current design distinguishes mutation-free supported predicate evaluation, post-acceptance action-result staging, lexer-owned operational state split by lifetime, and non-transactional user effects. It intentionally introduces no lexer state manager, snapshot infrastructure, action replay, or runtime behavior. Any future state contract requires a concrete need and a separate PR.
 
 They must not be added as a side effect of parser transactional state work.
 
@@ -356,7 +362,7 @@ The `$type` / `$channel` / `$mode` write support introduces only bounded action-
 
 ## Lexer grammar-level named actions
 
-`@lexer::header`, `@lexer::members`, and `@lexer::footer` are generated-C# source injection compatibility blocks for combined and lexer grammars only. They do not participate in parser-managed transactional execution beyond any ordinary fields they add to the existing generated execution context. `@lexer::members` is copied, hashed, and rolled back only to the same extent as other fields on that generated execution context; no separate lexer runtime state, lexer action buffering, lexer predicate execution, or complete ANTLR lexer transactional model is introduced. Parser-only grammars keep scoped `@lexer::*` actions unsupported because no lexer is generated.
+`@lexer::header`, `@lexer::members`, and `@lexer::footer` are generated-C# source injection compatibility blocks for combined and lexer grammars only. Mutable fields and objects introduced by `@lexer::members` belong to the generated execution context, not to a separate lexer runtime state manager. The runtime does not promise a general lexer rollback for mutations made through those members, shared services, external objects, or I/O. Parser-managed copying/hashing of generated execution-context fields must not be interpreted as a lexer alternative rollback model, lexer action buffering, lexer predicate execution, or complete ANTLR lexer transactional semantics. Parser-only grammars keep scoped `@lexer::*` actions unsupported because no lexer is generated.
 
 
 ### Generated-C# explicit simple positional rule-call binding
