@@ -67,7 +67,11 @@ public abstract class XmlDataProcessor
 
     /// <summary>
     /// Ordered list of trigger descriptors built at construction time.
-    /// Declaration order (depth-first, base-to-derived, then source order) defines dispatch precedence.
+    /// Handlers in the most-derived class are registered first (derived-to-base traversal),
+    /// giving derived-class handlers priority over same-XPath base-class handlers.
+    /// Within a single class, methods appear in <c>MetadataToken</c> order, which corresponds
+    /// to their declaration order in the compiled assembly. Only the first matching handler per
+    /// node fires; subsequent entries in the list are skipped.
     /// </summary>
     private readonly List<TriggerDescriptor> _triggers;
 
@@ -112,7 +116,8 @@ public abstract class XmlDataProcessor
         while (type != null && type != typeof(object))
         {
             foreach (var method in type.GetMethods(
-                BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+                BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+                .OrderBy(m => m.MetadataToken))
             {
                 foreach (MatchAttribute matchAttr in method.GetCustomAttributes<MatchAttribute>())
                 {

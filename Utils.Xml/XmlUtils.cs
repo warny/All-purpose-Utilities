@@ -18,115 +18,84 @@ public static class XmlUtils
     /// When <see langword="null"/>, all immediate child elements are yielded.
     /// </param>
     /// <returns>
-    /// An enumerable sequence of child element positions represented by the same <see cref="XmlReader"/>
-    /// instance. Each yielded position is valid only until the next iteration step or reader mutation.
-    /// Consume or skip each subtree before advancing the iterator.
+    /// An enumerable sequence yielding an isolated <see cref="XmlReader"/> sub-reader for each
+    /// immediate child element. The sub-reader is managed by the iterator: partially consumed
+    /// sub-readers are drained automatically when the enumerator advances to the next child,
+    /// so consumers need not read or skip remaining content before the next iteration.
     /// </returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="reader"/> is <see langword="null"/>.</exception>
     /// <exception cref="InvalidOperationException">
     /// Thrown when the reader is not positioned at an element node.
     /// </exception>
     /// <remarks>
     /// <para>
-    /// The iterator uses <see cref="XmlReader.Depth"/> to track nesting, so elements with different
-    /// names at any depth are handled correctly. An empty parent element (<c>&lt;parent /&gt;</c>)
-    /// returns no children and does not advance the reader past sibling elements.
+    /// Depth-based tracking ensures that only elements at exactly one level below the starting
+    /// element are yielded, regardless of element names at any depth. An empty parent element
+    /// (<c>&lt;parent /&gt;</c>) yields no children without advancing the outer reader past sibling
+    /// elements.
     /// </para>
     /// <para>
-    /// <b>Reader-state contract:</b> the underlying <see cref="XmlReader"/> is shared across
-    /// iterations. If the loop body partially consumes the current element's subtree, the iterator
-    /// calls <see cref="XmlReader.Skip"/> to advance past it before yielding the next sibling.
-    /// Early disposal of the enumerator leaves the reader positioned at the end-element of the
-    /// parent or inside an unconsumed child subtree.
+    /// <b>Reader-state contract:</b> each yielded reader is an independent sub-reader created by
+    /// <see cref="XmlReader.ReadSubtree"/>. When the iterator advances to the next sibling,
+    /// <see cref="XmlReader.Dispose()"/> is called on the previous sub-reader, which reads through
+    /// any unconsumed content and positions the outer reader immediately after the child's closing
+    /// tag. The consumer must not advance the outer reader directly; only the sub-reader should be
+    /// used to read the child's content.
     /// </para>
     /// </remarks>
     public static IEnumerable<XmlReader> ReadChildElements(this XmlReader reader, string? elementName = null)
     {
+        ArgumentNullException.ThrowIfNull(reader);
+
         if (reader.NodeType != XmlNodeType.Element)
         {
             throw new InvalidOperationException(
                 $"Current reader {reader.NodeType} '{reader.Name}' is not of type Element.");
         }
 
-        // Fix #2: empty parent elements have no children.
         if (reader.IsEmptyElement)
-        {
             yield break;
-        }
 
-        // Fix #1: capture depth to use reader.Depth instead of name-based tracking.
         int parentDepth = reader.Depth;
 
-        bool needsRead = true;
+        // Move past the parent's opening tag into its content.
+        if (!reader.Read())
+            yield break;
 
         while (true)
         {
-            if (needsRead && !reader.Read())
-            {
-                yield break;
-            }
-
-            needsRead = true;
-
-            // Stop when the parent's EndElement is reached.
+            // Exit when the parent's closing tag is reached.
             if (reader.NodeType == XmlNodeType.EndElement && reader.Depth == parentDepth)
-            {
                 break;
-            }
 
-            // Only process direct children at depth == parentDepth + 1.
-            if (reader.NodeType != XmlNodeType.Element || reader.Depth != parentDepth + 1)
+            if (reader.NodeType == XmlNodeType.Element && reader.Depth == parentDepth + 1)
             {
-                continue;
-            }
-
-            if (elementName != null && reader.Name != elementName)
-            {
-                // Wrong name: skip the subtree so we don't accidentally yield its descendants.
-                // After Skip(), the reader is positioned on the node that follows the child's
-                // end element. Set needsRead=false so the outer loop re-evaluates this position
-                // rather than calling Read() again.
-                reader.Skip();
-                needsRead = false;
-                continue;
-            }
-
-            // Fix #3: record the child's qualified name and whether it is self-closing before
-            // yielding so we can detect whether the consumer advanced the reader after the yield.
-            string childName = reader.Name;
-            bool childIsEmpty = reader.IsEmptyElement;
-
-            yield return reader;
-
-            // After yield, the consumer may or may not have consumed the child's content:
-            //
-            // Case A — self-closing element (<foo />): reader.Read() in the outer loop will
-            //   correctly advance to the following node. Nothing to do here.
-            //
-            // Case B — consumer did not read any content (reader is still on the child's start
-            //   element): reader.NodeType == Element, reader.Depth == parentDepth+1, and
-            //   reader.Name == childName. Call Skip() to jump past the child's end element.
-            //   After Skip(), reader is on the node that follows the child; set needsRead=false.
-            //
-            // Case C — consumer read into or past the child's content (reader moved away from
-            //   the start element): do not call Skip(). Re-evaluate the current reader position
-            //   by setting needsRead=false, which causes the outer loop to check the current
-            //   node without calling Read() first.
-            if (!childIsEmpty)
-            {
-                bool stillOnStartElement =
-                    reader.NodeType == XmlNodeType.Element
-                    && reader.Depth == parentDepth + 1
-                    && reader.Name == childName;
-
-                if (stillOnStartElement)
+                if (elementName is null || reader.Name == elementName)
                 {
-                    // Case B: consumer did nothing — skip past the child's subtree.
+                    using (XmlReader subtree = reader.ReadSubtree())
+                    {
+                        subtree.Read(); // advance from Initial to Interactive so Name/NodeType are populated
+                        yield return subtree;
+                    }
+                    // XmlSubtreeReader.Close() does not advance the outer reader past empty elements
+                    // when the sub-reader is in Interactive state (it only calls Read() for non-empty
+                    // elements). Advance manually so the loop does not re-yield the same element.
+                    if (reader.NodeType == XmlNodeType.Element && reader.IsEmptyElement)
+                        reader.Read();
+                }
+                else
+                {
+                    // Wrong name: skip the entire child subtree. Skip() leaves the outer
+                    // reader on the node immediately following the child's end element.
                     reader.Skip();
                 }
-
-                // After Skip() (Case B) or after consumer advanced (Case C), re-evaluate the
-                // current position without calling Read() first.
-                needsRead = false;
+            }
+            else
+            {
+                // Non-element node (text, comment, whitespace) or a node at an unexpected depth:
+                // advance one step.
+                if (!reader.Read())
+                    break;
             }
         }
     }

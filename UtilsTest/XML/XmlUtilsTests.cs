@@ -286,13 +286,48 @@ public class XmlUtilsTests
         var values = new List<string>();
         foreach (var child in reader.ReadChildElements())
         {
-            // Consumer reads the element's text value via the yielded child reader (which is the
-            // same XmlReader instance). ReadElementContentAsString reads through the start element,
-            // text, and end element, advancing the reader past the child subtree.
             values.Add(child.ReadElementContentAsString());
         }
 
         CollectionAssert.AreEqual(new[] { "text-a", "text-b" }, values);
+    }
+
+    [TestMethod]
+    [Description("Regression: consuming body of a child must not skip a same-name following sibling.")]
+    public void ReadChildElements_ConsumerReadsBody_SameNameSiblingIsNotSkipped()
+    {
+        const string xml = "<root><item>A</item><item>B</item></root>";
+        using var reader = XmlReader.Create(new StringReader(xml));
+        reader.ReadToFollowing("root");
+
+        var values = new List<string>();
+        foreach (var child in reader.ReadChildElements())
+        {
+            values.Add(child.ReadElementContentAsString());
+        }
+
+        // Both items must be yielded; the second must not be skipped because it
+        // shares the same name, depth, and node type as the first.
+        CollectionAssert.AreEqual(new[] { "A", "B" }, values);
+    }
+
+    [TestMethod]
+    [Description("Regression: an empty child element must not skip the following same-name sibling.")]
+    public void ReadChildElements_EmptyChildSiblings_BothYielded()
+    {
+        const string xml = "<root><item/><item/></root>";
+        using var reader = XmlReader.Create(new StringReader(xml));
+        reader.ReadToFollowing("root");
+
+        var count = 0;
+        foreach (var child in reader.ReadChildElements())
+        {
+            count++;
+            // Empty elements have no body; the iterator must still yield the second sibling.
+            Assert.IsTrue(child.IsEmptyElement, "child should be an empty element");
+        }
+
+        Assert.AreEqual(2, count, "Both <item/> siblings must be yielded.");
     }
 
     // -----------------------------------------------------------------------
@@ -480,6 +515,18 @@ public class XmlDataProcessorTests
         // 'root' handler fires first (from '/' match), then 'item' for the item element.
         Assert.IsTrue(processor.Log.Count >= 2);
         Assert.AreEqual("root", processor.Log[0]);
+    }
+
+    [TestMethod]
+    [Description("Item 7: when both derived and base class have [Match] for the same XPath, derived fires first.")]
+    public void DispatchOrder_DerivedMatchAttributeTakesPriorityOverBase()
+    {
+        var processor = new HandlerPriorityDerived();
+        processor.Read(MakeDoc("<root><target/></root>").CreateNavigator()!);
+
+        // Derived class handler registered first (derived-to-base walk), so it fires.
+        Assert.AreEqual(1, processor.Log.Count, "Only the first matching handler per node must fire.");
+        Assert.AreEqual("derived", processor.Log[0], "Derived class [Match] handler must take priority.");
     }
 
     // -----------------------------------------------------------------------
@@ -779,4 +826,26 @@ internal class BlockingRootProcessor : XmlDataProcessor
         _entered?.Set();
         _release?.Wait(TimeSpan.FromSeconds(10));
     }
+}
+
+/// <summary>Base processor with an explicit [Match] handler for dispatch-priority tests.</summary>
+internal class HandlerPriorityBase : XmlDataProcessor
+{
+    public List<string> Log { get; } = [];
+
+    [Match("/")]
+    protected override void Root() => Apply("//target");
+
+    [Match("//target")]
+    protected virtual void OnTarget() => Log.Add("base");
+}
+
+/// <summary>
+/// Derived processor that adds its own [Match] for the same XPath as the base,
+/// to verify that derived-class handlers are registered first and take priority.
+/// </summary>
+internal class HandlerPriorityDerived : HandlerPriorityBase
+{
+    [Match("//target")]
+    protected override void OnTarget() => Log.Add("derived");
 }
