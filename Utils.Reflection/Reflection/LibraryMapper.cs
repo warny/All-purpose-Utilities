@@ -444,6 +444,14 @@ namespace Utils.Reflection
         /// auto-property, identified by the presence of a <c>&lt;PropertyName&gt;k__BackingField</c>
         /// field on its declaring type.
         /// </summary>
+        /// <remarks>
+        /// The <c>&lt;Name&gt;k__BackingField</c> naming convention is specific to the C# compiler.
+        /// Types emitted by other IL generators (e.g. <c>System.Reflection.Emit</c>, F#, or
+        /// third-party source generators that produce properties with custom setter bodies) may not
+        /// follow this convention and would be incorrectly classified as non-auto-properties.
+        /// This is intentional for <see cref="LibraryMapper"/>: only C#-authored subclasses are
+        /// expected, so the convention is a reliable signal here.
+        /// </remarks>
         private static bool IsAutoProperty(PropertyInfo prop)
         {
             string backingFieldName = $"<{prop.Name}>k__BackingField";

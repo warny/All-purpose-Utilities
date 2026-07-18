@@ -121,6 +121,12 @@ public Func<int, int> Compute
 `<PropertyName>k__BackingField` on the declaring type. Any property without that field is
 considered to have a custom setter body and is rejected.
 
+> **Note:** the `<Name>k__BackingField` naming convention is specific to the C# compiler.
+> Types produced by other IL generators (Reflection.Emit, F#, or third-party source generators
+> that emit properties with custom setter bodies) may not follow this convention and could be
+> misclassified. `LibraryMapper` subclasses are expected to be C#-authored, so the convention
+> is a reliable signal in practice.
+
 > **Non-nullable contract:** if you need callers to see a non-nullable API, expose it through
 > a wrapper method rather than through the setter of the `[External]` member:
 >
