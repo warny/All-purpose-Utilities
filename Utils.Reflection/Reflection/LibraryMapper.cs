@@ -277,6 +277,12 @@ namespace Utils.Reflection
         /// <summary>
         /// Maps the functions in a DLL to the properties and fields of the provided <see cref="LibraryMapper"/> object.
         /// </summary>
+        /// <remarks>
+        /// Loading is transactional: all exports are resolved and delegates constructed in a
+        /// preparation phase before any member assignment is committed. If any step fails the DLL
+        /// handle is freed immediately (rather than waiting for the finalizer), so no partial state
+        /// or leaked native resource is left on the object.
+        /// </remarks>
         /// <param name="dllPath">The path to the DLL.</param>
         /// <param name="obj">The object whose members are to be mapped to DLL functions.</param>
         private static void MapLibraryToInstance(string dllPath, LibraryMapper obj)
@@ -290,68 +296,81 @@ namespace Utils.Reflection
                 throw new DllNotFoundException($"Unable to load the DLL: {dllPath}", ex);
             }
 
-            // Get all instance members that might have the External attribute
-            var members = obj.GetType().GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-            foreach (var member in members)
+            // Prepare phase: resolve every export and construct every delegate before committing
+            // any assignment. On failure, free the DLL immediately.
+            var pending = new List<(MemberInfo Member, Delegate Value)>();
+            try
             {
-                var attr = (ExternalAttribute)member.GetCustomAttributes(ExternalAttributeType, true).FirstOrDefault();
-                if (attr == null)
-                    continue;
+                var members = obj.GetType().GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                foreach (var member in members)
+                {
+                    var attr = (ExternalAttribute)member.GetCustomAttributes(ExternalAttributeType, true).FirstOrDefault();
+                    if (attr == null)
+                        continue;
 
-                string functionName = attr.Name ?? member.Name;
-                IntPtr functionPtr;
-                try
-                {
-                    functionPtr = NativeLibrary.GetExport(obj.dllHandle, functionName);
-                }
-                catch (EntryPointNotFoundException)
-                {
-                    throw new EntryPointNotFoundException(
-                        $"Unable to locate the function '{functionName}' in the DLL '{dllPath}'."
-                    );
-                }
+                    string functionName = attr.Name ?? member.Name;
+                    IntPtr functionPtr;
+                    try
+                    {
+                        functionPtr = NativeLibrary.GetExport(obj.dllHandle, functionName);
+                    }
+                    catch (EntryPointNotFoundException)
+                    {
+                        throw new EntryPointNotFoundException(
+                            $"Unable to locate the function '{functionName}' in the DLL '{dllPath}'.");
+                    }
 
-                var memberType = (member as PropertyInfo)?.PropertyType ?? (member as FieldInfo)?.FieldType;
-                if (memberType == null)
-                    continue; // Method members: only meaningful to EmitDllMappableClass's generated code, not here.
+                    var memberType = (member as PropertyInfo)?.PropertyType ?? (member as FieldInfo)?.FieldType;
+                    if (memberType == null)
+                        continue; // Method members: only meaningful to EmitDllMappableClass's generated code, not here.
 
-                if (!typeof(Delegate).IsAssignableFrom(memberType))
-                {
-                    throw new InvalidOperationException(
-                        $"Member '{member.Name}' on '{obj.GetType().FullName}' is decorated with " +
-                        $"[External] but its type '{memberType.FullName}' is not a delegate type. " +
-                        $"[External] properties/fields must be typed as a delegate matching the " +
-                        $"native function's signature.");
-                }
+                    if (!typeof(Delegate).IsAssignableFrom(memberType))
+                    {
+                        throw new InvalidOperationException(
+                            $"Member '{member.Name}' on '{obj.GetType().FullName}' is decorated with " +
+                            $"[External] but its type '{memberType.FullName}' is not a delegate type. " +
+                            $"[External] properties/fields must be typed as a delegate matching the " +
+                            $"native function's signature.");
+                    }
 
-                Delegate delegateFunction;
-                try
-                {
-                    delegateFunction = Marshal.GetDelegateForFunctionPointer(functionPtr, memberType);
-                }
-                catch (ArgumentException ex)
-                {
-                    throw new InvalidOperationException(
-                        $"Unable to create a delegate of type '{memberType.FullName}' for the native " +
-                        $"function '{functionName}' mapped to member '{member.Name}' on " +
-                        $"'{obj.GetType().FullName}'.", ex);
-                }
-
-                if (member is PropertyInfo propInfo)
-                {
-                    if (!propInfo.CanWrite)
+                    if (member is PropertyInfo prop && !prop.CanWrite)
                     {
                         throw new InvalidOperationException(
                             $"Property '{member.Name}' on '{obj.GetType().FullName}' is decorated " +
                             $"with [External] but has no setter.");
                     }
 
-                    propInfo.SetValue(obj, delegateFunction);
+                    Delegate delegateFunction;
+                    try
+                    {
+                        delegateFunction = Marshal.GetDelegateForFunctionPointer(functionPtr, memberType);
+                    }
+                    catch (ArgumentException ex)
+                    {
+                        throw new InvalidOperationException(
+                            $"Unable to create a delegate of type '{memberType.FullName}' for the native " +
+                            $"function '{functionName}' mapped to member '{member.Name}' on " +
+                            $"'{obj.GetType().FullName}'.", ex);
+                    }
+
+                    pending.Add((member, delegateFunction));
                 }
+            }
+            catch
+            {
+                // Roll back immediately — do not leave a DLL handle that only the finalizer will free.
+                NativeLibrary.Free(obj.dllHandle);
+                obj.dllHandle = IntPtr.Zero;
+                throw;
+            }
+
+            // Commit phase: every export resolved and delegate constructed successfully; assign all.
+            foreach ((MemberInfo member, Delegate value) in pending)
+            {
+                if (member is PropertyInfo propInfo)
+                    propInfo.SetValue(obj, value);
                 else if (member is FieldInfo fieldInfo)
-                {
-                    fieldInfo.SetValue(obj, delegateFunction);
-                }
+                    fieldInfo.SetValue(obj, value);
             }
         }
 
