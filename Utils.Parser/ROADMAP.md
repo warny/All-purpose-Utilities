@@ -695,9 +695,23 @@ ANTLR-style current-rule local writes are now documented as an optional C# trans
 
 ### Optional C# transformer current-rule return writes
 
-**Status: in progress.**
+**Status: complete for the documented generated-C# opt-in subset.**
 
 ANTLR-style current-rule return writes are recognized only by the optional C# ANTLR-style transformer for rule `@after` code and inline parser actions. The no-op/default transformer preserves `$returnName = ...` unchanged. The transformer supports bare declared current-rule return attributes and emits typed `SetRequiredRuleReturn<T>` / `GetRequiredRuleReturn<T>` helper calls for assignment, compound assignment, and standalone increment/decrement statements. Runtime helpers write parser-managed frame return state, successful child rule completions snapshot those returns into `ParserRuleCallResult`, failed alternatives roll return writes back, last successful write wins, present-null is distinct from missing, and returns are not auto-initialized. This does not complete broader ANTLR return execution semantics: dotted `$rule.returnName = ...`, parameter writes, label writes, token/lexer writes, `ref`/`out`, predicates, and `@init` writes remain unsupported or read-only.
+
+Executable generated-C# opt-in coverage now locks the documented current-rule return write subset end to end:
+
+- rule `@after` writes are rewritten, executed, and observable through parent child-call results;
+- inline parser action writes are captured on successful child rule exit;
+- multiple successful writes in one rule invocation keep the last successful value;
+- compound assignments and standalone postfix/prefix `++` / `--` use required read-modify-write helper semantics and do not auto-initialize missing returns;
+- explicitly present `null` returns remain distinct from missing, unwritten returns in `ParserRuleCallResult`;
+- writes in rejected alternatives are rolled back before later alternatives can succeed;
+- memoization hits restore the successful child return snapshot without re-executing the original write action.
+
+No discriminating current-rule-return quantifier or direct-left-recursion test was added in this coverage pass: the existing managed execution-state rollback infrastructure already covers failed quantifier attempts and direct-left-recursive extensions generically, and the added return-write matrix focuses on observable generated-C# return snapshots where the grammar can distinguish committed child results without inventing new APIs.
+
+The unsupported boundary remains explicit: dotted writes (`$rule.returnName = ...`), parameters and labels as write targets, semantic predicates, `@init`, `ref` / `out`, implicit typed returns, automatic propagation, and complete ANTLR return semantics are not supported.
 
 
 Parser and lexer grammar-level named-action support is source-generator C# only. In parser or combined grammars, unscoped `@header` / `@members` / `@footer` are treated as parser compatibility blocks, and scoped `@parser::header` / `@parser::members` / `@parser::footer` are equivalent parser compatibility blocks. They emit parser header code, generated execution-context members, or deterministic trailing parser source in grammar source order, and they still produce compatibility warnings (`UP1035`, `UP1031`, or `UP1036`) because invalid C# remains a Roslyn responsibility. Scoped lexer named actions (`@lexer::header`, `@lexer::members`, `@lexer::footer`) mirror the same limited injection model in combined or lexer grammars only with dedicated lexer markers; parser-only grammars keep them unsupported because no lexer is generated; lexer members are emitted into the existing generated execution context and do not create a separate ANTLR lexer runtime type. Parser named actions in lexer grammars are invalid for this generator, and unscoped `@header`, `@members`, and `@footer` are not parser compatibility blocks in lexer grammars. Unsupported named actions, unknown lexer/parser action names such as `@lexer::custom` or `@parser::custom`, and unknown scopes such as `@tree::members` produce deterministic `UP1029` diagnostics and are not silently injected. The default/no-op transformer preserves named-action content unchanged; optional transformer behavior remains opt-in, and `$...` current-rule attribute rewriting is intentionally limited to parser actions/lifecycle code, not parser or lexer header/member/footer content. Parser and lexer members can be called from generated inline parser actions and supported `@init`/`@after` lifecycle hooks, and simple lexer inline actions and simple lexer predicates are available in the explicit generated-C# opt-in path. Lexer predicates are evaluated during lexer matching, while lexer actions still execute only after token acceptance.

@@ -3782,6 +3782,240 @@ public class Antlr4GeneratedEmbeddedCodeTests
         Assert.IsTrue((bool)ReadContextObjectProperty(executionContext, "IsNull")!);
     }
 
+    /// <summary>Ensures an <c>@after</c> current-rule return write is rewritten, executed, and captured for the parent call result.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_CurrentRuleReturnWriteInAfter_RewritesExecutesAndReachesParentCallResult()
+    {
+        const string grammar = """
+            grammar P;
+
+            @members {
+                public int Seen;
+            }
+
+            start
+            @after {
+                Seen = (int)GetRequiredLabeledRuleCallReturn(context, "c", "value");
+            }
+                : c=child
+                ;
+
+            child returns [int value]
+            @after {
+                $value = 42;
+            }
+                : A
+                ;
+
+            A : 'a';
+            """;
+
+        string source = EmitWithAntlrStyleTransformer(grammar);
+        StringAssert.Contains(source, "SetRequiredRuleReturn<int>(context, \"value\", 42);");
+        string afterHook = ExtractMethodBlock(source, "internal void __After_child(ParserRuleLifecycleContext context)");
+        Assert.IsFalse(afterHook.Contains("$value = 42;", StringComparison.Ordinal), afterHook);
+        var assembly = CompileGeneratedSource(source);
+        object executionContext = CreateExecutionContext(assembly);
+
+        ParseNode result = InvokeParseWithContext(assembly, "a", executionContext);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(42, ReadInstanceIntField(executionContext, "Seen"));
+    }
+
+    /// <summary>Ensures an inline action current-rule return write is captured on successful child exit.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_CurrentRuleReturnWriteInInlineAction_IsCapturedOnSuccessfulChildExit()
+    {
+        const string grammar = """
+            grammar P;
+            @members { public int Seen; }
+            start @after { Seen = (int)GetRequiredLabeledRuleCallReturn(context, "c", "value"); } : c=child ;
+            child returns [int value] : A { $value = 7; } ;
+            A : 'a' ;
+            """;
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object executionContext = CreateExecutionContext(assembly);
+
+        ParseNode result = InvokeParseWithContext(assembly, "a", executionContext);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(7, ReadInstanceIntField(executionContext, "Seen"));
+    }
+
+    /// <summary>Ensures the final successful transformed current-rule return write wins within one rule invocation.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_CurrentRuleReturnWrites_LastSuccessfulWriteWins()
+    {
+        const string grammar = """
+            grammar P;
+            @members { public int Seen; }
+            start @after { Seen = (int)GetRequiredLabeledRuleCallReturn(context, "c", "value"); } : c=child ;
+            child returns [int value]
+                : A
+                  { $value = 1; }
+                  { $value = 2; }
+                ;
+            A : 'a' ;
+            """;
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object executionContext = CreateExecutionContext(assembly);
+
+        ParseNode result = InvokeParseWithContext(assembly, "a", executionContext);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(2, ReadInstanceIntField(executionContext, "Seen"));
+    }
+
+    /// <summary>Ensures compound assignment plus postfix and prefix updates execute through generated return helpers.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_CurrentRuleReturnCompoundAndUpdateWrites_ExecuteEndToEnd()
+    {
+        const string grammar = """
+            grammar P;
+            @members { public int Seen; }
+            start @after { Seen = (int)GetRequiredLabeledRuleCallReturn(context, "c", "value"); } : c=child ;
+            child returns [int value]
+                : A
+                  { $value = 10; }
+                  { $value += 2; }
+                  { $value--; }
+                  { ++$value; }
+                ;
+            A : 'a' ;
+            """;
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object executionContext = CreateExecutionContext(assembly);
+
+        ParseNode result = InvokeParseWithContext(assembly, "a", executionContext);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(12, ReadInstanceIntField(executionContext, "Seen"));
+    }
+
+    /// <summary>Ensures child call results distinguish an explicitly written null return from an unwritten return.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_CurrentRuleReturnPresentNullAndMissing_AreDistinctInCallResults()
+    {
+        const string grammar = """
+            grammar P;
+            @members {
+                public bool NullFound;
+                public bool NullValueIsNull;
+                public bool MissingFound = true;
+            }
+            start
+            @after {
+                NullFound = TryGetLabeledRuleCallReturn(context, "c", "value", out object? childValue);
+                NullValueIsNull = childValue == null;
+                MissingFound = TryGetLabeledRuleCallReturn(context, "m", "value", out _);
+            }
+                : c=child m=missing
+                ;
+            child returns [string? value]
+            @after {
+                $value = null;
+            }
+                : A
+                ;
+            missing returns [string? value] : B ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object executionContext = CreateExecutionContext(assembly);
+
+        ParseNode result = InvokeParseWithContext(assembly, "ab", executionContext);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.IsTrue(ReadInstanceBoolField(executionContext, "NullFound"));
+        Assert.IsTrue(ReadInstanceBoolField(executionContext, "NullValueIsNull"));
+        Assert.IsFalse(ReadInstanceBoolField(executionContext, "MissingFound"));
+    }
+
+    /// <summary>Ensures a transformed current-rule return write in a rejected alternative is rolled back.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_CurrentRuleReturnWriteInRejectedAlternative_IsRolledBack()
+    {
+        const string grammar = """
+            grammar P;
+            @members { public int Seen; }
+            start @after { Seen = (int)GetRequiredLabeledRuleCallReturn(context, "c", "value"); } : c=child ;
+            child returns [int value]
+                : A { $value = 1; } B
+                | A { $value = 2; }
+                ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object executionContext = CreateExecutionContext(assembly);
+
+        ParseNode result = InvokeParseWithContext(assembly, "a", executionContext);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(2, ReadInstanceIntField(executionContext, "Seen"));
+    }
+
+    /// <summary>Ensures memoization restores transformed current-rule returns without re-executing the child action.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_CurrentRuleReturnWrite_IsRestoredOnMemoizationHitWithoutReexecutingAction()
+    {
+        const string grammar = """
+            grammar P;
+            @members {
+                public int Seen;
+                public int WriteCount;
+            }
+            start
+            @after {
+                Seen = (int)GetRequiredLabeledRuleCallReturn(context, "c", "value");
+            }
+                : c=child B
+                | c=child
+                ;
+            child returns [int value]
+            @after {
+                WriteCount++;
+                $value = 42;
+            }
+                : A
+                ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object executionContext = CreateExecutionContext(assembly);
+
+        ParseNode result = InvokeParseWithContext(assembly, "a", executionContext);
+
+        Assert.IsNotInstanceOfType(result, typeof(ErrorNode));
+        Assert.AreEqual(1, ReadInstanceIntField(executionContext, "WriteCount"));
+        Assert.AreEqual(42, ReadInstanceIntField(executionContext, "Seen"));
+    }
+
+    /// <summary>Ensures compound writes before an initial current-rule return assignment keep required-helper failure semantics.</summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_CurrentRuleReturnCompoundWriteBeforeInitialization_ThrowsRequiredAccessException()
+    {
+        const string grammar = """
+            grammar P;
+            @members { public int Seen = -1; }
+            start @after { Seen = (int)GetRequiredLabeledRuleCallReturn(context, "c", "value"); } : c=child ;
+            child returns [int value]
+                : A { $value += 1; }
+                ;
+            A : 'a' ;
+            """;
+        var assembly = CompileGeneratedSource(EmitWithAntlrStyleTransformer(grammar));
+        object executionContext = CreateExecutionContext(assembly);
+
+        TargetInvocationException exception = Assert.ThrowsException<TargetInvocationException>(() => InvokeParseWithContext(assembly, "a", executionContext));
+
+        Assert.IsInstanceOfType<ParserAttributeAccessException>(exception.InnerException);
+        Assert.AreEqual(-1, ReadInstanceIntField(executionContext, "Seen"));
+    }
+
     /// <summary>
     /// Ensures return write right-hand sides still use existing ANTLR-style read rewrites.
     /// </summary>
@@ -3998,6 +4232,8 @@ public class Antlr4GeneratedEmbeddedCodeTests
     {
         AssertTransformerDiagnostic("start[int count] locals [int total] @init { $count = 1; } : A ; A : 'a' ;", "Parser parameter '$count' is read-only.");
         AssertTransformerDiagnostic("start locals [int total] returns [int value] @after { $start.value = 1; } : A ; A : 'a' ;", "Current-rule dotted return writes are not supported");
+        AssertTransformerDiagnostic("start returns [int value] @init { $value = 1; } : A ; A : 'a' ;", "Parser return writes are not supported in @init.");
+        AssertTransformerDiagnostic("start returns [int value] : { $value = 1; }? A ; A : 'a' ;", "Parser return writes are not supported in semantic predicates.");
         AssertTransformerDiagnostic("start locals [int total] : x=child { $x.value = 1; } ; child returns [int value] : A ; A : 'a' ;", "Labeled rule-call return attributes are read-only.");
         AssertTransformerDiagnostic("start locals [int total] : xs+=child { $xs.value = values; } ; child returns [int value] : A ; A : 'a' ;", "List-labeled rule-call return projections are read-only.");
         AssertTransformerDiagnostic("start locals [int total] @init { value = $total++; } : A ; A : 'a' ;", "Increment/decrement parser attributes are supported only as standalone statements.");
