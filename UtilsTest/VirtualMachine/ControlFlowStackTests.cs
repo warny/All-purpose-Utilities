@@ -346,6 +346,42 @@ public class ControlFlowStackTests
         Assert.ThrowsException<InvalidOperationException>(() => cfs.Pop<LoopBlock>());
     }
 
+    // ── Item 12: Break/Continue are transactional — no stack corruption on failure ──
+
+    [TestMethod]
+    public void Break_OutsideLoop_StackUnchanged()
+    {
+        // The stack must be intact after BREAK throws when no loop is in scope.
+        var cfs = new ControlFlowStack();
+        cfs.PushConditional(0, 10);
+        cfs.PushConditional(5, 8);
+        var ctx = new ControlFlowContext(new byte[0]);
+        Assert.ThrowsException<InvalidOperationException>(() => cfs.Break(ctx));
+        Assert.AreEqual(2, cfs.Depth); // both blocks must still be present
+    }
+
+    [TestMethod]
+    public void Continue_OutsideLoop_StackUnchanged()
+    {
+        var cfs = new ControlFlowStack();
+        cfs.PushConditional(0, 10);
+        var ctx = new ControlFlowContext(new byte[0]);
+        Assert.ThrowsException<InvalidOperationException>(() => cfs.Continue(ctx));
+        Assert.AreEqual(1, cfs.Depth);
+    }
+
+    [TestMethod]
+    public void Break_NestedInsideException_PopsBothAndJumps()
+    {
+        var cfs = new ControlFlowStack();
+        cfs.PushLoop(0, 50);
+        cfs.PushException(5, catchAddress: 40, finallyAddress: null);
+        var ctx = new ControlFlowContext(new byte[0]);
+        cfs.Break(ctx);
+        Assert.AreEqual(50, ctx.InstructionPointer);
+        Assert.AreEqual(0, cfs.Depth);
+    }
+
     // â"€â"€ FullContext â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
     [TestMethod]
@@ -882,5 +918,59 @@ public class ControlFlowStackTests
         var stack = ctx.Stack.ToArray();
         Assert.AreEqual(1, stack.Length);
         Assert.AreEqual(1, (int)stack[0]); // finally marker
+    }
+
+    // ── Item 28: throw inside catch/finally propagates to outer handler ───────
+
+    [TestMethod]
+    public void Throw_InsideCatch_PropagatestoOuterHandler()
+    {
+        // Inner try/catch, outer try/catch.
+        // The inner catch re-throws; the outer catch must receive the new exception.
+        var cfs = new ControlFlowStack();
+        var ctx = new ControlFlowContext(new byte[100]);
+
+        cfs.PushException(startAddress: 0, catchAddress: 50, finallyAddress: null); // outer
+        cfs.PushException(startAddress: 5, catchAddress: 20, finallyAddress: null); // inner
+
+        // First throw: inner block handles it (phase transitions to Catch).
+        cfs.Throw(ctx, "error1");
+        Assert.AreEqual(20, ctx.InstructionPointer); // inner catch
+        var inner = (ExceptionBlock)cfs.CurrentBlock!;
+        Assert.AreEqual(ExceptionBlockPhase.Catch, inner.Phase);
+
+        // Second throw from inside the catch: inner block is now in Catch phase → skip it.
+        // Must propagate to the outer catch.
+        bool handled = cfs.Throw(ctx, "error2");
+        Assert.IsTrue(handled);
+        Assert.AreEqual(50, ctx.InstructionPointer); // outer catch
+    }
+
+    [TestMethod]
+    public void Throw_InsideFinally_PropagatestoOuterHandler()
+    {
+        var cfs = new ControlFlowStack();
+        var ctx = new ControlFlowContext(new byte[100]);
+
+        cfs.PushException(startAddress: 0, catchAddress: 60, finallyAddress: null); // outer
+        cfs.PushException(startAddress: 5, catchAddress: null, finallyAddress: 30); // inner (finally-only)
+
+        // First throw: inner block's finally handles it (phase → Finally).
+        cfs.Throw(ctx, "error1");
+        Assert.AreEqual(30, ctx.InstructionPointer); // inner finally
+        var inner = (ExceptionBlock)cfs.CurrentBlock!;
+        Assert.AreEqual(ExceptionBlockPhase.Finally, inner.Phase);
+
+        // Throw from inside the finally: inner block in Finally phase → skip.
+        bool handled = cfs.Throw(ctx, "error2");
+        Assert.IsTrue(handled);
+        Assert.AreEqual(60, ctx.InstructionPointer); // outer catch
+    }
+
+    [TestMethod]
+    public void ExceptionBlock_Phase_StartsAsTry()
+    {
+        var block = new ExceptionBlock(0, catchAddress: 10, finallyAddress: null);
+        Assert.AreEqual(ExceptionBlockPhase.Try, block.Phase);
     }
 }

@@ -3,6 +3,23 @@ using System;
 namespace Utils.VirtualMachine;
 
 /// <summary>
+/// Tracks the lifecycle phase of an <see cref="ExceptionBlock"/> so that
+/// <see cref="ControlFlowStack.Throw"/> can skip blocks whose protected try-region is
+/// no longer active and avoid re-entering the same handler.
+/// </summary>
+public enum ExceptionBlockPhase
+{
+    /// <summary>Execution is inside the protected try body. The block is eligible as a throw target.</summary>
+    Try,
+
+    /// <summary>Execution is inside the finally handler. Throws propagate past this block.</summary>
+    Finally,
+
+    /// <summary>Execution is inside the catch handler. Throws propagate past this block.</summary>
+    Catch,
+}
+
+/// <summary>
 /// Represents an active try/catch/finally block on a <see cref="ControlFlowStack"/>.
 /// </summary>
 /// <remarks>
@@ -55,6 +72,17 @@ public sealed class ExceptionBlock : IControlFlowBlock
     /// <see langword="false"/> when the finally block was entered during normal (non-exception) execution.
     /// </summary>
     internal bool ExceptionInFlight { get; set; }
+
+    /// <summary>
+    /// Current handler phase. Starts at <see cref="ExceptionBlockPhase.Try"/>; transitions to
+    /// <see cref="ExceptionBlockPhase.Finally"/> when <see cref="ControlFlowStack.Throw"/> routes
+    /// execution into the finally clause, and to <see cref="ExceptionBlockPhase.Catch"/> when
+    /// <see cref="ControlFlowStack.EndFinally"/> redirects to the catch clause.
+    /// <see cref="ControlFlowStack.Throw"/> skips blocks whose <see cref="Phase"/> is not
+    /// <see cref="ExceptionBlockPhase.Try"/> so that a throw from inside a handler propagates
+    /// to the next outer handler instead of re-entering the same block.
+    /// </summary>
+    public ExceptionBlockPhase Phase { get; internal set; } = ExceptionBlockPhase.Try;
 
     /// <summary>
     /// Initializes a new exception block.

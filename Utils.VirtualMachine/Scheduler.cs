@@ -58,8 +58,20 @@ public class Scheduler<T> where T : Context
     /// </param>
     /// <returns>The newly created <see cref="ScheduledProcess{T}"/> in the <see cref="ProcessState.Ready"/> state.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="context"/> or <paramref name="processor"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="context"/> is already registered with this scheduler. Sharing a
+    /// single context across multiple processes produces contradictory lifecycle states and corrupts
+    /// instruction pointer and stack state.
+    /// </exception>
     public ScheduledProcess<T> AddProcess(T context, VirtualProcessor<T> processor, int priority = 0, string? name = null)
     {
+        ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(processor);
+        if (_processes.Any(p => ReferenceEquals(p.Context, context)))
+            throw new ArgumentException(
+                "The supplied context is already registered with this scheduler. " +
+                "Each process must own a distinct context instance.", nameof(context));
+
         var process = new ScheduledProcess<T>(_nextId++, context, processor, priority, name);
         _processes.Add(process);
         return process;
@@ -68,12 +80,18 @@ public class Scheduler<T> where T : Context
     /// <summary>
     /// Removes a process from this scheduler by its identifier.
     /// No-op if no process with the given <paramref name="processId"/> is registered.
+    /// The process is transitioned to <see cref="ProcessState.Terminated"/> before removal so
+    /// that the scheduler's quantum-end cleanup block does not later promote it back to
+    /// <see cref="ProcessState.Ready"/> when the process removed itself from inside a handler.
     /// </summary>
     /// <param name="processId">The identifier of the process to remove.</param>
     public void RemoveProcess(int processId)
     {
         int index = _processes.FindIndex(p => p.ProcessId == processId);
-        if (index >= 0) _processes.RemoveAt(index);
+        if (index < 0) return;
+        var process = _processes[index];
+        _processes.RemoveAt(index);
+        process.SetState(ProcessState.Terminated);
     }
 
     /// <summary>
@@ -104,32 +122,45 @@ public class Scheduler<T> where T : Context
             process.SetState(ProcessState.Running);
             process.ClearYield();
 
-            for (int i = 0; i < QuantumSteps; i++)
+            try
             {
-                if (!process.Processor.ExecuteStep(process.Context))
+                for (int i = 0; i < QuantumSteps; i++)
                 {
-                    process.SetState(ProcessState.Terminated);
-                    break;
+                    // Item 11: recheck membership before each instruction so that a handler that
+                    // calls RemoveProcess on its own process stops further execution immediately.
+                    if (!_processes.Contains(process)) break;
+
+                    if (!process.Processor.ExecuteStep(process.Context))
+                    {
+                        process.SetState(ProcessState.Terminated);
+                        break;
+                    }
+
+                    // Check after ExecuteStep: yield or suspension may have been requested
+                    // from inside the instruction handler that just ran.
+                    if (process.YieldRequested || process.State == ProcessState.Suspended)
+                    {
+                        process.ClearYield();
+                        if (process.State == ProcessState.Running)
+                            process.SetState(ProcessState.Ready);
+                        break;
+                    }
                 }
 
-                // Check after ExecuteStep: yield or suspension may have been requested
-                // from inside the instruction handler that just ran.
-                if (process.YieldRequested || process.State == ProcessState.Suspended)
+                // Quantum exhausted without an explicit break; check whether the last instruction
+                // called Terminate() (IP < 0) or ran past the bytecode end (IP >= Data.Length).
+                if (process.State == ProcessState.Running)
                 {
-                    process.ClearYield();
-                    if (process.State == ProcessState.Running)
-                        process.SetState(ProcessState.Ready);
-                    break;
+                    bool contextDone = process.Context.InstructionPointer < 0
+                        || process.Context.InstructionPointer >= process.Context.Data.Length;
+                    process.SetState(contextDone ? ProcessState.Terminated : ProcessState.Ready);
                 }
             }
-
-            // Quantum exhausted without an explicit break; check whether the last instruction
-            // called Terminate() (IP < 0) or ran past the bytecode end (IP >= Data.Length).
-            if (process.State == ProcessState.Running)
+            catch (Exception ex)
             {
-                bool contextDone = process.Context.InstructionPointer < 0
-                    || process.Context.InstructionPointer >= process.Context.Data.Length;
-                process.SetState(contextDone ? ProcessState.Terminated : ProcessState.Ready);
+                // Item 2: transition to Faulted so Run/RunAsync do not loop forever
+                // waiting for a process that will never leave the Running state.
+                process.SetFaulted(ex);
             }
         }
 
@@ -146,6 +177,7 @@ public class Scheduler<T> where T : Context
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is cancelled.</exception>
     public void Run(CancellationToken cancellationToken = default)
     {
+        // Faulted is treated as terminal: a faulted process will never be rescheduled.
         while (_processes.Any(p => p.State is ProcessState.Ready or ProcessState.Running))
         {
             cancellationToken.ThrowIfCancellationRequested();

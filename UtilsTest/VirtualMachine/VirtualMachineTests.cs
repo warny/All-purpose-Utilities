@@ -258,6 +258,87 @@ namespace UtilsTest.VirtualMachine
             Assert.AreEqual((byte)0x42, ctx2.Stack.Peek());
         }
 
+        // ── Item 3: opcode keys are immutable after registration ──────────────
+
+        [TestMethod]
+        public void RegisterInstruction_MutateSourceArrayAfterRegistration_DispatchUnchanged()
+        {
+            var machine = new TestMachine();
+            bool executed = false;
+            byte[] opcode = [0xAB];
+            machine.RegisterInstruction(opcode, "TEST", _ => executed = true);
+
+            // Mutate the original array — must not affect dispatch.
+            opcode[0] = 0x00;
+
+            var context = new DefaultContext(new byte[] { 0xAB });
+            machine.Execute(context);
+            Assert.IsTrue(executed, "Handler must still dispatch via the original opcode 0xAB.");
+        }
+
+        // ── Item 1: prefix-conflicting opcodes are rejected ───────────────────
+
+        [TestMethod]
+        public void RegisterInstruction_ShorterPrefixConflict_Throws()
+        {
+            // [0x10] already registered; [0x10, 0x20] is rejected because [0x10] is a prefix of it.
+            var machine = new TestMachine(); // TestMachine has [0x10,0x01] and [0x10,0x02]
+            machine.RegisterInstruction([0xAA], "A", _ => { });
+            Assert.ThrowsException<ArgumentException>(
+                () => machine.RegisterInstruction([0xAA, 0x01], "B", _ => { }));
+        }
+
+        [TestMethod]
+        public void RegisterInstruction_LongerPrefixConflict_Throws()
+        {
+            // [0xBB, 0x01] registered first; [0xBB] alone conflicts because it is a prefix.
+            var machine = new TestMachine();
+            machine.RegisterInstruction([0xBB, 0x01], "LONG", _ => { });
+            Assert.ThrowsException<ArgumentException>(
+                () => machine.RegisterInstruction([0xBB], "SHORT", _ => { }));
+        }
+
+        [TestMethod]
+        public void RegisterInstruction_NonPrefixConflict_Succeeds()
+        {
+            // [0xCC] and [0xDD] share no prefix — both should register without error.
+            var machine = new TestMachine();
+            machine.RegisterInstruction([0xCC], "A", _ => { });
+            machine.RegisterInstruction([0xDD], "B", _ => { }); // must not throw
+        }
+
+        // ── Item 1: prefix-conflict rules apply even with overwrite: true ────────
+
+        [TestMethod]
+        public void RegisterInstruction_Overwrite_SameOpcode_Succeeds()
+        {
+            // Replacing an instruction with the same opcode must succeed regardless of overwrite.
+            var machine = new TestMachine();
+            machine.RegisterInstruction([0xEE], "OLD", _ => { });
+            machine.RegisterInstruction([0xEE], "NEW", _ => { }, overwrite: true); // must not throw
+        }
+
+        [TestMethod]
+        public void RegisterInstruction_Overwrite_ShorterPrefixConflict_Throws()
+        {
+            // overwrite: true cannot bypass the prefix-conflict rule.
+            // [0xAA] registered first; [0xAA, 0x01] would make [0xAA] a prefix — rejected.
+            var machine = new TestMachine();
+            machine.RegisterInstruction([0xAA], "SHORT", _ => { });
+            Assert.ThrowsException<ArgumentException>(
+                () => machine.RegisterInstruction([0xAA, 0x01], "LONG", _ => { }, overwrite: true));
+        }
+
+        [TestMethod]
+        public void RegisterInstruction_Overwrite_LongerPrefixConflict_Throws()
+        {
+            // [0xBB, 0x01] registered first; [0xBB] alone is a prefix of it — rejected even with overwrite.
+            var machine = new TestMachine();
+            machine.RegisterInstruction([0xBB, 0x01], "LONG", _ => { });
+            Assert.ThrowsException<ArgumentException>(
+                () => machine.RegisterInstruction([0xBB], "SHORT", _ => { }, overwrite: true));
+        }
+
         // ── InvertedReader (endianness swap, zero allocation) ─────────────────
 
         [TestMethod]
@@ -366,6 +447,74 @@ namespace UtilsTest.VirtualMachine
             var context = new DefaultContext(instructions);
             new LEB128TestMachine().Execute(context);
             Assert.AreEqual(-128L, context.Stack.Peek());
+        }
+
+        // ── Item 17: LEB128 overlong and overflow rejection ───────────────────
+
+        [TestMethod]
+        public void ReadULEB128_ElevenBytes_ThrowsFormatException()
+        {
+            // 11 bytes all with the continuation bit set — exceeds the 10-byte maximum.
+            byte[] payload = [0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x00];
+            byte[] instructions = [0x20, .. payload];
+            var context = new DefaultContext(instructions);
+            Assert.ThrowsException<FormatException>(() => new LEB128TestMachine().Execute(context));
+        }
+
+        [TestMethod]
+        public void ReadULEB128_TenthByteInvalidHighBits_ThrowsFormatException()
+        {
+            // 9 continuation bytes followed by a 10th byte that has payload bits beyond bit 63.
+            // Valid 10th byte for ULEB128 is 0x00 or 0x01 only.
+            byte[] payload = [0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x02];
+            byte[] instructions = [0x20, .. payload];
+            var context = new DefaultContext(instructions);
+            Assert.ThrowsException<FormatException>(() => new LEB128TestMachine().Execute(context));
+        }
+
+        [TestMethod]
+        public void ReadULEB128_MaxUInt64_DecodesCorrectly()
+        {
+            // ulong.MaxValue = 0xFFFFFFFFFFFFFFFF in ULEB128:
+            // [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x01]
+            byte[] payload = [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x01];
+            byte[] instructions = [0x20, .. payload];
+            var context = new DefaultContext(instructions);
+            new LEB128TestMachine().Execute(context);
+            Assert.AreEqual(ulong.MaxValue, context.Stack.Peek());
+        }
+
+        [TestMethod]
+        public void ReadSLEB128_ElevenBytes_ThrowsFormatException()
+        {
+            byte[] payload = [0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x00];
+            byte[] instructions = [0x21, .. payload];
+            var context = new DefaultContext(instructions);
+            Assert.ThrowsException<FormatException>(() => new LEB128TestMachine().Execute(context));
+        }
+
+        [TestMethod]
+        public void ReadSLEB128_MaxInt64_DecodesCorrectly()
+        {
+            // long.MaxValue = 0x7FFFFFFFFFFFFFFF in SLEB128:
+            // [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00]
+            byte[] payload = [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00];
+            byte[] instructions = [0x21, .. payload];
+            var context = new DefaultContext(instructions);
+            new LEB128TestMachine().Execute(context);
+            Assert.AreEqual(long.MaxValue, context.Stack.Peek());
+        }
+
+        [TestMethod]
+        public void ReadSLEB128_MinInt64_DecodesCorrectly()
+        {
+            // long.MinValue = -9223372036854775808 in SLEB128:
+            // [0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x7F]
+            byte[] payload = [0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x7F];
+            byte[] instructions = [0x21, .. payload];
+            var context = new DefaultContext(instructions);
+            new LEB128TestMachine().Execute(context);
+            Assert.AreEqual(long.MinValue, context.Stack.Peek());
         }
 
         [TestMethod]
@@ -499,6 +648,28 @@ namespace UtilsTest.VirtualMachine
             var context = new DefaultContext(instructions);
             new SByteTestMachine().Execute(context);
             Assert.AreEqual((sbyte)-1, (sbyte)context.Stack.Peek());
+        }
+
+        // ── Item 18: failed byte read must not advance IP ─────────────────────
+
+        [TestMethod]
+        public void ReadByte_FailedRead_InstructionPointerUnchanged()
+        {
+            // Context with exactly one byte consumed by the opcode — no operand byte follows.
+            // SByteTestMachine (PUSH_SBYTE 0x30) reads the opcode byte, then tries to read
+            // the operand. A failed operand read must leave IP at the operand position, not beyond.
+            byte[] instructions = [0x30]; // PUSH_SBYTE opcode with no operand
+            var context = new DefaultContext(instructions);
+            int ipBeforeDispatch = 0;
+
+            // Execute the step; it should throw because the operand is missing.
+            var ex = Assert.ThrowsException<VirtualProcessorException>(
+                () => new SByteTestMachine().Execute(context));
+
+            // IP should not have advanced past the end of the stream.
+            // The opcode consumed 1 byte (0x30), so after dispatching the opcode IP = 1
+            // (equal to Data.Length). The operand read fails at IP = 1 without advancing further.
+            Assert.AreEqual(1, context.InstructionPointer);
         }
 
         [TestMethod]
@@ -732,6 +903,52 @@ namespace UtilsTest.VirtualMachine
             byte[] program = [0xF0, 0xF0]; // two NOPs
             machine.Execute(new DefaultContext(program));
             Assert.IsTrue(machine.NopExecuted);
+        }
+
+        // ── Item 31: OnBreakpoint redirect suppresses BeforeInstruction ──────
+
+        [TestMethod]
+        public void Inspector_OnBreakpoint_MultiByteOpcodeWithoutRedirect_BeforeInstructionCalled()
+        {
+            // Regression guard: a breakpoint on a multi-byte opcode (slow dispatch path) must
+            // still call BeforeInstruction when OnBreakpoint does not redirect execution.
+            // Before the fix, NotifyInspector compared IP against instructionStart, but the slow
+            // path already advances IP past the opcode bytes before the call — so the comparison
+            // was always true and BeforeInstruction was silently skipped.
+            var machine = new TestMachine(); // multi-byte opcodes only (slow path)
+            var beforeInstructionCalled = false;
+            machine.Inspector = new DelegateInspector<DefaultContext>(
+                beforeInstruction: (ctx, addr, name) => beforeInstructionCalled = true,
+                onBreakpoint: (ctx, addr, name) => { } // no redirect
+            );
+            machine.Breakpoints.Add(0);
+
+            // PUSH_BYTE ([0x01, 0x01] + operand 0x42) — multi-byte opcode at address 0.
+            byte[] program = [0x01, 0x01, 0x42];
+            machine.Execute(new DefaultContext(program));
+
+            Assert.IsTrue(beforeInstructionCalled,
+                "BeforeInstruction must be called when OnBreakpoint does not redirect, even for a multi-byte opcode.");
+        }
+
+        [TestMethod]
+        public void Inspector_OnBreakpoint_Redirect_BeforeInstructionNotCalled()
+        {
+            // When OnBreakpoint changes InstructionPointer, BeforeInstruction must not be called
+            // with stale metadata for the old instruction.
+            var machine = new InspectorMachine();
+            var beforeInstructionCalled = false;
+            machine.Inspector = new DelegateInspector<DefaultContext>(
+                beforeInstruction: (ctx, addr, name) => beforeInstructionCalled = true,
+                onBreakpoint: (ctx, addr, name) => ctx.InstructionPointer = ctx.Data.Length // redirect
+            );
+            machine.Breakpoints.Add(0);
+
+            byte[] program = [0x01]; // single PUSH_A
+            machine.Execute(new DefaultContext(program));
+
+            Assert.IsFalse(beforeInstructionCalled,
+                "BeforeInstruction must not be called when OnBreakpoint has already redirected execution.");
         }
 
         [TestMethod]

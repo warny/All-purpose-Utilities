@@ -89,18 +89,28 @@ public class ControlFlowStack
     /// <see cref="LoopBlock"/>, then sets <see cref="Context.InstructionPointer"/> to
     /// the loop's <see cref="LoopBlock.EndAddress"/>.
     /// </summary>
+    /// <remarks>
+    /// The operation is transactional: the loop is located first without mutating the stack.
+    /// The exception is thrown before any block is popped, so the stack remains intact when
+    /// malformed bytecode issues BREAK outside a loop.
+    /// </remarks>
     /// <exception cref="InvalidOperationException">Thrown when no enclosing loop is in scope.</exception>
     public void Break(Context context)
     {
+        // Validate first — locate the nearest loop without mutating the stack.
+        LoopBlock? target = FindEnclosing<LoopBlock>();
+        if (target is null)
+            throw new InvalidOperationException("BREAK used outside of a loop.");
+
+        // Commit: pop all inner blocks, including the loop itself.
         while (_blocks.TryPop(out var block))
         {
-            if (block is LoopBlock loop)
+            if (block is LoopBlock)
             {
-                context.InstructionPointer = loop.EndAddress;
+                context.InstructionPointer = target.EndAddress;
                 return;
             }
         }
-        throw new InvalidOperationException("BREAK used outside of a loop.");
     }
 
     /// <summary>
@@ -108,19 +118,29 @@ public class ControlFlowStack
     /// <see cref="LoopBlock"/> (the loop itself stays on the stack), then sets
     /// <see cref="Context.InstructionPointer"/> to the loop's <see cref="LoopBlock.StartAddress"/>.
     /// </summary>
+    /// <remarks>
+    /// The operation is transactional: the loop is located first without mutating the stack.
+    /// The exception is thrown before any block is popped, so the stack remains intact when
+    /// malformed bytecode issues CONTINUE outside a loop.
+    /// </remarks>
     /// <exception cref="InvalidOperationException">Thrown when no enclosing loop is in scope.</exception>
     public void Continue(Context context)
     {
+        // Validate first — locate the nearest loop without mutating the stack.
+        LoopBlock? target = FindEnclosing<LoopBlock>();
+        if (target is null)
+            throw new InvalidOperationException("CONTINUE used outside of a loop.");
+
+        // Commit: pop all inner blocks that are nested inside the loop, but keep the loop itself.
         while (_blocks.TryPeek(out var block))
         {
-            if (block is LoopBlock loop)
+            if (block is LoopBlock)
             {
-                context.InstructionPointer = loop.StartAddress;
+                context.InstructionPointer = target.StartAddress;
                 return;
             }
             _blocks.Pop();
         }
-        throw new InvalidOperationException("CONTINUE used outside of a loop.");
     }
 
     /// <summary>
@@ -128,7 +148,8 @@ public class ControlFlowStack
     /// <see cref="Throw"/> call when both <see cref="ExceptionBlock.CatchAddress"/> and
     /// <see cref="ExceptionBlock.FinallyAddress"/> were set), redirects
     /// <see cref="Context.InstructionPointer"/> to that catch handler and clears the pending
-    /// address. When no pending catch is present but an exception is in flight (finally-only
+    /// address, then transitions the block to <see cref="ExceptionBlockPhase.Catch"/>.
+    /// When no pending catch is present but an exception is in flight (finally-only
     /// block, or the innermost finally in a nested try), pops the block and propagates the
     /// exception to the next outer handler by calling <see cref="Throw"/> recursively.
     /// Otherwise, simply pops the block (normal exit from a try/finally without an exception).
@@ -151,6 +172,7 @@ public class ControlFlowStack
             {
                 context.InstructionPointer = ex.PendingCatchAddress.Value;
                 ex.PendingCatchAddress = null;
+                ex.Phase = ExceptionBlockPhase.Catch;
                 return true;
             }
             _blocks.Pop();
@@ -173,18 +195,24 @@ public class ControlFlowStack
 
     /// <summary>
     /// Handles a THROW instruction: pops all blocks until the nearest <see cref="ExceptionBlock"/>
-    /// is found, stores the thrown value in <see cref="ExceptionBlock.ThrownValue"/>, and
-    /// redirects <see cref="Context.InstructionPointer"/> according to the following rules:
+    /// whose <see cref="ExceptionBlock.Phase"/> is <see cref="ExceptionBlockPhase.Try"/> is found,
+    /// stores the thrown value in <see cref="ExceptionBlock.ThrownValue"/>, and redirects
+    /// <see cref="Context.InstructionPointer"/> according to the following rules:
     /// <list type="bullet">
     ///   <item>If the block has a finally clause, jumps to <see cref="ExceptionBlock.FinallyAddress"/>
     ///     first. When a catch clause is also present, its address is stored in
     ///     <see cref="ExceptionBlock.PendingCatchAddress"/> so the ENDFINALLY handler can jump there
-    ///     after the finally block completes.</item>
+    ///     after the finally block completes. The block transitions to
+    ///     <see cref="ExceptionBlockPhase.Finally"/>.</item>
     ///   <item>If the block has only a catch clause (no finally), jumps directly to
-    ///     <see cref="ExceptionBlock.CatchAddress"/>.</item>
+    ///     <see cref="ExceptionBlock.CatchAddress"/>. The block transitions to
+    ///     <see cref="ExceptionBlockPhase.Catch"/>.</item>
     /// </list>
-    /// The <see cref="ExceptionBlock"/> remains on the stack so that the handler body can read
-    /// <see cref="ExceptionBlock.ThrownValue"/>; ENDTRY pops it.
+    /// Blocks already in <see cref="ExceptionBlockPhase.Finally"/> or
+    /// <see cref="ExceptionBlockPhase.Catch"/> are skipped so that a throw from inside a handler
+    /// body propagates to the next outer try scope instead of re-entering the current handler.
+    /// The matched <see cref="ExceptionBlock"/> remains on the stack so that the handler body can
+    /// read <see cref="ExceptionBlock.ThrownValue"/>; ENDTRY pops it.
     /// </summary>
     /// <param name="context">The current execution context.</param>
     /// <param name="value">The value being thrown.</param>
@@ -198,6 +226,11 @@ public class ControlFlowStack
         {
             if (block is ExceptionBlock ex)
             {
+                // Skip exception blocks that are already executing their own handler.
+                // A throw from inside catch or finally must propagate to the next outer handler.
+                if (ex.Phase != ExceptionBlockPhase.Try)
+                    continue;
+
                 ex.ThrownValue = value;
                 ex.ExceptionInFlight = true;
                 _blocks.Push(ex);
@@ -205,10 +238,12 @@ public class ControlFlowStack
                 {
                     // Always run finally first. If there is also a catch, store it so ENDFINALLY can jump there.
                     ex.PendingCatchAddress = ex.CatchAddress;
+                    ex.Phase = ExceptionBlockPhase.Finally;
                     context.InstructionPointer = ex.FinallyAddress.Value;
                 }
                 else
                 {
+                    ex.Phase = ExceptionBlockPhase.Catch;
                     context.InstructionPointer = ex.CatchAddress!.Value;
                 }
                 return true;
