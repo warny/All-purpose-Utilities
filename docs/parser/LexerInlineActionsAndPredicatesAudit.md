@@ -96,17 +96,20 @@ The current generated-C# opt-in regression suite covers the already-supported ru
 
 ## Rollback and side-effect risks
 
-Lexer inline actions and predicates introduce risks that are separate from parser rollback:
+Lexer inline actions and predicates have boundaries distinct from parser rollback:
 
-- A lexer action could run during a tokenization attempt that is later abandoned.
-- External side effects from a lexer action may not be rollback-safe.
-- Parser rollback and lexer rollback are different concerns and must not be conflated.
-- Parser memoization currently does not imply that a future lexer execution state is captured, restored, or hashed correctly.
-- A future design may require a separate lexer state model for input position, mode stack, command effects, pending token decisions, and generated execution state.
-- There is currently no general action buffering or replay mechanism for lexer actions.
-- There is currently no general rollback mechanism for external side effects.
+- predicates execute during path exploration, but expose no supported mutation result; `false` rejects only the current path and `true` continues it;
+- lexer `$...` writes in predicates are forbidden, so a rejected predicate commits no runtime-managed lexer mutation;
+- arbitrary effects performed by user predicate code are external and are not promised to roll back;
+- action occurrences are collected while matching, but rejected paths never execute them;
+- only the accepted token's actions execute, sharing one fresh, acceptance-local `LexerActionExecutionResult`;
+- later action assignments replace earlier assignments to the same result property, preserving the tested last-write-wins behavior;
+- result requests are applied before accepted commands, which remain authoritative;
+- there is no general action buffering, replay, lexer snapshot manager, or external-effect rollback.
 
-Any future implementation must state which side effects are parser-managed, lexer-managed, or external and non-rollback-safe.
+Lexer-owned operational state is split by lifetime rather than one persistent bucket. Persistent `LexerEngine` fields cover the current mode, mode stack, `more` accumulation, and associated `more` start position between token recognitions. A tokenization session owns the `TextReaderBuffer` and current input position, the emitted-token collection, and the per-call extension invocation contexts. Attempt- and acceptance-local values include best-match data, collected commands and action occurrences, token/chunk construction data, and the accepted token's `LexerActionExecutionResult`. Parser memoization and `IParserExecutionStateManager` do not capture, restore, or hash those lexer categories. Reusing the parser manager or adding a generic `isLexer` switch would conflate two different execution models. A lexer-specific state contract should be considered only in a separate PR backed by a concrete need.
+
+Mutable fields and objects injected through `@lexer::members` belong to the generated execution context. Delayed action execution prevents rejected alternatives from running those actions, but does not make accepted user code transactional. I/O, shared-service mutation, changes to unmanaged objects, later exceptions, `skip`, and eventual parser failure remain outside rollback guarantees.
 
 ## Source-generator path versus runtime-inline path
 
