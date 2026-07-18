@@ -157,16 +157,21 @@ public class LiteralRuleCallExecutionPolicyContractTests
     }
 
     /// <summary>
-    /// Verifies runtime rollback observes the winning bound value instead of a rejected alternative seed.
+    /// Verifies runtime rollback and value-sensitive memoization observe effective bound values.
     /// </summary>
     [TestMethod]
-    public void RuntimeLiteralPolicies_RollbackUsesWinningBoundValue()
+    public void RuntimeLiteralPolicies_RollbackAndMemoizationUseEffectiveBoundValues()
     {
         foreach (PolicyCase policyCase in PolicyCases())
         {
             string[] rollbackObservations = ParseObserved(policyCase, policyCase.RollbackGrammar, "aa");
             Assert.AreEqual(policyCase.SecondObserved, rollbackObservations[^1], policyCase.Name);
             Assert.AreEqual(2, rollbackObservations.Length, policyCase.Name);
+
+            string[] memoizedObservations = ParseObserved(policyCase, policyCase.MemoizationGrammar, "a");
+            CollectionAssert.AreEqual(policyCase.ExpectedMemoizedObservations, memoizedObservations, policyCase.Name);
+
+            CollectionAssert.Contains(ParseObserved(policyCase, policyCase.RightRecursiveGrammar, "aa"), policyCase.SecondObserved, policyCase.Name);
         }
     }
 
@@ -180,10 +185,12 @@ public class LiteralRuleCallExecutionPolicyContractTests
     private static string[] ParseObserved(PolicyCase policyCase, string grammar, string input)
     {
         var observed = new List<string>();
+        var frameManager = new StackParserRuleInvocationFrameManager();
         var policy = ParserRuntimeFeaturePolicy.Default with
         {
             RuleCallExecutionPolicy = policyCase.CreatePolicy(),
-            RuleInvocationFrameManager = new StackParserRuleInvocationFrameManager(),
+            RuleInvocationFrameManager = frameManager,
+            ExecutionStateManager = new SeedStateExecutionManager(frameManager),
             RuleLifecycleExecutor = new RecordingLifecycleExecutor(observed),
         };
         ParseNode result = new CompiledGrammar(Antlr4GrammarConverter.Parse(grammar), policy).Parse(input);
@@ -279,6 +286,56 @@ public class LiteralRuleCallExecutionPolicyContractTests
     private static IReadOnlyDictionary<string, string> NamedArgs(params IEnumerable<(string Name, string Value)> entries) => entries.ToDictionary(static entry => entry.Name, static entry => entry.Value, StringComparer.Ordinal);
 
     /// <summary>
+    /// Exposes the current pending literal seed hash as the parser execution-state key for contract memoization tests.
+    /// </summary>
+    private sealed class SeedStateExecutionManager(StackParserRuleInvocationFrameManager frameManager) : IParserExecutionStateManager
+    {
+        /// <summary>
+        /// Captures pending seeds from the active frame.
+        /// </summary>
+        /// <returns>The current pending seed store.</returns>
+        public object Capture() => (object?)frameManager.GetCurrentPendingSeeds() ?? NullSeedSnapshot.Instance;
+
+        /// <summary>
+        /// Restores pending seeds to the active frame.
+        /// </summary>
+        /// <param name="snapshot">Captured pending seed store or the null-seed sentinel.</param>
+        public void Restore(object snapshot)
+        {
+            ArgumentNullException.ThrowIfNull(snapshot);
+            frameManager.SyncPendingSeedsToCurrentFrame(ReferenceEquals(snapshot, NullSeedSnapshot.Instance) ? null : (ParserRuleParameterSeedStore)snapshot);
+        }
+
+        /// <summary>
+        /// Gets the current value-sensitive pending-seed state key.
+        /// </summary>
+        /// <returns>The current parser execution-state key.</returns>
+        public ParserExecutionStateKey GetCurrentStateKey()
+        {
+            ParserRuleParameterSeedStore? seeds = frameManager.GetCurrentPendingSeeds();
+            return seeds is null ? ParserExecutionStateKey.Stateless : new ParserExecutionStateKey(seeds.GetParserExecutionStateHash());
+        }
+    }
+
+    /// <summary>
+    /// Sentinel snapshot used when the current frame has no pending literal seeds.
+    /// </summary>
+    private sealed class NullSeedSnapshot
+    {
+        /// <summary>
+        /// Gets the singleton null-seed snapshot.
+        /// </summary>
+        public static NullSeedSnapshot Instance { get; } = new();
+
+        /// <summary>
+        /// Initializes the singleton null-seed snapshot.
+        /// </summary>
+        private NullSeedSnapshot()
+        {
+        }
+    }
+
+    /// <summary>
     /// Records the value parameter from child frames during initialization.
     /// </summary>
     private sealed class RecordingLifecycleExecutor(List<string> observed) : IParserRuleLifecycleExecutor
@@ -291,7 +348,7 @@ public class LiteralRuleCallExecutionPolicyContractTests
         /// <param name="context">Lifecycle context.</param>
         public void Execute(ParserRuleLifecyclePhase phase, string ruleName, ParserRuleLifecycleContext context)
         {
-            if (phase == ParserRuleLifecyclePhase.Init && ruleName == "child" && context.InvocationFrame?.TryGetParameter("value", out object? value) == true)
+            if (phase == ParserRuleLifecyclePhase.Init && context.InvocationFrame?.TryGetParameter("value", out object? value) == true)
             {
                 observed.Add(FormattableString.Invariant($"{value}:{value?.GetType().Name ?? "null"}"));
             }
@@ -343,6 +400,10 @@ public class LiteralRuleCallExecutionPolicyContractTests
         /// </summary>
         public string SecondObserved => IsTyped ? "2:Int32" : "2:Int32";
 
+        /// <summary>
+        /// Gets observations proving value-sensitive memoization behavior.
+        /// </summary>
+        public string[] ExpectedMemoizedObservations => IsTyped ? ["1:Double"] : ["1:Int32", "1:Double"];
 
         /// <summary>
         /// Gets the rollback grammar for this syntax family.
@@ -361,6 +422,37 @@ public class LiteralRuleCallExecutionPolicyContractTests
             B : 'b' ;
             """;
 
+        /// <summary>
+        /// Gets the memoization grammar for this syntax and typing family.
+        /// </summary>
+        public string MemoizationGrammar => IsNamed ? """
+            grammar P;
+            start : child[value: 1] B | child[value: 1.0] ;
+            child[double value] : A ;
+            A : 'a' ;
+            B : 'b' ;
+            """ : """
+            grammar P;
+            start : child[1] B | child[1.0] ;
+            child[double value] : A ;
+            A : 'a' ;
+            B : 'b' ;
+            """;
+
+        /// <summary>
+        /// Gets the right-recursive binding grammar for this syntax family.
+        /// </summary>
+        public string RightRecursiveGrammar => IsNamed ? """
+            grammar P;
+            start : expr ;
+            expr[int value] : A expr[value: 2]? ;
+            A : 'a' ;
+            """ : """
+            grammar P;
+            start : expr ;
+            expr[int value] : A expr[2]? ;
+            A : 'a' ;
+            """;
 
         /// <summary>
         /// Creates a positional or named policy case.
