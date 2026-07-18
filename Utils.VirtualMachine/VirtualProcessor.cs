@@ -391,8 +391,10 @@ public abstract class VirtualProcessor<T> where T : Context
         // Clone into owned storage so that external mutations of the source array cannot corrupt
         // dictionary hash buckets or dispatch tables after registration.
         byte[] ownedOpcode = (byte[])opcode.Clone();
-        if (!overwrite)
-            CheckPrefixConflict(InstructionsSet, ownedOpcode);
+        // Always enforce prefix-conflict rules. CheckPrefixConflict only throws when lengths differ,
+        // so replacing an exact opcode (overwrite: true) is allowed while cross-length conflicts are
+        // still rejected — a conflict with a different-length opcode is invalid regardless of overwrite.
+        CheckPrefixConflict(InstructionsSet, ownedOpcode);
 
         InstructionsSet[ownedOpcode] = (name ?? string.Empty, ctx => handler(ctx));
         if (ownedOpcode.Length > _maxInstructionSize)
@@ -422,7 +424,8 @@ public abstract class VirtualProcessor<T> where T : Context
         byte firstByte = context.Data.Span[instructionStart];
         if (_fastLookup[firstByte] is { } fast)
         {
-            NotifyInspector(context, instructionStart, fast.Name);
+            // IP has not been advanced yet: expected value after the callback is still instructionStart.
+            NotifyInspector(context, instructionStart, instructionStart, fast.Name);
             // If the inspector redirected execution (e.g. a breakpoint handler jumped away),
             // skip this instruction entirely to honour the new instruction pointer.
             if (context.InstructionPointer != instructionStart) return;
@@ -446,8 +449,11 @@ public abstract class VirtualProcessor<T> where T : Context
             var segment = new ArraySegment<byte>(_buffer, 0, _bufferLength);
             if (InstructionsSet.TryGetValue(segment, out var entry))
             {
+                // IP has already advanced past the opcode bytes: pass the post-opcode position
+                // as the expected value so NotifyInspector can distinguish a genuine redirect
+                // from the normal advancement due to reading a multi-byte opcode.
                 int afterOpcodeIp = context.InstructionPointer;
-                NotifyInspector(context, instructionStart, entry.Name);
+                NotifyInspector(context, instructionStart, afterOpcodeIp, entry.Name);
                 // Same guard: inspector may redirect before operands are consumed.
                 if (context.InstructionPointer != afterOpcodeIp) return;
                 try
@@ -472,7 +478,17 @@ public abstract class VirtualProcessor<T> where T : Context
     /// returns without calling <see cref="IVmInspector{T}.BeforeInstruction"/> so that the callback
     /// does not receive stale instruction metadata for the old address.
     /// </summary>
-    private void NotifyInspector(T context, int address, string instructionName)
+    /// <param name="context">The current execution context.</param>
+    /// <param name="address">Address of the instruction (first byte of the opcode).</param>
+    /// <param name="expectedInstructionPointer">
+    /// The value <see cref="Context.InstructionPointer"/> is expected to hold when no redirect has
+    /// occurred. For the fast dispatch path this equals <paramref name="address"/> (IP not yet
+    /// advanced); for the slow path it equals the position immediately after the last opcode byte
+    /// was consumed. Any other value after <see cref="IVmInspector{T}.OnBreakpoint"/> is treated
+    /// as a deliberate redirect.
+    /// </param>
+    /// <param name="instructionName">Human-readable instruction name for diagnostics.</param>
+    private void NotifyInspector(T context, int address, int expectedInstructionPointer, string instructionName)
     {
         if (Inspector is not { } inspector) return;
         if (Breakpoints.Count > 0 && Breakpoints.Contains(address))
@@ -480,7 +496,7 @@ public abstract class VirtualProcessor<T> where T : Context
             inspector.OnBreakpoint(context, address, instructionName);
             // If OnBreakpoint redirected execution, skip BeforeInstruction for the old instruction
             // so that the callback does not observe contradictory metadata.
-            if (context.InstructionPointer != address) return;
+            if (context.InstructionPointer != expectedInstructionPointer) return;
         }
         inspector.BeforeInstruction(context, address, instructionName);
     }

@@ -307,6 +307,38 @@ namespace UtilsTest.VirtualMachine
             machine.RegisterInstruction([0xDD], "B", _ => { }); // must not throw
         }
 
+        // ── Item 1: prefix-conflict rules apply even with overwrite: true ────────
+
+        [TestMethod]
+        public void RegisterInstruction_Overwrite_SameOpcode_Succeeds()
+        {
+            // Replacing an instruction with the same opcode must succeed regardless of overwrite.
+            var machine = new TestMachine();
+            machine.RegisterInstruction([0xEE], "OLD", _ => { });
+            machine.RegisterInstruction([0xEE], "NEW", _ => { }, overwrite: true); // must not throw
+        }
+
+        [TestMethod]
+        public void RegisterInstruction_Overwrite_ShorterPrefixConflict_Throws()
+        {
+            // overwrite: true cannot bypass the prefix-conflict rule.
+            // [0xAA] registered first; [0xAA, 0x01] would make [0xAA] a prefix — rejected.
+            var machine = new TestMachine();
+            machine.RegisterInstruction([0xAA], "SHORT", _ => { });
+            Assert.ThrowsException<ArgumentException>(
+                () => machine.RegisterInstruction([0xAA, 0x01], "LONG", _ => { }, overwrite: true));
+        }
+
+        [TestMethod]
+        public void RegisterInstruction_Overwrite_LongerPrefixConflict_Throws()
+        {
+            // [0xBB, 0x01] registered first; [0xBB] alone is a prefix of it — rejected even with overwrite.
+            var machine = new TestMachine();
+            machine.RegisterInstruction([0xBB, 0x01], "LONG", _ => { });
+            Assert.ThrowsException<ArgumentException>(
+                () => machine.RegisterInstruction([0xBB], "SHORT", _ => { }, overwrite: true));
+        }
+
         // ── InvertedReader (endianness swap, zero allocation) ─────────────────
 
         [TestMethod]
@@ -874,6 +906,30 @@ namespace UtilsTest.VirtualMachine
         }
 
         // ── Item 31: OnBreakpoint redirect suppresses BeforeInstruction ──────
+
+        [TestMethod]
+        public void Inspector_OnBreakpoint_MultiByteOpcodeWithoutRedirect_BeforeInstructionCalled()
+        {
+            // Regression guard: a breakpoint on a multi-byte opcode (slow dispatch path) must
+            // still call BeforeInstruction when OnBreakpoint does not redirect execution.
+            // Before the fix, NotifyInspector compared IP against instructionStart, but the slow
+            // path already advances IP past the opcode bytes before the call — so the comparison
+            // was always true and BeforeInstruction was silently skipped.
+            var machine = new TestMachine(); // multi-byte opcodes only (slow path)
+            var beforeInstructionCalled = false;
+            machine.Inspector = new DelegateInspector<DefaultContext>(
+                beforeInstruction: (ctx, addr, name) => beforeInstructionCalled = true,
+                onBreakpoint: (ctx, addr, name) => { } // no redirect
+            );
+            machine.Breakpoints.Add(0);
+
+            // PUSH_BYTE ([0x01, 0x01] + operand 0x42) — multi-byte opcode at address 0.
+            byte[] program = [0x01, 0x01, 0x42];
+            machine.Execute(new DefaultContext(program));
+
+            Assert.IsTrue(beforeInstructionCalled,
+                "BeforeInstruction must be called when OnBreakpoint does not redirect, even for a multi-byte opcode.");
+        }
 
         [TestMethod]
         public void Inspector_OnBreakpoint_Redirect_BeforeInstructionNotCalled()
