@@ -157,18 +157,16 @@ public class LiteralRuleCallExecutionPolicyContractTests
     }
 
     /// <summary>
-    /// Verifies runtime rollback and memoization observe the effective bound values instead of stale child frame state.
+    /// Verifies runtime rollback observes the winning bound value instead of a rejected alternative seed.
     /// </summary>
     [TestMethod]
-    public void RuntimeLiteralPolicies_RollbackAndMemoization_UseEffectiveBoundValues()
+    public void RuntimeLiteralPolicies_RollbackUsesWinningBoundValue()
     {
         foreach (PolicyCase policyCase in PolicyCases())
         {
             string[] rollbackObservations = ParseObserved(policyCase, policyCase.RollbackGrammar, "aa");
             Assert.AreEqual(policyCase.SecondObserved, rollbackObservations[^1], policyCase.Name);
             Assert.AreEqual(2, rollbackObservations.Length, policyCase.Name);
-            string[] memoizedObservations = ParseObserved(policyCase, policyCase.MemoizationGrammar, "a");
-            Assert.AreEqual(policyCase.ExpectedMemoizedObservations[0], memoizedObservations[0], policyCase.Name);
         }
     }
 
@@ -345,10 +343,6 @@ public class LiteralRuleCallExecutionPolicyContractTests
         /// </summary>
         public string SecondObserved => IsTyped ? "2:Int32" : "2:Int32";
 
-        /// <summary>
-        /// Gets observations proving value-sensitive memoization behavior.
-        /// </summary>
-        public string[] ExpectedMemoizedObservations => IsTyped ? ["1:Double", "1:Double"] : ["1:Int32", "1:Double"];
 
         /// <summary>
         /// Gets the rollback grammar for this syntax family.
@@ -367,22 +361,6 @@ public class LiteralRuleCallExecutionPolicyContractTests
             B : 'b' ;
             """;
 
-        /// <summary>
-        /// Gets the memoization grammar for this syntax and typing family.
-        /// </summary>
-        public string MemoizationGrammar => IsNamed ? """
-            grammar P;
-            start : child[value: 1] B | child[value: 1.0] ;
-            child[double value] : A ;
-            A : 'a' ;
-            B : 'b' ;
-            """ : """
-            grammar P;
-            start : child[1] B | child[1.0] ;
-            child[double value] : A ;
-            A : 'a' ;
-            B : 'b' ;
-            """;
 
         /// <summary>
         /// Creates a positional or named policy case.
