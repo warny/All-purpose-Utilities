@@ -25,10 +25,12 @@ internal sealed class LinuxBubblewrapContainer : IProcessContainer
 {
     private const string BubblewrapExecutableName = "bwrap";
     private readonly ProcessContainerPermissions permissions;
+    private readonly string resolvedExecutablePath;
 
-    private LinuxBubblewrapContainer(ProcessContainerPermissions permissions)
+    private LinuxBubblewrapContainer(ProcessContainerPermissions permissions, string resolvedExecutablePath)
     {
         this.permissions = permissions;
+        this.resolvedExecutablePath = resolvedExecutablePath;
     }
 
     /// <summary>
@@ -47,8 +49,8 @@ internal sealed class LinuxBubblewrapContainer : IProcessContainer
             return null;
         }
 
-        return CommandAvailability.Exists(BubblewrapExecutableName)
-            ? new LinuxBubblewrapContainer(permissions)
+        return CommandAvailability.TryResolve(BubblewrapExecutableName, out string? resolvedPath)
+            ? new LinuxBubblewrapContainer(permissions, resolvedPath!)
             : null;
     }
 
@@ -64,7 +66,8 @@ internal sealed class LinuxBubblewrapContainer : IProcessContainer
         string? ipcSocketPath = TryGetIpcSocketPath(argsArray);
         List<string> wrappedArguments = BuildArguments(executablePath, argsArray, permissions, ipcSocketPath);
 
-        var psi = new ProcessStartInfo(BubblewrapExecutableName)
+        // Use the canonical absolute path resolved at TryCreate time to avoid TOCTOU races.
+        var psi = new ProcessStartInfo(resolvedExecutablePath)
         {
             UseShellExecute = false,
             CreateNoWindow = true,

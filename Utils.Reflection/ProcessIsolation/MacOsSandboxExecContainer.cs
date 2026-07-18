@@ -29,10 +29,12 @@ internal sealed class MacOsSandboxExecContainer : IProcessContainer
 {
     private const string SandboxExecutableName = "sandbox-exec";
     private readonly ProcessContainerPermissions permissions;
+    private readonly string resolvedExecutablePath;
 
-    private MacOsSandboxExecContainer(ProcessContainerPermissions permissions)
+    private MacOsSandboxExecContainer(ProcessContainerPermissions permissions, string resolvedExecutablePath)
     {
         this.permissions = permissions;
+        this.resolvedExecutablePath = resolvedExecutablePath;
     }
 
     /// <summary>
@@ -51,8 +53,8 @@ internal sealed class MacOsSandboxExecContainer : IProcessContainer
             return null;
         }
 
-        return CommandAvailability.Exists(SandboxExecutableName)
-            ? new MacOsSandboxExecContainer(permissions)
+        return CommandAvailability.TryResolve(SandboxExecutableName, out string? resolvedPath)
+            ? new MacOsSandboxExecContainer(permissions, resolvedPath!)
             : null;
     }
 
@@ -64,7 +66,8 @@ internal sealed class MacOsSandboxExecContainer : IProcessContainer
     /// <returns>The started process.</returns>
     public Process StartProcess(string executablePath, IEnumerable<string> arguments)
     {
-        var psi = new ProcessStartInfo(SandboxExecutableName)
+        // Use the canonical absolute path resolved at TryCreate time to avoid TOCTOU races.
+        var psi = new ProcessStartInfo(resolvedExecutablePath)
         {
             UseShellExecute = false,
             CreateNoWindow = true,
