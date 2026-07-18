@@ -151,6 +151,52 @@ public class EmitWorkerProtocolTests
             () => EmitWorkerHost.Run(input, output));
     }
 
+    // ─── Item 39: bounded protocol line reader ───────────────────────────────────
+
+    [TestMethod]
+    public void ReadBoundedLine_ReturnsNullAtEndOfStream()
+    {
+        using var reader = new StringReader("");
+        Assert.IsNull(ProtocolFraming.ReadBoundedLine(reader));
+    }
+
+    [TestMethod]
+    public void ReadBoundedLine_ReturnsLineContent()
+    {
+        using var reader = new StringReader("hello world\nsecond line");
+        Assert.AreEqual("hello world", ProtocolFraming.ReadBoundedLine(reader));
+        Assert.AreEqual("second line", ProtocolFraming.ReadBoundedLine(reader));
+        Assert.IsNull(ProtocolFraming.ReadBoundedLine(reader));
+    }
+
+    [TestMethod]
+    public void ReadBoundedLine_HandlesWindowsLineEndings()
+    {
+        using var reader = new StringReader("line1\r\nline2");
+        Assert.AreEqual("line1", ProtocolFraming.ReadBoundedLine(reader));
+        Assert.AreEqual("line2", ProtocolFraming.ReadBoundedLine(reader));
+    }
+
+    [TestMethod]
+    public void ReadBoundedLine_ThrowsWhenLineExceedsLimit()
+    {
+        string oversizedLine = new string('x', 101) + "\n";
+        using var reader = new StringReader(oversizedLine);
+
+        Assert.ThrowsException<InvalidOperationException>(
+            () => ProtocolFraming.ReadBoundedLine(reader, maxLength: 100));
+    }
+
+    [TestMethod]
+    public void ReadBoundedLine_AcceptsLineExactlyAtLimit()
+    {
+        string lineAtLimit = new string('x', 100) + "\n";
+        using var reader = new StringReader(lineAtLimit);
+
+        string? result = ProtocolFraming.ReadBoundedLine(reader, maxLength: 100);
+        Assert.AreEqual(new string('x', 100), result);
+    }
+
     // ─── Item 38: method token restricted to loaded interface ────────────────────
 
     /// <summary>Minimal interface used only to supply real metadata tokens for token-restriction tests.</summary>

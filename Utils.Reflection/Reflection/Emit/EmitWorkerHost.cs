@@ -62,7 +62,7 @@ internal static class EmitWorkerHost
         var dispatched = new ConcurrentBag<Task>();
 
         string? line;
-        while ((line = input.ReadLine()) is not null)
+        while ((line = ProtocolFraming.ReadBoundedLine(input)) is not null)
         {
             WorkerRequest? request;
             try

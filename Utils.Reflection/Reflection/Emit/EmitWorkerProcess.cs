@@ -408,8 +408,8 @@ internal sealed class EmitWorkerProcess : IDisposable
     /// requests can be in flight at once instead of one at a time.
     /// </summary>
     /// <remarks>
-    /// When the loop ends — the worker closed the connection (<c>ReadLine</c> returns <see langword="null"/>)
-    /// or the read faulted (broken pipe, disposed stream) — every still-pending request fails with that
+    /// When the loop ends — the worker closed the connection (<c>ReadBoundedLine</c> returns <see langword="null"/>)
+    /// or the read faulted (broken pipe, disposed stream, line-length limit exceeded) — every still-pending request fails with that
     /// cause via <see cref="FailAllPending"/>, and, unless this was already a deliberate <see cref="Dispose"/>
     /// (which handles the worker process itself), the worker process is killed so it cannot linger as an
     /// unreachable orphan.
@@ -420,7 +420,7 @@ internal sealed class EmitWorkerProcess : IDisposable
         try
         {
             string? line;
-            while ((line = reader.ReadLine()) is not null)
+            while ((line = ProtocolFraming.ReadBoundedLine(reader)) is not null)
             {
                 WorkerResponse? response;
                 try
