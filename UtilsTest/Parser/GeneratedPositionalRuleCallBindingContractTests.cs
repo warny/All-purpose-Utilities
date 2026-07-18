@@ -33,7 +33,7 @@ public sealed class GeneratedPositionalRuleCallBindingContractTests
             A : 'a';
             """;
 
-        Assembly assembly = CompileGeneratedSource(Emit(grammar));
+        Assembly assembly = CompileGeneratedSource(EmitWithGeneratedRuleArgumentBinding(grammar));
 
         ParseNode result = InvokeParse(assembly, "ParseWithEmbeddedCode", "a");
 
@@ -47,7 +47,7 @@ public sealed class GeneratedPositionalRuleCallBindingContractTests
     [TestMethod]
     public void ParseWithEmbeddedCode_ExplicitContext_BindsGeneratedPositionalLiteralAutomatically()
     {
-        Assembly assembly = CompileGeneratedSource(Emit(SingleIntGrammar()));
+        Assembly assembly = CompileGeneratedSource(EmitWithGeneratedRuleArgumentBinding(SingleIntGrammar()));
         object context = CreateExecutionContext(assembly);
 
         ParseNode result = InvokeParseWithContext(assembly, "a", context);
@@ -74,7 +74,7 @@ public sealed class GeneratedPositionalRuleCallBindingContractTests
                 : A ;
             A : 'a';
             """;
-        Assembly assembly = CompileGeneratedSource(Emit(grammar));
+        Assembly assembly = CompileGeneratedSource(EmitWithGeneratedRuleArgumentBinding(grammar));
 
         ParseNode result = InvokeParse(assembly, "Parse", "a");
 
@@ -98,7 +98,7 @@ public sealed class GeneratedPositionalRuleCallBindingContractTests
                 : A ;
             A : 'a';
             """;
-        Assembly assembly = CompileGeneratedSource(Emit(grammar));
+        Assembly assembly = CompileGeneratedSource(EmitWithGeneratedRuleArgumentBinding(grammar));
         object context = CreateExecutionContext(assembly);
         var recorder = new RecordingRuleCallPolicy(seedValue: 7);
         ParserRuntimeFeaturePolicy basePolicy = ParserRuntimeFeaturePolicy.Default with { RuleCallExecutionPolicy = recorder };
@@ -143,7 +143,7 @@ public sealed class GeneratedPositionalRuleCallBindingContractTests
                 : A ;
             A : 'a';
             """;
-        Assembly assembly = CompileGeneratedSource(Emit(grammar));
+        Assembly assembly = CompileGeneratedSource(EmitWithGeneratedRuleArgumentBinding(grammar));
         object context = CreateExecutionContext(assembly);
 
         ParseNode result = InvokeParseWithContext(assembly, "a", context);
@@ -177,7 +177,7 @@ public sealed class GeneratedPositionalRuleCallBindingContractTests
                 : A ;
             A : 'a';
             """;
-        Assembly assembly = CompileGeneratedSource(Emit(grammar));
+        Assembly assembly = CompileGeneratedSource(EmitWithGeneratedRuleArgumentBinding(grammar));
         object context = CreateExecutionContext(assembly);
 
         ParseNode result = InvokeParseWithContext(assembly, "a", context);
@@ -205,7 +205,7 @@ public sealed class GeneratedPositionalRuleCallBindingContractTests
                 : A ;
             A : 'a';
             """;
-        Assembly assembly = CompileGeneratedSource(Emit(grammar));
+        Assembly assembly = CompileGeneratedSource(EmitWithGeneratedRuleArgumentBinding(grammar));
         object context = CreateExecutionContext(assembly);
 
         ParserRuleCallBindingException exception = AssertBindingException(() => InvokeParseWithContext(assembly, "a", context));
@@ -232,7 +232,7 @@ public sealed class GeneratedPositionalRuleCallBindingContractTests
             {{childDeclaration}}
             A : 'a';
             """;
-        Assembly assembly = CompileGeneratedSource(Emit(grammar));
+        Assembly assembly = CompileGeneratedSource(EmitWithGeneratedRuleArgumentBinding(grammar));
         object context = CreateExecutionContext(assembly);
 
         ParserRuleCallBindingException exception = AssertBindingException(() => InvokeParseWithContext(assembly, "a", context));
@@ -257,7 +257,7 @@ public sealed class GeneratedPositionalRuleCallBindingContractTests
             child @init { Entered++; } : A ;
             A : 'a';
             """;
-        Assembly assembly = CompileGeneratedSource(Emit(grammar));
+        Assembly assembly = CompileGeneratedSource(EmitWithGeneratedRuleArgumentBinding(grammar));
         object context = CreateExecutionContext(assembly);
 
         ParseNode result = InvokeParseWithContext(assembly, "a", context);
@@ -285,7 +285,7 @@ public sealed class GeneratedPositionalRuleCallBindingContractTests
             child[int value] @init { Entered++; } : A ;
             A : 'a';
             """;
-        Assembly assembly = CompileGeneratedSource(Emit(grammar));
+        Assembly assembly = CompileGeneratedSource(EmitWithGeneratedRuleArgumentBinding(grammar));
         object context = CreateExecutionContext(assembly);
 
         ParserRuleCallBindingException exception = AssertBindingException(() => InvokeParseWithContext(assembly, "a", context));
@@ -309,7 +309,7 @@ public sealed class GeneratedPositionalRuleCallBindingContractTests
             child[int first, int second] @init { Entered++; } : A ;
             A : 'a';
             """;
-        Assembly assembly = CompileGeneratedSource(Emit(grammar));
+        Assembly assembly = CompileGeneratedSource(EmitWithGeneratedRuleArgumentBinding(grammar));
         object context = CreateExecutionContext(assembly);
 
         ParserRuleCallBindingException exception = AssertBindingException(() => InvokeParseWithContext(assembly, "a", context));
@@ -346,7 +346,7 @@ public sealed class GeneratedPositionalRuleCallBindingContractTests
             A : 'a';
             B : 'b';
             """;
-        Assembly assembly = CompileGeneratedSource(Emit(grammar));
+        Assembly assembly = CompileGeneratedSource(EmitWithGeneratedRuleArgumentBinding(grammar));
         object context = CreateExecutionContext(assembly);
 
         ParseNode result = InvokeParseWithContext(assembly, "a", context);
@@ -375,7 +375,7 @@ public sealed class GeneratedPositionalRuleCallBindingContractTests
             A : 'a';
             B : 'b';
             """;
-        Assembly assembly = CompileGeneratedSource(Emit(grammar));
+        Assembly assembly = CompileGeneratedSource(EmitWithGeneratedRuleArgumentBinding(grammar));
         object context = CreateExecutionContext(assembly);
 
         ParseNode result = InvokeParseWithContext(assembly, "a", context);
@@ -406,7 +406,7 @@ public sealed class GeneratedPositionalRuleCallBindingContractTests
             A : 'a';
             B : 'b';
             """;
-        Assembly assembly = CompileGeneratedSource(Emit(grammar));
+        Assembly assembly = CompileGeneratedSource(EmitWithGeneratedRuleArgumentBinding(grammar));
         object context = CreateExecutionContext(assembly);
 
         ParseNode result = InvokeParseWithContext(assembly, "a", context);
@@ -432,7 +432,7 @@ public sealed class GeneratedPositionalRuleCallBindingContractTests
                 ;
             A : 'a';
             """;
-        Assembly assembly = CompileGeneratedSource(Emit(grammar));
+        Assembly assembly = CompileGeneratedSource(EmitWithGeneratedRuleArgumentBinding(grammar));
         object context = CreateExecutionContext(assembly);
 
         ParseNode result = InvokeParseWithContext(assembly, "aa", context);
@@ -447,7 +447,7 @@ public sealed class GeneratedPositionalRuleCallBindingContractTests
     [TestMethod]
     public void ParseWithEmbeddedCode_FallbackOrder_BindsBeforeBeforeCallAndSkipsFallbackOnBindingError()
     {
-        Assembly validAssembly = CompileGeneratedSource(Emit(SingleIntGrammar()));
+        Assembly validAssembly = CompileGeneratedSource(EmitWithGeneratedRuleArgumentBinding(SingleIntGrammar()));
         object validContext = CreateExecutionContext(validAssembly);
         var validPolicy = new RecordingRuleCallPolicy(seedValue: null);
         ParserRuntimeFeaturePolicy validBase = ParserRuntimeFeaturePolicy.Default with { RuleCallExecutionPolicy = validPolicy };
@@ -465,7 +465,7 @@ public sealed class GeneratedPositionalRuleCallBindingContractTests
             child[int value] : A ;
             A : 'a';
             """;
-        Assembly invalidAssembly = CompileGeneratedSource(Emit(invalidGrammar));
+        Assembly invalidAssembly = CompileGeneratedSource(EmitWithGeneratedRuleArgumentBinding(invalidGrammar));
         object invalidContext = CreateExecutionContext(invalidAssembly);
         var invalidPolicy = new RecordingRuleCallPolicy(seedValue: null);
         ParserRuntimeFeaturePolicy invalidBase = ParserRuntimeFeaturePolicy.Default with { RuleCallExecutionPolicy = invalidPolicy };
@@ -491,11 +491,11 @@ public sealed class GeneratedPositionalRuleCallBindingContractTests
         """;
 
     /// <summary>
-    /// Emits generated C# with generated positional argument binding enabled.
+    /// Emits generated C# with the internal generated positional argument binding flag enabled.
     /// </summary>
     /// <param name="grammarText">ANTLR grammar text.</param>
     /// <returns>Generated C# source.</returns>
-    private static string Emit(string grammarText)
+    private static string EmitWithGeneratedRuleArgumentBinding(string grammarText)
     {
         var grammar = new G4Parser(new G4Tokenizer(grammarText).Tokenize()).Parse();
         return GrammarEmitter.Emit(
