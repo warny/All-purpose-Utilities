@@ -368,6 +368,74 @@ namespace UtilsTest.VirtualMachine
             Assert.AreEqual(-128L, context.Stack.Peek());
         }
 
+        // ── Item 17: LEB128 overlong and overflow rejection ───────────────────
+
+        [TestMethod]
+        public void ReadULEB128_ElevenBytes_ThrowsFormatException()
+        {
+            // 11 bytes all with the continuation bit set — exceeds the 10-byte maximum.
+            byte[] payload = [0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x00];
+            byte[] instructions = [0x20, .. payload];
+            var context = new DefaultContext(instructions);
+            Assert.ThrowsException<FormatException>(() => new LEB128TestMachine().Execute(context));
+        }
+
+        [TestMethod]
+        public void ReadULEB128_TenthByteInvalidHighBits_ThrowsFormatException()
+        {
+            // 9 continuation bytes followed by a 10th byte that has payload bits beyond bit 63.
+            // Valid 10th byte for ULEB128 is 0x00 or 0x01 only.
+            byte[] payload = [0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x02];
+            byte[] instructions = [0x20, .. payload];
+            var context = new DefaultContext(instructions);
+            Assert.ThrowsException<FormatException>(() => new LEB128TestMachine().Execute(context));
+        }
+
+        [TestMethod]
+        public void ReadULEB128_MaxUInt64_DecodesCorrectly()
+        {
+            // ulong.MaxValue = 0xFFFFFFFFFFFFFFFF in ULEB128:
+            // [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x01]
+            byte[] payload = [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x01];
+            byte[] instructions = [0x20, .. payload];
+            var context = new DefaultContext(instructions);
+            new LEB128TestMachine().Execute(context);
+            Assert.AreEqual(ulong.MaxValue, context.Stack.Peek());
+        }
+
+        [TestMethod]
+        public void ReadSLEB128_ElevenBytes_ThrowsFormatException()
+        {
+            byte[] payload = [0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x00];
+            byte[] instructions = [0x21, .. payload];
+            var context = new DefaultContext(instructions);
+            Assert.ThrowsException<FormatException>(() => new LEB128TestMachine().Execute(context));
+        }
+
+        [TestMethod]
+        public void ReadSLEB128_MaxInt64_DecodesCorrectly()
+        {
+            // long.MaxValue = 0x7FFFFFFFFFFFFFFF in SLEB128:
+            // [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00]
+            byte[] payload = [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00];
+            byte[] instructions = [0x21, .. payload];
+            var context = new DefaultContext(instructions);
+            new LEB128TestMachine().Execute(context);
+            Assert.AreEqual(long.MaxValue, context.Stack.Peek());
+        }
+
+        [TestMethod]
+        public void ReadSLEB128_MinInt64_DecodesCorrectly()
+        {
+            // long.MinValue = -9223372036854775808 in SLEB128:
+            // [0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x7F]
+            byte[] payload = [0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x7F];
+            byte[] instructions = [0x21, .. payload];
+            var context = new DefaultContext(instructions);
+            new LEB128TestMachine().Execute(context);
+            Assert.AreEqual(long.MinValue, context.Stack.Peek());
+        }
+
         [TestMethod]
         public void RegisterInstruction_DuplicateOpcode_Throws()
         {

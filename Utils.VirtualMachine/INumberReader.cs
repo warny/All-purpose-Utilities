@@ -82,45 +82,63 @@ public interface INumberReader
     /// <summary>
     /// Reads an unsigned LEB128-encoded integer from the supplied <paramref name="context"/>.
     /// LEB128 is byte-order independent; this default implementation delegates to <see cref="ReadByte"/>.
+    /// A 64-bit value requires at most 10 bytes; longer sequences are rejected as malformed.
+    /// The 10th byte must not have payload bits beyond bit 63 (only the low bit is valid).
     /// </summary>
     /// <param name="context">The execution context containing the instruction stream.</param>
     /// <returns>The unsigned integer decoded from the LEB128 byte sequence.</returns>
+    /// <exception cref="FormatException">
+    /// Thrown when the encoding exceeds 10 bytes or the 10th byte carries invalid high-order bits.
+    /// </exception>
     ulong ReadULEB128(Context context)
     {
         ulong result = 0;
         int shift = 0;
-        byte b;
-        do
+        for (int byteCount = 0; byteCount < 10; byteCount++)
         {
-            b = ReadByte(context);
+            byte b = ReadByte(context);
+            if (byteCount == 9 && (b & 0xFE) != 0)
+                throw new FormatException(
+                    $"Malformed ULEB128: the 10th byte (0x{b:X2}) carries bits beyond bit 63.");
             result |= (ulong)(b & 0x7F) << shift;
             shift += 7;
+            if ((b & 0x80) == 0) return result;
         }
-        while ((b & 0x80) != 0);
-        return result;
+        throw new FormatException("Malformed ULEB128: encoding exceeds the maximum of 10 bytes for a 64-bit value.");
     }
 
     /// <summary>
     /// Reads a signed LEB128-encoded integer from the supplied <paramref name="context"/>.
     /// LEB128 is byte-order independent; this default implementation delegates to <see cref="ReadByte"/>.
+    /// A 64-bit value requires at most 10 bytes; longer sequences are rejected as malformed.
+    /// The 10th byte must encode only the sign extension (only bits 0 and 6 are meaningful).
     /// </summary>
     /// <param name="context">The execution context containing the instruction stream.</param>
     /// <returns>The signed integer decoded from the LEB128 byte sequence.</returns>
+    /// <exception cref="FormatException">
+    /// Thrown when the encoding exceeds 10 bytes or the 10th byte carries invalid high-order bits.
+    /// </exception>
     long ReadSLEB128(Context context)
     {
         long result = 0;
         int shift = 0;
-        byte b;
-        do
+        for (int byteCount = 0; byteCount < 10; byteCount++)
         {
-            b = ReadByte(context);
+            byte b = ReadByte(context);
+            // The 10th byte covers bits 63 only; bits 1..6 must match the sign extension.
+            if (byteCount == 9 && (b & 0xFE) != 0 && (b & 0xFE) != 0x7E)
+                throw new FormatException(
+                    $"Malformed SLEB128: the 10th byte (0x{b:X2}) carries bits beyond bit 63.");
             result |= (long)(b & 0x7F) << shift;
             shift += 7;
+            if ((b & 0x80) == 0)
+            {
+                if (shift < 64 && (b & 0x40) != 0)
+                    result |= -(1L << shift);
+                return result;
+            }
         }
-        while ((b & 0x80) != 0);
-        if (shift < 64 && (b & 0x40) != 0)
-            result |= -(1L << shift);
-        return result;
+        throw new FormatException("Malformed SLEB128: encoding exceeds the maximum of 10 bytes for a 64-bit value.");
     }
 }
 
