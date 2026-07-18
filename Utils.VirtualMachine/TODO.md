@@ -1,10 +1,12 @@
 # Utils.VirtualMachine — Quality and correctness audit (2026-07-11)
 
+> **Partially completed 2026-07-18.** Items 1, 2, 3, 11, 12 addressed in PR fix/utils-vm-quality-audit-p0-p1. Items 4–10, 13–16 remain open (see below). Item 13 was already correct before this pass.
+
 Static review of the processor, scheduler, virtual-memory model, stacks, and structured control-flow helpers. The review focuses on deterministic bytecode dispatch, malformed-program handling, memory isolation, lifecycle state, resource bounds, and duplicated intent. No production code is changed by this commit.
 
 ## Critical priority
 
-### 1. Prefix opcodes make longer instructions unreachable
+### ✅ 1. Prefix opcodes make longer instructions unreachable
 
 The slow dispatch path reads bytes incrementally and invokes an instruction as soon as the accumulated byte sequence matches any registered opcode. If both `[0x10]` and `[0x10, 0x20]` are registered, the one-byte instruction executes immediately after `0x10`; the dispatcher never reads `0x20` to consider the longer opcode.
 
@@ -16,7 +18,7 @@ The fast lookup explicitly detects shared first bytes and routes them to the slo
 
 **Priority: P0 bytecode correctness.**
 
-### 2. A scheduler exception can leave a process permanently `Running`
+### ✅ 2. A scheduler exception can leave a process permanently `Running`
 
 `Scheduler.Step` changes a process from `Ready` to `Running` before calling `ExecuteStep`. If instruction dispatch or a handler throws, no `finally` or fault transition restores the state. A later `Run` sees a `Running` process in its loop condition, while `Step` selects only `Ready` processes and returns `false` forever.
 
@@ -28,7 +30,7 @@ The fast lookup explicitly detects shared first bytes and routes them to the slo
 
 ## High priority
 
-### 3. Runtime opcode keys remain mutable after registration
+### ✅ 3. Runtime opcode keys remain mutable after registration
 
 `RegisterInstruction` inserts the caller-provided `byte[]` directly into a dictionary whose equality and hash code depend on the array contents. The caller can mutate the array afterward. The public `Instructions` enumeration also exposes the same key object as `IReadOnlyCollection<byte>`, which prevents mutation only through that interface, not through retained aliases.
 
@@ -108,7 +110,7 @@ For unambiguous one-byte opcodes, the inspector is notified before the instructi
 
 **Priority: P1 resource correctness.**
 
-### 11. Removed scheduler processes may continue executing their current quantum
+### ✅ 11. Removed scheduler processes may continue executing their current quantum
 
 `Step` snapshots ready processes and checks membership only before starting each process. If an instruction handler calls `RemoveProcess` on its own process, the inner quantum loop does not recheck membership and continues executing up to `QuantumSteps` instructions.
 
@@ -118,7 +120,7 @@ For unambiguous one-byte opcodes, the inspector is notified before the instructi
 
 **Priority: P1 lifecycle correctness.**
 
-### 12. `Break` and `Continue` destructively alter the stack before reporting misuse
+### ✅ 12. `Break` and `Continue` destructively alter the stack before reporting misuse
 
 Both methods pop nested blocks while searching for a loop. If no loop exists, they throw only after all blocks have been removed.
 

@@ -160,12 +160,44 @@ public abstract class VirtualProcessor<T> where T : Context
 
             foreach (InstructionAttribute attr in instructionAttributes.OfType<InstructionAttribute>())
             {
-                result.Add(attr.Instruction, (attr.Name, instructionDelegate));
-                _maxInstructionSize = Math.Max(_maxInstructionSize, attr.Instruction.Length);
+                // Clone the attribute's opcode into owned immutable storage so that external
+                // mutations of the source array cannot corrupt the dictionary's hash buckets.
+                byte[] ownedOpcode = (byte[])attr.Instruction.Clone();
+                CheckPrefixConflict(result, ownedOpcode);
+                result.Add(ownedOpcode, (attr.Name, instructionDelegate));
+                _maxInstructionSize = Math.Max(_maxInstructionSize, ownedOpcode.Length);
             }
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Throws <see cref="ArgumentException"/> when <paramref name="newOpcode"/> is a proper prefix
+    /// of an already-registered opcode, or when any registered opcode is a proper prefix of
+    /// <paramref name="newOpcode"/>. Prefix ambiguity makes one of the opcodes permanently
+    /// unreachable in the dispatch loop.
+    /// </summary>
+    private static void CheckPrefixConflict(
+        Dictionary<IReadOnlyCollection<byte>, (string Name, InstructionDelegate Handler)> existing,
+        byte[] newOpcode)
+    {
+        foreach (var key in existing.Keys)
+        {
+            var keyList = key.ToList();
+            int minLen = Math.Min(keyList.Count, newOpcode.Length);
+            bool sharedPrefix = true;
+            for (int i = 0; i < minLen; i++)
+            {
+                if (keyList[i] != newOpcode[i]) { sharedPrefix = false; break; }
+            }
+            if (sharedPrefix && keyList.Count != newOpcode.Length)
+                throw new ArgumentException(
+                    $"Opcode [{string.Join(", ", newOpcode.Select(b => $"0x{b:X2}"))}] conflicts with " +
+                    $"already-registered opcode [{string.Join(", ", keyList.Select(b => $"0x{b:X2}"))}]: " +
+                    "one is a proper prefix of the other. Prefix conflicts make the longer opcode unreachable.",
+                    "opcode");
+        }
     }
 
     /// <summary>
@@ -356,10 +388,18 @@ public abstract class VirtualProcessor<T> where T : Context
                 $"An instruction with opcode [{string.Join(", ", opcode.Select(b => $"0x{b:X2}"))}] is already registered.",
                 nameof(opcode));
 
-        InstructionsSet[opcode] = (name ?? string.Empty, ctx => handler(ctx));
-        if (opcode.Length > _maxInstructionSize)
+        // Clone into owned storage so that external mutations of the source array cannot corrupt
+        // dictionary hash buckets or dispatch tables after registration.
+        byte[] ownedOpcode = (byte[])opcode.Clone();
+        // Always enforce prefix-conflict rules. CheckPrefixConflict only throws when lengths differ,
+        // so replacing an exact opcode (overwrite: true) is allowed while cross-length conflicts are
+        // still rejected — a conflict with a different-length opcode is invalid regardless of overwrite.
+        CheckPrefixConflict(InstructionsSet, ownedOpcode);
+
+        InstructionsSet[ownedOpcode] = (name ?? string.Empty, ctx => handler(ctx));
+        if (ownedOpcode.Length > _maxInstructionSize)
         {
-            _maxInstructionSize = opcode.Length;
+            _maxInstructionSize = ownedOpcode.Length;
             Array.Resize(ref _buffer, _maxInstructionSize);
         }
         RebuildFastLookup();
@@ -384,7 +424,8 @@ public abstract class VirtualProcessor<T> where T : Context
         byte firstByte = context.Data.Span[instructionStart];
         if (_fastLookup[firstByte] is { } fast)
         {
-            NotifyInspector(context, instructionStart, fast.Name);
+            // IP has not been advanced yet: expected value after the callback is still instructionStart.
+            NotifyInspector(context, instructionStart, instructionStart, fast.Name);
             // If the inspector redirected execution (e.g. a breakpoint handler jumped away),
             // skip this instruction entirely to honour the new instruction pointer.
             if (context.InstructionPointer != instructionStart) return;
@@ -408,8 +449,11 @@ public abstract class VirtualProcessor<T> where T : Context
             var segment = new ArraySegment<byte>(_buffer, 0, _bufferLength);
             if (InstructionsSet.TryGetValue(segment, out var entry))
             {
+                // IP has already advanced past the opcode bytes: pass the post-opcode position
+                // as the expected value so NotifyInspector can distinguish a genuine redirect
+                // from the normal advancement due to reading a multi-byte opcode.
                 int afterOpcodeIp = context.InstructionPointer;
-                NotifyInspector(context, instructionStart, entry.Name);
+                NotifyInspector(context, instructionStart, afterOpcodeIp, entry.Name);
                 // Same guard: inspector may redirect before operands are consumed.
                 if (context.InstructionPointer != afterOpcodeIp) return;
                 try
@@ -430,13 +474,30 @@ public abstract class VirtualProcessor<T> where T : Context
     /// <summary>
     /// Notifies <see cref="Inspector"/> (when set) before an instruction runs, and additionally
     /// calls <see cref="IVmInspector{T}.OnBreakpoint"/> when the address is in <see cref="Breakpoints"/>.
-    /// Inlined from <see cref="TryDispatch"/> to keep the hot path clean.
+    /// If <see cref="IVmInspector{T}.OnBreakpoint"/> redirects the instruction pointer, this method
+    /// returns without calling <see cref="IVmInspector{T}.BeforeInstruction"/> so that the callback
+    /// does not receive stale instruction metadata for the old address.
     /// </summary>
-    private void NotifyInspector(T context, int address, string instructionName)
+    /// <param name="context">The current execution context.</param>
+    /// <param name="address">Address of the instruction (first byte of the opcode).</param>
+    /// <param name="expectedInstructionPointer">
+    /// The value <see cref="Context.InstructionPointer"/> is expected to hold when no redirect has
+    /// occurred. For the fast dispatch path this equals <paramref name="address"/> (IP not yet
+    /// advanced); for the slow path it equals the position immediately after the last opcode byte
+    /// was consumed. Any other value after <see cref="IVmInspector{T}.OnBreakpoint"/> is treated
+    /// as a deliberate redirect.
+    /// </param>
+    /// <param name="instructionName">Human-readable instruction name for diagnostics.</param>
+    private void NotifyInspector(T context, int address, int expectedInstructionPointer, string instructionName)
     {
         if (Inspector is not { } inspector) return;
         if (Breakpoints.Count > 0 && Breakpoints.Contains(address))
+        {
             inspector.OnBreakpoint(context, address, instructionName);
+            // If OnBreakpoint redirected execution, skip BeforeInstruction for the old instruction
+            // so that the callback does not observe contradictory metadata.
+            if (context.InstructionPointer != expectedInstructionPointer) return;
+        }
         inspector.BeforeInstruction(context, address, instructionName);
     }
 }

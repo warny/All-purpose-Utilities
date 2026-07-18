@@ -16,4 +16,13 @@ public enum ProcessState
 
     /// <summary>The process has terminated and will never run again.</summary>
     Terminated,
+
+    /// <summary>
+    /// The process encountered an unhandled exception during instruction execution.
+    /// The exception is available via <see cref="ScheduledProcess{T}.FaultException"/>.
+    /// A faulted process will not run again; it is treated the same as
+    /// <see cref="Terminated"/> by <see cref="Scheduler{T}.Run"/> and
+    /// <see cref="Scheduler{T}.RunAsync"/>.
+    /// </summary>
+    Faulted,
 }
