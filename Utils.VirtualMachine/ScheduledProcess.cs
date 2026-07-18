@@ -46,6 +46,13 @@ public sealed class ScheduledProcess<T> where T : Context
     /// </summary>
     public bool YieldRequested => _yieldRequested;
 
+    /// <summary>
+    /// Gets the exception that caused this process to fault, or <see langword="null"/> when
+    /// <see cref="State"/> is not <see cref="ProcessState.Faulted"/>.
+    /// Set by <see cref="Scheduler{T}"/> when an unhandled exception escapes an instruction handler.
+    /// </summary>
+    public Exception? FaultException { get; private set; }
+
     internal ScheduledProcess(int processId, T context, VirtualProcessor<T> processor, int priority, string? name)
     {
         ProcessId = processId;
@@ -86,6 +93,16 @@ public sealed class ScheduledProcess<T> where T : Context
 
     /// <summary>Sets the process state. Called exclusively by <see cref="Scheduler{T}"/>.</summary>
     internal void SetState(ProcessState state) => _state = state;
+
+    /// <summary>
+    /// Transitions the process to <see cref="ProcessState.Faulted"/> and stores the exception.
+    /// Called exclusively by <see cref="Scheduler{T}"/> when an unhandled exception escapes a quantum.
+    /// </summary>
+    internal void SetFaulted(Exception exception)
+    {
+        FaultException = exception;
+        _state = ProcessState.Faulted;
+    }
 
     /// <summary>
     /// Clears the yield flag. Called by <see cref="Scheduler{T}"/> before starting each

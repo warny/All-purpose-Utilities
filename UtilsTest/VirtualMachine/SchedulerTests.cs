@@ -469,4 +469,93 @@ public class SchedulerTests
         var scheduler = new Scheduler<DefaultContext>();
         scheduler.RunAsync().GetAwaiter().GetResult(); // must not throw or block
     }
+
+    // ── Item 2: scheduler exception transitions process to Faulted ───────────
+
+    [TestMethod]
+    public void Step_InstructionException_TransitionsProcessToFaulted()
+    {
+        var scheduler = new Scheduler<DefaultContext>(quantumSteps: 10);
+        var processor = new CountingProcessor();
+        processor.RegisterInstruction([0x02], "BOOM", _ => throw new InvalidOperationException("test fault"));
+
+        var proc = scheduler.AddProcess(Ctx(0x02), processor);
+        scheduler.Step();
+
+        Assert.AreEqual(ProcessState.Faulted, proc.State);
+        Assert.IsInstanceOfType<InvalidOperationException>(proc.FaultException);
+    }
+
+    [TestMethod]
+    public void Step_InstructionException_FaultExceptionStored()
+    {
+        var scheduler = new Scheduler<DefaultContext>(quantumSteps: 10);
+        var processor = new CountingProcessor();
+        processor.RegisterInstruction([0x02], "BOOM", _ => throw new InvalidOperationException("sentinel"));
+
+        var proc = scheduler.AddProcess(Ctx(0x02), processor);
+        scheduler.Step();
+
+        Assert.IsNotNull(proc.FaultException);
+        Assert.AreEqual("sentinel", proc.FaultException.Message);
+    }
+
+    [TestMethod]
+    public void Run_FaultedProcess_DoesNotLoopForever()
+    {
+        var scheduler = new Scheduler<DefaultContext>(quantumSteps: 10);
+        var processor = new CountingProcessor();
+        processor.RegisterInstruction([0x02], "BOOM", _ => throw new InvalidOperationException());
+
+        var proc = scheduler.AddProcess(Ctx(0x02), processor);
+        scheduler.Run(); // must return, not loop forever
+
+        Assert.AreEqual(ProcessState.Faulted, proc.State);
+    }
+
+    // ── Item 11: process removed from its handler stops further execution ─────
+
+    [TestMethod]
+    public void Step_ProcessRemovesItself_StopsFurtherExecution()
+    {
+        var scheduler = new Scheduler<DefaultContext>(quantumSteps: 100);
+        var ctx = Ctx(0x01, 0x01, 0x01, 0x01, 0x01); // 5 STEPs
+        ScheduledProcess<DefaultContext>? handle = null;
+        int stepCount = 0;
+
+        var processor = new CountingProcessor();
+        processor.RegisterInstruction([0x01], "STEP", c =>
+        {
+            stepCount++;
+            c.Stack.Push(1);
+            scheduler.RemoveProcess(handle!.ProcessId); // self-remove on first step
+        }, overwrite: true);
+
+        handle = scheduler.AddProcess(ctx, processor);
+        scheduler.Step();
+
+        // Only 1 instruction must have executed: the process was removed before the 2nd.
+        Assert.AreEqual(1, stepCount);
+        Assert.IsFalse(scheduler.Processes.Contains(handle));
+    }
+
+    // ── Item 44: duplicate context registration is rejected ───────────────────
+
+    [TestMethod]
+    public void AddProcess_SameContext_Throws()
+    {
+        var scheduler = new Scheduler<DefaultContext>();
+        var ctx = Ctx(0x00);
+        scheduler.AddProcess(ctx, Proc());
+        Assert.ThrowsException<ArgumentException>(() => scheduler.AddProcess(ctx, Proc()));
+    }
+
+    [TestMethod]
+    public void AddProcess_DifferentContexts_BothSucceed()
+    {
+        var scheduler = new Scheduler<DefaultContext>();
+        scheduler.AddProcess(Ctx(0x00), Proc());
+        scheduler.AddProcess(Ctx(0x00), Proc()); // different instance — must succeed
+        Assert.AreEqual(2, scheduler.Processes.Count);
+    }
 }
