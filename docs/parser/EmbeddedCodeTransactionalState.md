@@ -122,7 +122,7 @@ The generated-C# opt-in writes request exactly three mutations through that resu
 Lexer state has several distinct lifetimes and must not be described as one persistent snapshot surface:
 
 1. **Persistent state between tokens.** `LexerEngine` owns the current mode, the mode stack, `more` text accumulation, and the associated `more` start position across token recognitions in a tokenization run.
-2. **Tokenization-session state.** A `Tokenize(...)` call owns the `TextReaderBuffer` and its current input position, the emitted-token collection, and extension state needed by that tokenization session. The input position is session-local buffer state, not a persistent `LexerEngine` field.
+2. **Tokenization-session state.** A `Tokenize(...)` call owns the `TextReaderBuffer` and its current input position, the emitted-token collection, and the per-call extension invocation contexts. The input position is session-local buffer state, not a persistent `LexerEngine` field. Any mutable state retained inside caller-provided `ILexerExtension` instances remains external to lexer-managed rollback guarantees.
 3. **Attempt- or acceptance-local state.** Matching and acceptance use local values such as the current best match, collected commands and action occurrences, token/chunk construction data, and the `LexerActionExecutionResult` created after selection for the accepted token.
 
 These lexer-owned operational categories are not parser transactional state. They must not be routed through `IParserExecutionStateManager`, and a shared manager controlled by a flag such as `isLexer` would obscure the distinct contracts. A future `ILexerExecutionStateManager`, if ever needed, requires a concrete rollback use case and a separate design and implementation PR.
