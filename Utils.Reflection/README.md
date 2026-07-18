@@ -77,6 +77,70 @@ using var lib = LibraryMapper.Create<MathLib>("math.dll");
 int result = lib.Add(3, 4); // 7
 ```
 
+### `[External]` member constraints
+
+`LibraryMapper.Dispose()` must be able to set every `[External]`-decorated member to
+`null` unconditionally, so that no stale delegate remains pointing into freed native memory.
+To make this guarantee enforceable, `Create<T>()` rejects any member that cannot be safely
+nulled during the prepare phase — **before** any DLL export is resolved.
+
+**Allowed:**
+
+```csharp
+// ✔ Field — always settable to null
+[External("compute")]
+public Func<int, int>? Compute;
+
+// ✔ Auto-property — compiler-generated backing field, no custom logic
+[External("compute")]
+public Func<int, int>? Compute { get; set; }
+```
+
+**Rejected at `Create()` time:**
+
+```csharp
+// ✗ Custom setter body — rejected, even if the assignment looks trivial
+[External("compute")]
+public Func<int, int>? Compute
+{
+    get => _compute;
+    set => _compute = value;  // ← Create throws InvalidOperationException
+}
+private Func<int, int>? _compute;
+
+// ✗ Setter that refuses null — also rejected
+[External("compute")]
+public Func<int, int> Compute
+{
+    get => _compute ?? throw new InvalidOperationException("Not loaded");
+    set => _compute = value ?? throw new ArgumentNullException(nameof(value));
+}
+```
+
+`Create<T>()` detects auto-properties by looking for the compiler-generated
+`<PropertyName>k__BackingField` on the declaring type. Any property without that field is
+considered to have a custom setter body and is rejected.
+
+> **Note:** the `<Name>k__BackingField` naming convention is specific to the C# compiler.
+> Types produced by other IL generators (Reflection.Emit, F#, or third-party source generators
+> that emit properties with custom setter bodies) may not follow this convention and could be
+> misclassified. `LibraryMapper` subclasses are expected to be C#-authored, so the convention
+> is a reliable signal in practice.
+
+> **Non-nullable contract:** if you need callers to see a non-nullable API, expose it through
+> a wrapper method rather than through the setter of the `[External]` member:
+>
+> ```csharp
+> public class MyLib : LibraryMapper
+> {
+>     [External("compute")]
+>     public Func<int, int>? Compute { get; set; }   // nullable backing member
+>
+>     public int ComputeChecked(int x)               // non-nullable public surface
+>         => (Compute ?? throw new ObjectDisposedException(nameof(MyLib)))(x);
+> }
+> ```
+
 ### Interface emit approach
 
 When you don't want to define a subclass, `Emit<TInterface>` generates the implementation at runtime — in an

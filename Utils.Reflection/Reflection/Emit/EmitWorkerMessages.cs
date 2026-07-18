@@ -26,7 +26,7 @@ internal enum WorkerRequestKind
 internal sealed class WorkerRequest
 {
     /// <summary>Correlation identifier echoed back in the matching <see cref="WorkerResponse"/>.</summary>
-    public int Id { get; set; }
+    public long Id { get; set; }
 
     /// <summary>Purpose of this request.</summary>
     public WorkerRequestKind Kind { get; set; }
@@ -65,7 +65,7 @@ internal sealed class WorkerRequest
 internal sealed class WorkerResponse
 {
     /// <summary>Correlation identifier matching the originating <see cref="WorkerRequest"/>.</summary>
-    public int Id { get; set; }
+    public long Id { get; set; }
 
     /// <summary><see langword="true"/> when the request completed without error.</summary>
     public bool Success { get; set; }

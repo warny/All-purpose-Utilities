@@ -111,9 +111,20 @@ internal static class CrossProcessMarshaling
 
         if (type.IsValueType)
         {
-            foreach (FieldInfo field in type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+            // JsonSerializer with IncludeFields=true serializes public fields AND public properties.
+            // Non-public fields are NOT serialized, so they must not be validated here — doing so
+            // would falsely reject structs whose backing fields are compiler-generated or private.
+            foreach (FieldInfo field in type.GetFields(BindingFlags.Public | BindingFlags.Instance))
             {
                 if (!IsSupportedType(field.FieldType, depth + 1))
+                {
+                    return false;
+                }
+            }
+
+            foreach (PropertyInfo property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+            {
+                if (property.CanRead && !IsSupportedType(property.PropertyType, depth + 1))
                 {
                     return false;
                 }

@@ -47,8 +47,9 @@ internal sealed class PluginWorkerProcess : IAsyncDisposable
 
         if (sandbox is not null && OperatingSystem.IsWindows())
         {
-            // Pre-grant the AppContainer read access to the plugin directory so the worker
-            // can load DLLs placed there by the user.
+            // Ensure the directory exists before granting the ACL. Directory creation is now the
+            // caller's responsibility (separated from the ACL assignment, per item 58).
+            Directory.CreateDirectory(PluginDirectoryLocator.PluginDirectory);
             sandbox.GrantDirectoryReadAccess(PluginDirectoryLocator.PluginDirectory);
         }
     }

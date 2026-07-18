@@ -1,7 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using Utils.Objects;
 
 namespace Utils.Reflection;
@@ -12,21 +12,46 @@ namespace Utils.Reflection;
 public static class TypeEx
 {
     /// <summary>
-    /// Checks if <paramref name="toBeAssigned"/> can be assigned from <paramref name="toAssign"/>.
-    /// For numeric types, this also checks size compatibility when both types are numbers.
+    /// Maps each numeric type to the set of numeric types it can implicitly receive, matching
+    /// the C# implicit numeric conversion table (§10.2.3 of the C# spec).
     /// </summary>
-    /// <param name="toBeAssigned">The type to be assigned to.</param>
-    /// <param name="toAssign">The type to be assigned.</param>
-    /// <returns>True if <paramref name="toAssign"/> can be assigned to <paramref name="toBeAssigned"/>; otherwise, false.</returns>
+    private static readonly Dictionary<Type, HashSet<Type>> ImplicitNumericConversions = new()
+    {
+        [typeof(short)]   = [typeof(sbyte), typeof(byte)],
+        [typeof(ushort)]  = [typeof(byte)],
+        [typeof(int)]     = [typeof(sbyte), typeof(byte), typeof(short), typeof(ushort), typeof(char)],
+        [typeof(uint)]    = [typeof(byte), typeof(ushort), typeof(char)],
+        [typeof(long)]    = [typeof(sbyte), typeof(byte), typeof(short), typeof(ushort), typeof(int), typeof(uint), typeof(char)],
+        [typeof(ulong)]   = [typeof(byte), typeof(ushort), typeof(uint), typeof(char)],
+        [typeof(float)]   = [typeof(sbyte), typeof(byte), typeof(short), typeof(ushort), typeof(int), typeof(uint), typeof(long), typeof(ulong), typeof(char)],
+        [typeof(double)]  = [typeof(sbyte), typeof(byte), typeof(short), typeof(ushort), typeof(int), typeof(uint), typeof(long), typeof(ulong), typeof(float), typeof(char)],
+        [typeof(decimal)] = [typeof(sbyte), typeof(byte), typeof(short), typeof(ushort), typeof(int), typeof(uint), typeof(long), typeof(ulong), typeof(char)],
+    };
+
+    /// <summary>
+    /// Checks if <paramref name="toAssign"/> can be implicitly assigned to a variable of type
+    /// <paramref name="toBeAssigned"/>.
+    /// </summary>
+    /// <remarks>
+    /// For numeric types, only the implicit numeric conversions defined by the C# specification are
+    /// accepted. <c>uint → int</c> or <c>long → int</c> are therefore rejected even though they share
+    /// the same storage size.  Use <see cref="Type.IsAssignableFrom"/> when CLR assignability — rather
+    /// than C# implicit conversion — is the intended check.
+    /// </remarks>
+    /// <param name="toBeAssigned">Target type of the assignment.</param>
+    /// <param name="toAssign">Source type of the assignment.</param>
+    /// <returns>
+    /// <see langword="true"/> if a C# implicit conversion exists from <paramref name="toAssign"/> to
+    /// <paramref name="toBeAssigned"/>, or if the CLR considers <paramref name="toAssign"/> directly
+    /// assignable to <paramref name="toBeAssigned"/>.
+    /// </returns>
     public static bool IsAssignableFromEx(this Type toBeAssigned, Type toAssign)
     {
-        if (toBeAssigned.In(Types.Number) && toAssign.In(Types.Number))
-        {
-            // If it's a floating point number, allow assignment.
-            if (toBeAssigned.In(Types.FloatingPointNumber)) return true;
+        if (toBeAssigned == toAssign) return true;
 
-            // For other numbers, compare their sizes using Marshal.
-            return Marshal.SizeOf(toBeAssigned) >= Marshal.SizeOf(toAssign);
+        if (ImplicitNumericConversions.TryGetValue(toBeAssigned, out HashSet<Type>? sources))
+        {
+            return sources.Contains(toAssign);
         }
 
         return toBeAssigned.IsAssignableFrom(toAssign);
@@ -60,12 +85,30 @@ public static class TypeEx
     /// </summary>
     /// <param name="type">The type from which to retrieve the property or field.</param>
     /// <param name="name">The name of the property or field.</param>
-    /// <returns>A <see cref="PropertyOrFieldInfo"/> representing the found member, or null if not found.</returns>
-    public static PropertyOrFieldInfo GetPropertyOrField(this Type type, string name)
-        => type.GetMember(name)
+    /// <returns>
+    /// A <see cref="PropertyOrFieldInfo"/> representing the found member, or <see langword="null"/> if
+    /// no matching member exists.
+    /// </returns>
+    /// <exception cref="AmbiguousMatchException">
+    /// Thrown when the lookup resolves to more than one member (for example, a property and a field
+    /// with the same name in different scopes, or a hidden member in a derived class).
+    /// </exception>
+    public static PropertyOrFieldInfo? GetPropertyOrField(this Type type, string name)
+    {
+        var candidates = type.GetMember(name)
             .Where(m => m is PropertyInfo || m is FieldInfo)
             .Select(m => new PropertyOrFieldInfo(m))
-            .FirstOrDefault();
+            .ToList();
+
+        return candidates.Count switch
+        {
+            0 => null,
+            1 => candidates[0],
+            _ => throw new AmbiguousMatchException(
+                $"'{type.FullName}.{name}' resolves to {candidates.Count} members. " +
+                "Provide BindingFlags to narrow the search to the intended member.")
+        };
+    }
 
     /// <summary>
     /// Gets a property or field by name from the specified type, using the given binding flags.
@@ -73,12 +116,29 @@ public static class TypeEx
     /// <param name="type">The type from which to retrieve the property or field.</param>
     /// <param name="name">The name of the property or field.</param>
     /// <param name="bindingFlags">A combination of <see cref="BindingFlags"/> to control the search.</param>
-    /// <returns>A <see cref="PropertyOrFieldInfo"/> representing the found member, or null if not found.</returns>
-    public static PropertyOrFieldInfo GetPropertyOrField(this Type type, string name, BindingFlags bindingFlags)
-        => type.GetMember(name, bindingFlags)
+    /// <returns>
+    /// A <see cref="PropertyOrFieldInfo"/> representing the found member, or <see langword="null"/> if
+    /// no matching member exists.
+    /// </returns>
+    /// <exception cref="AmbiguousMatchException">
+    /// Thrown when the lookup resolves to more than one member under the given <paramref name="bindingFlags"/>.
+    /// </exception>
+    public static PropertyOrFieldInfo? GetPropertyOrField(this Type type, string name, BindingFlags bindingFlags)
+    {
+        var candidates = type.GetMember(name, bindingFlags)
             .Where(m => m is PropertyInfo || m is FieldInfo)
             .Select(m => new PropertyOrFieldInfo(m))
-            .FirstOrDefault();
+            .ToList();
+
+        return candidates.Count switch
+        {
+            0 => null,
+            1 => candidates[0],
+            _ => throw new AmbiguousMatchException(
+                $"'{type.FullName}.{name}' resolves to {candidates.Count} members under the given BindingFlags. " +
+                "Refine the BindingFlags to narrow the search to the intended member.")
+        };
+    }
 
     /// <summary>
     /// Gets the underlying type for the given type. 
@@ -195,38 +255,67 @@ public static class TypeEx
     }
 
     /// <summary>
-    /// Gets all static methods from a generic type, based on the specified generic type arguments and method name.
+    /// Gets all public static methods named <paramref name="methodName"/> from the closed generic type
+    /// obtained by applying <paramref name="genericTypeArguments"/> to <paramref name="type"/>.
     /// </summary>
-    /// <param name="type">The generic type.</param>
-    /// <param name="genericTypeArguments">The generic type arguments to apply.</param>
-    /// <param name="methodName">The name of the method to retrieve.</param>
-    /// <returns>An array of <see cref="MethodInfo"/> representing the static methods found.</returns>
-    /// <exception cref="ArgumentException">Thrown if the type is not generic.</exception>
+    /// <param name="type">An open generic type definition (e.g. <c>typeof(List&lt;&gt;)</c>).</param>
+    /// <param name="genericTypeArguments">Type arguments to close the generic definition.</param>
+    /// <param name="methodName">Name of the static methods to retrieve.</param>
+    /// <returns>An array of matching <see cref="MethodInfo"/> instances; empty when none match.</returns>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="type"/> is not an open generic type definition, or when the number
+    /// of <paramref name="genericTypeArguments"/> does not match the type's arity.
+    /// </exception>
     public static MethodInfo[] GetStaticMethods(this Type type, Type[] genericTypeArguments, string methodName)
     {
-        if (!type.IsGenericType)
-            throw new ArgumentException($"{type.FullName} is not a generic type", nameof(type));
-
+        ValidateGenericTypeDefinition(type, genericTypeArguments, nameof(type), nameof(genericTypeArguments));
         var t = type.MakeGenericType(genericTypeArguments);
         return t.GetMethods(BindingFlags.Static | BindingFlags.Public)
                 .Where(m => m.Name == methodName).ToArray();
     }
 
     /// <summary>
-    /// Gets a specific static method from a generic type, based on the specified method name and argument types.
+    /// Gets the public static method named <paramref name="methodName"/> with the exact
+    /// <paramref name="argumentTypes"/> from the closed generic type obtained by applying
+    /// <paramref name="genericTypeArguments"/> to <paramref name="type"/>.
     /// </summary>
-    /// <param name="type">The generic type.</param>
-    /// <param name="genericTypeArguments">The generic type arguments to apply.</param>
-    /// <param name="methodName">The name of the method to retrieve.</param>
-    /// <param name="argumentTypes">The argument types for the method.</param>
-    /// <returns>The <see cref="MethodInfo"/> representing the method, or null if not found.</returns>
-    /// <exception cref="ArgumentException">Thrown if the type is not generic.</exception>
-    public static MethodInfo GetStaticMethod(this Type type, Type[] genericTypeArguments, string methodName, Type[] argumentTypes)
+    /// <param name="type">An open generic type definition (e.g. <c>typeof(List&lt;&gt;)</c>).</param>
+    /// <param name="genericTypeArguments">Type arguments to close the generic definition.</param>
+    /// <param name="methodName">Name of the static method to retrieve.</param>
+    /// <param name="argumentTypes">Exact parameter types of the method to retrieve.</param>
+    /// <returns>
+    /// The matching <see cref="MethodInfo"/>, or <see langword="null"/> when no method with the given
+    /// name and parameter types exists.
+    /// </returns>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="type"/> is not an open generic type definition, or when the number
+    /// of <paramref name="genericTypeArguments"/> does not match the type's arity.
+    /// </exception>
+    public static MethodInfo? GetStaticMethod(this Type type, Type[] genericTypeArguments, string methodName, Type[] argumentTypes)
     {
-        if (!type.IsGenericType)
-            throw new ArgumentException($"{type.FullName} is not a generic type", nameof(type));
-
+        ValidateGenericTypeDefinition(type, genericTypeArguments, nameof(type), nameof(genericTypeArguments));
         var t = type.MakeGenericType(genericTypeArguments);
         return t.GetMethod(methodName, BindingFlags.Static | BindingFlags.Public, null, argumentTypes, null);
+    }
+
+    /// <summary>
+    /// Verifies that <paramref name="type"/> is an open generic type definition and that
+    /// <paramref name="genericTypeArguments"/> provides the correct number of type arguments.
+    /// </summary>
+    private static void ValidateGenericTypeDefinition(Type type, Type[] genericTypeArguments,
+        string typeParamName, string argsParamName)
+    {
+        if (!type.IsGenericTypeDefinition)
+            throw new ArgumentException(
+                $"'{type.FullName}' is not an open generic type definition. " +
+                "Pass an unbound generic type such as typeof(List<>) instead of a closed type like typeof(List<int>).",
+                typeParamName);
+
+        int expected = type.GetGenericArguments().Length;
+        int actual = genericTypeArguments?.Length ?? 0;
+        if (actual != expected)
+            throw new ArgumentException(
+                $"'{type.FullName}' requires {expected} generic type argument(s), but {actual} were supplied.",
+                argsParamName);
     }
 }

@@ -51,14 +51,42 @@ public class LinuxBubblewrapContainerTests
     }
 
     [TestMethod]
-    public void BuildArguments_AllowDiskWrite_BindsRealTmp()
+    public void BuildArguments_AllowDiskWrite_WithoutIpcSocket_UsesTmpfsOnly()
     {
+        // When AllowDiskWrite is true but no IPC socket path is provided, /tmp must still be an
+        // isolated tmpfs. The host /tmp must never be exposed without an explicit socket path.
         var permissions = new ProcessContainerPermissions { AllowDiskWrite = true };
 
         List<string> args = LinuxBubblewrapContainer.BuildArguments("/bin/worker", [], permissions);
 
-        CollectionAssert.Contains(args, "--bind");
-        CollectionAssert.DoesNotContain(args, "--tmpfs");
+        CollectionAssert.Contains(args, "--tmpfs");
+        CollectionAssert.DoesNotContain(args, "--bind");
+    }
+
+    [TestMethod]
+    public void BuildArguments_AllowDiskWrite_WithIpcSocket_UsesTmpfsAndBindsSocketOnly()
+    {
+        // The worker should see only the specific IPC socket, not all of /tmp.
+        const string socketPath = "/tmp/CoreFxPipe_abc-1234";
+        var permissions = new ProcessContainerPermissions { AllowDiskWrite = true };
+
+        List<string> args = LinuxBubblewrapContainer.BuildArguments(
+            "/bin/worker", [], permissions, ipcSocketPath: socketPath);
+
+        // /tmp is a fresh tmpfs ...
+        CollectionAssert.Contains(args, "--tmpfs");
+
+        // ... and the exact socket file is bind-mounted into it.
+        int bindIndex = args.IndexOf("--bind");
+        Assert.AreNotEqual(-1, bindIndex, "--bind must be present when ipcSocketPath is supplied.");
+
+        // Both source and destination paths must be the socket path, not /tmp as a whole.
+        Assert.AreEqual(socketPath, args[bindIndex + 1]);
+        Assert.AreEqual(socketPath, args[bindIndex + 2]);
+
+        // The bind must appear BEFORE the -- separator so it applies to the container setup.
+        int separatorIndex = args.IndexOf("--");
+        Assert.IsTrue(bindIndex < separatorIndex, "--bind must precede the -- separator.");
     }
 
     [TestMethod]

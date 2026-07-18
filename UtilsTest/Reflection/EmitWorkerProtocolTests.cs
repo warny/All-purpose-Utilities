@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Frozen;
+using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 
@@ -129,5 +133,156 @@ public class EmitWorkerProtocolTests
         Assert.AreEqual(response.ErrorMessage, roundTripped.ErrorMessage);
         Assert.AreEqual(response.ErrorTypeName, roundTripped.ErrorTypeName);
         Assert.AreEqual(response.ErrorStackTrace, roundTripped.ErrorStackTrace);
+    }
+
+    // ─── Item 43: malformed JSON is fatal ────────────────────────────────────────
+
+    [TestMethod]
+    public void EmitWorkerHost_Run_ThrowsOnMalformedRequestLine()
+    {
+        // The first line is valid JSON (a Shutdown request) so the worker actually starts
+        // processing before hitting the invalid line; the invalid line itself triggers the
+        // fatal path. We send Shutdown first so the worker doesn't block waiting for more input.
+        string malformed = "this is not json\n";
+        using var input = new StringReader(malformed);
+        using var output = new StringWriter();
+
+        Assert.ThrowsException<InvalidOperationException>(
+            () => EmitWorkerHost.Run(input, output));
+    }
+
+    // ─── Item 40: bounded concurrent dispatch ────────────────────────────────────
+
+    [TestMethod]
+    public void MaxConcurrency_IsPositiveAndReasonable()
+    {
+        // Verify the constant exists, is positive, and is within the range a real worker would use.
+        Assert.IsTrue(EmitWorkerHost.MaxConcurrency > 0);
+        Assert.IsTrue(EmitWorkerHost.MaxConcurrency <= 1024,
+            "MaxConcurrency should be well below typical thread-pool sizes to prevent starvation.");
+    }
+
+    // ─── Item 39: bounded protocol line reader ───────────────────────────────────
+
+    [TestMethod]
+    public void ReadBoundedLine_ReturnsNullAtEndOfStream()
+    {
+        using var reader = new StringReader("");
+        Assert.IsNull(ProtocolFraming.ReadBoundedLine(reader));
+    }
+
+    [TestMethod]
+    public void ReadBoundedLine_ReturnsLineContent()
+    {
+        using var reader = new StringReader("hello world\nsecond line");
+        Assert.AreEqual("hello world", ProtocolFraming.ReadBoundedLine(reader));
+        Assert.AreEqual("second line", ProtocolFraming.ReadBoundedLine(reader));
+        Assert.IsNull(ProtocolFraming.ReadBoundedLine(reader));
+    }
+
+    [TestMethod]
+    public void ReadBoundedLine_HandlesWindowsLineEndings()
+    {
+        using var reader = new StringReader("line1\r\nline2");
+        Assert.AreEqual("line1", ProtocolFraming.ReadBoundedLine(reader));
+        Assert.AreEqual("line2", ProtocolFraming.ReadBoundedLine(reader));
+    }
+
+    [TestMethod]
+    public void ReadBoundedLine_ThrowsWhenLineExceedsLimit()
+    {
+        string oversizedLine = new string('x', 101) + "\n";
+        using var reader = new StringReader(oversizedLine);
+
+        Assert.ThrowsException<InvalidOperationException>(
+            () => ProtocolFraming.ReadBoundedLine(reader, maxLength: 100));
+    }
+
+    [TestMethod]
+    public void ReadBoundedLine_AcceptsLineExactlyAtLimit()
+    {
+        string lineAtLimit = new string('x', 100) + "\n";
+        using var reader = new StringReader(lineAtLimit);
+
+        string? result = ProtocolFraming.ReadBoundedLine(reader, maxLength: 100);
+        Assert.AreEqual(new string('x', 100), result);
+    }
+
+    // ─── Item 38: method token restricted to loaded interface ────────────────────
+
+    /// <summary>Minimal interface used only to supply real metadata tokens for token-restriction tests.</summary>
+    private interface ITokenTestContract
+    {
+        int Compute(int a, int b);
+    }
+
+    /// <summary>
+    /// A Call request whose <see cref="WorkerRequest.MethodMetadataToken"/> does not appear in the
+    /// loaded interface's method set must be rejected before <c>Module.ResolveMethod</c> is invoked,
+    /// preventing the worker from being directed to call arbitrary methods in the same module.
+    /// </summary>
+    [TestMethod]
+    public void ValidateMethodToken_RejectsTokenOutsideInterfaceContract()
+    {
+        FrozenSet<int> allowedTokens = typeof(ITokenTestContract)
+            .GetMethods()
+            .Select(m => m.MetadataToken)
+            .ToFrozenSet();
+
+        // 0x06ABCDEF is a syntactically valid method token that is not in ITokenTestContract.
+        const int foreignToken = 0x06ABCDEF;
+
+        var ex = Assert.ThrowsException<InvalidOperationException>(
+            () => EmitWorkerHost.ValidateMethodToken(typeof(ITokenTestContract), allowedTokens, foreignToken));
+
+        // The error message should contain the token so it can be correlated in logs.
+        StringAssert.Contains(ex.Message, "0x06ABCDEF",
+            "The error message should include the rejected token value.");
+    }
+
+    [TestMethod]
+    public void ValidateMethodToken_AcceptsTokenFromInterface()
+    {
+        FrozenSet<int> allowedTokens = typeof(ITokenTestContract)
+            .GetMethods()
+            .Select(m => m.MetadataToken)
+            .ToFrozenSet();
+
+        int validToken = typeof(ITokenTestContract).GetMethod(nameof(ITokenTestContract.Compute))!.MetadataToken;
+
+        // Must not throw — a valid interface method token is accepted.
+        EmitWorkerHost.ValidateMethodToken(typeof(ITokenTestContract), allowedTokens, validToken);
+    }
+
+    // ─── Review #472 item 3: bounded active-task tracking ────────────────────────
+
+    [TestMethod]
+    public void Run_ShutdownRequest_CompletesWithSuccessResponse()
+    {
+        // Verifies that Run correctly processes a Shutdown request and writes a success response.
+        // Also exercises the DrainDispatched path with an empty active-task dictionary.
+        var shutdownRequest = new WorkerRequest { Id = 42, Kind = WorkerRequestKind.Shutdown };
+        string requestLine = JsonSerializer.Serialize(shutdownRequest);
+        using var input = new StringReader(requestLine + "\n");
+        using var output = new StringWriter();
+
+        EmitWorkerHost.Run(input, output);
+
+        string responseJson = output.ToString().Trim();
+        WorkerResponse? response = JsonSerializer.Deserialize<WorkerResponse>(responseJson);
+        Assert.IsNotNull(response, "A response line must be written for every Shutdown request.");
+        Assert.AreEqual(42, response.Id);
+        Assert.IsTrue(response.Success, "Shutdown must produce a success response.");
+    }
+
+    [TestMethod]
+    public void Run_EmptyInput_ReturnsWithoutThrowingOrHanging()
+    {
+        // Verifies that Run returns gracefully when the input stream is empty (pipe closed abruptly).
+        // DrainDispatched must handle an empty active-task dictionary correctly.
+        using var input = new StringReader("");
+        using var output = new StringWriter();
+
+        EmitWorkerHost.Run(input, output); // Must not throw or block.
     }
 }

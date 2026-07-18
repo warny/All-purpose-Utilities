@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Frozen;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text.Json;
 using System.Threading;
@@ -31,7 +33,20 @@ internal static class EmitWorkerHost
     /// </summary>
     /// <param name="Instance">The emitted mapping instance (an <see cref="Utils.Reflection.LibraryMapper"/> subclass).</param>
     /// <param name="InterfaceType">Interface the instance was mapped from, used to resolve method tokens on <see cref="WorkerRequestKind.Call"/>.</param>
-    private readonly record struct LoadedInterface(object Instance, Type InterfaceType);
+    /// <param name="AllowedMethodTokens">
+    /// Frozen set of metadata tokens for every method declared by (or inherited into) <paramref name="InterfaceType"/>,
+    /// computed once at load time. <see cref="HandleCall"/> rejects any <see cref="WorkerRequest.MethodMetadataToken"/>
+    /// not in this set so the worker cannot be directed to invoke arbitrary methods from the same module.
+    /// </param>
+    private readonly record struct LoadedInterface(object Instance, Type InterfaceType, FrozenSet<int> AllowedMethodTokens);
+
+    /// <summary>
+    /// Maximum number of requests that may be executing concurrently inside a single worker
+    /// process. When this limit is reached, the reader loop blocks (backs up into the OS pipe
+    /// buffer) rather than dispatching another <see cref="Task.Run"/>, preventing a fast
+    /// producer from exhausting the thread pool or allocating unbounded native resources.
+    /// </summary>
+    internal const int MaxConcurrency = 64;
 
     /// <summary>
     /// Runs the request/response loop until a <see cref="WorkerRequestKind.Shutdown"/> request is
@@ -44,6 +59,11 @@ internal static class EmitWorkerHost
     /// <see cref="WorkerRequestKind.Call"/>/<see cref="WorkerRequestKind.Unload"/> request for that
     /// instance, so several unrelated interfaces can share one worker process without their calls being
     /// misrouted to each other.
+    /// <para>
+    /// Concurrency is bounded to <see cref="MaxConcurrency"/> by a <see cref="SemaphoreSlim"/>:
+    /// when the limit is reached the reader loop blocks on <c>Wait()</c>, which backs pressure
+    /// up into the OS named-pipe buffer instead of spawning unbounded thread-pool tasks.
+    /// </para>
     /// </remarks>
     /// <param name="input">Reader for incoming JSON-line requests.</param>
     /// <param name="output">Writer for outgoing JSON-line responses.</param>
@@ -52,21 +72,28 @@ internal static class EmitWorkerHost
         var loaded = new ConcurrentDictionary<int, LoadedInterface>();
         var nextHandleBox = new int[1];
         var writeLock = new object();
-        var dispatched = new ConcurrentBag<Task>();
+        // Only active (not-yet-completed) tasks are kept. Each task removes itself via a
+        // continuation so the dictionary stays bounded — a long-lived worker that processes
+        // many requests never accumulates references to completed tasks.
+        var activeTasks = new ConcurrentDictionary<int, Task>();
+        int nextTaskId = 0;
+        using var concurrencyLimit = new SemaphoreSlim(MaxConcurrency, MaxConcurrency);
 
         string? line;
-        while ((line = input.ReadLine()) is not null)
+        while ((line = ProtocolFraming.ReadBoundedLine(input)) is not null)
         {
             WorkerRequest? request;
             try
             {
                 request = JsonSerializer.Deserialize<WorkerRequest>(line);
             }
-            catch (JsonException)
+            catch (JsonException ex)
             {
-                // A malformed line should never happen with a well-behaved host; ignore it rather
-                // than tearing down the worker over a single corrupted message.
-                continue;
+                // A malformed request line indicates framing corruption — the protocol is no longer
+                // trustworthy. Throw so the worker exits rather than continuing with an unknown state.
+                throw new InvalidOperationException(
+                    "The Emit worker host received a request line that could not be deserialized. " +
+                    "The connection is now unusable.", ex);
             }
 
             if (request is null)
@@ -76,33 +103,58 @@ internal static class EmitWorkerHost
 
             if (request.Kind == WorkerRequestKind.Shutdown)
             {
-                DrainDispatched(dispatched);
+                DrainDispatched(activeTasks);
                 WriteResponse(output, writeLock, new WorkerResponse { Id = request.Id, Success = true });
                 return;
             }
 
+            // Acquire the semaphore BEFORE Task.Run so the reader loop blocks (backs up into the
+            // OS pipe buffer) rather than enqueuing an unbounded number of thread-pool tasks.
+            concurrencyLimit.Wait();
+
             WorkerRequest dispatchedRequest = request;
-            dispatched.Add(Task.Run(() => ProcessRequest(dispatchedRequest, loaded, nextHandleBox, output, writeLock)));
+            int taskId = Interlocked.Increment(ref nextTaskId);
+
+            Task task = Task.Run(() =>
+            {
+                try
+                {
+                    ProcessRequest(dispatchedRequest, loaded, nextHandleBox, output, writeLock);
+                }
+                finally
+                {
+                    concurrencyLimit.Release();
+                }
+            });
+
+            // Register before attaching the removal continuation so the entry is always present
+            // when the continuation fires, even if the task completes extremely quickly.
+            activeTasks[taskId] = task;
+            _ = task.ContinueWith(
+                _ => activeTasks.TryRemove(taskId, out _),
+                TaskContinuationOptions.ExecuteSynchronously);
         }
 
         // The input ended without an explicit Shutdown request (for example, the host's side of the
         // pipe closed abruptly). Still give already-dispatched requests a chance to finish and write
         // their response before returning, for the same reason the Shutdown path below does — otherwise
         // a request dispatched just before the last line was read could be silently dropped.
-        DrainDispatched(dispatched);
+        DrainDispatched(activeTasks);
     }
 
     /// <summary>
-    /// Best-effort: waits for every request dispatched so far to finish (and write its response) before
+    /// Best-effort: waits for every still-active request to finish (and write its response) before
     /// <see cref="Run"/> returns, so requests already in flight are not silently abandoned. Not a hard
     /// guarantee — a request that is itself stuck is bounded by <see cref="EmitWorkerProcess.SendAndReceive"/>'s
     /// per-request timeout on the host side, not by this drain, and can still be abandoned here.
     /// </summary>
-    private static void DrainDispatched(ConcurrentBag<Task> dispatched)
+    private static void DrainDispatched(ConcurrentDictionary<int, Task> activeTasks)
     {
         try
         {
-            Task.WaitAll([.. dispatched], TimeSpan.FromSeconds(5));
+            Task[] snapshot = [.. activeTasks.Values];
+            if (snapshot.Length > 0)
+                Task.WaitAll(snapshot, TimeSpan.FromSeconds(5));
         }
         catch
         {
@@ -177,8 +229,9 @@ internal static class EmitWorkerHost
             request.CallingConvention);
 #pragma warning restore UTILSREFL001
 
+        FrozenSet<int> allowedTokens = interfaceType.GetMethods().Select(m => m.MetadataToken).ToFrozenSet();
         int handle = Interlocked.Increment(ref nextHandleBox[0]);
-        loaded[handle] = new LoadedInterface(nativeInstance, interfaceType);
+        loaded[handle] = new LoadedInterface(nativeInstance, interfaceType, allowedTokens);
 
         return new WorkerResponse { Id = request.Id, Success = true, Handle = handle };
     }
@@ -225,11 +278,45 @@ internal static class EmitWorkerHost
     }
 
     /// <summary>
+    /// Validates that <paramref name="token"/> belongs to the interface contract by checking it
+    /// against the frozen allowlist computed at load time.
+    /// </summary>
+    /// <remarks>
+    /// Exposed as <see langword="internal"/> so it can be unit-tested without instantiating the
+    /// private <c>LoadedInterface</c> record. Production callers go through
+    /// <see cref="HandleCall"/>, which delegates here before calling <c>Module.ResolveMethod</c>.
+    /// </remarks>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when <paramref name="token"/> is not in <paramref name="allowedTokens"/>, i.e. it
+    /// does not belong to the interface contract loaded by the prior <c>Load</c> request.
+    /// </exception>
+    internal static void ValidateMethodToken(Type interfaceType, FrozenSet<int> allowedTokens, int token)
+    {
+        if (!allowedTokens.Contains(token))
+        {
+            throw new InvalidOperationException(
+                $"Call request token 0x{token:X8} does not belong to " +
+                $"interface '{interfaceType.FullName}'. " +
+                "Only methods declared by the loaded interface contract may be invoked.");
+        }
+    }
+
+    /// <summary>
     /// Resolves the requested interface method by metadata token and invokes it on the native
     /// mapping instance, round-tripping arguments and the return value as JSON.
     /// </summary>
+    /// <remarks>
+    /// The metadata token in the request is validated against the frozen allowlist built at load time
+    /// (<see cref="LoadedInterface.AllowedMethodTokens"/>) by <see cref="ValidateMethodToken"/>. A
+    /// token that is not in the allowlist is rejected before <c>Module.ResolveMethod</c> is ever
+    /// called, preventing the worker from being directed to invoke arbitrary methods from the same
+    /// module (for example, private helpers or static constructors from the interface's assembly that
+    /// were not part of the interface contract).
+    /// </remarks>
     private static WorkerResponse HandleCall(LoadedInterface loadedInterface, WorkerRequest request)
     {
+        ValidateMethodToken(loadedInterface.InterfaceType, loadedInterface.AllowedMethodTokens, request.MethodMetadataToken);
+
         var method = (MethodInfo)loadedInterface.InterfaceType.Module.ResolveMethod(request.MethodMetadataToken);
         ParameterInfo[] parameters = method.GetParameters();
         string?[] argumentsJson = request.ArgumentsJson ?? [];

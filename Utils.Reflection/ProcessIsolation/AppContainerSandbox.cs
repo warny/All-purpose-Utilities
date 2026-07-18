@@ -108,8 +108,10 @@ internal sealed class AppContainerSandbox : IProcessContainer
     /// <summary>
     /// Returns a <see cref="SecurityIdentifier"/> for the AppContainer, usable in .NET ACL APIs.
     /// </summary>
+    /// <exception cref="ObjectDisposedException">Thrown when this instance has been disposed.</exception>
     public SecurityIdentifier GetContainerSid()
     {
+        ObjectDisposedException.ThrowIf(disposed, this);
         int len = WindowsNativeMethods.GetLengthSid(containerSid);
         byte[] bytes = new byte[len];
         Marshal.Copy(containerSid, bytes, 0, len);
@@ -121,25 +123,32 @@ internal sealed class AppContainerSandbox : IProcessContainer
     /// </summary>
     /// <param name="securityIdentifier">Resolved AppContainer SID.</param>
     /// <returns>Always <see langword="true"/>.</returns>
+    /// <exception cref="ObjectDisposedException">Thrown when this instance has been disposed.</exception>
     public bool TryGetSecurityIdentifier(out SecurityIdentifier? securityIdentifier)
     {
+        ObjectDisposedException.ThrowIf(disposed, this);
         securityIdentifier = GetContainerSid();
         return true;
     }
 
     /// <summary>
-    /// Ensures <paramref name="directoryPath"/> exists and grants the AppContainer SID
-    /// read+execute access so the worker can load DLLs from it.
+    /// Grants the AppContainer SID read+execute access to an existing directory so the worker
+    /// can load DLLs from it.
     /// </summary>
+    /// <remarks>
+    /// This method only modifies ACLs — it does not create the directory. Call
+    /// <see cref="Directory.CreateDirectory(string)"/> before invoking this method if the
+    /// directory may not yet exist. Separating directory creation from ACL assignment avoids the
+    /// implicit file-system side effect that occurs when a grant request coincidentally creates a
+    /// path the caller never intended to create.
+    /// </remarks>
+    /// <param name="directoryPath">Path to an existing directory.</param>
+    /// <exception cref="ObjectDisposedException">Thrown when this instance has been disposed.</exception>
     public void GrantDirectoryReadAccess(string directoryPath)
     {
+        ObjectDisposedException.ThrowIf(disposed, this);
         try
         {
-            if (!Directory.Exists(directoryPath))
-            {
-                Directory.CreateDirectory(directoryPath);
-            }
-
             SecurityIdentifier sid = GetContainerSid();
             var security = new DirectorySecurity(directoryPath, AccessControlSections.Access);
             var rule = new FileSystemAccessRule(
@@ -166,14 +175,16 @@ internal sealed class AppContainerSandbox : IProcessContainer
     }
 
     /// <summary>
-    /// Starts <paramref name="exePath"/> inside the AppContainer and assigns it to the
+    /// Starts <paramref name="executablePath"/> inside the AppContainer and assigns it to the
     /// Job Object. Returns a <see cref="Process"/> wrapping the created process.
     /// </summary>
     /// <param name="executablePath">Absolute path to the executable to run.</param>
     /// <param name="arguments">Ordered arguments passed to the executable.</param>
     /// <exception cref="InvalidOperationException">Thrown when the process cannot be created.</exception>
+    /// <exception cref="ObjectDisposedException">Thrown when this instance has been disposed.</exception>
     public Process StartProcess(string executablePath, IEnumerable<string> arguments)
     {
+        ObjectDisposedException.ThrowIf(disposed, this);
         string argumentString = BuildArgumentString(arguments);
         return StartProcessInternal(executablePath, argumentString);
     }
@@ -358,11 +369,22 @@ internal sealed class AppContainerSandbox : IProcessContainer
             LimitFlags = WindowsNativeMethods.JOB_OBJECT_LIMIT.KillOnJobClose,
         };
 
-        WindowsNativeMethods.SetInformationJobObject(
+        if (!WindowsNativeMethods.SetInformationJobObject(
             job,
             WindowsNativeMethods.JOBOBJECTINFOCLASS.JobObjectBasicLimitInformation,
             ref basicLimits,
-            Marshal.SizeOf<WindowsNativeMethods.JOBOBJECT_BASIC_LIMIT_INFORMATION>());
+            Marshal.SizeOf<WindowsNativeMethods.JOBOBJECT_BASIC_LIMIT_INFORMATION>()))
+        {
+            // KillOnJobClose is the primary safety net that terminates the worker when this
+            // process exits. If it cannot be configured, the Job Object must not be used —
+            // failing closed is safer than returning a sandbox without lifecycle guarantees.
+            int error = Marshal.GetLastWin32Error();
+            WindowsNativeMethods.CloseHandle(job);
+            Trace.TraceWarning(
+                $"AppContainerSandbox: SetInformationJobObject(KillOnJobClose) failed with Win32 error {error}. " +
+                "Sandbox creation aborted.");
+            return IntPtr.Zero;
+        }
 
         var uiRestrictions = new WindowsNativeMethods.JOBOBJECT_BASIC_UI_RESTRICTIONS
         {
@@ -377,11 +399,22 @@ internal sealed class AppContainerSandbox : IProcessContainer
                 WindowsNativeMethods.JOB_OBJECT_UILIMIT.ExitWindows,
         };
 
-        WindowsNativeMethods.SetInformationJobObject(
+        if (!WindowsNativeMethods.SetInformationJobObject(
             job,
             WindowsNativeMethods.JOBOBJECTINFOCLASS.JobObjectBasicUIRestrictions,
             ref uiRestrictions,
-            Marshal.SizeOf<WindowsNativeMethods.JOBOBJECT_BASIC_UI_RESTRICTIONS>());
+            Marshal.SizeOf<WindowsNativeMethods.JOBOBJECT_BASIC_UI_RESTRICTIONS>()))
+        {
+            // UI restrictions failing is less critical than KillOnJobClose, but still a
+            // configuration gap. Close the handle and report it so the caller can fall back
+            // to an unsandboxed process rather than silently accepting reduced isolation.
+            int error = Marshal.GetLastWin32Error();
+            WindowsNativeMethods.CloseHandle(job);
+            Trace.TraceWarning(
+                $"AppContainerSandbox: SetInformationJobObject(UIRestrictions) failed with Win32 error {error}. " +
+                "Sandbox creation aborted.");
+            return IntPtr.Zero;
+        }
 
         return job;
     }

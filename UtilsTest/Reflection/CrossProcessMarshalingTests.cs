@@ -144,4 +144,82 @@ public class CrossProcessMarshalingTests
         Assert.ThrowsException<NotSupportedException>(
             () => CrossProcessMarshaling.EnsureInterfaceIsSupported(typeof(IUnsupportedReturnType)));
     }
+
+    // ─── Item 42: struct validation matches JSON contract ────────────────────────
+
+    /// <summary>Struct with only a non-public field (not serialized by JsonSerializer).</summary>
+    public struct StructWithPrivateUnsupportedField
+    {
+        // The private field holds an object but is not serialized by System.Text.Json,
+        // so the struct must still be considered supported.
+#pragma warning disable CS0649
+        private object _hidden;
+#pragma warning restore CS0649
+        public int Public;
+    }
+
+    /// <summary>Struct with a public property that uses a supported type.</summary>
+    public struct StructWithSupportedProperty
+    {
+        public int Count { get; set; }
+    }
+
+    /// <summary>Struct with a public property that uses an unsupported type.</summary>
+    public struct StructWithUnsupportedProperty
+    {
+        public object Bad { get; set; }
+    }
+
+    public interface IStructWithPrivateField : IDisposable
+    {
+        StructWithPrivateUnsupportedField Get();
+    }
+
+    public interface IStructWithSupportedProp : IDisposable
+    {
+        StructWithSupportedProperty Get();
+    }
+
+    public interface IStructWithUnsupportedProp : IDisposable
+    {
+        StructWithUnsupportedProperty Get();
+    }
+
+    [TestMethod]
+    public void IsSupportedType_ReturnsTrue_ForStructWithOnlyPrivateUnsupportedField()
+    {
+        // Non-public fields are not serialized, so the struct is valid across the boundary.
+        Assert.IsTrue(CrossProcessMarshaling.IsSupportedType(typeof(StructWithPrivateUnsupportedField), 0));
+    }
+
+    [TestMethod]
+    public void IsSupportedType_ReturnsTrue_ForStructWithSupportedPublicProperty()
+    {
+        Assert.IsTrue(CrossProcessMarshaling.IsSupportedType(typeof(StructWithSupportedProperty), 0));
+    }
+
+    [TestMethod]
+    public void IsSupportedType_ReturnsFalse_ForStructWithUnsupportedPublicProperty()
+    {
+        Assert.IsFalse(CrossProcessMarshaling.IsSupportedType(typeof(StructWithUnsupportedProperty), 0));
+    }
+
+    [TestMethod]
+    public void EnsureInterfaceIsSupported_DoesNotThrow_ForStructWithPrivateUnsupportedField()
+    {
+        CrossProcessMarshaling.EnsureInterfaceIsSupported(typeof(IStructWithPrivateField));
+    }
+
+    [TestMethod]
+    public void EnsureInterfaceIsSupported_DoesNotThrow_ForStructWithSupportedProperty()
+    {
+        CrossProcessMarshaling.EnsureInterfaceIsSupported(typeof(IStructWithSupportedProp));
+    }
+
+    [TestMethod]
+    public void EnsureInterfaceIsSupported_Throws_ForStructWithUnsupportedPublicProperty()
+    {
+        Assert.ThrowsException<NotSupportedException>(
+            () => CrossProcessMarshaling.EnsureInterfaceIsSupported(typeof(IStructWithUnsupportedProp)));
+    }
 }

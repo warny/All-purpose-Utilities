@@ -16,9 +16,13 @@ namespace Utils.Reflection
     /// </summary>
     public abstract class LibraryMapper : IDisposable
     {
-        private IntPtr dllHandle; // Handle to the loaded DLL
+        private IntPtr dllHandle;
+        private bool disposed;
 
         private static readonly Type ExternalAttributeType = typeof(ExternalAttribute);
+
+        /// <summary>Indicates whether this mapper instance has been disposed.</summary>
+        public bool IsDisposed => disposed;
 
         /// <summary>
         /// Diagnostic ID reported by APIs that compile and load caller-controlled interface metadata
@@ -78,13 +82,11 @@ namespace Utils.Reflection
         /// <param name="callingConvention">The calling convention of the functions.</param>
         /// <param name="loadTimeout">
         /// Maximum time to wait for the worker to load <paramref name="dllPath"/> and emit the mapping
-        /// class before giving up and killing it. Defaults to 30 seconds when <see langword="null"/>.
+        /// class. Defaults to 30 seconds when <see langword="null"/>.
         /// </param>
         /// <param name="callTimeout">
         /// Maximum time to wait for the worker's response to each native call forwarded through the
-        /// returned proxy before giving up and killing it. Defaults to 30 seconds when
-        /// <see langword="null"/>. A hung native call inside the worker would otherwise block the
-        /// calling thread indefinitely, with no way to recover.
+        /// returned proxy. Defaults to 30 seconds when <see langword="null"/>.
         /// </param>
         /// <returns>A proxy implementing <typeparamref name="TInterface"/> that forwards every call to the isolated worker.</returns>
         /// <exception cref="NotSupportedException">
@@ -93,7 +95,13 @@ namespace Utils.Reflection
         /// <exception cref="TimeoutException">
         /// Thrown by this method (initial load) or by the returned proxy's members (subsequent calls)
         /// when the worker does not respond within <paramref name="loadTimeout"/>/<paramref name="callTimeout"/>.
-        /// The worker is killed and the proxy becomes unusable when this happens.
+        /// <para>
+        /// <b>Important:</b> a per-call timeout abandons only the timed-out request on the host side;
+        /// the worker process is <em>not</em> killed and remains usable for subsequent calls. The native
+        /// call inside the worker continues to execute on its own thread until it finishes, and the
+        /// eventual response is silently discarded. Callers must treat the outcome of a timed-out call
+        /// as indeterminate and should not assume any side effect was or was not applied.
+        /// </para>
         /// </exception>
         public static TInterface Emit<TInterface>(
             string dllPath, CallingConvention callingConvention,
@@ -269,6 +277,13 @@ namespace Utils.Reflection
         /// <summary>
         /// Maps the functions in a DLL to the properties and fields of the provided <see cref="LibraryMapper"/> object.
         /// </summary>
+        /// <remarks>
+        /// Loading is transactional: all exports are resolved and delegates constructed in a
+        /// preparation phase before any member assignment is committed. If any step fails, the DLL
+        /// handle is freed immediately so no partial state or leaked native resource is left on the
+        /// object. Only fields and auto-properties are accepted as <c>[External]</c> members; custom
+        /// setter bodies are rejected during the preparation phase (see <see cref="IsAutoProperty"/>).
+        /// </remarks>
         /// <param name="dllPath">The path to the DLL.</param>
         /// <param name="obj">The object whose members are to be mapped to DLL functions.</param>
         private static void MapLibraryToInstance(string dllPath, LibraryMapper obj)
@@ -282,68 +297,92 @@ namespace Utils.Reflection
                 throw new DllNotFoundException($"Unable to load the DLL: {dllPath}", ex);
             }
 
-            // Get all instance members that might have the External attribute
-            var members = obj.GetType().GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-            foreach (var member in members)
+            // Prepare phase: resolve every export and construct every delegate before committing
+            // any assignment. On failure, free the DLL immediately.
+            var pending = new List<(MemberInfo Member, Delegate Value)>();
+            try
             {
-                var attr = (ExternalAttribute)member.GetCustomAttributes(ExternalAttributeType, true).FirstOrDefault();
-                if (attr == null)
-                    continue;
+                var members = obj.GetType().GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                foreach (var member in members)
+                {
+                    var attr = (ExternalAttribute)member.GetCustomAttributes(ExternalAttributeType, true).FirstOrDefault();
+                    if (attr == null)
+                        continue;
 
-                string functionName = attr.Name ?? member.Name;
-                IntPtr functionPtr;
-                try
-                {
-                    functionPtr = NativeLibrary.GetExport(obj.dllHandle, functionName);
-                }
-                catch (EntryPointNotFoundException)
-                {
-                    throw new EntryPointNotFoundException(
-                        $"Unable to locate the function '{functionName}' in the DLL '{dllPath}'."
-                    );
-                }
-
-                var memberType = (member as PropertyInfo)?.PropertyType ?? (member as FieldInfo)?.FieldType;
-                if (memberType == null)
-                    continue; // Method members: only meaningful to EmitDllMappableClass's generated code, not here.
-
-                if (!typeof(Delegate).IsAssignableFrom(memberType))
-                {
-                    throw new InvalidOperationException(
-                        $"Member '{member.Name}' on '{obj.GetType().FullName}' is decorated with " +
-                        $"[External] but its type '{memberType.FullName}' is not a delegate type. " +
-                        $"[External] properties/fields must be typed as a delegate matching the " +
-                        $"native function's signature.");
-                }
-
-                Delegate delegateFunction;
-                try
-                {
-                    delegateFunction = Marshal.GetDelegateForFunctionPointer(functionPtr, memberType);
-                }
-                catch (ArgumentException ex)
-                {
-                    throw new InvalidOperationException(
-                        $"Unable to create a delegate of type '{memberType.FullName}' for the native " +
-                        $"function '{functionName}' mapped to member '{member.Name}' on " +
-                        $"'{obj.GetType().FullName}'.", ex);
-                }
-
-                if (member is PropertyInfo propInfo)
-                {
-                    if (!propInfo.CanWrite)
+                    string functionName = attr.Name ?? member.Name;
+                    IntPtr functionPtr;
+                    try
                     {
-                        throw new InvalidOperationException(
-                            $"Property '{member.Name}' on '{obj.GetType().FullName}' is decorated " +
-                            $"with [External] but has no setter.");
+                        functionPtr = NativeLibrary.GetExport(obj.dllHandle, functionName);
+                    }
+                    catch (EntryPointNotFoundException)
+                    {
+                        throw new EntryPointNotFoundException(
+                            $"Unable to locate the function '{functionName}' in the DLL '{dllPath}'.");
                     }
 
-                    propInfo.SetValue(obj, delegateFunction);
+                    var memberType = (member as PropertyInfo)?.PropertyType ?? (member as FieldInfo)?.FieldType;
+                    if (memberType == null)
+                        continue; // Method members: only meaningful to EmitDllMappableClass's generated code, not here.
+
+                    if (!typeof(Delegate).IsAssignableFrom(memberType))
+                    {
+                        throw new InvalidOperationException(
+                            $"Member '{member.Name}' on '{obj.GetType().FullName}' is decorated with " +
+                            $"[External] but its type '{memberType.FullName}' is not a delegate type. " +
+                            $"[External] properties/fields must be typed as a delegate matching the " +
+                            $"native function's signature.");
+                    }
+
+                    if (member is PropertyInfo prop)
+                    {
+                        if (!prop.CanWrite)
+                            throw new InvalidOperationException(
+                                $"Property '{member.Name}' on '{obj.GetType().FullName}' is decorated " +
+                                $"with [External] but has no setter.");
+
+                        if (!IsAutoProperty(prop))
+                            throw new InvalidOperationException(
+                                $"Property '{member.Name}' on '{obj.GetType().FullName}' is decorated " +
+                                $"with [External] but has a custom setter body. Only auto-properties " +
+                                $"(compiler-generated backing field) and fields are permitted, because " +
+                                $"Dispose must be able to null them unconditionally. Use a field or an " +
+                                $"auto-property, and enforce any non-nullable contract through a wrapper " +
+                                $"method instead.");
+                    }
+
+                    Delegate delegateFunction;
+                    try
+                    {
+                        delegateFunction = Marshal.GetDelegateForFunctionPointer(functionPtr, memberType);
+                    }
+                    catch (ArgumentException ex)
+                    {
+                        throw new InvalidOperationException(
+                            $"Unable to create a delegate of type '{memberType.FullName}' for the native " +
+                            $"function '{functionName}' mapped to member '{member.Name}' on " +
+                            $"'{obj.GetType().FullName}'.", ex);
+                    }
+
+                    pending.Add((member, delegateFunction));
                 }
+            }
+            catch
+            {
+                // Roll back immediately — do not leave a DLL handle that only the finalizer will free.
+                NativeLibrary.Free(obj.dllHandle);
+                obj.dllHandle = IntPtr.Zero;
+                throw;
+            }
+
+            // Commit phase: all members are fields or auto-properties (validated above), so
+            // SetValue cannot throw — assignment is unconditionally safe.
+            foreach ((MemberInfo member, Delegate value) in pending)
+            {
+                if (member is PropertyInfo propInfo)
+                    propInfo.SetValue(obj, value);
                 else if (member is FieldInfo fieldInfo)
-                {
-                    fieldInfo.SetValue(obj, delegateFunction);
-                }
+                    fieldInfo.SetValue(obj, value);
             }
         }
 
@@ -361,11 +400,63 @@ namespace Utils.Reflection
         /// <inheritdoc/>
         protected virtual void Dispose(bool disposing)
         {
-            if (dllHandle != IntPtr.Zero)
+            if (disposed) return;
+            disposed = true;
+
+            try
             {
-                NativeLibrary.Free(dllHandle);
-                dllHandle = IntPtr.Zero;
+                // Clear mapped delegates only during explicit Dispose, not from the finalizer.
+                // All [External] members are guaranteed to be fields or auto-properties (validated
+                // at Create time), so SetValue(null) is unconditionally safe.
+                if (disposing)
+                    ClearMappedDelegates();
             }
+            finally
+            {
+                if (dllHandle != IntPtr.Zero)
+                {
+                    NativeLibrary.Free(dllHandle);
+                    dllHandle = IntPtr.Zero;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Sets every <see cref="ExternalAttribute"/>-decorated member to <see langword="null"/>
+        /// so post-Dispose reads return <see langword="null"/> instead of a stale function pointer
+        /// into freed native memory.
+        /// </summary>
+        private void ClearMappedDelegates()
+        {
+            foreach (MemberInfo member in GetType().GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+            {
+                if (member.GetCustomAttributes(ExternalAttributeType, inherit: true).Length == 0) continue;
+
+                if (member is PropertyInfo prop && prop.CanWrite)
+                    prop.SetValue(this, null);
+                else if (member is FieldInfo field)
+                    field.SetValue(this, null);
+            }
+        }
+
+        /// <summary>
+        /// Returns <see langword="true"/> when <paramref name="prop"/> is a compiler-generated
+        /// auto-property, identified by the presence of a <c>&lt;PropertyName&gt;k__BackingField</c>
+        /// field on its declaring type.
+        /// </summary>
+        /// <remarks>
+        /// The <c>&lt;Name&gt;k__BackingField</c> naming convention is specific to the C# compiler.
+        /// Types emitted by other IL generators (e.g. <c>System.Reflection.Emit</c>, F#, or
+        /// third-party source generators that produce properties with custom setter bodies) may not
+        /// follow this convention and would be incorrectly classified as non-auto-properties.
+        /// This is intentional for <see cref="LibraryMapper"/>: only C#-authored subclasses are
+        /// expected, so the convention is a reliable signal here.
+        /// </remarks>
+        private static bool IsAutoProperty(PropertyInfo prop)
+        {
+            string backingFieldName = $"<{prop.Name}>k__BackingField";
+            return (prop.DeclaringType ?? prop.ReflectedType)?
+                .GetField(backingFieldName, BindingFlags.NonPublic | BindingFlags.Instance) is not null;
         }
 
         /// <inheritdoc/>

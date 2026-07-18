@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.IO;
+using System.Reflection;
 using Utils.Files;
 
 namespace Utils.Reflection;
@@ -28,14 +29,33 @@ public static class ReflectionEx
         };
 
     /// <summary>
-    /// Retrieves the interfaces that are directly implemented by the type, excluding those inherited from base types.
+    /// Retrieves the interfaces that are directly implemented by the type, excluding those inherited from base types
+    /// or from other directly implemented interfaces.
     /// </summary>
+    /// <remarks>
+    /// For class types the method subtracts the interfaces already exposed by the base class.
+    /// For interface types it subtracts the interfaces that are transitively inherited through any parent interface,
+    /// retaining only the interfaces declared directly on <paramref name="type"/> itself.
+    /// </remarks>
     /// <param name="type">The type to check for directly implemented interfaces.</param>
-    /// <returns>An enumerable of directly implemented interfaces.</returns>
+    /// <returns>An enumerable of directly implemented interfaces, in the order returned by reflection.</returns>
     public static IEnumerable<Type> GetDirectInterfaces(this Type type)
-        => type.BaseType == null
-        ? []
-        : type.GetInterfaces().Except(type.BaseType.GetInterfaces());
+    {
+        if (!type.IsInterface)
+        {
+            return type.BaseType == null
+                ? []
+                : type.GetInterfaces().Except(type.BaseType.GetInterfaces());
+        }
+
+        // For interface types BaseType is always null. Subtract the interfaces that are already
+        // exposed transitively through any of the immediate parent interfaces, so only the direct
+        // parents remain.
+        Type[] allInterfaces = type.GetInterfaces();
+        var transitivelyInherited = new HashSet<Type>(
+            allInterfaces.SelectMany(i => i.GetInterfaces()));
+        return allInterfaces.Except(transitivelyInherited);
+    }
 
     /// <summary>
     /// Retrieves the type hierarchy starting from the given type, along with the directly implemented interfaces at each level.
@@ -66,14 +86,33 @@ public static class ReflectionEx
     }
 
     /// <summary>
-    /// Get types given the specified predicate
+    /// Gets types from <paramref name="assembly"/> matching <paramref name="filter"/>.
     /// </summary>
-    /// <param name="assembly">Assembly to load types from</param>
-    /// <param name="filter">Filter to apply to types</param>
-    /// <returns><see cref="IEnumerable{Type}"/> of <see cref="Type"/> that match the given <paramref name="filter"/></returns>
-    public static IEnumerable<Type> GetTypes(this Assembly assembly, Func<Type, bool> filter)
+    /// <param name="assembly">Assembly to enumerate types from.</param>
+    /// <param name="filter">Predicate applied to each type.</param>
+    /// <param name="loadErrors">
+    /// When not <see langword="null"/>, type-load failures are collected here instead of thrown,
+    /// and any successfully loadable types are still returned (tolerant mode).
+    /// When <see langword="null"/> (default), a <see cref="ReflectionTypeLoadException"/> from the
+    /// underlying <see cref="Assembly.GetTypes"/> call propagates to the caller (strict mode).
+    /// </param>
+    /// <returns>Types from <paramref name="assembly"/> that satisfy <paramref name="filter"/>.</returns>
+    public static IEnumerable<Type> GetTypes(this Assembly assembly, Func<Type, bool> filter,
+        ICollection<Exception>? loadErrors = null)
     {
-        Type[] types = assembly.GetTypes();
+        Type[] types;
+        try
+        {
+            types = assembly.GetTypes();
+        }
+        catch (ReflectionTypeLoadException ex) when (loadErrors is not null)
+        {
+            foreach (Exception? loaderEx in ex.LoaderExceptions)
+            {
+                if (loaderEx is not null) loadErrors.Add(loaderEx);
+            }
+            types = ex.Types.Where(t => t is not null).ToArray()!;
+        }
 
         foreach (var type in types.Where(filter))
         {
@@ -82,36 +121,60 @@ public static class ReflectionEx
     }
 
     /// <summary>
-    /// Get types given the specified predicate
+    /// Gets types from each assembly in <paramref name="assemblies"/> matching <paramref name="filter"/>.
     /// </summary>
-    /// <param name="assemblies">Assemblies to load types from</param>
-    /// <param name="filter">Filter to apply to types</param>
-    /// <returns><see cref="IEnumerable{Type}"/> of <see cref="Type"/> that match the given <paramref name="filter"/></returns>
-    public static IEnumerable<Type> GetTypes(this IEnumerable<Assembly> assemblies, Func<Type, bool> filter)
+    /// <param name="assemblies">Assemblies to enumerate types from.</param>
+    /// <param name="filter">Predicate applied to each type.</param>
+    /// <param name="loadErrors">
+    /// When not <see langword="null"/>, per-assembly type-load failures are collected here and
+    /// the successfully loadable types from each assembly are still returned (tolerant mode).
+    /// When <see langword="null"/> (default), any <see cref="ReflectionTypeLoadException"/> propagates
+    /// immediately (strict mode).
+    /// </param>
+    /// <returns>Types from all assemblies that satisfy <paramref name="filter"/>.</returns>
+    public static IEnumerable<Type> GetTypes(this IEnumerable<Assembly> assemblies, Func<Type, bool> filter,
+        ICollection<Exception>? loadErrors = null)
     {
         foreach (var assembly in assemblies)
         {
-            foreach (var type in assembly.GetTypes(filter))
+            foreach (var type in assembly.GetTypes(filter, loadErrors))
             {
                 yield return type;
             }
         }
     }
 
+    private static readonly HashSet<string> ManagedAssemblyExtensions =
+        new(StringComparer.OrdinalIgnoreCase) { ".dll", ".exe" };
+
     /// <summary>
-    /// Loads all assemblies located in the specified directory.
+    /// Loads managed assemblies from the directory identified by <paramref name="path"/>.
     /// </summary>
-    /// <param name="path">The path that contains the assemblies to load.</param>
-    /// <param name="raiseError">True to rethrow load exceptions; false to ignore invalid assemblies.</param>
-    /// <returns>A sequence of assemblies loaded from the directory.</returns>
+    /// <remarks>
+    /// Only files with a <c>.dll</c> or <c>.exe</c> extension are probed; other files are silently
+    /// skipped. Each candidate is loaded with <see cref="Assembly.LoadFrom(string)"/>, which resolves
+    /// the canonical on-disk path and avoids the identity mismatch that <c>Assembly.Load(string)</c>
+    /// causes when called with a file path instead of an assembly display name.
+    /// </remarks>
+    /// <param name="path">Directory path (may include wildcards) to enumerate.</param>
+    /// <param name="raiseError">
+    /// <see langword="true"/> to rethrow any exception thrown while loading an individual file;
+    /// <see langword="false"/> (default) to skip files that cannot be loaded.
+    /// </param>
+    /// <returns>A sequence of successfully loaded assemblies.</returns>
     public static IEnumerable<Assembly> LoadAssemblies(string path, bool raiseError = false)
     {
         foreach (var file in PathUtils.EnumerateFiles(path))
         {
+            if (!ManagedAssemblyExtensions.Contains(Path.GetExtension(file)))
+            {
+                continue;
+            }
+
             Assembly assembly;
             try
             {
-                assembly = Assembly.Load(file);
+                assembly = Assembly.LoadFrom(file);
             }
             catch
             {

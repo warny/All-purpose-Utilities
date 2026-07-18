@@ -125,11 +125,13 @@ internal static class PluginAssemblyVerifier
 
     /// <summary>
     /// Returns <see langword="true"/> when <paramref name="filePath"/> carries a valid
-    /// Authenticode signature that chains to a trusted root.
+    /// Authenticode signature that chains to a trusted root and is not revoked.
     /// </summary>
     [SupportedOSPlatform("windows")]
     private static bool HasValidAuthenticode(string filePath)
     {
-        return ProcessIsolationPlatformSecurity.HasValidAuthenticodeSignature(filePath);
+        AuthenticodeVerificationResult result = ProcessIsolationPlatformSecurity.VerifyAuthenticodeSignature(
+            filePath, AuthenticodeRevocationPolicy.Online);
+        return result.IsValid;
     }
 }

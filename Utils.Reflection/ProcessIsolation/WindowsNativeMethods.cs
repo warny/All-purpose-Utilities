@@ -144,6 +144,8 @@ internal static class WindowsNativeMethods
 
     // WinVerifyTrust fdwRevocationChecks values
     internal const uint WTD_REVOKE_NONE = 0;
+    /// <summary>Check revocation for the entire certificate chain (signer + CA chain).</summary>
+    internal const uint WTD_REVOKE_WHOLECHAIN = 1;
 
     // WinVerifyTrust dwUnionChoice values
     internal const uint WTD_CHOICE_FILE = 1;
@@ -151,6 +153,18 @@ internal static class WindowsNativeMethods
     // WinVerifyTrust dwStateAction values
     internal const uint WTD_STATEACTION_VERIFY = 1;
     internal const uint WTD_STATEACTION_CLOSE = 2;
+
+    // WinVerifyTrust dwProvFlags values
+    /// <summary>Use only locally cached CRL/OCSP data; do not send network revocation requests.</summary>
+    internal const uint WTD_CACHE_ONLY_URL_RETRIEVAL = 0x00001000;
+
+    // WinVerifyTrust HRESULT return codes (non-zero = failure)
+    /// <summary>The file carries no Authenticode signature, or the signature cannot be decoded.</summary>
+    internal const int TRUST_E_NOSIGNATURE = unchecked((int)0x800B0100);
+    /// <summary>The signing certificate or one of its CA certificates has been revoked.</summary>
+    internal const int CRYPT_E_REVOKED = unchecked((int)0x80092010);
+    /// <summary>Revocation status could not be determined because the revocation server is offline.</summary>
+    internal const int CRYPT_E_REVOCATION_OFFLINE = unchecked((int)0x80092013);
 
     /// <summary>
     /// Action GUID for standard Authenticode PE verification.
