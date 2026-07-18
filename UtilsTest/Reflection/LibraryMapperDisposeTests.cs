@@ -97,10 +97,37 @@ public class LibraryMapperDisposeTests
         mapper.NativeFunction = () => { };
         Assert.IsNotNull(mapper.NativeFunction, "Pre-condition: property must be set before Dispose.");
 
-        // ClearMappedDelegatesBestEffort must swallow exceptions from individual setters.
+        // Dispose must not propagate the setter exception.
+        // The DLL is intentionally not freed when delegates cannot be cleared (no DLL is loaded
+        // here, so there is nothing to leak), but IsDisposed must still be set to true.
         mapper.Dispose();
 
         Assert.IsTrue(mapper.IsDisposed, "IsDisposed must be true even when a setter throws during Dispose.");
+    }
+
+    [TestMethod]
+    public void TryClearMappedDelegates_ReturnsFalse_WhenSetterThrows()
+    {
+        var mapper = new ThrowingSetterMapper();
+        mapper.NativeFunction = () => { };
+
+        bool result = mapper.TryClearMappedDelegates();
+
+        Assert.IsFalse(result,
+            "TryClearMappedDelegates must return false when a setter refuses to accept null, " +
+            "so the caller knows the DLL handle cannot be safely freed.");
+    }
+
+    [TestMethod]
+    public void TryClearMappedDelegates_ReturnsTrue_WhenAllMembersCleared()
+    {
+        var mapper = new MapperWithProperty();
+        mapper.NativeFunction = () => { };
+
+        bool result = mapper.TryClearMappedDelegates();
+
+        Assert.IsTrue(result, "TryClearMappedDelegates must return true when all setters accept null.");
+        Assert.IsNull(mapper.NativeFunction, "The property must be null after TryClearMappedDelegates returns true.");
     }
 
     // ─── Item 47: transactional loading ─────────────────────────────────────────

@@ -279,10 +279,11 @@ namespace Utils.Reflection
         /// Maps the functions in a DLL to the properties and fields of the provided <see cref="LibraryMapper"/> object.
         /// </summary>
         /// <remarks>
-        /// Loading is transactional: all exports are resolved and delegates constructed in a
-        /// preparation phase before any member assignment is committed. If any step fails the DLL
-        /// handle is freed immediately (rather than waiting for the finalizer), so no partial state
-        /// or leaked native resource is left on the object.
+        /// All exports are resolved and delegates constructed in a preparation phase before any
+        /// member assignment is committed. If preparation fails, the DLL handle is freed immediately.
+        /// If a setter throws during the commit phase, already-assigned members are cleared in best
+        /// effort, the DLL handle is freed, and the exception is rethrown. Side-effects that occur
+        /// inside setters before they throw cannot be rolled back.
         /// </remarks>
         /// <param name="dllPath">The path to the DLL.</param>
         /// <param name="obj">The object whose members are to be mapped to DLL functions.</param>
@@ -378,12 +379,14 @@ namespace Utils.Reflection
             }
             catch (Exception ex)
             {
-                // A setter threw mid-commit — partially assigned state. Roll back and free the DLL.
-                obj.ClearMappedDelegatesBestEffort();
+                // A setter threw mid-commit. The object is being discarded, so any uncleared
+                // delegates become unreachable along with obj — freeing the DLL is safe here
+                // even if TryClearMappedDelegates cannot null every member.
+                obj.TryClearMappedDelegates();
                 NativeLibrary.Free(obj.dllHandle);
                 obj.dllHandle = IntPtr.Zero;
-                // prop.SetValue wraps user exceptions in TargetInvocationException; unwrap to expose
-                // the original cause directly, as we do elsewhere in this assembly.
+                // prop.SetValue wraps user exceptions in TargetInvocationException; unwrap to
+                // expose the original cause directly, as we do elsewhere in this assembly.
                 if (ex is TargetInvocationException { InnerException: { } inner })
                     ExceptionDispatchInfo.Capture(inner).Throw();
                 throw;
@@ -407,35 +410,41 @@ namespace Utils.Reflection
             if (disposed) return;
             disposed = true;
 
-            try
+            if (disposing)
             {
-                // Clear mapped delegate fields and properties only during an explicit Dispose call.
-                // The finalizer must never invoke arbitrary setters: they may throw, access managed
-                // objects in an indeterminate state, or prevent NativeLibrary.Free from running.
-                if (disposing)
-                {
-                    ClearMappedDelegatesBestEffort();
-                }
+                // Try to null every mapped delegate. If any setter refuses to clear (throws or
+                // silently retains the value), do NOT free the native handle: a delegate that
+                // still references freed DLL memory is a use-after-free crash waiting to happen.
+                // A native-handle leak is the lesser of two evils.
+                if (!TryClearMappedDelegates())
+                    return;
             }
-            finally
+
+            // Either all delegates were cleared (disposing=true path above) or the finalizer is
+            // running (disposing=false). In the finalizer case, we cannot safely call arbitrary
+            // setters, so the handle is freed unconditionally — the caller's failure to call
+            // Dispose means stale delegates are already the caller's problem.
+            if (dllHandle != IntPtr.Zero)
             {
-                if (dllHandle != IntPtr.Zero)
-                {
-                    NativeLibrary.Free(dllHandle);
-                    dllHandle = IntPtr.Zero;
-                }
+                NativeLibrary.Free(dllHandle);
+                dllHandle = IntPtr.Zero;
             }
         }
 
         /// <summary>
-        /// Sets every <see cref="ExternalAttribute"/>-decorated property and field back to
-        /// <see langword="null"/> so post-Dispose reads return null rather than a function
-        /// pointer into freed native memory. Exceptions thrown by individual setters are
-        /// swallowed so that all members are attempted and the caller's <c>finally</c>
-        /// block (which frees the native handle) always runs.
+        /// Attempts to set every <see cref="ExternalAttribute"/>-decorated member to
+        /// <see langword="null"/>. Returns <see langword="true"/> when every member was
+        /// successfully cleared, <see langword="false"/> when at least one setter threw
+        /// or otherwise refused the assignment.
         /// </summary>
-        internal void ClearMappedDelegatesBestEffort()
+        /// <remarks>
+        /// When this returns <see langword="false"/>, at least one property may still hold a
+        /// delegate referencing native DLL code. The caller must not free the native handle
+        /// in that case: doing so would leave a stale function pointer that crashes on call.
+        /// </remarks>
+        internal bool TryClearMappedDelegates()
         {
+            bool allCleared = true;
             foreach (MemberInfo member in GetType().GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
             {
                 if (member.GetCustomAttributes(ExternalAttributeType, inherit: true).Length == 0) continue;
@@ -449,9 +458,10 @@ namespace Utils.Reflection
                 }
                 catch
                 {
-                    // Best-effort: continue to the next member even if this setter throws.
+                    allCleared = false;
                 }
             }
+            return allCleared;
         }
 
         /// <inheritdoc/>
