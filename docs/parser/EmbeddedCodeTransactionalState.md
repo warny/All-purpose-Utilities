@@ -105,11 +105,23 @@ Dictionary and set hashing is deterministic and independent from native enumerat
 
 This state-aware memoization now works together with parser attempt rollback: after a discarded ordinary alternative, left-recursive extension, quantifier attempt, or negation probe is restored, `GetCurrentStateKey()` reflects the restored state before later parser work queries completed-result cache entries. Successful and failed completed rule results also store the opaque execution-state snapshot captured when the result was recorded; on a memoization hit, `ParserEngine` restores that snapshot and the end position so cached rule reuse reflects the semantic state produced by the original invocation without replaying actions. It still does not enable action buffering, replay, lifecycle actions, general lexer embedded-code state, or external side-effect rollback.
 
-## Limited lexer action-result mutation boundary
+## Lexer embedded-code transactional state model
 
-The generated-C# opt-in `$type` / `$channel` / `$mode` write support introduces only bounded action-result mutation for the accepted token and following lexer mode. It does not introduce general lexer embedded-code transactional state. Generated hooks do not mutate `Token` directly; they set `LexerActionExecutionResult.TokenType`, `LexerActionExecutionResult.Channel`, or `LexerActionExecutionResult.Mode`, and `LexerEngine` applies those requested mutations once after accepted lexer actions run and before lexer commands.
+The lexer and parser have different execution boundaries. Parser alternatives are speculative attempts that can execute managed code and therefore use `IParserExecutionStateManager` snapshots, restoration, and state-dependent memoization. Lexer predicates instead run while a recognition path is explored, but the supported predicate contract has no runtime-managed mutation surface: `false` rejects only that path and `true` permits it to continue. Lexer attribute writes in predicates remain unsupported. A rejected predicate therefore commits no lexer mutation managed by this runtime; this statement does not claim that arbitrary user code, I/O, shared services, or other external effects can be undone.
 
-This boundary does not add action replay, action buffering, external side-effect rollback, runtime-inline lexer execution, a separate lexer runtime, general lexer state rollback, or full ANTLR lexer compatibility. Rejected lexer paths still do not execute collected actions, so writes from rejected alternatives or predicate-rejected paths do not leak. Accepted writes remain subordinate to language-neutral lexer commands: `type(...)`, `channel(...)`, `mode(...)`, `pushMode(...)`, `popMode`, `skip`, and `more` keep their existing behavior. `$mode = ...` replaces the current mode like `mode(...)`, but does not push or pop modes. `pushMode(...)` and `popMode` keep their stack semantics.
+Lexer inline actions use an acceptance boundary rather than an alternative rollback boundary. Matching records action occurrences, but actions belonging to rejected rules, alternatives, quantifier attempts, or predicate-rejected paths are never executed. Only after `MatchLongest(...)` selects the accepted token does `LexerEngine` create one fresh `LexerActionExecutionResult` for that acceptance and execute its recorded actions in order. Multiple actions share that acceptance-local result, so ordinary property assignment provides the existing last-write-wins behavior. The result cannot leak from an unselected path because it does not exist until after selection. No buffering, replay, or rollback between lexer alternatives is required for these bounded mutations in the current architecture.
+
+The generated-C# opt-in writes request exactly three mutations through that result:
+
+- `$type = ...` sets `LexerActionExecutionResult.TokenType`;
+- `$channel = ...` sets `LexerActionExecutionResult.Channel`;
+- `$mode = ...` sets `LexerActionExecutionResult.Mode`.
+
+`LexerEngine` applies these requests after all accepted actions and before commands. Commands remain authoritative: `type(...)`, `channel(...)`, and `mode(...)` can replace action requests; `skip` controls emission; `more` controls chunk accumulation; and `pushMode(...)` / `popMode` retain their stack behavior. `$mode = ...` replaces the current mode, like `mode(...)`; it never implies a push or pop.
+
+The persistent lexer state owned by `LexerEngine` includes the current mode and mode stack, `more` text and starting-position accumulation, the current input position, the token/chunk under construction, collected commands and accepted action occurrences, and the match information needed to choose the accepted token. This operational state is not parser transactional state. It must not be routed through `IParserExecutionStateManager`, and a shared manager controlled by a flag such as `isLexer` would obscure the distinct contracts. A future `ILexerExecutionStateManager`, if ever needed, requires a concrete rollback use case and a separate design and implementation PR.
+
+Fields and mutable objects declared in `@lexer::members` belong to the generated execution context. The runtime makes no general rollback promise for their mutations. Delaying actions until acceptance limits leaks from rejected alternatives, but an accepted action can still mutate members, shared services, external objects, or perform I/O. A later exception, `skip`, parser failure, or any subsequent operation does not automatically undo those effects. The same limitation applies to arbitrary external effects in predicate code even though predicate attribute writes are forbidden.
 
 ## Top-level parse rejection boundary
 
@@ -255,7 +267,9 @@ Implemented scope:
 
 ### Step 7 — Lexer embedded-code design
 
-Lexer actions, lexer predicates, lexer members, and mode-sensitive lexer state require a separate design.
+Status: complete as a documentation-only state model.
+
+The current design distinguishes mutation-free supported predicate evaluation, post-acceptance action-result staging, persistent `LexerEngine` state, and non-transactional user effects. It intentionally introduces no lexer state manager, snapshot infrastructure, action replay, or runtime behavior. Any future state contract requires a concrete need and a separate PR.
 
 They must not be added as a side effect of parser transactional state work.
 

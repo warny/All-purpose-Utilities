@@ -436,6 +436,14 @@ Generated-C# opt-in lexer inline actions also support a deliberately narrow writ
 
 Unsupported forms include `$text = ...`, `$line = ...`, `$pos = ...`, compound/coalescing/increment writes such as `$mode += ...`, `$type += ...`, `$channel ??= ...`, `$mode++`, `$type++`, `$channel++`, reads or writes of lexer `$...` attributes inside lexer predicates, complex expression writes, `ref`/`out` writes, chained attributes, runtime-inline lexer execution, and a separate runtime lexer.
 
+#### Lexer action transaction boundary
+
+Lexer predicates execute while the engine explores a recognition path. They may allow or reject only that path and have no supported lexer-attribute write surface. This prevents runtime-managed predicate mutations, but does not undo arbitrary external effects in user code.
+
+Lexer actions on rejected paths are not executed. Once a token is selected, its actions share one fresh `LexerActionExecutionResult` local to that acceptance and execute before commands. Repeated assignments use the existing last-write-wins behavior. The engine applies requested `TokenType`, `Channel`, and `Mode` values before `type(...)`, `channel(...)`, `skip`, `more`, `mode(...)`, `pushMode(...)`, and `popMode`; those commands remain authoritative. `$mode = ...` replaces the current mode like `mode(...)`, without push/pop semantics.
+
+Input position, mode stack, `more` accumulation, token/chunk construction, and accepted-match bookkeeping belong to `LexerEngine`, not `IParserExecutionStateManager`. No general lexer snapshot manager or parser/lexer manager selected by an `isLexer` flag exists. Mutable `@lexer::members` state and effects on I/O, shared services, or external objects are not generally rollback-safe; `skip`, later exceptions, and parser failure do not reverse them. Any future lexer state-manager contract requires a concrete need and a separate PR.
+
 ### Optional ANTLR-style local writes
 
 The default/no-op embedded-code transformer preserves `$local = ...` and every other `$...` fragment unchanged. ANTLR-style writes to current-rule locals are supported only when generated C# explicitly opts into `CSharpAntlrStyleParserEmbeddedCodeTransformer`. The transformer rewrites simple assignment, compound assignment, and standalone prefix/postfix increment/decrement to typed `SetRequiredRuleLocal<T>(...)` calls using the raw local declaration type. Compound assignment is emitted as getter/operator/setter and does not emulate C# compound-assignment narrowing conversions; grammar authors must write explicit casts when needed. Parameters, returns, labels, list-label projections, token labels, lexer attributes, `ref`/`out`, nested assignments, and increment/decrement expression values remain unsupported. Direct helper APIs such as `SetRuleLocal(...)` / `SetRequiredRuleLocal<T>(...)` remain the preferred no-transformer C# style. Future richer action conveniences must remain isolated behind `IParserEmbeddedCodeTransformer`.

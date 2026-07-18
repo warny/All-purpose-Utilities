@@ -342,6 +342,12 @@ In the generated-C# opt-in path, simple lexer predicates are evaluated during le
 
 This support includes only the optional generated-C# lexer action read rewrite documented below for `$text`, `$type`, `$channel`, `$mode`, `$line`, and `$pos`, plus the bounded simple `$type = ...`, `$channel = ...`, and `$mode = ...` write subset through `LexerActionExecutionResult`; it does not add lexer predicate attributes, other lexer attribute writes, runtime-inline lexer execution, a separate runtime lexer, generalized action buffering/replay, complete ANTLR target-language lexer command/mode semantics beyond the explicit runtime commands and bounded generated-C# action-result writes documented here, general lexer rollback, or rollback of external side effects performed by lexer actions.
 
+The execution sequence is deliberately asymmetric with parser speculation. A predicate runs during recognition with no supported managed mutation surface; its Boolean outcome affects only the current lexer path. Actions on unselected paths do not run. After token selection, the accepted actions receive one new `LexerActionExecutionResult` local to that acceptance, run in source occurrence order, and stage `TokenType`, `Channel`, and `Mode` requests with the existing last-write-wins property semantics. The engine applies those requests and then executes commands, so commands remain authoritative. `$mode = ...` replaces the current mode like `mode(...)` and never implies `pushMode(...)` or `popMode`.
+
+Lexer operational state—input position, current mode and stack, `more` accumulation, current token/chunk construction, and accepted-match bookkeeping—belongs to `LexerEngine`; it is not managed parser state. `IParserExecutionStateManager` must not be reused for it, and no generic parser/lexer manager selected by an `isLexer` flag is implied. A lexer-specific snapshot contract would require a concrete future need and its own PR.
+
+`@lexer::members` fields and mutable objects live in the generated execution context. Neither they nor arbitrary I/O, shared-service changes, or mutations of external objects receive a general rollback guarantee. Delaying actions until acceptance reduces rejected-alternative leakage; it does not mean that `skip`, a later exception, a parser failure, or another subsequent operation reverses accepted action effects. The same external-effect limitation applies to user predicate code.
+
 ## 10. Project responsibilities
 
 ### `Utils.Parser`
