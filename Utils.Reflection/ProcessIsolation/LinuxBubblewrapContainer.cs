@@ -4,6 +4,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Security.Principal;
 
+using Utils.Reflection;
+
 namespace Utils.Reflection.ProcessIsolation;
 
 /// <summary>
@@ -58,7 +60,9 @@ internal sealed class LinuxBubblewrapContainer : IProcessContainer
     /// <returns>The started process.</returns>
     public Process StartProcess(string executablePath, IEnumerable<string> arguments)
     {
-        List<string> wrappedArguments = BuildArguments(executablePath, arguments, permissions);
+        string[] argsArray = arguments as string[] ?? [.. arguments];
+        string? ipcSocketPath = TryGetIpcSocketPath(argsArray);
+        List<string> wrappedArguments = BuildArguments(executablePath, argsArray, permissions, ipcSocketPath);
 
         var psi = new ProcessStartInfo(BubblewrapExecutableName)
         {
@@ -85,9 +89,16 @@ internal sealed class LinuxBubblewrapContainer : IProcessContainer
     /// <param name="executablePath">Absolute path to the executable to run inside the sandbox.</param>
     /// <param name="arguments">Ordered command-line arguments for the executable.</param>
     /// <param name="permissions">Requested process permissions.</param>
+    /// <param name="ipcSocketPath">
+    /// The host-side Unix-domain socket path the worker needs to reach. When provided alongside
+    /// <see cref="ProcessContainerPermissions.AllowDiskWrite"/>, only this path is bind-mounted
+    /// into the container's <c>/tmp</c>; the rest of <c>/tmp</c> is a fresh <c>tmpfs</c>. When
+    /// <see langword="null"/>, <c>/tmp</c> is always an isolated <c>tmpfs</c> with no host content.
+    /// </param>
     /// <returns>The complete, ordered <c>bwrap</c> argument list.</returns>
     internal static List<string> BuildArguments(
-        string executablePath, IEnumerable<string> arguments, ProcessContainerPermissions permissions)
+        string executablePath, IEnumerable<string> arguments, ProcessContainerPermissions permissions,
+        string? ipcSocketPath = null)
     {
         var wrappedArguments = new List<string>
         {
@@ -118,16 +129,16 @@ internal sealed class LinuxBubblewrapContainer : IProcessContainer
             wrappedArguments.Add("/dev");
         }
 
-        if (permissions.AllowDiskWrite)
+        // Always start with a fresh tmpfs so host /tmp content is not visible. When the worker
+        // needs IPC access, bind-mount the exact socket file — nothing more.
+        wrappedArguments.Add("--tmpfs");
+        wrappedArguments.Add("/tmp");
+
+        if (permissions.AllowDiskWrite && ipcSocketPath != null)
         {
             wrappedArguments.Add("--bind");
-            wrappedArguments.Add("/tmp");
-            wrappedArguments.Add("/tmp");
-        }
-        else
-        {
-            wrappedArguments.Add("--tmpfs");
-            wrappedArguments.Add("/tmp");
+            wrappedArguments.Add(ipcSocketPath);
+            wrappedArguments.Add(ipcSocketPath);
         }
 
         wrappedArguments.Add("--");
@@ -135,6 +146,24 @@ internal sealed class LinuxBubblewrapContainer : IProcessContainer
         wrappedArguments.AddRange(arguments);
 
         return wrappedArguments;
+    }
+
+    /// <summary>
+    /// Scans <paramref name="arguments"/> for the emit-worker pipe-name marker and derives the
+    /// Unix-domain socket path that .NET's <see cref="System.IO.Pipes.NamedPipeServerStream"/>
+    /// creates on Linux (<c>/tmp/CoreFxPipe_&lt;name&gt;</c>).
+    /// </summary>
+    private static string? TryGetIpcSocketPath(string[] arguments)
+    {
+        for (int i = 0; i + 1 < arguments.Length; i++)
+        {
+            if (arguments[i] == LibraryMapper.WorkerArgumentMarker)
+            {
+                return Path.Combine(Path.GetTempPath(), $"CoreFxPipe_{arguments[i + 1]}");
+            }
+        }
+
+        return null;
     }
 
     /// <summary>
