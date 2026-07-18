@@ -89,18 +89,28 @@ public class ControlFlowStack
     /// <see cref="LoopBlock"/>, then sets <see cref="Context.InstructionPointer"/> to
     /// the loop's <see cref="LoopBlock.EndAddress"/>.
     /// </summary>
+    /// <remarks>
+    /// The operation is transactional: the loop is located first without mutating the stack.
+    /// The exception is thrown before any block is popped, so the stack remains intact when
+    /// malformed bytecode issues BREAK outside a loop.
+    /// </remarks>
     /// <exception cref="InvalidOperationException">Thrown when no enclosing loop is in scope.</exception>
     public void Break(Context context)
     {
+        // Validate first — locate the nearest loop without mutating the stack.
+        LoopBlock? target = FindEnclosing<LoopBlock>();
+        if (target is null)
+            throw new InvalidOperationException("BREAK used outside of a loop.");
+
+        // Commit: pop all inner blocks, including the loop itself.
         while (_blocks.TryPop(out var block))
         {
-            if (block is LoopBlock loop)
+            if (block is LoopBlock)
             {
-                context.InstructionPointer = loop.EndAddress;
+                context.InstructionPointer = target.EndAddress;
                 return;
             }
         }
-        throw new InvalidOperationException("BREAK used outside of a loop.");
     }
 
     /// <summary>
@@ -108,19 +118,29 @@ public class ControlFlowStack
     /// <see cref="LoopBlock"/> (the loop itself stays on the stack), then sets
     /// <see cref="Context.InstructionPointer"/> to the loop's <see cref="LoopBlock.StartAddress"/>.
     /// </summary>
+    /// <remarks>
+    /// The operation is transactional: the loop is located first without mutating the stack.
+    /// The exception is thrown before any block is popped, so the stack remains intact when
+    /// malformed bytecode issues CONTINUE outside a loop.
+    /// </remarks>
     /// <exception cref="InvalidOperationException">Thrown when no enclosing loop is in scope.</exception>
     public void Continue(Context context)
     {
+        // Validate first — locate the nearest loop without mutating the stack.
+        LoopBlock? target = FindEnclosing<LoopBlock>();
+        if (target is null)
+            throw new InvalidOperationException("CONTINUE used outside of a loop.");
+
+        // Commit: pop all inner blocks that are nested inside the loop, but keep the loop itself.
         while (_blocks.TryPeek(out var block))
         {
-            if (block is LoopBlock loop)
+            if (block is LoopBlock)
             {
-                context.InstructionPointer = loop.StartAddress;
+                context.InstructionPointer = target.StartAddress;
                 return;
             }
             _blocks.Pop();
         }
-        throw new InvalidOperationException("CONTINUE used outside of a loop.");
     }
 
     /// <summary>

@@ -346,6 +346,42 @@ public class ControlFlowStackTests
         Assert.ThrowsException<InvalidOperationException>(() => cfs.Pop<LoopBlock>());
     }
 
+    // ── Item 12: Break/Continue are transactional — no stack corruption on failure ──
+
+    [TestMethod]
+    public void Break_OutsideLoop_StackUnchanged()
+    {
+        // The stack must be intact after BREAK throws when no loop is in scope.
+        var cfs = new ControlFlowStack();
+        cfs.PushConditional(0, 10);
+        cfs.PushConditional(5, 8);
+        var ctx = new ControlFlowContext(new byte[0]);
+        Assert.ThrowsException<InvalidOperationException>(() => cfs.Break(ctx));
+        Assert.AreEqual(2, cfs.Depth); // both blocks must still be present
+    }
+
+    [TestMethod]
+    public void Continue_OutsideLoop_StackUnchanged()
+    {
+        var cfs = new ControlFlowStack();
+        cfs.PushConditional(0, 10);
+        var ctx = new ControlFlowContext(new byte[0]);
+        Assert.ThrowsException<InvalidOperationException>(() => cfs.Continue(ctx));
+        Assert.AreEqual(1, cfs.Depth);
+    }
+
+    [TestMethod]
+    public void Break_NestedInsideException_PopsBothAndJumps()
+    {
+        var cfs = new ControlFlowStack();
+        cfs.PushLoop(0, 50);
+        cfs.PushException(5, catchAddress: 40, finallyAddress: null);
+        var ctx = new ControlFlowContext(new byte[0]);
+        cfs.Break(ctx);
+        Assert.AreEqual(50, ctx.InstructionPointer);
+        Assert.AreEqual(0, cfs.Depth);
+    }
+
     // â"€â"€ FullContext â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
     [TestMethod]
