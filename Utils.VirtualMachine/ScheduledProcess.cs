@@ -65,12 +65,14 @@ public sealed class ScheduledProcess<T> where T : Context
     /// <summary>
     /// Suspends the process. Transitions <see cref="ProcessState.Ready"/> or
     /// <see cref="ProcessState.Running"/> to <see cref="ProcessState.Suspended"/>.
-    /// No-op when already <see cref="ProcessState.Suspended"/> or
-    /// <see cref="ProcessState.Terminated"/>.
+    /// No-op when already <see cref="ProcessState.Suspended"/>,
+    /// <see cref="ProcessState.Terminated"/>, or <see cref="ProcessState.Faulted"/>
+    /// (both terminal states must not be revived via <see cref="Resume"/>).
     /// </summary>
     public void Suspend()
     {
-        if (_state == ProcessState.Terminated || _state == ProcessState.Suspended) return;
+        if (_state is ProcessState.Terminated or ProcessState.Faulted or ProcessState.Suspended)
+            return;
         _state = ProcessState.Suspended;
     }
 

@@ -304,6 +304,43 @@ public class SchedulerTests
         Assert.AreEqual(ProcessState.Terminated, proc.State);
     }
 
+    [TestMethod]
+    public void Suspend_FaultedProcess_RemainsFaulted()
+    {
+        // Faulted is a terminal state: Suspend must not demote it to Suspended.
+        var scheduler = new Scheduler<DefaultContext>(quantumSteps: 10);
+        var processor = new CountingProcessor();
+        processor.RegisterInstruction([0x02], "BOOM", _ => throw new InvalidOperationException("fault"));
+
+        var proc = scheduler.AddProcess(Ctx(0x02), processor);
+        scheduler.Step();
+        Assert.AreEqual(ProcessState.Faulted, proc.State);
+
+        proc.Suspend();
+
+        Assert.AreEqual(ProcessState.Faulted, proc.State);
+        Assert.IsNotNull(proc.FaultException);
+    }
+
+    [TestMethod]
+    public void FaultedProcess_CannotBeResumed()
+    {
+        // A faulted process must not be resurrectable via Suspend() + Resume().
+        var scheduler = new Scheduler<DefaultContext>(quantumSteps: 10);
+        var processor = new CountingProcessor();
+        processor.RegisterInstruction([0x02], "BOOM", _ => throw new InvalidOperationException("fault"));
+
+        var proc = scheduler.AddProcess(Ctx(0x02), processor);
+        scheduler.Step();
+        Assert.AreEqual(ProcessState.Faulted, proc.State);
+
+        proc.Suspend();
+        proc.Resume();
+
+        Assert.AreEqual(ProcessState.Faulted, proc.State,
+            "Suspend()+Resume() must not revive a Faulted process.");
+    }
+
     // ── Quantum boundary termination ──────────────────────────────────────────
 
     [TestMethod]
