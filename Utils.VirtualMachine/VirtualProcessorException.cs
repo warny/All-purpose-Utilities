@@ -14,7 +14,10 @@ public class VirtualProcessorException : Exception
     public int? InstructionPointer { get; }
 
     /// <summary>Gets the opcode bytes that triggered the error, if available.</summary>
-    public byte[]? OpcodeBytes { get; }
+    /// <remarks>Each access returns a new defensive copy so callers cannot modify the stored diagnostic data.</remarks>
+    public byte[]? OpcodeBytes => _opcodeBytes is null ? null : (byte[])_opcodeBytes.Clone();
+
+    private readonly byte[]? _opcodeBytes;
 
     /// <summary>Gets the human-readable name of the instruction that caused the error, if available.</summary>
     public string? InstructionName { get; }
@@ -56,7 +59,7 @@ public class VirtualProcessorException : Exception
         : base(BuildMessage(instructionPointer, opcodeBytes))
     {
         InstructionPointer = instructionPointer;
-        OpcodeBytes = [.. opcodeBytes];
+        _opcodeBytes = [.. opcodeBytes];
     }
 
     /// <summary>
@@ -70,7 +73,7 @@ public class VirtualProcessorException : Exception
         : base(BuildMessage(instructionPointer, opcodeBytes), innerException)
     {
         InstructionPointer = instructionPointer;
-        OpcodeBytes = [.. opcodeBytes];
+        _opcodeBytes = [.. opcodeBytes];
     }
 
     /// <summary>
@@ -85,7 +88,7 @@ public class VirtualProcessorException : Exception
         : base(BuildMessage(instructionPointer, opcodeBytes, instructionName), innerException)
     {
         InstructionPointer = instructionPointer;
-        OpcodeBytes = [.. opcodeBytes];
+        _opcodeBytes = [.. opcodeBytes];
         InstructionName = instructionName;
     }
 

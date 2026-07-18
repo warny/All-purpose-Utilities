@@ -762,6 +762,23 @@ namespace UtilsTest.VirtualMachine
             Assert.IsFalse(machine.Instructions.Any(i => i.Name == "OLD"));
         }
 
+        // ── Item 38: OpcodeBytes returns a defensive copy ─────────────────────
+
+        [TestMethod]
+        public void VirtualProcessorException_OpcodeBytes_MutationDoesNotAlterDiagnostics()
+        {
+            var context = new DefaultContext(new byte[] { 0xFF });
+            var ex = Assert.ThrowsException<VirtualProcessorException>(
+                () => new TestMachine().Execute(context));
+
+            byte[]? first = ex.OpcodeBytes;
+            Assert.IsNotNull(first);
+            first![0] = 0x00; // mutate the returned copy
+
+            byte[]? second = ex.OpcodeBytes;
+            Assert.AreEqual(0xFF, second![0], "Mutation of a returned OpcodeBytes array must not affect subsequent accesses.");
+        }
+
         // ── InstructionName in VirtualProcessorException ──────────────────────
 
         [TestMethod]
