@@ -79,12 +79,18 @@ public class Scheduler<T> where T : Context
     /// <summary>
     /// Removes a process from this scheduler by its identifier.
     /// No-op if no process with the given <paramref name="processId"/> is registered.
+    /// The process is transitioned to <see cref="ProcessState.Terminated"/> before removal so
+    /// that the scheduler's quantum-end cleanup block does not later promote it back to
+    /// <see cref="ProcessState.Ready"/> when the process removed itself from inside a handler.
     /// </summary>
     /// <param name="processId">The identifier of the process to remove.</param>
     public void RemoveProcess(int processId)
     {
         int index = _processes.FindIndex(p => p.ProcessId == processId);
-        if (index >= 0) _processes.RemoveAt(index);
+        if (index < 0) return;
+        var process = _processes[index];
+        _processes.RemoveAt(index);
+        process.SetState(ProcessState.Terminated);
     }
 
     /// <summary>

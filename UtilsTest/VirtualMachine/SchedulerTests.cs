@@ -516,6 +516,32 @@ public class SchedulerTests
     // ── Item 11: process removed from its handler stops further execution ─────
 
     [TestMethod]
+    public void Step_ProcessRemovesItself_ProcessIsNotLeftReadyOrRunning()
+    {
+        // Regression guard: when a process removes itself from inside a handler, the
+        // quantum-end cleanup block must not promote it back to Ready or leave it Running.
+        // Before the fix, RemoveProcess only evicted from _processes; the cleanup block
+        // then saw state==Running and set it to Ready (because IP was not past the end).
+        var scheduler = new Scheduler<DefaultContext>(quantumSteps: 100);
+        var ctx = Ctx(0x01, 0x01, 0x01); // 3 STEPs — IP will not be past the end when removed
+        ScheduledProcess<DefaultContext>? handle = null;
+
+        var processor = new CountingProcessor();
+        processor.RegisterInstruction([0x01], "STEP", c =>
+        {
+            c.Stack.Push(1);
+            scheduler.RemoveProcess(handle!.ProcessId);
+        }, overwrite: true);
+
+        handle = scheduler.AddProcess(ctx, processor);
+        scheduler.Step();
+
+        Assert.AreEqual(ProcessState.Terminated, handle.State,
+            "A self-removed process must end up Terminated, not Ready or Running.");
+        Assert.IsFalse(scheduler.Processes.Contains(handle));
+    }
+
+    [TestMethod]
     public void Step_ProcessRemovesItself_StopsFurtherExecution()
     {
         var scheduler = new Scheduler<DefaultContext>(quantumSteps: 100);
