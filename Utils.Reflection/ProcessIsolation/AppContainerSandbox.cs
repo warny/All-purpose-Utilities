@@ -132,20 +132,23 @@ internal sealed class AppContainerSandbox : IProcessContainer
     }
 
     /// <summary>
-    /// Ensures <paramref name="directoryPath"/> exists and grants the AppContainer SID
-    /// read+execute access so the worker can load DLLs from it.
+    /// Grants the AppContainer SID read+execute access to an existing directory so the worker
+    /// can load DLLs from it.
     /// </summary>
+    /// <remarks>
+    /// This method only modifies ACLs — it does not create the directory. Call
+    /// <see cref="Directory.CreateDirectory(string)"/> before invoking this method if the
+    /// directory may not yet exist. Separating directory creation from ACL assignment avoids the
+    /// implicit file-system side effect that occurs when a grant request coincidentally creates a
+    /// path the caller never intended to create.
+    /// </remarks>
+    /// <param name="directoryPath">Path to an existing directory.</param>
     /// <exception cref="ObjectDisposedException">Thrown when this instance has been disposed.</exception>
     public void GrantDirectoryReadAccess(string directoryPath)
     {
         ObjectDisposedException.ThrowIf(disposed, this);
         try
         {
-            if (!Directory.Exists(directoryPath))
-            {
-                Directory.CreateDirectory(directoryPath);
-            }
-
             SecurityIdentifier sid = GetContainerSid();
             var security = new DirectorySecurity(directoryPath, AccessControlSections.Access);
             var rule = new FileSystemAccessRule(
