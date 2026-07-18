@@ -9,9 +9,21 @@ This document must be consulted before modifying any grammar-related component, 
 > Note: this reference is complementary to `Antlr4CompatibilityMatrix.md` (high-level matrix).
 > Use this file for implementation-oriented usage guidance when behavior differs from standard ANTLR4.
 
-> Rule arguments and returns integration plan: see [`RuleArgumentsAndReturnsPlan.md`](./RuleArgumentsAndReturnsPlan.md) for the design split between conservative runtime behavior, explicit runtime policies, generated-C# opt-in helpers, metadata-only facts, rollback boundaries, and future generated-C# argument binding phases. In short, rule parameters are parsed as metadata, rule-call raw arguments are preserved, manual/explicit runtime policy support exists for limited literals, generated-C# automatic ANTLR-style argument binding is not implemented, return metadata and managed return snapshots exist, and ANTLR-style return access remains partial and opt-in.
+> Rule arguments and returns integration plan: see [`RuleArgumentsAndReturnsPlan.md`](./RuleArgumentsAndReturnsPlan.md) for the design split between conservative runtime behavior, explicit runtime policies, generated-C# opt-in helpers, metadata-only facts, rollback boundaries, and the generated-C# positional binding boundary. In short, rule parameters are parsed as metadata, rule-call raw arguments are preserved, manual/explicit runtime policy support exists for limited literals, generated-C# `ParseWithEmbeddedCode(...)` overloads without a `basePolicy` perform narrow exact-arity positional simple-literal binding, the overload with `basePolicy` preserves the caller rule-call policy, return metadata and managed return snapshots exist, and ANTLR-style return access remains partial and opt-in.
 
 ---
+
+## Generated-C# positional rule-call argument binding
+
+Generated parsers expose three distinct surfaces for `callee[...]` rule-call arguments:
+
+| Surface | Behavior |
+|---|---|
+| `Parse(...)` | Metadata only; no generated embedded-code hooks and no argument binding are executed. |
+| `ParseWithEmbeddedCode(...)` without `basePolicy` | Installs the generated-C# rule-call wrapper, requires exact positional arity, converts supported simple literals through the typed positional literal policy, and submits one managed seed batch. |
+| `ParseWithEmbeddedCode(input, executionContext, basePolicy)` | Preserves the caller's `RuleCallExecutionPolicy`; generated-C# automatic argument binding is deliberately disabled. |
+
+The automatic generated-C# subset is intentionally narrower than ANTLR4: positional only, simple literals only, allowlisted declared target types only, exact arity only, no omitted/default argument consumption, no named or mixed arguments, no arbitrary expressions, no generated ANTLR rule signatures, and no `Parse(...)` behavior change. The generated wrapper delegates conversion to `TypedPositionalLiteralRuleCallExecutionPolicy` with throwing failures, so invalid bindings fail before child lifecycle hooks observe partial seeds. Managed seeds participate in the existing generated execution-context rollback and state-aware memoization boundaries.
 
 ## Compatibility level estimate
 
@@ -25,7 +37,7 @@ These numbers are approximate maintenance guidance, not a formal conformance sco
 
 The runtime supports common grammar forms, lexer modes, commands, project imports, token vocabularies, direct left recursion with limits, semantic predicates/actions through explicit opt-in paths, and bounded generated-C# lexer action/predicate support.
 
-The project still intentionally does not support full ANTLR target-language semantics, full attribute syntax, automatic typed parameters/returns/locals/labels, lexer predicate attributes, runtime-inline lexer execution, adaptive LL prediction, general action buffering/replay, full external side-effect rollback, or full ANTLR-generated API parity.
+The project still intentionally does not support full ANTLR target-language semantics, full attribute syntax, full automatic typed parameters/returns/locals/labels beyond the documented generated-C# positional literal subset, lexer predicate attributes, runtime-inline lexer execution, adaptive LL prediction, general action buffering/replay, full external side-effect rollback, or full ANTLR-generated API parity.
 
 ---
 

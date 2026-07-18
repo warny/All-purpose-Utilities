@@ -146,6 +146,44 @@ internal static partial class ExpGrammar
 }
 ```
 
+
+## Generated-C# rule-call arguments
+
+Generated embedded-code parsing includes a narrow automatic binding path for positional simple-literal rule-call arguments. For example:
+
+```antlr
+grammar P;
+
+start : child[42] ;
+
+child[int value]
+@init {
+    var v = GetRequiredRuleParameter<int>(context, "value");
+}
+    : A
+    ;
+
+A : 'a';
+```
+
+The automatic binding is enabled only by the generated-C# overloads that do not accept a caller `basePolicy`:
+
+```csharp
+P.ParseWithEmbeddedCode(input);
+P.ParseWithEmbeddedCode(input, executionContext);
+```
+
+Those overloads require exact positional arity, convert supported simple literals to allowlisted declared parameter types, and submit one managed seed batch before the child rule is entered. The conservative `Parse(...)` overload is unchanged: it builds syntax only and does not execute generated hooks or bind rule-call arguments.
+
+The overload that accepts a caller policy intentionally preserves the caller's rule-call policy instead of composing the generated automatic binding wrapper:
+
+```csharp
+P.ParseWithEmbeddedCode(input, executionContext, basePolicy);
+```
+
+Limits are deliberate: positional arguments only, simple literals only, allowlisted target types only, no omitted/default argument consumption, no named or mixed arguments, no arbitrary expressions or method calls, and no ANTLR-style generated rule signatures.
+
+
 ---
 
 ## Diagnostics
