@@ -919,4 +919,58 @@ public class ControlFlowStackTests
         Assert.AreEqual(1, stack.Length);
         Assert.AreEqual(1, (int)stack[0]); // finally marker
     }
+
+    // ── Item 28: throw inside catch/finally propagates to outer handler ───────
+
+    [TestMethod]
+    public void Throw_InsideCatch_PropagatestoOuterHandler()
+    {
+        // Inner try/catch, outer try/catch.
+        // The inner catch re-throws; the outer catch must receive the new exception.
+        var cfs = new ControlFlowStack();
+        var ctx = new ControlFlowContext(new byte[100]);
+
+        cfs.PushException(startAddress: 0, catchAddress: 50, finallyAddress: null); // outer
+        cfs.PushException(startAddress: 5, catchAddress: 20, finallyAddress: null); // inner
+
+        // First throw: inner block handles it (phase transitions to Catch).
+        cfs.Throw(ctx, "error1");
+        Assert.AreEqual(20, ctx.InstructionPointer); // inner catch
+        var inner = (ExceptionBlock)cfs.CurrentBlock!;
+        Assert.AreEqual(ExceptionBlockPhase.Catch, inner.Phase);
+
+        // Second throw from inside the catch: inner block is now in Catch phase → skip it.
+        // Must propagate to the outer catch.
+        bool handled = cfs.Throw(ctx, "error2");
+        Assert.IsTrue(handled);
+        Assert.AreEqual(50, ctx.InstructionPointer); // outer catch
+    }
+
+    [TestMethod]
+    public void Throw_InsideFinally_PropagatestoOuterHandler()
+    {
+        var cfs = new ControlFlowStack();
+        var ctx = new ControlFlowContext(new byte[100]);
+
+        cfs.PushException(startAddress: 0, catchAddress: 60, finallyAddress: null); // outer
+        cfs.PushException(startAddress: 5, catchAddress: null, finallyAddress: 30); // inner (finally-only)
+
+        // First throw: inner block's finally handles it (phase → Finally).
+        cfs.Throw(ctx, "error1");
+        Assert.AreEqual(30, ctx.InstructionPointer); // inner finally
+        var inner = (ExceptionBlock)cfs.CurrentBlock!;
+        Assert.AreEqual(ExceptionBlockPhase.Finally, inner.Phase);
+
+        // Throw from inside the finally: inner block in Finally phase → skip.
+        bool handled = cfs.Throw(ctx, "error2");
+        Assert.IsTrue(handled);
+        Assert.AreEqual(60, ctx.InstructionPointer); // outer catch
+    }
+
+    [TestMethod]
+    public void ExceptionBlock_Phase_StartsAsTry()
+    {
+        var block = new ExceptionBlock(0, catchAddress: 10, finallyAddress: null);
+        Assert.AreEqual(ExceptionBlockPhase.Try, block.Phase);
+    }
 }
