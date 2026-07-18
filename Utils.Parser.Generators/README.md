@@ -146,6 +146,44 @@ internal static partial class ExpGrammar
 }
 ```
 
+
+## Generated-C# rule-call arguments
+
+The emitter contains a narrow, generation-flagged automatic binding path for positional simple-literal rule-call arguments. The shipped AdditionalFiles source-generator entry point currently emits grammars with this flag disabled, so normal package consumers get metadata/helper behavior only. When generation explicitly enables `enableGeneratedRuleArgumentBinding`, the generated parser can bind calls such as:
+
+```antlr
+grammar P;
+
+start : child[42] ;
+
+child[int value]
+@init {
+    var v = GetRequiredRuleParameter<int>(context, "value");
+}
+    : A
+    ;
+
+A : 'a';
+```
+
+For code emitted with `enableGeneratedRuleArgumentBinding`, automatic binding is active only on generated-C# overloads that do not accept a caller `basePolicy`:
+
+```csharp
+P.ParseWithEmbeddedCode(input);
+P.ParseWithEmbeddedCode(input, executionContext);
+```
+
+With the generation flag enabled, those overloads require exact positional arity, convert supported simple literals to allowlisted declared parameter types, and submit one managed seed batch before the child rule is entered. The conservative `Parse(...)` overload is unchanged: it builds syntax only and does not execute generated hooks or bind rule-call arguments.
+
+The overload that accepts a caller policy intentionally preserves the caller's rule-call policy instead of composing the generated automatic binding wrapper, even when the generation flag is enabled:
+
+```csharp
+P.ParseWithEmbeddedCode(input, executionContext, basePolicy);
+```
+
+Limits are deliberate: positional arguments only, simple literals only, allowlisted target types only, no omitted/default argument consumption, no named or mixed arguments, no arbitrary expressions or method calls, and no ANTLR-style generated rule signatures.
+
+
 ---
 
 ## Diagnostics
