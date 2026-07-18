@@ -152,11 +152,22 @@ internal class NormalReader : INumberReader
 {
     /// <inheritdoc />
     public byte ReadByte(Context context)
-        => context.Data.Span[context.InstructionPointer++];
+    {
+        int ip = context.InstructionPointer;
+        // Validate before advancing so a failed read leaves the pointer unchanged.
+        byte value = context.Data.Span[ip];
+        context.InstructionPointer = ip + 1;
+        return value;
+    }
 
     /// <inheritdoc />
     public sbyte ReadSByte(Context context)
-        => (sbyte)context.Data.Span[context.InstructionPointer++];
+    {
+        int ip = context.InstructionPointer;
+        sbyte value = (sbyte)context.Data.Span[ip];
+        context.InstructionPointer = ip + 1;
+        return value;
+    }
 
     /// <inheritdoc />
     public short ReadInt16(Context context)
@@ -231,10 +242,22 @@ internal class NormalReader : INumberReader
 internal class InvertedReader : INumberReader
 {
     /// <inheritdoc />
-    public byte ReadByte(Context context) => context.Data.Span[context.InstructionPointer++];
+    public byte ReadByte(Context context)
+    {
+        int ip = context.InstructionPointer;
+        byte value = context.Data.Span[ip];
+        context.InstructionPointer = ip + 1;
+        return value;
+    }
 
     /// <inheritdoc />
-    public sbyte ReadSByte(Context context) => (sbyte)context.Data.Span[context.InstructionPointer++];
+    public sbyte ReadSByte(Context context)
+    {
+        int ip = context.InstructionPointer;
+        sbyte value = (sbyte)context.Data.Span[ip];
+        context.InstructionPointer = ip + 1;
+        return value;
+    }
 
     /// <inheritdoc />
     public short ReadInt16(Context context)

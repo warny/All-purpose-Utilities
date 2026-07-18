@@ -501,6 +501,28 @@ namespace UtilsTest.VirtualMachine
             Assert.AreEqual((sbyte)-1, (sbyte)context.Stack.Peek());
         }
 
+        // ── Item 18: failed byte read must not advance IP ─────────────────────
+
+        [TestMethod]
+        public void ReadByte_FailedRead_InstructionPointerUnchanged()
+        {
+            // Context with exactly one byte consumed by the opcode — no operand byte follows.
+            // SByteTestMachine (PUSH_SBYTE 0x30) reads the opcode byte, then tries to read
+            // the operand. A failed operand read must leave IP at the operand position, not beyond.
+            byte[] instructions = [0x30]; // PUSH_SBYTE opcode with no operand
+            var context = new DefaultContext(instructions);
+            int ipBeforeDispatch = 0;
+
+            // Execute the step; it should throw because the operand is missing.
+            var ex = Assert.ThrowsException<VirtualProcessorException>(
+                () => new SByteTestMachine().Execute(context));
+
+            // IP should not have advanced past the end of the stream.
+            // The opcode consumed 1 byte (0x30), so after dispatching the opcode IP = 1
+            // (equal to Data.Length). The operand read fails at IP = 1 without advancing further.
+            Assert.AreEqual(1, context.InstructionPointer);
+        }
+
         [TestMethod]
         public void ReadSByte_BigEndian_SameResultAsLittleEndian()
         {
