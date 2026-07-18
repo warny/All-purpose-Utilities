@@ -494,6 +494,29 @@ namespace UtilsTest.VirtualMachine
         }
 
         [TestMethod]
+        public void ReadSLEB128_TenthByteZeroHighBits_ThrowsFormatException()
+        {
+            // 0x01: bit63=1 (negative value component) but bits 1-6=0, inconsistent with
+            // negative sign extension (bits 1-6 should be all-ones for a valid negative).
+            // The existing test only checked 11-byte sequences; this covers the 10th-byte rule.
+            byte[] payload = [0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x01];
+            byte[] instructions = [0x21, .. payload];
+            var context = new DefaultContext(instructions);
+            Assert.ThrowsException<FormatException>(() => new LEB128TestMachine().Execute(context));
+        }
+
+        [TestMethod]
+        public void ReadSLEB128_TenthBytePartialSignExtension_ThrowsFormatException()
+        {
+            // 0x7E: bits 1-6 are all-one (suggesting negative) but bit 0=0 (bit63 not set),
+            // which is inconsistent with positive sign extension (bits 1-6 should all be zero).
+            byte[] payload = [0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x7E];
+            byte[] instructions = [0x21, .. payload];
+            var context = new DefaultContext(instructions);
+            Assert.ThrowsException<FormatException>(() => new LEB128TestMachine().Execute(context));
+        }
+
+        [TestMethod]
         public void ReadSLEB128_MaxInt64_DecodesCorrectly()
         {
             // long.MaxValue = 0x7FFFFFFFFFFFFFFF in SLEB128:
