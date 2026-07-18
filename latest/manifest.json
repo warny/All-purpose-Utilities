@@ -12892,6 +12892,34 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Reflection.ProcessIsolation.AuthenticodeRevocationPolicy.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Reflection.ProcessIsolation.AuthenticodeRevocationPolicy.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Reflection.ProcessIsolation.AuthenticodeRevocationPolicy",
+      "Summary": "<p sourcefile=\"api/Utils.Reflection.ProcessIsolation.AuthenticodeRevocationPolicy.yml\" sourcestartlinenumber=\"1\">Controls whether and how certificate revocation is verified during an Authenticode check.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Reflection.ProcessIsolation.AuthenticodeVerificationResult.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Reflection.ProcessIsolation.AuthenticodeVerificationResult.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Reflection.ProcessIsolation.AuthenticodeVerificationResult",
+      "Summary": "<p sourcefile=\"api/Utils.Reflection.ProcessIsolation.AuthenticodeVerificationResult.yml\" sourcestartlinenumber=\"1\">Structured result from <xref href=\"Utils.Reflection.ProcessIsolation.ProcessIsolationPlatformSecurity.VerifyAuthenticodeSignature(System.String%2cUtils.Reflection.ProcessIsolation.AuthenticodeRevocationPolicy)\" data-throw-if-not-resolved=\"false\"></xref>,\nseparating signature presence, chain trust, and revocation status.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.Reflection.ProcessIsolation.CommandAvailability.yml",
       "output": {
         ".html": {
@@ -12959,6 +12987,20 @@
       "IsMRef": true,
       "Title": "Utils.Reflection.ProcessIsolation.ProcessIsolationPlatformSecurity",
       "Summary": "<p sourcefile=\"api/Utils.Reflection.ProcessIsolation.ProcessIsolationPlatformSecurity.yml\" sourcestartlinenumber=\"1\">Exposes standardized security helpers used by process-container consumers.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Reflection.ProcessIsolation.RevocationStatus.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Reflection.ProcessIsolation.RevocationStatus.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Reflection.ProcessIsolation.RevocationStatus",
+      "Summary": "<p sourcefile=\"api/Utils.Reflection.ProcessIsolation.RevocationStatus.yml\" sourcestartlinenumber=\"1\">Revocation status of the signing certificate returned by\n<xref href=\"Utils.Reflection.ProcessIsolation.ProcessIsolationPlatformSecurity.VerifyAuthenticodeSignature(System.String%2cUtils.Reflection.ProcessIsolation.AuthenticodeRevocationPolicy)\" data-throw-if-not-resolved=\"false\"></xref>.</p>\n"
     },
     {
       "type": "ManagedReference",

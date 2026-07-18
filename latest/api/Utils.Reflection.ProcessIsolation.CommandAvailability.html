@@ -198,6 +198,61 @@ know the platform-specific executable extension.</p>
 
 
 
+  <a id="Utils_Reflection_ProcessIsolation_CommandAvailability_TryResolve_" data-uid="Utils.Reflection.ProcessIsolation.CommandAvailability.TryResolve*"></a>
+
+  <h3 id="Utils_Reflection_ProcessIsolation_CommandAvailability_TryResolve_System_String_System_String__" data-uid="Utils.Reflection.ProcessIsolation.CommandAvailability.TryResolve(System.String,System.String@)">
+  TryResolve(string, out string?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/ProcessIsolation/CommandAvailability.cs/#L45"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Locates an executable in <code>PATH</code> and returns its canonical absolute path.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool TryResolve(string commandName, out string? absolutePath)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>commandName</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>File name or rooted path of the executable to locate.</p>
+</dd>
+    <dt><code>absolutePath</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>When this method returns <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a>, the canonical absolute path to the
+executable; otherwise <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if the executable was found; otherwise <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section" id="Utils_Reflection_ProcessIsolation_CommandAvailability_TryResolve_System_String_System_String___remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>
+Callers should retain the resolved path and pass it directly to process launches rather than
+re-resolving the bare command name each time. Re-resolving introduces a TOCTOU window: the
+<code>PATH</code> value or the file at each candidate directory can change between the check and the
+launch, allowing a different (possibly hostile) binary to be executed.
+</p>
+<p>
+On Windows, when <code class="paramref">commandName</code> has no extension, each extension listed in
+<code>PATHEXT</code> is also tried; see <a class="xref" href="Utils.Reflection.ProcessIsolation.CommandAvailability.html#Utils_Reflection_ProcessIsolation_CommandAvailability_Exists_System_String_">Exists(string)</a> for details.
+</p>
+</div>
+
+
+
+
 
 </article>
 

@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Reflection_ProcessIsolation_ProcessIsolationPlatformSecurity" data-uid="Utils.Reflection.ProcessIsolation.ProcessIsolationPlatformSecurity" class="text-break">
-Class ProcessIsolationPlatformSecurity  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/ProcessIsolation/ProcessIsolationPlatformSecurity.cs/#L11"><i class="bi bi-code-slash"></i></a>
+Class ProcessIsolationPlatformSecurity  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/ProcessIsolation/ProcessIsolationPlatformSecurity.cs/#L84"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -157,7 +157,7 @@ Class ProcessIsolationPlatformSecurity  <a class="header-action link-secondary" 
 
   <h3 id="Utils_Reflection_ProcessIsolation_ProcessIsolationPlatformSecurity_HasValidAuthenticodeSignature_System_String_" data-uid="Utils.Reflection.ProcessIsolation.ProcessIsolationPlatformSecurity.HasValidAuthenticodeSignature(System.String)">
   HasValidAuthenticodeSignature(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/ProcessIsolation/ProcessIsolationPlatformSecurity.cs/#L53"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/ProcessIsolation/ProcessIsolationPlatformSecurity.cs/#L169"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns whether a file carries a valid Authenticode signature.</p>
@@ -189,12 +189,20 @@ Class ProcessIsolationPlatformSecurity  <a class="header-action link-secondary" 
 
 
   <h4 class="section" id="Utils_Reflection_ProcessIsolation_ProcessIsolationPlatformSecurity_HasValidAuthenticodeSignature_System_String__remarks">Remarks</h4>
-  <div class="markdown level1 remarks"><p>Authenticode is a Windows-specific signing scheme with no equivalent on other platforms.
+  <div class="markdown level1 remarks"><p>
+This method performs a live online revocation check (equivalent to
+<a class="xref" href="Utils.Reflection.ProcessIsolation.AuthenticodeRevocationPolicy.html#Utils_Reflection_ProcessIsolation_AuthenticodeRevocationPolicy_Online">Online</a>). Use
+<a class="xref" href="Utils.Reflection.ProcessIsolation.ProcessIsolationPlatformSecurity.html#Utils_Reflection_ProcessIsolation_ProcessIsolationPlatformSecurity_VerifyAuthenticodeSignature_System_String_Utils_Reflection_ProcessIsolation_AuthenticodeRevocationPolicy_">VerifyAuthenticodeSignature(string, AuthenticodeRevocationPolicy)</a> when you need to distinguish between signature
+validity, chain trust, and revocation status.
+</p>
+<p>
+Authenticode is a Windows-specific signing scheme with no equivalent on other platforms.
 Unlike <a class="xref" href="Utils.Reflection.ProcessIsolation.ProcessIsolationPlatformSecurity.html#Utils_Reflection_ProcessIsolation_ProcessIsolationPlatformSecurity_IsExpectedNamedPipeClient_System_IO_Pipes_NamedPipeServerStream_System_Int32_">IsExpectedNamedPipeClient(NamedPipeServerStream, int)</a>, this method does not silently report
-success on non-Windows platforms — a caller using this as a trust gate (&quot;should I run this
-binary?&quot;) must not receive a false sense of having verified anything. Callers that need a
+success on non-Windows platforms — a caller using this as a trust gate ("should I run this
+binary?") must not receive a false sense of having verified anything. Callers that need a
 cross-platform trust decision should branch on <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.operatingsystem.iswindows">IsWindows()</a>
-themselves and decide what &quot;trusted&quot; means for other platforms.</p>
+themselves and decide what "trusted" means for other platforms.
+</p>
 </div>
 
   <h4 class="section">Exceptions</h4>
@@ -210,7 +218,7 @@ themselves and decide what &quot;trusted&quot; means for other platforms.</p>
 
   <h3 id="Utils_Reflection_ProcessIsolation_ProcessIsolationPlatformSecurity_IsExpectedNamedPipeClient_System_IO_Pipes_NamedPipeServerStream_System_Int32_" data-uid="Utils.Reflection.ProcessIsolation.ProcessIsolationPlatformSecurity.IsExpectedNamedPipeClient(System.IO.Pipes.NamedPipeServerStream,System.Int32)">
   IsExpectedNamedPipeClient(NamedPipeServerStream, int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/ProcessIsolation/ProcessIsolationPlatformSecurity.cs/#L29"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/ProcessIsolation/ProcessIsolationPlatformSecurity.cs/#L102"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Verifies that the process connected to a named pipe is the expected process.</p>
@@ -258,11 +266,70 @@ result there as a verified identity.</p>
 
 
 
+  <a id="Utils_Reflection_ProcessIsolation_ProcessIsolationPlatformSecurity_VerifyAuthenticodeSignature_" data-uid="Utils.Reflection.ProcessIsolation.ProcessIsolationPlatformSecurity.VerifyAuthenticodeSignature*"></a>
+
+  <h3 id="Utils_Reflection_ProcessIsolation_ProcessIsolationPlatformSecurity_VerifyAuthenticodeSignature_System_String_Utils_Reflection_ProcessIsolation_AuthenticodeRevocationPolicy_" data-uid="Utils.Reflection.ProcessIsolation.ProcessIsolationPlatformSecurity.VerifyAuthenticodeSignature(System.String,Utils.Reflection.ProcessIsolation.AuthenticodeRevocationPolicy)">
+  VerifyAuthenticodeSignature(string, AuthenticodeRevocationPolicy)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/ProcessIsolation/ProcessIsolationPlatformSecurity.cs/#L132"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Verifies an Authenticode signature and returns a structured result separating signature
+presence, chain trust, and revocation status.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static AuthenticodeVerificationResult VerifyAuthenticodeSignature(string filePath, AuthenticodeRevocationPolicy revocationPolicy = AuthenticodeRevocationPolicy.Online)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>filePath</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Path to the file to verify.</p>
+</dd>
+    <dt><code>revocationPolicy</code> <a class="xref" href="Utils.Reflection.ProcessIsolation.AuthenticodeRevocationPolicy.html">AuthenticodeRevocationPolicy</a></dt>
+    <dd><p>How to check certificate revocation. Defaults to <a class="xref" href="Utils.Reflection.ProcessIsolation.AuthenticodeRevocationPolicy.html#Utils_Reflection_ProcessIsolation_AuthenticodeRevocationPolicy_Online">Online</a>
+(live CRL/OCSP query); use <a class="xref" href="Utils.Reflection.ProcessIsolation.AuthenticodeRevocationPolicy.html#Utils_Reflection_ProcessIsolation_AuthenticodeRevocationPolicy_CacheOnly">CacheOnly</a> when network
+access is undesirable and <a class="xref" href="Utils.Reflection.ProcessIsolation.AuthenticodeRevocationPolicy.html#Utils_Reflection_ProcessIsolation_AuthenticodeRevocationPolicy_None">None</a> only when speed is
+critical and revocation is acceptable to skip.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Reflection.ProcessIsolation.AuthenticodeVerificationResult.html">AuthenticodeVerificationResult</a></dt>
+    <dd><p>A structured result describing signature, chain, and revocation status.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section" id="Utils_Reflection_ProcessIsolation_ProcessIsolationPlatformSecurity_VerifyAuthenticodeSignature_System_String_Utils_Reflection_ProcessIsolation_AuthenticodeRevocationPolicy__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Authenticode is a Windows-specific signing scheme with no equivalent on other platforms.
+Callers that need a cross-platform trust decision should branch on
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.operatingsystem.iswindows">IsWindows()</a> themselves and decide what &quot;trusted&quot; means on other
+platforms — this method never silently reports success on non-Windows, unlike APIs that
+return <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> unconditionally when the platform cannot perform the check.</p>
+</div>
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.platformnotsupportedexception">PlatformNotSupportedException</a></dt>
+    <dd><p>Thrown when called on a non-Windows platform.</p>
+</dd>
+  </dl>
+
+
+
 
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/ProcessIsolation/ProcessIsolationPlatformSecurity.cs/#L11" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/ProcessIsolation/ProcessIsolationPlatformSecurity.cs/#L84" class="edit-link">Edit this page</a>
         </div>
 
 

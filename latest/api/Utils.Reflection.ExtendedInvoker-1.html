@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Reflection_ExtendedInvoker_1" data-uid="Utils.Reflection.ExtendedInvoker`1" class="text-break">
-Class ExtendedInvoker&lt;TResult&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Reflection/ExtendedInvoker.cs/#L15"><i class="bi bi-code-slash"></i></a>
+Class ExtendedInvoker&lt;TResult&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Reflection/ExtendedInvoker.cs/#L17"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -305,7 +305,7 @@ delegate is selected using the compiler's distance-based method search.</p>
 
   <h3 id="Utils_Reflection_ExtendedInvoker_1_Add_System_Delegate_" data-uid="Utils.Reflection.ExtendedInvoker`1.Add(System.Delegate)">
   Add(Delegate)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Reflection/ExtendedInvoker.cs/#L26"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Reflection/ExtendedInvoker.cs/#L28"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Adds a delegate to the invoker. The delegate must return
@@ -348,7 +348,7 @@ delegate is selected using the compiler's distance-based method search.</p>
 
   <h3 id="Utils_Reflection_ExtendedInvoker_1_GetEnumerator" data-uid="Utils.Reflection.ExtendedInvoker`1.GetEnumerator">
   GetEnumerator()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Reflection/ExtendedInvoker.cs/#L76"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Reflection/ExtendedInvoker.cs/#L117"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns an enumerator that iterates through the collection.</p>
@@ -380,8 +380,8 @@ delegate is selected using the compiler's distance-based method search.</p>
   <a id="Utils_Reflection_ExtendedInvoker_1_Invoke_" data-uid="Utils.Reflection.ExtendedInvoker`1.Invoke*"></a>
 
   <h3 id="Utils_Reflection_ExtendedInvoker_1_Invoke_System_Object___" data-uid="Utils.Reflection.ExtendedInvoker`1.Invoke(System.Object[])">
-  Invoke(params object[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Reflection/ExtendedInvoker.cs/#L67"><i class="bi bi-code-slash"></i></a>
+  Invoke(params object?[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Reflection/ExtendedInvoker.cs/#L108"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Invokes the best matching delegate for the provided arguments or throws if none is found.</p>
@@ -389,7 +389,7 @@ delegate is selected using the compiler's distance-based method search.</p>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public TResult Invoke(params object[] arguments)</code></pre>
+    <pre><code class="lang-csharp hljs">public TResult Invoke(params object?[] arguments)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
@@ -418,6 +418,9 @@ delegate is selected using the compiler's distance-based method search.</p>
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.missingmethodexception">MissingMethodException</a></dt>
     <dd><p>Thrown when no suitable delegate is registered.</p>
 </dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.reflection.ambiguousmatchexception">AmbiguousMatchException</a></dt>
+    <dd><p>Thrown when two or more delegates match the arguments with equal specificity.</p>
+</dd>
   </dl>
 
 
@@ -425,8 +428,8 @@ delegate is selected using the compiler's distance-based method search.</p>
   <a id="Utils_Reflection_ExtendedInvoker_1_TryInvoke_" data-uid="Utils.Reflection.ExtendedInvoker`1.TryInvoke*"></a>
 
   <h3 id="Utils_Reflection_ExtendedInvoker_1_TryInvoke_System_Object____0__" data-uid="Utils.Reflection.ExtendedInvoker`1.TryInvoke(System.Object[],`0@)">
-  TryInvoke(object[], out TResult)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Reflection/ExtendedInvoker.cs/#L40"><i class="bi bi-code-slash"></i></a>
+  TryInvoke(object?[], out TResult)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Reflection/ExtendedInvoker.cs/#L62"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Attempts to invoke the best matching delegate with the provided arguments.</p>
@@ -434,7 +437,7 @@ delegate is selected using the compiler's distance-based method search.</p>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public bool TryInvoke(object[] arguments, out TResult result)</code></pre>
+    <pre><code class="lang-csharp hljs">public bool TryInvoke(object?[] arguments, out TResult result)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
@@ -460,7 +463,30 @@ delegate is selected using the compiler's distance-based method search.</p>
 
 
 
+  <h4 class="section" id="Utils_Reflection_ExtendedInvoker_1_TryInvoke_System_Object____0___remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>
+<b>Null arguments</b> are treated as <code>typeof(object)</code> for overload resolution. Delegates
+that accept a more specific reference type (e.g. <code>Func&lt;string, TResult&gt;</code>) are not
+reachable when the corresponding argument is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>; register a
+<code>Func&lt;object, TResult&gt;</code> overload to handle the null case.
+</p>
+<p>
+<b>Ambiguity</b>: when two or more registered delegates match with the same specificity
+distance, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.reflection.ambiguousmatchexception">AmbiguousMatchException</a> is thrown rather than silently selecting
+the first registration.
+</p>
+<p>
+<b>Exceptions</b>: if the selected delegate throws, the original exception is rethrown
+directly (not wrapped in <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.reflection.targetinvocationexception">TargetInvocationException</a>).
+</p>
+</div>
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.reflection.ambiguousmatchexception">AmbiguousMatchException</a></dt>
+    <dd><p>Thrown when two or more delegates match the arguments with equal specificity.</p>
+</dd>
+  </dl>
 
 
 
@@ -468,7 +494,7 @@ delegate is selected using the compiler's distance-based method search.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Reflection/ExtendedInvoker.cs/#L15" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Reflection/ExtendedInvoker.cs/#L17" class="edit-link">Edit this page</a>
         </div>
 
 

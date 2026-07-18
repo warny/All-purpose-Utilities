@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Reflection_DelegateInvoker_2" data-uid="Utils.Reflection.DelegateInvoker`2" class="text-break">
-Class DelegateInvoker&lt;TBaseArg, TResult&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Reflection/DelegateInvoker.cs/#L12"><i class="bi bi-code-slash"></i></a>
+Class DelegateInvoker&lt;TBaseArg, TResult&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Reflection/DelegateInvoker.cs/#L20"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -296,6 +296,12 @@ Class DelegateInvoker&lt;TBaseArg, TResult&gt;  <a class="header-action link-sec
 
 
 
+  <h2 id="Utils_Reflection_DelegateInvoker_2_remarks">Remarks</h2>
+  <div class="markdown level0 remarks"><p>Dispatch order: exact type match first, then base classes from most- to least-derived, then
+interfaces. Interface matches are ambiguous when two registered interfaces are both implemented
+by the runtime type without one being a sub-interface of the other; an
+AmbiguousMatchException is thrown in that case.</p>
+</div>
 
 
   <h2 class="section" id="methods">Methods
@@ -306,7 +312,7 @@ Class DelegateInvoker&lt;TBaseArg, TResult&gt;  <a class="header-action link-sec
 
   <h3 id="Utils_Reflection_DelegateInvoker_2_Add__1_System_Func___0__1__" data-uid="Utils.Reflection.DelegateInvoker`2.Add``1(System.Func{``0,`1})">
   Add&lt;T&gt;(Func&lt;T, TResult&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Reflection/DelegateInvoker.cs/#L22"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Reflection/DelegateInvoker.cs/#L33"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Registers a delegate function that takes a specific argument type derived from TBaseArg and returns TResult.</p>
@@ -345,7 +351,7 @@ Class DelegateInvoker&lt;TBaseArg, TResult&gt;  <a class="header-action link-sec
 
   <h3 id="Utils_Reflection_DelegateInvoker_2_GetEnumerator" data-uid="Utils.Reflection.DelegateInvoker`2.GetEnumerator">
   GetEnumerator()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Reflection/DelegateInvoker.cs/#L78"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Reflection/DelegateInvoker.cs/#L90"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns an enumerator that iterates through the registered delegates.</p>
@@ -378,7 +384,7 @@ Class DelegateInvoker&lt;TBaseArg, TResult&gt;  <a class="header-action link-sec
 
   <h3 id="Utils_Reflection_DelegateInvoker_2_Invoke__0_" data-uid="Utils.Reflection.DelegateInvoker`2.Invoke(`0)">
   Invoke(TBaseArg)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Reflection/DelegateInvoker.cs/#L64"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Reflection/DelegateInvoker.cs/#L76"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Invokes the delegate registered for the runtime type of the provided argument.
@@ -424,7 +430,7 @@ Throws an exception if no matching delegate is found.</p>
 
   <h3 id="Utils_Reflection_DelegateInvoker_2_TryInvoke__0__1__" data-uid="Utils.Reflection.DelegateInvoker`2.TryInvoke(`0,`1@)">
   TryInvoke(TBaseArg, out TResult)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Reflection/DelegateInvoker.cs/#L33"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Reflection/DelegateInvoker.cs/#L52"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Attempts to invoke the registered delegate for the runtime type of the provided argument.</p>
@@ -459,6 +465,13 @@ Throws an exception if no matching delegate is found.</p>
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.reflection.ambiguousmatchexception">AmbiguousMatchException</a></dt>
+    <dd><p>Thrown when two or more registered interfaces match the runtime type without a clear
+specificity ordering (neither is a sub-interface of the other).</p>
+</dd>
+  </dl>
 
 
 
@@ -466,7 +479,7 @@ Throws an exception if no matching delegate is found.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Reflection/DelegateInvoker.cs/#L12" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Reflection/DelegateInvoker.cs/#L20" class="edit-link">Edit this page</a>
         </div>
 
 

@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Reflection_Reflection_Emit_EmitWorkerRoundRobinProxy" data-uid="Utils.Reflection.Reflection.Emit.EmitWorkerRoundRobinProxy" class="text-break">
-Class EmitWorkerRoundRobinProxy  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Emit/EmitWorkerRoundRobinProxy.cs/#L20"><i class="bi bi-code-slash"></i></a>
+Class EmitWorkerRoundRobinProxy  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Emit/EmitWorkerRoundRobinProxy.cs/#L29"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -247,13 +247,22 @@ Emit worker processes, produced by <a class="xref" href="Utils.Reflection.Librar
 
 
   <h2 id="Utils_Reflection_Reflection_Emit_EmitWorkerRoundRobinProxy_remarks">Remarks</h2>
-  <div class="markdown level0 remarks"><p>Complements the in-process concurrency <span class="xref">Utils.Reflection.Reflection.Emit.EmitWorkerProcess</span> already supports (several
+  <div class="markdown level0 remarks"><p>
+Complements the in-process concurrency <span class="xref">Utils.Reflection.Reflection.Emit.EmitWorkerProcess</span> already supports (several
 calls in flight on the <em>same</em> worker — see <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">InvokeMethod(int, MethodInfo, object[])</a>):
 that requires the native library backing the interface to itself be safe to call concurrently, since
 every call ends up in the same worker process. Round-robining across <em>separate</em> worker
 processes instead sidesteps that requirement entirely — each process has its own independent load of
 the native DLL — at the cost of one full sandboxed process per member of the set (see
-<a class="xref" href="Utils.Reflection.LibraryMapper.html#Utils_Reflection_LibraryMapper_Emit__1_System_String_System_Runtime_InteropServices_CallingConvention_System_Nullable_System_TimeSpan__System_Nullable_System_TimeSpan__">Emit&lt;TInterface&gt;(string, CallingConvention, TimeSpan?, TimeSpan?)</a>'s per-process startup cost) rather than one process total.</p>
+<a class="xref" href="Utils.Reflection.LibraryMapper.html#Utils_Reflection_LibraryMapper_Emit__1_System_String_System_Runtime_InteropServices_CallingConvention_System_Nullable_System_TimeSpan__System_Nullable_System_TimeSpan__">Emit&lt;TInterface&gt;(string, CallingConvention, TimeSpan?, TimeSpan?)</a>'s per-process startup cost) rather than one process total.
+</p>
+<p>
+Each worker is protected by a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.semaphoreslim">SemaphoreSlim</a>(1, 1) so at most one invocation runs on
+any single worker process at a time. If more concurrent callers arrive than there are workers, the
+excess callers wait (blocking) until a worker becomes available. This guarantees that each
+underlying native DLL instance never sees a concurrent call, fulfilling the non-concurrent-access
+contract that motivated choosing round-robin over the single-worker <a class="xref" href="Utils.Reflection.LibraryMapper.html#Utils_Reflection_LibraryMapper_Emit__1_System_String_System_Runtime_InteropServices_CallingConvention_System_Nullable_System_TimeSpan__System_Nullable_System_TimeSpan__">Emit&lt;TInterface&gt;(string, CallingConvention, TimeSpan?, TimeSpan?)</a>.
+</p>
 </div>
 
 
@@ -265,7 +274,7 @@ the native DLL — at the cost of one full sandboxed process per member of the s
 
   <h3 id="Utils_Reflection_Reflection_Emit_EmitWorkerRoundRobinProxy_Invoke_System_Reflection_MethodInfo_System_Object___" data-uid="Utils.Reflection.Reflection.Emit.EmitWorkerRoundRobinProxy.Invoke(System.Reflection.MethodInfo,System.Object[])">
   Invoke(MethodInfo?, object?[]?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Emit/EmitWorkerRoundRobinProxy.cs/#L38"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Emit/EmitWorkerRoundRobinProxy.cs/#L52"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Whenever any method on the generated proxy type is called, this method is invoked to dispatch control.</p>
@@ -307,7 +316,7 @@ the native DLL — at the cost of one full sandboxed process per member of the s
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Emit/EmitWorkerRoundRobinProxy.cs/#L20" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Emit/EmitWorkerRoundRobinProxy.cs/#L29" class="edit-link">Edit this page</a>
         </div>
 
 

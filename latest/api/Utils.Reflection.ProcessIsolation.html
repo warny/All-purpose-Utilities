@@ -116,6 +116,15 @@ initializer to customize a permission set, or <code>Default</code> for the restr
       <dd><p>Exposes standardized security helpers used by process-container consumers.</p>
 </dd>
     </dl>
+    <h3 id="structs">
+Structs
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Reflection.ProcessIsolation.AuthenticodeVerificationResult.html">AuthenticodeVerificationResult</a></dt>
+      <dd><p>Structured result from <a class="xref" href="Utils.Reflection.ProcessIsolation.ProcessIsolationPlatformSecurity.html#Utils_Reflection_ProcessIsolation_ProcessIsolationPlatformSecurity_VerifyAuthenticodeSignature_System_String_Utils_Reflection_ProcessIsolation_AuthenticodeRevocationPolicy_">VerifyAuthenticodeSignature(string, AuthenticodeRevocationPolicy)</a>,
+separating signature presence, chain trust, and revocation status.</p>
+</dd>
+    </dl>
     <h3 id="interfaces">
 Interfaces
 </h3>
@@ -123,6 +132,20 @@ Interfaces
       <dt><a class="xref" href="Utils.Reflection.ProcessIsolation.IProcessContainer.html">IProcessContainer</a></dt>
       <dd><p>Defines a reusable process container capable of launching child processes
 with additional isolation constraints.</p>
+</dd>
+    </dl>
+    <h3 id="enums">
+Enums
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Reflection.ProcessIsolation.AuthenticodeRevocationPolicy.html">AuthenticodeRevocationPolicy</a></dt>
+      <dd><p>Controls whether and how certificate revocation is verified during an Authenticode check.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Reflection.ProcessIsolation.RevocationStatus.html">RevocationStatus</a></dt>
+      <dd><p>Revocation status of the signing certificate returned by
+<a class="xref" href="Utils.Reflection.ProcessIsolation.ProcessIsolationPlatformSecurity.html#Utils_Reflection_ProcessIsolation_ProcessIsolationPlatformSecurity_VerifyAuthenticodeSignature_System_String_Utils_Reflection_ProcessIsolation_AuthenticodeRevocationPolicy_">VerifyAuthenticodeSignature(string, AuthenticodeRevocationPolicy)</a>.</p>
 </dd>
     </dl>
 
