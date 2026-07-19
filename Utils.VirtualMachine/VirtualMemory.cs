@@ -62,10 +62,20 @@ public class VirtualMemory<TAddress> where TAddress : IBinaryInteger<TAddress>
     /// <returns>The newly allocated page.</returns>
     public VirtualPage AllocatePage()
     {
+        if (_nextPageId == int.MaxValue)
+            throw new InvalidOperationException(
+                $"Cannot allocate more pages: the page identifier counter has reached its maximum value ({int.MaxValue}).");
+        TAddress nextIndex;
+        try { nextIndex = checked(_masterNextVirtualIndex + TAddress.One); }
+        catch (OverflowException)
+        {
+            throw new InvalidOperationException(
+                "Cannot allocate more pages: the master process virtual address space is exhausted.");
+        }
         var page = new VirtualPage(_nextPageId++, PageSize);
         _pages.Add(page);
         MasterProcess.MapPage(_masterNextVirtualIndex, page, PageAccess.ReadWrite);
-        _masterNextVirtualIndex += TAddress.One;
+        _masterNextVirtualIndex = nextIndex;
         return page;
     }
 
@@ -74,8 +84,12 @@ public class VirtualMemory<TAddress> where TAddress : IBinaryInteger<TAddress>
     /// <see cref="VirtualMemory{TAddress}"/>.
     /// </summary>
     /// <returns>The new process.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the process identifier counter has reached its maximum value.</exception>
     public VirtualProcess<TAddress> CreateProcess()
     {
+        if (_nextProcessId == int.MaxValue)
+            throw new InvalidOperationException(
+                $"Cannot create more processes: the process identifier counter has reached its maximum value ({int.MaxValue}).");
         var process = new VirtualProcess<TAddress>(_nextProcessId++, PageSize, isMaster: false);
         _processes.Add(process);
         return process;

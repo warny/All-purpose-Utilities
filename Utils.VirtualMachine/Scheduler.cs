@@ -63,10 +63,14 @@ public class Scheduler<T> where T : Context
     /// single context across multiple processes produces contradictory lifecycle states and corrupts
     /// instruction pointer and stack state.
     /// </exception>
+    /// <exception cref="InvalidOperationException">Thrown when the process identifier counter has reached its maximum value.</exception>
     public ScheduledProcess<T> AddProcess(T context, VirtualProcessor<T> processor, int priority = 0, string? name = null)
     {
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(processor);
+        if (_nextId == int.MaxValue)
+            throw new InvalidOperationException(
+                $"Cannot add more processes: the process identifier counter has reached its maximum value ({int.MaxValue}).");
         if (_processes.Any(p => ReferenceEquals(p.Context, context)))
             throw new ArgumentException(
                 "The supplied context is already registered with this scheduler. " +
