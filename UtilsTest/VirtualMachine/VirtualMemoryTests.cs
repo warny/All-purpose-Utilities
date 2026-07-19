@@ -206,6 +206,24 @@ public class VirtualMemoryTests
         Assert.ThrowsException<MemoryAccessException>(() => mem.MasterProcess.GetAccess(-1));
     }
 
+    [TestMethod]
+    public void Read_NegativeAddress_ZeroLength_ThrowsMemoryAccessException()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        mem.AllocatePage();
+        Assert.ThrowsException<MemoryAccessException>(
+            () => mem.MasterProcess.Read(-1, Span<byte>.Empty));
+    }
+
+    [TestMethod]
+    public void Write_NegativeAddress_ZeroLength_ThrowsMemoryAccessException()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        mem.AllocatePage();
+        Assert.ThrowsException<MemoryAccessException>(
+            () => mem.MasterProcess.Write(-1, ReadOnlySpan<byte>.Empty));
+    }
+
     // ── Item 22: VirtualAddressText is lossless for wide address types ────────────────────────
 
     [TestMethod]

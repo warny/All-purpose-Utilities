@@ -295,11 +295,14 @@ public class ControlFlowStack
     ///     propagate to the next outer handler. The block transitions to
     ///     <see cref="ExceptionBlockPhase.Finally"/>.</item>
     /// </list>
-    /// Blocks already in <see cref="ExceptionBlockPhase.Finally"/> or
-    /// <see cref="ExceptionBlockPhase.Catch"/> are skipped so that a throw from inside a handler
-    /// body propagates to the next outer try scope instead of re-entering the current handler.
-    /// The matched <see cref="ExceptionBlock"/> remains on the stack so that the handler body can
-    /// read <see cref="ExceptionBlock.ThrownValue"/>; ENDCATCH or ENDTRY closes it.
+    /// A throw from inside a <see cref="ExceptionBlockPhase.Catch"/> body whose block also has a
+    /// <see cref="ExceptionBlock.FinallyAddress"/> redirects through that finally before propagating
+    /// outward, so the finally always runs regardless of how the catch exits. A throw from inside
+    /// a block already in <see cref="ExceptionBlockPhase.Finally"/>, or in
+    /// <see cref="ExceptionBlockPhase.Catch"/> without a finally, skips that block entirely and
+    /// propagates to the next outer try scope. The matched <see cref="ExceptionBlock"/> remains on
+    /// the stack so that the handler body can read <see cref="ExceptionBlock.ThrownValue"/>;
+    /// ENDCATCH or ENDTRY closes it.
     /// </summary>
     /// <param name="context">The current execution context.</param>
     /// <param name="value">The value being thrown.</param>
@@ -314,8 +317,21 @@ public class ControlFlowStack
         {
             if (block is ExceptionBlock ex)
             {
-                // Skip exception blocks that are already executing their own handler.
-                // A throw from inside catch or finally must propagate to the next outer handler.
+                // A throw from inside a catch body whose block also has a finally clause must
+                // still run that finally before propagating outward (conventional semantics).
+                if (ex.Phase == ExceptionBlockPhase.Catch && ex.FinallyAddress.HasValue)
+                {
+                    ex.ThrownValue = value;
+                    ex.PendingFinallyAddress = null;
+                    ex.ExceptionInFlight = true;
+                    ex.Phase = ExceptionBlockPhase.Finally;
+                    _blocks.Push(ex);
+                    context.InstructionPointer = ex.FinallyAddress.Value;
+                    return true;
+                }
+
+                // Skip blocks already in Finally phase, or in Catch phase without a finally.
+                // A throw from these must propagate to the next outer handler.
                 if (ex.Phase != ExceptionBlockPhase.Try)
                     continue;
 

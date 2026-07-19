@@ -1009,6 +1009,38 @@ public class ControlFlowStackTests
     }
 
     [TestMethod]
+    public void Throw_InsideCatch_WithFinally_RunsFinallyBeforeOuterCatch()
+    {
+        // Conventional semantics: when a throw occurs inside a catch body whose block also has
+        // a finally, the finally must run before the exception propagates outward.
+        var cfs = new ControlFlowStack();
+        var ctx = new ControlFlowContext(new byte[100]);
+
+        cfs.PushException(startAddress: 0, catchAddress: 80, finallyAddress: null); // outer try/catch
+        cfs.PushException(startAddress: 5, catchAddress: 20, finallyAddress: 40);   // inner try/catch/finally
+
+        // First throw: inner block catches it (phase → Catch, PendingFinally = 40).
+        cfs.Throw(ctx, "error1");
+        Assert.AreEqual(20, ctx.InstructionPointer); // inner catch
+        var inner = (ExceptionBlock)cfs.CurrentBlock!;
+        Assert.AreEqual(ExceptionBlockPhase.Catch, inner.Phase);
+        Assert.AreEqual(40, inner.PendingFinallyAddress);
+
+        // Second throw from inside the catch body: must redirect through the inner finally
+        // (not skip directly to the outer catch).
+        bool handled = cfs.Throw(ctx, "error2");
+        Assert.IsTrue(handled);
+        Assert.AreEqual(40, ctx.InstructionPointer); // inner finally runs first
+        Assert.AreEqual(ExceptionBlockPhase.Finally, inner.Phase);
+        Assert.IsNull(inner.PendingFinallyAddress);  // cleared
+
+        // After finally completes, EndFinally propagates to the outer catch.
+        bool propagated = cfs.EndFinally(ctx);
+        Assert.IsTrue(propagated);
+        Assert.AreEqual(80, ctx.InstructionPointer); // outer catch receives error2
+    }
+
+    [TestMethod]
     public void Throw_InsideFinally_PropagatestoOuterHandler()
     {
         var cfs = new ControlFlowStack();

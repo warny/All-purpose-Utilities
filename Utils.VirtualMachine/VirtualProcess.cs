@@ -225,6 +225,9 @@ public class VirtualProcess<TAddress> where TAddress : IBinaryInteger<TAddress>
     /// </summary>
     private void ValidateRange(TAddress startAddress, int length, PageAccess requiredAccess)
     {
+        // Enforce the negative-address contract even for zero-length operations.
+        if (TAddress.IsNegative(startAddress))
+            throw new MemoryAccessException(FormatAddress(startAddress), requiredAccess);
         if (length == 0) return;
         TAddress currentAddress = startAddress;
         int remaining = length;
