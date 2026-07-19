@@ -31,7 +31,7 @@ namespace Utils.Expressions.Resolvers
                 ? ((AppDomain)typeof(string).GetTypeInfo().Assembly.GetType("System.AppDomain").GetRuntimeProperty("CurrentDomain").GetMethod.Invoke(null, [])).GetAssemblies()
                 : assemblies;
 
-            foreach (Type type in Assemblies.SelectMany(a => a.GetTypes().Where(t => t.IsPublic)))
+            foreach (Type type in Assemblies.SelectMany(GetExportedTypes))
             {
                 if (type.Namespace is null) continue;
                 Types[type.FullName] = type;
@@ -53,6 +53,30 @@ namespace Utils.Expressions.Resolvers
                         }
                     }
                 }
+            }
+        }
+
+        /// <summary>
+        /// Returns the top-level public types of <paramref name="assembly"/> without throwing when
+        /// individual types cannot be loaded. Uses <see cref="Assembly.GetExportedTypes"/> (which
+        /// avoids iterating over non-public types) and then filters to <see cref="Type.IsPublic"/>
+        /// to preserve the original semantics: public nested types (<see cref="Type.IsNestedPublic"/>)
+        /// are excluded, matching the behaviour of the former
+        /// <c>GetTypes().Where(t => t.IsPublic)</c> expression.
+        /// </summary>
+        private static IEnumerable<Type> GetExportedTypes(Assembly assembly)
+        {
+            try
+            {
+                return assembly.GetExportedTypes().Where(static t => t.IsPublic);
+            }
+            catch (ReflectionTypeLoadException ex)
+            {
+                return ex.Types.OfType<Type>().Where(static t => t.IsPublic);
+            }
+            catch (Exception)
+            {
+                return [];
             }
         }
 
