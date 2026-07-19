@@ -114,13 +114,15 @@ public interface INumberReader
     /// For the 10th byte (shift = 63), only bit 0 contributes to the result (as the sign bit of
     /// <see cref="long"/>). Bits 1–6 must be consistent with sign extension: all zeros for a
     /// non-negative value (<c>0x00</c>) or all ones for a negative value (<c>0x7F</c>).
-    /// Any other pattern is rejected as a non-canonical encoding.
+    /// Any other pattern would require more than 64 bits of signed precision and is rejected.
+    /// Overlong encodings (e.g. zero encoded as 10 bytes) are accepted as long as the total
+    /// length does not exceed 10 bytes and the 10th byte passes the constraint above.
     /// </summary>
     /// <param name="context">The execution context containing the instruction stream.</param>
     /// <returns>The signed integer decoded from the LEB128 byte sequence.</returns>
     /// <exception cref="FormatException">
-    /// Thrown when the encoding exceeds 10 bytes or the 10th byte carries bits inconsistent
-    /// with the sign extension required for a canonical 64-bit signed value.
+    /// Thrown when the encoding exceeds 10 bytes or the 10th byte carries bits that would
+    /// require more than 64 bits of signed precision.
     /// </exception>
     long ReadSLEB128(Context context)
     {
@@ -130,9 +132,9 @@ public interface INumberReader
         {
             byte b = ReadByte(context);
             // For the 10th byte (shift=63), only bit 0 of the 7-bit payload maps to the result
-            // (as bit 63, the sign bit). Bits 1-6 must be all-zero (canonical positive: 0x00)
-            // or all-one (canonical negative: 0x7F). Any other value encodes an out-of-range
-            // or non-canonical value and is rejected.
+            // (as bit 63, the sign bit). Bits 1-6 must be all-zero (positive: 0x00) or all-one
+            // (negative: 0x7F). Any other pattern would require more than 64 bits of signed
+            // precision and is rejected.
             if (byteCount == 9 && b != 0x00 && b != 0x7F)
                 throw new FormatException(
                     $"Malformed SLEB128: the 10th byte (0x{b:X2}) is not a valid sign-extension " +
