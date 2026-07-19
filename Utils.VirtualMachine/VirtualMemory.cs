@@ -91,12 +91,16 @@ public class VirtualMemory<TAddress> where TAddress : IBinaryInteger<TAddress>
     /// <param name="virtualPageIndex">The virtual page index within the process's address space.</param>
     /// <param name="access">The access rights granted to the process for this page.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="process"/> or <paramref name="page"/> is <see langword="null"/>.</exception>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="page"/> was not allocated by this instance.</exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="process"/> or <paramref name="page"/> was not created by this instance.
+    /// </exception>
     /// <exception cref="ObjectDisposedException">Thrown when <paramref name="process"/> has been freed.</exception>
     public void MapPage(VirtualProcess<TAddress> process, VirtualPage page, TAddress virtualPageIndex, PageAccess access)
     {
         ArgumentNullException.ThrowIfNull(process);
         ArgumentNullException.ThrowIfNull(page);
+        ThrowIfProcessFreed(process);
+        EnsureOwnedProcess(process);
         if (!_pages.Contains(page))
             throw new ArgumentException("The page does not belong to this VirtualMemory instance.", nameof(page));
         process.MapPage(virtualPageIndex, page, access);
@@ -109,11 +113,29 @@ public class VirtualMemory<TAddress> where TAddress : IBinaryInteger<TAddress>
     /// <param name="process">The process whose mapping is to be removed.</param>
     /// <param name="virtualPageIndex">The virtual page index to unmap.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="process"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="process"/> was not created by this instance.</exception>
     /// <exception cref="ObjectDisposedException">Thrown when <paramref name="process"/> has been freed.</exception>
     public void UnmapPage(VirtualProcess<TAddress> process, TAddress virtualPageIndex)
     {
         ArgumentNullException.ThrowIfNull(process);
+        ThrowIfProcessFreed(process);
+        EnsureOwnedProcess(process);
         process.UnmapPage(virtualPageIndex);
+    }
+
+    private static void ThrowIfProcessFreed(VirtualProcess<TAddress> process)
+    {
+        if (process.IsFreed)
+            throw new ObjectDisposedException(
+                $"VirtualProcess #{process.ProcessId}",
+                "This process has been freed and can no longer be used for memory operations.");
+    }
+
+    private void EnsureOwnedProcess(VirtualProcess<TAddress> process)
+    {
+        if (!_processes.Contains(process))
+            throw new ArgumentException(
+                "The process does not belong to this VirtualMemory instance.", nameof(process));
     }
 
     /// <summary>

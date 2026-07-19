@@ -115,6 +115,25 @@ public class VirtualMemoryTests
         Assert.ThrowsException<ArgumentNullException>(() => mem.MapPage(proc, null!, 0, PageAccess.ReadWrite));
     }
 
+    [TestMethod]
+    public void MapPage_ProcessFromAnotherMemory_ThrowsArgumentException()
+    {
+        var memA = new VirtualMemory<int>(pageSize: 16);
+        var memB = new VirtualMemory<int>(pageSize: 16);
+        var pageA = memA.AllocatePage();
+        var procB = memB.CreateProcess();
+        Assert.ThrowsException<ArgumentException>(() => memA.MapPage(procB, pageA, 0, PageAccess.ReadWrite));
+    }
+
+    [TestMethod]
+    public void UnmapPage_ProcessFromAnotherMemory_ThrowsArgumentException()
+    {
+        var memA = new VirtualMemory<int>(pageSize: 16);
+        var memB = new VirtualMemory<int>(pageSize: 16);
+        var procB = memB.CreateProcess();
+        Assert.ThrowsException<ArgumentException>(() => memA.UnmapPage(procB, 0));
+    }
+
     // ───────────────────────────────────── Read ──────────────────────────────────────────────
 
     [TestMethod]
