@@ -21,6 +21,20 @@ public sealed class VirtualPage
     /// Returns the page content as a <see cref="ReadOnlyMemory{T}"/>, suitable for use as
     /// <see cref="Context.Data"/> when the page holds an instruction stream.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This is a zero-copy view over the page's backing array. Page permissions (read-only,
+    /// read-write) are a cooperative convention enforced by <see cref="VirtualProcess{TAddress}"/>
+    /// operations — they are <b>not</b> enforced by the <see cref="ReadOnlyMemory{T}"/> type itself.
+    /// Advanced APIs such as <see cref="System.Runtime.InteropServices.MemoryMarshal.TryGetArray{T}"/>
+    /// can recover the underlying <c>ArraySegment&lt;byte&gt;</c> and write to the page directly,
+    /// bypassing all access checks.
+    /// </para>
+    /// <para>
+    /// The entire virtual-machine memory model is single-threaded and cooperative. Do not share
+    /// pages with untrusted or concurrent code without additional isolation.
+    /// </para>
+    /// </remarks>
     public ReadOnlyMemory<byte> AsReadOnlyMemory() => _data;
 
     /// <summary>Gets the raw backing array. Internal access only; never expose publicly.</summary>

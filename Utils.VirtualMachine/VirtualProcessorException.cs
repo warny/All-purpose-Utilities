@@ -7,14 +7,23 @@ namespace Utils.VirtualMachine;
 /// <summary>
 /// Represents errors that occur while executing a <see cref="VirtualProcessor{T}"/>.
 /// </summary>
-[Serializable]
+/// <remarks>
+/// This exception is not marked <c>[Serializable]</c> because the custom diagnostic
+/// fields (<see cref="InstructionPointer"/>, <see cref="OpcodeBytes"/>, and
+/// <see cref="InstructionName"/>) have no corresponding serialization constructor or
+/// <c>GetObjectData</c> override. Cross-process fault reporting should use a dedicated
+/// diagnostic DTO instead of binary exception serialization.
+/// </remarks>
 public class VirtualProcessorException : Exception
 {
     /// <summary>Gets the byte offset in the instruction stream where the error occurred, if available.</summary>
     public int? InstructionPointer { get; }
 
     /// <summary>Gets the opcode bytes that triggered the error, if available.</summary>
-    public byte[]? OpcodeBytes { get; }
+    /// <remarks>Each access returns a new defensive copy so callers cannot modify the stored diagnostic data.</remarks>
+    public byte[]? OpcodeBytes => _opcodeBytes is null ? null : (byte[])_opcodeBytes.Clone();
+
+    private readonly byte[]? _opcodeBytes;
 
     /// <summary>Gets the human-readable name of the instruction that caused the error, if available.</summary>
     public string? InstructionName { get; }
@@ -56,7 +65,7 @@ public class VirtualProcessorException : Exception
         : base(BuildMessage(instructionPointer, opcodeBytes))
     {
         InstructionPointer = instructionPointer;
-        OpcodeBytes = [.. opcodeBytes];
+        _opcodeBytes = [.. opcodeBytes];
     }
 
     /// <summary>
@@ -70,7 +79,7 @@ public class VirtualProcessorException : Exception
         : base(BuildMessage(instructionPointer, opcodeBytes), innerException)
     {
         InstructionPointer = instructionPointer;
-        OpcodeBytes = [.. opcodeBytes];
+        _opcodeBytes = [.. opcodeBytes];
     }
 
     /// <summary>
@@ -85,7 +94,7 @@ public class VirtualProcessorException : Exception
         : base(BuildMessage(instructionPointer, opcodeBytes, instructionName), innerException)
     {
         InstructionPointer = instructionPointer;
-        OpcodeBytes = [.. opcodeBytes];
+        _opcodeBytes = [.. opcodeBytes];
         InstructionName = instructionName;
     }
 

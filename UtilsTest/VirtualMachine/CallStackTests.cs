@@ -6,7 +6,7 @@ using Utils.VirtualMachine;
 
 namespace UtilsTest.VirtualMachine;
 
-// â”€â”€ Test processor wiring CALL/RET against CallStackContext â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€ Test processor wiring CALL/RET against CallStackContext â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 public class CallMachine : VirtualProcessor<CallStackContext>
 {
@@ -34,12 +34,12 @@ public class CallMachine : VirtualProcessor<CallStackContext>
     void Halt(CallStackContext ctx) => ctx.InstructionPointer = ctx.Data.Length;
 }
 
-// â”€â”€ Unit tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€ Unit tests â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 [TestClass]
 public class CallStackTests
 {
-    // â”€â”€ ICallStack contract: CallStack â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // â"€â"€ ICallStack contract: CallStack â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
     [TestMethod]
     public void CallStack_Call_IncrementsDepth()
@@ -127,7 +127,7 @@ public class CallStackTests
         Assert.AreEqual(99, cs.CurrentFrame!.ReturnAddress);
     }
 
-    // â”€â”€ CallFrame local variables â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // â"€â"€ CallFrame local variables â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
     [TestMethod]
     public void CallFrame_SetLocal_CanBeRetrievedTyped()
@@ -183,7 +183,7 @@ public class CallStackTests
         Assert.AreEqual(1, prev);
     }
 
-    // â”€â”€ ICallStack.CurrentFrame via SimpleCallStack â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // â"€â"€ ICallStack.CurrentFrame via SimpleCallStack â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
     [TestMethod]
     public void SimpleCallStack_CurrentFrame_AlwaysNull()
@@ -193,7 +193,7 @@ public class CallStackTests
         Assert.IsNull(cs.CurrentFrame);
     }
 
-    // â”€â”€ CallFrame.GetLocal<T> throwing variant â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // â"€â"€ CallFrame.GetLocal<T> throwing variant â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
     [TestMethod]
     public void CallFrame_GetLocal_ReturnsTypedValue()
@@ -213,15 +213,17 @@ public class CallStackTests
     }
 
     [TestMethod]
-    public void CallFrame_GetLocal_WrongType_ThrowsKeyNotFoundException()
+    public void CallFrame_GetLocal_WrongType_ThrowsInvalidCastException_Legacy()
     {
+        // Previously threw KeyNotFoundException; now throws InvalidCastException to
+        // distinguish a type mismatch from a missing key.
         var cs = new CallStack();
         cs.Call(0);
         cs.CurrentFrame!.SetLocal("x", 42);
-        Assert.ThrowsException<KeyNotFoundException>(() => cs.CurrentFrame.GetLocal<string>("x"));
+        Assert.ThrowsException<InvalidCastException>(() => cs.CurrentFrame.GetLocal<string>("x"));
     }
 
-    // â”€â”€ ICallStack contract: SimpleCallStack â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // â"€â"€ ICallStack contract: SimpleCallStack â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
     [TestMethod]
     public void SimpleCallStack_Call_IncrementsDepth()
@@ -270,7 +272,7 @@ public class CallStackTests
         Assert.AreEqual(5, cs.MaxDepth);
     }
 
-    // â”€â”€ CallStackContext â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // â"€â"€ CallStackContext â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
     [TestMethod]
     public void CallStackContext_DefaultCtor_UsesCallStack()
@@ -293,7 +295,7 @@ public class CallStackTests
         Assert.ThrowsException<ArgumentNullException>(() => new CallStackContext(new byte[0], null!));
     }
 
-    // â”€â”€ Integration: CALL / RET in a VirtualProcessor â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // â"€â"€ Integration: CALL / RET in a VirtualProcessor â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
     [TestMethod]
     public void Integration_Call_JumpsToSubroutine_ReturnRestoresIP()
@@ -376,12 +378,120 @@ public class CallStackTests
     public void Integration_Ret_OnEmptyStack_TerminatesExecution()
     {
         // RET with an empty call stack yields IP = -1; the Execute loop stops.
-        // Program: RET (0xC1) â€” no prior CALL.
+        // Program: RET (0xC1) â€" no prior CALL.
         byte[] program = [0xC1];
         var ctx = new CallStackContext(program);
         new CallMachine().Execute(ctx);
 
         Assert.AreEqual(-1, ctx.InstructionPointer);
         Assert.AreEqual(0, ctx.CallStack.Depth);
+    }
+
+    // ── Item 35: TryGetLocal handles null values correctly ────────────────
+
+    [TestMethod]
+    public void CallFrame_TryGetLocal_NullValue_ReferenceType_ReturnsTrue()
+    {
+        var cs = new CallStack();
+        cs.Call(0);
+        cs.CurrentFrame!.SetLocal("s", (string?)null);
+        Assert.IsTrue(cs.CurrentFrame.TryGetLocal<string>("s", out string? v));
+        Assert.IsNull(v);
+    }
+
+    [TestMethod]
+    public void CallFrame_TryGetLocal_NullValue_NullableInt_ReturnsTrue()
+    {
+        var cs = new CallStack();
+        cs.Call(0);
+        cs.CurrentFrame!.SetLocal("n", (int?)null);
+        Assert.IsTrue(cs.CurrentFrame.TryGetLocal<int?>("n", out int? v));
+        Assert.IsNull(v);
+    }
+
+    [TestMethod]
+    public void CallFrame_TryGetLocal_NullValue_NonNullableInt_ReturnsFalse()
+    {
+        var cs = new CallStack();
+        cs.Call(0);
+        cs.CurrentFrame!.SetLocal("n", null);
+        Assert.IsFalse(cs.CurrentFrame.TryGetLocal<int>("n", out _));
+    }
+
+    [TestMethod]
+    public void CallFrame_ContainsLocal_PresentKey_ReturnsTrue()
+    {
+        var cs = new CallStack();
+        cs.Call(0);
+        cs.CurrentFrame!.SetLocal("x", 1);
+        Assert.IsTrue(cs.CurrentFrame.ContainsLocal("x"));
+    }
+
+    [TestMethod]
+    public void CallFrame_ContainsLocal_AbsentKey_ReturnsFalse()
+    {
+        var cs = new CallStack();
+        cs.Call(0);
+        Assert.IsFalse(cs.CurrentFrame!.ContainsLocal("missing"));
+    }
+
+    [TestMethod]
+    public void CallFrame_GetLocal_NullStoredValue_ThrowsInvalidCastForNonNullableValueType()
+    {
+        var cs = new CallStack();
+        cs.Call(0);
+        cs.CurrentFrame!.SetLocal("n", null);
+        Assert.ThrowsException<InvalidCastException>(
+            () => cs.CurrentFrame.GetLocal<int>("n"));
+    }
+
+    [TestMethod]
+    public void CallFrame_GetLocal_AbsentKey_ThrowsKeyNotFoundException()
+    {
+        var cs = new CallStack();
+        cs.Call(0);
+        Assert.ThrowsException<KeyNotFoundException>(
+            () => cs.CurrentFrame!.GetLocal<int>("missing"));
+    }
+
+    [TestMethod]
+    public void CallFrame_GetLocal_WrongType_ThrowsInvalidCastException()
+    {
+        var cs = new CallStack();
+        cs.Call(0);
+        cs.CurrentFrame!.SetLocal("x", 42);
+        Assert.ThrowsException<InvalidCastException>(
+            () => cs.CurrentFrame.GetLocal<string>("x"));
+    }
+
+    // ── Item 26: Call rejects negative return addresses ───────────────────
+
+    [TestMethod]
+    public void CallStack_Call_NegativeAddress_ThrowsArgumentOutOfRangeException()
+    {
+        var cs = new CallStack();
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => cs.Call(-1));
+    }
+
+    [TestMethod]
+    public void SimpleCallStack_Call_NegativeAddress_ThrowsArgumentOutOfRangeException()
+    {
+        var cs = new SimpleCallStack();
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => cs.Call(-1));
+    }
+
+    [TestMethod]
+    public void CallStack_Return_EmptyStack_ReturnsMinusOne()
+    {
+        var cs = new CallStack();
+        Assert.AreEqual(-1, cs.Return());
+    }
+
+    [TestMethod]
+    public void CallStack_Return_AfterCall_ReturnsOriginalAddress()
+    {
+        var cs = new CallStack();
+        cs.Call(42);
+        Assert.AreEqual(42, cs.Return());
     }
 }

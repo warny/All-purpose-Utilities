@@ -337,6 +337,7 @@ public abstract class VirtualProcessor<T> where T : Context
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is cancelled.</exception>
     public void Execute(T context, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(context);
         while (context.InstructionPointer >= 0 && context.InstructionPointer < context.Data.Length)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -357,6 +358,7 @@ public abstract class VirtualProcessor<T> where T : Context
     /// <exception cref="VirtualProcessorException">Thrown on an unknown opcode sequence.</exception>
     public bool ExecuteStep(T context)
     {
+        ArgumentNullException.ThrowIfNull(context);
         if (context.InstructionPointer < 0 || context.InstructionPointer >= context.Data.Length) return false;
         OnStep(context);
         TryDispatch(context);
@@ -368,21 +370,25 @@ public abstract class VirtualProcessor<T> where T : Context
     /// the methods discovered via <see cref="InstructionAttribute"/>.
     /// </summary>
     /// <param name="opcode">Byte sequence identifying the instruction.</param>
-    /// <param name="name">Human-readable name used in diagnostics.</param>
+    /// <param name="name">Human-readable name used in diagnostics. Must not be <see langword="null"/>, empty, or whitespace.</param>
     /// <param name="handler">Delegate invoked when the opcode is matched.</param>
     /// <param name="overwrite">
     /// When <see langword="true"/>, replaces an existing registration for the same opcode.
     /// When <see langword="false"/> (default), throws if the opcode is already registered.
     /// </param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="name"/> is <see langword="null"/>.</exception>
     /// <exception cref="ArgumentException">
-    /// Thrown when <paramref name="opcode"/> is empty, or when the opcode is already registered
-    /// and <paramref name="overwrite"/> is <see langword="false"/>.
+    /// Thrown when <paramref name="opcode"/> is empty, when <paramref name="name"/> is empty or whitespace-only,
+    /// or when the opcode is already registered and <paramref name="overwrite"/> is <see langword="false"/>.
     /// </exception>
     public void RegisterInstruction(byte[] opcode, string name, Action<T> handler, bool overwrite = false)
     {
         ArgumentNullException.ThrowIfNull(opcode);
+        ArgumentNullException.ThrowIfNull(name);
         ArgumentNullException.ThrowIfNull(handler);
         if (opcode.Length == 0) throw new ArgumentException("Opcode cannot be empty.", nameof(opcode));
+        if (string.IsNullOrWhiteSpace(name))
+            throw new ArgumentException("Instruction name must not be empty or whitespace.", nameof(name));
         if (!overwrite && InstructionsSet.ContainsKey(opcode))
             throw new ArgumentException(
                 $"An instruction with opcode [{string.Join(", ", opcode.Select(b => $"0x{b:X2}"))}] is already registered.",
@@ -396,7 +402,7 @@ public abstract class VirtualProcessor<T> where T : Context
         // still rejected — a conflict with a different-length opcode is invalid regardless of overwrite.
         CheckPrefixConflict(InstructionsSet, ownedOpcode);
 
-        InstructionsSet[ownedOpcode] = (name ?? string.Empty, ctx => handler(ctx));
+        InstructionsSet[ownedOpcode] = (name, ctx => handler(ctx));
         if (ownedOpcode.Length > _maxInstructionSize)
         {
             _maxInstructionSize = ownedOpcode.Length;

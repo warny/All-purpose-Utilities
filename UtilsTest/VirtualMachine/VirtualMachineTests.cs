@@ -200,6 +200,54 @@ namespace UtilsTest.VirtualMachine
             Assert.IsFalse(machine.ExecuteStep(context));  // EOF
         }
 
+        // ── Null context ──────────────────────────────────────────────────────
+
+        [TestMethod]
+        public void Execute_NullContext_ThrowsArgumentNullException()
+        {
+            Assert.ThrowsException<ArgumentNullException>(
+                () => new TestMachine().Execute(null!));
+        }
+
+        [TestMethod]
+        public void ExecuteStep_NullContext_ThrowsArgumentNullException()
+        {
+            Assert.ThrowsException<ArgumentNullException>(
+                () => new TestMachine().ExecuteStep(null!));
+        }
+
+        // ── Item 48: InstructionAttribute and RegisterInstruction reject empty/whitespace names ──
+
+        [TestMethod]
+        public void InstructionAttribute_EmptyName_ThrowsArgumentException()
+        {
+            Assert.ThrowsException<ArgumentException>(
+                () => new InstructionAttribute("", 0x01));
+        }
+
+        [TestMethod]
+        public void InstructionAttribute_WhitespaceName_ThrowsArgumentException()
+        {
+            Assert.ThrowsException<ArgumentException>(
+                () => new InstructionAttribute("   ", 0x01));
+        }
+
+        [TestMethod]
+        public void RegisterInstruction_EmptyName_ThrowsArgumentException()
+        {
+            var machine = new TestMachine();
+            Assert.ThrowsException<ArgumentException>(
+                () => machine.RegisterInstruction([0xA0], "", _ => { }));
+        }
+
+        [TestMethod]
+        public void RegisterInstruction_WhitespaceName_ThrowsArgumentException()
+        {
+            var machine = new TestMachine();
+            Assert.ThrowsException<ArgumentException>(
+                () => machine.RegisterInstruction([0xA0], "   ", _ => { }));
+        }
+
         // ── CancellationToken ─────────────────────────────────────────────────
 
         [TestMethod]
@@ -494,6 +542,29 @@ namespace UtilsTest.VirtualMachine
         }
 
         [TestMethod]
+        public void ReadSLEB128_TenthByteZeroHighBits_ThrowsFormatException()
+        {
+            // 0x01: bit63=1 (negative value component) but bits 1-6=0, inconsistent with
+            // negative sign extension (bits 1-6 should be all-ones for a valid negative).
+            // The existing test only checked 11-byte sequences; this covers the 10th-byte rule.
+            byte[] payload = [0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x01];
+            byte[] instructions = [0x21, .. payload];
+            var context = new DefaultContext(instructions);
+            Assert.ThrowsException<FormatException>(() => new LEB128TestMachine().Execute(context));
+        }
+
+        [TestMethod]
+        public void ReadSLEB128_TenthBytePartialSignExtension_ThrowsFormatException()
+        {
+            // 0x7E: bits 1-6 are all-one (suggesting negative) but bit 0=0 (bit63 not set),
+            // which is inconsistent with positive sign extension (bits 1-6 should all be zero).
+            byte[] payload = [0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x7E];
+            byte[] instructions = [0x21, .. payload];
+            var context = new DefaultContext(instructions);
+            Assert.ThrowsException<FormatException>(() => new LEB128TestMachine().Execute(context));
+        }
+
+        [TestMethod]
         public void ReadSLEB128_MaxInt64_DecodesCorrectly()
         {
             // long.MaxValue = 0x7FFFFFFFFFFFFFFF in SLEB128:
@@ -589,6 +660,12 @@ namespace UtilsTest.VirtualMachine
         public void InstructionAttribute_NullName_Throws()
         {
             Assert.ThrowsException<ArgumentNullException>(() => new InstructionAttribute(null!, 0x01));
+        }
+
+        [TestMethod]
+        public void InstructionAttribute_NullInstruction_ThrowsArgumentNullException()
+        {
+            Assert.ThrowsException<ArgumentNullException>(() => new InstructionAttribute("NOP", null!));
         }
 
         [TestMethod]
@@ -721,6 +798,23 @@ namespace UtilsTest.VirtualMachine
             machine.RegisterInstruction([0xFF], "NEW", _ => { }, overwrite: true);
             Assert.IsTrue(machine.Instructions.Any(i => i.Name == "NEW"));
             Assert.IsFalse(machine.Instructions.Any(i => i.Name == "OLD"));
+        }
+
+        // ── Item 38: OpcodeBytes returns a defensive copy ─────────────────────
+
+        [TestMethod]
+        public void VirtualProcessorException_OpcodeBytes_MutationDoesNotAlterDiagnostics()
+        {
+            var context = new DefaultContext(new byte[] { 0xFF });
+            var ex = Assert.ThrowsException<VirtualProcessorException>(
+                () => new TestMachine().Execute(context));
+
+            byte[]? first = ex.OpcodeBytes;
+            Assert.IsNotNull(first);
+            first![0] = 0x00; // mutate the returned copy
+
+            byte[]? second = ex.OpcodeBytes;
+            Assert.AreEqual(0xFF, second![0], "Mutation of a returned OpcodeBytes array must not affect subsequent accesses.");
         }
 
         // ── InstructionName in VirtualProcessorException ──────────────────────

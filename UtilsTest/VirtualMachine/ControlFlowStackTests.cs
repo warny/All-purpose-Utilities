@@ -973,4 +973,41 @@ public class ControlFlowStackTests
         var block = new ExceptionBlock(0, catchAddress: 10, finallyAddress: null);
         Assert.AreEqual(ExceptionBlockPhase.Try, block.Phase);
     }
+
+    // ── Item 13: PushException rejects blocks with neither catch nor finally ──
+
+    [TestMethod]
+    public void PushException_NoCatchNoFinally_ThrowsArgumentException()
+    {
+        var cfs = new ControlFlowStack();
+        Assert.ThrowsException<ArgumentException>(
+            () => cfs.PushException(startAddress: 0, catchAddress: null, finallyAddress: null));
+    }
+
+    [TestMethod]
+    public void PushException_CatchOnly_DoesNotThrow()
+    {
+        var cfs = new ControlFlowStack();
+        cfs.PushException(startAddress: 0, catchAddress: 10, finallyAddress: null);
+        Assert.IsNotNull(cfs.CurrentBlock);
+    }
+
+    [TestMethod]
+    public void PushException_FinallyOnly_DoesNotThrow()
+    {
+        var cfs = new ControlFlowStack();
+        cfs.PushException(startAddress: 0, catchAddress: null, finallyAddress: 20);
+        Assert.IsNotNull(cfs.CurrentBlock);
+    }
+
+    [TestMethod]
+    public void Throw_CatchOnlyBlock_JumpsToCatch()
+    {
+        var cfs = new ControlFlowStack();
+        cfs.PushException(startAddress: 0, catchAddress: 10, finallyAddress: null);
+        var ctx = new DefaultContext(ReadOnlyMemory<byte>.Empty);
+        bool handled = cfs.Throw(ctx, "err");
+        Assert.IsTrue(handled);
+        Assert.AreEqual(10, ctx.InstructionPointer);
+    }
 }

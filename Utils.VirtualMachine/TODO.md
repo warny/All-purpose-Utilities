@@ -1,6 +1,6 @@
 # Utils.VirtualMachine — Quality and correctness audit (2026-07-11)
 
-> **Partially completed 2026-07-18.** Items 1, 2, 3, 11, 12 addressed in PR fix/utils-vm-quality-audit-p0-p1. Items 4–10, 13–16 remain open (see below). Item 13 was already correct before this pass.
+> **Partially completed 2026-07-18/19.** Items 1, 2, 3, 11, 12 addressed in PR fix/utils-vm-quality-audit-p0-p1. Item 13 addressed in PR fix/utils-vm-quality-audit-round2. Items 4–10, 14–16 remain open.
 
 Static review of the processor, scheduler, virtual-memory model, stacks, and structured control-flow helpers. The review focuses on deterministic bytecode dispatch, malformed-program handling, memory isolation, lifecycle state, resource bounds, and duplicated intent. No production code is changed by this commit.
 
@@ -130,7 +130,7 @@ Both methods pop nested blocks while searching for a loop. If no loop exists, th
 
 **Priority: P1 control-flow integrity.**
 
-### 13. Exception blocks may be created with neither catch nor finally target
+### ✅ 13. Exception blocks may be created with neither catch nor finally target
 
 `PushException` accepts both target addresses as nullable without validation. `Throw` assumes that when there is no finally target, `CatchAddress` is non-null and dereferences `CatchAddress!.Value`.
 

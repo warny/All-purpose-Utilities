@@ -191,6 +191,14 @@ public class Scheduler<T> where T : Context
     /// or until cancellation is requested. Yields to the caller between each
     /// <see cref="Step"/> call so the calling thread is not blocked for the duration.
     /// </summary>
+    /// <remarks>
+    /// One <see cref="Step"/> call executes up to <see cref="QuantumSteps"/> instructions for
+    /// every ready process in priority order. With many processes, a large quantum, or slow
+    /// handlers, each step can still occupy the calling thread for a significant amount of time.
+    /// Cancellation is only checked between steps, not within a single step. If tighter
+    /// granularity is required, reduce <see cref="QuantumSteps"/> or have handlers check the
+    /// token themselves.
+    /// </remarks>
     /// <param name="cancellationToken">Token that can interrupt the loop between steps.</param>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is cancelled.</exception>
     public async Task RunAsync(CancellationToken cancellationToken = default)
