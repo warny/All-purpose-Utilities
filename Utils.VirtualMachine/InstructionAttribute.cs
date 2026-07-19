@@ -23,13 +23,16 @@ public class InstructionAttribute : Attribute
     /// </summary>
     /// <param name="name">The descriptive name of the instruction. Must not be <see langword="null"/>, empty, or whitespace.</param>
     /// <param name="instruction">The byte sequence that identifies the instruction. Must contain at least one byte.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="name"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="name"/> or <paramref name="instruction"/> is <see langword="null"/>.
+    /// </exception>
     /// <exception cref="ArgumentException">
     /// Thrown when <paramref name="name"/> is empty or whitespace-only, or when <paramref name="instruction"/> is empty.
     /// </exception>
     public InstructionAttribute(string name, params byte[] instruction)
     {
         ArgumentNullException.ThrowIfNull(name);
+        ArgumentNullException.ThrowIfNull(instruction);
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("Instruction name must not be empty or whitespace.", nameof(name));
         if (instruction.Length == 0)

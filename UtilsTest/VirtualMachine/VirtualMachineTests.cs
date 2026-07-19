@@ -663,6 +663,12 @@ namespace UtilsTest.VirtualMachine
         }
 
         [TestMethod]
+        public void InstructionAttribute_NullInstruction_ThrowsArgumentNullException()
+        {
+            Assert.ThrowsException<ArgumentNullException>(() => new InstructionAttribute("NOP", null!));
+        }
+
+        [TestMethod]
         public void InstructionAttribute_EmptyOpcode_Throws()
         {
             Assert.ThrowsException<ArgumentException>(() => new InstructionAttribute("NOP"));
