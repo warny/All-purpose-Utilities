@@ -136,6 +136,10 @@ public class Scheduler<T> where T : Context
 
                     if (!process.Processor.ExecuteStep(process.Context))
                     {
+                        // Item 45: validate structural completion before marking as Terminated.
+                        // If ValidateCompletion throws, the exception is caught below and the
+                        // process transitions to Faulted instead.
+                        process.Processor.ValidateCompletion(process.Context);
                         process.SetState(ProcessState.Terminated);
                         break;
                     }
@@ -157,6 +161,11 @@ public class Scheduler<T> where T : Context
                 {
                     bool contextDone = process.Context.InstructionPointer < 0
                         || process.Context.InstructionPointer >= process.Context.Data.Length;
+                    if (contextDone)
+                    {
+                        // Item 45: validate structural completion before marking as Terminated.
+                        process.Processor.ValidateCompletion(process.Context);
+                    }
                     process.SetState(contextDone ? ProcessState.Terminated : ProcessState.Ready);
                 }
             }

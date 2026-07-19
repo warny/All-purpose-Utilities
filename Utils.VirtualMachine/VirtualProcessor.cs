@@ -339,6 +339,21 @@ public abstract class VirtualProcessor<T> where T : Context
     protected virtual void OnStep(T context) { }
 
     /// <summary>
+    /// Called by <see cref="Scheduler{T}"/> immediately before a process transitions to
+    /// <see cref="ProcessState.Terminated"/> due to normal program completion (instruction pointer
+    /// out of range or negative). Throw to fail-fast and transition the process to
+    /// <see cref="ProcessState.Faulted"/> instead.
+    /// </summary>
+    /// <remarks>
+    /// Override this method to validate that the context is in a structurally consistent
+    /// terminal state: call frames are empty, control-flow blocks are all closed, no exception
+    /// handler is pending, operand stacks are empty, etc. The default implementation does nothing,
+    /// maintaining backward compatibility.
+    /// </remarks>
+    /// <param name="context">The execution context at termination.</param>
+    public virtual void ValidateCompletion(T context) { }
+
+    /// <summary>
     /// Executes all instructions until the end of the data stream, until
     /// <see cref="Context.InstructionPointer"/> becomes negative (program termination signal),
     /// or until <paramref name="cancellationToken"/> is cancelled.

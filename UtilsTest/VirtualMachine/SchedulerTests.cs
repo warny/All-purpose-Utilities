@@ -635,4 +635,45 @@ public class SchedulerTests
             () => scheduler.AddProcess(ctx, null!));
         Assert.AreEqual("processor", ex.ParamName);
     }
+
+    // ── ValidateCompletion hook (item 45) ──────────────────────────────────────────────────────
+
+    private sealed class ValidatingProcessor : VirtualProcessor<DefaultContext>
+    {
+        public bool ValidateCalled;
+        public bool ShouldThrow;
+
+        public ValidatingProcessor()
+        {
+            RegisterInstruction([0x00], "HALT", ctx => ctx.Terminate());
+        }
+
+        public override void ValidateCompletion(DefaultContext context)
+        {
+            ValidateCalled = true;
+            if (ShouldThrow)
+                throw new InvalidOperationException("Structural completion check failed.");
+        }
+    }
+
+    [TestMethod]
+    public void ValidateCompletion_CalledWhenProcessTerminatesNormally()
+    {
+        var scheduler = new Scheduler<DefaultContext>();
+        var proc = new ValidatingProcessor();
+        scheduler.AddProcess(Ctx(0x00), proc); // HALT at byte 0
+        scheduler.Run();
+        Assert.IsTrue(proc.ValidateCalled);
+    }
+
+    [TestMethod]
+    public void ValidateCompletion_Throws_TransitionsProcessToFaulted()
+    {
+        var scheduler = new Scheduler<DefaultContext>();
+        var proc = new ValidatingProcessor { ShouldThrow = true };
+        var sp = scheduler.AddProcess(Ctx(0x00), proc); // HALT at byte 0
+        scheduler.Run();
+        Assert.AreEqual(ProcessState.Faulted, sp.State);
+        Assert.IsInstanceOfType<InvalidOperationException>(sp.FaultException);
+    }
 }
