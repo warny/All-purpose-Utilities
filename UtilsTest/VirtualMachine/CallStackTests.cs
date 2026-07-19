@@ -95,7 +95,7 @@ public class CallStackTests
         cs.Call(1);
         cs.Call(2);
         cs.Call(3);
-        Assert.ThrowsException<InvalidOperationException>(() => cs.Call(4));
+        Assert.ThrowsException<VmLimitExceededException>(() => cs.Call(4));
     }
 
     [TestMethod]
@@ -256,7 +256,7 @@ public class CallStackTests
         var cs = new SimpleCallStack(maxDepth: 2);
         cs.Call(1);
         cs.Call(2);
-        Assert.ThrowsException<InvalidOperationException>(() => cs.Call(3));
+        Assert.ThrowsException<VmLimitExceededException>(() => cs.Call(3));
     }
 
     [TestMethod]
@@ -292,7 +292,7 @@ public class CallStackTests
     [TestMethod]
     public void CallStackContext_CustomCtor_NullStack_Throws()
     {
-        Assert.ThrowsException<ArgumentNullException>(() => new CallStackContext(new byte[0], null!));
+        Assert.ThrowsException<ArgumentNullException>(() => new CallStackContext(new byte[0], (ICallStack)null!));
     }
 
     // â"€â"€ Integration: CALL / RET in a VirtualProcessor â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€

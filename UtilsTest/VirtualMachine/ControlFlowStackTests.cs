@@ -1157,28 +1157,28 @@ public class ControlFlowStackTests
     }
 
     [TestMethod]
-    public void PushConditional_BeyondMaxDepth_ThrowsInvalidOperationException()
+    public void PushConditional_BeyondMaxDepth_ThrowsVmLimitExceededException()
     {
         var cfs = new ControlFlowStack(maxDepth: 2);
         cfs.PushConditional(0, 10);
         cfs.PushConditional(1, 20);
-        Assert.ThrowsException<InvalidOperationException>(() => cfs.PushConditional(2, 30));
+        Assert.ThrowsException<VmLimitExceededException>(() => cfs.PushConditional(2, 30));
     }
 
     [TestMethod]
-    public void PushLoop_BeyondMaxDepth_ThrowsInvalidOperationException()
+    public void PushLoop_BeyondMaxDepth_ThrowsVmLimitExceededException()
     {
         var cfs = new ControlFlowStack(maxDepth: 1);
         cfs.PushLoop(0, 10);
-        Assert.ThrowsException<InvalidOperationException>(() => cfs.PushLoop(1, 20));
+        Assert.ThrowsException<VmLimitExceededException>(() => cfs.PushLoop(1, 20));
     }
 
     [TestMethod]
-    public void PushException_BeyondMaxDepth_ThrowsInvalidOperationException()
+    public void PushException_BeyondMaxDepth_ThrowsVmLimitExceededException()
     {
         var cfs = new ControlFlowStack(maxDepth: 1);
         cfs.PushException(0, catchAddress: 10, finallyAddress: null);
-        Assert.ThrowsException<InvalidOperationException>(
+        Assert.ThrowsException<VmLimitExceededException>(
             () => cfs.PushException(1, catchAddress: 20, finallyAddress: null));
     }
 
