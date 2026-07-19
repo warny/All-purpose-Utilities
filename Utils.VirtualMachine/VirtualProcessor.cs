@@ -440,6 +440,8 @@ public abstract class VirtualProcessor<T> where T : Context
     /// Thrown when no instruction matches the bytes at the current position, or when a matched
     /// instruction's handler raises <see cref="IndexOutOfRangeException"/> or
     /// <see cref="ArgumentOutOfRangeException"/> (indicating truncated operand data).
+    /// On failure, <see cref="Context.InstructionPointer"/> is restored to the instruction's
+    /// start address so that callers can identify the failing instruction or retry.
     /// </exception>
     private void TryDispatch(T context)
     {
@@ -461,6 +463,7 @@ public abstract class VirtualProcessor<T> where T : Context
             }
             catch (Exception ex) when (ex is IndexOutOfRangeException or ArgumentOutOfRangeException)
             {
+                context.InstructionPointer = instructionStart;
                 throw new VirtualProcessorException(instructionStart, new ArraySegment<byte>([firstByte]), fast.Name, ex);
             }
             return;
@@ -488,6 +491,8 @@ public abstract class VirtualProcessor<T> where T : Context
                 catch (Exception ex) when (ex is IndexOutOfRangeException or ArgumentOutOfRangeException)
                 {
                     // INumberReader methods throw these when the byte stream ends before all operand bytes are read.
+                    // Restore IP to the start of the failed instruction so that callers can identify and retry it.
+                    context.InstructionPointer = instructionStart;
                     throw new VirtualProcessorException(instructionStart, segment, entry.Name, ex);
                 }
                 return;

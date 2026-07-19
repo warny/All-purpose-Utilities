@@ -730,23 +730,37 @@ namespace UtilsTest.VirtualMachine
         // ── Item 18: failed byte read must not advance IP ─────────────────────
 
         [TestMethod]
-        public void ReadByte_FailedRead_InstructionPointerUnchanged()
+        public void ReadByte_FailedRead_InstructionPointerRestoredToInstructionStart()
         {
-            // Context with exactly one byte consumed by the opcode — no operand byte follows.
+            // Item 19: a failed operand read must restore InstructionPointer to the start of
+            // the failing instruction so that callers can identify or retry it.
             // SByteTestMachine (PUSH_SBYTE 0x30) reads the opcode byte, then tries to read
-            // the operand. A failed operand read must leave IP at the operand position, not beyond.
+            // the operand sbyte — which is missing. The handler threw, so IP must be 0.
             byte[] instructions = [0x30]; // PUSH_SBYTE opcode with no operand
             var context = new DefaultContext(instructions);
-            int ipBeforeDispatch = 0;
 
-            // Execute the step; it should throw because the operand is missing.
-            var ex = Assert.ThrowsException<VirtualProcessorException>(
+            Assert.ThrowsException<VirtualProcessorException>(
                 () => new SByteTestMachine().Execute(context));
 
-            // IP should not have advanced past the end of the stream.
-            // The opcode consumed 1 byte (0x30), so after dispatching the opcode IP = 1
-            // (equal to Data.Length). The operand read fails at IP = 1 without advancing further.
-            Assert.AreEqual(1, context.InstructionPointer);
+            // IP must be restored to the instruction start (0), not left at 1 (after opcode).
+            Assert.AreEqual(0, context.InstructionPointer);
+        }
+
+        [TestMethod]
+        public void FailedSecondOperand_InstructionPointerRestoredToInstructionStart()
+        {
+            // Item 19: when the second of two operands is truncated, the first operand was already
+            // read (advancing IP). IP must still be restored to the instruction's start address.
+            // IntMachine's PUSH_INT (0x40) reads one int (4 bytes). We provide only 3 bytes
+            // after the opcode so the read fails mid-operand.
+            byte[] instructions = [0x40, 0x01, 0x02, 0x03]; // PUSH_INT with 3 of 4 operand bytes
+            var ctx = new TypedStackContext<int>(instructions);
+
+            Assert.ThrowsException<VirtualProcessorException>(
+                () => new IntMachine().Execute(ctx));
+
+            // IP must point to the instruction start (0), not to after the partial operand.
+            Assert.AreEqual(0, ctx.InstructionPointer);
         }
 
         [TestMethod]
