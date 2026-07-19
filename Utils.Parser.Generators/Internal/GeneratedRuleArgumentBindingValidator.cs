@@ -12,19 +12,31 @@ internal static class GeneratedRuleArgumentBindingValidator
     /// <summary>Validates all parser rule references that target locally declared parser rules.</summary>
     internal static ImmutableArray<GeneratedRuleArgumentBindingIssue> Validate(G4Grammar grammar)
     {
+        var localResolver = new G4ImportedRuleResolver(new G4GrammarProjectIndex([new G4GrammarProjectEntry(grammar.Name, grammar)]));
+        return Validate(grammar, callSite => localResolver.Resolve(grammar, callSite.RuleName));
+    }
+
+    /// <summary>Validates all parser rule references whose targets are resolved deterministically by the provided resolver.</summary>
+    /// <param name="grammar">Caller grammar whose parser-rule bodies contain the call sites.</param>
+    /// <param name="resolveRule">Resolver that maps a call site to a structured target resolution.</param>
+    /// <returns>Deterministic binding issues for unique local or imported parser-rule targets.</returns>
+    internal static ImmutableArray<GeneratedRuleArgumentBindingIssue> Validate(G4Grammar grammar, Func<G4RuleRef, G4RuleResolution> resolveRule)
+    {
         var issues = ImmutableArray.CreateBuilder<GeneratedRuleArgumentBindingIssue>();
-        var parserRules = grammar.ParserRules.ToDictionary(static rule => rule.Name, StringComparer.Ordinal);
         foreach (var owner in grammar.ParserRules)
         foreach (var callSite in G4ContentWalker.EnumerateRuleReferences(owner.Content))
         {
             if (callSite.RawArguments is null) continue;
-            if (!parserRules.TryGetValue(callSite.RuleName, out var target)) continue;
-            ValidateCallSite(target, callSite, issues);
+            var resolution = resolveRule(callSite);
+            if ((resolution.Kind == G4RuleResolutionKind.Local || resolution.Kind == G4RuleResolutionKind.Imported) && resolution.Rule is not null)
+            {
+                ValidateCallSite(resolution.Rule, callSite, issues);
+            }
         }
         return issues.ToImmutable();
     }
 
-    /// <summary>Validates a single locally resolved call site.</summary>
+    /// <summary>Validates a single resolved call site.</summary>
     private static void ValidateCallSite(G4Rule target, G4RuleRef callSite, ImmutableArray<GeneratedRuleArgumentBindingIssue>.Builder issues)
     {
         var parameters = ParseParameters(target.Parameters);

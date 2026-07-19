@@ -2,6 +2,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Text;
 using Utils.Parser.Diagnostics;
@@ -1140,6 +1141,21 @@ public class Antlr4GrammarGeneratorDiagnosticsTests
     }
 
     /// <summary>
+    /// Ensures duplicate generated hint names report the existing per-file generation diagnostic without failing the aggregate generator callback.
+    /// </summary>
+    [TestMethod]
+    public void GeneratorDiagnostics_DuplicateGeneratedHintName_ReportsPerFileDiagnosticAndKeepsFirstSource()
+    {
+        var result = RunGenerator([
+            new InMemoryAdditionalText("First/Expr.g4", "grammar First; start : A ; A : 'a' ;"),
+            new InMemoryAdditionalText("Second/Expr.g4", "grammar Second; start : A ; A : 'a' ;")]);
+
+        var diagnostic = result.Diagnostics.Single(static diagnostic => diagnostic.Id == "APU0100");
+        StringAssert.Contains(diagnostic.GetMessage(), "Expr.g4");
+        Assert.AreEqual(1, result.GeneratedTrees.Length);
+    }
+
+    /// <summary>
     /// Asserts that source snippets appear in the supplied order.
     /// </summary>
     /// <param name="source">Source text to inspect.</param>
@@ -1177,6 +1193,28 @@ public class Antlr4GrammarGeneratorDiagnosticsTests
 
         driver = driver.RunGenerators(compilation);
         return driver.GetRunResult().Diagnostics;
+    }
+
+    /// <summary>
+    /// Runs the ANTLR4 grammar source generator against in-memory grammar files.
+    /// </summary>
+    /// <param name="grammars">Virtual grammar files used by the source generator.</param>
+    /// <returns>Complete generator run result.</returns>
+    private static GeneratorDriverRunResult RunGenerator(IReadOnlyList<AdditionalText> grammars)
+    {
+        var compilation = CSharpCompilation.Create(
+            assemblyName: "GeneratorDiagnosticsTests",
+            syntaxTrees: [CSharpSyntaxTree.ParseText("namespace Generated.Tests;", CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.Preview))],
+            references: [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)],
+            options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(
+            generators: [new Antlr4GrammarGenerator().AsSourceGenerator()],
+            additionalTexts: grammars,
+            parseOptions: CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.Preview));
+
+        driver = driver.RunGenerators(compilation);
+        return driver.GetRunResult();
     }
 
     /// <summary>

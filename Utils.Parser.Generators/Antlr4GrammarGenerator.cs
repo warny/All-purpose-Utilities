@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading;
+using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
@@ -83,6 +85,22 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
         isEnabledByDefault: true,
         description:        "The current generator keeps ANTLR superClass in options metadata but does not change generated type inheritance.");
 
+
+    /// <summary>Immutable parsed grammar-file model carried through the incremental pipeline.</summary>
+    private sealed record ParsedGrammarFile(
+        AdditionalText File,
+        string Path,
+        string FileName,
+        SourceText? Text,
+        string Source,
+        string NamespaceName,
+        string ClassName,
+        G4Grammar? Grammar,
+        DiagnosticBag ParseDiagnostics,
+        bool MetadataValid,
+        string MetadataError,
+        Antlr4GrammarGeneratorOptions Options,
+        string? ParseExceptionMessage = null);
     /// <inheritdoc />
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -100,13 +118,16 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
         var grammarFiles = context.AdditionalTextsProvider
             .Where(static file => file.Path.EndsWith(".g4", StringComparison.OrdinalIgnoreCase));
 
-        var grammarFileAndOptions = grammarFiles
+        var parsedGrammarFiles = grammarFiles
+            .Combine(context.AnalyzerConfigOptionsProvider)
             .Combine(generatorOptions)
-            .Combine(context.AnalyzerConfigOptionsProvider);
+            .Select(static (source, cancellationToken) => ParseGrammarFile(source.Left.Left, source.Left.Right, source.Right.Options, cancellationToken));
 
-        context.RegisterSourceOutput(grammarFileAndOptions, static (productionContext, source) =>
+        var parsedGrammarProject = parsedGrammarFiles.Collect().Combine(generatorOptions);
+
+        context.RegisterSourceOutput(parsedGrammarProject, static (productionContext, source) =>
         {
-            ProcessGrammarFile(productionContext, source.Left.Left, source.Right, source.Left.Right.Options);
+            ProcessGrammarProject(productionContext, source.Left, source.Right.Options);
         });
 
         var colorizationFiles = context.AdditionalTextsProvider
@@ -122,24 +143,21 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
     }
 
     /// <summary>
-    /// Processes a grammar additional file and emits the generated parser definition source.
+    /// Parses one grammar additional file into an immutable per-file model used by project-wide validation and per-file emission.
     /// </summary>
-    /// <param name="context">Context used to report diagnostics and add generated files.</param>
     /// <param name="file">Grammar additional file being processed.</param>
     /// <param name="optionsProvider">Analyzer config options provider associated with the current run.</param>
-    /// <param name="generatorOptions">Project-wide options parsed from analyzer config global options.</param>
-    private static void ProcessGrammarFile(SourceProductionContext context, AdditionalText file, AnalyzerConfigOptionsProvider optionsProvider, Antlr4GrammarGeneratorOptions generatorOptions)
+    /// <param name="generatorOptions">Project-wide generator options.</param>
+    /// <param name="cancellationToken">Cancellation token for reading the file text.</param>
+    /// <returns>The parsed grammar-file model.</returns>
+    private static ParsedGrammarFile ParseGrammarFile(AdditionalText file, AnalyzerConfigOptionsProvider optionsProvider, Antlr4GrammarGeneratorOptions generatorOptions, CancellationToken cancellationToken)
     {
-        var text = file.GetText(context.CancellationToken);
-        if (text == null) return;
-
-        // ── Read MSBuild metadata ────────────────────────────────────────
+        var text = file.GetText(cancellationToken);
+        string fileName = Path.GetFileName(file.Path);
         var options = optionsProvider.GetOptions(file);
 
         options.TryGetValue("build_metadata.AdditionalFiles.Namespace", out var namespaceName);
         options.TryGetValue("build_metadata.AdditionalFiles.ClassName",  out var className);
-
-        string fileName = Path.GetFileName(file.Path);
 
         if (string.IsNullOrWhiteSpace(className))
             className = Path.GetFileNameWithoutExtension(file.Path);
@@ -147,49 +165,104 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
         if (string.IsNullOrWhiteSpace(namespaceName))
             namespaceName = string.Empty;
 
-        if (!SyntaxColorizationValidation.TryValidateTypeMetadata(namespaceName!, className!, out string metadataError))
+        string metadataError = string.Empty;
+        bool metadataValid = SyntaxColorizationValidation.TryValidateTypeMetadata(namespaceName!, className!, out metadataError);
+        if (text == null || !metadataValid)
         {
-            context.ReportDiagnostic(Diagnostic.Create(s_invalidMetadataDescriptor, Location.None, fileName, metadataError));
+            return new ParsedGrammarFile(file, file.Path, fileName, text, string.Empty, namespaceName!, className!, null, new DiagnosticBag(), metadataValid, metadataError, generatorOptions);
+        }
+
+        try
+        {
+            string source = text.ToString();
+            var diagnostics = new DiagnosticBag();
+            var grammar = new G4Parser(new G4Tokenizer(source).Tokenize(), diagnostics).Parse();
+            return new ParsedGrammarFile(file, file.Path, fileName, text, source, namespaceName!, className!, grammar, diagnostics, true, string.Empty, generatorOptions);
+        }
+        catch (Exception ex)
+        {
+            return new ParsedGrammarFile(file, file.Path, fileName, text, text.ToString(), namespaceName!, className!, null, new DiagnosticBag(), true, string.Empty, generatorOptions, ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Processes all parsed project grammars so imported-rule diagnostics can use a project-wide index without reparsing files.
+    /// </summary>
+    /// <param name="context">Context used to report diagnostics and add generated files.</param>
+    /// <param name="files">Parsed grammar files collected from project AdditionalFiles.</param>
+    /// <param name="generatorOptions">Project-wide options parsed from analyzer config global options.</param>
+    private static void ProcessGrammarProject(SourceProductionContext context, System.Collections.Immutable.ImmutableArray<ParsedGrammarFile> files, Antlr4GrammarGeneratorOptions generatorOptions)
+    {
+        var validGrammars = files
+            .Where(static file => file.MetadataValid && file.Grammar is not null)
+            .Select(static file => new G4GrammarProjectEntry(file.Path, file.Grammar!))
+            .ToArray();
+        var index = new G4GrammarProjectIndex(validGrammars);
+        var resolver = new G4ImportedRuleResolver(index);
+
+        foreach (var file in files.OrderBy(static file => file.Path, StringComparer.Ordinal))
+        {
+            ProcessParsedGrammarFile(context, file, generatorOptions, resolver);
+        }
+    }
+
+    /// <summary>
+    /// Emits diagnostics and source for one parsed grammar file.
+    /// </summary>
+    /// <param name="context">Context used to report diagnostics and add generated files.</param>
+    /// <param name="file">Parsed grammar file.</param>
+    /// <param name="generatorOptions">Project-wide options parsed from analyzer config global options.</param>
+    /// <param name="resolver">Project-wide imported-rule resolver.</param>
+    private static void ProcessParsedGrammarFile(SourceProductionContext context, ParsedGrammarFile file, Antlr4GrammarGeneratorOptions generatorOptions, G4ImportedRuleResolver resolver)
+    {
+        if (!file.MetadataValid)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(s_invalidMetadataDescriptor, Location.None, file.FileName, file.MetadataError));
             return;
         }
 
-        // ── Parse & emit ─────────────────────────────────────────────────
+        if (file.Text == null)
+        {
+            return;
+        }
+
+        if (file.Grammar is null)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(s_errorDescriptor, Location.None, file.FileName, file.ParseExceptionMessage ?? "Unable to parse grammar."));
+            return;
+        }
+
         try
         {
-            var source    = text.ToString();
-            var tokens    = new G4Tokenizer(source).Tokenize();
-            var diagnostics = new DiagnosticBag();
-            var grammar   = new G4Parser(tokens, diagnostics).Parse();
+            var grammar = file.Grammar;
             if (grammar.Options.TryGetValue("superClass", out var superClass) && !string.IsNullOrWhiteSpace(superClass))
             {
                 context.ReportDiagnostic(Diagnostic.Create(s_unsupportedSuperClassDescriptor, Location.None, grammar.Name, superClass));
             }
-            ReportEmbeddedParserAttributeDiagnostics(context, file, text, grammar);
-            ReportUnsupportedEmbeddedCodeDiagnostics(context, file, text, grammar);
+            ReportEmbeddedParserAttributeDiagnostics(context, file.File, file.Text, grammar);
+            ReportUnsupportedEmbeddedCodeDiagnostics(context, file.File, file.Text, grammar);
             if (generatorOptions.EnableGeneratedRuleArgumentBinding
-                && ReportGeneratedRuleArgumentBindingDiagnostics(context, file, text, grammar))
+                && ReportGeneratedRuleArgumentBindingDiagnostics(context, file.File, file.Text, grammar, resolver))
             {
-                ReportParserDiagnostics(context, diagnostics, fileName);
+                ReportParserDiagnostics(context, file.ParseDiagnostics, file.FileName);
                 return;
             }
 
             var generated = GrammarEmitter.Emit(
                 grammar,
-                namespaceName!,
-                className!,
-                fileName,
+                file.NamespaceName,
+                file.ClassName,
+                file.FileName,
                 enableGeneratedRuleArgumentBinding: generatorOptions.EnableGeneratedRuleArgumentBinding);
-            ReportParserDiagnostics(context, diagnostics, fileName);
+            ReportParserDiagnostics(context, file.ParseDiagnostics, file.FileName);
 
-            context.AddSource($"{className}.Grammar.g.cs", SourceText.From(generated, Encoding.UTF8));
+            context.AddSource($"{file.ClassName}.Grammar.g.cs", SourceText.From(generated, Encoding.UTF8));
         }
         catch (Exception ex)
         {
-            context.ReportDiagnostic(
-                Diagnostic.Create(s_errorDescriptor, Location.None, fileName, ex.Message));
+            context.ReportDiagnostic(Diagnostic.Create(s_errorDescriptor, Location.None, file.FileName, ex.Message));
         }
     }
-
 
     /// <summary>
     /// Reports generated-C# rule-call argument binding diagnostics attached to grammar call sites.
@@ -198,11 +271,12 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
     /// <param name="file">Grammar additional file.</param>
     /// <param name="text">Grammar source text used to create locations.</param>
     /// <param name="grammar">Parsed grammar AST.</param>
+    /// <param name="resolver">Project-wide resolver that identifies unique local or imported parser-rule targets.</param>
     /// <returns><see langword="true"/> when at least one deterministic binding error was reported.</returns>
-    private static bool ReportGeneratedRuleArgumentBindingDiagnostics(SourceProductionContext context, AdditionalText file, SourceText text, G4Grammar grammar)
+    private static bool ReportGeneratedRuleArgumentBindingDiagnostics(SourceProductionContext context, AdditionalText file, SourceText text, G4Grammar grammar, G4ImportedRuleResolver resolver)
     {
         bool hasErrors = false;
-        foreach (GeneratedRuleArgumentBindingIssue issue in GeneratedRuleArgumentBindingValidator.Validate(grammar))
+        foreach (GeneratedRuleArgumentBindingIssue issue in GeneratedRuleArgumentBindingValidator.Validate(grammar, callSite => resolver.Resolve(grammar, callSite.RuleName)))
         {
             hasErrors = true;
             context.ReportDiagnostic(Diagnostic.Create(
