@@ -12,7 +12,8 @@ namespace Utils.VirtualMachine;
 public class TypedStackContext<TValue> : Context
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="TypedStackContext{TValue}"/> class.
+    /// Initializes a new instance of the <see cref="TypedStackContext{TValue}"/> class with the
+    /// default operand-stack depth limit (<see cref="BoundedStack{T}.DefaultMaxDepth"/>).
     /// </summary>
     /// <param name="data">The byte data containing the instruction stream.</param>
     public TypedStackContext(ReadOnlyMemory<byte> data) : base(data)
@@ -20,7 +21,23 @@ public class TypedStackContext<TValue> : Context
     }
 
     /// <summary>
-    /// A strongly-typed operand stack for storing values without boxing overhead.
+    /// Initializes a new instance of the <see cref="TypedStackContext{TValue}"/> class with a
+    /// custom operand-stack depth limit.
     /// </summary>
-    public Stack<TValue> Stack { get; } = new Stack<TValue>();
+    /// <param name="data">The byte data containing the instruction stream.</param>
+    /// <param name="maxOperandStackDepth">
+    /// Maximum number of values the operand stack may hold simultaneously.
+    /// </param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="maxOperandStackDepth"/> is less than one.</exception>
+    public TypedStackContext(ReadOnlyMemory<byte> data, int maxOperandStackDepth) : base(data)
+    {
+        Stack = new BoundedStack<TValue>(maxOperandStackDepth);
+    }
+
+    /// <summary>
+    /// A bounded strongly-typed operand stack for storing values without boxing overhead.
+    /// Push throws <see cref="InvalidOperationException"/> when the depth limit is reached;
+    /// Pop and Peek throw when the stack is empty.
+    /// </summary>
+    public BoundedStack<TValue> Stack { get; } = new BoundedStack<TValue>();
 }

@@ -24,6 +24,13 @@ public class Scheduler<T> where T : Context
     /// <summary>Gets the maximum number of instructions each process may execute per <see cref="Step"/> call.</summary>
     public int QuantumSteps { get; }
 
+    /// <summary>
+    /// Gets the total number of instructions dispatched by this scheduler since it was created.
+    /// Incremented by <see cref="Step"/> and never reset. Callers may snapshot this value before
+    /// a <see cref="Run"/> or <see cref="RunAsync"/> call to compute the per-run instruction count.
+    /// </summary>
+    public long InstructionsExecuted { get; private set; }
+
     /// <summary>Gets the list of all processes registered with this scheduler.</summary>
     public IReadOnlyList<ScheduledProcess<T>> Processes => _processes;
 
@@ -63,10 +70,14 @@ public class Scheduler<T> where T : Context
     /// single context across multiple processes produces contradictory lifecycle states and corrupts
     /// instruction pointer and stack state.
     /// </exception>
+    /// <exception cref="InvalidOperationException">Thrown when the process identifier counter has reached its maximum value.</exception>
     public ScheduledProcess<T> AddProcess(T context, VirtualProcessor<T> processor, int priority = 0, string? name = null)
     {
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(processor);
+        if (_nextId == int.MaxValue)
+            throw new InvalidOperationException(
+                $"Cannot add more processes: the process identifier counter has reached its maximum value ({int.MaxValue}).");
         if (_processes.Any(p => ReferenceEquals(p.Context, context)))
             throw new ArgumentException(
                 "The supplied context is already registered with this scheduler. " +
@@ -103,7 +114,22 @@ public class Scheduler<T> where T : Context
     /// <see langword="true"/> if at least one process ran during this pass;
     /// <see langword="false"/> if no processes were in the <see cref="ProcessState.Ready"/> state.
     /// </returns>
-    public bool Step()
+    public bool Step() => StepCore(remainingBudget: 0, originalBudget: 0);
+
+    /// <summary>
+    /// Core implementation shared by <see cref="Step"/> and the budget-aware paths in
+    /// <see cref="Run"/> and <see cref="RunAsync"/>. Executes one scheduling round with an
+    /// optional per-call instruction cap.
+    /// </summary>
+    /// <param name="remainingBudget">
+    /// Maximum instructions allowed across all processes in this call.
+    /// Zero means unlimited (the <see cref="Step"/> case).
+    /// </param>
+    /// <param name="originalBudget">
+    /// The <c>maxInstructions</c> value supplied to <see cref="Run"/>/<see cref="RunAsync"/>;
+    /// reported in <see cref="InstructionBudgetExceededException.Budget"/> when the limit is hit.
+    /// </param>
+    private bool StepCore(long remainingBudget, long originalBudget)
     {
         // Snapshot to avoid issues if _processes is modified inside a handler.
         var ready = _processes
@@ -113,55 +139,96 @@ public class Scheduler<T> where T : Context
 
         if (ready.Count == 0) return false;
 
-        foreach (var process in ready)
+        long stepInstructions = 0;
+
+        try
         {
-            // Recheck: a higher-priority process in this pass may have suspended or removed this one.
-            if (process.State != ProcessState.Ready || !_processes.Contains(process))
-                continue;
-
-            process.SetState(ProcessState.Running);
-            process.ClearYield();
-
-            try
+            foreach (var process in ready)
             {
-                for (int i = 0; i < QuantumSteps; i++)
-                {
-                    // Item 11: recheck membership before each instruction so that a handler that
-                    // calls RemoveProcess on its own process stops further execution immediately.
-                    if (!_processes.Contains(process)) break;
+                // Recheck: a higher-priority process in this pass may have suspended or removed this one.
+                if (process.State != ProcessState.Ready || !_processes.Contains(process))
+                    continue;
 
-                    if (!process.Processor.ExecuteStep(process.Context))
+                process.SetState(ProcessState.Running);
+                process.ClearYield();
+
+                try
+                {
+                    for (int i = 0; i < QuantumSteps; i++)
                     {
-                        process.SetState(ProcessState.Terminated);
-                        break;
+                        // Item 11: recheck membership before each instruction so that a handler that
+                        // calls RemoveProcess on its own process stops further execution immediately.
+                        if (!_processes.Contains(process)) break;
+
+                        // Budget enforcement: checked before each instruction so the total number of
+                        // instructions dispatched in this StepCore call never exceeds remainingBudget.
+                        if (remainingBudget > 0 && stepInstructions >= remainingBudget)
+                            throw new InstructionBudgetExceededException(originalBudget);
+
+                        if (!process.Processor.ExecuteStep(process.Context))
+                        {
+                            // Item 45: validate structural completion before marking as Terminated.
+                            // If ValidateCompletion throws, the exception is caught below and the
+                            // process transitions to Faulted instead.
+                            process.Processor.ValidateCompletion(process.Context);
+                            process.SetState(ProcessState.Terminated);
+                            break;
+                        }
+                        stepInstructions++;
+
+                        // Break immediately when the context signals program end (IP < 0 or past
+                        // bytecode end), so the next iteration's budget check does not fire
+                        // spuriously after a legitimate final instruction (e.g. HALT).
+                        if (process.Context.InstructionPointer < 0
+                            || process.Context.InstructionPointer >= process.Context.Data.Length)
+                            break;
+
+                        // Check after ExecuteStep: yield or suspension may have been requested
+                        // from inside the instruction handler that just ran.
+                        if (process.YieldRequested || process.State == ProcessState.Suspended)
+                        {
+                            process.ClearYield();
+                            if (process.State == ProcessState.Running)
+                                process.SetState(ProcessState.Ready);
+                            break;
+                        }
                     }
 
-                    // Check after ExecuteStep: yield or suspension may have been requested
-                    // from inside the instruction handler that just ran.
-                    if (process.YieldRequested || process.State == ProcessState.Suspended)
+                    // Quantum exhausted without an explicit break; check whether the last instruction
+                    // called Terminate() (IP < 0) or ran past the bytecode end (IP >= Data.Length).
+                    if (process.State == ProcessState.Running)
                     {
-                        process.ClearYield();
-                        if (process.State == ProcessState.Running)
-                            process.SetState(ProcessState.Ready);
-                        break;
+                        bool contextDone = process.Context.InstructionPointer < 0
+                            || process.Context.InstructionPointer >= process.Context.Data.Length;
+                        if (contextDone)
+                        {
+                            // Item 45: validate structural completion before marking as Terminated.
+                            process.Processor.ValidateCompletion(process.Context);
+                        }
+                        process.SetState(contextDone ? ProcessState.Terminated : ProcessState.Ready);
                     }
                 }
-
-                // Quantum exhausted without an explicit break; check whether the last instruction
-                // called Terminate() (IP < 0) or ran past the bytecode end (IP >= Data.Length).
-                if (process.State == ProcessState.Running)
+                catch (InstructionBudgetExceededException)
                 {
-                    bool contextDone = process.Context.InstructionPointer < 0
-                        || process.Context.InstructionPointer >= process.Context.Data.Length;
-                    process.SetState(contextDone ? ProcessState.Terminated : ProcessState.Ready);
+                    // Restore the process to Ready so it can resume after the budget exception is
+                    // caught by the caller and a new Run() call is made.
+                    if (process.State == ProcessState.Running)
+                        process.SetState(ProcessState.Ready);
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    // Item 2: transition to Faulted so Run/RunAsync do not loop forever
+                    // waiting for a process that will never leave the Running state.
+                    process.SetFaulted(ex);
                 }
             }
-            catch (Exception ex)
-            {
-                // Item 2: transition to Faulted so Run/RunAsync do not loop forever
-                // waiting for a process that will never leave the Running state.
-                process.SetFaulted(ex);
-            }
+        }
+        finally
+        {
+            // Always update the global counter, even when a budget exception is thrown mid-step,
+            // so InstructionsExecuted reflects the instructions actually dispatched.
+            InstructionsExecuted += stepInstructions;
         }
 
         return true;
@@ -169,26 +236,55 @@ public class Scheduler<T> where T : Context
 
     /// <summary>
     /// Runs the scheduler until no process remains in the <see cref="ProcessState.Ready"/>
-    /// or <see cref="ProcessState.Running"/> state, or until cancellation is requested.
+    /// or <see cref="ProcessState.Running"/> state, until cancellation is requested, or until
+    /// <paramref name="maxInstructions"/> instructions have been dispatched in this call.
     /// Returns immediately when all processes are <see cref="ProcessState.Terminated"/> or
     /// <see cref="ProcessState.Suspended"/> (including when there are no processes at all).
     /// </summary>
     /// <param name="cancellationToken">Token that can interrupt the loop between steps.</param>
+    /// <param name="maxInstructions">
+    /// Maximum number of instructions to dispatch during this call. When greater than zero,
+    /// throws <see cref="InstructionBudgetExceededException"/> if the limit is reached before
+    /// all processes terminate. When zero (the default), execution is unlimited.
+    /// The count is relative to <see cref="InstructionsExecuted"/> at the start of this call.
+    /// </param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="maxInstructions"/> is negative.</exception>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is cancelled.</exception>
-    public void Run(CancellationToken cancellationToken = default)
+    /// <exception cref="InstructionBudgetExceededException">
+    /// Thrown when <paramref name="maxInstructions"/> is greater than zero and that many
+    /// instructions have been dispatched in this call without all processes terminating.
+    /// The total number of instructions dispatched never exceeds <paramref name="maxInstructions"/>.
+    /// </exception>
+    public void Run(CancellationToken cancellationToken = default, long maxInstructions = 0)
     {
+        if (maxInstructions < 0)
+            throw new ArgumentOutOfRangeException(nameof(maxInstructions),
+                "maxInstructions must be zero (unlimited) or a positive budget.");
+
+        long startCount = InstructionsExecuted;
         // Faulted is treated as terminal: a faulted process will never be rescheduled.
         while (_processes.Any(p => p.State is ProcessState.Ready or ProcessState.Running))
         {
             cancellationToken.ThrowIfCancellationRequested();
-            Step();
+            if (maxInstructions > 0)
+            {
+                long remaining = maxInstructions - (InstructionsExecuted - startCount);
+                if (remaining <= 0)
+                    throw new InstructionBudgetExceededException(maxInstructions);
+                StepCore(remaining, maxInstructions);
+            }
+            else
+            {
+                Step();
+            }
         }
     }
 
     /// <summary>
     /// Asynchronously runs the scheduler until no process remains in the
     /// <see cref="ProcessState.Ready"/> or <see cref="ProcessState.Running"/> state,
-    /// or until cancellation is requested. Yields to the caller between each
+    /// until cancellation is requested, or until <paramref name="maxInstructions"/> instructions
+    /// have been dispatched in this call. Yields to the caller between each
     /// <see cref="Step"/> call so the calling thread is not blocked for the duration.
     /// </summary>
     /// <remarks>
@@ -200,13 +296,40 @@ public class Scheduler<T> where T : Context
     /// token themselves.
     /// </remarks>
     /// <param name="cancellationToken">Token that can interrupt the loop between steps.</param>
+    /// <param name="maxInstructions">
+    /// Maximum number of instructions to dispatch during this call. When greater than zero,
+    /// throws <see cref="InstructionBudgetExceededException"/> if the limit is reached before
+    /// all processes terminate. When zero (the default), execution is unlimited.
+    /// The count is relative to <see cref="InstructionsExecuted"/> at the start of this call.
+    /// The total number of instructions dispatched never exceeds <paramref name="maxInstructions"/>.
+    /// </param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="maxInstructions"/> is negative.</exception>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is cancelled.</exception>
-    public async Task RunAsync(CancellationToken cancellationToken = default)
+    /// <exception cref="InstructionBudgetExceededException">
+    /// Thrown when <paramref name="maxInstructions"/> is greater than zero and that many
+    /// instructions have been dispatched in this call without all processes terminating.
+    /// </exception>
+    public async Task RunAsync(CancellationToken cancellationToken = default, long maxInstructions = 0)
     {
+        if (maxInstructions < 0)
+            throw new ArgumentOutOfRangeException(nameof(maxInstructions),
+                "maxInstructions must be zero (unlimited) or a positive budget.");
+
+        long startCount = InstructionsExecuted;
         while (_processes.Any(p => p.State is ProcessState.Ready or ProcessState.Running))
         {
             cancellationToken.ThrowIfCancellationRequested();
-            Step();
+            if (maxInstructions > 0)
+            {
+                long remaining = maxInstructions - (InstructionsExecuted - startCount);
+                if (remaining <= 0)
+                    throw new InstructionBudgetExceededException(maxInstructions);
+                StepCore(remaining, maxInstructions);
+            }
+            else
+            {
+                Step();
+            }
             await Task.Yield();
         }
     }

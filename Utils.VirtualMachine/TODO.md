@@ -1,6 +1,6 @@
 # Utils.VirtualMachine — Quality and correctness audit (2026-07-11)
 
-> **Partially completed 2026-07-18/19.** Items 1, 2, 3, 11, 12 addressed in PR fix/utils-vm-quality-audit-p0-p1. Item 13 addressed in PR fix/utils-vm-quality-audit-round2. Items 4–10, 14–16 remain open.
+> **Partially completed 2026-07-18/19.** Items 1, 2, 3, 11, 12 addressed in PR fix/utils-vm-quality-audit-p0-p1. Items 8, 13 addressed in PR fix/utils-vm-quality-audit-round2. Items 7, 9–10, 14, 16 addressed in PR fix/utils-vm-quality-audit-round3. Items 4, 5, 6 addressed in PR fix/utils-vm-quality-audit-round3. Item 15 remains open.
 
 Static review of the processor, scheduler, virtual-memory model, stacks, and structured control-flow helpers. The review focuses on deterministic bytecode dispatch, malformed-program handling, memory isolation, lifecycle state, resource bounds, and duplicated intent. No production code is changed by this commit.
 
@@ -40,7 +40,7 @@ The fast lookup explicitly detects shared first bytes and routes them to the slo
 
 **Priority: P1 deterministic dispatch.**
 
-### 4. Instruction method signatures are only partially validated
+### ✅ 4. Instruction method signatures are only partially validated
 
 Discovery checks only that a non-parameterless method's first parameter is exactly `T`. It does not explicitly reject generic methods, non-void return types, `ref`/`out` parameters, pointer/byref-like types, static methods, unsupported optional parameters, or unsupported operand types. Operand lookup uses `_numberReaderMethods[parameter.ParameterType]`, so an unsupported type fails with an unhelpful `KeyNotFoundException` during processor construction.
 
@@ -50,7 +50,7 @@ Discovery checks only that a non-parameterless method's first parameter is exact
 
 **Priority: P1 configuration robustness.**
 
-### 5. Operand-truncation handling can misclassify instruction-handler bugs
+### ✅ 5. Operand-truncation handling can misclassify instruction-handler bugs
 
 The dispatcher catches every `IndexOutOfRangeException` and `ArgumentOutOfRangeException` thrown by the handler and wraps it as truncated operand data. These exceptions may instead originate from the instruction's own domain logic, stack manipulation, collections, or user code.
 
@@ -60,7 +60,7 @@ The dispatcher catches every `IndexOutOfRangeException` and `ArgumentOutOfRangeE
 
 **Priority: P1 diagnostics and correctness.**
 
-### 6. Inspector callbacks observe inconsistent instruction-pointer states
+### ✅ 6. Inspector callbacks observe inconsistent instruction-pointer states
 
 For unambiguous one-byte opcodes, the inspector is notified before the instruction pointer is advanced. In the slow path, opcode bytes are consumed first and the inspector is notified with the pointer already positioned after the opcode. Redirection checks consequently compare against different baselines.
 
@@ -70,7 +70,7 @@ For unambiguous one-byte opcodes, the inspector is notified before the instructi
 
 **Priority: P1 debugger contract.**
 
-### 7. Signed negative virtual addresses are decomposed incorrectly
+### ✅ 7. Signed negative virtual addresses are decomposed incorrectly
 
 `VirtualProcess.Decompose` uses integer division and remainder directly. For signed address types, `-1 / pageSize` truncates toward zero and `-1 % pageSize` remains negative. `IsAccessible(-1)` can therefore report page zero as accessible, while `Read`/`Write` later use a negative span offset and throw a framework range exception instead of `MemoryAccessException`.
 
@@ -80,7 +80,7 @@ For unambiguous one-byte opcodes, the inspector is notified before the instructi
 
 **Priority: P1 memory correctness.**
 
-### 8. `MapPage` and `UnmapPage` do not verify process ownership
+### ✅ 8. `MapPage` and `UnmapPage` do not verify process ownership
 
 `VirtualMemory.MapPage` verifies that the physical page belongs to the memory instance, but does not verify that the target process belongs to it. `UnmapPage` performs no ownership check either. A process created by another `VirtualMemory<TAddress>` instance can therefore receive mappings to this instance's pages.
 
@@ -142,7 +142,7 @@ Both methods pop nested blocks while searching for a loop. If no loop exists, th
 
 ## Medium priority
 
-### 14. `ControlFlowStack` has no maximum depth
+### ✅ 14. `ControlFlowStack` has no maximum depth
 
 Unlike `CallStack`, structured blocks can be pushed without any bound. Malicious or malformed bytecode can grow the stack until process memory is exhausted.
 
@@ -160,7 +160,7 @@ Call depth has a limit, control-flow depth does not, processor execution has can
 
 **Priority: P2 architecture.**
 
-### 16. Public collections are live views over mutable internal state
+### ✅ 16. Public collections are live views over mutable internal state
 
 `Instructions`, `Breakpoints`, `Pages`, `Processes`, and process `Mappings` expose live mutable state or enumerations. Even when collection mutation is blocked by the static type, concurrent registration/allocation/removal can invalidate enumeration. `Breakpoints` is directly mutable with no synchronization or validation.
 

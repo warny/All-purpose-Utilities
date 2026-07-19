@@ -171,6 +171,120 @@ public class VirtualMemoryTests
         Assert.ThrowsException<MemoryAccessException>(() => mem.MasterProcess.Read(0, buf));
     }
 
+    // ── Item 7: negative addresses rejected ───────────────────────────────────────────────────
+
+    [TestMethod]
+    public void Read_NegativeAddress_ThrowsMemoryAccessException()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        mem.AllocatePage();
+        var buf = new byte[1];
+        Assert.ThrowsException<MemoryAccessException>(() => mem.MasterProcess.Read(-1, buf));
+    }
+
+    [TestMethod]
+    public void Write_NegativeAddress_ThrowsMemoryAccessException()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        mem.AllocatePage();
+        Assert.ThrowsException<MemoryAccessException>(() => mem.MasterProcess.Write(-1, new byte[] { 0 }));
+    }
+
+    [TestMethod]
+    public void IsAccessible_NegativeAddress_ThrowsMemoryAccessException()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        mem.AllocatePage();
+        Assert.ThrowsException<MemoryAccessException>(() => mem.MasterProcess.IsAccessible(-1));
+    }
+
+    [TestMethod]
+    public void GetAccess_NegativeAddress_ThrowsMemoryAccessException()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        mem.AllocatePage();
+        Assert.ThrowsException<MemoryAccessException>(() => mem.MasterProcess.GetAccess(-1));
+    }
+
+    [TestMethod]
+    public void Read_NegativeAddress_ZeroLength_ThrowsMemoryAccessException()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        mem.AllocatePage();
+        Assert.ThrowsException<MemoryAccessException>(
+            () => mem.MasterProcess.Read(-1, Span<byte>.Empty));
+    }
+
+    [TestMethod]
+    public void Write_NegativeAddress_ZeroLength_ThrowsMemoryAccessException()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        mem.AllocatePage();
+        Assert.ThrowsException<MemoryAccessException>(
+            () => mem.MasterProcess.Write(-1, ReadOnlySpan<byte>.Empty));
+    }
+
+    // ── Item 22: VirtualAddressText is lossless for wide address types ────────────────────────
+
+    [TestMethod]
+    public void MemoryAccessException_VirtualAddressText_ContainsHexAddress()
+    {
+        var mem = new VirtualMemory<uint>(pageSize: 16);
+        var buf = new byte[1];
+        var ex = Assert.ThrowsException<MemoryAccessException>(() => mem.MasterProcess.Read(0xDEADBEEFu, buf));
+        StringAssert.Contains(ex.VirtualAddressText, "DEADBEEF");
+    }
+
+    // ── Items 9 + 23: cross-page read/write atomicity ─────────────────────────────────────────
+
+    [TestMethod]
+    public void Write_CrossPage_SecondPageReadOnly_NoByteWritten()
+    {
+        // pageSize=4: addr 0-3 = page 0 (ReadWrite), addr 4-7 = page 1 (ReadOnly).
+        // Writing 5 bytes starting at addr 2 touches both pages. The write must fail
+        // without modifying the first page.
+        var mem = new VirtualMemory<int>(pageSize: 4);
+        var page0 = mem.AllocatePage();
+        var page1 = mem.AllocatePage();
+        var proc = mem.CreateProcess();
+        mem.MapPage(proc, page0, 0, PageAccess.ReadWrite);
+        mem.MapPage(proc, page1, 1, PageAccess.ReadOnly);
+
+        // Write sentinel to page0 so we can detect mutation.
+        mem.MasterProcess.Write(0, new byte[] { 0xAA, 0xAA, 0xAA, 0xAA });
+
+        Assert.ThrowsException<MemoryAccessException>(() =>
+            proc.Write(2, new byte[] { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF }));
+
+        // Page 0 must be unchanged.
+        var buf = new byte[4];
+        mem.MasterProcess.Read(0, buf);
+        CollectionAssert.AreEqual(new byte[] { 0xAA, 0xAA, 0xAA, 0xAA }, buf,
+            "Write atomicity violated: first page was partially modified before the fault.");
+    }
+
+    [TestMethod]
+    public void Read_CrossPage_SecondPageUnmapped_DestinationUnchanged()
+    {
+        // pageSize=4: addr 0-3 = page 0 mapped, addr 4-7 = unmapped.
+        // Reading 5 bytes starting at addr 2 spans the boundary. The read must fail
+        // without modifying the destination buffer.
+        var mem = new VirtualMemory<int>(pageSize: 4);
+        var page0 = mem.AllocatePage(); // mapped into process at virtual index 0
+        var proc = mem.CreateProcess();
+        mem.MapPage(proc, page0, 0, PageAccess.ReadOnly);
+        mem.MasterProcess.Write(0, new byte[] { 0x11, 0x22, 0x33, 0x44 });
+
+        byte[] destination = new byte[] { 0xDE, 0xAD, 0xBE, 0xEF, 0xFF };
+
+        Assert.ThrowsException<MemoryAccessException>(() =>
+            proc.Read(2, destination.AsSpan()));
+
+        // Destination buffer must be unchanged.
+        CollectionAssert.AreEqual(new byte[] { 0xDE, 0xAD, 0xBE, 0xEF, 0xFF }, destination,
+            "Read atomicity violated: destination buffer was modified before the fault.");
+    }
+
     // ───────────────────────────────────── Write ─────────────────────────────────────────────
 
     [TestMethod]
@@ -284,6 +398,39 @@ public class VirtualMemoryTests
     {
         Assert.ThrowsException<ArgumentNullException>(() =>
             new VirtualMemoryContext<int>(ReadOnlyMemory<byte>.Empty, null!));
+    }
+
+    [TestMethod]
+    public void VirtualMemoryContext_FreedProcess_ThrowsObjectDisposedException()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        var proc = mem.CreateProcess();
+        mem.FreeProcess(proc);
+        Assert.ThrowsException<ObjectDisposedException>(() =>
+            new VirtualMemoryContext<int>(ReadOnlyMemory<byte>.Empty, proc));
+    }
+
+    [TestMethod]
+    public void VirtualMemoryContext_PageCtor_UnmappedPage_ThrowsArgumentException()
+    {
+        var mem1 = new VirtualMemory<int>(pageSize: 16);
+        var mem2 = new VirtualMemory<int>(pageSize: 16);
+        var page = mem1.AllocatePage();
+        // page belongs to mem1 but proc belongs to mem2 — not mapped
+        var proc = mem2.MasterProcess;
+        Assert.ThrowsException<ArgumentException>(() =>
+            new VirtualMemoryContext<int>(page, proc));
+    }
+
+    [TestMethod]
+    public void VirtualMemoryContext_PageCtor_FreedProcess_ThrowsObjectDisposedException()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        var page = mem.AllocatePage();
+        var proc = mem.CreateProcess();
+        mem.FreeProcess(proc);
+        Assert.ThrowsException<ObjectDisposedException>(() =>
+            new VirtualMemoryContext<int>(page, proc));
     }
 
     // ──────────────────────────────── IsAccessible / GetAccess ───────────────────────────────
@@ -439,7 +586,24 @@ public class VirtualMemoryTests
         var mem = new VirtualMemory<int>(pageSize: 16);
         var proc = mem.CreateProcess();
         mem.FreeProcess(proc);
-        Assert.ThrowsException<ObjectDisposedException>(() => proc.Mappings.ToList());
+        Assert.ThrowsException<ObjectDisposedException>(() => proc.Mappings);
+    }
+
+    [TestMethod]
+    public void Mappings_SnapshotCapturedBeforeFree_RetainsContentAfterFree()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        var page = mem.AllocatePage();
+        var proc = mem.CreateProcess();
+        mem.MapPage(proc, page, 42, PageAccess.ReadOnly);
+
+        var snapshot = proc.Mappings;
+
+        mem.FreeProcess(proc);
+
+        Assert.AreEqual(1, snapshot.Count);
+        Assert.AreEqual(42, snapshot[0].VirtualPageIndex);
+        Assert.AreEqual(PageAccess.ReadOnly, snapshot[0].Access);
     }
 
     [TestMethod]
@@ -460,5 +624,101 @@ public class VirtualMemoryTests
         var proc = mem.CreateProcess();
         mem.FreeProcess(proc);
         Assert.ThrowsException<ObjectDisposedException>(() => mem.UnmapPage(proc, 0));
+    }
+
+    // ── Item 33: FreePage — page lifecycle ────────────────────────────────────
+
+    [TestMethod]
+    public void FreePage_SetsIsFreed()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        var page = mem.AllocatePage();
+        Assert.IsFalse(page.IsFreed);
+        mem.FreePage(page);
+        Assert.IsTrue(page.IsFreed);
+    }
+
+    [TestMethod]
+    public void FreePage_RemovesPageFromPages()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        var page = mem.AllocatePage();
+        mem.FreePage(page);
+        Assert.AreEqual(0, mem.Pages.Count);
+    }
+
+    [TestMethod]
+    public void FreePage_RemovesMasterMapping()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        var page = mem.AllocatePage();
+        mem.FreePage(page);
+        Assert.AreEqual(0, mem.MasterProcess.Mappings.Count());
+    }
+
+    [TestMethod]
+    public void FreePage_AlreadyFreed_ThrowsObjectDisposedException()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        var page = mem.AllocatePage();
+        mem.FreePage(page);
+        Assert.ThrowsException<ObjectDisposedException>(() => mem.FreePage(page));
+    }
+
+    [TestMethod]
+    public void FreePage_NullPage_ThrowsArgumentNullException()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        Assert.ThrowsException<ArgumentNullException>(() => mem.FreePage(null!));
+    }
+
+    [TestMethod]
+    public void FreePage_ForeignPage_ThrowsArgumentException()
+    {
+        var mem1 = new VirtualMemory<int>(pageSize: 16);
+        var mem2 = new VirtualMemory<int>(pageSize: 16);
+        var page = mem2.AllocatePage();
+        Assert.ThrowsException<ArgumentException>(() => mem1.FreePage(page));
+    }
+
+    [TestMethod]
+    public void FreePage_ActiveNonMasterMapping_WithoutForce_ThrowsInvalidOperationException()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        var page = mem.AllocatePage();
+        var proc = mem.CreateProcess();
+        mem.MapPage(proc, page, 0, PageAccess.ReadOnly);
+        Assert.ThrowsException<InvalidOperationException>(() => mem.FreePage(page));
+    }
+
+    [TestMethod]
+    public void FreePage_ActiveNonMasterMapping_WithForce_RemovesAllMappings()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        var page = mem.AllocatePage();
+        var proc = mem.CreateProcess();
+        mem.MapPage(proc, page, 0, PageAccess.ReadOnly);
+        mem.FreePage(page, force: true);
+        Assert.IsTrue(page.IsFreed);
+        Assert.IsFalse(proc.IsAccessible(0));
+    }
+
+    [TestMethod]
+    public void AsReadOnlyMemory_FreedPage_ThrowsObjectDisposedException()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        var page = mem.AllocatePage();
+        mem.FreePage(page);
+        Assert.ThrowsException<ObjectDisposedException>(() => page.AsReadOnlyMemory());
+    }
+
+    [TestMethod]
+    public void FreePage_NoNonMasterMappings_SucceedsWithoutForce()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        var page = mem.AllocatePage();
+        var _ = mem.CreateProcess(); // process exists but no mapping to the page
+        mem.FreePage(page); // must not throw
+        Assert.IsTrue(page.IsFreed);
     }
 }

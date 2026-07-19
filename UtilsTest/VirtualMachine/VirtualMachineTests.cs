@@ -730,23 +730,37 @@ namespace UtilsTest.VirtualMachine
         // ── Item 18: failed byte read must not advance IP ─────────────────────
 
         [TestMethod]
-        public void ReadByte_FailedRead_InstructionPointerUnchanged()
+        public void ReadByte_FailedRead_InstructionPointerRestoredToInstructionStart()
         {
-            // Context with exactly one byte consumed by the opcode — no operand byte follows.
+            // Item 19: a failed operand read must restore InstructionPointer to the start of
+            // the failing instruction so that callers can identify or retry it.
             // SByteTestMachine (PUSH_SBYTE 0x30) reads the opcode byte, then tries to read
-            // the operand. A failed operand read must leave IP at the operand position, not beyond.
+            // the operand sbyte — which is missing. The handler threw, so IP must be 0.
             byte[] instructions = [0x30]; // PUSH_SBYTE opcode with no operand
             var context = new DefaultContext(instructions);
-            int ipBeforeDispatch = 0;
 
-            // Execute the step; it should throw because the operand is missing.
-            var ex = Assert.ThrowsException<VirtualProcessorException>(
+            Assert.ThrowsException<VirtualProcessorException>(
                 () => new SByteTestMachine().Execute(context));
 
-            // IP should not have advanced past the end of the stream.
-            // The opcode consumed 1 byte (0x30), so after dispatching the opcode IP = 1
-            // (equal to Data.Length). The operand read fails at IP = 1 without advancing further.
-            Assert.AreEqual(1, context.InstructionPointer);
+            // IP must be restored to the instruction start (0), not left at 1 (after opcode).
+            Assert.AreEqual(0, context.InstructionPointer);
+        }
+
+        [TestMethod]
+        public void FailedSecondOperand_InstructionPointerRestoredToInstructionStart()
+        {
+            // Item 19: when the second of two operands is truncated, the first operand was already
+            // read (advancing IP). IP must still be restored to the instruction's start address.
+            // IntMachine's PUSH_INT (0x40) reads one int (4 bytes). We provide only 3 bytes
+            // after the opcode so the read fails mid-operand.
+            byte[] instructions = [0x40, 0x01, 0x02, 0x03]; // PUSH_INT with 3 of 4 operand bytes
+            var ctx = new TypedStackContext<int>(instructions);
+
+            Assert.ThrowsException<VirtualProcessorException>(
+                () => new IntMachine().Execute(ctx));
+
+            // IP must point to the instruction start (0), not to after the partial operand.
+            Assert.AreEqual(0, ctx.InstructionPointer);
         }
 
         [TestMethod]
@@ -1078,6 +1092,495 @@ namespace UtilsTest.VirtualMachine
             machine.Execute(ctx);
 
             Assert.AreEqual(0, ctx.Stack.Count);
+        }
+    }
+
+    // ── BoundedStack + operand-stack depth limit (item 27) ───────────────────────────────────
+
+    [TestClass]
+    public class BoundedStackTests
+    {
+        [TestMethod]
+        public void BoundedStack_Push_BeyondMaxDepth_ThrowsInvalidOperationException()
+        {
+            var stack = new BoundedStack<int>(maxDepth: 2);
+            stack.Push(1);
+            stack.Push(2);
+            Assert.ThrowsException<InvalidOperationException>(() => stack.Push(3));
+        }
+
+        [TestMethod]
+        public void BoundedStack_Pop_EmptyStack_ThrowsInvalidOperationException()
+        {
+            var stack = new BoundedStack<int>();
+            Assert.ThrowsException<InvalidOperationException>(() => stack.Pop());
+        }
+
+        [TestMethod]
+        public void BoundedStack_Peek_EmptyStack_ThrowsInvalidOperationException()
+        {
+            var stack = new BoundedStack<int>();
+            Assert.ThrowsException<InvalidOperationException>(() => stack.Peek());
+        }
+
+        [TestMethod]
+        public void BoundedStack_InvalidMaxDepth_ThrowsArgumentOutOfRangeException()
+        {
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => new BoundedStack<int>(0));
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => new BoundedStack<int>(-1));
+        }
+
+        [TestMethod]
+        public void BoundedStack_DefaultMaxDepth_Is1024()
+        {
+            var stack = new BoundedStack<object>();
+            Assert.AreEqual(1024, stack.MaxDepth);
+            Assert.AreEqual(BoundedStack<object>.DefaultMaxDepth, stack.MaxDepth);
+        }
+
+        [TestMethod]
+        public void DefaultContext_Stack_IsBoundedStack()
+        {
+            var ctx = new DefaultContext(ReadOnlyMemory<byte>.Empty);
+            Assert.IsInstanceOfType<BoundedStack<object>>(ctx.Stack);
+        }
+
+        [TestMethod]
+        public void TypedStackContext_Stack_IsBoundedStack()
+        {
+            var ctx = new TypedStackContext<int>(ReadOnlyMemory<byte>.Empty);
+            Assert.IsInstanceOfType<BoundedStack<int>>(ctx.Stack);
+        }
+
+        [TestMethod]
+        public void DefaultContext_CustomMaxDepth_Enforced()
+        {
+            var ctx = new DefaultContext(ReadOnlyMemory<byte>.Empty, maxOperandStackDepth: 1);
+            ctx.Stack.Push(42);
+            Assert.ThrowsException<InvalidOperationException>(() => ctx.Stack.Push(99));
+        }
+
+        [TestMethod]
+        public void TypedStackContext_CustomMaxDepth_Enforced()
+        {
+            var ctx = new TypedStackContext<int>(ReadOnlyMemory<byte>.Empty, maxOperandStackDepth: 1);
+            ctx.Stack.Push(1);
+            Assert.ThrowsException<InvalidOperationException>(() => ctx.Stack.Push(2));
+        }
+
+        // ── Context.Data defensive copy (item 43) ─────────────────────────────────────────────
+
+        [TestMethod]
+        public void Context_Data_IsDefensiveCopy_MutatingOriginalArrayDoesNotAffectData()
+        {
+            byte[] original = [0x01, 0x02, 0x03];
+            var ctx = new DefaultContext(original);
+            original[0] = 0xFF;
+            Assert.AreEqual(0x01, ctx.Data.Span[0]);
+        }
+    }
+
+    // ── Inspector exceptions (item 32) ────────────────────────────────────────────────────────────
+
+    [TestClass]
+    public class InspectorExceptionTests
+    {
+        private sealed class CallbackInspector<T> : IVmInspector<T> where T : Context
+        {
+            private readonly Action<T, int, string> _before;
+            private readonly Action<T, int, string> _onBp;
+            internal CallbackInspector(Action<T, int, string> before, Action<T, int, string> onBp)
+            { _before = before; _onBp = onBp; }
+            public void BeforeInstruction(T ctx, int addr, string name) => _before(ctx, addr, name);
+            public void OnBreakpoint(T ctx, int addr, string name) => _onBp(ctx, addr, name);
+        }
+
+        private static CallbackInspector<DefaultContext> MakeInspector(
+            Action<DefaultContext, int, string>? before = null,
+            Action<DefaultContext, int, string>? onBp = null)
+            => new(
+                before ?? ((_, _, _) => { }),
+                onBp ?? ((_, _, _) => { }));
+
+        [TestMethod]
+        public void Inspector_BeforeInstruction_Throws_WrappedAsVmInspectorException()
+        {
+            var machine = new InspectorMachine();
+            machine.Inspector = MakeInspector(
+                before: (ctx, addr, name) => throw new InvalidOperationException("boom"));
+            byte[] program = [0x01]; // PUSH_A
+            var ctx = new DefaultContext(program);
+            var ex = Assert.ThrowsException<VmInspectorException>(() => machine.Execute(ctx));
+            Assert.AreEqual(VmInspectorPhase.BeforeInstruction, ex.Phase);
+            Assert.AreEqual(0, ex.Address);
+            Assert.IsInstanceOfType<InvalidOperationException>(ex.InnerException);
+        }
+
+        [TestMethod]
+        public void Inspector_OnBreakpoint_Throws_WrappedAsVmInspectorException()
+        {
+            var machine = new InspectorMachine();
+            machine.Inspector = MakeInspector(
+                onBp: (ctx, addr, name) => throw new InvalidOperationException("boom"));
+            machine.Breakpoints.Add(0);
+            byte[] program = [0x01]; // PUSH_A
+            var ctx = new DefaultContext(program);
+            var ex = Assert.ThrowsException<VmInspectorException>(() => machine.Execute(ctx));
+            Assert.AreEqual(VmInspectorPhase.OnBreakpoint, ex.Phase);
+            Assert.AreEqual(0, ex.Address);
+            Assert.IsInstanceOfType<InvalidOperationException>(ex.InnerException);
+        }
+
+        [TestMethod]
+        public void Inspector_Exception_CarriesInstructionName()
+        {
+            var machine = new InspectorMachine();
+            machine.Inspector = MakeInspector(
+                before: (ctx, addr, name) => throw new InvalidOperationException("boom"));
+            byte[] program = [0x01]; // PUSH_A
+            var ex = Assert.ThrowsException<VmInspectorException>(
+                () => machine.Execute(new DefaultContext(program)));
+            Assert.AreEqual("PUSH_A", ex.InstructionName);
+        }
+
+        [TestMethod]
+        public void Inspector_VmInspectorException_NotRewrapped()
+        {
+            // VmInspectorException thrown by a callback must propagate unchanged, not double-wrapped.
+            var inner = new VmInspectorException("original");
+            var machine = new InspectorMachine();
+            machine.Inspector = MakeInspector(
+                before: (ctx, addr, name) => throw inner);
+            byte[] program = [0x01];
+            var ex = Assert.ThrowsException<VmInspectorException>(
+                () => machine.Execute(new DefaultContext(program)));
+            Assert.AreSame(inner, ex);
+        }
+
+        [TestMethod]
+        public void Inspector_SlowPath_BeforeInstruction_Throws_WrappedAsVmInspectorException()
+        {
+            // Regression: the slow dispatch path must also wrap inspector exceptions.
+            var machine = new TestMachine(); // multi-byte opcodes only (slow path)
+            machine.Inspector = MakeInspector(
+                before: (ctx, addr, name) => throw new InvalidOperationException("slow"));
+            byte[] program = [0x01, 0x01, 42]; // PUSH_BYTE 42 (slow path)
+            var ex = Assert.ThrowsException<VmInspectorException>(
+                () => machine.Execute(new DefaultContext(program)));
+            Assert.AreEqual(VmInspectorPhase.BeforeInstruction, ex.Phase);
+        }
+    }
+
+    // ── Execute instruction budget (item 21) ──────────────────────────────────────────────────────
+
+    [TestClass]
+    public class ExecuteBudgetTests
+    {
+        [TestMethod]
+        public void Execute_WithBudget_ThrowsAfterMaxInstructions()
+        {
+            var machine = new InspectorMachine();
+            machine.RegisterInstruction([0xFF], "LOOP", ctx => ctx.InstructionPointer = 0);
+            byte[] program = [0x01, 0xFF]; // PUSH_A, LOOP — infinite loop
+            var ctx = new DefaultContext(program);
+            Assert.ThrowsException<InstructionBudgetExceededException>(
+                () => machine.Execute(ctx, maxInstructions: 5));
+        }
+
+        [TestMethod]
+        public void Execute_Budget_ExceptionCarriesBudgetValue()
+        {
+            var machine = new InspectorMachine();
+            machine.RegisterInstruction([0xFF], "LOOP", ctx => ctx.InstructionPointer = 0);
+            byte[] program = [0x01, 0xFF];
+            var ctx = new DefaultContext(program);
+            var ex = Assert.ThrowsException<InstructionBudgetExceededException>(
+                () => machine.Execute(ctx, maxInstructions: 3));
+            Assert.AreEqual(3L, ex.Budget);
+        }
+
+        [TestMethod]
+        public void Execute_WithBudgetZero_Unlimited_TerminatesNormally()
+        {
+            var machine = new InspectorMachine();
+            byte[] program = [0x01, 0x02, 0x10]; // PUSH_A, PUSH_B, ADD
+            var ctx = new DefaultContext(program);
+            machine.Execute(ctx, maxInstructions: 0);
+            Assert.AreEqual(8, (int)ctx.Stack.Peek());
+        }
+
+        [TestMethod]
+        public void Execute_WithExactBudget_TerminatesNormally()
+        {
+            var machine = new InspectorMachine();
+            byte[] program = [0x01, 0x02, 0x10]; // PUSH_A, PUSH_B, ADD
+            var ctx = new DefaultContext(program);
+            machine.Execute(ctx, maxInstructions: 3);
+            Assert.AreEqual(8, (int)ctx.Stack.Peek());
+        }
+    }
+
+    // ── Item 5: operand truncation vs handler exceptions ─────────────────────────────────────────
+
+    [TestClass]
+    public class OperandTruncationTests
+    {
+        /// <summary>
+        /// Fast-path (single-byte opcodes): handlers that throw IOOB/AOOB from their own domain
+        /// logic; and one instruction where the expression-tree wrapper reads a truncated operand.
+        /// </summary>
+        private sealed class FastPathFaultMachine : VirtualProcessor<DefaultContext>
+        {
+            [Instruction("FAULT_IOOB", 0xA0)]
+            void FaultIndexOutOfRange(DefaultContext ctx)
+            {
+                int[] arr = [1, 2, 3];
+                _ = arr[10]; // IndexOutOfRangeException from handler domain logic, not bytecode reader
+            }
+
+            [Instruction("FAULT_AOOB", 0xA1)]
+            void FaultArgumentOutOfRange(DefaultContext ctx)
+                => throw new ArgumentOutOfRangeException("x", "handler bug"); // not a truncated operand
+
+            [Instruction("TRUNCATED_BYTE", 0xA2)]
+            void TruncatedByte(DefaultContext ctx, byte operand)
+            {
+                // Expression-tree calls ReadByte before this body; with no operand byte, it truncates.
+            }
+        }
+
+        /// <summary>
+        /// Slow-path (multi-byte opcode): handler that throws IOOB from its own domain logic.
+        /// </summary>
+        private sealed class SlowPathFaultMachine : VirtualProcessor<DefaultContext>
+        {
+            [Instruction("FAULT_MULTI_IOOB", 0xB0, 0x01)]
+            void FaultMultiByte(DefaultContext ctx)
+            {
+                int[] arr = [1, 2, 3];
+                _ = arr[10]; // IOOB from handler domain logic, slow dispatch path
+            }
+        }
+
+        [TestMethod]
+        public void FastPath_Handler_IndexOutOfRangeException_PropagatesUnchanged()
+        {
+            // A handler that throws IOOB from its own logic must NOT be wrapped as VirtualProcessorException.
+            var machine = new FastPathFaultMachine();
+            byte[] program = [0xA0];
+            Assert.ThrowsException<IndexOutOfRangeException>(
+                () => machine.Execute(new DefaultContext(program)));
+        }
+
+        [TestMethod]
+        public void FastPath_Handler_ArgumentOutOfRangeException_PropagatesUnchanged()
+        {
+            // A handler that throws AOOB from its own logic must NOT be wrapped as VirtualProcessorException.
+            var machine = new FastPathFaultMachine();
+            byte[] program = [0xA1];
+            Assert.ThrowsException<ArgumentOutOfRangeException>(
+                () => machine.Execute(new DefaultContext(program)));
+        }
+
+        [TestMethod]
+        public void FastPath_TruncatedOperand_WrappedAsVirtualProcessorException()
+        {
+            // Genuine end-of-stream during operand read must be wrapped as VirtualProcessorException.
+            var machine = new FastPathFaultMachine();
+            byte[] program = [0xA2]; // opcode only, no operand byte
+            var ex = Assert.ThrowsException<VirtualProcessorException>(
+                () => machine.Execute(new DefaultContext(program)));
+            Assert.AreEqual(0, ex.InstructionPointer);
+            Assert.AreEqual("TRUNCATED_BYTE", ex.InstructionName);
+        }
+
+        [TestMethod]
+        public void SlowPath_Handler_IndexOutOfRangeException_PropagatesUnchanged()
+        {
+            // Same guarantee for the slow dispatch path (multi-byte opcode).
+            var machine = new SlowPathFaultMachine();
+            byte[] program = [0xB0, 0x01]; // opcode only, no operands
+            Assert.ThrowsException<IndexOutOfRangeException>(
+                () => machine.Execute(new DefaultContext(program)));
+        }
+    }
+
+    // ── Item 6: inspector IP timing consistency ───────────────────────────────────────────────
+
+    [TestClass]
+    public class InspectorIpTimingTests
+    {
+        private sealed class RecordingIpInspector : IVmInspector<DefaultContext>
+        {
+            public readonly List<int> SeenIps = [];
+            public void BeforeInstruction(DefaultContext ctx, int addr, string name)
+                => SeenIps.Add(ctx.InstructionPointer);
+            public void OnBreakpoint(DefaultContext ctx, int addr, string name) { }
+        }
+
+        private sealed class ActionInspector : IVmInspector<DefaultContext>
+        {
+            private readonly Action<DefaultContext, int, string> _before;
+            private readonly Action<DefaultContext, int, string> _onBp;
+            internal ActionInspector(Action<DefaultContext, int, string> before, Action<DefaultContext, int, string> onBp)
+            { _before = before; _onBp = onBp; }
+            public void BeforeInstruction(DefaultContext ctx, int addr, string name) => _before(ctx, addr, name);
+            public void OnBreakpoint(DefaultContext ctx, int addr, string name) => _onBp(ctx, addr, name);
+        }
+
+        [TestMethod]
+        public void SlowPath_Inspector_SeesIpAtInstructionStart()
+        {
+            // Multi-byte opcode (slow dispatch path): IP must equal instructionStart, not afterOpcodeIp.
+            var machine = new TestMachine();
+            var inspector = new RecordingIpInspector();
+            machine.Inspector = inspector;
+            // PUSH_BYTE opcode [0x01, 0x01] at address 0 + operand 0x42 — 3 bytes total.
+            // Without the fix, inspector would see IP = 2 (after opcode bytes); with the fix: 0.
+            byte[] program = [0x01, 0x01, 0x42];
+            machine.Execute(new DefaultContext(program));
+            Assert.AreEqual(1, inspector.SeenIps.Count);
+            Assert.AreEqual(0, inspector.SeenIps[0],
+                "Inspector must see IP = instructionStart (0), not the post-opcode position (2).");
+        }
+
+        [TestMethod]
+        public void FastAndSlowPath_InspectorSees_SameIpPhase()
+        {
+            // Both dispatch paths must expose IP = instructionStart to the inspector.
+            var fastMachine = new InspectorMachine(); // single-byte opcodes → fast path
+            var fastInspector = new RecordingIpInspector();
+            fastMachine.Inspector = fastInspector;
+            fastMachine.Execute(new DefaultContext(new byte[] { 0x01 })); // PUSH_A at address 0
+
+            var slowMachine = new TestMachine(); // multi-byte opcodes → slow path
+            var slowInspector = new RecordingIpInspector();
+            slowMachine.Inspector = slowInspector;
+            slowMachine.Execute(new DefaultContext(new byte[] { 0x01, 0x01, 0x42 })); // PUSH_BYTE at address 0
+
+            Assert.AreEqual(0, fastInspector.SeenIps[0]);
+            Assert.AreEqual(0, slowInspector.SeenIps[0],
+                "Both dispatch paths must expose instructionStart as the IP seen by the inspector.");
+        }
+
+        [TestMethod]
+        public void SlowPath_Inspector_ConsistentAcrossMultipleInstructions()
+        {
+            // After a slow-path instruction at address 0 (3 bytes), the next instruction is at address 3.
+            // The inspector must see IP = 3, not some intermediate value.
+            var machine = new TestMachine();
+            var inspector = new RecordingIpInspector();
+            machine.Inspector = inspector;
+            // Two PUSH_BYTE instructions: [0x01,0x01,0x10] at address 0, [0x01,0x01,0x01] at address 3
+            byte[] program = [0x01, 0x01, 0x10,  0x01, 0x01, 0x01];
+            machine.Execute(new DefaultContext(program));
+            Assert.AreEqual(2, inspector.SeenIps.Count);
+            Assert.AreEqual(0, inspector.SeenIps[0]);
+            Assert.AreEqual(3, inspector.SeenIps[1]);
+        }
+
+        [TestMethod]
+        public void SlowPath_OnBreakpointRedirect_BeforeInstructionNotCalledWithStaleIp()
+        {
+            // When OnBreakpoint redirects execution on a slow-path instruction, BeforeInstruction
+            // must not be called. IP seen by OnBreakpoint must be instructionStart.
+            int? seenIpInBreakpoint = null;
+            bool beforeInstructionCalled = false;
+
+            var machine = new TestMachine();
+            machine.Breakpoints.Add(0);
+            machine.Inspector = new ActionInspector(
+                before: (ctx, addr, name) => beforeInstructionCalled = true,
+                onBp: (ctx, addr, name) =>
+                {
+                    seenIpInBreakpoint = ctx.InstructionPointer;
+                    ctx.InstructionPointer = ctx.Data.Length; // redirect to EOF
+                });
+
+            byte[] program = [0x01, 0x01, 0x42];
+            machine.Execute(new DefaultContext(program));
+
+            Assert.AreEqual(0, seenIpInBreakpoint, "OnBreakpoint must see IP = instructionStart for multi-byte opcodes.");
+            Assert.IsFalse(beforeInstructionCalled, "BeforeInstruction must not be called after a breakpoint redirect.");
+        }
+    }
+
+    // ── Item 4: instruction signature validation at construction ─────────────────────────────────
+
+    [TestClass]
+    public class InstructionSignatureValidationTests
+    {
+        private sealed class GenericHandlerMachine : VirtualProcessor<DefaultContext>
+        {
+            [Instruction("GEN", 0xC0)]
+            void Generic<TValue>(DefaultContext ctx) { }
+        }
+
+        private sealed class NonVoidHandlerMachine : VirtualProcessor<DefaultContext>
+        {
+            [Instruction("RET", 0xC1)]
+            int ReturnValue(DefaultContext ctx) => 42;
+        }
+
+        private sealed class UnsupportedOperandMachine : VirtualProcessor<DefaultContext>
+        {
+            [Instruction("OP_STR", 0xC2)]
+            void TakesString(DefaultContext ctx, string s) { }
+        }
+
+        private sealed class OutParamMachine : VirtualProcessor<DefaultContext>
+        {
+            [Instruction("OUT", 0xC3)]
+            void WithOut(DefaultContext ctx, out int x) { x = 0; }
+        }
+
+        private sealed class RefParamMachine : VirtualProcessor<DefaultContext>
+        {
+            [Instruction("REF", 0xC4)]
+            void WithRef(DefaultContext ctx, ref int x) { }
+        }
+
+        [TestMethod]
+        public void GenericMethod_ThrowsInvalidOperationException()
+        {
+            // Generic instruction methods cannot be compiled by expression-tree dispatch.
+            var ex = Assert.ThrowsException<InvalidOperationException>(
+                () => new GenericHandlerMachine());
+            StringAssert.Contains(ex.Message, "Generic");
+        }
+
+        [TestMethod]
+        public void NonVoidReturn_ThrowsInvalidOperationException()
+        {
+            // Non-void instruction methods are not callable as InstructionDelegate.
+            var ex = Assert.ThrowsException<InvalidOperationException>(
+                () => new NonVoidHandlerMachine());
+            StringAssert.Contains(ex.Message, "void");
+        }
+
+        [TestMethod]
+        public void UnsupportedOperandType_ThrowsInvalidOperationException()
+        {
+            // An operand type not present in INumberReader gives a clear error, not KeyNotFoundException.
+            var ex = Assert.ThrowsException<InvalidOperationException>(
+                () => new UnsupportedOperandMachine());
+            StringAssert.Contains(ex.Message, "unsupported operand type");
+        }
+
+        [TestMethod]
+        public void OutParameter_ThrowsInvalidOperationException()
+        {
+            var ex = Assert.ThrowsException<InvalidOperationException>(
+                () => new OutParamMachine());
+            StringAssert.Contains(ex.Message, "out");
+        }
+
+        [TestMethod]
+        public void RefParameter_ThrowsInvalidOperationException()
+        {
+            var ex = Assert.ThrowsException<InvalidOperationException>(
+                () => new RefParamMachine());
+            StringAssert.Contains(ex.Message, "ref");
         }
     }
 

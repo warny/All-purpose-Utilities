@@ -81,7 +81,11 @@ public class ControlFlowTestMachine : VirtualProcessor<ControlFlowContext>
     void TryFinally(ControlFlowContext ctx, int finallyAddress)
         => ctx.ControlFlow.PushException(ctx.InstructionPointer, null, finallyAddress);
 
-    /// <summary>ENDFINALLY — delegates to ControlFlowStack.EndFinally; jumps to pending catch or pops block.</summary>
+    /// <summary>ENDCATCH — delegates to ControlFlowStack.EndCatch; jumps to pending finally or pops block.</summary>
+    [Instruction("ENDCATCH", 0x36)]
+    void EndCatch(ControlFlowContext ctx) => ctx.ControlFlow.EndCatch(ctx);
+
+    /// <summary>ENDFINALLY — delegates to ControlFlowStack.EndFinally; propagates in-flight exception or pops block.</summary>
     [Instruction("ENDFINALLY", 0x34)]
     void EndFinally(ControlFlowContext ctx) => ctx.ControlFlow.EndFinally(ctx);
 }
@@ -149,6 +153,24 @@ public class ControlFlowStackTests
         var block = (LoopBlock)cfs.CurrentBlock!;
         Assert.AreEqual(5, block.StartAddress);
         Assert.AreEqual(40, block.EndAddress);
+    }
+
+    [TestMethod]
+    public void Loop_MultipleIterations_ControlFlowDepthRemainsConstant()
+    {
+        // Verify item 42: StartAddress points into the loop body (not the LOOP instruction),
+        // so iterating via CONTINUE does not push additional blocks.
+        var cfs = new ControlFlowStack();
+        cfs.PushLoop(startAddress: 10, endAddress: 100); // body starts at 10
+
+        int depthAfterPush = cfs.Depth;
+
+        var ctx = new DefaultContext(ReadOnlyMemory<byte>.Empty);
+        for (int i = 0; i < 5; i++)
+        {
+            cfs.Continue(ctx); // jumps to StartAddress, block stays on stack
+            Assert.AreEqual(depthAfterPush, cfs.Depth, $"Depth changed on iteration {i}");
+        }
     }
 
     [TestMethod]
@@ -657,31 +679,31 @@ public class ControlFlowStackTests
         Assert.AreEqual(0, ctx.Stack.Count);
     }
 
-    // ── Finally semantics ─────────────────────────────────────────────────────────────────────
+    // ── Catch/finally semantics (conventional: catch-first, then finally) ────────────────────
 
     [TestMethod]
-    public void Throw_WithBothCatchAndFinally_JumpsToFinallyFirst()
+    public void Throw_WithBothCatchAndFinally_JumpsToCatchFirst()
     {
         var cfs = new ControlFlowStack();
         cfs.PushException(0, catchAddress: 20, finallyAddress: 10);
         var ctx = new ControlFlowContext(new byte[0]);
         cfs.Throw(ctx, "error");
-        Assert.AreEqual(10, ctx.InstructionPointer);
+        Assert.AreEqual(20, ctx.InstructionPointer); // catch runs before finally
     }
 
     [TestMethod]
-    public void Throw_WithBothCatchAndFinally_SetsPendingCatchAddress()
+    public void Throw_WithBothCatchAndFinally_SetsPendingFinallyAddress()
     {
         var cfs = new ControlFlowStack();
         cfs.PushException(0, catchAddress: 20, finallyAddress: 10);
         var ctx = new ControlFlowContext(new byte[0]);
         cfs.Throw(ctx, "error");
         var ex = (ExceptionBlock)cfs.CurrentBlock!;
-        Assert.AreEqual(20, ex.PendingCatchAddress);
+        Assert.AreEqual(10, ex.PendingFinallyAddress); // finally stored for after catch
     }
 
     [TestMethod]
-    public void Throw_WithFinallyOnly_JumpsToFinally_NoPendingCatch()
+    public void Throw_WithFinallyOnly_JumpsToFinally_NoPendingFinally()
     {
         var cfs = new ControlFlowStack();
         cfs.PushException(0, catchAddress: null, finallyAddress: 10);
@@ -689,11 +711,11 @@ public class ControlFlowStackTests
         cfs.Throw(ctx, "error");
         Assert.AreEqual(10, ctx.InstructionPointer);
         var ex = (ExceptionBlock)cfs.CurrentBlock!;
-        Assert.IsNull(ex.PendingCatchAddress);
+        Assert.IsNull(ex.PendingFinallyAddress);
     }
 
     [TestMethod]
-    public void Throw_WithCatchOnly_JumpsToCatchDirectly_NoPendingCatch()
+    public void Throw_WithCatchOnly_JumpsToCatchDirectly_NoPendingFinally()
     {
         var cfs = new ControlFlowStack();
         cfs.PushException(0, catchAddress: 42, finallyAddress: null);
@@ -701,32 +723,81 @@ public class ControlFlowStackTests
         cfs.Throw(ctx, "error");
         Assert.AreEqual(42, ctx.InstructionPointer);
         var ex = (ExceptionBlock)cfs.CurrentBlock!;
-        Assert.IsNull(ex.PendingCatchAddress);
+        Assert.IsNull(ex.PendingFinallyAddress);
     }
 
     [TestMethod]
-    public void EndFinally_WithPendingCatch_RedirectsToCatch_ReturnsTrue()
+    public void EndCatch_WithPendingFinally_RedirectsToFinally_ReturnsTrue()
     {
         var cfs = new ControlFlowStack();
         cfs.PushException(0, catchAddress: 20, finallyAddress: 10);
         var ctx = new ControlFlowContext(new byte[0]);
-        cfs.Throw(ctx, "error");       // IP → 10, PendingCatch = 20
-        bool hasCatch = cfs.EndFinally(ctx); // IP → 20, PendingCatch cleared
-        Assert.IsTrue(hasCatch);
-        Assert.AreEqual(20, ctx.InstructionPointer);
-        Assert.AreEqual(1, cfs.Depth); // block stays on stack until ENDTRY
-        Assert.IsNull(((ExceptionBlock)cfs.CurrentBlock!).PendingCatchAddress);
+        cfs.Throw(ctx, "error");          // IP → 20 (catch), PendingFinally = 10
+        bool hasFinally = cfs.EndCatch(ctx); // IP → 10 (finally), PendingFinally cleared
+        Assert.IsTrue(hasFinally);
+        Assert.AreEqual(10, ctx.InstructionPointer);
+        Assert.AreEqual(1, cfs.Depth); // block stays on stack until ENDFINALLY
+        Assert.IsNull(((ExceptionBlock)cfs.CurrentBlock!).PendingFinallyAddress);
     }
 
     [TestMethod]
-    public void EndFinally_NoPendingCatch_PopsBlock_ReturnsFalse()
+    public void EndCatch_NoPendingFinally_PopsBlock_ReturnsFalse()
+    {
+        var cfs = new ControlFlowStack();
+        cfs.PushException(0, catchAddress: 42, finallyAddress: null);
+        var ctx = new ControlFlowContext(new byte[0]);
+        cfs.Throw(ctx, "error"); // IP → 42, no PendingFinally
+        bool hasFinally = cfs.EndCatch(ctx); // pops block
+        Assert.IsFalse(hasFinally);
+        Assert.AreEqual(0, cfs.Depth);
+    }
+
+    [TestMethod]
+    public void EndCatch_OutsideCatchBlock_Throws()
+    {
+        var cfs = new ControlFlowStack();
+        cfs.PushLoop(0, 10);
+        var ctx = new ControlFlowContext(new byte[0]);
+        Assert.ThrowsException<InvalidOperationException>(() => cfs.EndCatch(ctx));
+    }
+
+    [TestMethod]
+    public void EndCatch_EmptyStack_Throws()
+    {
+        var cfs = new ControlFlowStack();
+        var ctx = new ControlFlowContext(new byte[0]);
+        Assert.ThrowsException<InvalidOperationException>(() => cfs.EndCatch(ctx));
+    }
+
+    [TestMethod]
+    public void EndCatch_AfterEndCatch_TransitionedToFinally_Throws()
+    {
+        // After EndCatch transitions phase to Finally, a second EndCatch should throw.
+        var cfs = new ControlFlowStack();
+        cfs.PushException(0, catchAddress: 20, finallyAddress: 10);
+        var ctx = new ControlFlowContext(new byte[50]);
+        cfs.Throw(ctx, "error");
+        cfs.EndCatch(ctx); // now in Finally phase
+        Assert.ThrowsException<InvalidOperationException>(() => cfs.EndCatch(ctx));
+    }
+
+    [TestMethod]
+    public void EndCatch_NullContext_ThrowsArgumentNullException()
+    {
+        var cfs = new ControlFlowStack();
+        cfs.PushException(0, catchAddress: 10, finallyAddress: null);
+        Assert.ThrowsException<ArgumentNullException>(() => cfs.EndCatch(null!));
+    }
+
+    [TestMethod]
+    public void EndFinally_FinallyOnly_NoOuterHandler_ReturnsFalse()
     {
         var cfs = new ControlFlowStack();
         cfs.PushException(0, catchAddress: null, finallyAddress: 10);
         var ctx = new ControlFlowContext(new byte[0]);
-        cfs.Throw(ctx, "error");        // IP → 10, PendingCatch = null
-        bool hasCatch = cfs.EndFinally(ctx); // pops block
-        Assert.IsFalse(hasCatch);
+        cfs.Throw(ctx, "error"); // IP → 10, ExceptionInFlight = true
+        bool result = cfs.EndFinally(ctx); // propagate → no outer handler → false
+        Assert.IsFalse(result);
         Assert.AreEqual(0, cfs.Depth);
     }
 
@@ -748,42 +819,33 @@ public class ControlFlowStackTests
     }
 
     [TestMethod]
-    public void Integration_ThrowWithCatchAndFinally_RunsFinallyThenCatch()
+    public void Integration_ThrowWithCatchAndFinally_RunsCatchThenFinally()
     {
+        // Conventional semantics: catch executes before finally.
         // Layout (all addresses in decimal):
-        //  0: TRY_FULL catch=25 finally=17   [0x33, 25,0,0,0, 17,0,0,0]  (9 bytes)
-        //  9: PUSH_INT 42                     [0x01, 42,0,0,0]            (5 bytes)
-        // 14: THROW                           [0x31]                      (1 byte)
-        // 15: PUSH_INT 99 (dead code)         [0x01, 99,0,0,0]
-        // 20: HALT (dead code)                [0xFF]
-        // --- finally block ---
-        // 21: PUSH_INT 1 (finally marker)     [0x01, 1,0,0,0]
-        // 26: ENDFINALLY                      [0x34]                      → jumps to catch=25... wait, let me re-count
-
-        // Let me re-layout carefully:
         //  0: TRY_FULL  [0x33] + int catchAddr(4) + int finallyAddr(4) = 9 bytes
-        //  9: PUSH_INT  [0x01] + int(4) = 5 bytes  → address 14
-        // 14: THROW     [0x31] = 1 byte             → address 15
-        // 15: PUSH_INT 99 (dead)  [0x01, 99,0,0,0] = 5 bytes → address 20
-        // 20: HALT (dead) [0xFF]  = 1 byte           → address 21
-        // 21: PUSH_INT 1 (finally marker) [0x01, 1,0,0,0] = 5 bytes → address 26
-        // 26: ENDFINALLY [0x34] = 1 byte             → address 27
-        // 27: PUSH_INT 2 (catch marker) [0x01, 2,0,0,0] = 5 bytes → address 32
-        // 32: ENDTRY [0x32] = 1 byte                 → address 33
+        //  9: PUSH_INT 42 [0x01, 42,0,0,0]          5 bytes → addr 14
+        // 14: THROW [0x31]                           1 byte  → addr 15
+        // 15: PUSH_INT 99 (dead) [0x01, 99,0,0,0]   5 bytes → addr 20
+        // 20: HALT (dead) [0xFF]                     1 byte  → addr 21
+        // 21: PUSH_INT 2 (catch marker) [0x01,2,...] 5 bytes → addr 26  ← catchAddress
+        // 26: ENDCATCH [0x36]                        1 byte  → addr 27
+        // 27: PUSH_INT 1 (finally marker) [0x01,...] 5 bytes → addr 32  ← finallyAddress
+        // 32: ENDFINALLY [0x34]                      1 byte  → addr 33
         // 33: HALT [0xFF]
-
-        // catchAddress = 27, finallyAddress = 21
+        //
+        // catchAddress = 21, finallyAddress = 27
         byte[] program =
         [
-            0x33, 27, 0, 0, 0, 21, 0, 0, 0,  //  0: TRY_FULL catch=27 finally=21
+            0x33, 21, 0, 0, 0, 27, 0, 0, 0,  //  0: TRY_FULL catch=21 finally=27
             0x01, 42, 0, 0, 0,               //  9: PUSH_INT 42
-            0x31,                            // 14: THROW → IP=21 (finally)
+            0x31,                            // 14: THROW → IP=21 (catch)
             0x01, 99, 0, 0, 0,              // 15: PUSH_INT 99 (dead)
             0xFF,                            // 20: HALT (dead)
-            0x01, 1, 0, 0, 0,              // 21: PUSH_INT 1  (finally runs)
-            0x34,                            // 26: ENDFINALLY → IP=27 (catch)
-            0x01, 2, 0, 0, 0,              // 27: PUSH_INT 2  (catch runs)
-            0x32,                            // 32: ENDTRY
+            0x01, 2, 0, 0, 0,              // 21: PUSH_INT 2  (catch runs first)
+            0x36,                            // 26: ENDCATCH → IP=27 (finally)
+            0x01, 1, 0, 0, 0,              // 27: PUSH_INT 1  (finally runs after)
+            0x34,                            // 32: ENDFINALLY → pops block
             0xFF                             // 33: HALT
         ];
 
@@ -791,12 +853,12 @@ public class ControlFlowStackTests
         new ControlFlowTestMachine().Execute(ctx);
 
         // THROW pops 42 from the operand stack and stores it in ExceptionBlock.ThrownValue.
-        // Stack after: 1 (finally marker), then 2 (catch marker) = [2, 1] in ToArray() order.
+        // catch runs first (pushes 2), then finally (pushes 1) → stack = [1, 2] top-first.
         Assert.AreEqual(0, ctx.ControlFlow.Depth);
         var stack = ctx.Stack.ToArray(); // top is index 0
         Assert.AreEqual(2, stack.Length);
-        Assert.AreEqual(2, (int)stack[0]); // catch marker (top)
-        Assert.AreEqual(1, (int)stack[1]); // finally marker
+        Assert.AreEqual(1, (int)stack[0]); // finally marker (top — pushed last)
+        Assert.AreEqual(2, (int)stack[1]); // catch marker
     }
 
     [TestMethod]
@@ -947,6 +1009,38 @@ public class ControlFlowStackTests
     }
 
     [TestMethod]
+    public void Throw_InsideCatch_WithFinally_RunsFinallyBeforeOuterCatch()
+    {
+        // Conventional semantics: when a throw occurs inside a catch body whose block also has
+        // a finally, the finally must run before the exception propagates outward.
+        var cfs = new ControlFlowStack();
+        var ctx = new ControlFlowContext(new byte[100]);
+
+        cfs.PushException(startAddress: 0, catchAddress: 80, finallyAddress: null); // outer try/catch
+        cfs.PushException(startAddress: 5, catchAddress: 20, finallyAddress: 40);   // inner try/catch/finally
+
+        // First throw: inner block catches it (phase → Catch, PendingFinally = 40).
+        cfs.Throw(ctx, "error1");
+        Assert.AreEqual(20, ctx.InstructionPointer); // inner catch
+        var inner = (ExceptionBlock)cfs.CurrentBlock!;
+        Assert.AreEqual(ExceptionBlockPhase.Catch, inner.Phase);
+        Assert.AreEqual(40, inner.PendingFinallyAddress);
+
+        // Second throw from inside the catch body: must redirect through the inner finally
+        // (not skip directly to the outer catch).
+        bool handled = cfs.Throw(ctx, "error2");
+        Assert.IsTrue(handled);
+        Assert.AreEqual(40, ctx.InstructionPointer); // inner finally runs first
+        Assert.AreEqual(ExceptionBlockPhase.Finally, inner.Phase);
+        Assert.IsNull(inner.PendingFinallyAddress);  // cleared
+
+        // After finally completes, EndFinally propagates to the outer catch.
+        bool propagated = cfs.EndFinally(ctx);
+        Assert.IsTrue(propagated);
+        Assert.AreEqual(80, ctx.InstructionPointer); // outer catch receives error2
+    }
+
+    [TestMethod]
     public void Throw_InsideFinally_PropagatestoOuterHandler()
     {
         var cfs = new ControlFlowStack();
@@ -1009,5 +1103,153 @@ public class ControlFlowStackTests
         bool handled = cfs.Throw(ctx, "err");
         Assert.IsTrue(handled);
         Assert.AreEqual(10, ctx.InstructionPointer);
+    }
+
+    // ── Null context guards (item 37) ────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void Break_NullContext_ThrowsArgumentNullException()
+    {
+        var cfs = new ControlFlowStack();
+        cfs.PushLoop(0, 10);
+        Assert.ThrowsException<ArgumentNullException>(() => cfs.Break(null!));
+    }
+
+    [TestMethod]
+    public void Continue_NullContext_ThrowsArgumentNullException()
+    {
+        var cfs = new ControlFlowStack();
+        cfs.PushLoop(0, 10);
+        Assert.ThrowsException<ArgumentNullException>(() => cfs.Continue(null!));
+    }
+
+    [TestMethod]
+    public void EndFinally_NullContext_ThrowsArgumentNullException()
+    {
+        var cfs = new ControlFlowStack();
+        cfs.PushException(0, catchAddress: null, finallyAddress: 20);
+        Assert.ThrowsException<ArgumentNullException>(() => cfs.EndFinally(null!));
+    }
+
+    [TestMethod]
+    public void Throw_NullContext_ThrowsArgumentNullException()
+    {
+        var cfs = new ControlFlowStack();
+        cfs.PushException(0, catchAddress: 10, finallyAddress: null);
+        Assert.ThrowsException<ArgumentNullException>(() => cfs.Throw(null!, "error"));
+    }
+
+    // ── MaxDepth (item 14) ────────────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void MaxDepth_Default_Is1024()
+    {
+        var cfs = new ControlFlowStack();
+        Assert.AreEqual(1024, cfs.MaxDepth);
+        Assert.AreEqual(ControlFlowStack.DefaultMaxDepth, cfs.MaxDepth);
+    }
+
+    [TestMethod]
+    public void Constructor_InvalidMaxDepth_ThrowsArgumentOutOfRangeException()
+    {
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new ControlFlowStack(0));
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new ControlFlowStack(-1));
+    }
+
+    [TestMethod]
+    public void PushConditional_BeyondMaxDepth_ThrowsInvalidOperationException()
+    {
+        var cfs = new ControlFlowStack(maxDepth: 2);
+        cfs.PushConditional(0, 10);
+        cfs.PushConditional(1, 20);
+        Assert.ThrowsException<InvalidOperationException>(() => cfs.PushConditional(2, 30));
+    }
+
+    [TestMethod]
+    public void PushLoop_BeyondMaxDepth_ThrowsInvalidOperationException()
+    {
+        var cfs = new ControlFlowStack(maxDepth: 1);
+        cfs.PushLoop(0, 10);
+        Assert.ThrowsException<InvalidOperationException>(() => cfs.PushLoop(1, 20));
+    }
+
+    [TestMethod]
+    public void PushException_BeyondMaxDepth_ThrowsInvalidOperationException()
+    {
+        var cfs = new ControlFlowStack(maxDepth: 1);
+        cfs.PushException(0, catchAddress: 10, finallyAddress: null);
+        Assert.ThrowsException<InvalidOperationException>(
+            () => cfs.PushException(1, catchAddress: 20, finallyAddress: null));
+    }
+
+    [TestMethod]
+    public void CustomMaxDepth_AfterPop_AllowsPushAgain()
+    {
+        var cfs = new ControlFlowStack(maxDepth: 1);
+        cfs.PushLoop(0, 10);
+        cfs.Pop();
+        cfs.PushLoop(0, 10); // should not throw after pop freed a slot
+        Assert.AreEqual(1, cfs.Depth);
+    }
+
+    // ── Negative branch target validation (item 29) ──────────────────────────
+
+    [TestMethod]
+    public void PushConditional_NegativeStartAddress_ThrowsArgumentOutOfRangeException()
+    {
+        var cfs = new ControlFlowStack();
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => cfs.PushConditional(-1, 10));
+    }
+
+    [TestMethod]
+    public void PushConditional_NegativeEndAddress_ThrowsArgumentOutOfRangeException()
+    {
+        var cfs = new ControlFlowStack();
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => cfs.PushConditional(0, -1));
+    }
+
+    [TestMethod]
+    public void PushConditional_NegativeElseAddress_ThrowsArgumentOutOfRangeException()
+    {
+        var cfs = new ControlFlowStack();
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => cfs.PushConditional(0, 10, elseAddress: -1));
+    }
+
+    [TestMethod]
+    public void PushLoop_NegativeStartAddress_ThrowsArgumentOutOfRangeException()
+    {
+        var cfs = new ControlFlowStack();
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => cfs.PushLoop(-1, 10));
+    }
+
+    [TestMethod]
+    public void PushLoop_NegativeEndAddress_ThrowsArgumentOutOfRangeException()
+    {
+        var cfs = new ControlFlowStack();
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => cfs.PushLoop(0, -1));
+    }
+
+    [TestMethod]
+    public void PushException_NegativeStartAddress_ThrowsArgumentOutOfRangeException()
+    {
+        var cfs = new ControlFlowStack();
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => cfs.PushException(-1, catchAddress: 10, finallyAddress: null));
+    }
+
+    [TestMethod]
+    public void PushException_NegativeCatchAddress_ThrowsArgumentOutOfRangeException()
+    {
+        var cfs = new ControlFlowStack();
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => cfs.PushException(0, catchAddress: -1, finallyAddress: null));
+    }
+
+    [TestMethod]
+    public void PushException_NegativeFinallyAddress_ThrowsArgumentOutOfRangeException()
+    {
+        var cfs = new ControlFlowStack();
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => cfs.PushException(0, catchAddress: null, finallyAddress: -5));
     }
 }

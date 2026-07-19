@@ -182,7 +182,8 @@ internal class NormalReader : INumberReader
     public byte ReadByte(Context context)
     {
         int ip = context.InstructionPointer;
-        // Validate before advancing so a failed read leaves the pointer unchanged.
+        if (ip >= context.Data.Length)
+            throw new EndOfBytecodeException(ip, 1);
         byte value = context.Data.Span[ip];
         context.InstructionPointer = ip + 1;
         return value;
@@ -192,6 +193,8 @@ internal class NormalReader : INumberReader
     public sbyte ReadSByte(Context context)
     {
         int ip = context.InstructionPointer;
+        if (ip >= context.Data.Length)
+            throw new EndOfBytecodeException(ip, 1);
         sbyte value = (sbyte)context.Data.Span[ip];
         context.InstructionPointer = ip + 1;
         return value;
@@ -200,64 +203,88 @@ internal class NormalReader : INumberReader
     /// <inheritdoc />
     public short ReadInt16(Context context)
     {
-        var result = MemoryMarshal.Read<short>(context.Data.Span[context.InstructionPointer..]);
-        context.InstructionPointer += sizeof(short);
+        int ip = context.InstructionPointer;
+        if (ip + sizeof(short) > context.Data.Length)
+            throw new EndOfBytecodeException(ip, sizeof(short));
+        var result = MemoryMarshal.Read<short>(context.Data.Span[ip..]);
+        context.InstructionPointer = ip + sizeof(short);
         return result;
     }
 
     /// <inheritdoc />
     public int ReadInt32(Context context)
     {
-        var result = MemoryMarshal.Read<int>(context.Data.Span[context.InstructionPointer..]);
-        context.InstructionPointer += sizeof(int);
+        int ip = context.InstructionPointer;
+        if (ip + sizeof(int) > context.Data.Length)
+            throw new EndOfBytecodeException(ip, sizeof(int));
+        var result = MemoryMarshal.Read<int>(context.Data.Span[ip..]);
+        context.InstructionPointer = ip + sizeof(int);
         return result;
     }
 
     /// <inheritdoc />
     public long ReadInt64(Context context)
     {
-        var result = MemoryMarshal.Read<long>(context.Data.Span[context.InstructionPointer..]);
-        context.InstructionPointer += sizeof(long);
+        int ip = context.InstructionPointer;
+        if (ip + sizeof(long) > context.Data.Length)
+            throw new EndOfBytecodeException(ip, sizeof(long));
+        var result = MemoryMarshal.Read<long>(context.Data.Span[ip..]);
+        context.InstructionPointer = ip + sizeof(long);
         return result;
     }
 
     /// <inheritdoc />
     public ushort ReadUInt16(Context context)
     {
-        var result = MemoryMarshal.Read<ushort>(context.Data.Span[context.InstructionPointer..]);
-        context.InstructionPointer += sizeof(ushort);
+        int ip = context.InstructionPointer;
+        if (ip + sizeof(ushort) > context.Data.Length)
+            throw new EndOfBytecodeException(ip, sizeof(ushort));
+        var result = MemoryMarshal.Read<ushort>(context.Data.Span[ip..]);
+        context.InstructionPointer = ip + sizeof(ushort);
         return result;
     }
 
     /// <inheritdoc />
     public uint ReadUInt32(Context context)
     {
-        var result = MemoryMarshal.Read<uint>(context.Data.Span[context.InstructionPointer..]);
-        context.InstructionPointer += sizeof(uint);
+        int ip = context.InstructionPointer;
+        if (ip + sizeof(uint) > context.Data.Length)
+            throw new EndOfBytecodeException(ip, sizeof(uint));
+        var result = MemoryMarshal.Read<uint>(context.Data.Span[ip..]);
+        context.InstructionPointer = ip + sizeof(uint);
         return result;
     }
 
     /// <inheritdoc />
     public ulong ReadUInt64(Context context)
     {
-        var result = MemoryMarshal.Read<ulong>(context.Data.Span[context.InstructionPointer..]);
-        context.InstructionPointer += sizeof(ulong);
+        int ip = context.InstructionPointer;
+        if (ip + sizeof(ulong) > context.Data.Length)
+            throw new EndOfBytecodeException(ip, sizeof(ulong));
+        var result = MemoryMarshal.Read<ulong>(context.Data.Span[ip..]);
+        context.InstructionPointer = ip + sizeof(ulong);
         return result;
     }
 
     /// <inheritdoc />
     public float ReadSingle(Context context)
     {
-        var result = MemoryMarshal.Read<float>(context.Data.Span[context.InstructionPointer..]);
-        context.InstructionPointer += sizeof(float);
+        int ip = context.InstructionPointer;
+        if (ip + sizeof(float) > context.Data.Length)
+            throw new EndOfBytecodeException(ip, sizeof(float));
+        var result = MemoryMarshal.Read<float>(context.Data.Span[ip..]);
+        context.InstructionPointer = ip + sizeof(float);
         return result;
     }
 
     /// <inheritdoc />
     public double ReadDouble(Context context)
     {
-        var result = MemoryMarshal.Read<double>(context.Data.Span[context.InstructionPointer..]);
-        context.InstructionPointer += sizeof(double);
+        int ip = context.InstructionPointer;
+        if (ip + sizeof(double) > context.Data.Length)
+            throw new EndOfBytecodeException(ip, sizeof(double));
+        var result = MemoryMarshal.Read<double>(context.Data.Span[ip..]);
+        context.InstructionPointer = ip + sizeof(double);
         return result;
     }
 }
@@ -273,6 +300,8 @@ internal class InvertedReader : INumberReader
     public byte ReadByte(Context context)
     {
         int ip = context.InstructionPointer;
+        if (ip >= context.Data.Length)
+            throw new EndOfBytecodeException(ip, 1);
         byte value = context.Data.Span[ip];
         context.InstructionPointer = ip + 1;
         return value;
@@ -282,6 +311,8 @@ internal class InvertedReader : INumberReader
     public sbyte ReadSByte(Context context)
     {
         int ip = context.InstructionPointer;
+        if (ip >= context.Data.Length)
+            throw new EndOfBytecodeException(ip, 1);
         sbyte value = (sbyte)context.Data.Span[ip];
         context.InstructionPointer = ip + 1;
         return value;
@@ -290,64 +321,88 @@ internal class InvertedReader : INumberReader
     /// <inheritdoc />
     public short ReadInt16(Context context)
     {
-        var result = MemoryMarshal.Read<short>(context.Data.Span[context.InstructionPointer..]);
-        context.InstructionPointer += sizeof(short);
+        int ip = context.InstructionPointer;
+        if (ip + sizeof(short) > context.Data.Length)
+            throw new EndOfBytecodeException(ip, sizeof(short));
+        var result = MemoryMarshal.Read<short>(context.Data.Span[ip..]);
+        context.InstructionPointer = ip + sizeof(short);
         return BinaryPrimitives.ReverseEndianness(result);
     }
 
     /// <inheritdoc />
     public int ReadInt32(Context context)
     {
-        var result = MemoryMarshal.Read<int>(context.Data.Span[context.InstructionPointer..]);
-        context.InstructionPointer += sizeof(int);
+        int ip = context.InstructionPointer;
+        if (ip + sizeof(int) > context.Data.Length)
+            throw new EndOfBytecodeException(ip, sizeof(int));
+        var result = MemoryMarshal.Read<int>(context.Data.Span[ip..]);
+        context.InstructionPointer = ip + sizeof(int);
         return BinaryPrimitives.ReverseEndianness(result);
     }
 
     /// <inheritdoc />
     public long ReadInt64(Context context)
     {
-        var result = MemoryMarshal.Read<long>(context.Data.Span[context.InstructionPointer..]);
-        context.InstructionPointer += sizeof(long);
+        int ip = context.InstructionPointer;
+        if (ip + sizeof(long) > context.Data.Length)
+            throw new EndOfBytecodeException(ip, sizeof(long));
+        var result = MemoryMarshal.Read<long>(context.Data.Span[ip..]);
+        context.InstructionPointer = ip + sizeof(long);
         return BinaryPrimitives.ReverseEndianness(result);
     }
 
     /// <inheritdoc />
     public ushort ReadUInt16(Context context)
     {
-        var result = MemoryMarshal.Read<ushort>(context.Data.Span[context.InstructionPointer..]);
-        context.InstructionPointer += sizeof(ushort);
+        int ip = context.InstructionPointer;
+        if (ip + sizeof(ushort) > context.Data.Length)
+            throw new EndOfBytecodeException(ip, sizeof(ushort));
+        var result = MemoryMarshal.Read<ushort>(context.Data.Span[ip..]);
+        context.InstructionPointer = ip + sizeof(ushort);
         return BinaryPrimitives.ReverseEndianness(result);
     }
 
     /// <inheritdoc />
     public uint ReadUInt32(Context context)
     {
-        var result = MemoryMarshal.Read<uint>(context.Data.Span[context.InstructionPointer..]);
-        context.InstructionPointer += sizeof(uint);
+        int ip = context.InstructionPointer;
+        if (ip + sizeof(uint) > context.Data.Length)
+            throw new EndOfBytecodeException(ip, sizeof(uint));
+        var result = MemoryMarshal.Read<uint>(context.Data.Span[ip..]);
+        context.InstructionPointer = ip + sizeof(uint);
         return BinaryPrimitives.ReverseEndianness(result);
     }
 
     /// <inheritdoc />
     public ulong ReadUInt64(Context context)
     {
-        var result = MemoryMarshal.Read<ulong>(context.Data.Span[context.InstructionPointer..]);
-        context.InstructionPointer += sizeof(ulong);
+        int ip = context.InstructionPointer;
+        if (ip + sizeof(ulong) > context.Data.Length)
+            throw new EndOfBytecodeException(ip, sizeof(ulong));
+        var result = MemoryMarshal.Read<ulong>(context.Data.Span[ip..]);
+        context.InstructionPointer = ip + sizeof(ulong);
         return BinaryPrimitives.ReverseEndianness(result);
     }
 
     /// <inheritdoc />
     public float ReadSingle(Context context)
     {
-        var bits = MemoryMarshal.Read<uint>(context.Data.Span[context.InstructionPointer..]);
-        context.InstructionPointer += sizeof(float);
+        int ip = context.InstructionPointer;
+        if (ip + sizeof(float) > context.Data.Length)
+            throw new EndOfBytecodeException(ip, sizeof(float));
+        var bits = MemoryMarshal.Read<uint>(context.Data.Span[ip..]);
+        context.InstructionPointer = ip + sizeof(float);
         return BitConverter.UInt32BitsToSingle(BinaryPrimitives.ReverseEndianness(bits));
     }
 
     /// <inheritdoc />
     public double ReadDouble(Context context)
     {
-        var bits = MemoryMarshal.Read<ulong>(context.Data.Span[context.InstructionPointer..]);
-        context.InstructionPointer += sizeof(double);
+        int ip = context.InstructionPointer;
+        if (ip + sizeof(double) > context.Data.Length)
+            throw new EndOfBytecodeException(ip, sizeof(double));
+        var bits = MemoryMarshal.Read<ulong>(context.Data.Span[ip..]);
+        context.InstructionPointer = ip + sizeof(double);
         return BitConverter.UInt64BitsToDouble(BinaryPrimitives.ReverseEndianness(bits));
     }
 }

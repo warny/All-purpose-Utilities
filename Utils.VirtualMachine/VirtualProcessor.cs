@@ -67,6 +67,12 @@ public abstract class VirtualProcessor<T> where T : Context
     /// Gets a read-only enumeration of all registered instructions, including those discovered via
     /// <see cref="InstructionAttribute"/> and those added with <see cref="RegisterInstruction"/>.
     /// </summary>
+    /// <remarks>
+    /// This is a live view over the internal instruction dictionary. Registering new instructions
+    /// via <see cref="RegisterInstruction"/> while enumerating may throw
+    /// <see cref="System.InvalidOperationException"/>; take a snapshot (<c>.ToList()</c>) when
+    /// stable enumeration is required.
+    /// </remarks>
     public IEnumerable<(IReadOnlyCollection<byte> Opcode, string Name)> Instructions
         => InstructionsSet.Select(kv => (kv.Key, kv.Value.Name));
 
@@ -82,6 +88,12 @@ public abstract class VirtualProcessor<T> where T : Context
     /// <see cref="IVmInspector{T}.OnBreakpoint"/> when execution reaches them.
     /// Breakpoints are only checked when <see cref="Inspector"/> is non-null.
     /// </summary>
+    /// <remarks>
+    /// Addresses are raw integers and are not validated against the current program image.
+    /// Negative, past-end, and mid-operand values are accepted silently and will never be hit
+    /// unless the instruction pointer happens to equal that exact value during dispatch. Stale
+    /// breakpoints are not removed when a new program is loaded into the context.
+    /// </remarks>
     public HashSet<int> Breakpoints { get; } = [];
 
     /// <summary>
@@ -98,6 +110,41 @@ public abstract class VirtualProcessor<T> where T : Context
         InstructionsSet = DiscoverInstructionSet();
         _buffer = new byte[_maxInstructionSize];
         RebuildFastLookup();
+    }
+
+    /// <summary>
+    /// Validates the signature of a method annotated with <see cref="InstructionAttribute"/>.
+    /// Throws <see cref="InvalidOperationException"/> when the method is generic, non-void,
+    /// has unsupported parameter kinds (ref, out, pointer, byref-like), or has operand parameters
+    /// whose types are not registered in <see cref="_numberReaderMethods"/>.
+    /// </summary>
+    private static void ValidateInstructionSignature(MethodInfo method)
+    {
+        if (method.IsGenericMethod || method.ContainsGenericParameters)
+            throw new InvalidOperationException(
+                $"Instruction method '{method.Name}': generic methods are not supported as instruction handlers.");
+
+        if (method.ReturnType != typeof(void))
+            throw new InvalidOperationException(
+                $"Instruction method '{method.Name}': must return void, found '{method.ReturnType.Name}'.");
+
+        foreach (var param in method.GetParameters().Skip(1)) // first param is the context T, already checked
+        {
+            if (param.IsOut || param.ParameterType.IsByRef)
+                throw new InvalidOperationException(
+                    $"Instruction method '{method.Name}': parameter '{param.Name}' is ref/out, which is not supported.");
+
+            if (param.ParameterType.IsPointer || param.ParameterType.IsByRefLike)
+                throw new InvalidOperationException(
+                    $"Instruction method '{method.Name}': parameter '{param.Name}' has an unsupported type " +
+                    $"(pointer or byref-like type '{param.ParameterType.Name}').");
+
+            if (!_numberReaderMethods.ContainsKey(param.ParameterType))
+                throw new InvalidOperationException(
+                    $"Instruction method '{method.Name}': parameter '{param.Name}' has unsupported operand type " +
+                    $"'{param.ParameterType.Name}'. Supported types are: " +
+                    string.Join(", ", _numberReaderMethods.Keys.Select(t => t.Name)) + ".");
+        }
     }
 
     /// <summary>
@@ -119,6 +166,7 @@ public abstract class VirtualProcessor<T> where T : Context
 
             var parameters = method.GetParameters();
             if (parameters.Length > 0 && parameters[0].ParameterType != typeof(T)) continue;
+            ValidateInstructionSignature(method);
             InstructionDelegate instructionDelegate;
             if (parameters.Length == 0)
             {
@@ -327,22 +375,58 @@ public abstract class VirtualProcessor<T> where T : Context
     protected virtual void OnStep(T context) { }
 
     /// <summary>
+    /// Called by <see cref="Scheduler{T}"/> immediately before a process transitions to
+    /// <see cref="ProcessState.Terminated"/> due to normal program completion (instruction pointer
+    /// out of range or negative). Throw to fail-fast and transition the process to
+    /// <see cref="ProcessState.Faulted"/> instead.
+    /// </summary>
+    /// <remarks>
+    /// Override this method to validate that the context is in a structurally consistent
+    /// terminal state: call frames are empty, control-flow blocks are all closed, no exception
+    /// handler is pending, operand stacks are empty, etc. The default implementation does nothing,
+    /// maintaining backward compatibility.
+    /// </remarks>
+    /// <param name="context">The execution context at termination.</param>
+    public virtual void ValidateCompletion(T context) { }
+
+    /// <summary>
     /// Executes all instructions until the end of the data stream, until
     /// <see cref="Context.InstructionPointer"/> becomes negative (program termination signal),
-    /// or until <paramref name="cancellationToken"/> is cancelled.
+    /// until <paramref name="cancellationToken"/> is cancelled, or until
+    /// <paramref name="maxInstructions"/> instructions have been dispatched.
     /// </summary>
     /// <param name="context">The execution context.</param>
     /// <param name="cancellationToken">Token that can stop execution between instructions.</param>
+    /// <param name="maxInstructions">
+    /// Maximum number of instructions to dispatch. When greater than zero, throws
+    /// <see cref="InstructionBudgetExceededException"/> if this limit is reached before the
+    /// program terminates naturally. When zero (the default), execution is unlimited.
+    /// </param>
+    /// <remarks>
+    /// Cancellation is cooperative and checked only between instructions — not within a single
+    /// instruction handler. A handler that blocks indefinitely, performs a long-running computation,
+    /// or enters an infinite loop will prevent cancellation from being observed until it returns.
+    /// For untrusted or long-running handlers, use an isolation boundary or have the handler
+    /// observe the token or a deadline directly.
+    /// </remarks>
     /// <exception cref="VirtualProcessorException">Thrown on an unknown opcode sequence.</exception>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is cancelled.</exception>
-    public void Execute(T context, CancellationToken cancellationToken = default)
+    /// <exception cref="InstructionBudgetExceededException">
+    /// Thrown when <paramref name="maxInstructions"/> is greater than zero and that many
+    /// instructions have been dispatched without the program terminating.
+    /// </exception>
+    public void Execute(T context, CancellationToken cancellationToken = default, long maxInstructions = 0)
     {
         ArgumentNullException.ThrowIfNull(context);
+        long dispatched = 0;
         while (context.InstructionPointer >= 0 && context.InstructionPointer < context.Data.Length)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            if (maxInstructions > 0 && dispatched >= maxInstructions)
+                throw new InstructionBudgetExceededException(maxInstructions);
             OnStep(context);
             TryDispatch(context);
+            dispatched++;
         }
     }
 
@@ -418,9 +502,14 @@ public abstract class VirtualProcessor<T> where T : Context
     /// Reuses the instance-level <see cref="_buffer"/> array; not thread-safe.
     /// </summary>
     /// <exception cref="VirtualProcessorException">
-    /// Thrown when no instruction matches the bytes at the current position, or when a matched
-    /// instruction's handler raises <see cref="IndexOutOfRangeException"/> or
-    /// <see cref="ArgumentOutOfRangeException"/> (indicating truncated operand data).
+    /// Thrown when no instruction matches the bytes at the current position, or when operand
+    /// reading via an <see cref="INumberReader"/> method raises <see cref="EndOfBytecodeException"/>
+    /// (indicating the stream ended before all operand bytes were available).
+    /// On failure, <see cref="Context.InstructionPointer"/> is restored to the instruction's
+    /// start address so that callers can identify the failing instruction or retry.
+    /// Exceptions that originate in the handler's own domain logic (including
+    /// <see cref="IndexOutOfRangeException"/> and <see cref="ArgumentOutOfRangeException"/>
+    /// from handler-side collections or computations) propagate unchanged.
     /// </exception>
     private void TryDispatch(T context)
     {
@@ -440,8 +529,11 @@ public abstract class VirtualProcessor<T> where T : Context
             {
                 fast.Handler(context);
             }
-            catch (Exception ex) when (ex is IndexOutOfRangeException or ArgumentOutOfRangeException)
+            catch (EndOfBytecodeException ex)
             {
+                // INumberReader throws EndOfBytecodeException when the stream ends before all
+                // operand bytes are read. Restore IP so the caller can identify the failing instruction.
+                context.InstructionPointer = instructionStart;
                 throw new VirtualProcessorException(instructionStart, new ArraySegment<byte>([firstByte]), fast.Name, ex);
             }
             return;
@@ -455,20 +547,24 @@ public abstract class VirtualProcessor<T> where T : Context
             var segment = new ArraySegment<byte>(_buffer, 0, _bufferLength);
             if (InstructionsSet.TryGetValue(segment, out var entry))
             {
-                // IP has already advanced past the opcode bytes: pass the post-opcode position
-                // as the expected value so NotifyInspector can distinguish a genuine redirect
-                // from the normal advancement due to reading a multi-byte opcode.
                 int afterOpcodeIp = context.InstructionPointer;
-                NotifyInspector(context, instructionStart, afterOpcodeIp, entry.Name);
+                // Restore IP to instructionStart before notifying the inspector so that both fast
+                // and slow dispatch paths expose the same consistent pointer state to callbacks.
+                context.InstructionPointer = instructionStart;
+                NotifyInspector(context, instructionStart, instructionStart, entry.Name);
                 // Same guard: inspector may redirect before operands are consumed.
-                if (context.InstructionPointer != afterOpcodeIp) return;
+                if (context.InstructionPointer != instructionStart) return;
+                // Advance IP past the opcode bytes before invoking the handler.
+                context.InstructionPointer = afterOpcodeIp;
                 try
                 {
                     entry.Handler(context);
                 }
-                catch (Exception ex) when (ex is IndexOutOfRangeException or ArgumentOutOfRangeException)
+                catch (EndOfBytecodeException ex)
                 {
-                    // INumberReader methods throw these when the byte stream ends before all operand bytes are read.
+                    // INumberReader throws EndOfBytecodeException when the stream ends before all
+                    // operand bytes are read. Restore IP so the caller can identify the failing instruction.
+                    context.InstructionPointer = instructionStart;
                     throw new VirtualProcessorException(instructionStart, segment, entry.Name, ex);
                 }
                 return;
@@ -499,12 +595,26 @@ public abstract class VirtualProcessor<T> where T : Context
         if (Inspector is not { } inspector) return;
         if (Breakpoints.Count > 0 && Breakpoints.Contains(address))
         {
-            inspector.OnBreakpoint(context, address, instructionName);
+            try
+            {
+                inspector.OnBreakpoint(context, address, instructionName);
+            }
+            catch (Exception ex) when (ex is not VmInspectorException)
+            {
+                throw new VmInspectorException(VmInspectorPhase.OnBreakpoint, address, instructionName, ex);
+            }
             // If OnBreakpoint redirected execution, skip BeforeInstruction for the old instruction
             // so that the callback does not observe contradictory metadata.
             if (context.InstructionPointer != expectedInstructionPointer) return;
         }
-        inspector.BeforeInstruction(context, address, instructionName);
+        try
+        {
+            inspector.BeforeInstruction(context, address, instructionName);
+        }
+        catch (Exception ex) when (ex is not VmInspectorException)
+        {
+            throw new VmInspectorException(VmInspectorPhase.BeforeInstruction, address, instructionName, ex);
+        }
     }
 }
 
@@ -524,6 +634,13 @@ public abstract class Context
     /// Setting this to a negative value (typically <c>-1</c>) signals program termination to the
     /// <see cref="VirtualProcessor{T}"/> execution loop.
     /// </summary>
+    /// <remarks>
+    /// Any negative value causes the execution loop to stop and is treated as normal termination.
+    /// This means stack underflow from <c>CallStack.Return</c> (which also returns <c>-1</c>),
+    /// explicit <see cref="Terminate"/> calls, and erroneous negative jump targets all collapse
+    /// into the same observable state — all appear as normal completion. Distinguish them at the
+    /// bytecode or caller level if the difference matters.
+    /// </remarks>
     public int InstructionPointer { get; set; }
 
     /// <summary>
@@ -536,21 +653,24 @@ public abstract class Context
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Context"/> class with the given data buffer.
+    /// The buffer is copied so that subsequent mutations of the caller's array do not affect
+    /// the instruction stream seen during execution.
     /// </summary>
     /// <param name="data">The byte data containing all instructions or data to process.</param>
     protected Context(ReadOnlyMemory<byte> data)
     {
-        Data = data;
+        Data = data.ToArray();
     }
 }
 
 /// <summary>
-/// A default context implementation providing an object stack.
+/// A default context implementation providing a bounded object operand stack.
 /// </summary>
 public class DefaultContext : Context
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="DefaultContext"/> class with the given data buffer.
+    /// Initializes a new instance of the <see cref="DefaultContext"/> class with the given data buffer
+    /// and the default operand-stack depth limit (<see cref="BoundedStack{T}.DefaultMaxDepth"/>).
     /// </summary>
     /// <param name="data">The byte data containing all instructions or data to process.</param>
     public DefaultContext(ReadOnlyMemory<byte> data) : base(data)
@@ -558,7 +678,24 @@ public class DefaultContext : Context
     }
 
     /// <summary>
-    /// A stack of objects that can be used during instruction execution for temporary data storage.
+    /// Initializes a new instance of the <see cref="DefaultContext"/> class with the given data buffer
+    /// and a custom operand-stack depth limit.
     /// </summary>
-    public Stack<object> Stack { get; } = new Stack<object>();
+    /// <param name="data">The byte data containing all instructions or data to process.</param>
+    /// <param name="maxOperandStackDepth">
+    /// Maximum number of values the operand stack may hold simultaneously.
+    /// Defaults to <see cref="BoundedStack{T}.DefaultMaxDepth"/> when this constructor is not used.
+    /// </param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="maxOperandStackDepth"/> is less than one.</exception>
+    public DefaultContext(ReadOnlyMemory<byte> data, int maxOperandStackDepth) : base(data)
+    {
+        Stack = new BoundedStack<object>(maxOperandStackDepth);
+    }
+
+    /// <summary>
+    /// A bounded operand stack for temporary values during instruction execution.
+    /// Push throws <see cref="InvalidOperationException"/> when the depth limit is reached;
+    /// Pop and Peek throw when the stack is empty.
+    /// </summary>
+    public BoundedStack<object> Stack { get; } = new BoundedStack<object>();
 }
