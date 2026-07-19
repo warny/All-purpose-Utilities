@@ -388,7 +388,7 @@
 <pre><code class="lang-antlr">start : child[1 + 2] ;
 child[int value] : A ;
 </code></pre>
-<p>With <code>UtilsParserEnableGeneratedRuleArgumentBinding=true</code>, this reports <code>APU0107</code> because <code>1 + 2</code> is not a supported simple literal. With the option absent or <code>false</code>, the argument remains metadata only and no generated-binding diagnostic is produced.</p>
+<p>With <code>UtilsParserEnableGeneratedRuleArgumentBinding=true</code>, this reports <code>APU0107</code> because <code>1 + 2</code> is not a supported simple literal. The same diagnostic contract also applies when the target parser rule is reached through a uniquely resolved direct or transitive import among <code>.g4</code> files supplied as same-project <code>AdditionalFiles</code>. Resolution is intentionally conservative: it uses declared grammar names, lets local rules shadow imported rules, skips aliased imports because call sites do not represent alias qualification, and ignores missing imports/rules or ambiguous imported declarations without emitting <code>APU0107</code>. With the option absent or <code>false</code>, the argument remains metadata only and no generated-binding diagnostic is produced.</p>
 
 </article>
 
