@@ -10,12 +10,19 @@ namespace Utils.VirtualMachine;
 public sealed class VirtualPage
 {
     private readonly byte[] _data;
+    private bool _isFreed;
 
     /// <summary>Gets the unique identifier assigned to this page by its owning <see cref="VirtualMemory{TAddress}"/>.</summary>
     public int PageId { get; }
 
     /// <summary>Gets the size of this page in bytes.</summary>
     public int Size => _data.Length;
+
+    /// <summary>
+    /// Gets a value indicating whether this page has been freed via
+    /// <see cref="VirtualMemory{TAddress}.FreePage"/>. Freed pages reject <see cref="AsReadOnlyMemory"/>.
+    /// </summary>
+    public bool IsFreed => _isFreed;
 
     /// <summary>
     /// Returns the page content as a <see cref="ReadOnlyMemory{T}"/>, suitable for use as
@@ -35,7 +42,13 @@ public sealed class VirtualPage
     /// pages with untrusted or concurrent code without additional isolation.
     /// </para>
     /// </remarks>
-    public ReadOnlyMemory<byte> AsReadOnlyMemory() => _data;
+    /// <exception cref="ObjectDisposedException">Thrown when the page has been freed.</exception>
+    public ReadOnlyMemory<byte> AsReadOnlyMemory()
+    {
+        if (_isFreed)
+            throw new ObjectDisposedException($"VirtualPage #{PageId}", "The page has been freed and its memory is no longer accessible.");
+        return _data;
+    }
 
     /// <summary>Gets the raw backing array. Internal access only; never expose publicly.</summary>
     internal byte[] Data => _data;
@@ -45,4 +58,6 @@ public sealed class VirtualPage
         PageId = pageId;
         _data = new byte[pageSize];
     }
+
+    internal void MarkFreed() => _isFreed = true;
 }

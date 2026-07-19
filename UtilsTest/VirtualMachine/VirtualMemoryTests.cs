@@ -590,4 +590,100 @@ public class VirtualMemoryTests
         mem.FreeProcess(proc);
         Assert.ThrowsException<ObjectDisposedException>(() => mem.UnmapPage(proc, 0));
     }
+
+    // ── Item 33: FreePage — page lifecycle ────────────────────────────────────
+
+    [TestMethod]
+    public void FreePage_SetsIsFreed()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        var page = mem.AllocatePage();
+        Assert.IsFalse(page.IsFreed);
+        mem.FreePage(page);
+        Assert.IsTrue(page.IsFreed);
+    }
+
+    [TestMethod]
+    public void FreePage_RemovesPageFromPages()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        var page = mem.AllocatePage();
+        mem.FreePage(page);
+        Assert.AreEqual(0, mem.Pages.Count);
+    }
+
+    [TestMethod]
+    public void FreePage_RemovesMasterMapping()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        var page = mem.AllocatePage();
+        mem.FreePage(page);
+        Assert.AreEqual(0, mem.MasterProcess.Mappings.Count());
+    }
+
+    [TestMethod]
+    public void FreePage_AlreadyFreed_ThrowsObjectDisposedException()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        var page = mem.AllocatePage();
+        mem.FreePage(page);
+        Assert.ThrowsException<ObjectDisposedException>(() => mem.FreePage(page));
+    }
+
+    [TestMethod]
+    public void FreePage_NullPage_ThrowsArgumentNullException()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        Assert.ThrowsException<ArgumentNullException>(() => mem.FreePage(null!));
+    }
+
+    [TestMethod]
+    public void FreePage_ForeignPage_ThrowsArgumentException()
+    {
+        var mem1 = new VirtualMemory<int>(pageSize: 16);
+        var mem2 = new VirtualMemory<int>(pageSize: 16);
+        var page = mem2.AllocatePage();
+        Assert.ThrowsException<ArgumentException>(() => mem1.FreePage(page));
+    }
+
+    [TestMethod]
+    public void FreePage_ActiveNonMasterMapping_WithoutForce_ThrowsInvalidOperationException()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        var page = mem.AllocatePage();
+        var proc = mem.CreateProcess();
+        mem.MapPage(proc, page, 0, PageAccess.ReadOnly);
+        Assert.ThrowsException<InvalidOperationException>(() => mem.FreePage(page));
+    }
+
+    [TestMethod]
+    public void FreePage_ActiveNonMasterMapping_WithForce_RemovesAllMappings()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        var page = mem.AllocatePage();
+        var proc = mem.CreateProcess();
+        mem.MapPage(proc, page, 0, PageAccess.ReadOnly);
+        mem.FreePage(page, force: true);
+        Assert.IsTrue(page.IsFreed);
+        Assert.IsFalse(proc.IsAccessible(0));
+    }
+
+    [TestMethod]
+    public void AsReadOnlyMemory_FreedPage_ThrowsObjectDisposedException()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        var page = mem.AllocatePage();
+        mem.FreePage(page);
+        Assert.ThrowsException<ObjectDisposedException>(() => page.AsReadOnlyMemory());
+    }
+
+    [TestMethod]
+    public void FreePage_NoNonMasterMappings_SucceedsWithoutForce()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        var page = mem.AllocatePage();
+        var _ = mem.CreateProcess(); // process exists but no mapping to the page
+        mem.FreePage(page); // must not throw
+        Assert.IsTrue(page.IsFreed);
+    }
 }

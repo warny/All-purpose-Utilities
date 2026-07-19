@@ -170,6 +170,56 @@ public class VirtualMemory<TAddress> where TAddress : IBinaryInteger<TAddress>
     }
 
     /// <summary>
+    /// Frees a physical page, removing all mappings to it from every process in this instance
+    /// and marking it as freed. Freed pages are removed from <see cref="Pages"/> and their
+    /// backing memory is no longer accessible via <see cref="VirtualPage.AsReadOnlyMemory"/>.
+    /// </summary>
+    /// <param name="page">The page to free. Must have been allocated by this instance.</param>
+    /// <param name="force">
+    /// When <see langword="true"/>, removes all mappings in non-master processes before freeing.
+    /// When <see langword="false"/> (default), throws <see cref="InvalidOperationException"/> if
+    /// the page is still mapped into any non-master process.
+    /// </param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="page"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="page"/> was not allocated by this instance.</exception>
+    /// <exception cref="ObjectDisposedException">Thrown when <paramref name="page"/> has already been freed.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when <paramref name="force"/> is <see langword="false"/> and the page is still
+    /// mapped into one or more non-master processes. Unmap the page first or use <c>force: true</c>.
+    /// </exception>
+    public void FreePage(VirtualPage page, bool force = false)
+    {
+        ArgumentNullException.ThrowIfNull(page);
+        if (page.IsFreed)
+            throw new ObjectDisposedException(
+                $"VirtualPage #{page.PageId}", "The page has already been freed.");
+        if (!_pages.Contains(page))
+            throw new ArgumentException(
+                "The page does not belong to this VirtualMemory instance.", nameof(page));
+
+        // Enumerate non-master processes that still map this page.
+        var nonMasterWithPage = _processes
+            .Where(p => !p.IsMaster && p.ContainsPage(page))
+            .ToList();
+
+        if (!force && nonMasterWithPage.Count > 0)
+            throw new InvalidOperationException(
+                $"Cannot free page #{page.PageId}: it is still mapped into " +
+                $"{nonMasterWithPage.Count} non-master process(es). " +
+                "Unmap the page from all processes first, or call FreePage with force: true.");
+
+        // If forced, remove from non-master processes.
+        foreach (var proc in nonMasterWithPage)
+            proc.RemoveMappingsForPage(page);
+
+        // Always remove from the master process.
+        MasterProcess.RemoveMappingsForPage(page);
+
+        _pages.Remove(page);
+        page.MarkFreed();
+    }
+
+    /// <summary>
     /// Removes all page mappings from <paramref name="process"/> and unregisters it from this
     /// <see cref="VirtualMemory{TAddress}"/> instance. Call this when a process has terminated
     /// to reclaim its page table entries and avoid unbounded growth of the process list.
