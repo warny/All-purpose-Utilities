@@ -70,7 +70,7 @@ For unambiguous one-byte opcodes, the inspector is notified before the instructi
 
 **Priority: P1 debugger contract.**
 
-### 7. Signed negative virtual addresses are decomposed incorrectly
+### ✅ 7. Signed negative virtual addresses are decomposed incorrectly
 
 `VirtualProcess.Decompose` uses integer division and remainder directly. For signed address types, `-1 / pageSize` truncates toward zero and `-1 % pageSize` remains negative. `IsAccessible(-1)` can therefore report page zero as accessible, while `Read`/`Write` later use a negative span offset and throw a framework range exception instead of `MemoryAccessException`.
 
