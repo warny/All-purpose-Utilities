@@ -1,6 +1,6 @@
 # Utils.VirtualMachine — Quality and correctness audit (2026-07-11)
 
-> **Partially completed 2026-07-18/19.** Items 1, 2, 3, 11, 12 addressed in PR fix/utils-vm-quality-audit-p0-p1. Item 13 addressed in PR fix/utils-vm-quality-audit-round2. Items 4–10, 14–16 remain open.
+> **Partially completed 2026-07-18/19.** Items 1, 2, 3, 11, 12 addressed in PR fix/utils-vm-quality-audit-p0-p1. Items 8, 13 addressed in PR fix/utils-vm-quality-audit-round2. Items 4–7, 9–10, 14–16 remain open.
 
 Static review of the processor, scheduler, virtual-memory model, stacks, and structured control-flow helpers. The review focuses on deterministic bytecode dispatch, malformed-program handling, memory isolation, lifecycle state, resource bounds, and duplicated intent. No production code is changed by this commit.
 
@@ -80,7 +80,7 @@ For unambiguous one-byte opcodes, the inspector is notified before the instructi
 
 **Priority: P1 memory correctness.**
 
-### 8. `MapPage` and `UnmapPage` do not verify process ownership
+### ✅ 8. `MapPage` and `UnmapPage` do not verify process ownership
 
 `VirtualMemory.MapPage` verifies that the physical page belongs to the memory instance, but does not verify that the target process belongs to it. `UnmapPage` performs no ownership check either. A process created by another `VirtualMemory<TAddress>` instance can therefore receive mappings to this instance's pages.
 

@@ -171,6 +171,102 @@ public class VirtualMemoryTests
         Assert.ThrowsException<MemoryAccessException>(() => mem.MasterProcess.Read(0, buf));
     }
 
+    // ── Item 7: negative addresses rejected ───────────────────────────────────────────────────
+
+    [TestMethod]
+    public void Read_NegativeAddress_ThrowsMemoryAccessException()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        mem.AllocatePage();
+        var buf = new byte[1];
+        Assert.ThrowsException<MemoryAccessException>(() => mem.MasterProcess.Read(-1, buf));
+    }
+
+    [TestMethod]
+    public void Write_NegativeAddress_ThrowsMemoryAccessException()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        mem.AllocatePage();
+        Assert.ThrowsException<MemoryAccessException>(() => mem.MasterProcess.Write(-1, new byte[] { 0 }));
+    }
+
+    [TestMethod]
+    public void IsAccessible_NegativeAddress_ThrowsMemoryAccessException()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        mem.AllocatePage();
+        Assert.ThrowsException<MemoryAccessException>(() => mem.MasterProcess.IsAccessible(-1));
+    }
+
+    [TestMethod]
+    public void GetAccess_NegativeAddress_ThrowsMemoryAccessException()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        mem.AllocatePage();
+        Assert.ThrowsException<MemoryAccessException>(() => mem.MasterProcess.GetAccess(-1));
+    }
+
+    // ── Item 22: VirtualAddressText is lossless for wide address types ────────────────────────
+
+    [TestMethod]
+    public void MemoryAccessException_VirtualAddressText_ContainsHexAddress()
+    {
+        var mem = new VirtualMemory<uint>(pageSize: 16);
+        var buf = new byte[1];
+        var ex = Assert.ThrowsException<MemoryAccessException>(() => mem.MasterProcess.Read(0xDEADBEEFu, buf));
+        StringAssert.Contains(ex.VirtualAddressText, "DEADBEEF");
+    }
+
+    // ── Items 9 + 23: cross-page read/write atomicity ─────────────────────────────────────────
+
+    [TestMethod]
+    public void Write_CrossPage_SecondPageReadOnly_NoByteWritten()
+    {
+        // pageSize=4: addr 0-3 = page 0 (ReadWrite), addr 4-7 = page 1 (ReadOnly).
+        // Writing 5 bytes starting at addr 2 touches both pages. The write must fail
+        // without modifying the first page.
+        var mem = new VirtualMemory<int>(pageSize: 4);
+        var page0 = mem.AllocatePage();
+        var page1 = mem.AllocatePage();
+        var proc = mem.CreateProcess();
+        mem.MapPage(proc, page0, 0, PageAccess.ReadWrite);
+        mem.MapPage(proc, page1, 1, PageAccess.ReadOnly);
+
+        // Write sentinel to page0 so we can detect mutation.
+        mem.MasterProcess.Write(0, new byte[] { 0xAA, 0xAA, 0xAA, 0xAA });
+
+        Assert.ThrowsException<MemoryAccessException>(() =>
+            proc.Write(2, new byte[] { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF }));
+
+        // Page 0 must be unchanged.
+        var buf = new byte[4];
+        mem.MasterProcess.Read(0, buf);
+        CollectionAssert.AreEqual(new byte[] { 0xAA, 0xAA, 0xAA, 0xAA }, buf,
+            "Write atomicity violated: first page was partially modified before the fault.");
+    }
+
+    [TestMethod]
+    public void Read_CrossPage_SecondPageUnmapped_DestinationUnchanged()
+    {
+        // pageSize=4: addr 0-3 = page 0 mapped, addr 4-7 = unmapped.
+        // Reading 5 bytes starting at addr 2 spans the boundary. The read must fail
+        // without modifying the destination buffer.
+        var mem = new VirtualMemory<int>(pageSize: 4);
+        var page0 = mem.AllocatePage(); // mapped into process at virtual index 0
+        var proc = mem.CreateProcess();
+        mem.MapPage(proc, page0, 0, PageAccess.ReadOnly);
+        mem.MasterProcess.Write(0, new byte[] { 0x11, 0x22, 0x33, 0x44 });
+
+        byte[] destination = new byte[] { 0xDE, 0xAD, 0xBE, 0xEF, 0xFF };
+
+        Assert.ThrowsException<MemoryAccessException>(() =>
+            proc.Read(2, destination.AsSpan()));
+
+        // Destination buffer must be unchanged.
+        CollectionAssert.AreEqual(new byte[] { 0xDE, 0xAD, 0xBE, 0xEF, 0xFF }, destination,
+            "Read atomicity violated: destination buffer was modified before the fault.");
+    }
+
     // ───────────────────────────────────── Write ─────────────────────────────────────────────
 
     [TestMethod]
