@@ -157,7 +157,7 @@ The emitter contains a narrow automatic binding path for positional simple-liter
 </PropertyGroup>
 ```
 
-The NuGet build assets declare `CompilerVisibleProperty`, so projects that reference the generator package do not need to add that item manually. The option is project-wide and participates in the incremental generator inputs: changing only this property regenerates `.g4` outputs. With the option enabled, the generated parser can bind calls such as:
+The NuGet build assets declare `CompilerVisibleProperty`, so projects that reference the generator package do not need to add that item manually. The option is project-wide and participates in generator validation and emission; changing only this property reuses unchanged per-file parsing and then regenerates the affected project outputs. With the option enabled, the generated parser can bind calls such as:
 
 ```antlr
 grammar P;
@@ -565,7 +565,7 @@ These forms are optional `IParserEmbeddedCodeTransformer` rewrites for generated
 
 When `UtilsParserEnableGeneratedRuleArgumentBinding=true`, the generator performs a bounded static validation pass for generated-C# positional rule-call argument binding. Static binding diagnostics validate local parser-rule targets and parser-rule targets reached through direct or transitive `import` chains only when every grammar in the chain is present as a `.g4` `AdditionalFiles` item in the same project and every target is unique. The project index is keyed by the declared grammar name (`grammar`, `parser grammar`, or `lexer grammar`), not by file name. Local parser rules take priority over imported rules. Missing imports, duplicate declared grammar names, multiple imports that provide different declarations for the same parser-rule name, direct/transitive collisions, lexer-only rules, unresolved targets, explicit helper-based mappings, manually installed runtime policies, and all projects with the option omitted or set to `false` remain metadata-only at generation time. Aliased imports are preserved in metadata but are not resolved for generated-binding diagnostics because call sites do not currently model an alias-qualified rule reference. This pass does not merge grammar ASTs, does not make imports executable in a new way, does not change `Parse(...)`, and does not claim complete ANTLR4 delegate-grammar compatibility.
 
-The validation mirrors the generated-C# contract: positional arguments only, supported simple literals only, exact arity, allowlisted declared parameter types, no default-value consumption, no named or mixed arguments, no arbitrary C# expression evaluation, no generated rule-signature changes, and no change to `Parse(...)`.
+The validation mirrors the generated-C# contract: positional arguments only, supported simple literals only, exact arity, allowlisted declared parameter types, no default-value consumption, no named or mixed arguments, no arbitrary C# expression evaluation, no generated rule-signature changes, and no change to `Parse(...)`. Incrementally, each `.g4` file is parsed from its path, text, and own `AdditionalFiles` `Namespace`/`ClassName` metadata; unchanged parsed files can be reused. The generator still aggregates the parsed project with `Collect()` so import resolution, validation, and emission may rerun project-wide after a grammar or option change; this is not a promise of import-subgraph-only recalculation.
 
 ```antlr
 grammar P;
