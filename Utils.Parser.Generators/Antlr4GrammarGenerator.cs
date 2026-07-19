@@ -232,29 +232,36 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
             return;
         }
 
-        var grammar = file.Grammar;
-        if (grammar.Options.TryGetValue("superClass", out var superClass) && !string.IsNullOrWhiteSpace(superClass))
+        try
         {
-            context.ReportDiagnostic(Diagnostic.Create(s_unsupportedSuperClassDescriptor, Location.None, grammar.Name, superClass));
-        }
-        ReportEmbeddedParserAttributeDiagnostics(context, file.File, file.Text, grammar);
-        ReportUnsupportedEmbeddedCodeDiagnostics(context, file.File, file.Text, grammar);
-        if (generatorOptions.EnableGeneratedRuleArgumentBinding
-            && ReportGeneratedRuleArgumentBindingDiagnostics(context, file.File, file.Text, grammar, resolver))
-        {
+            var grammar = file.Grammar;
+            if (grammar.Options.TryGetValue("superClass", out var superClass) && !string.IsNullOrWhiteSpace(superClass))
+            {
+                context.ReportDiagnostic(Diagnostic.Create(s_unsupportedSuperClassDescriptor, Location.None, grammar.Name, superClass));
+            }
+            ReportEmbeddedParserAttributeDiagnostics(context, file.File, file.Text, grammar);
+            ReportUnsupportedEmbeddedCodeDiagnostics(context, file.File, file.Text, grammar);
+            if (generatorOptions.EnableGeneratedRuleArgumentBinding
+                && ReportGeneratedRuleArgumentBindingDiagnostics(context, file.File, file.Text, grammar, resolver))
+            {
+                ReportParserDiagnostics(context, file.ParseDiagnostics, file.FileName);
+                return;
+            }
+
+            var generated = GrammarEmitter.Emit(
+                grammar,
+                file.NamespaceName,
+                file.ClassName,
+                file.FileName,
+                enableGeneratedRuleArgumentBinding: generatorOptions.EnableGeneratedRuleArgumentBinding);
             ReportParserDiagnostics(context, file.ParseDiagnostics, file.FileName);
-            return;
+
+            context.AddSource($"{file.ClassName}.Grammar.g.cs", SourceText.From(generated, Encoding.UTF8));
         }
-
-        var generated = GrammarEmitter.Emit(
-            grammar,
-            file.NamespaceName,
-            file.ClassName,
-            file.FileName,
-            enableGeneratedRuleArgumentBinding: generatorOptions.EnableGeneratedRuleArgumentBinding);
-        ReportParserDiagnostics(context, file.ParseDiagnostics, file.FileName);
-
-        context.AddSource($"{file.ClassName}.Grammar.g.cs", SourceText.From(generated, Encoding.UTF8));
+        catch (Exception ex)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(s_errorDescriptor, Location.None, file.FileName, ex.Message));
+        }
     }
 
     /// <summary>
