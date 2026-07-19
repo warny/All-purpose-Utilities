@@ -9,7 +9,7 @@ namespace Utils.Parser.Antlr4.Common;
 /// <summary>
 /// Parses the narrow simple-literal subset supported by parser rule-call binding.
 /// </summary>
-public static class ParserSimpleLiteralParser
+internal static class ParserSimpleLiteralParser
 {
     private static readonly Regex IntegerPattern = new Regex(@"^[+-]?\d+$", RegexOptions.Compiled);
     private static readonly Regex FloatingPointPattern = new Regex(@"^[+-]?(?:\d+\.\d*|\d*\.\d+|\d+[eE][+-]?\d+|(?:\d+\.\d*|\d*\.\d+)[eE][+-]?\d+)$", RegexOptions.Compiled);

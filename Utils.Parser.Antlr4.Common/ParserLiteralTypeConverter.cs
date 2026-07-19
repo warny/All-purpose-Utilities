@@ -5,7 +5,7 @@ using System.Globalization;
 namespace Utils.Parser.Antlr4.Common;
 
 /// <summary>Converts parsed simple literals to the built-in allowlist supported by rule-call binding.</summary>
-public static class ParserLiteralTypeConverter
+internal static class ParserLiteralTypeConverter
 {
     private static readonly IReadOnlyDictionary<string, ParserLiteralTargetType> TargetTypes = new Dictionary<string, ParserLiteralTargetType>(StringComparer.Ordinal)
     {
@@ -83,7 +83,7 @@ public static class ParserLiteralTypeConverter
 }
 
 /// <summary>Result of a simple-literal type conversion.</summary>
-public readonly struct ParserLiteralConversionResult
+internal readonly struct ParserLiteralConversionResult
 {
     /// <summary>Initializes a conversion result.</summary>
     /// <param name="success">Whether conversion succeeded.</param>
@@ -99,7 +99,7 @@ public readonly struct ParserLiteralConversionResult
 }
 
 /// <summary>Describes one supported literal target type.</summary>
-public readonly struct ParserLiteralTargetType
+internal readonly struct ParserLiteralTargetType
 {
     /// <summary>Initializes a literal target type descriptor.</summary>
     /// <param name="runtimeType">Runtime target type.</param>

@@ -8,4 +8,14 @@
         <Description>Shared ANTLR4 prequel DTOs used by runtime and generator mapping paths.</Description>
     </PropertyGroup>
 
+
+    <ItemGroup>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+            <_Parameter1>Utils.Parser</_Parameter1>
+        </AssemblyAttribute>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+            <_Parameter1>Utils.Parser.Generators</_Parameter1>
+        </AssemblyAttribute>
+    </ItemGroup>
+
 </Project>

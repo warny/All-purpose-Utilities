@@ -40,7 +40,7 @@ internal static class GeneratedRuleArgumentBindingValidator
         var arguments = callSite.RawArguments is null ? Array.Empty<string>() : ParserRawArgumentSplitter.SplitTopLevel(callSite.RawArguments);
         for (int i = 0; i < arguments.Count; i++)
         {
-            if (ContainsTopLevelNamedSeparator(arguments[i])) { Add(issues, callSite, "Named rule-call arguments are not supported.", i); return; }
+            if (ParserRawArgumentSplitter.ContainsTopLevelNamedSeparator(arguments[i])) { Add(issues, callSite, "Named rule-call arguments are not supported.", i); return; }
         }
         if (arguments.Count != parameters.Count) { Add(issues, callSite, $"Expected exactly {parameters.Count} positional argument(s), but received {arguments.Count}."); return; }
         for (int i = 0; i < arguments.Count; i++)
@@ -132,21 +132,6 @@ internal static class GeneratedRuleArgumentBindingValidator
         int start = end;
         while (start >= 0 && (char.IsLetterOrDigit(text[start]) || text[start] == '_')) start--;
         return text.Substring(start + 1, end - start);
-    }
-
-    /// <summary>Determines whether an argument slice uses top-level named-argument syntax.</summary>
-    private static bool ContainsTopLevelNamedSeparator(string text)
-    {
-        int depth = 0; char? quote = null;
-        foreach (char c in text)
-        {
-            if (quote is not null) { if (c == quote) quote = null; continue; }
-            if (c == '"' || c == '\'') { quote = c; continue; }
-            if (c == '(' || c == '[' || c == '{') depth++;
-            else if (c == ')' || c == ']' || c == '}') { if (depth > 0) depth--; }
-            else if (depth == 0 && (c == ':' || c == '=')) return true;
-        }
-        return false;
     }
 
     /// <summary>Adds one issue with shared metadata.</summary>

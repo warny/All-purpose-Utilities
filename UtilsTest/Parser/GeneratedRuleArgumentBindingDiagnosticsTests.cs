@@ -84,6 +84,26 @@ public sealed class GeneratedRuleArgumentBindingDiagnosticsTests
         Assert.AreEqual(0, result.GeneratedTrees.Length);
     }
 
+
+    /// <summary>Verifies escaped separators inside literals are not misclassified as named arguments.</summary>
+    [DataTestMethod]
+    [DataRow("child[\"a\\\":b\"]", "string value")]
+    [DataRow("child[\"a\\\"=b\"]", "string value")]
+    [DataRow("child[':']", "char value")]
+    [DataRow("child['=']", "char value")]
+    public void Enabled_SeparatorsInsideLiterals_AreValid(string call, string parameters)
+    {
+        var result = RunGenerator($"""
+            grammar P;
+            start : {call} ;
+            child[{parameters}] : A ;
+            A : 'a' ;
+            """, "true");
+
+        AssertNoBindingDiagnostics(result);
+        Assert.AreEqual(1, result.GeneratedTrees.Length);
+    }
+
     /// <summary>Verifies zero-parameter calls without and with empty clauses are valid.</summary>
     [DataTestMethod]
     [DataRow("child")]

@@ -5,7 +5,7 @@ using System.Text;
 namespace Utils.Parser.Antlr4.Common;
 
 /// <summary>Provides syntactic top-level splitting of raw rule-call argument text.</summary>
-public static class ParserRawArgumentSplitter
+internal static class ParserRawArgumentSplitter
 {
     /// <summary>Splits raw argument text on top-level commas while preserving nested and quoted commas.</summary>
     public static IReadOnlyList<string> SplitTopLevel(string rawArguments)
@@ -37,4 +37,65 @@ public static class ParserRawArgumentSplitter
         result.Add(current.ToString().Trim());
         return result;
     }
+
+    /// <summary>
+    /// Determines whether a raw argument slice contains a top-level named-argument separator.
+    /// Escaped characters inside quoted strings are consumed together so escaped quotes cannot close the string.
+    /// </summary>
+    /// <param name="text">One raw argument slice to inspect.</param>
+    /// <returns><see langword="true"/> when a top-level <c>:</c> or <c>=</c> separator is present outside quotes and nested groups.</returns>
+    internal static bool ContainsTopLevelNamedSeparator(string text)
+    {
+        if (text is null)
+        {
+            throw new ArgumentNullException(nameof(text));
+        }
+
+        int depth = 0;
+        char? quote = null;
+        for (int index = 0; index < text.Length; index++)
+        {
+            char current = text[index];
+            if (quote is not null)
+            {
+                if (current == '\\' && index + 1 < text.Length)
+                {
+                    index++;
+                    continue;
+                }
+
+                if (current == quote)
+                {
+                    quote = null;
+                }
+
+                continue;
+            }
+
+            if (current == '"' || current == '\'')
+            {
+                quote = current;
+                continue;
+            }
+
+            if (current == '(' || current == '[' || current == '{')
+            {
+                depth++;
+            }
+            else if (current == ')' || current == ']' || current == '}')
+            {
+                if (depth > 0)
+                {
+                    depth--;
+                }
+            }
+            else if (depth == 0 && (current == ':' || current == '='))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
 }
