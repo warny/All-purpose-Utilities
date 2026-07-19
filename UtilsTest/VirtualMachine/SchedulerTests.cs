@@ -676,4 +676,71 @@ public class SchedulerTests
         Assert.AreEqual(ProcessState.Faulted, sp.State);
         Assert.IsInstanceOfType<InvalidOperationException>(sp.FaultException);
     }
+
+    // ── Instruction budget (item 21) ─────────────────────────────────────────
+
+    [TestMethod]
+    public void InstructionsExecuted_InitiallyZero()
+    {
+        var scheduler = new Scheduler<DefaultContext>();
+        Assert.AreEqual(0L, scheduler.InstructionsExecuted);
+    }
+
+    [TestMethod]
+    public void InstructionsExecuted_IncreasesAfterStep()
+    {
+        var scheduler = new Scheduler<DefaultContext>(quantumSteps: 10);
+        // 3 STEPs then HALT = 4 instructions total.
+        scheduler.AddProcess(Ctx(0x01, 0x01, 0x01, 0x00), Proc());
+        scheduler.Step();
+        Assert.AreEqual(4L, scheduler.InstructionsExecuted);
+    }
+
+    [TestMethod]
+    public void Run_WithBudget_ThrowsInstructionBudgetExceededException()
+    {
+        var scheduler = new Scheduler<DefaultContext>(quantumSteps: 10);
+        var processor = new CountingProcessor();
+        // Register a JUMP instruction that loops back to address 0.
+        processor.RegisterInstruction([0x02], "JUMP_0", ctx => ctx.InstructionPointer = 0);
+        scheduler.AddProcess(Ctx(0x01, 0x02), processor); // STEP, JUMP_0 — infinite loop
+        Assert.ThrowsException<InstructionBudgetExceededException>(
+            () => scheduler.Run(maxInstructions: 6));
+    }
+
+    [TestMethod]
+    public void Run_WithBudget_ExceptionCarriesBudgetValue()
+    {
+        var scheduler = new Scheduler<DefaultContext>(quantumSteps: 10);
+        var processor = new CountingProcessor();
+        processor.RegisterInstruction([0x02], "JUMP_0", ctx => ctx.InstructionPointer = 0);
+        scheduler.AddProcess(Ctx(0x01, 0x02), processor);
+        var ex = Assert.ThrowsException<InstructionBudgetExceededException>(
+            () => scheduler.Run(maxInstructions: 4));
+        Assert.AreEqual(4L, ex.Budget);
+    }
+
+    [TestMethod]
+    public void Run_WithBudgetZero_Unlimited_TerminatesNormally()
+    {
+        var scheduler = new Scheduler<DefaultContext>(quantumSteps: 10);
+        scheduler.AddProcess(Ctx(0x01, 0x01, 0x00), Proc()); // 2 STEPs then HALT
+        scheduler.Run(maxInstructions: 0); // unlimited — must not throw
+        Assert.AreEqual(3L, scheduler.InstructionsExecuted);
+    }
+
+    [TestMethod]
+    public void Run_Budget_IsRelativeToCallStart()
+    {
+        // A first Run() executes 3 instructions; a second Run() with maxInstructions: 3
+        // should allow another 3 instructions without throwing.
+        var scheduler = new Scheduler<DefaultContext>(quantumSteps: 10);
+        scheduler.AddProcess(Ctx(0x01, 0x01, 0x00), Proc()); // 3 instructions
+        scheduler.Run();
+        long afterFirst = scheduler.InstructionsExecuted;
+
+        scheduler.AddProcess(Ctx(0x01, 0x01, 0x00), Proc()); // another 3 instructions
+        scheduler.Run(maxInstructions: 3); // budget relative to this Run() start — must not throw
+        Assert.AreEqual(afterFirst + 3, scheduler.InstructionsExecuted);
+    }
 }

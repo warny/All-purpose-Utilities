@@ -24,6 +24,13 @@ public class Scheduler<T> where T : Context
     /// <summary>Gets the maximum number of instructions each process may execute per <see cref="Step"/> call.</summary>
     public int QuantumSteps { get; }
 
+    /// <summary>
+    /// Gets the total number of instructions dispatched by this scheduler since it was created.
+    /// Incremented by <see cref="Step"/> and never reset. Callers may snapshot this value before
+    /// a <see cref="Run"/> or <see cref="RunAsync"/> call to compute the per-run instruction count.
+    /// </summary>
+    public long InstructionsExecuted { get; private set; }
+
     /// <summary>Gets the list of all processes registered with this scheduler.</summary>
     public IReadOnlyList<ScheduledProcess<T>> Processes => _processes;
 
@@ -117,6 +124,8 @@ public class Scheduler<T> where T : Context
 
         if (ready.Count == 0) return false;
 
+        long stepInstructions = 0;
+
         foreach (var process in ready)
         {
             // Recheck: a higher-priority process in this pass may have suspended or removed this one.
@@ -143,6 +152,7 @@ public class Scheduler<T> where T : Context
                         process.SetState(ProcessState.Terminated);
                         break;
                     }
+                    stepInstructions++;
 
                     // Check after ExecuteStep: yield or suspension may have been requested
                     // from inside the instruction handler that just ran.
@@ -177,23 +187,38 @@ public class Scheduler<T> where T : Context
             }
         }
 
+        InstructionsExecuted += stepInstructions;
         return true;
     }
 
     /// <summary>
     /// Runs the scheduler until no process remains in the <see cref="ProcessState.Ready"/>
-    /// or <see cref="ProcessState.Running"/> state, or until cancellation is requested.
+    /// or <see cref="ProcessState.Running"/> state, until cancellation is requested, or until
+    /// <paramref name="maxInstructions"/> instructions have been dispatched in this call.
     /// Returns immediately when all processes are <see cref="ProcessState.Terminated"/> or
     /// <see cref="ProcessState.Suspended"/> (including when there are no processes at all).
     /// </summary>
     /// <param name="cancellationToken">Token that can interrupt the loop between steps.</param>
+    /// <param name="maxInstructions">
+    /// Maximum number of instructions to dispatch during this call. When greater than zero,
+    /// throws <see cref="InstructionBudgetExceededException"/> if the limit is reached before
+    /// all processes terminate. When zero (the default), execution is unlimited.
+    /// The count is relative to <see cref="InstructionsExecuted"/> at the start of this call.
+    /// </param>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is cancelled.</exception>
-    public void Run(CancellationToken cancellationToken = default)
+    /// <exception cref="InstructionBudgetExceededException">
+    /// Thrown when <paramref name="maxInstructions"/> is greater than zero and that many
+    /// instructions have been dispatched in this call without all processes terminating.
+    /// </exception>
+    public void Run(CancellationToken cancellationToken = default, long maxInstructions = 0)
     {
+        long startCount = InstructionsExecuted;
         // Faulted is treated as terminal: a faulted process will never be rescheduled.
         while (_processes.Any(p => p.State is ProcessState.Ready or ProcessState.Running))
         {
             cancellationToken.ThrowIfCancellationRequested();
+            if (maxInstructions > 0 && InstructionsExecuted - startCount >= maxInstructions)
+                throw new InstructionBudgetExceededException(maxInstructions);
             Step();
         }
     }
@@ -201,7 +226,8 @@ public class Scheduler<T> where T : Context
     /// <summary>
     /// Asynchronously runs the scheduler until no process remains in the
     /// <see cref="ProcessState.Ready"/> or <see cref="ProcessState.Running"/> state,
-    /// or until cancellation is requested. Yields to the caller between each
+    /// until cancellation is requested, or until <paramref name="maxInstructions"/> instructions
+    /// have been dispatched in this call. Yields to the caller between each
     /// <see cref="Step"/> call so the calling thread is not blocked for the duration.
     /// </summary>
     /// <remarks>
@@ -213,12 +239,25 @@ public class Scheduler<T> where T : Context
     /// token themselves.
     /// </remarks>
     /// <param name="cancellationToken">Token that can interrupt the loop between steps.</param>
+    /// <param name="maxInstructions">
+    /// Maximum number of instructions to dispatch during this call. When greater than zero,
+    /// throws <see cref="InstructionBudgetExceededException"/> if the limit is reached before
+    /// all processes terminate. When zero (the default), execution is unlimited.
+    /// The count is relative to <see cref="InstructionsExecuted"/> at the start of this call.
+    /// </param>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is cancelled.</exception>
-    public async Task RunAsync(CancellationToken cancellationToken = default)
+    /// <exception cref="InstructionBudgetExceededException">
+    /// Thrown when <paramref name="maxInstructions"/> is greater than zero and that many
+    /// instructions have been dispatched in this call without all processes terminating.
+    /// </exception>
+    public async Task RunAsync(CancellationToken cancellationToken = default, long maxInstructions = 0)
     {
+        long startCount = InstructionsExecuted;
         while (_processes.Any(p => p.State is ProcessState.Ready or ProcessState.Running))
         {
             cancellationToken.ThrowIfCancellationRequested();
+            if (maxInstructions > 0 && InstructionsExecuted - startCount >= maxInstructions)
+                throw new InstructionBudgetExceededException(maxInstructions);
             Step();
             await Task.Yield();
         }

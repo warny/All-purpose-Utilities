@@ -1180,6 +1180,55 @@ namespace UtilsTest.VirtualMachine
         }
     }
 
+    // ── Execute instruction budget (item 21) ──────────────────────────────────────────────────────
+
+    [TestClass]
+    public class ExecuteBudgetTests
+    {
+        [TestMethod]
+        public void Execute_WithBudget_ThrowsAfterMaxInstructions()
+        {
+            var machine = new InspectorMachine();
+            machine.RegisterInstruction([0xFF], "LOOP", ctx => ctx.InstructionPointer = 0);
+            byte[] program = [0x01, 0xFF]; // PUSH_A, LOOP — infinite loop
+            var ctx = new DefaultContext(program);
+            Assert.ThrowsException<InstructionBudgetExceededException>(
+                () => machine.Execute(ctx, maxInstructions: 5));
+        }
+
+        [TestMethod]
+        public void Execute_Budget_ExceptionCarriesBudgetValue()
+        {
+            var machine = new InspectorMachine();
+            machine.RegisterInstruction([0xFF], "LOOP", ctx => ctx.InstructionPointer = 0);
+            byte[] program = [0x01, 0xFF];
+            var ctx = new DefaultContext(program);
+            var ex = Assert.ThrowsException<InstructionBudgetExceededException>(
+                () => machine.Execute(ctx, maxInstructions: 3));
+            Assert.AreEqual(3L, ex.Budget);
+        }
+
+        [TestMethod]
+        public void Execute_WithBudgetZero_Unlimited_TerminatesNormally()
+        {
+            var machine = new InspectorMachine();
+            byte[] program = [0x01, 0x02, 0x10]; // PUSH_A, PUSH_B, ADD
+            var ctx = new DefaultContext(program);
+            machine.Execute(ctx, maxInstructions: 0);
+            Assert.AreEqual(8, (int)ctx.Stack.Peek());
+        }
+
+        [TestMethod]
+        public void Execute_WithExactBudget_TerminatesNormally()
+        {
+            var machine = new InspectorMachine();
+            byte[] program = [0x01, 0x02, 0x10]; // PUSH_A, PUSH_B, ADD
+            var ctx = new DefaultContext(program);
+            machine.Execute(ctx, maxInstructions: 3);
+            Assert.AreEqual(8, (int)ctx.Stack.Peek());
+        }
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     /// <summary>

@@ -356,10 +356,16 @@ public abstract class VirtualProcessor<T> where T : Context
     /// <summary>
     /// Executes all instructions until the end of the data stream, until
     /// <see cref="Context.InstructionPointer"/> becomes negative (program termination signal),
-    /// or until <paramref name="cancellationToken"/> is cancelled.
+    /// until <paramref name="cancellationToken"/> is cancelled, or until
+    /// <paramref name="maxInstructions"/> instructions have been dispatched.
     /// </summary>
     /// <param name="context">The execution context.</param>
     /// <param name="cancellationToken">Token that can stop execution between instructions.</param>
+    /// <param name="maxInstructions">
+    /// Maximum number of instructions to dispatch. When greater than zero, throws
+    /// <see cref="InstructionBudgetExceededException"/> if this limit is reached before the
+    /// program terminates naturally. When zero (the default), execution is unlimited.
+    /// </param>
     /// <remarks>
     /// Cancellation is cooperative and checked only between instructions — not within a single
     /// instruction handler. A handler that blocks indefinitely, performs a long-running computation,
@@ -369,14 +375,22 @@ public abstract class VirtualProcessor<T> where T : Context
     /// </remarks>
     /// <exception cref="VirtualProcessorException">Thrown on an unknown opcode sequence.</exception>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is cancelled.</exception>
-    public void Execute(T context, CancellationToken cancellationToken = default)
+    /// <exception cref="InstructionBudgetExceededException">
+    /// Thrown when <paramref name="maxInstructions"/> is greater than zero and that many
+    /// instructions have been dispatched without the program terminating.
+    /// </exception>
+    public void Execute(T context, CancellationToken cancellationToken = default, long maxInstructions = 0)
     {
         ArgumentNullException.ThrowIfNull(context);
+        long dispatched = 0;
         while (context.InstructionPointer >= 0 && context.InstructionPointer < context.Data.Length)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            if (maxInstructions > 0 && dispatched >= maxInstructions)
+                throw new InstructionBudgetExceededException(maxInstructions);
             OnStep(context);
             TryDispatch(context);
+            dispatched++;
         }
     }
 
