@@ -18,6 +18,12 @@ namespace Utils.VirtualMachine;
 /// <see cref="PageAccess.ReadWrite"/> mapping for every page created by <see cref="AllocatePage"/>.
 /// Additional processes created with <see cref="CreateProcess"/> start with an empty page table;
 /// use <see cref="MapPage"/> to grant them access to specific pages.
+/// <para>
+/// <b>Thread safety:</b> this class is not thread-safe. All allocations, mappings, and process
+/// operations must occur on the same thread. When the same <see cref="VirtualPage"/> is mapped
+/// into multiple processes, concurrent reads or writes from different threads are not synchronized
+/// and produce undefined behaviour.
+/// </para>
 /// </remarks>
 public class VirtualMemory<TAddress> where TAddress : IBinaryInteger<TAddress>
 {

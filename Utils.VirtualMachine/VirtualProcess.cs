@@ -25,6 +25,12 @@ namespace Utils.VirtualMachine;
 /// <para>
 /// Negative addresses are always rejected for signed <typeparamref name="TAddress"/> types.
 /// </para>
+/// <para>
+/// <b>Thread safety:</b> this class is not thread-safe. All reads, writes, and mapping
+/// operations must occur on the same thread. Sharing a page between multiple processes does not
+/// provide any synchronization; concurrent access from multiple <see cref="VirtualProcess{TAddress}"/>
+/// or <see cref="VirtualMemory{TAddress}"/> instances produces undefined behaviour.
+/// </para>
 /// </remarks>
 public class VirtualProcess<TAddress> where TAddress : IBinaryInteger<TAddress>
 {
