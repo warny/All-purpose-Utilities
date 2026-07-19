@@ -147,6 +147,7 @@ public class ControlFlowStack
     /// <exception cref="InvalidOperationException">Thrown when no enclosing loop is in scope.</exception>
     public void Break(Context context)
     {
+        ArgumentNullException.ThrowIfNull(context);
         // Validate first — locate the nearest loop without mutating the stack.
         LoopBlock? target = FindEnclosing<LoopBlock>();
         if (target is null)
@@ -176,6 +177,7 @@ public class ControlFlowStack
     /// <exception cref="InvalidOperationException">Thrown when no enclosing loop is in scope.</exception>
     public void Continue(Context context)
     {
+        ArgumentNullException.ThrowIfNull(context);
         // Validate first — locate the nearest loop without mutating the stack.
         LoopBlock? target = FindEnclosing<LoopBlock>();
         if (target is null)
@@ -216,6 +218,7 @@ public class ControlFlowStack
     /// </exception>
     public bool EndFinally(Context context)
     {
+        ArgumentNullException.ThrowIfNull(context);
         if (_blocks.TryPeek(out var top) && top is ExceptionBlock ex)
         {
             if (ex.PendingCatchAddress.HasValue)
@@ -272,6 +275,7 @@ public class ControlFlowStack
     /// </returns>
     public bool Throw(Context context, object? value)
     {
+        ArgumentNullException.ThrowIfNull(context);
         while (_blocks.TryPop(out var block))
         {
             if (block is ExceptionBlock ex)

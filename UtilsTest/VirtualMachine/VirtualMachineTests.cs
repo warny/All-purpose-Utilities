@@ -1153,6 +1153,17 @@ namespace UtilsTest.VirtualMachine
             ctx.Stack.Push(1);
             Assert.ThrowsException<InvalidOperationException>(() => ctx.Stack.Push(2));
         }
+
+        // ── Context.Data defensive copy (item 43) ─────────────────────────────────────────────
+
+        [TestMethod]
+        public void Context_Data_IsDefensiveCopy_MutatingOriginalArrayDoesNotAffectData()
+        {
+            byte[] original = [0x01, 0x02, 0x03];
+            var ctx = new DefaultContext(original);
+            original[0] = 0xFF;
+            Assert.AreEqual(0x01, ctx.Data.Span[0]);
+        }
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

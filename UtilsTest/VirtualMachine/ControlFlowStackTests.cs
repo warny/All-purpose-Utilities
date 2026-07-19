@@ -1011,6 +1011,40 @@ public class ControlFlowStackTests
         Assert.AreEqual(10, ctx.InstructionPointer);
     }
 
+    // ── Null context guards (item 37) ────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void Break_NullContext_ThrowsArgumentNullException()
+    {
+        var cfs = new ControlFlowStack();
+        cfs.PushLoop(0, 10);
+        Assert.ThrowsException<ArgumentNullException>(() => cfs.Break(null!));
+    }
+
+    [TestMethod]
+    public void Continue_NullContext_ThrowsArgumentNullException()
+    {
+        var cfs = new ControlFlowStack();
+        cfs.PushLoop(0, 10);
+        Assert.ThrowsException<ArgumentNullException>(() => cfs.Continue(null!));
+    }
+
+    [TestMethod]
+    public void EndFinally_NullContext_ThrowsArgumentNullException()
+    {
+        var cfs = new ControlFlowStack();
+        cfs.PushException(0, catchAddress: null, finallyAddress: 20);
+        Assert.ThrowsException<ArgumentNullException>(() => cfs.EndFinally(null!));
+    }
+
+    [TestMethod]
+    public void Throw_NullContext_ThrowsArgumentNullException()
+    {
+        var cfs = new ControlFlowStack();
+        cfs.PushException(0, catchAddress: 10, finallyAddress: null);
+        Assert.ThrowsException<ArgumentNullException>(() => cfs.Throw(null!, "error"));
+    }
+
     // ── MaxDepth (item 14) ────────────────────────────────────────────────────────────────────
 
     [TestMethod]

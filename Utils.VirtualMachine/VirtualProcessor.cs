@@ -536,11 +536,13 @@ public abstract class Context
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Context"/> class with the given data buffer.
+    /// The buffer is copied so that subsequent mutations of the caller's array do not affect
+    /// the instruction stream seen during execution.
     /// </summary>
     /// <param name="data">The byte data containing all instructions or data to process.</param>
     protected Context(ReadOnlyMemory<byte> data)
     {
-        Data = data;
+        Data = data.ToArray();
     }
 }
 
