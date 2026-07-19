@@ -5,6 +5,10 @@
         <CompilerGeneratedFilesOutputPath Condition="'$(CompilerGeneratedFilesOutputPath)' == ''">$(BaseIntermediateOutputPath)generated</CompilerGeneratedFilesOutputPath>
     </PropertyGroup>
 
+    <ItemGroup>
+        <CompilerVisibleProperty Include="UtilsParserEnableGeneratedRuleArgumentBinding" />
+    </ItemGroup>
+
     <ItemGroup Condition="'$(UtilsParserAttachGeneratedFiles)' == 'true'">
         <_UtilsParserAntlrGrammar Include="@(AdditionalFiles)" Condition="$([System.String]::Copy('%(Extension)').ToLowerInvariant()) == '.g4'">
             <GeneratedClassName Condition="'%(ClassName)' == ''">%(Filename)</GeneratedClassName>

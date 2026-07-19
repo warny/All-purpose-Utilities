@@ -43,7 +43,7 @@
 
     <ItemGroup>
         <None Include="README.md" Pack="true" PackagePath="\" />
-        <None Include="buildTransitive\Utils.Parser.Generators.targets" Pack="true" PackagePath="buildTransitive\Utils.Parser.Generators.targets" />
+        <None Include="buildTransitive\Utils.Parser.Generators.targets" Pack="true" PackagePath="buildTransitive\omy.Utils.Parser.Generators.targets" />
     </ItemGroup>
 
 
