@@ -76,15 +76,27 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
     /// <inheritdoc />
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
+        var generatorOptions = context.AnalyzerConfigOptionsProvider
+            .Select(static (provider, _) => Antlr4GrammarGeneratorOptions.Parse(provider.GlobalOptions));
+
+        context.RegisterSourceOutput(generatorOptions, static (productionContext, options) =>
+        {
+            foreach (Diagnostic diagnostic in options.Diagnostics)
+            {
+                productionContext.ReportDiagnostic(diagnostic);
+            }
+        });
+
         var grammarFiles = context.AdditionalTextsProvider
             .Where(static file => file.Path.EndsWith(".g4", StringComparison.OrdinalIgnoreCase));
 
         var grammarFileAndOptions = grammarFiles
+            .Combine(generatorOptions)
             .Combine(context.AnalyzerConfigOptionsProvider);
 
         context.RegisterSourceOutput(grammarFileAndOptions, static (productionContext, source) =>
         {
-            ProcessGrammarFile(productionContext, source.Left, source.Right);
+            ProcessGrammarFile(productionContext, source.Left.Left, source.Right, source.Left.Right.Options);
         });
 
         var colorizationFiles = context.AdditionalTextsProvider
@@ -105,7 +117,8 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
     /// <param name="context">Context used to report diagnostics and add generated files.</param>
     /// <param name="file">Grammar additional file being processed.</param>
     /// <param name="optionsProvider">Analyzer config options provider associated with the current run.</param>
-    private static void ProcessGrammarFile(SourceProductionContext context, AdditionalText file, AnalyzerConfigOptionsProvider optionsProvider)
+    /// <param name="generatorOptions">Project-wide options parsed from analyzer config global options.</param>
+    private static void ProcessGrammarFile(SourceProductionContext context, AdditionalText file, AnalyzerConfigOptionsProvider optionsProvider, Antlr4GrammarGeneratorOptions generatorOptions)
     {
         var text = file.GetText(context.CancellationToken);
         if (text == null) return;
@@ -143,7 +156,12 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
             }
             ReportEmbeddedParserAttributeDiagnostics(context, file, text, grammar);
             ReportUnsupportedEmbeddedCodeDiagnostics(context, file, text, grammar);
-            var generated = GrammarEmitter.Emit(grammar, namespaceName!, className!, fileName);
+            var generated = GrammarEmitter.Emit(
+                grammar,
+                namespaceName!,
+                className!,
+                fileName,
+                enableGeneratedRuleArgumentBinding: generatorOptions.EnableGeneratedRuleArgumentBinding);
             ReportParserDiagnostics(context, diagnostics, fileName);
 
             context.AddSource($"{className}.Grammar.g.cs", SourceText.From(generated, Encoding.UTF8));

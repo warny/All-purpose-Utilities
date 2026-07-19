@@ -149,7 +149,15 @@ internal static partial class ExpGrammar
 
 ## Generated-C# rule-call arguments
 
-The emitter contains a narrow, generation-flagged automatic binding path for positional simple-literal rule-call arguments. The shipped AdditionalFiles source-generator entry point currently emits grammars with this flag disabled, so normal package consumers get metadata/helper behavior only. When generation explicitly enables `enableGeneratedRuleArgumentBinding`, the generated parser can bind calls such as:
+The emitter contains a narrow automatic binding path for positional simple-literal rule-call arguments. The shipped generator exposes an explicit project-wide opt-in, disabled by default. Normal package consumers get metadata/helper behavior only until they enable the MSBuild property:
+
+```xml
+<PropertyGroup>
+  <UtilsParserEnableGeneratedRuleArgumentBinding>true</UtilsParserEnableGeneratedRuleArgumentBinding>
+</PropertyGroup>
+```
+
+The NuGet build assets declare `CompilerVisibleProperty`, so projects that reference the generator package do not need to add that item manually. The option is project-wide and participates in the incremental generator inputs: changing only this property regenerates `.g4` outputs. With the option enabled, the generated parser can bind calls such as:
 
 ```antlr
 grammar P;
@@ -166,14 +174,14 @@ child[int value]
 A : 'a';
 ```
 
-For code emitted with `enableGeneratedRuleArgumentBinding`, automatic binding is active only on generated-C# overloads that do not accept a caller `basePolicy`:
+When `UtilsParserEnableGeneratedRuleArgumentBinding` is `true`, automatic binding is active only on generated-C# overloads that do not accept a caller `basePolicy`:
 
 ```csharp
 P.ParseWithEmbeddedCode(input);
 P.ParseWithEmbeddedCode(input, executionContext);
 ```
 
-With the generation flag enabled, those overloads require exact positional arity, convert supported simple literals to allowlisted declared parameter types, and submit one managed seed batch before the child rule is entered. The conservative `Parse(...)` overload is unchanged: it builds syntax only and does not execute generated hooks or bind rule-call arguments.
+With the option enabled, those overloads require exact positional arity, convert supported simple literals to allowlisted declared parameter types, and submit one managed seed batch before the child rule is entered. Invalid generated binding can throw at runtime before a child lifecycle hook observes partial seeds. The conservative `Parse(...)` overload is unchanged: it builds syntax only and does not execute generated hooks or bind rule-call arguments.
 
 The overload that accepts a caller policy intentionally preserves the caller's rule-call policy instead of composing the generated automatic binding wrapper, even when the generation flag is enabled:
 
@@ -191,6 +199,7 @@ Limits are deliberate: positional arguments only, simple literals only, allowlis
 | ID | Severity | Meaning |
 |---|---|---|
 | `APU0100` | Error | The `.g4` file could not be parsed or the C# could not be emitted. The error message includes the file name and the underlying exception message. |
+| `APU0106` | Warning | `UtilsParserEnableGeneratedRuleArgumentBinding` was not `true` or `false`; generation continues with generated rule-argument binding disabled. |
 
 ---
 

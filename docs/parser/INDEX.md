@@ -35,7 +35,7 @@ When adding, removing, or materially changing any file in `docs/parser/`, update
 
 ## Generated-C# positional rule arguments
 
-The parser documentation pages listed here now distinguish conservative `Parse(...)`, explicit runtime literal policies, and generated-C# exact-arity explicit simple positional argument binding for rule calls, including zero-parameter callees, explicit empty argument lists, and the distinction from explicit runtime typed defaults. See `RuleArgumentsAndReturnsPlan.md`, `ANTLRCompatibility.md`, `Antlr4CompatibilityMatrix.md`, `EmbeddedCodeExecutionModel.md`, and `EmbeddedCodeTransactionalState.md` for the current support boundaries.
+The parser documentation pages listed here now distinguish conservative `Parse(...)`, explicit runtime literal policies, and generated-C# exact-arity explicit simple positional argument binding for rule calls exposed by the project-wide `UtilsParserEnableGeneratedRuleArgumentBinding` opt-in, including zero-parameter callees, explicit empty argument lists, and the distinction from explicit runtime typed defaults. See `RuleArgumentsAndReturnsPlan.md`, `ANTLRCompatibility.md`, `Antlr4CompatibilityMatrix.md`, `EmbeddedCodeExecutionModel.md`, and `EmbeddedCodeTransactionalState.md` for the current support boundaries.
 
 ## Generated-C# returns and labels boundary
 

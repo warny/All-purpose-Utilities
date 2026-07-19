@@ -15,7 +15,7 @@ This document must be consulted before modifying any grammar-related component, 
 
 ## Generated-C# positional rule-call argument binding
 
-Generated parsers emitted with `enableGeneratedRuleArgumentBinding` expose three distinct surfaces for `callee[...]` rule-call arguments. The normal AdditionalFiles source-generator entry point currently leaves that emitter flag disabled, so consumers of the shipped generator get metadata/helper behavior only unless generation explicitly enables the flag.
+Generated parsers emitted with generated rule-argument binding expose distinct surfaces for `callee[...]` rule-call arguments. The shipped generator exposes an explicit project-wide opt-in, disabled by default, through the MSBuild property `UtilsParserEnableGeneratedRuleArgumentBinding`. Consumers get metadata/helper behavior until they set that property to `true`.
 
 | Surface | Behavior |
 |---|---|
