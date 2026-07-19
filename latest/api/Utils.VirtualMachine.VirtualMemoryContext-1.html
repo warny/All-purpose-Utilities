@@ -271,7 +271,7 @@ virtual memory reads and writes on behalf of that process.</p>
 
   <h3 id="Utils_VirtualMachine_VirtualMemoryContext_1__ctor_System_ReadOnlyMemory_System_Byte__Utils_VirtualMachine_VirtualProcess__0__" data-uid="Utils.VirtualMachine.VirtualMemoryContext`1.#ctor(System.ReadOnlyMemory{System.Byte},Utils.VirtualMachine.VirtualProcess{`0})">
   VirtualMemoryContext(ReadOnlyMemory&lt;byte&gt;, VirtualProcess&lt;TAddress&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualMemoryContext.cs/#L29"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualMemoryContext.cs/#L30"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance with an external instruction buffer and an associated process.
@@ -307,6 +307,9 @@ rather than in a virtual memory page.</p>
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
     <dd><p>Thrown when <code class="paramref">process</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
 </dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.objectdisposedexception">ObjectDisposedException</a></dt>
+    <dd><p>Thrown when <code class="paramref">process</code> has been freed.</p>
+</dd>
   </dl>
 
 
@@ -315,12 +318,12 @@ rather than in a virtual memory page.</p>
 
   <h3 id="Utils_VirtualMachine_VirtualMemoryContext_1__ctor_Utils_VirtualMachine_VirtualPage_Utils_VirtualMachine_VirtualProcess__0__" data-uid="Utils.VirtualMachine.VirtualMemoryContext`1.#ctor(Utils.VirtualMachine.VirtualPage,Utils.VirtualMachine.VirtualProcess{`0})">
   VirtualMemoryContext(VirtualPage, VirtualProcess&lt;TAddress&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualMemoryContext.cs/#L45"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualMemoryContext.cs/#L53"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance whose instruction stream is the content of a
-<a class="xref" href="Utils.VirtualMachine.VirtualPage.html">VirtualPage</a>. The page's current byte content is exposed read-only via
-<a class="xref" href="Utils.VirtualMachine.Context.html#Utils_VirtualMachine_Context_Data">Data</a>.</p>
+<a class="xref" href="Utils.VirtualMachine.VirtualPage.html">VirtualPage</a>. The page's current byte content is copied into the context
+so that subsequent writes to the page do not alter the instruction stream.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -350,6 +353,12 @@ rather than in a virtual memory page.</p>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
     <dd><p>Thrown when <code class="paramref">instructionPage</code> or <code class="paramref">process</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.objectdisposedexception">ObjectDisposedException</a></dt>
+    <dd><p>Thrown when <code class="paramref">process</code> has been freed.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when <code class="paramref">instructionPage</code> is not mapped into <code class="paramref">process</code>.</p>
 </dd>
   </dl>
 

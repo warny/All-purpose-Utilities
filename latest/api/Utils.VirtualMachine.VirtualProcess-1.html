@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_VirtualMachine_VirtualProcess_1" data-uid="Utils.VirtualMachine.VirtualProcess`1" class="text-break">
-Class VirtualProcess&lt;TAddress&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L21"><i class="bi bi-code-slash"></i></a>
+Class VirtualProcess&lt;TAddress&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L35"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -250,6 +250,20 @@ Class VirtualProcess&lt;TAddress&gt;  <a class="header-action link-secondary" ti
   <div class="markdown level0 remarks"><p>Instances are created exclusively by <a class="xref" href="Utils.VirtualMachine.VirtualMemory-1.html">VirtualMemory&lt;TAddress&gt;</a>. Call
 <a class="xref" href="Utils.VirtualMachine.VirtualProcess-1.html#Utils_VirtualMachine_VirtualProcess_1_Read__0_System_Span_System_Byte__">Read(TAddress, Span&lt;byte&gt;)</a> or <a class="xref" href="Utils.VirtualMachine.VirtualProcess-1.html#Utils_VirtualMachine_VirtualProcess_1_Write__0_System_ReadOnlySpan_System_Byte__">Write(TAddress, ReadOnlySpan&lt;byte&gt;)</a> to access memory; both methods handle cross-page
 operations transparently.</p>
+<p>
+<a class="xref" href="Utils.VirtualMachine.VirtualProcess-1.html#Utils_VirtualMachine_VirtualProcess_1_Read__0_System_Span_System_Byte__">Read(TAddress, Span&lt;byte&gt;)</a> and <a class="xref" href="Utils.VirtualMachine.VirtualProcess-1.html#Utils_VirtualMachine_VirtualProcess_1_Write__0_System_ReadOnlySpan_System_Byte__">Write(TAddress, ReadOnlySpan&lt;byte&gt;)</a> are fully atomic: either the entire range is
+validated and transferred, or no bytes are copied and a <a class="xref" href="Utils.VirtualMachine.MemoryAccessException.html">MemoryAccessException</a>
+is thrown. Partial updates do not occur.
+</p>
+<p>
+Negative addresses are always rejected for signed <code class="typeparamref">TAddress</code> types.
+</p>
+<p>
+<b>Thread safety:</b> this class is not thread-safe. All reads, writes, and mapping
+operations must occur on the same thread. Sharing a page between multiple processes does not
+provide any synchronization; concurrent access from multiple <a class="xref" href="Utils.VirtualMachine.VirtualProcess-1.html">VirtualProcess&lt;TAddress&gt;</a>
+or <a class="xref" href="Utils.VirtualMachine.VirtualMemory-1.html">VirtualMemory&lt;TAddress&gt;</a> instances produces undefined behaviour.
+</p>
 </div>
 
 
@@ -261,7 +275,7 @@ operations transparently.</p>
 
   <h3 id="Utils_VirtualMachine_VirtualProcess_1_IsFreed" data-uid="Utils.VirtualMachine.VirtualProcess`1.IsFreed">
   IsFreed
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L42"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L56"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a value indicating whether this process has been freed via
@@ -295,7 +309,7 @@ memory operations.</p>
 
   <h3 id="Utils_VirtualMachine_VirtualProcess_1_IsMaster" data-uid="Utils.VirtualMachine.VirtualProcess`1.IsMaster">
   IsMaster
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L35"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L49"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a value indicating whether this is the master process. The master process receives
@@ -329,16 +343,16 @@ automatic <a class="xref" href="Utils.VirtualMachine.PageAccess.html#Utils_Virtu
 
   <h3 id="Utils_VirtualMachine_VirtualProcess_1_Mappings" data-uid="Utils.VirtualMachine.VirtualProcess`1.Mappings">
   Mappings
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L49"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L68"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets all current page mappings for this process as an enumerable of
+  <div class="markdown level1 summary"><p>Gets a snapshot of all current page mappings for this process as a list of
 (virtual page index, physical page, access rights) tuples.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public IEnumerable&lt;(TAddress VirtualPageIndex, VirtualPage Page, PageAccess Access)&gt; Mappings { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">public IReadOnlyList&lt;(TAddress VirtualPageIndex, VirtualPage Page, PageAccess Access)&gt; Mappings { get; }</code></pre>
   </div>
 
 
@@ -347,13 +361,18 @@ automatic <a class="xref" href="Utils.VirtualMachine.PageAccess.html#Utils_Virtu
 
   <h4 class="section">Property Value</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;(TAddress <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple--0,utils.virtualmachine.virtualpage,utils.virtualmachine.pageaccess-.virtualpageindex">VirtualPageIndex</a>, <a class="xref" href="Utils.VirtualMachine.VirtualPage.html">VirtualPage</a> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple--0,utils.virtualmachine.virtualpage,utils.virtualmachine.pageaccess-.page">Page</a>, <a class="xref" href="Utils.VirtualMachine.PageAccess.html">PageAccess</a> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple--0,utils.virtualmachine.virtualpage,utils.virtualmachine.pageaccess-.access">Access</a>)&gt;</dt>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1">IReadOnlyList</a>&lt;(TAddress <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple--0,utils.virtualmachine.virtualpage,utils.virtualmachine.pageaccess-.virtualpageindex">VirtualPageIndex</a>, <a class="xref" href="Utils.VirtualMachine.VirtualPage.html">VirtualPage</a> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple--0,utils.virtualmachine.virtualpage,utils.virtualmachine.pageaccess-.page">Page</a>, <a class="xref" href="Utils.VirtualMachine.PageAccess.html">PageAccess</a> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.valuetuple--0,utils.virtualmachine.virtualpage,utils.virtualmachine.pageaccess-.access">Access</a>)&gt;</dt>
     <dd></dd>
   </dl>
 
 
 
 
+  <h4 class="section" id="Utils_VirtualMachine_VirtualProcess_1_Mappings_remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>The returned list is an immutable snapshot taken at the moment the property is accessed.
+Subsequent calls to <a class="xref" href="Utils.VirtualMachine.VirtualPage.html">MapPage(TAddress, VirtualPage, PageAccess)</a>, <span class="xref">Utils.VirtualMachine.VirtualProcess&lt;TAddress&gt;.UnmapPage(TAddress)</span>, or
+<a class="xref" href="Utils.VirtualMachine.VirtualMemory-1.html#Utils_VirtualMachine_VirtualMemory_1_FreeProcess_Utils_VirtualMachine_VirtualProcess__0__">FreeProcess(VirtualProcess&lt;TAddress&gt;)</a> do not affect the returned list.</p>
+</div>
 
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
@@ -368,7 +387,7 @@ automatic <a class="xref" href="Utils.VirtualMachine.PageAccess.html#Utils_Virtu
 
   <h3 id="Utils_VirtualMachine_VirtualProcess_1_ProcessId" data-uid="Utils.VirtualMachine.VirtualProcess`1.ProcessId">
   ProcessId
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L28"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L42"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the unique identifier assigned to this process.</p>
@@ -404,7 +423,7 @@ automatic <a class="xref" href="Utils.VirtualMachine.PageAccess.html#Utils_Virtu
 
   <h3 id="Utils_VirtualMachine_VirtualProcess_1_GetAccess__0_" data-uid="Utils.VirtualMachine.VirtualProcess`1.GetAccess(`0)">
   GetAccess(TAddress)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L171"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L214"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns the access rights for the page that contains <code class="paramref">virtualAddress</code>,
@@ -440,6 +459,9 @@ or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keyword
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.objectdisposedexception">ObjectDisposedException</a></dt>
     <dd><p>Thrown when the process has been freed.</p>
 </dd>
+    <dt><a class="xref" href="Utils.VirtualMachine.MemoryAccessException.html">MemoryAccessException</a></dt>
+    <dd><p>Thrown when the address is negative for a signed address type.</p>
+</dd>
   </dl>
 
 
@@ -448,7 +470,7 @@ or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keyword
 
   <h3 id="Utils_VirtualMachine_VirtualProcess_1_IsAccessible__0_" data-uid="Utils.VirtualMachine.VirtualProcess`1.IsAccessible(`0)">
   IsAccessible(TAddress)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L159"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L201"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if <code class="paramref">virtualAddress</code> falls within a mapped page.</p>
@@ -483,6 +505,9 @@ or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keyword
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.objectdisposedexception">ObjectDisposedException</a></dt>
     <dd><p>Thrown when the process has been freed.</p>
 </dd>
+    <dt><a class="xref" href="Utils.VirtualMachine.MemoryAccessException.html">MemoryAccessException</a></dt>
+    <dd><p>Thrown when the address is negative for a signed address type.</p>
+</dd>
   </dl>
 
 
@@ -491,11 +516,13 @@ or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keyword
 
   <h3 id="Utils_VirtualMachine_VirtualProcess_1_Read__0_System_Span_System_Byte__" data-uid="Utils.VirtualMachine.VirtualProcess`1.Read(`0,System.Span{System.Byte})">
   Read(TAddress, Span&lt;byte&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L100"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L140"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads <code class="paramref">destination</code><code>.Length</code> bytes starting at
-<code class="paramref">virtualAddress</code>. Transparently crosses page boundaries.</p>
+<code class="paramref">virtualAddress</code>. Transparently crosses page boundaries.
+The operation is atomic: either all bytes are copied or none are (the destination
+buffer is not modified when a <a class="xref" href="Utils.VirtualMachine.MemoryAccessException.html">MemoryAccessException</a> is thrown).</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -506,7 +533,7 @@ or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keyword
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>virtualAddress</code> <span class="xref">TAddress</span></dt>
-    <dd><p>The virtual address to read from.</p>
+    <dd><p>The virtual address to read from. Must be non-negative for signed address types.</p>
 </dd>
     <dt><code>destination</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.span-1">Span</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>&gt;</dt>
     <dd><p>Buffer that receives the bytes.</p>
@@ -527,7 +554,8 @@ or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keyword
     <dd><p>Thrown when the process has been freed.</p>
 </dd>
     <dt><a class="xref" href="Utils.VirtualMachine.MemoryAccessException.html">MemoryAccessException</a></dt>
-    <dd><p>Thrown when any byte of the range falls in an unmapped page.</p>
+    <dd><p>Thrown when the address is negative (for signed types) or when any byte of the range
+falls in an unmapped page. No bytes are copied in this case.</p>
 </dd>
   </dl>
 
@@ -537,11 +565,13 @@ or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keyword
 
   <h3 id="Utils_VirtualMachine_VirtualProcess_1_Write__0_System_ReadOnlySpan_System_Byte__" data-uid="Utils.VirtualMachine.VirtualProcess`1.Write(`0,System.ReadOnlySpan{System.Byte})">
   Write(TAddress, ReadOnlySpan&lt;byte&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L132"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L175"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Writes <code class="paramref">source</code> bytes starting at <code class="paramref">virtualAddress</code>.
-Transparently crosses page boundaries.</p>
+Transparently crosses page boundaries.
+The operation is atomic: either all bytes are written or none are (memory is not
+modified when a <a class="xref" href="Utils.VirtualMachine.MemoryAccessException.html">MemoryAccessException</a> is thrown).</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -552,7 +582,7 @@ Transparently crosses page boundaries.</p>
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>virtualAddress</code> <span class="xref">TAddress</span></dt>
-    <dd><p>The virtual address to write to.</p>
+    <dd><p>The virtual address to write to. Must be non-negative for signed address types.</p>
 </dd>
     <dt><code>source</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.readonlyspan-1">ReadOnlySpan</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>&gt;</dt>
     <dd><p>Bytes to write.</p>
@@ -573,8 +603,9 @@ Transparently crosses page boundaries.</p>
     <dd><p>Thrown when the process has been freed.</p>
 </dd>
     <dt><a class="xref" href="Utils.VirtualMachine.MemoryAccessException.html">MemoryAccessException</a></dt>
-    <dd><p>Thrown when any byte of the range falls in an unmapped page or in a
-<a class="xref" href="Utils.VirtualMachine.PageAccess.html#Utils_VirtualMachine_PageAccess_ReadOnly">ReadOnly</a> page.</p>
+    <dd><p>Thrown when the address is negative (for signed types), when any byte of the range falls
+in an unmapped page, or when any touched page has <a class="xref" href="Utils.VirtualMachine.PageAccess.html#Utils_VirtualMachine_PageAccess_ReadOnly">ReadOnly</a> rights.
+No bytes are written in this case.</p>
 </dd>
   </dl>
 
@@ -584,7 +615,7 @@ Transparently crosses page boundaries.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L21" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L35" class="edit-link">Edit this page</a>
         </div>
 
 

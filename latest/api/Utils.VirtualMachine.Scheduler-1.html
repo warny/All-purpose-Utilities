@@ -247,7 +247,7 @@ Class Scheduler&lt;T&gt;  <a class="header-action link-secondary" title="View so
 
 
   <h2 id="Utils_VirtualMachine_Scheduler_1_remarks">Remarks</h2>
-  <div class="markdown level0 remarks"><p>Not thread-safe. <a class="xref" href="Utils.VirtualMachine.Scheduler-1.html#Utils_VirtualMachine_Scheduler_1_Step">Step()</a> and <a class="xref" href="Utils.VirtualMachine.Scheduler-1.html#Utils_VirtualMachine_Scheduler_1_Run_System_Threading_CancellationToken_">Run(CancellationToken)</a> must not be called
+  <div class="markdown level0 remarks"><p>Not thread-safe. <a class="xref" href="Utils.VirtualMachine.Scheduler-1.html#Utils_VirtualMachine_Scheduler_1_Step">Step()</a> and <a class="xref" href="Utils.VirtualMachine.Scheduler-1.html#Utils_VirtualMachine_Scheduler_1_Run_System_Threading_CancellationToken_System_Int64_">Run(CancellationToken, long)</a> must not be called
 concurrently from multiple threads.</p>
 </div>
 
@@ -260,7 +260,7 @@ concurrently from multiple threads.</p>
 
   <h3 id="Utils_VirtualMachine_Scheduler_1__ctor_System_Int32_" data-uid="Utils.VirtualMachine.Scheduler`1.#ctor(System.Int32)">
   Scheduler(int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/Scheduler.cs/#L39"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/Scheduler.cs/#L46"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new <a class="xref" href="Utils.VirtualMachine.Scheduler-1.html">Scheduler&lt;T&gt;</a> with the specified quantum size.</p>
@@ -299,11 +299,45 @@ concurrently from multiple threads.</p>
 </h2>
 
 
+  <a id="Utils_VirtualMachine_Scheduler_1_InstructionsExecuted_" data-uid="Utils.VirtualMachine.Scheduler`1.InstructionsExecuted*"></a>
+
+  <h3 id="Utils_VirtualMachine_Scheduler_1_InstructionsExecuted" data-uid="Utils.VirtualMachine.Scheduler`1.InstructionsExecuted">
+  InstructionsExecuted
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/Scheduler.cs/#L32"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the total number of instructions dispatched by this scheduler since it was created.
+Incremented by <a class="xref" href="Utils.VirtualMachine.Scheduler-1.html#Utils_VirtualMachine_Scheduler_1_Step">Step()</a> and never reset. Callers may snapshot this value before
+a <a class="xref" href="Utils.VirtualMachine.Scheduler-1.html#Utils_VirtualMachine_Scheduler_1_Run_System_Threading_CancellationToken_System_Int64_">Run(CancellationToken, long)</a> or <a class="xref" href="Utils.VirtualMachine.Scheduler-1.html#Utils_VirtualMachine_Scheduler_1_RunAsync_System_Threading_CancellationToken_System_Int64_">RunAsync(CancellationToken, long)</a> call to compute the per-run instruction count.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public long InstructionsExecuted { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int64">long</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <a id="Utils_VirtualMachine_Scheduler_1_Processes_" data-uid="Utils.VirtualMachine.Scheduler`1.Processes*"></a>
 
   <h3 id="Utils_VirtualMachine_Scheduler_1_Processes" data-uid="Utils.VirtualMachine.Scheduler`1.Processes">
   Processes
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/Scheduler.cs/#L28"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/Scheduler.cs/#L35"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the list of all processes registered with this scheduler.</p>
@@ -371,7 +405,7 @@ concurrently from multiple threads.</p>
 
   <h3 id="Utils_VirtualMachine_Scheduler_1_AddProcess__0_Utils_VirtualMachine_VirtualProcessor__0__System_Int32_System_String_" data-uid="Utils.VirtualMachine.Scheduler`1.AddProcess(`0,Utils.VirtualMachine.VirtualProcessor{`0},System.Int32,System.String)">
   AddProcess(T, VirtualProcessor&lt;T&gt;, int, string?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/Scheduler.cs/#L66"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/Scheduler.cs/#L74"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Registers a new process with this scheduler.</p>
@@ -424,6 +458,9 @@ Accessible via <a class="xref" href="Utils.VirtualMachine.ScheduledProcess-1.htm
 single context across multiple processes produces contradictory lifecycle states and corrupts
 instruction pointer and stack state.</p>
 </dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a></dt>
+    <dd><p>Thrown when the process identifier counter has reached its maximum value.</p>
+</dd>
   </dl>
 
 
@@ -432,7 +469,7 @@ instruction pointer and stack state.</p>
 
   <h3 id="Utils_VirtualMachine_Scheduler_1_RemoveProcess_System_Int32_" data-uid="Utils.VirtualMachine.Scheduler`1.RemoveProcess(System.Int32)">
   RemoveProcess(int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/Scheduler.cs/#L88"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/Scheduler.cs/#L99"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Removes a process from this scheduler by its identifier.
@@ -467,26 +504,33 @@ that the scheduler's quantum-end cleanup block does not later promote it back to
 
   <a id="Utils_VirtualMachine_Scheduler_1_Run_" data-uid="Utils.VirtualMachine.Scheduler`1.Run*"></a>
 
-  <h3 id="Utils_VirtualMachine_Scheduler_1_Run_System_Threading_CancellationToken_" data-uid="Utils.VirtualMachine.Scheduler`1.Run(System.Threading.CancellationToken)">
-  Run(CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/Scheduler.cs/#L178"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_VirtualMachine_Scheduler_1_Run_System_Threading_CancellationToken_System_Int64_" data-uid="Utils.VirtualMachine.Scheduler`1.Run(System.Threading.CancellationToken,System.Int64)">
+  Run(CancellationToken, long)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/Scheduler.cs/#L258"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Runs the scheduler until no process remains in the <a class="xref" href="Utils.VirtualMachine.ProcessState.html#Utils_VirtualMachine_ProcessState_Ready">Ready</a>
-or <a class="xref" href="Utils.VirtualMachine.ProcessState.html#Utils_VirtualMachine_ProcessState_Running">Running</a> state, or until cancellation is requested.
+or <a class="xref" href="Utils.VirtualMachine.ProcessState.html#Utils_VirtualMachine_ProcessState_Running">Running</a> state, until cancellation is requested, or until
+<code class="paramref">maxInstructions</code> instructions have been dispatched in this call.
 Returns immediately when all processes are <a class="xref" href="Utils.VirtualMachine.ProcessState.html#Utils_VirtualMachine_ProcessState_Terminated">Terminated</a> or
 <a class="xref" href="Utils.VirtualMachine.ProcessState.html#Utils_VirtualMachine_ProcessState_Suspended">Suspended</a> (including when there are no processes at all).</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public void Run(CancellationToken cancellationToken = default)</code></pre>
+    <pre><code class="lang-csharp hljs">public void Run(CancellationToken cancellationToken = default, long maxInstructions = 0)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>cancellationToken</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></dt>
     <dd><p>Token that can interrupt the loop between steps.</p>
+</dd>
+    <dt><code>maxInstructions</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int64">long</a></dt>
+    <dd><p>Maximum number of instructions to dispatch during this call. When greater than zero,
+throws <a class="xref" href="Utils.VirtualMachine.InstructionBudgetExceededException.html">InstructionBudgetExceededException</a> if the limit is reached before
+all processes terminate. When zero (the default), execution is unlimited.
+The count is relative to <a class="xref" href="Utils.VirtualMachine.Scheduler-1.html#Utils_VirtualMachine_Scheduler_1_InstructionsExecuted">InstructionsExecuted</a> at the start of this call.</p>
 </dd>
   </dl>
 
@@ -500,8 +544,16 @@ Returns immediately when all processes are <a class="xref" href="Utils.VirtualMa
 
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when <code class="paramref">maxInstructions</code> is negative.</p>
+</dd>
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.operationcanceledexception">OperationCanceledException</a></dt>
     <dd><p>Thrown when <code class="paramref">cancellationToken</code> is cancelled.</p>
+</dd>
+    <dt><a class="xref" href="Utils.VirtualMachine.InstructionBudgetExceededException.html">InstructionBudgetExceededException</a></dt>
+    <dd><p>Thrown when <code class="paramref">maxInstructions</code> is greater than zero and that many
+instructions have been dispatched in this call without all processes terminating.
+The total number of instructions dispatched never exceeds <code class="paramref">maxInstructions</code>.</p>
 </dd>
   </dl>
 
@@ -509,26 +561,34 @@ Returns immediately when all processes are <a class="xref" href="Utils.VirtualMa
 
   <a id="Utils_VirtualMachine_Scheduler_1_RunAsync_" data-uid="Utils.VirtualMachine.Scheduler`1.RunAsync*"></a>
 
-  <h3 id="Utils_VirtualMachine_Scheduler_1_RunAsync_System_Threading_CancellationToken_" data-uid="Utils.VirtualMachine.Scheduler`1.RunAsync(System.Threading.CancellationToken)">
-  RunAsync(CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/Scheduler.cs/#L204"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_VirtualMachine_Scheduler_1_RunAsync_System_Threading_CancellationToken_System_Int64_" data-uid="Utils.VirtualMachine.Scheduler`1.RunAsync(System.Threading.CancellationToken,System.Int64)">
+  RunAsync(CancellationToken, long)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/Scheduler.cs/#L312"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Asynchronously runs the scheduler until no process remains in the
 <a class="xref" href="Utils.VirtualMachine.ProcessState.html#Utils_VirtualMachine_ProcessState_Ready">Ready</a> or <a class="xref" href="Utils.VirtualMachine.ProcessState.html#Utils_VirtualMachine_ProcessState_Running">Running</a> state,
-or until cancellation is requested. Yields to the caller between each
+until cancellation is requested, or until <code class="paramref">maxInstructions</code> instructions
+have been dispatched in this call. Yields to the caller between each
 <a class="xref" href="Utils.VirtualMachine.Scheduler-1.html#Utils_VirtualMachine_Scheduler_1_Step">Step()</a> call so the calling thread is not blocked for the duration.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public Task RunAsync(CancellationToken cancellationToken = default)</code></pre>
+    <pre><code class="lang-csharp hljs">public Task RunAsync(CancellationToken cancellationToken = default, long maxInstructions = 0)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>cancellationToken</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></dt>
     <dd><p>Token that can interrupt the loop between steps.</p>
+</dd>
+    <dt><code>maxInstructions</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int64">long</a></dt>
+    <dd><p>Maximum number of instructions to dispatch during this call. When greater than zero,
+throws <a class="xref" href="Utils.VirtualMachine.InstructionBudgetExceededException.html">InstructionBudgetExceededException</a> if the limit is reached before
+all processes terminate. When zero (the default), execution is unlimited.
+The count is relative to <a class="xref" href="Utils.VirtualMachine.Scheduler-1.html#Utils_VirtualMachine_Scheduler_1_InstructionsExecuted">InstructionsExecuted</a> at the start of this call.
+The total number of instructions dispatched never exceeds <code class="paramref">maxInstructions</code>.</p>
 </dd>
   </dl>
 
@@ -544,7 +604,7 @@ or until cancellation is requested. Yields to the caller between each
 
 
 
-  <h4 class="section" id="Utils_VirtualMachine_Scheduler_1_RunAsync_System_Threading_CancellationToken__remarks">Remarks</h4>
+  <h4 class="section" id="Utils_VirtualMachine_Scheduler_1_RunAsync_System_Threading_CancellationToken_System_Int64__remarks">Remarks</h4>
   <div class="markdown level1 remarks"><p>One <a class="xref" href="Utils.VirtualMachine.Scheduler-1.html#Utils_VirtualMachine_Scheduler_1_Step">Step()</a> call executes up to <a class="xref" href="Utils.VirtualMachine.Scheduler-1.html#Utils_VirtualMachine_Scheduler_1_QuantumSteps">QuantumSteps</a> instructions for
 every ready process in priority order. With many processes, a large quantum, or slow
 handlers, each step can still occupy the calling thread for a significant amount of time.
@@ -555,8 +615,15 @@ token themselves.</p>
 
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when <code class="paramref">maxInstructions</code> is negative.</p>
+</dd>
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.operationcanceledexception">OperationCanceledException</a></dt>
     <dd><p>Thrown when <code class="paramref">cancellationToken</code> is cancelled.</p>
+</dd>
+    <dt><a class="xref" href="Utils.VirtualMachine.InstructionBudgetExceededException.html">InstructionBudgetExceededException</a></dt>
+    <dd><p>Thrown when <code class="paramref">maxInstructions</code> is greater than zero and that many
+instructions have been dispatched in this call without all processes terminating.</p>
 </dd>
   </dl>
 
@@ -566,7 +633,7 @@ token themselves.</p>
 
   <h3 id="Utils_VirtualMachine_Scheduler_1_Step" data-uid="Utils.VirtualMachine.Scheduler`1.Step">
   Step()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/Scheduler.cs/#L106"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/Scheduler.cs/#L117"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Executes one scheduling round: runs every <a class="xref" href="Utils.VirtualMachine.ProcessState.html#Utils_VirtualMachine_ProcessState_Ready">Ready</a> process

@@ -253,7 +253,7 @@ annotated with <a class="xref" href="Utils.VirtualMachine.InstructionAttribute.h
 
 
   <h2 id="Utils_VirtualMachine_VirtualProcessor_1_remarks">Remarks</h2>
-  <div class="markdown level0 remarks"><p>This class is not thread-safe. Concurrent calls to <a class="xref" href="Utils.VirtualMachine.VirtualProcessor-1.html#Utils_VirtualMachine_VirtualProcessor_1_Execute__0_System_Threading_CancellationToken_">Execute(T, CancellationToken)</a> or
+  <div class="markdown level0 remarks"><p>This class is not thread-safe. Concurrent calls to <a class="xref" href="Utils.VirtualMachine.VirtualProcessor-1.html#Utils_VirtualMachine_VirtualProcessor_1_Execute__0_System_Threading_CancellationToken_System_Int64_">Execute(T, CancellationToken, long)</a> or
 <a class="xref" href="Utils.VirtualMachine.VirtualProcessor-1.html#Utils_VirtualMachine_VirtualProcessor_1_ExecuteStep__0_">ExecuteStep(T)</a> on the same instance share a dispatch buffer and must not
 overlap; use one <a class="xref" href="Utils.VirtualMachine.VirtualProcessor-1.html">VirtualProcessor&lt;T&gt;</a> instance per thread, or synchronize externally.</p>
 </div>
@@ -267,7 +267,7 @@ overlap; use one <a class="xref" href="Utils.VirtualMachine.VirtualProcessor-1.h
 
   <h3 id="Utils_VirtualMachine_VirtualProcessor_1__ctor_System_Boolean_" data-uid="Utils.VirtualMachine.VirtualProcessor`1.#ctor(System.Boolean)">
   VirtualProcessor(bool)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L95"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L107"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.VirtualMachine.VirtualProcessor-1.html">VirtualProcessor&lt;T&gt;</a> class,
@@ -306,7 +306,7 @@ Defaults to <a href="https://learn.microsoft.com/dotnet/csharp/language-referenc
 
   <h3 id="Utils_VirtualMachine_VirtualProcessor_1_Breakpoints" data-uid="Utils.VirtualMachine.VirtualProcessor`1.Breakpoints">
   Breakpoints
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L85"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L97"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>A set of instruction-pointer addresses that trigger
@@ -332,6 +332,12 @@ Breakpoints are only checked when <a class="xref" href="Utils.VirtualMachine.Vir
 
 
 
+  <h4 class="section" id="Utils_VirtualMachine_VirtualProcessor_1_Breakpoints_remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Addresses are raw integers and are not validated against the current program image.
+Negative, past-end, and mid-operand values are accepted silently and will never be hit
+unless the instruction pointer happens to equal that exact value during dispatch. Stale
+breakpoints are not removed when a new program is loaded into the context.</p>
+</div>
 
 
 
@@ -340,7 +346,7 @@ Breakpoints are only checked when <a class="xref" href="Utils.VirtualMachine.Vir
 
   <h3 id="Utils_VirtualMachine_VirtualProcessor_1_Inspector" data-uid="Utils.VirtualMachine.VirtualProcessor`1.Inspector">
   Inspector
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L78"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L84"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets an optional inspector that receives a notification before each instruction is
@@ -374,7 +380,7 @@ zero per-instruction overhead.</p>
 
   <h3 id="Utils_VirtualMachine_VirtualProcessor_1_Instructions" data-uid="Utils.VirtualMachine.VirtualProcessor`1.Instructions">
   Instructions
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L70"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L76"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a read-only enumeration of all registered instructions, including those discovered via
@@ -399,6 +405,12 @@ zero per-instruction overhead.</p>
 
 
 
+  <h4 class="section" id="Utils_VirtualMachine_VirtualProcessor_1_Instructions_remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>This is a live view over the internal instruction dictionary. Registering new instructions
+via <a class="xref" href="Utils.VirtualMachine.VirtualProcessor-1.html#Utils_VirtualMachine_VirtualProcessor_1_RegisterInstruction_System_Byte___System_String_System_Action__0__System_Boolean_">RegisterInstruction(byte[], string, Action&lt;T&gt;, bool)</a> while enumerating may throw
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a>; take a snapshot (<code>.ToList()</code>) when
+stable enumeration is required.</p>
+</div>
 
 
 
@@ -442,19 +454,20 @@ The equality comparer for keys is configured to handle byte-array comparison.</p
 
   <a id="Utils_VirtualMachine_VirtualProcessor_1_Execute_" data-uid="Utils.VirtualMachine.VirtualProcessor`1.Execute*"></a>
 
-  <h3 id="Utils_VirtualMachine_VirtualProcessor_1_Execute__0_System_Threading_CancellationToken_" data-uid="Utils.VirtualMachine.VirtualProcessor`1.Execute(`0,System.Threading.CancellationToken)">
-  Execute(T, CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L338"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_VirtualMachine_VirtualProcessor_1_Execute__0_System_Threading_CancellationToken_System_Int64_" data-uid="Utils.VirtualMachine.VirtualProcessor`1.Execute(`0,System.Threading.CancellationToken,System.Int64)">
+  Execute(T, CancellationToken, long)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L418"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Executes all instructions until the end of the data stream, until
 <a class="xref" href="Utils.VirtualMachine.Context.html#Utils_VirtualMachine_Context_InstructionPointer">InstructionPointer</a> becomes negative (program termination signal),
-or until <code class="paramref">cancellationToken</code> is cancelled.</p>
+until <code class="paramref">cancellationToken</code> is cancelled, or until
+<code class="paramref">maxInstructions</code> instructions have been dispatched.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public void Execute(T context, CancellationToken cancellationToken = default)</code></pre>
+    <pre><code class="lang-csharp hljs">public void Execute(T context, CancellationToken cancellationToken = default, long maxInstructions = 0)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
@@ -465,6 +478,11 @@ or until <code class="paramref">cancellationToken</code> is cancelled.</p>
     <dt><code>cancellationToken</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></dt>
     <dd><p>Token that can stop execution between instructions.</p>
 </dd>
+    <dt><code>maxInstructions</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int64">long</a></dt>
+    <dd><p>Maximum number of instructions to dispatch. When greater than zero, throws
+<a class="xref" href="Utils.VirtualMachine.InstructionBudgetExceededException.html">InstructionBudgetExceededException</a> if this limit is reached before the
+program terminates naturally. When zero (the default), execution is unlimited.</p>
+</dd>
   </dl>
 
 
@@ -474,6 +492,13 @@ or until <code class="paramref">cancellationToken</code> is cancelled.</p>
 
 
 
+  <h4 class="section" id="Utils_VirtualMachine_VirtualProcessor_1_Execute__0_System_Threading_CancellationToken_System_Int64__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Cancellation is cooperative and checked only between instructions — not within a single
+instruction handler. A handler that blocks indefinitely, performs a long-running computation,
+or enters an infinite loop will prevent cancellation from being observed until it returns.
+For untrusted or long-running handlers, use an isolation boundary or have the handler
+observe the token or a deadline directly.</p>
+</div>
 
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
@@ -483,6 +508,10 @@ or until <code class="paramref">cancellationToken</code> is cancelled.</p>
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.operationcanceledexception">OperationCanceledException</a></dt>
     <dd><p>Thrown when <code class="paramref">cancellationToken</code> is cancelled.</p>
 </dd>
+    <dt><a class="xref" href="Utils.VirtualMachine.InstructionBudgetExceededException.html">InstructionBudgetExceededException</a></dt>
+    <dd><p>Thrown when <code class="paramref">maxInstructions</code> is greater than zero and that many
+instructions have been dispatched without the program terminating.</p>
+</dd>
   </dl>
 
 
@@ -491,7 +520,7 @@ or until <code class="paramref">cancellationToken</code> is cancelled.</p>
 
   <h3 id="Utils_VirtualMachine_VirtualProcessor_1_ExecuteStep__0_" data-uid="Utils.VirtualMachine.VirtualProcessor`1.ExecuteStep(`0)">
   ExecuteStep(T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L359"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L443"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Executes exactly one instruction at the current instruction pointer.</p>
@@ -538,10 +567,10 @@ or is negative (program termination signal).</p>
 
   <h3 id="Utils_VirtualMachine_VirtualProcessor_1_OnStep__0_" data-uid="Utils.VirtualMachine.VirtualProcessor`1.OnStep(`0)">
   OnStep(T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L327"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L375"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Called before each instruction is dispatched during <a class="xref" href="Utils.VirtualMachine.VirtualProcessor-1.html#Utils_VirtualMachine_VirtualProcessor_1_Execute__0_System_Threading_CancellationToken_">Execute(T, CancellationToken)</a> and
+  <div class="markdown level1 summary"><p>Called before each instruction is dispatched during <a class="xref" href="Utils.VirtualMachine.VirtualProcessor-1.html#Utils_VirtualMachine_VirtualProcessor_1_Execute__0_System_Threading_CancellationToken_System_Int64_">Execute(T, CancellationToken, long)</a> and
 <a class="xref" href="Utils.VirtualMachine.VirtualProcessor-1.html#Utils_VirtualMachine_VirtualProcessor_1_ExecuteStep__0_">ExecuteStep(T)</a>. The default implementation does nothing.
 Override to add breakpoints, tracing, or profiling without modifying the dispatch loop.
 At the time of the call, <a class="xref" href="Utils.VirtualMachine.Context.html#Utils_VirtualMachine_Context_InstructionPointer">InstructionPointer</a> points to the
@@ -575,7 +604,7 @@ first byte of the instruction about to execute.</p>
 
   <h3 id="Utils_VirtualMachine_VirtualProcessor_1_ReadByte_Utils_VirtualMachine_Context_" data-uid="Utils.VirtualMachine.VirtualProcessor`1.ReadByte(Utils.VirtualMachine.Context)">
   ReadByte(Context)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L238"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L286"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads a single byte from the context using the configured <a class="xref" href="Utils.VirtualMachine.INumberReader.html">INumberReader</a>.</p>
@@ -614,7 +643,7 @@ first byte of the instruction about to execute.</p>
 
   <h3 id="Utils_VirtualMachine_VirtualProcessor_1_ReadDouble_Utils_VirtualMachine_Context_" data-uid="Utils.VirtualMachine.VirtualProcessor`1.ReadDouble(Utils.VirtualMachine.Context)">
   ReadDouble(Context)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L301"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L349"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads a 64-bit floating-point number (double) from the context.</p>
@@ -653,7 +682,7 @@ first byte of the instruction about to execute.</p>
 
   <h3 id="Utils_VirtualMachine_VirtualProcessor_1_ReadInt16_Utils_VirtualMachine_Context_" data-uid="Utils.VirtualMachine.VirtualProcessor`1.ReadInt16(Utils.VirtualMachine.Context)">
   ReadInt16(Context)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L252"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L300"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads a 16-bit signed integer (short) from the context.</p>
@@ -692,7 +721,7 @@ first byte of the instruction about to execute.</p>
 
   <h3 id="Utils_VirtualMachine_VirtualProcessor_1_ReadInt32_Utils_VirtualMachine_Context_" data-uid="Utils.VirtualMachine.VirtualProcessor`1.ReadInt32(Utils.VirtualMachine.Context)">
   ReadInt32(Context)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L259"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L307"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads a 32-bit signed integer (int) from the context.</p>
@@ -731,7 +760,7 @@ first byte of the instruction about to execute.</p>
 
   <h3 id="Utils_VirtualMachine_VirtualProcessor_1_ReadInt64_Utils_VirtualMachine_Context_" data-uid="Utils.VirtualMachine.VirtualProcessor`1.ReadInt64(Utils.VirtualMachine.Context)">
   ReadInt64(Context)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L266"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L314"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads a 64-bit signed integer (long) from the context.</p>
@@ -770,7 +799,7 @@ first byte of the instruction about to execute.</p>
 
   <h3 id="Utils_VirtualMachine_VirtualProcessor_1_ReadSByte_Utils_VirtualMachine_Context_" data-uid="Utils.VirtualMachine.VirtualProcessor`1.ReadSByte(Utils.VirtualMachine.Context)">
   ReadSByte(Context)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L245"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L293"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads a single signed byte from the context using the configured <a class="xref" href="Utils.VirtualMachine.INumberReader.html">INumberReader</a>.</p>
@@ -809,7 +838,7 @@ first byte of the instruction about to execute.</p>
 
   <h3 id="Utils_VirtualMachine_VirtualProcessor_1_ReadSLEB128_Utils_VirtualMachine_Context_" data-uid="Utils.VirtualMachine.VirtualProcessor`1.ReadSLEB128(Utils.VirtualMachine.Context)">
   ReadSLEB128(Context)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L315"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L363"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads a signed LEB128-encoded integer from the context.</p>
@@ -848,7 +877,7 @@ first byte of the instruction about to execute.</p>
 
   <h3 id="Utils_VirtualMachine_VirtualProcessor_1_ReadSingle_Utils_VirtualMachine_Context_" data-uid="Utils.VirtualMachine.VirtualProcessor`1.ReadSingle(Utils.VirtualMachine.Context)">
   ReadSingle(Context)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L294"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L342"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads a 32-bit floating-point number (float) from the context.</p>
@@ -887,7 +916,7 @@ first byte of the instruction about to execute.</p>
 
   <h3 id="Utils_VirtualMachine_VirtualProcessor_1_ReadUInt16_Utils_VirtualMachine_Context_" data-uid="Utils.VirtualMachine.VirtualProcessor`1.ReadUInt16(Utils.VirtualMachine.Context)">
   ReadUInt16(Context)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L273"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L321"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads a 16-bit unsigned integer (ushort) from the context.</p>
@@ -926,7 +955,7 @@ first byte of the instruction about to execute.</p>
 
   <h3 id="Utils_VirtualMachine_VirtualProcessor_1_ReadUInt32_Utils_VirtualMachine_Context_" data-uid="Utils.VirtualMachine.VirtualProcessor`1.ReadUInt32(Utils.VirtualMachine.Context)">
   ReadUInt32(Context)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L280"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L328"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads a 32-bit unsigned integer (uint) from the context.</p>
@@ -965,7 +994,7 @@ first byte of the instruction about to execute.</p>
 
   <h3 id="Utils_VirtualMachine_VirtualProcessor_1_ReadUInt64_Utils_VirtualMachine_Context_" data-uid="Utils.VirtualMachine.VirtualProcessor`1.ReadUInt64(Utils.VirtualMachine.Context)">
   ReadUInt64(Context)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L287"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L335"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads a 64-bit unsigned integer (ulong) from the context.</p>
@@ -1004,7 +1033,7 @@ first byte of the instruction about to execute.</p>
 
   <h3 id="Utils_VirtualMachine_VirtualProcessor_1_ReadULEB128_Utils_VirtualMachine_Context_" data-uid="Utils.VirtualMachine.VirtualProcessor`1.ReadULEB128(Utils.VirtualMachine.Context)">
   ReadULEB128(Context)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L308"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L356"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads an unsigned LEB128-encoded integer from the context.</p>
@@ -1043,7 +1072,7 @@ first byte of the instruction about to execute.</p>
 
   <h3 id="Utils_VirtualMachine_VirtualProcessor_1_RegisterInstruction_System_Byte___System_String_System_Action__0__System_Boolean_" data-uid="Utils.VirtualMachine.VirtualProcessor`1.RegisterInstruction(System.Byte[],System.String,System.Action{`0},System.Boolean)">
   RegisterInstruction(byte[], string, Action&lt;T&gt;, bool)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L384"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L468"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Registers an instruction handler at runtime, supplementing or overriding
@@ -1090,6 +1119,48 @@ When <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/built
 or when the opcode is already registered and <code class="paramref">overwrite</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
 </dd>
   </dl>
+
+
+
+  <a id="Utils_VirtualMachine_VirtualProcessor_1_ValidateCompletion_" data-uid="Utils.VirtualMachine.VirtualProcessor`1.ValidateCompletion*"></a>
+
+  <h3 id="Utils_VirtualMachine_VirtualProcessor_1_ValidateCompletion__0_" data-uid="Utils.VirtualMachine.VirtualProcessor`1.ValidateCompletion(`0)">
+  ValidateCompletion(T)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L390"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Called by <a class="xref" href="Utils.VirtualMachine.Scheduler-1.html">Scheduler&lt;T&gt;</a> immediately before a process transitions to
+<a class="xref" href="Utils.VirtualMachine.ProcessState.html#Utils_VirtualMachine_ProcessState_Terminated">Terminated</a> due to normal program completion (instruction pointer
+out of range or negative). Throw to fail-fast and transition the process to
+<a class="xref" href="Utils.VirtualMachine.ProcessState.html#Utils_VirtualMachine_ProcessState_Faulted">Faulted</a> instead.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public virtual void ValidateCompletion(T context)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>context</code> <span class="xref">T</span></dt>
+    <dd><p>The execution context at termination.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section" id="Utils_VirtualMachine_VirtualProcessor_1_ValidateCompletion__0__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Override this method to validate that the context is in a structurally consistent
+terminal state: call frames are empty, control-flow blocks are all closed, no exception
+handler is pending, operand stacks are empty, etc. The default implementation does nothing,
+maintaining backward compatibility.</p>
+</div>
+
 
 
 

@@ -266,10 +266,11 @@ Use this instead of <a class="xref" href="Utils.VirtualMachine.DefaultContext.ht
 
   <h3 id="Utils_VirtualMachine_TypedStackContext_1__ctor_System_ReadOnlyMemory_System_Byte__" data-uid="Utils.VirtualMachine.TypedStackContext`1.#ctor(System.ReadOnlyMemory{System.Byte})">
   TypedStackContext(ReadOnlyMemory&lt;byte&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/TypedStackContext.cs/#L18"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/TypedStackContext.cs/#L19"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.VirtualMachine.TypedStackContext-1.html">TypedStackContext&lt;TValue&gt;</a> class.</p>
+  <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.VirtualMachine.TypedStackContext-1.html">TypedStackContext&lt;TValue&gt;</a> class with the
+default operand-stack depth limit (<a class="xref" href="Utils.VirtualMachine.BoundedStack-1.html#Utils_VirtualMachine_BoundedStack_1_DefaultMaxDepth">DefaultMaxDepth</a>).</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -295,6 +296,49 @@ Use this instead of <a class="xref" href="Utils.VirtualMachine.DefaultContext.ht
 
 
 
+  <a id="Utils_VirtualMachine_TypedStackContext_1__ctor_" data-uid="Utils.VirtualMachine.TypedStackContext`1.#ctor*"></a>
+
+  <h3 id="Utils_VirtualMachine_TypedStackContext_1__ctor_System_ReadOnlyMemory_System_Byte__System_Int32_" data-uid="Utils.VirtualMachine.TypedStackContext`1.#ctor(System.ReadOnlyMemory{System.Byte},System.Int32)">
+  TypedStackContext(ReadOnlyMemory&lt;byte&gt;, int)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/TypedStackContext.cs/#L32"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.VirtualMachine.TypedStackContext-1.html">TypedStackContext&lt;TValue&gt;</a> class with a
+custom operand-stack depth limit.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public TypedStackContext(ReadOnlyMemory&lt;byte&gt; data, int maxOperandStackDepth)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>data</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.readonlymemory-1">ReadOnlyMemory</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>&gt;</dt>
+    <dd><p>The byte data containing the instruction stream.</p>
+</dd>
+    <dt><code>maxOperandStackDepth</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Maximum number of values the operand stack may hold simultaneously.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when <code class="paramref">maxOperandStackDepth</code> is less than one.</p>
+</dd>
+  </dl>
+
+
+
   <h2 class="section" id="properties">Properties
 </h2>
 
@@ -303,15 +347,17 @@ Use this instead of <a class="xref" href="Utils.VirtualMachine.DefaultContext.ht
 
   <h3 id="Utils_VirtualMachine_TypedStackContext_1_Stack" data-uid="Utils.VirtualMachine.TypedStackContext`1.Stack">
   Stack
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/TypedStackContext.cs/#L25"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/TypedStackContext.cs/#L42"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>A strongly-typed operand stack for storing values without boxing overhead.</p>
+  <div class="markdown level1 summary"><p>A bounded strongly-typed operand stack for storing values without boxing overhead.
+Push throws <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a> when the depth limit is reached;
+Pop and Peek throw when the stack is empty.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public Stack&lt;TValue&gt; Stack { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">public BoundedStack&lt;TValue&gt; Stack { get; }</code></pre>
   </div>
 
 
@@ -320,7 +366,7 @@ Use this instead of <a class="xref" href="Utils.VirtualMachine.DefaultContext.ht
 
   <h4 class="section">Property Value</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.stack-1">Stack</a>&lt;TValue&gt;</dt>
+    <dt><a class="xref" href="Utils.VirtualMachine.BoundedStack-1.html">BoundedStack</a>&lt;TValue&gt;</dt>
     <dd></dd>
   </dl>
 

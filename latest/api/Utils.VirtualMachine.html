@@ -95,6 +95,13 @@
 Classes
 </h3>
     <dl class="jumplist">
+      <dt><a class="xref" href="Utils.VirtualMachine.BoundedStack-1.html">BoundedStack&lt;T&gt;</a></dt>
+      <dd><p>A stack with a configurable maximum depth. Push throws <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a>
+when the depth limit is reached; Pop and Peek throw when the stack is empty.
+All exceptions carry VM-specific messages that include the depth limit for diagnostics.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
       <dt><a class="xref" href="Utils.VirtualMachine.CallFrame.html">CallFrame</a></dt>
       <dd><p>Represents a single activation frame on a <a class="xref" href="Utils.VirtualMachine.CallStack.html">CallStack</a>, carrying the return address
 and a per-frame local-variable store keyed by name.</p>
@@ -137,7 +144,7 @@ and exception handlers (<a class="xref" href="Utils.VirtualMachine.ExceptionBloc
     </dl>
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.VirtualMachine.DefaultContext.html">DefaultContext</a></dt>
-      <dd><p>A default context implementation providing an object stack.</p>
+      <dd><p>A default context implementation providing a bounded object operand stack.</p>
 </dd>
     </dl>
     <dl class="jumplist">
@@ -158,6 +165,11 @@ Use this when the VM needs both call/return and if/loop/try semantics.</p>
 </dd>
     </dl>
     <dl class="jumplist">
+      <dt><a class="xref" href="Utils.VirtualMachine.InstructionBudgetExceededException.html">InstructionBudgetExceededException</a></dt>
+      <dd><p>Thrown when the number of dispatched instructions exceeds the configured instruction budget.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
       <dt><a class="xref" href="Utils.VirtualMachine.LoopBlock.html">LoopBlock</a></dt>
       <dd><p>Represents an active loop on a <a class="xref" href="Utils.VirtualMachine.ControlFlowStack.html">ControlFlowStack</a>.</p>
 </dd>
@@ -165,7 +177,7 @@ Use this when the VM needs both call/return and if/loop/try semantics.</p>
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.VirtualMachine.MemoryAccessException.html">MemoryAccessException</a></dt>
       <dd><p>The exception thrown when a virtual memory access violates the page's mapped access rights,
-or when the target address is not mapped in the process's page table.</p>
+or when the target address is not mapped or is invalid in the process's page table.</p>
 </dd>
     </dl>
     <dl class="jumplist">
@@ -237,6 +249,12 @@ instructions from a byte array-based context. Instructions are defined by method
 annotated with <a class="xref" href="Utils.VirtualMachine.InstructionAttribute.html">InstructionAttribute</a>.</p>
 </dd>
     </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.VirtualMachine.VmInspectorException.html">VmInspectorException</a></dt>
+      <dd><p>Thrown when an <a class="xref" href="Utils.VirtualMachine.IVmInspector-1.html">IVmInspector&lt;T&gt;</a> callback raises an exception, allowing callers
+to distinguish inspector failures from instruction-execution faults.</p>
+</dd>
+    </dl>
     <h3 id="interfaces">
 Interfaces
 </h3>
@@ -281,6 +299,11 @@ no longer active and avoid re-entering the same handler.</p>
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.VirtualMachine.ProcessState.html">ProcessState</a></dt>
       <dd><p>Represents the lifecycle state of a process managed by <a class="xref" href="Utils.VirtualMachine.Scheduler-1.html">Scheduler&lt;T&gt;</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.VirtualMachine.VmInspectorPhase.html">VmInspectorPhase</a></dt>
+      <dd><p>Identifies which <a class="xref" href="Utils.VirtualMachine.IVmInspector-1.html">IVmInspector&lt;T&gt;</a> callback threw.</p>
 </dd>
     </dl>
     <h3 id="delegates">

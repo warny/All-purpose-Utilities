@@ -6,7 +6,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="title" content="Class DefaultContext | omy.Utils Documentation ">
       
-      <meta name="description" content="A default context implementation providing an object stack.">
+      <meta name="description" content="A default context implementation providing a bounded object operand stack.">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_VirtualMachine_DefaultContext" data-uid="Utils.VirtualMachine.DefaultContext" class="text-break">
-Class DefaultContext  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L550"><i class="bi bi-code-slash"></i></a>
+Class DefaultContext  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L669"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -97,7 +97,7 @@ Class DefaultContext  <a class="header-action link-secondary" title="View source
   <dl><dt>Assembly</dt><dd>Utils.VirtualMachine.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>A default context implementation providing an object stack.</p>
+  <div class="markdown summary"><p>A default context implementation providing a bounded object operand stack.</p>
 </div>
   <div class="markdown conceptual"></div>
 
@@ -268,10 +268,11 @@ Class DefaultContext  <a class="header-action link-secondary" title="View source
 
   <h3 id="Utils_VirtualMachine_DefaultContext__ctor_System_ReadOnlyMemory_System_Byte__" data-uid="Utils.VirtualMachine.DefaultContext.#ctor(System.ReadOnlyMemory{System.Byte})">
   DefaultContext(ReadOnlyMemory&lt;byte&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L556"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L676"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.VirtualMachine.DefaultContext.html">DefaultContext</a> class with the given data buffer.</p>
+  <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.VirtualMachine.DefaultContext.html">DefaultContext</a> class with the given data buffer
+and the default operand-stack depth limit (<a class="xref" href="Utils.VirtualMachine.BoundedStack-1.html#Utils_VirtualMachine_BoundedStack_1_DefaultMaxDepth">DefaultMaxDepth</a>).</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -297,6 +298,50 @@ Class DefaultContext  <a class="header-action link-secondary" title="View source
 
 
 
+  <a id="Utils_VirtualMachine_DefaultContext__ctor_" data-uid="Utils.VirtualMachine.DefaultContext.#ctor*"></a>
+
+  <h3 id="Utils_VirtualMachine_DefaultContext__ctor_System_ReadOnlyMemory_System_Byte__System_Int32_" data-uid="Utils.VirtualMachine.DefaultContext.#ctor(System.ReadOnlyMemory{System.Byte},System.Int32)">
+  DefaultContext(ReadOnlyMemory&lt;byte&gt;, int)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L690"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.VirtualMachine.DefaultContext.html">DefaultContext</a> class with the given data buffer
+and a custom operand-stack depth limit.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public DefaultContext(ReadOnlyMemory&lt;byte&gt; data, int maxOperandStackDepth)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>data</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.readonlymemory-1">ReadOnlyMemory</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>&gt;</dt>
+    <dd><p>The byte data containing all instructions or data to process.</p>
+</dd>
+    <dt><code>maxOperandStackDepth</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Maximum number of values the operand stack may hold simultaneously.
+Defaults to <a class="xref" href="Utils.VirtualMachine.BoundedStack-1.html#Utils_VirtualMachine_BoundedStack_1_DefaultMaxDepth">DefaultMaxDepth</a> when this constructor is not used.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when <code class="paramref">maxOperandStackDepth</code> is less than one.</p>
+</dd>
+  </dl>
+
+
+
   <h2 class="section" id="properties">Properties
 </h2>
 
@@ -305,15 +350,17 @@ Class DefaultContext  <a class="header-action link-secondary" title="View source
 
   <h3 id="Utils_VirtualMachine_DefaultContext_Stack" data-uid="Utils.VirtualMachine.DefaultContext.Stack">
   Stack
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L563"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L700"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>A stack of objects that can be used during instruction execution for temporary data storage.</p>
+  <div class="markdown level1 summary"><p>A bounded operand stack for temporary values during instruction execution.
+Push throws <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a> when the depth limit is reached;
+Pop and Peek throw when the stack is empty.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public Stack&lt;object&gt; Stack { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">public BoundedStack&lt;object&gt; Stack { get; }</code></pre>
   </div>
 
 
@@ -322,7 +369,7 @@ Class DefaultContext  <a class="header-action link-secondary" title="View source
 
   <h4 class="section">Property Value</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.stack-1">Stack</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a>&gt;</dt>
+    <dt><a class="xref" href="Utils.VirtualMachine.BoundedStack-1.html">BoundedStack</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a>&gt;</dt>
     <dd></dd>
   </dl>
 
@@ -337,7 +384,7 @@ Class DefaultContext  <a class="header-action link-secondary" title="View source
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L550" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L669" class="edit-link">Edit this page</a>
         </div>
 
 

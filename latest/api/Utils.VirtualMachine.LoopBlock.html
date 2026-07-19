@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_VirtualMachine_LoopBlock" data-uid="Utils.VirtualMachine.LoopBlock" class="text-break">
-Class LoopBlock  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/LoopBlock.cs/#L19"><i class="bi bi-code-slash"></i></a>
+Class LoopBlock  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/LoopBlock.cs/#L27"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -243,11 +243,19 @@ Class LoopBlock  <a class="header-action link-secondary" title="View source" hre
 
   <h2 id="Utils_VirtualMachine_LoopBlock_remarks">Remarks</h2>
   <div class="markdown level0 remarks"><p>Typical VM usage:</p>
-<ul><li>LOOP instruction: push a <a class="xref" href="Utils.VirtualMachine.LoopBlock.html">LoopBlock</a> with the current IP as
-    <a class="xref" href="Utils.VirtualMachine.LoopBlock.html#Utils_VirtualMachine_LoopBlock_StartAddress">StartAddress</a> and the first byte after the loop as <a class="xref" href="Utils.VirtualMachine.LoopBlock.html#Utils_VirtualMachine_LoopBlock_EndAddress">EndAddress</a>.</li><li>ENDLOOP instruction: jump to <a class="xref" href="Utils.VirtualMachine.LoopBlock.html#Utils_VirtualMachine_LoopBlock_StartAddress">StartAddress</a> to re-evaluate the condition
-    (the block stays on the stack for the next iteration).</li><li>BREAK instruction: call <a class="xref" href="Utils.VirtualMachine.ControlFlowStack.html#Utils_VirtualMachine_ControlFlowStack_Break_Utils_VirtualMachine_Context_">Break(Context)</a>; pops up to and
+<ul><li>LOOP instruction: push a <a class="xref" href="Utils.VirtualMachine.LoopBlock.html">LoopBlock</a> with <a class="xref" href="Utils.VirtualMachine.LoopBlock.html#Utils_VirtualMachine_LoopBlock_StartAddress">StartAddress</a> set to
+    the first instruction of the loop <em>body</em> (i.e. the byte immediately after the LOOP
+    instruction itself) and <a class="xref" href="Utils.VirtualMachine.LoopBlock.html#Utils_VirtualMachine_LoopBlock_EndAddress">EndAddress</a> set to the first byte after the loop.</li><li>ENDLOOP instruction: jump to <a class="xref" href="Utils.VirtualMachine.LoopBlock.html#Utils_VirtualMachine_LoopBlock_StartAddress">StartAddress</a> to re-enter the body (the block
+    stays on the stack for the next iteration).</li><li>BREAK instruction: call <a class="xref" href="Utils.VirtualMachine.ControlFlowStack.html#Utils_VirtualMachine_ControlFlowStack_Break_Utils_VirtualMachine_Context_">Break(Context)</a>; pops up to and
     including this block, then jumps to <a class="xref" href="Utils.VirtualMachine.LoopBlock.html#Utils_VirtualMachine_LoopBlock_EndAddress">EndAddress</a>.</li><li>CONTINUE instruction: call <a class="xref" href="Utils.VirtualMachine.ControlFlowStack.html#Utils_VirtualMachine_ControlFlowStack_Continue_Utils_VirtualMachine_Context_">Continue(Context)</a>; pops any blocks
     nested inside this loop, then jumps to <a class="xref" href="Utils.VirtualMachine.LoopBlock.html#Utils_VirtualMachine_LoopBlock_StartAddress">StartAddress</a>.</li></ul>
+<p>
+<b>Important:</b> <a class="xref" href="Utils.VirtualMachine.LoopBlock.html#Utils_VirtualMachine_LoopBlock_StartAddress">StartAddress</a> must not point at the LOOP instruction itself.
+If ENDLOOP jumped back to LOOP, the LOOP handler would push a second <a class="xref" href="Utils.VirtualMachine.LoopBlock.html">LoopBlock</a>
+on every iteration, growing the <a class="xref" href="Utils.VirtualMachine.ControlFlowStack.html">ControlFlowStack</a> without bound. Set
+<a class="xref" href="Utils.VirtualMachine.LoopBlock.html#Utils_VirtualMachine_LoopBlock_StartAddress">StartAddress</a> to the IP value already advanced past the LOOP operands, as returned
+by <a class="xref" href="Utils.VirtualMachine.Context.html#Utils_VirtualMachine_Context_InstructionPointer">InstructionPointer</a> when the LOOP handler is executing.
+</p>
 </div>
 
 
@@ -259,7 +267,7 @@ Class LoopBlock  <a class="header-action link-secondary" title="View source" hre
 
   <h3 id="Utils_VirtualMachine_LoopBlock__ctor_System_Int32_System_Int32_" data-uid="Utils.VirtualMachine.LoopBlock.#ctor(System.Int32,System.Int32)">
   LoopBlock(int, int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/LoopBlock.cs/#L33"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/LoopBlock.cs/#L45"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new loop block.</p>
@@ -288,6 +296,13 @@ Class LoopBlock  <a class="header-action link-secondary" title="View source" hre
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when any address is negative. Negative values are the termination sentinel
+and must not be used as branch targets.</p>
+</dd>
+  </dl>
 
 
 
@@ -299,7 +314,7 @@ Class LoopBlock  <a class="header-action link-secondary" title="View source" hre
 
   <h3 id="Utils_VirtualMachine_LoopBlock_EndAddress" data-uid="Utils.VirtualMachine.LoopBlock.EndAddress">
   EndAddress
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/LoopBlock.cs/#L26"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/LoopBlock.cs/#L34"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>First instruction after the loop body; target of a BREAK instruction.</p>
@@ -331,7 +346,7 @@ Class LoopBlock  <a class="header-action link-secondary" title="View source" hre
 
   <h3 id="Utils_VirtualMachine_LoopBlock_StartAddress" data-uid="Utils.VirtualMachine.LoopBlock.StartAddress">
   StartAddress
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/LoopBlock.cs/#L23"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/LoopBlock.cs/#L31"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the instruction-stream offset at which this block was opened.</p>
@@ -366,7 +381,7 @@ Class LoopBlock  <a class="header-action link-secondary" title="View source" hre
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/LoopBlock.cs/#L19" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/LoopBlock.cs/#L27" class="edit-link">Edit this page</a>
         </div>
 
 

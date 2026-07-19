@@ -13396,6 +13396,20 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.VirtualMachine.BoundedStack-1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.VirtualMachine.BoundedStack-1.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.VirtualMachine.BoundedStack<T>",
+      "Summary": "<p sourcefile=\"api/Utils.VirtualMachine.BoundedStack-1.yml\" sourcestartlinenumber=\"1\">A stack with a configurable maximum depth. Push throws <xref href=\"System.InvalidOperationException\" data-throw-if-not-resolved=\"false\"></xref>\nwhen the depth limit is reached; Pop and Peek throw when the stack is empty.\nAll exceptions carry VM-specific messages that include the depth limit for diagnostics.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.VirtualMachine.CallFrame.yml",
       "output": {
         ".html": {
@@ -13504,7 +13518,7 @@
       "Uid": null,
       "IsMRef": true,
       "Title": "Utils.VirtualMachine.DefaultContext",
-      "Summary": "<p sourcefile=\"api/Utils.VirtualMachine.DefaultContext.yml\" sourcestartlinenumber=\"1\">A default context implementation providing an object stack.</p>\n"
+      "Summary": "<p sourcefile=\"api/Utils.VirtualMachine.DefaultContext.yml\" sourcestartlinenumber=\"1\">A default context implementation providing a bounded object operand stack.</p>\n"
     },
     {
       "type": "ManagedReference",
@@ -13620,6 +13634,20 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.VirtualMachine.InstructionBudgetExceededException.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.VirtualMachine.InstructionBudgetExceededException.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.VirtualMachine.InstructionBudgetExceededException",
+      "Summary": "<p sourcefile=\"api/Utils.VirtualMachine.InstructionBudgetExceededException.yml\" sourcestartlinenumber=\"1\">Thrown when the number of dispatched instructions exceeds the configured instruction budget.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.VirtualMachine.LoopBlock.yml",
       "output": {
         ".html": {
@@ -13644,7 +13672,7 @@
       "Uid": null,
       "IsMRef": true,
       "Title": "Utils.VirtualMachine.MemoryAccessException",
-      "Summary": "<p sourcefile=\"api/Utils.VirtualMachine.MemoryAccessException.yml\" sourcestartlinenumber=\"1\">The exception thrown when a virtual memory access violates the page's mapped access rights,\nor when the target address is not mapped in the process's page table.</p>\n"
+      "Summary": "<p sourcefile=\"api/Utils.VirtualMachine.MemoryAccessException.yml\" sourcestartlinenumber=\"1\">The exception thrown when a virtual memory access violates the page's mapped access rights,\nor when the target address is not mapped or is invalid in the process's page table.</p>\n"
     },
     {
       "type": "ManagedReference",
@@ -13841,6 +13869,34 @@
       "IsMRef": true,
       "Title": "Utils.VirtualMachine.VirtualProcessorException",
       "Summary": "<p sourcefile=\"api/Utils.VirtualMachine.VirtualProcessorException.yml\" sourcestartlinenumber=\"1\">Represents errors that occur while executing a <xref href=\"Utils.VirtualMachine.VirtualProcessor%601\" data-throw-if-not-resolved=\"false\"></xref>.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.VirtualMachine.VmInspectorException.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.VirtualMachine.VmInspectorException.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.VirtualMachine.VmInspectorException",
+      "Summary": "<p sourcefile=\"api/Utils.VirtualMachine.VmInspectorException.yml\" sourcestartlinenumber=\"1\">Thrown when an <xref href=\"Utils.VirtualMachine.IVmInspector%601\" data-throw-if-not-resolved=\"false\"></xref> callback raises an exception, allowing callers\nto distinguish inspector failures from instruction-execution faults.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.VirtualMachine.VmInspectorPhase.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.VirtualMachine.VmInspectorPhase.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.VirtualMachine.VmInspectorPhase",
+      "Summary": "<p sourcefile=\"api/Utils.VirtualMachine.VmInspectorPhase.yml\" sourcestartlinenumber=\"1\">Identifies which <xref href=\"Utils.VirtualMachine.IVmInspector%601\" data-throw-if-not-resolved=\"false\"></xref> callback threw.</p>\n"
     },
     {
       "type": "ManagedReference",

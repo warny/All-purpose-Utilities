@@ -246,6 +246,85 @@ push/pop/navigate methods and are free to assign any opcode to each operation.</
 </div>
 
 
+  <h2 class="section" id="constructors">Constructors
+</h2>
+
+
+  <a id="Utils_VirtualMachine_ControlFlowStack__ctor_" data-uid="Utils.VirtualMachine.ControlFlowStack.#ctor*"></a>
+
+  <h3 id="Utils_VirtualMachine_ControlFlowStack__ctor_System_Int32_" data-uid="Utils.VirtualMachine.ControlFlowStack.#ctor(System.Int32)">
+  ControlFlowStack(int)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L52"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Initializes a new <a class="xref" href="Utils.VirtualMachine.ControlFlowStack.html">ControlFlowStack</a> with the specified maximum nesting depth.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ControlFlowStack(int maxDepth = 1024)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>maxDepth</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>Maximum number of blocks that may be open simultaneously.
+Defaults to <a class="xref" href="Utils.VirtualMachine.ControlFlowStack.html#Utils_VirtualMachine_ControlFlowStack_DefaultMaxDepth">DefaultMaxDepth</a> (<code>1024</code>).</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when <code class="paramref">maxDepth</code> is less than one.</p>
+</dd>
+  </dl>
+
+
+
+  <h2 class="section" id="fields">Fields
+</h2>
+
+
+
+  <h3 id="Utils_VirtualMachine_ControlFlowStack_DefaultMaxDepth" data-uid="Utils.VirtualMachine.ControlFlowStack.DefaultMaxDepth">
+  DefaultMaxDepth
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L19"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>The default maximum nesting depth when no explicit limit is provided.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public const int DefaultMaxDepth = 1024</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
   <h2 class="section" id="properties">Properties
 </h2>
 
@@ -254,7 +333,7 @@ push/pop/navigate methods and are free to assign any opcode to each operation.</
 
   <h3 id="Utils_VirtualMachine_ControlFlowStack_Blocks" data-uid="Utils.VirtualMachine.ControlFlowStack.Blocks">
   Blocks
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L33"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L42"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets all currently open blocks from innermost (top of stack) to outermost (bottom),
@@ -287,7 +366,7 @@ as a live enumerable. Useful for diagnostics and post-execution assertions.</p>
 
   <h3 id="Utils_VirtualMachine_ControlFlowStack_CurrentBlock" data-uid="Utils.VirtualMachine.ControlFlowStack.CurrentBlock">
   CurrentBlock
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L27"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L36"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the innermost open block, or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> when the stack is empty.</p>
@@ -319,7 +398,7 @@ as a live enumerable. Useful for diagnostics and post-execution assertions.</p>
 
   <h3 id="Utils_VirtualMachine_ControlFlowStack_Depth" data-uid="Utils.VirtualMachine.ControlFlowStack.Depth">
   Depth
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L21"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L30"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the number of currently open blocks.</p>
@@ -351,7 +430,7 @@ as a live enumerable. Useful for diagnostics and post-execution assertions.</p>
 
   <h3 id="Utils_VirtualMachine_ControlFlowStack_IsEmpty" data-uid="Utils.VirtualMachine.ControlFlowStack.IsEmpty">
   IsEmpty
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L24"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L33"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a value indicating whether no blocks are currently open.</p>
@@ -379,6 +458,39 @@ as a live enumerable. Useful for diagnostics and post-execution assertions.</p>
 
 
 
+  <a id="Utils_VirtualMachine_ControlFlowStack_MaxDepth_" data-uid="Utils.VirtualMachine.ControlFlowStack.MaxDepth*"></a>
+
+  <h3 id="Utils_VirtualMachine_ControlFlowStack_MaxDepth" data-uid="Utils.VirtualMachine.ControlFlowStack.MaxDepth">
+  MaxDepth
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L27"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the maximum number of blocks that may be open simultaneously.
+Pushing beyond this limit throws <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int MaxDepth { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <h2 class="section" id="methods">Methods
 </h2>
 
@@ -387,7 +499,7 @@ as a live enumerable. Useful for diagnostics and post-execution assertions.</p>
 
   <h3 id="Utils_VirtualMachine_ControlFlowStack_Break_Utils_VirtualMachine_Context_" data-uid="Utils.VirtualMachine.ControlFlowStack.Break(Utils.VirtualMachine.Context)">
   Break(Context)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L107"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L151"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Handles a BREAK instruction: pops all blocks up to and including the nearest
@@ -432,7 +544,7 @@ malformed bytecode issues BREAK outside a loop.</p>
 
   <h3 id="Utils_VirtualMachine_ControlFlowStack_Continue_Utils_VirtualMachine_Context_" data-uid="Utils.VirtualMachine.ControlFlowStack.Continue(Utils.VirtualMachine.Context)">
   Continue(Context)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L136"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L181"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Handles a CONTINUE instruction: pops all blocks nested inside the nearest
@@ -473,22 +585,73 @@ malformed bytecode issues CONTINUE outside a loop.</p>
 
 
 
+  <a id="Utils_VirtualMachine_ControlFlowStack_EndCatch_" data-uid="Utils.VirtualMachine.ControlFlowStack.EndCatch*"></a>
+
+  <h3 id="Utils_VirtualMachine_ControlFlowStack_EndCatch_Utils_VirtualMachine_Context_" data-uid="Utils.VirtualMachine.ControlFlowStack.EndCatch(Utils.VirtualMachine.Context)">
+  EndCatch(Context)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L220"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Handles an ENDCATCH instruction: closes the catch body and, when a finally clause is
+pending (stored by a prior <a class="xref" href="Utils.VirtualMachine.ControlFlowStack.html#Utils_VirtualMachine_ControlFlowStack_Throw_Utils_VirtualMachine_Context_System_Object_">Throw(Context, object?)</a> call when both
+<a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_CatchAddress">CatchAddress</a> and <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_FinallyAddress">FinallyAddress</a>
+were set), redirects <a class="xref" href="Utils.VirtualMachine.Context.html#Utils_VirtualMachine_Context_InstructionPointer">InstructionPointer</a> to that finally block and
+clears <span class="xref">Utils.VirtualMachine.ExceptionBlock.ExceptionInFlight</span> so that <a class="xref" href="Utils.VirtualMachine.ControlFlowStack.html#Utils_VirtualMachine_ControlFlowStack_EndFinally_Utils_VirtualMachine_Context_">EndFinally(Context)</a>
+will not attempt to re-propagate the now-handled exception. When no pending finally is
+present (catch-only block), the block is popped.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool EndCatch(Context context)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>context</code> <a class="xref" href="Utils.VirtualMachine.Context.html">Context</a></dt>
+    <dd><p>The current execution context.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if execution was redirected to a finally block;
+<a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> if the block was popped with no finally to redirect to.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">context</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a></dt>
+    <dd><p>Thrown when the innermost open block is not an <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html">ExceptionBlock</a> in the
+<a class="xref" href="Utils.VirtualMachine.ExceptionBlockPhase.html#Utils_VirtualMachine_ExceptionBlockPhase_Catch">Catch</a> phase.</p>
+</dd>
+  </dl>
+
+
+
   <a id="Utils_VirtualMachine_ControlFlowStack_EndFinally_" data-uid="Utils.VirtualMachine.ControlFlowStack.EndFinally*"></a>
 
   <h3 id="Utils_VirtualMachine_ControlFlowStack_EndFinally_Utils_VirtualMachine_Context_" data-uid="Utils.VirtualMachine.ControlFlowStack.EndFinally(Utils.VirtualMachine.Context)">
   EndFinally(Context)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L176"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L257"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Handles an ENDFINALLY instruction: if a catch handler is pending (stored by a prior
-<a class="xref" href="Utils.VirtualMachine.ControlFlowStack.html#Utils_VirtualMachine_ControlFlowStack_Throw_Utils_VirtualMachine_Context_System_Object_">Throw(Context, object?)</a> call when both <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_CatchAddress">CatchAddress</a> and
-<a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_FinallyAddress">FinallyAddress</a> were set), redirects
-<a class="xref" href="Utils.VirtualMachine.Context.html#Utils_VirtualMachine_Context_InstructionPointer">InstructionPointer</a> to that catch handler and clears the pending
-address, then transitions the block to <a class="xref" href="Utils.VirtualMachine.ExceptionBlockPhase.html#Utils_VirtualMachine_ExceptionBlockPhase_Catch">Catch</a>.
-When no pending catch is present but an exception is in flight (finally-only
-block, or the innermost finally in a nested try), pops the block and propagates the
-exception to the next outer handler by calling <a class="xref" href="Utils.VirtualMachine.ControlFlowStack.html#Utils_VirtualMachine_ControlFlowStack_Throw_Utils_VirtualMachine_Context_System_Object_">Throw(Context, object?)</a> recursively.
-Otherwise, simply pops the block (normal exit from a try/finally without an exception).</p>
+  <div class="markdown level1 summary"><p>Handles an ENDFINALLY instruction: when an exception is still in flight (finally-only
+path, or a nested finally inside a catch that rethrew), pops the block and propagates
+the exception to the next outer handler by calling <a class="xref" href="Utils.VirtualMachine.ControlFlowStack.html#Utils_VirtualMachine_ControlFlowStack_Throw_Utils_VirtualMachine_Context_System_Object_">Throw(Context, object?)</a> recursively.
+Otherwise, simply pops the block (normal try-exit or cleanup after a catch body).</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -506,9 +669,8 @@ Otherwise, simply pops the block (normal exit from a try/finally without an exce
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
-    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if execution was redirected to a catch handler (either a pending
-one on this block or an outer one found via propagation);
-<a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> if the block was popped with no handler to redirect to
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if the exception was propagated to an outer handler;
+<a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> if the block was popped with no propagation
 (normal exit, or unhandled exception that reached the top of the control-flow stack).</p>
 </dd>
   </dl>
@@ -522,6 +684,9 @@ one on this block or an outer one found via propagation);
 
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">context</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a></dt>
     <dd><p>Thrown when the innermost open block is not an <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html">ExceptionBlock</a>.</p>
 </dd>
@@ -533,7 +698,7 @@ one on this block or an outer one found via propagation);
 
   <h3 id="Utils_VirtualMachine_ControlFlowStack_FindEnclosing__1" data-uid="Utils.VirtualMachine.ControlFlowStack.FindEnclosing``1">
   FindEnclosing&lt;T&gt;()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L202"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L277"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns the nearest enclosing block of type <code class="typeparamref">T</code> without removing it
@@ -574,7 +739,7 @@ Useful for introspection (e.g. &quot;are we inside a loop?&quot;) and diagnostic
 
   <h3 id="Utils_VirtualMachine_ControlFlowStack_Pop" data-uid="Utils.VirtualMachine.ControlFlowStack.Pop">
   Pop()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L68"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L112"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Closes the innermost open block. Called at ENDIF, ENDLOOP, or ENDTRY.</p>
@@ -612,7 +777,7 @@ Useful for introspection (e.g. &quot;are we inside a loop?&quot;) and diagnostic
 
   <h3 id="Utils_VirtualMachine_ControlFlowStack_Pop__1" data-uid="Utils.VirtualMachine.ControlFlowStack.Pop``1">
   Pop&lt;T&gt;()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L86"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L130"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Closes the innermost open block, asserting that it is of type <code class="typeparamref">T</code>.
@@ -662,7 +827,7 @@ Use this overload when the bytecode guarantees the block type (e.g. ENDIF always
 
   <h3 id="Utils_VirtualMachine_ControlFlowStack_PushConditional_System_Int32_System_Int32_System_Nullable_System_Int32__" data-uid="Utils.VirtualMachine.ControlFlowStack.PushConditional(System.Int32,System.Int32,System.Nullable{System.Int32})">
   PushConditional(int, int, int?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L39"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L65"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Opens a conditional (if/else) block.</p>
@@ -694,6 +859,15 @@ Use this overload when the bytecode guarantees the block type (e.g. ENDIF always
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when any non-null address is negative.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a></dt>
+    <dd><p>Thrown when <a class="xref" href="Utils.VirtualMachine.ControlFlowStack.html#Utils_VirtualMachine_ControlFlowStack_MaxDepth">MaxDepth</a> would be exceeded.</p>
+</dd>
+  </dl>
 
 
 
@@ -701,7 +875,7 @@ Use this overload when the bytecode guarantees the block type (e.g. ENDIF always
 
   <h3 id="Utils_VirtualMachine_ControlFlowStack_PushException_System_Int32_System_Nullable_System_Int32__System_Nullable_System_Int32__" data-uid="Utils.VirtualMachine.ControlFlowStack.PushException(System.Int32,System.Nullable{System.Int32},System.Nullable{System.Int32})">
   PushException(int, int?, int?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L56"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L92"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Opens a try/catch/finally block.</p>
@@ -739,6 +913,12 @@ Use this overload when the bytecode guarantees the block type (e.g. ENDIF always
     <dd><p>Thrown when both <code class="paramref">catchAddress</code> and <code class="paramref">finallyAddress</code> are <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.
 An exception block with no handler is unreachable and indicates malformed bytecode.</p>
 </dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when any non-null address is negative.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a></dt>
+    <dd><p>Thrown when <a class="xref" href="Utils.VirtualMachine.ControlFlowStack.html#Utils_VirtualMachine_ControlFlowStack_MaxDepth">MaxDepth</a> would be exceeded.</p>
+</dd>
   </dl>
 
 
@@ -747,7 +927,7 @@ An exception block with no handler is unreachable and indicates malformed byteco
 
   <h3 id="Utils_VirtualMachine_ControlFlowStack_PushLoop_System_Int32_System_Int32_" data-uid="Utils.VirtualMachine.ControlFlowStack.PushLoop(System.Int32,System.Int32)">
   PushLoop(int, int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L45"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L76"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Opens a loop block.</p>
@@ -776,6 +956,15 @@ An exception block with no handler is unreachable and indicates malformed byteco
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when any address is negative.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a></dt>
+    <dd><p>Thrown when <a class="xref" href="Utils.VirtualMachine.ControlFlowStack.html#Utils_VirtualMachine_ControlFlowStack_MaxDepth">MaxDepth</a> would be exceeded.</p>
+</dd>
+  </dl>
 
 
 
@@ -783,25 +972,31 @@ An exception block with no handler is unreachable and indicates malformed byteco
 
   <h3 id="Utils_VirtualMachine_ControlFlowStack_Throw_Utils_VirtualMachine_Context_System_Object_" data-uid="Utils.VirtualMachine.ControlFlowStack.Throw(Utils.VirtualMachine.Context,System.Object)">
   Throw(Context, object?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L232"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L313"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Handles a THROW instruction: pops all blocks until the nearest <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html">ExceptionBlock</a>
 whose <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_Phase">Phase</a> is <a class="xref" href="Utils.VirtualMachine.ExceptionBlockPhase.html#Utils_VirtualMachine_ExceptionBlockPhase_Try">Try</a> is found,
 stores the thrown value in <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_ThrownValue">ThrownValue</a>, and redirects
-<a class="xref" href="Utils.VirtualMachine.Context.html#Utils_VirtualMachine_Context_InstructionPointer">InstructionPointer</a> according to the following rules:</p>
-<ul><li>If the block has a finally clause, jumps to <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_FinallyAddress">FinallyAddress</a>
-    first. When a catch clause is also present, its address is stored in
-    <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_PendingCatchAddress">PendingCatchAddress</a> so the ENDFINALLY handler can jump there
-    after the finally block completes. The block transitions to
-    <a class="xref" href="Utils.VirtualMachine.ExceptionBlockPhase.html#Utils_VirtualMachine_ExceptionBlockPhase_Finally">Finally</a>.</li><li>If the block has only a catch clause (no finally), jumps directly to
-    <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_CatchAddress">CatchAddress</a>. The block transitions to
-    <a class="xref" href="Utils.VirtualMachine.ExceptionBlockPhase.html#Utils_VirtualMachine_ExceptionBlockPhase_Catch">Catch</a>.</li></ul>
-<p>Blocks already in <a class="xref" href="Utils.VirtualMachine.ExceptionBlockPhase.html#Utils_VirtualMachine_ExceptionBlockPhase_Finally">Finally</a> or
-<a class="xref" href="Utils.VirtualMachine.ExceptionBlockPhase.html#Utils_VirtualMachine_ExceptionBlockPhase_Catch">Catch</a> are skipped so that a throw from inside a handler
-body propagates to the next outer try scope instead of re-entering the current handler.
-The matched <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html">ExceptionBlock</a> remains on the stack so that the handler body can
-read <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_ThrownValue">ThrownValue</a>; ENDTRY pops it.</p>
+<a class="xref" href="Utils.VirtualMachine.Context.html#Utils_VirtualMachine_Context_InstructionPointer">InstructionPointer</a> according to conventional structured-exception
+semantics (catch executes before finally):</p>
+<ul><li>If the block has a catch clause, jumps to <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_CatchAddress">CatchAddress</a>
+    first. When a finally clause is also present, its address is stored in
+    <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_PendingFinallyAddress">PendingFinallyAddress</a> so the ENDCATCH handler can jump
+    there after the catch body completes normally. The block transitions to
+    <a class="xref" href="Utils.VirtualMachine.ExceptionBlockPhase.html#Utils_VirtualMachine_ExceptionBlockPhase_Catch">Catch</a>.</li><li>If the block has only a finally clause (no catch), jumps directly to
+    <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_FinallyAddress">FinallyAddress</a> and sets
+    <span class="xref">Utils.VirtualMachine.ExceptionBlock.ExceptionInFlight</span> so that <a class="xref" href="Utils.VirtualMachine.ControlFlowStack.html#Utils_VirtualMachine_ControlFlowStack_EndFinally_Utils_VirtualMachine_Context_">EndFinally(Context)</a> can
+    propagate to the next outer handler. The block transitions to
+    <a class="xref" href="Utils.VirtualMachine.ExceptionBlockPhase.html#Utils_VirtualMachine_ExceptionBlockPhase_Finally">Finally</a>.</li></ul>
+<p>A throw from inside a <a class="xref" href="Utils.VirtualMachine.ExceptionBlockPhase.html#Utils_VirtualMachine_ExceptionBlockPhase_Catch">Catch</a> body whose block also has a
+<a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_FinallyAddress">FinallyAddress</a> redirects through that finally before propagating
+outward, so the finally always runs regardless of how the catch exits. A throw from inside
+a block already in <a class="xref" href="Utils.VirtualMachine.ExceptionBlockPhase.html#Utils_VirtualMachine_ExceptionBlockPhase_Finally">Finally</a>, or in
+<a class="xref" href="Utils.VirtualMachine.ExceptionBlockPhase.html#Utils_VirtualMachine_ExceptionBlockPhase_Catch">Catch</a> without a finally, skips that block entirely and
+propagates to the next outer try scope. The matched <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html">ExceptionBlock</a> remains on
+the stack so that the handler body can read <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_ThrownValue">ThrownValue</a>;
+ENDCATCH or ENDTRY closes it.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 

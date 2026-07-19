@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_VirtualMachine_Context" data-uid="Utils.VirtualMachine.Context" class="text-break">
-Class Context  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L514"><i class="bi bi-code-slash"></i></a>
+Class Context  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L624"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -255,10 +255,12 @@ Class Context  <a class="header-action link-secondary" title="View source" href=
 
   <h3 id="Utils_VirtualMachine_Context__ctor_System_ReadOnlyMemory_System_Byte__" data-uid="Utils.VirtualMachine.Context.#ctor(System.ReadOnlyMemory{System.Byte})">
   Context(ReadOnlyMemory&lt;byte&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L541"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L660"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.VirtualMachine.Context.html">Context</a> class with the given data buffer.</p>
+  <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.VirtualMachine.Context.html">Context</a> class with the given data buffer.
+The buffer is copied so that subsequent mutations of the caller's array do not affect
+the instruction stream seen during execution.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -292,7 +294,7 @@ Class Context  <a class="header-action link-secondary" title="View source" href=
 
   <h3 id="Utils_VirtualMachine_Context_Data" data-uid="Utils.VirtualMachine.Context.Data">
   Data
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L520"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L630"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the raw byte data to be processed by the virtual processor.
@@ -325,7 +327,7 @@ The data is read-only; instruction handlers cannot modify the instruction stream
 
   <h3 id="Utils_VirtualMachine_Context_InstructionPointer" data-uid="Utils.VirtualMachine.Context.InstructionPointer">
   InstructionPointer
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L527"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L644"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the current instruction pointer indicating the byte offset into <a class="xref" href="Utils.VirtualMachine.Context.html#Utils_VirtualMachine_Context_Data">Data</a>.
@@ -351,6 +353,13 @@ Setting this to a negative value (typically <code>-1</code>) signals program ter
 
 
 
+  <h4 class="section" id="Utils_VirtualMachine_Context_InstructionPointer_remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Any negative value causes the execution loop to stop and is treated as normal termination.
+This means stack underflow from <code>CallStack.Return</code> (which also returns <code>-1</code>),
+explicit <a class="xref" href="Utils.VirtualMachine.Context.html#Utils_VirtualMachine_Context_Terminate">Terminate()</a> calls, and erroneous negative jump targets all collapse
+into the same observable state — all appear as normal completion. Distinguish them at the
+bytecode or caller level if the difference matters.</p>
+</div>
 
 
 
@@ -363,7 +372,7 @@ Setting this to a negative value (typically <code>-1</code>) signals program ter
 
   <h3 id="Utils_VirtualMachine_Context_Terminate" data-uid="Utils.VirtualMachine.Context.Terminate">
   Terminate()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L535"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L652"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Signals program termination by setting <a class="xref" href="Utils.VirtualMachine.Context.html#Utils_VirtualMachine_Context_InstructionPointer">InstructionPointer</a> to <code>-1</code>.
@@ -393,7 +402,7 @@ so that intent is explicit and the mechanism can evolve without changing every H
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L514" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L624" class="edit-link">Edit this page</a>
         </div>
 
 

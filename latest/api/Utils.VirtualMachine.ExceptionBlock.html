@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_VirtualMachine_ExceptionBlock" data-uid="Utils.VirtualMachine.ExceptionBlock" class="text-break">
-Class ExceptionBlock  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ExceptionBlock.cs/#L40"><i class="bi bi-code-slash"></i></a>
+Class ExceptionBlock  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ExceptionBlock.cs/#L46"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -242,13 +242,18 @@ Class ExceptionBlock  <a class="header-action link-secondary" title="View source
 
 
   <h2 id="Utils_VirtualMachine_ExceptionBlock_remarks">Remarks</h2>
-  <div class="markdown level0 remarks"><p>Typical VM usage:</p>
+  <div class="markdown level0 remarks"><p>Typical VM usage follows conventional structured-exception semantics
+(catch executes before finally):</p>
 <ul><li>TRY instruction: push an <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html">ExceptionBlock</a> with the handler addresses.</li><li>THROW instruction: call <a class="xref" href="Utils.VirtualMachine.ControlFlowStack.html#Utils_VirtualMachine_ControlFlowStack_Throw_Utils_VirtualMachine_Context_System_Object_">Throw(Context, object?)</a>; unwinds to this block,
-    sets <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_ThrownValue">ThrownValue</a>, and redirects execution to <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_FinallyAddress">FinallyAddress</a>
-    when present (storing the catch address in <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_PendingCatchAddress">PendingCatchAddress</a> for later),
-    or directly to <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_CatchAddress">CatchAddress</a> when there is no finally clause.
-    The block stays on the stack so that the handler body can inspect <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_ThrownValue">ThrownValue</a>.</li><li>ENDFINALLY instruction: read <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_PendingCatchAddress">PendingCatchAddress</a>; if non-null, jump there
-    to enter the catch body; if null, call <a class="xref" href="Utils.VirtualMachine.ControlFlowStack.html#Utils_VirtualMachine_ControlFlowStack_Pop">Pop()</a> and propagate.</li><li>ENDTRY instruction: call <a class="xref" href="Utils.VirtualMachine.ControlFlowStack.html#Utils_VirtualMachine_ControlFlowStack_Pop">Pop()</a>.</li></ul>
+    sets <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_ThrownValue">ThrownValue</a>, and redirects execution to <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_CatchAddress">CatchAddress</a>
+    when present (storing <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_FinallyAddress">FinallyAddress</a> in <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_PendingFinallyAddress">PendingFinallyAddress</a>
+    for later), or directly to <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_FinallyAddress">FinallyAddress</a> when there is no catch clause.
+    The block stays on the stack so that the handler body can inspect <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_ThrownValue">ThrownValue</a>.</li><li>ENDCATCH instruction (catch body completed normally): call
+    <a class="xref" href="Utils.VirtualMachine.ControlFlowStack.html#Utils_VirtualMachine_ControlFlowStack_EndCatch_Utils_VirtualMachine_Context_">EndCatch(Context)</a>; if <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_PendingFinallyAddress">PendingFinallyAddress</a> is set,
+    jumps there for cleanup; otherwise pops the block.</li><li>ENDFINALLY instruction: call <a class="xref" href="Utils.VirtualMachine.ControlFlowStack.html#Utils_VirtualMachine_ControlFlowStack_EndFinally_Utils_VirtualMachine_Context_">EndFinally(Context)</a>; if an exception
+    is still in flight (finally-only path), propagates to the next outer handler; otherwise
+    pops the block (normal cleanup after catch, or normal try-exit).</li><li>ENDTRY instruction: call <a class="xref" href="Utils.VirtualMachine.ControlFlowStack.html#Utils_VirtualMachine_ControlFlowStack_Pop">Pop()</a> to close the block on the
+    normal (non-exception) path through a try body.</li></ul>
 <p>At least one of <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_CatchAddress">CatchAddress</a> or <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_FinallyAddress">FinallyAddress</a> must be provided.</p>
 </div>
 
@@ -261,7 +266,7 @@ Class ExceptionBlock  <a class="header-action link-secondary" title="View source
 
   <h3 id="Utils_VirtualMachine_ExceptionBlock__ctor_System_Int32_System_Nullable_System_Int32__System_Nullable_System_Int32__" data-uid="Utils.VirtualMachine.ExceptionBlock.#ctor(System.Int32,System.Nullable{System.Int32},System.Nullable{System.Int32})">
   ExceptionBlock(int, int?, int?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ExceptionBlock.cs/#L96"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ExceptionBlock.cs/#L108"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new exception block.</p>
@@ -298,6 +303,10 @@ Class ExceptionBlock  <a class="header-action link-secondary" title="View source
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
     <dd><p>Thrown when both <code class="paramref">catchAddress</code> and <code class="paramref">finallyAddress</code> are <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
 </dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when any non-null address is negative. Negative values are the termination sentinel
+and must not be used as branch targets.</p>
+</dd>
   </dl>
 
 
@@ -310,7 +319,7 @@ Class ExceptionBlock  <a class="header-action link-secondary" title="View source
 
   <h3 id="Utils_VirtualMachine_ExceptionBlock_CatchAddress" data-uid="Utils.VirtualMachine.ExceptionBlock.CatchAddress">
   CatchAddress
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ExceptionBlock.cs/#L46"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ExceptionBlock.cs/#L52"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Address of the catch handler, or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> if there is no catch clause.</p>
@@ -342,7 +351,7 @@ Class ExceptionBlock  <a class="header-action link-secondary" title="View source
 
   <h3 id="Utils_VirtualMachine_ExceptionBlock_FinallyAddress" data-uid="Utils.VirtualMachine.ExceptionBlock.FinallyAddress">
   FinallyAddress
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ExceptionBlock.cs/#L49"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ExceptionBlock.cs/#L55"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Address of the finally block, or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> if there is no finally clause.</p>
@@ -370,23 +379,23 @@ Class ExceptionBlock  <a class="header-action link-secondary" title="View source
 
 
 
-  <a id="Utils_VirtualMachine_ExceptionBlock_PendingCatchAddress_" data-uid="Utils.VirtualMachine.ExceptionBlock.PendingCatchAddress*"></a>
+  <a id="Utils_VirtualMachine_ExceptionBlock_PendingFinallyAddress_" data-uid="Utils.VirtualMachine.ExceptionBlock.PendingFinallyAddress*"></a>
 
-  <h3 id="Utils_VirtualMachine_ExceptionBlock_PendingCatchAddress" data-uid="Utils.VirtualMachine.ExceptionBlock.PendingCatchAddress">
-  PendingCatchAddress
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ExceptionBlock.cs/#L65"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_VirtualMachine_ExceptionBlock_PendingFinallyAddress" data-uid="Utils.VirtualMachine.ExceptionBlock.PendingFinallyAddress">
+  PendingFinallyAddress
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ExceptionBlock.cs/#L71"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>When <a class="xref" href="Utils.VirtualMachine.ControlFlowStack.html#Utils_VirtualMachine_ControlFlowStack_Throw_Utils_VirtualMachine_Context_System_Object_">Throw(Context, object?)</a> routes execution through a finally block because
-both <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_FinallyAddress">FinallyAddress</a> and <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_CatchAddress">CatchAddress</a> are present, this property
-stores the catch handler address so that the ENDFINALLY instruction handler can jump there
-after the finally block completes. <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> when there is no pending catch
+  <div class="markdown level1 summary"><p>When <a class="xref" href="Utils.VirtualMachine.ControlFlowStack.html#Utils_VirtualMachine_ControlFlowStack_Throw_Utils_VirtualMachine_Context_System_Object_">Throw(Context, object?)</a> routes execution into a catch handler and both
+<a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_CatchAddress">CatchAddress</a> and <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_FinallyAddress">FinallyAddress</a> are present, this property
+stores the finally address so that the ENDCATCH instruction handler can jump there after
+the catch body completes normally. <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> when there is no pending finally
 (finally-only or catch-only scenarios, or when the block has not been thrown into yet).</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public int? PendingCatchAddress { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">public int? PendingFinallyAddress { get; }</code></pre>
   </div>
 
 
@@ -410,13 +419,14 @@ after the finally block completes. <a href="https://learn.microsoft.com/dotnet/c
 
   <h3 id="Utils_VirtualMachine_ExceptionBlock_Phase" data-uid="Utils.VirtualMachine.ExceptionBlock.Phase">
   Phase
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ExceptionBlock.cs/#L85"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ExceptionBlock.cs/#L93"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Current handler phase. Starts at <a class="xref" href="Utils.VirtualMachine.ExceptionBlockPhase.html#Utils_VirtualMachine_ExceptionBlockPhase_Try">Try</a>; transitions to
-<a class="xref" href="Utils.VirtualMachine.ExceptionBlockPhase.html#Utils_VirtualMachine_ExceptionBlockPhase_Finally">Finally</a> when <a class="xref" href="Utils.VirtualMachine.ControlFlowStack.html#Utils_VirtualMachine_ControlFlowStack_Throw_Utils_VirtualMachine_Context_System_Object_">Throw(Context, object?)</a> routes
-execution into the finally clause, and to <a class="xref" href="Utils.VirtualMachine.ExceptionBlockPhase.html#Utils_VirtualMachine_ExceptionBlockPhase_Catch">Catch</a> when
-<a class="xref" href="Utils.VirtualMachine.ControlFlowStack.html#Utils_VirtualMachine_ControlFlowStack_EndFinally_Utils_VirtualMachine_Context_">EndFinally(Context)</a> redirects to the catch clause.
+<a class="xref" href="Utils.VirtualMachine.ExceptionBlockPhase.html#Utils_VirtualMachine_ExceptionBlockPhase_Catch">Catch</a> when <a class="xref" href="Utils.VirtualMachine.ControlFlowStack.html#Utils_VirtualMachine_ControlFlowStack_Throw_Utils_VirtualMachine_Context_System_Object_">Throw(Context, object?)</a> routes
+execution into the catch clause, and to <a class="xref" href="Utils.VirtualMachine.ExceptionBlockPhase.html#Utils_VirtualMachine_ExceptionBlockPhase_Finally">Finally</a> when
+execution enters the finally clause (either via <a class="xref" href="Utils.VirtualMachine.ControlFlowStack.html#Utils_VirtualMachine_ControlFlowStack_EndCatch_Utils_VirtualMachine_Context_">EndCatch(Context)</a>
+or directly from <a class="xref" href="Utils.VirtualMachine.ControlFlowStack.html#Utils_VirtualMachine_ControlFlowStack_Throw_Utils_VirtualMachine_Context_System_Object_">Throw(Context, object?)</a> in the finally-only case).
 <a class="xref" href="Utils.VirtualMachine.ControlFlowStack.html#Utils_VirtualMachine_ControlFlowStack_Throw_Utils_VirtualMachine_Context_System_Object_">Throw(Context, object?)</a> skips blocks whose <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html#Utils_VirtualMachine_ExceptionBlock_Phase">Phase</a> is not
 <a class="xref" href="Utils.VirtualMachine.ExceptionBlockPhase.html#Utils_VirtualMachine_ExceptionBlockPhase_Try">Try</a> so that a throw from inside a handler propagates
 to the next outer handler instead of re-entering the same block.</p>
@@ -448,7 +458,7 @@ to the next outer handler instead of re-entering the same block.</p>
 
   <h3 id="Utils_VirtualMachine_ExceptionBlock_StartAddress" data-uid="Utils.VirtualMachine.ExceptionBlock.StartAddress">
   StartAddress
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ExceptionBlock.cs/#L43"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ExceptionBlock.cs/#L49"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the instruction-stream offset at which this block was opened.</p>
@@ -480,7 +490,7 @@ to the next outer handler instead of re-entering the same block.</p>
 
   <h3 id="Utils_VirtualMachine_ExceptionBlock_ThrownValue" data-uid="Utils.VirtualMachine.ExceptionBlock.ThrownValue">
   ThrownValue
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ExceptionBlock.cs/#L56"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ExceptionBlock.cs/#L62"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>The value thrown by the most recent THROW that targeted this block.
@@ -514,7 +524,7 @@ Set by <a class="xref" href="Utils.VirtualMachine.ControlFlowStack.html#Utils_Vi
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ExceptionBlock.cs/#L40" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ExceptionBlock.cs/#L46" class="edit-link">Edit this page</a>
         </div>
 
 
