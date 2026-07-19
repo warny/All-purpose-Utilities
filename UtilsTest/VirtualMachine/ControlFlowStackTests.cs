@@ -152,6 +152,24 @@ public class ControlFlowStackTests
     }
 
     [TestMethod]
+    public void Loop_MultipleIterations_ControlFlowDepthRemainsConstant()
+    {
+        // Verify item 42: StartAddress points into the loop body (not the LOOP instruction),
+        // so iterating via CONTINUE does not push additional blocks.
+        var cfs = new ControlFlowStack();
+        cfs.PushLoop(startAddress: 10, endAddress: 100); // body starts at 10
+
+        int depthAfterPush = cfs.Depth;
+
+        var ctx = new DefaultContext(ReadOnlyMemory<byte>.Empty);
+        for (int i = 0; i < 5; i++)
+        {
+            cfs.Continue(ctx); // jumps to StartAddress, block stays on stack
+            Assert.AreEqual(depthAfterPush, cfs.Depth, $"Depth changed on iteration {i}");
+        }
+    }
+
+    [TestMethod]
     public void Break_JumpsToEndAddress_AndPopsLoop()
     {
         var cfs = new ControlFlowStack();
