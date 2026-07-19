@@ -56,23 +56,21 @@ public class VirtualProcess<TAddress> where TAddress : IBinaryInteger<TAddress>
     public bool IsFreed => _isFreed;
 
     /// <summary>
-    /// Gets all current page mappings for this process as an enumerable of
+    /// Gets a snapshot of all current page mappings for this process as a list of
     /// (virtual page index, physical page, access rights) tuples.
     /// </summary>
     /// <remarks>
-    /// This is a live view over the internal page table. Calling <see cref="MapPage"/>,
-    /// <see cref="UnmapPage"/>, or <see cref="VirtualMemory{TAddress}.FreeProcess"/> while
-    /// enumerating this sequence may throw <see cref="System.InvalidOperationException"/>.
-    /// Take a snapshot (e.g. <c>.ToList()</c>) before modifying mappings when stable enumeration
-    /// is required.
+    /// The returned list is an immutable snapshot taken at the moment the property is accessed.
+    /// Subsequent calls to <see cref="MapPage"/>, <see cref="UnmapPage"/>, or
+    /// <see cref="VirtualMemory{TAddress}.FreeProcess"/> do not affect the returned list.
     /// </remarks>
     /// <exception cref="ObjectDisposedException">Thrown when the process has been freed.</exception>
-    public IEnumerable<(TAddress VirtualPageIndex, VirtualPage Page, PageAccess Access)> Mappings
+    public IReadOnlyList<(TAddress VirtualPageIndex, VirtualPage Page, PageAccess Access)> Mappings
     {
         get
         {
             ThrowIfFreed();
-            return _pageTable.Select(kv => (kv.Key, kv.Value.Page, kv.Value.Access));
+            return _pageTable.Select(kv => (kv.Key, kv.Value.Page, kv.Value.Access)).ToArray();
         }
     }
 

@@ -568,7 +568,24 @@ public class VirtualMemoryTests
         var mem = new VirtualMemory<int>(pageSize: 16);
         var proc = mem.CreateProcess();
         mem.FreeProcess(proc);
-        Assert.ThrowsException<ObjectDisposedException>(() => proc.Mappings.ToList());
+        Assert.ThrowsException<ObjectDisposedException>(() => proc.Mappings);
+    }
+
+    [TestMethod]
+    public void Mappings_SnapshotCapturedBeforeFree_RetainsContentAfterFree()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        var page = mem.AllocatePage();
+        var proc = mem.CreateProcess();
+        mem.MapPage(proc, page, 42, PageAccess.ReadOnly);
+
+        var snapshot = proc.Mappings;
+
+        mem.FreeProcess(proc);
+
+        Assert.AreEqual(1, snapshot.Count);
+        Assert.AreEqual(42, snapshot[0].VirtualPageIndex);
+        Assert.AreEqual(PageAccess.ReadOnly, snapshot[0].Access);
     }
 
     [TestMethod]
