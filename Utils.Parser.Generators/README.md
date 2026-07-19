@@ -560,3 +560,18 @@ Supported generated-C# opt-in convenience forms are deliberately narrow:
 The following remain unsupported and must produce deterministic transformer diagnostics rather than new runtime syntax: `$child.value`, `$rule.value`, `$ctx`, `$c.ctx`, `$xs.ctx`, bare `$c` / `$xs` label objects, writes to `$c.value` or `$xs.value`, label-return reads in `@init`, label-return reads in semantic predicates, token attributes such as `$t.text`, lexer attributes, typed parser contexts, public ANTLR-style parser rule methods, and general ANTLR attribute compatibility.
 
 These forms are optional `IParserEmbeddedCodeTransformer` rewrites for generated C# only. The default/no-op transformer leaves `$...` text unchanged, conservative `Parse(...)` remains unchanged, and `ParserEngine` remains target-language-neutral. Parser-managed return and label state follows the existing rollback semantics; no rollback of external side effects is implied.
+
+### Generated rule-call argument binding diagnostics
+
+When `UtilsParserEnableGeneratedRuleArgumentBinding=true`, the generator now performs a bounded static validation pass for generated-C# positional rule-call argument binding. Static binding diagnostics currently validate locally declared parser-rule targets only. Imported targets, unresolved targets, explicit helper-based mappings, manually installed runtime policies, and all projects with the option omitted or set to `false` remain metadata-only at generation time.
+
+The validation mirrors the generated-C# contract: positional arguments only, supported simple literals only, exact arity, allowlisted declared parameter types, no default-value consumption, no named or mixed arguments, no arbitrary C# expression evaluation, no generated rule-signature changes, and no change to `Parse(...)`.
+
+```antlr
+grammar P;
+start : child[1 + 2] ;
+child[int value] : A ;
+A : 'a' ;
+```
+
+With the generated binding option enabled, this grammar reports `APU0107` (`Error`) at the `child[1 + 2]` call site because `1 + 2` is an expression, not a supported simple literal. The invalid grammar file is not emitted, while other valid `.g4` files in the same compilation continue to generate normally.

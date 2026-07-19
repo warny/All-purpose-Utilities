@@ -435,7 +435,7 @@ internal sealed class G4Parser
             string? rawArguments = null;
             if (Peek().Kind == G4TokenKind.CharClass)
                 rawArguments = Consume().Value;
-            return new G4RuleRef { RuleName = tok.Value, RawArguments = rawArguments };
+            return new G4RuleRef { RuleName = tok.Value, RawArguments = rawArguments, Line = tok.Line, Column = tok.Column };
         }
 
         return null;

@@ -241,6 +241,12 @@ internal sealed class G4RuleRef : G4Content
     /// </summary>
     public string? RawArguments { get; set; }
 
+    /// <summary>Gets or sets the one-based source line where the referenced rule name starts.</summary>
+    public int Line { get; set; }
+
+    /// <summary>Gets or sets the zero-based source column where the referenced rule name starts.</summary>
+    public int Column { get; set; }
+
     /// <summary>
     /// Gets or sets the label identifier from a call-site label prefix (<c>x=child</c> or <c>xs+=child</c>),
     /// or <c>null</c> when the reference is unlabeled.

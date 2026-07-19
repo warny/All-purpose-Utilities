@@ -32,13 +32,15 @@ internal readonly struct G4Token
     public G4TokenKind Kind  { get; }
     public string      Value { get; }
     public int         Line  { get; }
+    public int         Column { get; }
 
-    public G4Token(G4TokenKind kind, string value, int line)
+    public G4Token(G4TokenKind kind, string value, int line, int column = 0)
     {
-        Kind  = kind;
-        Value = value;
-        Line  = line;
+        Kind   = kind;
+        Value  = value;
+        Line   = line;
+        Column = column;
     }
 
-    public override string ToString() => $"[{Kind} '{Value}' @{Line}]";
+    public override string ToString() => $"[{Kind} '{Value}' @{Line}:{Column}]";
 }

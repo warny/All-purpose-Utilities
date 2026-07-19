@@ -304,3 +304,18 @@ Future simple generated-C# return assignment/access should reuse generated execu
 Generated-C# parent access to labeled child rule returns is helper-first. Current-rule returns may use the narrow bare `$value` convenience only inside the rule that declares `returns [.. value ..]`, and only through the optional C# transformer in supported parser action locations. Parent rules may inspect completed assignment-labeled child calls with narrow `$c.value` sugar in generated-C# inline parser actions and `@after`, or explicitly with helpers such as `GetRequiredLabeledRuleCallReturn(context, "c", "value")`, `TryGetLabeledRuleCallReturn(context, "c", "value", out object? value)`, `TryGetLabeledRuleCallResult(context, "c", out ParserRuleCallResult? result)`, `GetLabeledRuleCallResults(context, "xs")`, and `GetLabeledRuleCallReturns(context, "xs", "value")`.
 
 Assignment labels (`c=child`) expose the last successful child `ParserRuleCallResult` for that label. List labels (`xs+=child`) expose successful child results in call order. Present-null return values are distinct from missing return keys: required helpers return `null` for present-null values and throw the deterministic parser attribute exception for missing labels or missing return names. Failed alternatives must not leak label state, and memoized child results must restore return values while applying the current successful call-site label. `$c.value`/`$x.value` are supported as assignment-label transformer sugar in generated-C# inline parser actions and `@after`. `$xs.value` is supported separately as read-only list-label projection sugar only when `xs` is a visible `xs+=child` parser-rule list label and every referenced target rule declares `value`; it rewrites to `GetLabeledRuleCallReturns(context, "xs", "value")`, so ordinary C# member access such as `$xs.value.Count` works after the root projection rewrite. `$child.value`, `$rule.value`, `$ctx`, `$c.ctx`, `$xs.ctx`, bare `$c`/`$xs` label objects, writes to `$c.value` or `$xs.value`, `@init` label-return reads, semantic-predicate label-return reads, token attributes such as `$t.text`, lexer attributes, typed parser contexts, public ANTLR-style parser rule methods, and general ANTLR attribute compatibility remain unsupported syntax. Conservative `Parse(...)` remains unchanged and `ParserEngine` remains target-language-neutral.
+
+## Generated binding static diagnostics
+
+The generated-C# positional binding opt-in now includes bounded generator-time diagnostics for certain failures when the call target is a locally declared parser rule. This does not change the runtime contract: arguments remain positional only, simple literals only, exact arity only, allowlisted declared types only, no default-value consumption, no named arguments, no expressions, no generated ANTLR-style rule signatures, and no change to `Parse(...)`.
+
+Static binding diagnostics currently validate locally declared parser-rule targets only. Imported rules, unresolved rules, explicit mapping helpers, and manually installed runtime policies are not statically concluded by this pass; runtime behavior remains authoritative there. A grammar file with certain generated-binding errors is not emitted, but other valid grammar files continue to generate.
+
+Example:
+
+```antlr
+start : child[1 + 2] ;
+child[int value] : A ;
+```
+
+With `UtilsParserEnableGeneratedRuleArgumentBinding=true`, this reports `APU0107` because `1 + 2` is not a supported simple literal. With the option absent or `false`, the argument remains metadata only and no generated-binding diagnostic is produced.

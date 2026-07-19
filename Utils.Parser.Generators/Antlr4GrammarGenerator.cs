@@ -64,6 +64,16 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
         isEnabledByDefault: true,
         description:        "The syntax colorization descriptor does not contain required sections or directives.");
 
+
+    private static readonly DiagnosticDescriptor s_invalidGeneratedRuleArgumentBindingDescriptor = new DiagnosticDescriptor(
+        id:                 "APU0107",
+        title:              "Invalid generated rule-call argument binding",
+        messageFormat:      "Rule call to '{0}' cannot use generated positional rule-argument binding: {1}",
+        category:           "Utils.Parser.Generators",
+        defaultSeverity:    RoslynDiagnosticSeverity.Error,
+        isEnabledByDefault: true,
+        description:        "Generated-C# positional rule-call argument binding can be emitted only for locally resolved parser-rule calls that satisfy the exact literal binding contract.");
+
     private static readonly DiagnosticDescriptor s_unsupportedSuperClassDescriptor = new DiagnosticDescriptor(
         id:                 "APU0103",
         title:              "ANTLR superClass is not applied by generator",
@@ -156,6 +166,13 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
             }
             ReportEmbeddedParserAttributeDiagnostics(context, file, text, grammar);
             ReportUnsupportedEmbeddedCodeDiagnostics(context, file, text, grammar);
+            if (generatorOptions.EnableGeneratedRuleArgumentBinding
+                && ReportGeneratedRuleArgumentBindingDiagnostics(context, file, text, grammar))
+            {
+                ReportParserDiagnostics(context, diagnostics, fileName);
+                return;
+            }
+
             var generated = GrammarEmitter.Emit(
                 grammar,
                 namespaceName!,
@@ -173,6 +190,30 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
         }
     }
 
+
+    /// <summary>
+    /// Reports generated-C# rule-call argument binding diagnostics attached to grammar call sites.
+    /// </summary>
+    /// <param name="context">Source production context receiving Roslyn diagnostics.</param>
+    /// <param name="file">Grammar additional file.</param>
+    /// <param name="text">Grammar source text used to create locations.</param>
+    /// <param name="grammar">Parsed grammar AST.</param>
+    /// <returns><see langword="true"/> when at least one deterministic binding error was reported.</returns>
+    private static bool ReportGeneratedRuleArgumentBindingDiagnostics(SourceProductionContext context, AdditionalText file, SourceText text, G4Grammar grammar)
+    {
+        bool hasErrors = false;
+        foreach (GeneratedRuleArgumentBindingIssue issue in GeneratedRuleArgumentBindingValidator.Validate(grammar))
+        {
+            hasErrors = true;
+            context.ReportDiagnostic(Diagnostic.Create(
+                s_invalidGeneratedRuleArgumentBindingDescriptor,
+                CreateGrammarLocation(file, text, issue.CallSite.Line, issue.CallSite.Column, issue.CallSite.RuleName.Length),
+                issue.TargetRuleName,
+                issue.Reason));
+        }
+
+        return hasErrors;
+    }
 
     /// <summary>
     /// Reports deterministic validation errors for the limited embedded parser attribute rewrite.
@@ -478,17 +519,34 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
     /// <returns>A line-based location or <see cref="Location.None"/> when unavailable.</returns>
     private static Location CreateGrammarLocation(AdditionalText file, SourceText text, int line)
     {
+        return CreateGrammarLocation(file, text, line, 0, 0);
+    }
+
+    /// <summary>
+    /// Creates a Roslyn location from grammar source coordinates when line and column information is available.
+    /// </summary>
+    /// <param name="file">Grammar additional file.</param>
+    /// <param name="text">Grammar source text.</param>
+    /// <param name="line">One-based line number.</param>
+    /// <param name="column">Zero-based column number.</param>
+    /// <param name="length">Source length to highlight.</param>
+    /// <returns>A source location or <see cref="Location.None"/> when unavailable.</returns>
+    private static Location CreateGrammarLocation(AdditionalText file, SourceText text, int line, int column, int length)
+    {
         int zeroBasedLine = line - 1;
         if (zeroBasedLine < 0 || zeroBasedLine >= text.Lines.Count)
         {
             return Location.None;
         }
 
-        int start = text.Lines[zeroBasedLine].Start;
+        int lineStart = text.Lines[zeroBasedLine].Start;
+        int boundedColumn = Math.Max(0, Math.Min(column, text.Lines[zeroBasedLine].Span.Length));
+        int start = lineStart + boundedColumn;
+        int end = Math.Min(start + Math.Max(0, length), text.Lines[zeroBasedLine].End);
         return Location.Create(
             file.Path,
-            TextSpan.FromBounds(start, start),
-            new LinePositionSpan(new LinePosition(zeroBasedLine, 0), new LinePosition(zeroBasedLine, 0)));
+            TextSpan.FromBounds(start, end),
+            new LinePositionSpan(new LinePosition(zeroBasedLine, boundedColumn), new LinePosition(zeroBasedLine, boundedColumn + Math.Max(0, end - start))));
     }
 
     /// <summary>

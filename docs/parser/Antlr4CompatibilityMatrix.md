@@ -332,3 +332,9 @@ Supported generated-C# opt-in convenience forms are deliberately narrow:
 The following remain unsupported and must produce deterministic transformer diagnostics rather than new runtime syntax: `$child.value`, `$rule.value`, `$ctx`, `$c.ctx`, `$xs.ctx`, bare `$c` / `$xs` label objects, writes to `$c.value` or `$xs.value`, label-return reads in `@init`, label-return reads in semantic predicates, token attributes such as `$t.text`, lexer attributes, typed parser contexts, public ANTLR-style parser rule methods, and general ANTLR attribute compatibility.
 
 These forms are optional `IParserEmbeddedCodeTransformer` rewrites for generated C# only. The default/no-op transformer leaves `$...` text unchanged, conservative `Parse(...)` remains unchanged, and `ParserEngine` remains target-language-neutral. Parser-managed return and label state follows the existing rollback semantics; no rollback of external side effects is implied.
+
+## Generated binding static diagnostics
+
+`UtilsParserEnableGeneratedRuleArgumentBinding=true` enables bounded source-generator diagnostics for locally declared parser-rule targets. The generator reports certain generated-C# positional binding failures before emission, including exact-arity failures, named or mixed arguments, non-literal expressions such as `child[1 + 2]`, unsupported conversions, unsupported declared types, and duplicated parameter names. The invalid file is not emitted; unrelated valid grammar files still generate.
+
+Static binding diagnostics currently validate locally declared parser-rule targets only. Imported and unresolved targets remain runtime/resolution concerns, the syntax is not extended, no C# expression evaluation is performed, and `Parse(...)` remains metadata-only.

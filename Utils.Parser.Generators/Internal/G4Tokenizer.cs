@@ -12,6 +12,7 @@ internal sealed class G4Tokenizer
     private readonly string _text;
     private int _pos;
     private int _line = 1;
+    private int _column;
 
     public G4Tokenizer(string text) => _text = text;
 
@@ -27,7 +28,7 @@ internal sealed class G4Tokenizer
 
             if (_pos >= _text.Length)
             {
-                tokens.Add(new G4Token(G4TokenKind.Eof, "", _line));
+                tokens.Add(new G4Token(G4TokenKind.Eof, "", _line, _column));
                 break;
             }
 
@@ -46,13 +47,15 @@ internal sealed class G4Tokenizer
             }
             else if (c == '.' && Peek(1) == '.')
             {
-                tokens.Add(new G4Token(G4TokenKind.DotDot, "..", _line));
-                _pos += 2;
+                tokens.Add(new G4Token(G4TokenKind.DotDot, "..", _line, _column));
+                Advance();
+                Advance();
             }
             else if (c == '-' && Peek(1) == '>')
             {
-                tokens.Add(new G4Token(G4TokenKind.Arrow, "->", _line));
-                _pos += 2;
+                tokens.Add(new G4Token(G4TokenKind.Arrow, "->", _line, _column));
+                Advance();
+                Advance();
             }
             else if (c == '{')
             {
@@ -85,9 +88,9 @@ internal sealed class G4Tokenizer
                 };
 
                 if ((int)kind >= 0)
-                    tokens.Add(new G4Token(kind, c.ToString(), _line));
+                    tokens.Add(new G4Token(kind, c.ToString(), _line, _column));
                 // else: unknown character — silently skip
-                _pos++;
+                Advance();
             }
         }
 
@@ -102,31 +105,33 @@ internal sealed class G4Tokenizer
         {
             char c = _text[_pos];
 
-            if (c == '\n') { _line++; _pos++; continue; }
-            if (c == '\r') { _pos++; continue; }
-            if (char.IsWhiteSpace(c)) { _pos++; continue; }
+            if (c == '\n') { Advance(); continue; }
+            if (c == '\r') { Advance(); continue; }
+            if (char.IsWhiteSpace(c)) { Advance(); continue; }
 
             // Line comment
             if (c == '/' && Peek(1) == '/')
             {
                 while (_pos < _text.Length && _text[_pos] != '\n')
-                    _pos++;
+                    Advance();
                 continue;
             }
 
             // Block comment
             if (c == '/' && Peek(1) == '*')
             {
-                _pos += 2;
+                Advance();
+                Advance();
                 while (_pos < _text.Length - 1)
                 {
-                    if (_text[_pos] == '\n') _line++;
+
                     if (_text[_pos] == '*' && _text[_pos + 1] == '/')
                     {
-                        _pos += 2;
+                        Advance();
+                        Advance();
                         break;
                     }
-                    _pos++;
+                    Advance();
                 }
                 continue;
             }
@@ -141,27 +146,29 @@ internal sealed class G4Tokenizer
     private G4Token ReadStringLiteral()
     {
         int startLine = _line;
-        _pos++; // skip opening '
+        int startColumn = _column;
+        Advance(); // skip opening '
         var sb = new StringBuilder();
 
         while (_pos < _text.Length && _text[_pos] != '\'')
         {
             if (_text[_pos] == '\\' && _pos + 1 < _text.Length)
             {
-                _pos++;
+                Advance();
                 sb.Append(DecodeEscape(_text[_pos]));
-                _pos++;
+                Advance();
             }
             else
             {
-                if (_text[_pos] == '\n') _line++;
-                sb.Append(_text[_pos++]);
+
+                sb.Append(_text[_pos]);
+                Advance();
             }
         }
 
-        if (_pos < _text.Length) _pos++; // skip closing '
+        if (_pos < _text.Length) Advance(); // skip closing '
 
-        return new G4Token(G4TokenKind.StringLiteral, sb.ToString(), startLine);
+        return new G4Token(G4TokenKind.StringLiteral, sb.ToString(), startLine, startColumn);
     }
 
     /// <summary>
@@ -173,7 +180,8 @@ internal sealed class G4Tokenizer
     private G4Token ReadBracketBlock(bool balanced)
     {
         int startLine = _line;
-        _pos++; // skip [
+        int startColumn = _column;
+        Advance(); // skip [
         int depth = 1;
         var sb = new StringBuilder();
 
@@ -183,22 +191,24 @@ internal sealed class G4Tokenizer
             if (current == '\\' && _pos + 1 < _text.Length)
             {
                 sb.Append('\\');
-                _pos++;
-                sb.Append(_text[_pos++]);
+                Advance();
+                sb.Append(_text[_pos]);
+                Advance();
                 continue;
             }
 
             if (balanced && current == '[')
             {
                 depth++;
-                sb.Append(_text[_pos++]);
+                sb.Append(_text[_pos]);
+                Advance();
                 continue;
             }
 
             if (current == ']')
             {
                 depth--;
-                _pos++;
+                Advance();
                 if (depth == 0)
                 {
                     break;
@@ -208,47 +218,56 @@ internal sealed class G4Tokenizer
                 continue;
             }
 
-            if (current == '\n') _line++;
-            sb.Append(_text[_pos++]);
+            sb.Append(_text[_pos]);
+            Advance();
         }
 
-        return new G4Token(G4TokenKind.CharClass, sb.ToString(), startLine);
+        return new G4Token(G4TokenKind.CharClass, sb.ToString(), startLine, startColumn);
     }
 
     /// <summary>Reads a balanced <c>{ ... }</c> block (embedded action or predicate).</summary>
     private G4Token ReadBraceBlock()
     {
         int startLine = _line;
-        _pos++; // skip {
+        int startColumn = _column;
+        Advance(); // skip {
         var sb = new StringBuilder();
         int depth = 1;
 
         while (_pos < _text.Length && depth > 0)
         {
             char c = _text[_pos];
-            if (c == '\n') _line++;
             if (c == '{') depth++;
-            else if (c == '}') { depth--; if (depth == 0) { _pos++; break; } }
+            else if (c == '}') { depth--; if (depth == 0) { Advance(); break; } }
             sb.Append(c);
-            _pos++;
+            Advance();
         }
 
-        return new G4Token(G4TokenKind.BraceBlock, sb.ToString(), startLine);
+        return new G4Token(G4TokenKind.BraceBlock, sb.ToString(), startLine, startColumn);
     }
 
     /// <summary>Reads an identifier (keyword or rule name).</summary>
     private G4Token ReadIdentifier()
     {
         int startLine = _line;
+        int startColumn = _column;
         int start = _pos;
 
         while (_pos < _text.Length && IsIdentContinue(_text[_pos]))
-            _pos++;
+            Advance();
 
-        return new G4Token(G4TokenKind.Identifier, _text.Substring(start, _pos - start), startLine);
+        return new G4Token(G4TokenKind.Identifier, _text.Substring(start, _pos - start), startLine, startColumn);
     }
 
     // ── Character helpers ────────────────────────────────────────────
+
+    private void Advance()
+    {
+        if (_pos >= _text.Length) return;
+        if (_text[_pos] == '\n') { _line++; _column = 0; }
+        else { _column++; }
+        _pos++;
+    }
 
     private char Peek(int offset) =>
         _pos + offset < _text.Length ? _text[_pos + offset] : '\0';
