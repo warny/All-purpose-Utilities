@@ -246,7 +246,7 @@ and a per-frame local-variable store keyed by name.</p>
 
   <h3 id="Utils_VirtualMachine_CallFrame_Locals" data-uid="Utils.VirtualMachine.CallFrame.Locals">
   Locals
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/CallFrame.cs/#L18"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/CallFrame.cs/#L25"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a read-only view of all local variables stored in this frame.</p>
@@ -270,6 +270,11 @@ and a per-frame local-variable store keyed by name.</p>
 
 
 
+  <h4 class="section" id="Utils_VirtualMachine_CallFrame_Locals_remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>This is a live view over the internal dictionary, not a snapshot. Enumerating this
+property while the frame is being modified concurrently or re-entrantly is not safe.
+For stable diagnostic snapshots, copy the result: <code>frame.Locals.ToDictionary(...)</code>.</p>
+</div>
 
 
 
@@ -310,11 +315,50 @@ and a per-frame local-variable store keyed by name.</p>
 </h2>
 
 
+  <a id="Utils_VirtualMachine_CallFrame_ContainsLocal_" data-uid="Utils.VirtualMachine.CallFrame.ContainsLocal*"></a>
+
+  <h3 id="Utils_VirtualMachine_CallFrame_ContainsLocal_System_String_" data-uid="Utils.VirtualMachine.CallFrame.ContainsLocal(System.String)">
+  ContainsLocal(string)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/CallFrame.cs/#L45"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when a local variable with the given name has been stored,
+regardless of its value or type.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool ContainsLocal(string name)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>name</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Variable name.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
   <a id="Utils_VirtualMachine_CallFrame_GetLocal_" data-uid="Utils.VirtualMachine.CallFrame.GetLocal*"></a>
 
   <h3 id="Utils_VirtualMachine_CallFrame_GetLocal__1_System_String_" data-uid="Utils.VirtualMachine.CallFrame.GetLocal``1(System.String)">
   GetLocal&lt;T&gt;(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/CallFrame.cs/#L66"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/CallFrame.cs/#L94"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Retrieves a typed local variable, throwing if the variable is absent or has an incompatible type.</p>
@@ -322,7 +366,7 @@ and a per-frame local-variable store keyed by name.</p>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public T GetLocal&lt;T&gt;(string name)</code></pre>
+    <pre><code class="lang-csharp hljs">public T? GetLocal&lt;T&gt;(string name)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
@@ -355,8 +399,10 @@ and a per-frame local-variable store keyed by name.</p>
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.keynotfoundexception">KeyNotFoundException</a></dt>
-    <dd><p>Thrown when no variable with <code class="paramref">name</code> exists in this frame, or when the
-stored value cannot be cast to <code class="typeparamref">T</code>.</p>
+    <dd><p>Thrown when no variable with <code class="paramref">name</code> exists in this frame.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidcastexception">InvalidCastException</a></dt>
+    <dd><p>Thrown when the stored value cannot be assigned to <code class="typeparamref">T</code>.</p>
 </dd>
   </dl>
 
@@ -366,7 +412,7 @@ stored value cannot be cast to <code class="typeparamref">T</code>.</p>
 
   <h3 id="Utils_VirtualMachine_CallFrame_SetLocal_System_String_System_Object_" data-uid="Utils.VirtualMachine.CallFrame.SetLocal(System.String,System.Object)">
   SetLocal(string, object?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/CallFrame.cs/#L27"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/CallFrame.cs/#L34"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Stores a local variable, overwriting any previous value under the same name.</p>
@@ -402,10 +448,13 @@ stored value cannot be cast to <code class="typeparamref">T</code>.</p>
 
   <h3 id="Utils_VirtualMachine_CallFrame_TryGetLocal__1_System_String___0__" data-uid="Utils.VirtualMachine.CallFrame.TryGetLocal``1(System.String,``0@)">
   TryGetLocal&lt;T&gt;(string, out T?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/CallFrame.cs/#L45"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/CallFrame.cs/#L64"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Attempts to retrieve a typed local variable.</p>
+  <div class="markdown level1 summary"><p>Attempts to retrieve a typed local variable.
+Returns <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> when the variable is absent; when the stored value is
+<a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> and <code class="typeparamref">T</code> is a reference or nullable value type,
+sets <code class="paramref">value</code> to <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> and returns <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a>.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -427,7 +476,9 @@ otherwise <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
-    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if the variable exists and its value is assignable to <code class="typeparamref">T</code>.</p>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if the variable exists and its value is compatible with
+<code class="typeparamref">T</code> (including a stored <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> for nullable types).
+<a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> if the variable is absent or its non-null value cannot be assigned to <code class="typeparamref">T</code>.</p>
 </dd>
   </dl>
 

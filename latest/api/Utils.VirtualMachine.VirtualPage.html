@@ -315,7 +315,7 @@ into process virtual address spaces with per-process access rights.</p>
 
   <h3 id="Utils_VirtualMachine_VirtualPage_AsReadOnlyMemory" data-uid="Utils.VirtualMachine.VirtualPage.AsReadOnlyMemory">
   AsReadOnlyMemory()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualPage.cs/#L24"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualPage.cs/#L38"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns the page content as a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.readonlymemory-1">ReadOnlyMemory&lt;T&gt;</a>, suitable for use as
@@ -340,6 +340,20 @@ into process virtual address spaces with per-process access rights.</p>
 
 
 
+  <h4 class="section" id="Utils_VirtualMachine_VirtualPage_AsReadOnlyMemory_remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>
+This is a zero-copy view over the page's backing array. Page permissions (read-only,
+read-write) are a cooperative convention enforced by <a class="xref" href="Utils.VirtualMachine.VirtualProcess-1.html">VirtualProcess&lt;TAddress&gt;</a>
+operations — they are <b>not</b> enforced by the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.readonlymemory-1">ReadOnlyMemory&lt;T&gt;</a> type itself.
+Advanced APIs such as <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.runtime.interopservices.memorymarshal.trygetarray">TryGetArray&lt;T&gt;(ReadOnlyMemory&lt;T&gt;, out ArraySegment&lt;T&gt;)</a>
+can recover the underlying <code>ArraySegment&lt;byte&gt;</code> and write to the page directly,
+bypassing all access checks.
+</p>
+<p>
+The entire virtual-machine memory model is single-threaded and cooperative. Do not share
+pages with untrusted or concurrent code without additional isolation.
+</p>
+</div>
 
 
 

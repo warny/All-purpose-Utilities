@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_VirtualMachine_VirtualProcessorException" data-uid="Utils.VirtualMachine.VirtualProcessorException" class="text-break">
-Class VirtualProcessorException  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessorException.cs/#L10"><i class="bi bi-code-slash"></i></a>
+Class VirtualProcessorException  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessorException.cs/#L17"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -102,8 +102,7 @@ Class VirtualProcessorException  <a class="header-action link-secondary" title="
   <div class="markdown conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">[Serializable]
-public class VirtualProcessorException : Exception, ISerializable</code></pre>
+    <pre><code class="lang-csharp hljs">public class VirtualProcessorException : Exception, ISerializable</code></pre>
   </div>
 
 
@@ -276,6 +275,13 @@ public class VirtualProcessorException : Exception, ISerializable</code></pre>
 
 
 
+  <h2 id="Utils_VirtualMachine_VirtualProcessorException_remarks">Remarks</h2>
+  <div class="markdown level0 remarks"><p>This exception is not marked <code>[Serializable]</code> because the custom diagnostic
+fields (<a class="xref" href="Utils.VirtualMachine.VirtualProcessorException.html#Utils_VirtualMachine_VirtualProcessorException_InstructionPointer">InstructionPointer</a>, <a class="xref" href="Utils.VirtualMachine.VirtualProcessorException.html#Utils_VirtualMachine_VirtualProcessorException_OpcodeBytes">OpcodeBytes</a>, and
+<a class="xref" href="Utils.VirtualMachine.VirtualProcessorException.html#Utils_VirtualMachine_VirtualProcessorException_InstructionName">InstructionName</a>) have no corresponding serialization constructor or
+<code>GetObjectData</code> override. Cross-process fault reporting should use a dedicated
+diagnostic DTO instead of binary exception serialization.</p>
+</div>
 
 
   <h2 class="section" id="constructors">Constructors
@@ -286,7 +292,7 @@ public class VirtualProcessorException : Exception, ISerializable</code></pre>
 
   <h3 id="Utils_VirtualMachine_VirtualProcessorException__ctor" data-uid="Utils.VirtualMachine.VirtualProcessorException.#ctor">
   VirtualProcessorException()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessorException.cs/#L25"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessorException.cs/#L34"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.VirtualMachine.VirtualProcessorException.html">VirtualProcessorException</a> class.</p>
@@ -313,7 +319,7 @@ public class VirtualProcessorException : Exception, ISerializable</code></pre>
 
   <h3 id="Utils_VirtualMachine_VirtualProcessorException__ctor_System_Int32_System_Collections_Generic_IReadOnlyList_System_Byte__" data-uid="Utils.VirtualMachine.VirtualProcessorException.#ctor(System.Int32,System.Collections.Generic.IReadOnlyList{System.Byte})">
   VirtualProcessorException(int, IReadOnlyList&lt;byte&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessorException.cs/#L55"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessorException.cs/#L64"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance with the instruction position and opcode bytes that caused the error.
@@ -350,7 +356,7 @@ Used when an unrecognised or truncated opcode is encountered.</p>
 
   <h3 id="Utils_VirtualMachine_VirtualProcessorException__ctor_System_Int32_System_Collections_Generic_IReadOnlyList_System_Byte__System_Exception_" data-uid="Utils.VirtualMachine.VirtualProcessorException.#ctor(System.Int32,System.Collections.Generic.IReadOnlyList{System.Byte},System.Exception)">
   VirtualProcessorException(int, IReadOnlyList&lt;byte&gt;, Exception)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessorException.cs/#L69"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessorException.cs/#L78"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance with the instruction position, opcode bytes, and an inner exception.
@@ -390,7 +396,7 @@ Used when a matched instruction's operand read fails due to a truncated stream.<
 
   <h3 id="Utils_VirtualMachine_VirtualProcessorException__ctor_System_Int32_System_Collections_Generic_IReadOnlyList_System_Byte__System_String_System_Exception_" data-uid="Utils.VirtualMachine.VirtualProcessorException.#ctor(System.Int32,System.Collections.Generic.IReadOnlyList{System.Byte},System.String,System.Exception)">
   VirtualProcessorException(int, IReadOnlyList&lt;byte&gt;, string?, Exception)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessorException.cs/#L84"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessorException.cs/#L93"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance with the instruction position, opcode bytes, instruction name, and an inner exception.
@@ -433,7 +439,7 @@ Used when a matched and named instruction's operand read fails due to a truncate
 
   <h3 id="Utils_VirtualMachine_VirtualProcessorException__ctor_System_String_" data-uid="Utils.VirtualMachine.VirtualProcessorException.#ctor(System.String)">
   VirtualProcessorException(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessorException.cs/#L33"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessorException.cs/#L42"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.VirtualMachine.VirtualProcessorException.html">VirtualProcessorException</a> class with a specified error message.</p>
@@ -466,7 +472,7 @@ Used when a matched and named instruction's operand read fails due to a truncate
 
   <h3 id="Utils_VirtualMachine_VirtualProcessorException__ctor_System_String_System_Exception_" data-uid="Utils.VirtualMachine.VirtualProcessorException.#ctor(System.String,System.Exception)">
   VirtualProcessorException(string, Exception)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessorException.cs/#L44"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessorException.cs/#L53"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.VirtualMachine.VirtualProcessorException.html">VirtualProcessorException</a> class with a specified error message
@@ -507,7 +513,7 @@ and a reference to the inner exception that is the cause of this exception.</p>
 
   <h3 id="Utils_VirtualMachine_VirtualProcessorException_InstructionName" data-uid="Utils.VirtualMachine.VirtualProcessorException.InstructionName">
   InstructionName
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessorException.cs/#L20"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessorException.cs/#L29"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the human-readable name of the instruction that caused the error, if available.</p>
@@ -539,7 +545,7 @@ and a reference to the inner exception that is the cause of this exception.</p>
 
   <h3 id="Utils_VirtualMachine_VirtualProcessorException_InstructionPointer" data-uid="Utils.VirtualMachine.VirtualProcessorException.InstructionPointer">
   InstructionPointer
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessorException.cs/#L14"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessorException.cs/#L20"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the byte offset in the instruction stream where the error occurred, if available.</p>
@@ -571,7 +577,7 @@ and a reference to the inner exception that is the cause of this exception.</p>
 
   <h3 id="Utils_VirtualMachine_VirtualProcessorException_OpcodeBytes" data-uid="Utils.VirtualMachine.VirtualProcessorException.OpcodeBytes">
   OpcodeBytes
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessorException.cs/#L17"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessorException.cs/#L24"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the opcode bytes that triggered the error, if available.</p>
@@ -595,6 +601,9 @@ and a reference to the inner exception that is the cause of this exception.</p>
 
 
 
+  <h4 class="section" id="Utils_VirtualMachine_VirtualProcessorException_OpcodeBytes_remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Each access returns a new defensive copy so callers cannot modify the stored diagnostic data.</p>
+</div>
 
 
 
@@ -603,7 +612,7 @@ and a reference to the inner exception that is the cause of this exception.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessorException.cs/#L10" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessorException.cs/#L17" class="edit-link">Edit this page</a>
         </div>
 
 

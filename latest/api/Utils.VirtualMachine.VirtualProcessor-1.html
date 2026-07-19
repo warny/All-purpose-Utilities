@@ -491,7 +491,7 @@ or until <code class="paramref">cancellationToken</code> is cancelled.</p>
 
   <h3 id="Utils_VirtualMachine_VirtualProcessor_1_ExecuteStep__0_" data-uid="Utils.VirtualMachine.VirtualProcessor`1.ExecuteStep(`0)">
   ExecuteStep(T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L358"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L359"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Executes exactly one instruction at the current instruction pointer.</p>
@@ -1043,7 +1043,7 @@ first byte of the instruction about to execute.</p>
 
   <h3 id="Utils_VirtualMachine_VirtualProcessor_1_RegisterInstruction_System_Byte___System_String_System_Action__0__System_Boolean_" data-uid="Utils.VirtualMachine.VirtualProcessor`1.RegisterInstruction(System.Byte[],System.String,System.Action{`0},System.Boolean)">
   RegisterInstruction(byte[], string, Action&lt;T&gt;, bool)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L381"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L384"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Registers an instruction handler at runtime, supplementing or overriding
@@ -1061,7 +1061,7 @@ the methods discovered via <a class="xref" href="Utils.VirtualMachine.Instructio
     <dd><p>Byte sequence identifying the instruction.</p>
 </dd>
     <dt><code>name</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>Human-readable name used in diagnostics.</p>
+    <dd><p>Human-readable name used in diagnostics. Must not be <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>, empty, or whitespace.</p>
 </dd>
     <dt><code>handler</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.action-1">Action</a>&lt;T&gt;</dt>
     <dd><p>Delegate invoked when the opcode is matched.</p>
@@ -1082,9 +1082,12 @@ When <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/built
 
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">name</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
-    <dd><p>Thrown when <code class="paramref">opcode</code> is empty, or when the opcode is already registered
-and <code class="paramref">overwrite</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
+    <dd><p>Thrown when <code class="paramref">opcode</code> is empty, when <code class="paramref">name</code> is empty or whitespace-only,
+or when the opcode is already registered and <code class="paramref">overwrite</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
 </dd>
   </dl>
 

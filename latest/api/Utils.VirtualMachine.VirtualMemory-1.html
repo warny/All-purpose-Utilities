@@ -506,7 +506,7 @@ at the next sequential virtual page index with <a class="xref" href="Utils.Virtu
 
   <h3 id="Utils_VirtualMachine_VirtualMemory_1_FreeProcess_Utils_VirtualMachine_VirtualProcess__0__" data-uid="Utils.VirtualMachine.VirtualMemory`1.FreeProcess(Utils.VirtualMachine.VirtualProcess{`0})">
   FreeProcess(VirtualProcess&lt;TAddress&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualMemory.cs/#L128"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualMemory.cs/#L152"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Removes all page mappings from <code class="paramref">process</code> and unregisters it from this
@@ -551,7 +551,7 @@ to this <a class="xref" href="Utils.VirtualMachine.VirtualMemory-1.html">Virtual
 
   <h3 id="Utils_VirtualMachine_VirtualMemory_1_MapPage_Utils_VirtualMachine_VirtualProcess__0__Utils_VirtualMachine_VirtualPage__0_Utils_VirtualMachine_PageAccess_" data-uid="Utils.VirtualMachine.VirtualMemory`1.MapPage(Utils.VirtualMachine.VirtualProcess{`0},Utils.VirtualMachine.VirtualPage,`0,Utils.VirtualMachine.PageAccess)">
   MapPage(VirtualProcess&lt;TAddress&gt;, VirtualPage, TAddress, PageAccess)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualMemory.cs/#L95"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualMemory.cs/#L98"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Maps <code class="paramref">page</code> into <code class="paramref">process</code>'s virtual address space at
@@ -594,7 +594,10 @@ An existing mapping at that index is replaced.</p>
     <dd><p>Thrown when <code class="paramref">process</code> or <code class="paramref">page</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
 </dd>
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
-    <dd><p>Thrown when <code class="paramref">page</code> was not allocated by this instance.</p>
+    <dd><p>Thrown when <code class="paramref">process</code> or <code class="paramref">page</code> was not created by this instance.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.objectdisposedexception">ObjectDisposedException</a></dt>
+    <dd><p>Thrown when <code class="paramref">process</code> has been freed.</p>
 </dd>
   </dl>
 
@@ -604,7 +607,7 @@ An existing mapping at that index is replaced.</p>
 
   <h3 id="Utils_VirtualMachine_VirtualMemory_1_UnmapPage_Utils_VirtualMachine_VirtualProcess__0___0_" data-uid="Utils.VirtualMachine.VirtualMemory`1.UnmapPage(Utils.VirtualMachine.VirtualProcess{`0},`0)">
   UnmapPage(VirtualProcess&lt;TAddress&gt;, TAddress)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualMemory.cs/#L111"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualMemory.cs/#L118"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Removes the mapping at <code class="paramref">virtualPageIndex</code> from <code class="paramref">process</code>'s
@@ -638,6 +641,12 @@ page table. Does nothing when the index is not mapped.</p>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
     <dd><p>Thrown when <code class="paramref">process</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when <code class="paramref">process</code> was not created by this instance.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.objectdisposedexception">ObjectDisposedException</a></dt>
+    <dd><p>Thrown when <code class="paramref">process</code> has been freed.</p>
 </dd>
   </dl>
 

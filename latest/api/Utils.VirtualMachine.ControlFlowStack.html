@@ -387,7 +387,7 @@ as a live enumerable. Useful for diagnostics and post-execution assertions.</p>
 
   <h3 id="Utils_VirtualMachine_ControlFlowStack_Break_Utils_VirtualMachine_Context_" data-uid="Utils.VirtualMachine.ControlFlowStack.Break(Utils.VirtualMachine.Context)">
   Break(Context)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L98"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L107"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Handles a BREAK instruction: pops all blocks up to and including the nearest
@@ -432,7 +432,7 @@ malformed bytecode issues BREAK outside a loop.</p>
 
   <h3 id="Utils_VirtualMachine_ControlFlowStack_Continue_Utils_VirtualMachine_Context_" data-uid="Utils.VirtualMachine.ControlFlowStack.Continue(Utils.VirtualMachine.Context)">
   Continue(Context)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L127"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L136"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Handles a CONTINUE instruction: pops all blocks nested inside the nearest
@@ -477,7 +477,7 @@ malformed bytecode issues CONTINUE outside a loop.</p>
 
   <h3 id="Utils_VirtualMachine_ControlFlowStack_EndFinally_Utils_VirtualMachine_Context_" data-uid="Utils.VirtualMachine.ControlFlowStack.EndFinally(Utils.VirtualMachine.Context)">
   EndFinally(Context)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L167"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L176"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Handles an ENDFINALLY instruction: if a catch handler is pending (stored by a prior
@@ -533,7 +533,7 @@ one on this block or an outer one found via propagation);
 
   <h3 id="Utils_VirtualMachine_ControlFlowStack_FindEnclosing__1" data-uid="Utils.VirtualMachine.ControlFlowStack.FindEnclosing``1">
   FindEnclosing&lt;T&gt;()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L193"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L202"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns the nearest enclosing block of type <code class="typeparamref">T</code> without removing it
@@ -574,7 +574,7 @@ Useful for introspection (e.g. &quot;are we inside a loop?&quot;) and diagnostic
 
   <h3 id="Utils_VirtualMachine_ControlFlowStack_Pop" data-uid="Utils.VirtualMachine.ControlFlowStack.Pop">
   Pop()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L59"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L68"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Closes the innermost open block. Called at ENDIF, ENDLOOP, or ENDTRY.</p>
@@ -612,7 +612,7 @@ Useful for introspection (e.g. &quot;are we inside a loop?&quot;) and diagnostic
 
   <h3 id="Utils_VirtualMachine_ControlFlowStack_Pop__1" data-uid="Utils.VirtualMachine.ControlFlowStack.Pop``1">
   Pop&lt;T&gt;()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L77"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L86"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Closes the innermost open block, asserting that it is of type <code class="typeparamref">T</code>.
@@ -701,7 +701,7 @@ Use this overload when the bytecode guarantees the block type (e.g. ENDIF always
 
   <h3 id="Utils_VirtualMachine_ControlFlowStack_PushException_System_Int32_System_Nullable_System_Int32__System_Nullable_System_Int32__" data-uid="Utils.VirtualMachine.ControlFlowStack.PushException(System.Int32,System.Nullable{System.Int32},System.Nullable{System.Int32})">
   PushException(int, int?, int?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L52"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L56"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Opens a try/catch/finally block.</p>
@@ -733,6 +733,13 @@ Use this overload when the bytecode guarantees the block type (e.g. ENDIF always
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when both <code class="paramref">catchAddress</code> and <code class="paramref">finallyAddress</code> are <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.
+An exception block with no handler is unreachable and indicates malformed bytecode.</p>
+</dd>
+  </dl>
 
 
 
@@ -776,7 +783,7 @@ Use this overload when the bytecode guarantees the block type (e.g. ENDIF always
 
   <h3 id="Utils_VirtualMachine_ControlFlowStack_Throw_Utils_VirtualMachine_Context_System_Object_" data-uid="Utils.VirtualMachine.ControlFlowStack.Throw(Utils.VirtualMachine.Context,System.Object)">
   Throw(Context, object?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L223"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/ControlFlowStack.cs/#L232"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Handles a THROW instruction: pops all blocks until the nearest <a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html">ExceptionBlock</a>

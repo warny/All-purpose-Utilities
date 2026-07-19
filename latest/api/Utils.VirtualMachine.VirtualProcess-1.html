@@ -257,11 +257,45 @@ operations transparently.</p>
 </h2>
 
 
+  <a id="Utils_VirtualMachine_VirtualProcess_1_IsFreed_" data-uid="Utils.VirtualMachine.VirtualProcess`1.IsFreed*"></a>
+
+  <h3 id="Utils_VirtualMachine_VirtualProcess_1_IsFreed" data-uid="Utils.VirtualMachine.VirtualProcess`1.IsFreed">
+  IsFreed
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L42"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets a value indicating whether this process has been freed via
+<a class="xref" href="Utils.VirtualMachine.VirtualMemory-1.html#Utils_VirtualMachine_VirtualMemory_1_FreeProcess_Utils_VirtualMachine_VirtualProcess__0__">FreeProcess(VirtualProcess&lt;TAddress&gt;)</a>. Freed processes reject all subsequent
+memory operations.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool IsFreed { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <a id="Utils_VirtualMachine_VirtualProcess_1_IsMaster_" data-uid="Utils.VirtualMachine.VirtualProcess`1.IsMaster*"></a>
 
   <h3 id="Utils_VirtualMachine_VirtualProcess_1_IsMaster" data-uid="Utils.VirtualMachine.VirtualProcess`1.IsMaster">
   IsMaster
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L34"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L35"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a value indicating whether this is the master process. The master process receives
@@ -295,7 +329,7 @@ automatic <a class="xref" href="Utils.VirtualMachine.PageAccess.html#Utils_Virtu
 
   <h3 id="Utils_VirtualMachine_VirtualProcess_1_Mappings" data-uid="Utils.VirtualMachine.VirtualProcess`1.Mappings">
   Mappings
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L40"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L49"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets all current page mappings for this process as an enumerable of
@@ -321,6 +355,12 @@ automatic <a class="xref" href="Utils.VirtualMachine.PageAccess.html#Utils_Virtu
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.objectdisposedexception">ObjectDisposedException</a></dt>
+    <dd><p>Thrown when the process has been freed.</p>
+</dd>
+  </dl>
 
 
 
@@ -328,7 +368,7 @@ automatic <a class="xref" href="Utils.VirtualMachine.PageAccess.html#Utils_Virtu
 
   <h3 id="Utils_VirtualMachine_VirtualProcess_1_ProcessId" data-uid="Utils.VirtualMachine.VirtualProcess`1.ProcessId">
   ProcessId
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L27"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L28"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the unique identifier assigned to this process.</p>
@@ -364,7 +404,7 @@ automatic <a class="xref" href="Utils.VirtualMachine.PageAccess.html#Utils_Virtu
 
   <h3 id="Utils_VirtualMachine_VirtualProcess_1_GetAccess__0_" data-uid="Utils.VirtualMachine.VirtualProcess`1.GetAccess(`0)">
   GetAccess(TAddress)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L130"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L171"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns the access rights for the page that contains <code class="paramref">virtualAddress</code>,
@@ -395,6 +435,12 @@ or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keyword
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.objectdisposedexception">ObjectDisposedException</a></dt>
+    <dd><p>Thrown when the process has been freed.</p>
+</dd>
+  </dl>
 
 
 
@@ -402,7 +448,7 @@ or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keyword
 
   <h3 id="Utils_VirtualMachine_VirtualProcess_1_IsAccessible__0_" data-uid="Utils.VirtualMachine.VirtualProcess`1.IsAccessible(`0)">
   IsAccessible(TAddress)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L120"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L159"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if <code class="paramref">virtualAddress</code> falls within a mapped page.</p>
@@ -432,6 +478,12 @@ or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keyword
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.objectdisposedexception">ObjectDisposedException</a></dt>
+    <dd><p>Thrown when the process has been freed.</p>
+</dd>
+  </dl>
 
 
 
@@ -439,7 +491,7 @@ or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keyword
 
   <h3 id="Utils_VirtualMachine_VirtualProcess_1_Read__0_System_Span_System_Byte__" data-uid="Utils.VirtualMachine.VirtualProcess`1.Read(`0,System.Span{System.Byte})">
   Read(TAddress, Span&lt;byte&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L65"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L100"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads <code class="paramref">destination</code><code>.Length</code> bytes starting at
@@ -471,6 +523,9 @@ or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keyword
 
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.objectdisposedexception">ObjectDisposedException</a></dt>
+    <dd><p>Thrown when the process has been freed.</p>
+</dd>
     <dt><a class="xref" href="Utils.VirtualMachine.MemoryAccessException.html">MemoryAccessException</a></dt>
     <dd><p>Thrown when any byte of the range falls in an unmapped page.</p>
 </dd>
@@ -482,7 +537,7 @@ or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keyword
 
   <h3 id="Utils_VirtualMachine_VirtualProcess_1_Write__0_System_ReadOnlySpan_System_Byte__" data-uid="Utils.VirtualMachine.VirtualProcess`1.Write(`0,System.ReadOnlySpan{System.Byte})">
   Write(TAddress, ReadOnlySpan&lt;byte&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L95"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcess.cs/#L132"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Writes <code class="paramref">source</code> bytes starting at <code class="paramref">virtualAddress</code>.
@@ -514,6 +569,9 @@ Transparently crosses page boundaries.</p>
 
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.objectdisposedexception">ObjectDisposedException</a></dt>
+    <dd><p>Thrown when the process has been freed.</p>
+</dd>
     <dt><a class="xref" href="Utils.VirtualMachine.MemoryAccessException.html">MemoryAccessException</a></dt>
     <dd><p>Thrown when any byte of the range falls in an unmapped page or in a
 <a class="xref" href="Utils.VirtualMachine.PageAccess.html#Utils_VirtualMachine_PageAccess_ReadOnly">ReadOnly</a> page.</p>

@@ -355,7 +355,7 @@ public class InstructionAttribute : Attribute</code></pre>
 
   <h3 id="Utils_VirtualMachine_InstructionAttribute__ctor_System_String_System_Byte___" data-uid="Utils.VirtualMachine.InstructionAttribute.#ctor(System.String,System.Byte[])">
   InstructionAttribute(string, params byte[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/InstructionAttribute.cs/#L28"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/InstructionAttribute.cs/#L32"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.VirtualMachine.InstructionAttribute.html">InstructionAttribute</a> class.</p>
@@ -369,7 +369,7 @@ public class InstructionAttribute : Attribute</code></pre>
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>name</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>The descriptive name of the instruction. Must not be <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+    <dd><p>The descriptive name of the instruction. Must not be <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>, empty, or whitespace.</p>
 </dd>
     <dt><code>instruction</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
     <dd><p>The byte sequence that identifies the instruction. Must contain at least one byte.</p>
@@ -387,10 +387,10 @@ public class InstructionAttribute : Attribute</code></pre>
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
-    <dd><p>Thrown when <code class="paramref">name</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+    <dd><p>Thrown when <code class="paramref">name</code> or <code class="paramref">instruction</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
 </dd>
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
-    <dd><p>Thrown when <code class="paramref">instruction</code> is empty.</p>
+    <dd><p>Thrown when <code class="paramref">name</code> is empty or whitespace-only, or when <code class="paramref">instruction</code> is empty.</p>
 </dd>
   </dl>
 

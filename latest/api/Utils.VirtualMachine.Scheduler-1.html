@@ -511,7 +511,7 @@ Returns immediately when all processes are <a class="xref" href="Utils.VirtualMa
 
   <h3 id="Utils_VirtualMachine_Scheduler_1_RunAsync_System_Threading_CancellationToken_" data-uid="Utils.VirtualMachine.Scheduler`1.RunAsync(System.Threading.CancellationToken)">
   RunAsync(CancellationToken)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/Scheduler.cs/#L196"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/Scheduler.cs/#L204"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Asynchronously runs the scheduler until no process remains in the
@@ -544,6 +544,14 @@ or until cancellation is requested. Yields to the caller between each
 
 
 
+  <h4 class="section" id="Utils_VirtualMachine_Scheduler_1_RunAsync_System_Threading_CancellationToken__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>One <a class="xref" href="Utils.VirtualMachine.Scheduler-1.html#Utils_VirtualMachine_Scheduler_1_Step">Step()</a> call executes up to <a class="xref" href="Utils.VirtualMachine.Scheduler-1.html#Utils_VirtualMachine_Scheduler_1_QuantumSteps">QuantumSteps</a> instructions for
+every ready process in priority order. With many processes, a large quantum, or slow
+handlers, each step can still occupy the calling thread for a significant amount of time.
+Cancellation is only checked between steps, not within a single step. If tighter
+granularity is required, reduce <a class="xref" href="Utils.VirtualMachine.Scheduler-1.html#Utils_VirtualMachine_Scheduler_1_QuantumSteps">QuantumSteps</a> or have handlers check the
+token themselves.</p>
+</div>
 
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
