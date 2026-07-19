@@ -176,6 +176,13 @@ public class Scheduler<T> where T : Context
                         }
                         stepInstructions++;
 
+                        // Break immediately when the context signals program end (IP < 0 or past
+                        // bytecode end), so the next iteration's budget check does not fire
+                        // spuriously after a legitimate final instruction (e.g. HALT).
+                        if (process.Context.InstructionPointer < 0
+                            || process.Context.InstructionPointer >= process.Context.Data.Length)
+                            break;
+
                         // Check after ExecuteStep: yield or suspension may have been requested
                         // from inside the instruction handler that just ran.
                         if (process.YieldRequested || process.State == ProcessState.Suspended)
