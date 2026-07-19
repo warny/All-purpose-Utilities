@@ -1,6 +1,6 @@
 # Utils.VirtualMachine — Quality and correctness audit (2026-07-11)
 
-> **Partially completed 2026-07-18/19.** Items 1, 2, 3, 11, 12 addressed in PR fix/utils-vm-quality-audit-p0-p1. Items 8, 13 addressed in PR fix/utils-vm-quality-audit-round2. Items 4–7, 9–10, 14–16 remain open.
+> **Partially completed 2026-07-18/19.** Items 1, 2, 3, 11, 12 addressed in PR fix/utils-vm-quality-audit-p0-p1. Items 8, 13 addressed in PR fix/utils-vm-quality-audit-round2. Items 7, 9–10, 14 addressed in PR fix/utils-vm-quality-audit-round3. Items 4–6, 15–16 remain open.
 
 Static review of the processor, scheduler, virtual-memory model, stacks, and structured control-flow helpers. The review focuses on deterministic bytecode dispatch, malformed-program handling, memory isolation, lifecycle state, resource bounds, and duplicated intent. No production code is changed by this commit.
 
@@ -142,7 +142,7 @@ Both methods pop nested blocks while searching for a loop. If no loop exists, th
 
 ## Medium priority
 
-### 14. `ControlFlowStack` has no maximum depth
+### ✅ 14. `ControlFlowStack` has no maximum depth
 
 Unlike `CallStack`, structured blocks can be pushed without any bound. Malicious or malformed bytecode can grow the stack until process memory is exhausted.
 

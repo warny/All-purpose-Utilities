@@ -1010,4 +1010,57 @@ public class ControlFlowStackTests
         Assert.IsTrue(handled);
         Assert.AreEqual(10, ctx.InstructionPointer);
     }
+
+    // ── MaxDepth (item 14) ────────────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void MaxDepth_Default_Is1024()
+    {
+        var cfs = new ControlFlowStack();
+        Assert.AreEqual(1024, cfs.MaxDepth);
+        Assert.AreEqual(ControlFlowStack.DefaultMaxDepth, cfs.MaxDepth);
+    }
+
+    [TestMethod]
+    public void Constructor_InvalidMaxDepth_ThrowsArgumentOutOfRangeException()
+    {
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new ControlFlowStack(0));
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new ControlFlowStack(-1));
+    }
+
+    [TestMethod]
+    public void PushConditional_BeyondMaxDepth_ThrowsInvalidOperationException()
+    {
+        var cfs = new ControlFlowStack(maxDepth: 2);
+        cfs.PushConditional(0, 10);
+        cfs.PushConditional(1, 20);
+        Assert.ThrowsException<InvalidOperationException>(() => cfs.PushConditional(2, 30));
+    }
+
+    [TestMethod]
+    public void PushLoop_BeyondMaxDepth_ThrowsInvalidOperationException()
+    {
+        var cfs = new ControlFlowStack(maxDepth: 1);
+        cfs.PushLoop(0, 10);
+        Assert.ThrowsException<InvalidOperationException>(() => cfs.PushLoop(1, 20));
+    }
+
+    [TestMethod]
+    public void PushException_BeyondMaxDepth_ThrowsInvalidOperationException()
+    {
+        var cfs = new ControlFlowStack(maxDepth: 1);
+        cfs.PushException(0, catchAddress: 10, finallyAddress: null);
+        Assert.ThrowsException<InvalidOperationException>(
+            () => cfs.PushException(1, catchAddress: 20, finallyAddress: null));
+    }
+
+    [TestMethod]
+    public void CustomMaxDepth_AfterPop_AllowsPushAgain()
+    {
+        var cfs = new ControlFlowStack(maxDepth: 1);
+        cfs.PushLoop(0, 10);
+        cfs.Pop();
+        cfs.PushLoop(0, 10); // should not throw after pop freed a slot
+        Assert.AreEqual(1, cfs.Depth);
+    }
 }

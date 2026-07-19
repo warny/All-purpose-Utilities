@@ -1081,6 +1081,80 @@ namespace UtilsTest.VirtualMachine
         }
     }
 
+    // ── BoundedStack + operand-stack depth limit (item 27) ───────────────────────────────────
+
+    [TestClass]
+    public class BoundedStackTests
+    {
+        [TestMethod]
+        public void BoundedStack_Push_BeyondMaxDepth_ThrowsInvalidOperationException()
+        {
+            var stack = new BoundedStack<int>(maxDepth: 2);
+            stack.Push(1);
+            stack.Push(2);
+            Assert.ThrowsException<InvalidOperationException>(() => stack.Push(3));
+        }
+
+        [TestMethod]
+        public void BoundedStack_Pop_EmptyStack_ThrowsInvalidOperationException()
+        {
+            var stack = new BoundedStack<int>();
+            Assert.ThrowsException<InvalidOperationException>(() => stack.Pop());
+        }
+
+        [TestMethod]
+        public void BoundedStack_Peek_EmptyStack_ThrowsInvalidOperationException()
+        {
+            var stack = new BoundedStack<int>();
+            Assert.ThrowsException<InvalidOperationException>(() => stack.Peek());
+        }
+
+        [TestMethod]
+        public void BoundedStack_InvalidMaxDepth_ThrowsArgumentOutOfRangeException()
+        {
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => new BoundedStack<int>(0));
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => new BoundedStack<int>(-1));
+        }
+
+        [TestMethod]
+        public void BoundedStack_DefaultMaxDepth_Is1024()
+        {
+            var stack = new BoundedStack<object>();
+            Assert.AreEqual(1024, stack.MaxDepth);
+            Assert.AreEqual(BoundedStack<object>.DefaultMaxDepth, stack.MaxDepth);
+        }
+
+        [TestMethod]
+        public void DefaultContext_Stack_IsBoundedStack()
+        {
+            var ctx = new DefaultContext(ReadOnlyMemory<byte>.Empty);
+            Assert.IsInstanceOfType<BoundedStack<object>>(ctx.Stack);
+        }
+
+        [TestMethod]
+        public void TypedStackContext_Stack_IsBoundedStack()
+        {
+            var ctx = new TypedStackContext<int>(ReadOnlyMemory<byte>.Empty);
+            Assert.IsInstanceOfType<BoundedStack<int>>(ctx.Stack);
+        }
+
+        [TestMethod]
+        public void DefaultContext_CustomMaxDepth_Enforced()
+        {
+            var ctx = new DefaultContext(ReadOnlyMemory<byte>.Empty, maxOperandStackDepth: 1);
+            ctx.Stack.Push(42);
+            Assert.ThrowsException<InvalidOperationException>(() => ctx.Stack.Push(99));
+        }
+
+        [TestMethod]
+        public void TypedStackContext_CustomMaxDepth_Enforced()
+        {
+            var ctx = new TypedStackContext<int>(ReadOnlyMemory<byte>.Empty, maxOperandStackDepth: 1);
+            ctx.Stack.Push(1);
+            Assert.ThrowsException<InvalidOperationException>(() => ctx.Stack.Push(2));
+        }
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     /// <summary>

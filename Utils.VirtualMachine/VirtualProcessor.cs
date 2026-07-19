@@ -545,12 +545,13 @@ public abstract class Context
 }
 
 /// <summary>
-/// A default context implementation providing an object stack.
+/// A default context implementation providing a bounded object operand stack.
 /// </summary>
 public class DefaultContext : Context
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="DefaultContext"/> class with the given data buffer.
+    /// Initializes a new instance of the <see cref="DefaultContext"/> class with the given data buffer
+    /// and the default operand-stack depth limit (<see cref="BoundedStack{T}.DefaultMaxDepth"/>).
     /// </summary>
     /// <param name="data">The byte data containing all instructions or data to process.</param>
     public DefaultContext(ReadOnlyMemory<byte> data) : base(data)
@@ -558,7 +559,24 @@ public class DefaultContext : Context
     }
 
     /// <summary>
-    /// A stack of objects that can be used during instruction execution for temporary data storage.
+    /// Initializes a new instance of the <see cref="DefaultContext"/> class with the given data buffer
+    /// and a custom operand-stack depth limit.
     /// </summary>
-    public Stack<object> Stack { get; } = new Stack<object>();
+    /// <param name="data">The byte data containing all instructions or data to process.</param>
+    /// <param name="maxOperandStackDepth">
+    /// Maximum number of values the operand stack may hold simultaneously.
+    /// Defaults to <see cref="BoundedStack{T}.DefaultMaxDepth"/> when this constructor is not used.
+    /// </param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="maxOperandStackDepth"/> is less than one.</exception>
+    public DefaultContext(ReadOnlyMemory<byte> data, int maxOperandStackDepth) : base(data)
+    {
+        Stack = new BoundedStack<object>(maxOperandStackDepth);
+    }
+
+    /// <summary>
+    /// A bounded operand stack for temporary values during instruction execution.
+    /// Push throws <see cref="InvalidOperationException"/> when the depth limit is reached;
+    /// Pop and Peek throw when the stack is empty.
+    /// </summary>
+    public BoundedStack<object> Stack { get; } = new BoundedStack<object>();
 }

@@ -15,7 +15,16 @@ namespace Utils.VirtualMachine;
 /// </remarks>
 public class ControlFlowStack
 {
+    /// <summary>The default maximum nesting depth when no explicit limit is provided.</summary>
+    public const int DefaultMaxDepth = 1024;
+
     private readonly Stack<IControlFlowBlock> _blocks = new();
+
+    /// <summary>
+    /// Gets the maximum number of blocks that may be open simultaneously.
+    /// Pushing beyond this limit throws <see cref="InvalidOperationException"/>.
+    /// </summary>
+    public int MaxDepth { get; }
 
     /// <summary>Gets the number of currently open blocks.</summary>
     public int Depth => _blocks.Count;
@@ -32,18 +41,41 @@ public class ControlFlowStack
     /// </summary>
     public IEnumerable<IControlFlowBlock> Blocks => _blocks;
 
+    /// <summary>
+    /// Initializes a new <see cref="ControlFlowStack"/> with the specified maximum nesting depth.
+    /// </summary>
+    /// <param name="maxDepth">
+    /// Maximum number of blocks that may be open simultaneously.
+    /// Defaults to <see cref="DefaultMaxDepth"/> (<c>1024</c>).
+    /// </param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="maxDepth"/> is less than one.</exception>
+    public ControlFlowStack(int maxDepth = DefaultMaxDepth)
+    {
+        if (maxDepth < 1)
+            throw new ArgumentOutOfRangeException(nameof(maxDepth), "Maximum depth must be at least 1.");
+        MaxDepth = maxDepth;
+    }
+
     /// <summary>Opens a conditional (if/else) block.</summary>
     /// <param name="startAddress">Address of the IF instruction.</param>
     /// <param name="endAddress">Address immediately after the ENDIF.</param>
     /// <param name="elseAddress">Address of the ELSE branch, or <see langword="null"/> if absent.</param>
+    /// <exception cref="InvalidOperationException">Thrown when <see cref="MaxDepth"/> would be exceeded.</exception>
     public void PushConditional(int startAddress, int endAddress, int? elseAddress = null)
-        => _blocks.Push(new ConditionalBlock(startAddress, endAddress, elseAddress));
+    {
+        ThrowIfDepthExceeded();
+        _blocks.Push(new ConditionalBlock(startAddress, endAddress, elseAddress));
+    }
 
     /// <summary>Opens a loop block.</summary>
     /// <param name="startAddress">Address of the loop header; target of CONTINUE.</param>
     /// <param name="endAddress">Address after the loop; target of BREAK.</param>
+    /// <exception cref="InvalidOperationException">Thrown when <see cref="MaxDepth"/> would be exceeded.</exception>
     public void PushLoop(int startAddress, int endAddress)
-        => _blocks.Push(new LoopBlock(startAddress, endAddress));
+    {
+        ThrowIfDepthExceeded();
+        _blocks.Push(new LoopBlock(startAddress, endAddress));
+    }
 
     /// <summary>Opens a try/catch/finally block.</summary>
     /// <param name="startAddress">Address of the TRY instruction.</param>
@@ -53,12 +85,21 @@ public class ControlFlowStack
     /// Thrown when both <paramref name="catchAddress"/> and <paramref name="finallyAddress"/> are <see langword="null"/>.
     /// An exception block with no handler is unreachable and indicates malformed bytecode.
     /// </exception>
+    /// <exception cref="InvalidOperationException">Thrown when <see cref="MaxDepth"/> would be exceeded.</exception>
     public void PushException(int startAddress, int? catchAddress, int? finallyAddress)
     {
         if (catchAddress is null && finallyAddress is null)
             throw new ArgumentException(
                 "An exception block must have at least one handler: catchAddress or finallyAddress must be non-null.");
+        ThrowIfDepthExceeded();
         _blocks.Push(new ExceptionBlock(startAddress, catchAddress, finallyAddress));
+    }
+
+    private void ThrowIfDepthExceeded()
+    {
+        if (_blocks.Count >= MaxDepth)
+            throw new InvalidOperationException(
+                $"Control-flow stack overflow: maximum nesting depth of {MaxDepth} exceeded.");
     }
 
     /// <summary>
