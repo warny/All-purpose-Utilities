@@ -757,3 +757,18 @@ Supported generated-C# opt-in convenience forms are deliberately narrow:
 The following remain unsupported and must produce deterministic transformer diagnostics rather than new runtime syntax: `$child.value`, `$rule.value`, `$ctx`, `$c.ctx`, `$xs.ctx`, bare `$c` / `$xs` label objects, writes to `$c.value` or `$xs.value`, label-return reads in `@init`, label-return reads in semantic predicates, token attributes such as `$t.text`, lexer attributes, typed parser contexts, public ANTLR-style parser rule methods, and general ANTLR attribute compatibility.
 
 These forms are optional `IParserEmbeddedCodeTransformer` rewrites for generated C# only. The default/no-op transformer leaves `$...` text unchanged, conservative `Parse(...)` remains unchanged, and `ParserEngine` remains target-language-neutral. Parser-managed return and label state follows the existing rollback semantics; no rollback of external side effects is implied.
+
+### Static diagnostics for generated-C# positional binding
+
+When `UtilsParserEnableGeneratedRuleArgumentBinding=true`, the source generator validates certain generated-C# rule-call argument binding failures before emitting C#. Static binding diagnostics currently validate locally declared parser-rule targets only. The runtime remains authoritative for imported or unresolved rules and for policies installed manually by callers.
+
+The generator reports `APU0107` as an error for certain invalid local parser-rule call sites: arity mismatches, named or mixed arguments, unsupported simple-literal syntax, impossible conversions to allowlisted declared types, unsupported declared target types, and duplicated or unusable target parameter names. A file with these certain errors does not produce generated source, but other grammar files continue.
+
+No C# expression evaluation is performed and the supported syntax is not expanded. For example:
+
+```antlr
+start : child[1 + 2] ;
+child[int value] : A ;
+```
+
+With generated binding enabled, `child[1 + 2]` produces a generation diagnostic because the argument is not a simple literal. `Parse(...)` behavior is unchanged.

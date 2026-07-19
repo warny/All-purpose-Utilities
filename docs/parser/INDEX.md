@@ -40,3 +40,7 @@ The parser documentation pages listed here now distinguish conservative `Parse(.
 ## Generated-C# returns and labels boundary
 
 The parser documentation now locks the generated-C# rule returns and labeled rule-call boundary to the existing parser named-action and embedded-code transformer strategy: named-action classification stays centralized in `EmbeddedMembersSupport`, parser headers/members/footers use the documented generated-source injection locations, rule-return and label metadata is not automatic ANTLR context support, conservative `Parse(...)` remains unchanged, and the implemented `$returnName` current-rule return convenience stays behind `IParserEmbeddedCodeTransformer`, while assignment-label `$c.value` and list-label `$xs.value` now rewrite to explicit helpers in supported generated-C# parser actions/`@after`; `$child.value`, `$rule.value`, `$ctx`, `$c.ctx`, `$xs.ctx`, bare labels, token attributes, typed contexts, public ANTLR-style parser methods, and general ANTLR attribute compatibility remain unsupported.
+
+## Generated binding diagnostics update
+
+The parser documentation now records that generated-C# positional rule-call argument binding emits `APU0107` only when `UtilsParserEnableGeneratedRuleArgumentBinding=true` and the target parser rule is declared locally. See `ANTLRCompatibility.md`, `Antlr4CompatibilityMatrix.md`, and `RuleArgumentsAndReturnsPlan.md` for the static validation boundary and generation behavior.
