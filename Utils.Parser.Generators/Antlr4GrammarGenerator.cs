@@ -79,6 +79,14 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
         var generatorOptions = context.AnalyzerConfigOptionsProvider
             .Select(static (provider, _) => Antlr4GrammarGeneratorOptions.Parse(provider.GlobalOptions));
 
+        context.RegisterSourceOutput(generatorOptions, static (productionContext, options) =>
+        {
+            foreach (Diagnostic diagnostic in options.Diagnostics)
+            {
+                productionContext.ReportDiagnostic(diagnostic);
+            }
+        });
+
         var grammarFiles = context.AdditionalTextsProvider
             .Where(static file => file.Path.EndsWith(".g4", StringComparison.OrdinalIgnoreCase));
 
@@ -88,7 +96,7 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
 
         context.RegisterSourceOutput(grammarFileAndOptions, static (productionContext, source) =>
         {
-            ProcessGrammarFile(productionContext, source.Left.Left, source.Right, source.Left.Right);
+            ProcessGrammarFile(productionContext, source.Left.Left, source.Right, source.Left.Right.Options);
         });
 
         var colorizationFiles = context.AdditionalTextsProvider
@@ -110,15 +118,10 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
     /// <param name="file">Grammar additional file being processed.</param>
     /// <param name="optionsProvider">Analyzer config options provider associated with the current run.</param>
     /// <param name="generatorOptions">Project-wide options parsed from analyzer config global options.</param>
-    private static void ProcessGrammarFile(SourceProductionContext context, AdditionalText file, AnalyzerConfigOptionsProvider optionsProvider, Antlr4GrammarGeneratorOptionsParseResult generatorOptions)
+    private static void ProcessGrammarFile(SourceProductionContext context, AdditionalText file, AnalyzerConfigOptionsProvider optionsProvider, Antlr4GrammarGeneratorOptions generatorOptions)
     {
         var text = file.GetText(context.CancellationToken);
         if (text == null) return;
-
-        foreach (Diagnostic diagnostic in generatorOptions.Diagnostics)
-        {
-            context.ReportDiagnostic(diagnostic);
-        }
 
         // ── Read MSBuild metadata ────────────────────────────────────────
         var options = optionsProvider.GetOptions(file);
@@ -158,7 +161,7 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
                 namespaceName!,
                 className!,
                 fileName,
-                enableGeneratedRuleArgumentBinding: generatorOptions.Options.EnableGeneratedRuleArgumentBinding);
+                enableGeneratedRuleArgumentBinding: generatorOptions.EnableGeneratedRuleArgumentBinding);
             ReportParserDiagnostics(context, diagnostics, fileName);
 
             context.AddSource($"{className}.Grammar.g.cs", SourceText.From(generated, Encoding.UTF8));

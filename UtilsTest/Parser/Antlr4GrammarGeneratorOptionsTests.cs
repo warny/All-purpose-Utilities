@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Reflection;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -85,7 +86,7 @@ public class Antlr4GrammarGeneratorOptionsTests
         string generatedSource = GetSingleGeneratedSource(runResult);
 
         AssertBindingWrapperEnabled(generatedSource);
-        AssertGeneratedSourceCompiles(generatedSource);
+        AssertGeneratedSourceExecutesBinding(generatedSource);
     }
 
     /// <summary>
@@ -101,6 +102,21 @@ public class Antlr4GrammarGeneratorOptionsTests
         Assert.AreEqual(DiagnosticSeverity.Warning, diagnostic.Severity);
         StringAssert.Contains(diagnostic.GetMessage(), "sometimes");
         AssertBindingWrapperDisabled(generatedSource);
+    }
+
+    /// <summary>
+    /// Ensures an invalid project-wide option reports one warning even when multiple grammars are present.
+    /// </summary>
+    [TestMethod]
+    public void Generator_InvalidOptionWithMultipleGrammarFiles_ReportsOneProjectWideDiagnostic()
+    {
+        GeneratorDriverRunResult runResult = RunGenerator([
+            new InMemoryAdditionalText("P.g4", BindingGrammar),
+            new InMemoryAdditionalText("Q.g4", BindingGrammar.Replace("grammar P;", "grammar Q;"))],
+            "sometimes");
+
+        Assert.AreEqual(1, runResult.Diagnostics.Count(diagnostic => diagnostic.Id == "APU0106"));
+        Assert.AreEqual(2, runResult.GeneratedTrees.Length);
     }
 
     /// <summary>
@@ -127,9 +143,19 @@ public class Antlr4GrammarGeneratorOptionsTests
     [TestMethod]
     public void Generator_OptionChange_InvalidatesGeneratedOutput()
     {
-        string disabledSource = GetSingleGeneratedSource(RunGenerator(BindingGrammar, "false"));
-        string enabledSource = GetSingleGeneratedSource(RunGenerator(BindingGrammar, "true"));
-        string disabledAgainSource = GetSingleGeneratedSource(RunGenerator(BindingGrammar, "false"));
+        var compilation = CreateGeneratorCompilation();
+        GeneratorDriver driver = CreateGeneratorDriver([new InMemoryAdditionalText("P.g4", BindingGrammar)], "false");
+
+        driver = driver.RunGenerators(compilation);
+        string disabledSource = GetSingleGeneratedSource(driver.GetRunResult());
+
+        driver = driver.WithUpdatedAnalyzerConfigOptions(new DictionaryAnalyzerConfigOptionsProvider(CreateGlobalOptions("true")));
+        driver = driver.RunGenerators(compilation);
+        string enabledSource = GetSingleGeneratedSource(driver.GetRunResult());
+
+        driver = driver.WithUpdatedAnalyzerConfigOptions(new DictionaryAnalyzerConfigOptionsProvider(CreateGlobalOptions("false")));
+        driver = driver.RunGenerators(compilation);
+        string disabledAgainSource = GetSingleGeneratedSource(driver.GetRunResult());
 
         Assert.AreNotEqual(disabledSource, enabledSource);
         Assert.AreEqual(disabledSource, disabledAgainSource);
@@ -150,19 +176,34 @@ public class Antlr4GrammarGeneratorOptionsTests
     /// </summary>
     private static GeneratorDriverRunResult RunGenerator(IReadOnlyList<AdditionalText> grammars, string? optionValue)
     {
-        var compilation = CSharpCompilation.Create(
+        var compilation = CreateGeneratorCompilation();
+        GeneratorDriver driver = CreateGeneratorDriver(grammars, optionValue);
+
+        return driver.RunGenerators(compilation).GetRunResult();
+    }
+
+    /// <summary>
+    /// Creates a compilation used to host source generator executions in tests.
+    /// </summary>
+    private static CSharpCompilation CreateGeneratorCompilation()
+    {
+        return CSharpCompilation.Create(
             "Antlr4GrammarGeneratorOptionsTests",
             syntaxTrees: [CSharpSyntaxTree.ParseText("namespace Generated.Tests;", CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.Preview))],
             references: [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)],
             options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+    }
 
-        GeneratorDriver driver = CSharpGeneratorDriver.Create(
+    /// <summary>
+    /// Creates a source generator driver with in-memory grammars and optional project-wide option value.
+    /// </summary>
+    private static GeneratorDriver CreateGeneratorDriver(IReadOnlyList<AdditionalText> grammars, string? optionValue)
+    {
+        return CSharpGeneratorDriver.Create(
             generators: [new Antlr4GrammarGenerator().AsSourceGenerator()],
             additionalTexts: grammars,
             parseOptions: CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.Preview),
             optionsProvider: new DictionaryAnalyzerConfigOptionsProvider(CreateGlobalOptions(optionValue)));
-
-        return driver.RunGenerators(compilation).GetRunResult();
     }
 
     /// <summary>
@@ -207,23 +248,48 @@ public class Antlr4GrammarGeneratorOptionsTests
     }
 
     /// <summary>
-    /// Compiles generated source to verify the true option still emits valid C#.
+    /// Compiles and executes generated source to verify the true option makes child arguments visible to <c>@init</c>.
     /// </summary>
-    private static void AssertGeneratedSourceCompiles(string source)
+    private static void AssertGeneratedSourceExecutesBinding(string source)
+    {
+        using var assemblyStream = new MemoryStream();
+        CSharpCompilation compilation = CreateGeneratedSourceCompilation(source);
+        var emitResult = compilation.Emit(assemblyStream);
+        Diagnostic[] errors = emitResult.Diagnostics.Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error).ToArray();
+        Assert.AreEqual(0, errors.Length, string.Join("\n", errors.Select(error => error.ToString())));
+
+        assemblyStream.Position = 0;
+        Assembly assembly = Assembly.Load(assemblyStream.ToArray());
+        Type parserType = assembly.GetType("P", throwOnError: true)!;
+        Type contextType = assembly.GetType("PExecutionContext", throwOnError: true)!;
+        object executionContext = Activator.CreateInstance(contextType, nonPublic: true)!;
+        MethodInfo parseMethod = parserType.GetMethod(
+            "ParseWithEmbeddedCode",
+            BindingFlags.Public | BindingFlags.Static,
+            binder: null,
+            types: [typeof(string), contextType],
+            modifiers: null)!;
+
+        _ = parseMethod.Invoke(null, ["a", executionContext]);
+        FieldInfo seenField = contextType.GetField("Seen", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        Assert.AreEqual(42, seenField.GetValue(executionContext));
+    }
+
+    /// <summary>
+    /// Creates a Roslyn compilation for generated source execution tests.
+    /// </summary>
+    private static CSharpCompilation CreateGeneratedSourceCompilation(string source)
     {
         MetadataReference[] references = AppDomain.CurrentDomain.GetAssemblies()
             .Where(assembly => !assembly.IsDynamic && !string.IsNullOrWhiteSpace(assembly.Location))
             .Select(assembly => MetadataReference.CreateFromFile(assembly.Location))
             .ToArray();
 
-        var compilation = CSharpCompilation.Create(
+        return CSharpCompilation.Create(
             "GeneratedParserBindingCompilation",
             syntaxTrees: [CSharpSyntaxTree.ParseText(source, CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.Preview))],
             references: references,
             options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
-
-        Diagnostic[] errors = compilation.GetDiagnostics().Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error).ToArray();
-        Assert.AreEqual(0, errors.Length, string.Join("\n", errors.Select(error => error.ToString())));
     }
 
     /// <summary>
