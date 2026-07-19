@@ -64,11 +64,20 @@ public class VirtualProcess<TAddress> where TAddress : IBinaryInteger<TAddress>
 
     internal void MarkFreed() => _isFreed = true;
 
+    /// <summary>Clears all page-table entries without checking <see cref="IsFreed"/>. For use by <see cref="VirtualMemory{TAddress}.FreeProcess"/> only.</summary>
+    internal void ClearAllMappings() => _pageTable.Clear();
+
     internal void MapPage(TAddress virtualPageIndex, VirtualPage page, PageAccess access)
-        => _pageTable[virtualPageIndex] = (page, access);
+    {
+        ThrowIfFreed();
+        _pageTable[virtualPageIndex] = (page, access);
+    }
 
     internal void UnmapPage(TAddress virtualPageIndex)
-        => _pageTable.Remove(virtualPageIndex);
+    {
+        ThrowIfFreed();
+        _pageTable.Remove(virtualPageIndex);
+    }
 
     private void ThrowIfFreed()
     {

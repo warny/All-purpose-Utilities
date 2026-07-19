@@ -422,4 +422,24 @@ public class VirtualMemoryTests
         mem.FreeProcess(proc);
         Assert.ThrowsException<ObjectDisposedException>(() => proc.Mappings.ToList());
     }
+
+    [TestMethod]
+    public void MapPage_FreedProcess_ThrowsObjectDisposedException()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        var page = mem.AllocatePage();
+        var proc = mem.CreateProcess();
+        mem.FreeProcess(proc);
+        Assert.ThrowsException<ObjectDisposedException>(() => mem.MapPage(proc, page, 0, PageAccess.ReadWrite));
+    }
+
+    [TestMethod]
+    public void UnmapPage_FreedProcess_ThrowsObjectDisposedException()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        mem.AllocatePage();
+        var proc = mem.CreateProcess();
+        mem.FreeProcess(proc);
+        Assert.ThrowsException<ObjectDisposedException>(() => mem.UnmapPage(proc, 0));
+    }
 }

@@ -92,6 +92,7 @@ public class VirtualMemory<TAddress> where TAddress : IBinaryInteger<TAddress>
     /// <param name="access">The access rights granted to the process for this page.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="process"/> or <paramref name="page"/> is <see langword="null"/>.</exception>
     /// <exception cref="ArgumentException">Thrown when <paramref name="page"/> was not allocated by this instance.</exception>
+    /// <exception cref="ObjectDisposedException">Thrown when <paramref name="process"/> has been freed.</exception>
     public void MapPage(VirtualProcess<TAddress> process, VirtualPage page, TAddress virtualPageIndex, PageAccess access)
     {
         ArgumentNullException.ThrowIfNull(process);
@@ -108,6 +109,7 @@ public class VirtualMemory<TAddress> where TAddress : IBinaryInteger<TAddress>
     /// <param name="process">The process whose mapping is to be removed.</param>
     /// <param name="virtualPageIndex">The virtual page index to unmap.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="process"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ObjectDisposedException">Thrown when <paramref name="process"/> has been freed.</exception>
     public void UnmapPage(VirtualProcess<TAddress> process, TAddress virtualPageIndex)
     {
         ArgumentNullException.ThrowIfNull(process);
@@ -132,10 +134,7 @@ public class VirtualMemory<TAddress> where TAddress : IBinaryInteger<TAddress>
             throw new ArgumentException("The master process cannot be freed.", nameof(process));
         if (!_processes.Remove(process))
             throw new ArgumentException("The process does not belong to this VirtualMemory instance.", nameof(process));
-        // Snapshot mappings before marking freed, as Mappings checks IsFreed.
-        var mappingKeys = process.Mappings.Select(m => m.VirtualPageIndex).ToList();
+        process.ClearAllMappings();
         process.MarkFreed();
-        foreach (var virtualPageIndex in mappingKeys)
-            process.UnmapPage(virtualPageIndex);
     }
 }
