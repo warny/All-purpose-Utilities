@@ -93,10 +93,20 @@ public sealed class ExceptionBlock : IControlFlowBlock
     /// <exception cref="ArgumentException">
     /// Thrown when both <paramref name="catchAddress"/> and <paramref name="finallyAddress"/> are <see langword="null"/>.
     /// </exception>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when any non-null address is negative. Negative values are the termination sentinel
+    /// and must not be used as branch targets.
+    /// </exception>
     public ExceptionBlock(int startAddress, int? catchAddress, int? finallyAddress)
     {
         if (catchAddress is null && finallyAddress is null)
             throw new ArgumentException("An ExceptionBlock must have at least a catch or a finally address.");
+        if (startAddress < 0)
+            throw new ArgumentOutOfRangeException(nameof(startAddress), "Branch target addresses must be non-negative.");
+        if (catchAddress.HasValue && catchAddress.Value < 0)
+            throw new ArgumentOutOfRangeException(nameof(catchAddress), "Branch target addresses must be non-negative.");
+        if (finallyAddress.HasValue && finallyAddress.Value < 0)
+            throw new ArgumentOutOfRangeException(nameof(finallyAddress), "Branch target addresses must be non-negative.");
         StartAddress = startAddress;
         CatchAddress = catchAddress;
         FinallyAddress = finallyAddress;

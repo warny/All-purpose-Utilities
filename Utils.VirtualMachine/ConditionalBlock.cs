@@ -31,8 +31,18 @@ public sealed class ConditionalBlock : IControlFlowBlock
     /// <param name="startAddress">Address of the IF instruction.</param>
     /// <param name="endAddress">Address immediately after the ENDIF.</param>
     /// <param name="elseAddress">Address of the ELSE branch, or <see langword="null"/> if absent.</param>
+    /// <exception cref="System.ArgumentOutOfRangeException">
+    /// Thrown when any non-null address is negative. Negative values are the termination sentinel
+    /// and must not be used as branch targets.
+    /// </exception>
     public ConditionalBlock(int startAddress, int endAddress, int? elseAddress = null)
     {
+        if (startAddress < 0)
+            throw new System.ArgumentOutOfRangeException(nameof(startAddress), "Branch target addresses must be non-negative.");
+        if (endAddress < 0)
+            throw new System.ArgumentOutOfRangeException(nameof(endAddress), "Branch target addresses must be non-negative.");
+        if (elseAddress.HasValue && elseAddress.Value < 0)
+            throw new System.ArgumentOutOfRangeException(nameof(elseAddress), "Branch target addresses must be non-negative.");
         StartAddress = startAddress;
         EndAddress = endAddress;
         ElseAddress = elseAddress;

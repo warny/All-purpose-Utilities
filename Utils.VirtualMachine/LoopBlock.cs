@@ -38,8 +38,16 @@ public sealed class LoopBlock : IControlFlowBlock
     /// </summary>
     /// <param name="startAddress">Address of the loop header (CONTINUE jumps here).</param>
     /// <param name="endAddress">Address immediately after the loop (BREAK jumps here).</param>
+    /// <exception cref="System.ArgumentOutOfRangeException">
+    /// Thrown when any address is negative. Negative values are the termination sentinel
+    /// and must not be used as branch targets.
+    /// </exception>
     public LoopBlock(int startAddress, int endAddress)
     {
+        if (startAddress < 0)
+            throw new System.ArgumentOutOfRangeException(nameof(startAddress), "Branch target addresses must be non-negative.");
+        if (endAddress < 0)
+            throw new System.ArgumentOutOfRangeException(nameof(endAddress), "Branch target addresses must be non-negative.");
         StartAddress = startAddress;
         EndAddress = endAddress;
     }

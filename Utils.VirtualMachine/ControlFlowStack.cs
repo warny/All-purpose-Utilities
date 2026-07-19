@@ -60,6 +60,7 @@ public class ControlFlowStack
     /// <param name="startAddress">Address of the IF instruction.</param>
     /// <param name="endAddress">Address immediately after the ENDIF.</param>
     /// <param name="elseAddress">Address of the ELSE branch, or <see langword="null"/> if absent.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when any non-null address is negative.</exception>
     /// <exception cref="InvalidOperationException">Thrown when <see cref="MaxDepth"/> would be exceeded.</exception>
     public void PushConditional(int startAddress, int endAddress, int? elseAddress = null)
     {
@@ -70,6 +71,7 @@ public class ControlFlowStack
     /// <summary>Opens a loop block.</summary>
     /// <param name="startAddress">Address of the loop header; target of CONTINUE.</param>
     /// <param name="endAddress">Address after the loop; target of BREAK.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when any address is negative.</exception>
     /// <exception cref="InvalidOperationException">Thrown when <see cref="MaxDepth"/> would be exceeded.</exception>
     public void PushLoop(int startAddress, int endAddress)
     {
@@ -85,6 +87,7 @@ public class ControlFlowStack
     /// Thrown when both <paramref name="catchAddress"/> and <paramref name="finallyAddress"/> are <see langword="null"/>.
     /// An exception block with no handler is unreachable and indicates malformed bytecode.
     /// </exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when any non-null address is negative.</exception>
     /// <exception cref="InvalidOperationException">Thrown when <see cref="MaxDepth"/> would be exceeded.</exception>
     public void PushException(int startAddress, int? catchAddress, int? finallyAddress)
     {

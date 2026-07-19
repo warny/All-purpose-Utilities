@@ -1115,4 +1115,65 @@ public class ControlFlowStackTests
         cfs.PushLoop(0, 10); // should not throw after pop freed a slot
         Assert.AreEqual(1, cfs.Depth);
     }
+
+    // ── Negative branch target validation (item 29) ──────────────────────────
+
+    [TestMethod]
+    public void PushConditional_NegativeStartAddress_ThrowsArgumentOutOfRangeException()
+    {
+        var cfs = new ControlFlowStack();
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => cfs.PushConditional(-1, 10));
+    }
+
+    [TestMethod]
+    public void PushConditional_NegativeEndAddress_ThrowsArgumentOutOfRangeException()
+    {
+        var cfs = new ControlFlowStack();
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => cfs.PushConditional(0, -1));
+    }
+
+    [TestMethod]
+    public void PushConditional_NegativeElseAddress_ThrowsArgumentOutOfRangeException()
+    {
+        var cfs = new ControlFlowStack();
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => cfs.PushConditional(0, 10, elseAddress: -1));
+    }
+
+    [TestMethod]
+    public void PushLoop_NegativeStartAddress_ThrowsArgumentOutOfRangeException()
+    {
+        var cfs = new ControlFlowStack();
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => cfs.PushLoop(-1, 10));
+    }
+
+    [TestMethod]
+    public void PushLoop_NegativeEndAddress_ThrowsArgumentOutOfRangeException()
+    {
+        var cfs = new ControlFlowStack();
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => cfs.PushLoop(0, -1));
+    }
+
+    [TestMethod]
+    public void PushException_NegativeStartAddress_ThrowsArgumentOutOfRangeException()
+    {
+        var cfs = new ControlFlowStack();
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => cfs.PushException(-1, catchAddress: 10, finallyAddress: null));
+    }
+
+    [TestMethod]
+    public void PushException_NegativeCatchAddress_ThrowsArgumentOutOfRangeException()
+    {
+        var cfs = new ControlFlowStack();
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => cfs.PushException(0, catchAddress: -1, finallyAddress: null));
+    }
+
+    [TestMethod]
+    public void PushException_NegativeFinallyAddress_ThrowsArgumentOutOfRangeException()
+    {
+        var cfs = new ControlFlowStack();
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => cfs.PushException(0, catchAddress: null, finallyAddress: -5));
+    }
 }
