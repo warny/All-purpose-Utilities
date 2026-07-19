@@ -345,6 +345,13 @@ public abstract class VirtualProcessor<T> where T : Context
     /// </summary>
     /// <param name="context">The execution context.</param>
     /// <param name="cancellationToken">Token that can stop execution between instructions.</param>
+    /// <remarks>
+    /// Cancellation is cooperative and checked only between instructions — not within a single
+    /// instruction handler. A handler that blocks indefinitely, performs a long-running computation,
+    /// or enters an infinite loop will prevent cancellation from being observed until it returns.
+    /// For untrusted or long-running handlers, use an isolation boundary or have the handler
+    /// observe the token or a deadline directly.
+    /// </remarks>
     /// <exception cref="VirtualProcessorException">Thrown on an unknown opcode sequence.</exception>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is cancelled.</exception>
     public void Execute(T context, CancellationToken cancellationToken = default)
@@ -536,6 +543,13 @@ public abstract class Context
     /// Setting this to a negative value (typically <c>-1</c>) signals program termination to the
     /// <see cref="VirtualProcessor{T}"/> execution loop.
     /// </summary>
+    /// <remarks>
+    /// Any negative value causes the execution loop to stop and is treated as normal termination.
+    /// This means stack underflow from <c>CallStack.Return</c> (which also returns <c>-1</c>),
+    /// explicit <see cref="Terminate"/> calls, and erroneous negative jump targets all collapse
+    /// into the same observable state — all appear as normal completion. Distinguish them at the
+    /// bytecode or caller level if the difference matters.
+    /// </remarks>
     public int InstructionPointer { get; set; }
 
     /// <summary>
