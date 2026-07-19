@@ -552,12 +552,26 @@ public abstract class VirtualProcessor<T> where T : Context
         if (Inspector is not { } inspector) return;
         if (Breakpoints.Count > 0 && Breakpoints.Contains(address))
         {
-            inspector.OnBreakpoint(context, address, instructionName);
+            try
+            {
+                inspector.OnBreakpoint(context, address, instructionName);
+            }
+            catch (Exception ex) when (ex is not VmInspectorException)
+            {
+                throw new VmInspectorException(VmInspectorPhase.OnBreakpoint, address, instructionName, ex);
+            }
             // If OnBreakpoint redirected execution, skip BeforeInstruction for the old instruction
             // so that the callback does not observe contradictory metadata.
             if (context.InstructionPointer != expectedInstructionPointer) return;
         }
-        inspector.BeforeInstruction(context, address, instructionName);
+        try
+        {
+            inspector.BeforeInstruction(context, address, instructionName);
+        }
+        catch (Exception ex) when (ex is not VmInspectorException)
+        {
+            throw new VmInspectorException(VmInspectorPhase.BeforeInstruction, address, instructionName, ex);
+        }
     }
 }
 

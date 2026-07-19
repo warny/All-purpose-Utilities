@@ -1180,6 +1180,97 @@ namespace UtilsTest.VirtualMachine
         }
     }
 
+    // ── Inspector exceptions (item 32) ────────────────────────────────────────────────────────────
+
+    [TestClass]
+    public class InspectorExceptionTests
+    {
+        private sealed class CallbackInspector<T> : IVmInspector<T> where T : Context
+        {
+            private readonly Action<T, int, string> _before;
+            private readonly Action<T, int, string> _onBp;
+            internal CallbackInspector(Action<T, int, string> before, Action<T, int, string> onBp)
+            { _before = before; _onBp = onBp; }
+            public void BeforeInstruction(T ctx, int addr, string name) => _before(ctx, addr, name);
+            public void OnBreakpoint(T ctx, int addr, string name) => _onBp(ctx, addr, name);
+        }
+
+        private static CallbackInspector<DefaultContext> MakeInspector(
+            Action<DefaultContext, int, string>? before = null,
+            Action<DefaultContext, int, string>? onBp = null)
+            => new(
+                before ?? ((_, _, _) => { }),
+                onBp ?? ((_, _, _) => { }));
+
+        [TestMethod]
+        public void Inspector_BeforeInstruction_Throws_WrappedAsVmInspectorException()
+        {
+            var machine = new InspectorMachine();
+            machine.Inspector = MakeInspector(
+                before: (ctx, addr, name) => throw new InvalidOperationException("boom"));
+            byte[] program = [0x01]; // PUSH_A
+            var ctx = new DefaultContext(program);
+            var ex = Assert.ThrowsException<VmInspectorException>(() => machine.Execute(ctx));
+            Assert.AreEqual(VmInspectorPhase.BeforeInstruction, ex.Phase);
+            Assert.AreEqual(0, ex.Address);
+            Assert.IsInstanceOfType<InvalidOperationException>(ex.InnerException);
+        }
+
+        [TestMethod]
+        public void Inspector_OnBreakpoint_Throws_WrappedAsVmInspectorException()
+        {
+            var machine = new InspectorMachine();
+            machine.Inspector = MakeInspector(
+                onBp: (ctx, addr, name) => throw new InvalidOperationException("boom"));
+            machine.Breakpoints.Add(0);
+            byte[] program = [0x01]; // PUSH_A
+            var ctx = new DefaultContext(program);
+            var ex = Assert.ThrowsException<VmInspectorException>(() => machine.Execute(ctx));
+            Assert.AreEqual(VmInspectorPhase.OnBreakpoint, ex.Phase);
+            Assert.AreEqual(0, ex.Address);
+            Assert.IsInstanceOfType<InvalidOperationException>(ex.InnerException);
+        }
+
+        [TestMethod]
+        public void Inspector_Exception_CarriesInstructionName()
+        {
+            var machine = new InspectorMachine();
+            machine.Inspector = MakeInspector(
+                before: (ctx, addr, name) => throw new InvalidOperationException("boom"));
+            byte[] program = [0x01]; // PUSH_A
+            var ex = Assert.ThrowsException<VmInspectorException>(
+                () => machine.Execute(new DefaultContext(program)));
+            Assert.AreEqual("PUSH_A", ex.InstructionName);
+        }
+
+        [TestMethod]
+        public void Inspector_VmInspectorException_NotRewrapped()
+        {
+            // VmInspectorException thrown by a callback must propagate unchanged, not double-wrapped.
+            var inner = new VmInspectorException("original");
+            var machine = new InspectorMachine();
+            machine.Inspector = MakeInspector(
+                before: (ctx, addr, name) => throw inner);
+            byte[] program = [0x01];
+            var ex = Assert.ThrowsException<VmInspectorException>(
+                () => machine.Execute(new DefaultContext(program)));
+            Assert.AreSame(inner, ex);
+        }
+
+        [TestMethod]
+        public void Inspector_SlowPath_BeforeInstruction_Throws_WrappedAsVmInspectorException()
+        {
+            // Regression: the slow dispatch path must also wrap inspector exceptions.
+            var machine = new TestMachine(); // multi-byte opcodes only (slow path)
+            machine.Inspector = MakeInspector(
+                before: (ctx, addr, name) => throw new InvalidOperationException("slow"));
+            byte[] program = [0x01, 0x01, 42]; // PUSH_BYTE 42 (slow path)
+            var ex = Assert.ThrowsException<VmInspectorException>(
+                () => machine.Execute(new DefaultContext(program)));
+            Assert.AreEqual(VmInspectorPhase.BeforeInstruction, ex.Phase);
+        }
+    }
+
     // ── Execute instruction budget (item 21) ──────────────────────────────────────────────────────
 
     [TestClass]
