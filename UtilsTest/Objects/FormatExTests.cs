@@ -28,8 +28,10 @@ namespace UtilsTest.Objects
             }
         }
 
-        [TestMethod]
-        public void StringFormatFromIDataRecordTest()
+        [DataTestMethod]
+        [DataRow("mixed case", "alpha      :       2A => 2026-07-19 mixed case {Mixed Case} omega")]
+        [DataRow(null, "alpha      :       2A => 2026-07-19  {} omega")]
+        public void StringFormatFromIDataRecordTest(string? nullableText, string expected)
         {
             var formatter = new CustomFormatter(CultureInfo.InvariantCulture);
             formatter.AddFormatter("fluc", (string s) => CultureInfo.InvariantCulture.TextInfo.ToTitleCase(s));
@@ -41,12 +43,12 @@ namespace UtilsTest.Objects
                 Field1 = "alpha",
                 Field2 = 42,
                 Field3 = new DateTime(2026, 7, 19),
-                Field3_1 = "mixed case",
+                Field3_1 = nullableText,
                 Field4 = "omega"
             };
 
 
-            var fields = new (Type Type, string Name, Func<object> Value)[] {
+            var fields = new (Type Type, string Name, Func<object?> Value)[] {
                 (typeof(string), "field1", () => result.Field1),
                 (typeof(int), "field2", () => result.Field2),
                 (typeof(DateTime), "field3", () => result.Field3),
@@ -69,7 +71,6 @@ namespace UtilsTest.Objects
 
             IStringFormatBuilder builder = new StringFormatBuilder(new CSyntaxExpressionCompiler());
             var format = builder.Create("{field1,-10} : {field2,8:X2} => {field3:yyyy-MM-dd} {field3_1} {{{field3_1:fluc}}} {field4}", formatter, CultureInfo.InvariantCulture, dr);
-            var expected = string.Format(formatter, "{0,-10} : {1,8:X2} => {2:yyyy-MM-dd} {3} {{{3:fluc}}} {4}", dr[0], dr[1], dr[2], dr[3], dr[4]);
 
             Assert.AreEqual(expected, format(dr));
         }
