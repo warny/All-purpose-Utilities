@@ -31,7 +31,7 @@ namespace Utils.Expressions.Resolvers
                 ? ((AppDomain)typeof(string).GetTypeInfo().Assembly.GetType("System.AppDomain").GetRuntimeProperty("CurrentDomain").GetMethod.Invoke(null, [])).GetAssemblies()
                 : assemblies;
 
-            foreach (Type type in Assemblies.SelectMany(a => a.GetTypes().Where(t => t.IsPublic)))
+            foreach (Type type in Assemblies.SelectMany(GetExportedTypes))
             {
                 if (type.Namespace is null) continue;
                 Types[type.FullName] = type;
@@ -53,6 +53,22 @@ namespace Utils.Expressions.Resolvers
                         }
                     }
                 }
+            }
+        }
+
+        private static IEnumerable<Type> GetExportedTypes(Assembly assembly)
+        {
+            try
+            {
+                return assembly.GetExportedTypes();
+            }
+            catch (ReflectionTypeLoadException ex)
+            {
+                return ex.Types.Where(static t => t is not null)!;
+            }
+            catch (Exception)
+            {
+                return [];
             }
         }
 
