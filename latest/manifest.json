@@ -11838,7 +11838,7 @@
       "Uid": null,
       "IsMRef": true,
       "Title": "Utils.Parser.Runtime.ParserLiteralTypeConverter",
-      "Summary": "<p sourcefile=\"api/Utils.Parser.Runtime.ParserLiteralTypeConverter.yml\" sourcestartlinenumber=\"1\">Converts values produced by <xref href=\"Utils.Parser.Runtime.ParserSimpleLiteralParser\" data-throw-if-not-resolved=\"false\"></xref> to a deliberately limited set of built-in declared types.\nNo arbitrary type resolution, reflection-based construction, expression evaluation, or string-to-numeric parsing is performed.</p>\n"
+      "Summary": "<p sourcefile=\"api/Utils.Parser.Runtime.ParserLiteralTypeConverter.yml\" sourcestartlinenumber=\"1\">Converts values produced by <xref href=\"Utils.Parser.Runtime.ParserSimpleLiteralParser\" data-throw-if-not-resolved=\"false\"></xref> to a deliberately limited set of built-in declared types.</p>\n"
     },
     {
       "type": "ManagedReference",
@@ -11880,7 +11880,7 @@
       "Uid": null,
       "IsMRef": true,
       "Title": "Utils.Parser.Runtime.ParserRawArgumentSplitter",
-      "Summary": "<p sourcefile=\"api/Utils.Parser.Runtime.ParserRawArgumentSplitter.yml\" sourcestartlinenumber=\"1\">Provides syntactic top-level splitting of raw rule-call argument text preserved from\n<code>callee[...]</code> grammar clauses.\nSplitting is purely syntactic: no argument is evaluated, no parameter is bound, and no seed is set.</p>\n"
+      "Summary": "<p sourcefile=\"api/Utils.Parser.Runtime.ParserRawArgumentSplitter.yml\" sourcestartlinenumber=\"1\">Provides syntactic top-level splitting of raw rule-call argument text preserved from <code>callee[...]</code> grammar clauses.</p>\n"
     },
     {
       "type": "ManagedReference",
@@ -12188,7 +12188,7 @@
       "Uid": null,
       "IsMRef": true,
       "Title": "Utils.Parser.Runtime.ParserSimpleLiteralParser",
-      "Summary": "<p sourcefile=\"api/Utils.Parser.Runtime.ParserSimpleLiteralParser.yml\" sourcestartlinenumber=\"1\">Parses the deliberately limited literal syntax supported by positional parser rule-call binding.\nThis parser does not evaluate expressions and is not a complete C# or ANTLR literal parser.</p>\n"
+      "Summary": "<p sourcefile=\"api/Utils.Parser.Runtime.ParserSimpleLiteralParser.yml\" sourcestartlinenumber=\"1\">Parses the narrow simple-literal subset supported by parser rule-call binding.</p>\n"
     },
     {
       "type": "ManagedReference",

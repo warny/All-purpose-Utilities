@@ -6,7 +6,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="title" content="Class ParserRawArgumentSplitter | omy.Utils Documentation ">
       
-      <meta name="description" content="Provides syntactic top-level splitting of raw rule-call argument text preserved from callee[...] grammar clauses. Splitting is purely syntactic: no argument is evaluated, no parameter is bound, and no seed is set.">
+      <meta name="description" content="Provides syntactic top-level splitting of raw rule-call argument text preserved from callee[...] grammar clauses.">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Parser_Runtime_ParserRawArgumentSplitter" data-uid="Utils.Parser.Runtime.ParserRawArgumentSplitter" class="text-break">
-Class ParserRawArgumentSplitter  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserRawArgumentSplitter.cs/#L11"><i class="bi bi-code-slash"></i></a>
+Class ParserRawArgumentSplitter  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserRawArgumentSplitter.cs/#L6"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -97,9 +97,7 @@ Class ParserRawArgumentSplitter  <a class="header-action link-secondary" title="
   <dl><dt>Assembly</dt><dd>Utils.Parser.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Provides syntactic top-level splitting of raw rule-call argument text preserved from
-<code>callee[...]</code> grammar clauses.
-Splitting is purely syntactic: no argument is evaluated, no parameter is bound, and no seed is set.</p>
+  <div class="markdown summary"><p>Provides syntactic top-level splitting of raw rule-call argument text preserved from <code>callee[...]</code> grammar clauses.</p>
 </div>
   <div class="markdown conceptual"></div>
 
@@ -159,11 +157,10 @@ Splitting is purely syntactic: no argument is evaluated, no parameter is bound, 
 
   <h3 id="Utils_Parser_Runtime_ParserRawArgumentSplitter_SplitTopLevel_System_String_" data-uid="Utils.Parser.Runtime.ParserRawArgumentSplitter.SplitTopLevel(System.String)">
   SplitTopLevel(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserRawArgumentSplitter.cs/#L37"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserRawArgumentSplitter.cs/#L9"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Splits raw rule-call argument text into top-level argument slices at commas,
-respecting nested parentheses, square brackets, braces, and quoted strings.</p>
+  <div class="markdown level1 summary"><p>Splits raw rule-call argument text into top-level argument slices at commas.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -174,18 +171,13 @@ respecting nested parentheses, square brackets, braces, and quoted strings.</p>
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>rawArguments</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>Raw argument text without the outer <code>[</code> and <code>]</code> delimiters,
-as stored in <a class="xref" href="Utils.Parser.Runtime.ParserRuleCallResult.html#Utils_Parser_Runtime_ParserRuleCallResult_RawArguments">RawArguments</a>.</p>
-</dd>
+    <dd></dd>
   </dl>
 
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1">IReadOnlyList</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;</dt>
-    <dd><p>A read-only list of trimmed argument slices. Returns an empty list when
-<code class="paramref">rawArguments</code> is empty or contains only whitespace.
-Empty segments (e.g. from <code>a,,b</code> or a trailing comma) are preserved.</p>
-</dd>
+    <dd></dd>
   </dl>
 
 
@@ -194,23 +186,7 @@ Empty segments (e.g. from <code>a,,b</code> or a trailing comma) are preserved.<
 
 
 
-  <h4 class="section" id="Utils_Parser_Runtime_ParserRawArgumentSplitter_SplitTopLevel_System_String__remarks">Remarks</h4>
-  <div class="markdown level1 remarks"><p>Nesting is tracked for <code>()</code>, <code>[]</code>, and <code>{}</code>. Angle brackets <code>&lt;&gt;</code>
-are not tracked to avoid misinterpreting comparison operators.</p>
-<p>Quoted strings (<code>"..."</code> and <code>'...'</code>) are respected; backslash escapes
-(<code>\"</code>, <code>\'</code>, <code>\\</code>) inside strings are recognized. Verbatim C# strings
-(<code>@"..."</code>) are not supported.</p>
-<p>Unbalanced brackets or quotes are handled conservatively: the remainder of the input
-is absorbed into the current segment without throwing.</p>
-<p>This method does not evaluate expressions, infer types, or bind arguments to parameters.</p>
-</div>
 
-  <h4 class="section">Exceptions</h4>
-  <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
-    <dd><p>Thrown when <code class="paramref">rawArguments</code> is <code>null</code>.</p>
-</dd>
-  </dl>
 
 
 
@@ -218,7 +194,7 @@ is absorbed into the current segment without throwing.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserRawArgumentSplitter.cs/#L11" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserRawArgumentSplitter.cs/#L6" class="edit-link">Edit this page</a>
         </div>
 
 

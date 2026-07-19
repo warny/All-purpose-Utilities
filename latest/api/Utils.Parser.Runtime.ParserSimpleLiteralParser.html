@@ -6,7 +6,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="title" content="Class ParserSimpleLiteralParser | omy.Utils Documentation ">
       
-      <meta name="description" content="Parses the deliberately limited literal syntax supported by positional parser rule-call binding. This parser does not evaluate expressions and is not a complete C# or ANTLR literal parser.">
+      <meta name="description" content="Parses the narrow simple-literal subset supported by parser rule-call binding.">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Parser_Runtime_ParserSimpleLiteralParser" data-uid="Utils.Parser.Runtime.ParserSimpleLiteralParser" class="text-break">
-Class ParserSimpleLiteralParser  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserSimpleLiteralParser.cs/#L11"><i class="bi bi-code-slash"></i></a>
+Class ParserSimpleLiteralParser  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserSimpleLiteralParser.cs/#L6"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -97,8 +97,7 @@ Class ParserSimpleLiteralParser  <a class="header-action link-secondary" title="
   <dl><dt>Assembly</dt><dd>Utils.Parser.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Parses the deliberately limited literal syntax supported by positional parser rule-call binding.
-This parser does not evaluate expressions and is not a complete C# or ANTLR literal parser.</p>
+  <div class="markdown summary"><p>Parses the narrow simple-literal subset supported by parser rule-call binding.</p>
 </div>
   <div class="markdown conceptual"></div>
 
@@ -158,12 +157,10 @@ This parser does not evaluate expressions and is not a complete C# or ANTLR lite
 
   <h3 id="Utils_Parser_Runtime_ParserSimpleLiteralParser_TryParse_System_String_System_Object__" data-uid="Utils.Parser.Runtime.ParserSimpleLiteralParser.TryParse(System.String,System.Object@)">
   TryParse(string, out object?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserSimpleLiteralParser.cs/#L40"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserSimpleLiteralParser.cs/#L9"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Attempts to parse a null, Boolean, integer, floating-point, string, or character literal.
-Surrounding whitespace is ignored. Integers use <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a> when possible and
-<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int64">long</a> otherwise; decimal floating-point values use <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a>.</p>
+  <div class="markdown level1 summary"><p>Attempts to parse a supported literal without evaluating expressions.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -174,18 +171,15 @@ Surrounding whitespace is ignored. Integers use <a class="xref" href="https://le
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>rawText</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>Raw call-site argument text.</p>
-</dd>
+    <dd></dd>
     <dt><code>value</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></dt>
-    <dd><p>Parsed literal value when successful; otherwise, <code>null</code>.</p>
-</dd>
+    <dd></dd>
   </dl>
 
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
-    <dd><p><code>true</code> when <code class="paramref">rawText</code> is a supported literal.</p>
-</dd>
+    <dd></dd>
   </dl>
 
 
@@ -202,7 +196,7 @@ Surrounding whitespace is ignored. Integers use <a class="xref" href="https://le
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserSimpleLiteralParser.cs/#L11" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserSimpleLiteralParser.cs/#L6" class="edit-link">Edit this page</a>
         </div>
 
 

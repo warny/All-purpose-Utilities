@@ -928,6 +928,14 @@ Additional intentional test-documented difference: malformed prequel inputs curr
 </ul>
 <p>The following remain unsupported and must produce deterministic transformer diagnostics rather than new runtime syntax: <code>$child.value</code>, <code>$rule.value</code>, <code>$ctx</code>, <code>$c.ctx</code>, <code>$xs.ctx</code>, bare <code>$c</code> / <code>$xs</code> label objects, writes to <code>$c.value</code> or <code>$xs.value</code>, label-return reads in <code>@init</code>, label-return reads in semantic predicates, token attributes such as <code>$t.text</code>, lexer attributes, typed parser contexts, public ANTLR-style parser rule methods, and general ANTLR attribute compatibility.</p>
 <p>These forms are optional <code>IParserEmbeddedCodeTransformer</code> rewrites for generated C# only. The default/no-op transformer leaves <code>$...</code> text unchanged, conservative <code>Parse(...)</code> remains unchanged, and <code>ParserEngine</code> remains target-language-neutral. Parser-managed return and label state follows the existing rollback semantics; no rollback of external side effects is implied.</p>
+<h3 id="static-diagnostics-for-generated-c-positional-binding">Static diagnostics for generated-C# positional binding</h3>
+<p>When <code>UtilsParserEnableGeneratedRuleArgumentBinding=true</code>, the source generator validates certain generated-C# rule-call argument binding failures before emitting C#. Static binding diagnostics currently validate locally declared parser-rule targets only. The runtime remains authoritative for imported or unresolved rules and for policies installed manually by callers.</p>
+<p>The generator reports <code>APU0107</code> as an error for certain invalid local parser-rule call sites: arity mismatches, named or mixed arguments, unsupported simple-literal syntax, impossible conversions to allowlisted declared types, unsupported declared target types, and duplicated or unusable target parameter names. A file with these certain errors does not produce generated source, but other grammar files continue.</p>
+<p>No C# expression evaluation is performed and the supported syntax is not expanded. For example:</p>
+<pre><code class="lang-antlr">start : child[1 + 2] ;
+child[int value] : A ;
+</code></pre>
+<p>With generated binding enabled, <code>child[1 + 2]</code> produces a generation diagnostic because the argument is not a simple literal. <code>Parse(...)</code> behavior is unchanged.</p>
 
 </article>
 
