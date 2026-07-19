@@ -104,6 +104,46 @@ public sealed class GeneratedImportedRuleArgumentBindingDiagnosticsTests
         AssertNoBindingDiagnostics(result);
     }
 
+    /// <summary>Verifies a diamond import graph resolves to one imported declaration when both paths reach the same rule instance.</summary>
+    [TestMethod]
+    public void DiamondImport_SameRuleReachedTwice_IsResolved()
+    {
+        var result = RunGenerator([
+            Grammar("Root.g4", "parser grammar Root; import A, B; start : child[bad] ;"),
+            Grammar("A.g4", "parser grammar A; import Shared;"),
+            Grammar("B.g4", "parser grammar B; import Shared;"),
+            Grammar("Shared.g4", "parser grammar Shared; child[int value] : TOKEN ;")], "true");
+
+        var diagnostic = AssertSingleBindingDiagnostic(result);
+        Assert.AreEqual("Root.g4", diagnostic.Location.GetLineSpan().Path);
+        StringAssert.Contains(diagnostic.GetMessage(), "Argument 0 is not a supported simple literal.");
+    }
+
+    /// <summary>Verifies direct and transitive paths to the same imported declaration do not create artificial ambiguity.</summary>
+    [TestMethod]
+    public void DirectAndTransitivePathToSameDeclaration_IsResolved()
+    {
+        var result = RunGenerator([
+            Grammar("Root.g4", "parser grammar Root; import A, Shared; start : child[bad] ;"),
+            Grammar("A.g4", "parser grammar A; import Shared;"),
+            Grammar("Shared.g4", "parser grammar Shared; child[int value] : TOKEN ;")], "true");
+
+        var diagnostic = AssertSingleBindingDiagnostic(result);
+        Assert.AreEqual("Root.g4", diagnostic.Location.GetLineSpan().Path);
+    }
+
+    /// <summary>Verifies importing the same grammar name more than once does not create artificial ambiguity.</summary>
+    [TestMethod]
+    public void DuplicateImportOfSameGrammar_DoesNotBecomeAmbiguous()
+    {
+        var result = RunGenerator([
+            Grammar("Root.g4", "parser grammar Root; import Shared, Shared; start : child[bad] ;"),
+            Grammar("Shared.g4", "parser grammar Shared; child[int value] : TOKEN ;")], "true");
+
+        var diagnostic = AssertSingleBindingDiagnostic(result);
+        Assert.AreEqual("Root.g4", diagnostic.Location.GetLineSpan().Path);
+    }
+
     /// <summary>Verifies import cycles terminate deterministically without duplicated candidates.</summary>
     [TestMethod]
     public void ImportCycle_TerminatesAndKeepsGeneration()

@@ -31,20 +31,20 @@ internal sealed class G4ImportedRuleResolver
             return G4RuleResolution.Ambiguous(ruleName);
         }
 
-        var candidates = ImmutableArray.CreateBuilder<G4Rule>();
+        var candidates = new HashSet<G4Rule>();
         var visited = new HashSet<string>(StringComparer.Ordinal) { caller.Name };
         CollectImportedCandidates(caller, ruleName, visited, candidates);
 
         return candidates.Count switch
         {
             0 => G4RuleResolution.Unresolved(ruleName),
-            1 => G4RuleResolution.Imported(candidates[0]),
+            1 => G4RuleResolution.Imported(candidates.Single()),
             _ => G4RuleResolution.Ambiguous(ruleName)
         };
     }
 
-    /// <summary>Collects imported parser-rule candidates reachable through direct and transitive imports.</summary>
-    private void CollectImportedCandidates(G4Grammar grammar, string ruleName, HashSet<string> visited, ImmutableArray<G4Rule>.Builder candidates)
+    /// <summary>Collects unique imported parser-rule declaration candidates reachable through direct and transitive imports.</summary>
+    private void CollectImportedCandidates(G4Grammar grammar, string ruleName, HashSet<string> visited, HashSet<G4Rule> candidates)
     {
         foreach (var import in grammar.Imports.OrderBy(static import => import.GrammarName, StringComparer.Ordinal).ThenBy(static import => import.Alias ?? string.Empty, StringComparer.Ordinal))
         {
@@ -65,9 +65,18 @@ internal sealed class G4ImportedRuleResolver
                 continue;
             }
 
-            candidates.AddRange(FindParserRules(importedGrammar, ruleName));
+            AddParserRules(importedGrammar, ruleName, candidates);
             CollectImportedCandidates(importedGrammar, ruleName, visited, candidates);
             visited.Remove(importedGrammar.Name);
+        }
+    }
+
+    /// <summary>Adds parser-domain rules by declaration identity without considering lexer rules.</summary>
+    private static void AddParserRules(G4Grammar grammar, string ruleName, HashSet<G4Rule> candidates)
+    {
+        foreach (var rule in FindParserRules(grammar, ruleName))
+        {
+            candidates.Add(rule);
         }
     }
 
