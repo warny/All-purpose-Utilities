@@ -382,6 +382,39 @@ public class VirtualMemoryTests
             new VirtualMemoryContext<int>(ReadOnlyMemory<byte>.Empty, null!));
     }
 
+    [TestMethod]
+    public void VirtualMemoryContext_FreedProcess_ThrowsObjectDisposedException()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        var proc = mem.CreateProcess();
+        mem.FreeProcess(proc);
+        Assert.ThrowsException<ObjectDisposedException>(() =>
+            new VirtualMemoryContext<int>(ReadOnlyMemory<byte>.Empty, proc));
+    }
+
+    [TestMethod]
+    public void VirtualMemoryContext_PageCtor_UnmappedPage_ThrowsArgumentException()
+    {
+        var mem1 = new VirtualMemory<int>(pageSize: 16);
+        var mem2 = new VirtualMemory<int>(pageSize: 16);
+        var page = mem1.AllocatePage();
+        // page belongs to mem1 but proc belongs to mem2 — not mapped
+        var proc = mem2.MasterProcess;
+        Assert.ThrowsException<ArgumentException>(() =>
+            new VirtualMemoryContext<int>(page, proc));
+    }
+
+    [TestMethod]
+    public void VirtualMemoryContext_PageCtor_FreedProcess_ThrowsObjectDisposedException()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        var page = mem.AllocatePage();
+        var proc = mem.CreateProcess();
+        mem.FreeProcess(proc);
+        Assert.ThrowsException<ObjectDisposedException>(() =>
+            new VirtualMemoryContext<int>(page, proc));
+    }
+
     // ──────────────────────────────── IsAccessible / GetAccess ───────────────────────────────
 
     [TestMethod]

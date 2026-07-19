@@ -88,6 +88,10 @@ public class VirtualProcess<TAddress> where TAddress : IBinaryInteger<TAddress>
     /// <summary>Clears all page-table entries without checking <see cref="IsFreed"/>. For use by <see cref="VirtualMemory{TAddress}.FreeProcess"/> only.</summary>
     internal void ClearAllMappings() => _pageTable.Clear();
 
+    /// <summary>Returns <see langword="true"/> when <paramref name="page"/> is mapped into this process with at least <see cref="PageAccess.ReadOnly"/> access.</summary>
+    internal bool ContainsPage(VirtualPage page)
+        => _pageTable.Values.Any(entry => ReferenceEquals(entry.Page, page));
+
     internal void MapPage(TAddress virtualPageIndex, VirtualPage page, PageAccess access)
     {
         ThrowIfFreed();
