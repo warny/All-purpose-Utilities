@@ -743,4 +743,82 @@ public class SchedulerTests
         scheduler.Run(maxInstructions: 3); // budget relative to this Run() start — must not throw
         Assert.AreEqual(afterFirst + 3, scheduler.InstructionsExecuted);
     }
+
+    [TestMethod]
+    public void Run_BudgetOne_ExecutesExactlyOneInstruction()
+    {
+        // quantum=100, budget=1 — only one instruction must be dispatched.
+        var scheduler = new Scheduler<DefaultContext>(quantumSteps: 100);
+        var processor = new CountingProcessor();
+        processor.RegisterInstruction([0x02], "JUMP_0", ctx => ctx.InstructionPointer = 0);
+        scheduler.AddProcess(Ctx(0x01, 0x02), processor); // STEP, JUMP_0 — infinite loop
+
+        Assert.ThrowsException<InstructionBudgetExceededException>(
+            () => scheduler.Run(maxInstructions: 1));
+
+        Assert.AreEqual(1L, scheduler.InstructionsExecuted);
+    }
+
+    [TestMethod]
+    public void Run_BudgetSmallerThanQuantum_DoesNotOvershoot()
+    {
+        // quantum=100, budget=5 — must stop at 5, not at 100.
+        var scheduler = new Scheduler<DefaultContext>(quantumSteps: 100);
+        var processor = new CountingProcessor();
+        processor.RegisterInstruction([0x02], "JUMP_0", ctx => ctx.InstructionPointer = 0);
+        scheduler.AddProcess(Ctx(0x01, 0x02), processor); // STEP, JUMP_0 — infinite loop
+
+        Assert.ThrowsException<InstructionBudgetExceededException>(
+            () => scheduler.Run(maxInstructions: 5));
+
+        Assert.AreEqual(5L, scheduler.InstructionsExecuted);
+    }
+
+    [TestMethod]
+    public void Run_BudgetSharedAcrossMultipleProcesses_DoesNotOvershoot()
+    {
+        // 2 processes, quantum=100, budget=5 — total instructions must not exceed 5.
+        var scheduler = new Scheduler<DefaultContext>(quantumSteps: 100);
+        var processor = new CountingProcessor();
+        processor.RegisterInstruction([0x02], "JUMP_0", ctx => ctx.InstructionPointer = 0);
+        scheduler.AddProcess(Ctx(0x01, 0x02), processor); // infinite loop
+        scheduler.AddProcess(Ctx(0x01, 0x02), processor); // infinite loop
+
+        Assert.ThrowsException<InstructionBudgetExceededException>(
+            () => scheduler.Run(maxInstructions: 5));
+
+        Assert.IsTrue(scheduler.InstructionsExecuted <= 5,
+            $"Expected ≤5 instructions but got {scheduler.InstructionsExecuted}");
+    }
+
+    [TestMethod]
+    public async Task RunAsync_BudgetDoesNotOvershoot()
+    {
+        // async variant: budget=3 with quantum=100 must dispatch exactly 3 instructions.
+        var scheduler = new Scheduler<DefaultContext>(quantumSteps: 100);
+        var processor = new CountingProcessor();
+        processor.RegisterInstruction([0x02], "JUMP_0", ctx => ctx.InstructionPointer = 0);
+        scheduler.AddProcess(Ctx(0x01, 0x02), processor); // infinite loop
+
+        await Assert.ThrowsExceptionAsync<InstructionBudgetExceededException>(
+            () => scheduler.RunAsync(maxInstructions: 3));
+
+        Assert.AreEqual(3L, scheduler.InstructionsExecuted);
+    }
+
+    [TestMethod]
+    public void Run_NegativeMaxInstructions_ThrowsArgumentOutOfRangeException()
+    {
+        var scheduler = new Scheduler<DefaultContext>();
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => scheduler.Run(maxInstructions: -1));
+    }
+
+    [TestMethod]
+    public async Task RunAsync_NegativeMaxInstructions_ThrowsArgumentOutOfRangeException()
+    {
+        var scheduler = new Scheduler<DefaultContext>();
+        await Assert.ThrowsExceptionAsync<ArgumentOutOfRangeException>(
+            () => scheduler.RunAsync(maxInstructions: -1));
+    }
 }
