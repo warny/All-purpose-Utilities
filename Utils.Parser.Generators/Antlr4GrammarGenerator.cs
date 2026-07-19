@@ -86,7 +86,13 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
         description:        "The current generator keeps ANTLR superClass in options metadata but does not change generated type inheritance.");
 
 
-    /// <summary>Immutable parsed grammar-file model carried through the incremental pipeline.</summary>
+    /// <summary>Per-file metadata value that isolates AdditionalFiles item metadata from project-wide analyzer options.</summary>
+    private readonly record struct GrammarFileMetadata(string NamespaceName, string ClassName, bool IsValid, string Error);
+
+    /// <summary>Per-file source and metadata input for grammar parsing.</summary>
+    private readonly record struct GrammarFileInput(AdditionalText File, GrammarFileMetadata Metadata);
+
+    /// <summary>Parsed per-file model carried through the incremental pipeline; its grammar AST is not mutated after parsing.</summary>
     private sealed record ParsedGrammarFile(
         AdditionalText File,
         string Path,
@@ -99,13 +105,13 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
         DiagnosticBag ParseDiagnostics,
         bool MetadataValid,
         string MetadataError,
-        Antlr4GrammarGeneratorOptions Options,
         string? ParseExceptionMessage = null);
     /// <inheritdoc />
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         var generatorOptions = context.AnalyzerConfigOptionsProvider
-            .Select(static (provider, _) => Antlr4GrammarGeneratorOptions.Parse(provider.GlobalOptions));
+            .Select(static (provider, _) => Antlr4GrammarGeneratorOptions.Parse(provider.GlobalOptions))
+            .WithTrackingName("GeneratorOptions");
 
         context.RegisterSourceOutput(generatorOptions, static (productionContext, options) =>
         {
@@ -118,12 +124,20 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
         var grammarFiles = context.AdditionalTextsProvider
             .Where(static file => file.Path.EndsWith(".g4", StringComparison.OrdinalIgnoreCase));
 
-        var parsedGrammarFiles = grammarFiles
+        var grammarFileInputs = grammarFiles
             .Combine(context.AnalyzerConfigOptionsProvider)
-            .Combine(generatorOptions)
-            .Select(static (source, cancellationToken) => ParseGrammarFile(source.Left.Left, source.Left.Right, source.Right.Options, cancellationToken));
+            .Select(static (source, _) => new GrammarFileInput(source.Left, GetGrammarFileMetadata(source.Left, source.Right)))
+            .WithTrackingName("GrammarFileMetadata");
 
-        var parsedGrammarProject = parsedGrammarFiles.Collect().Combine(generatorOptions);
+        var parsedGrammarFiles = grammarFileInputs
+            .Select(static (source, cancellationToken) => ParseGrammarFile(source.File, source.Metadata, cancellationToken))
+            .WithTrackingName("ParseGrammarFile");
+
+        var parsedGrammarProject = parsedGrammarFiles
+            .Collect()
+            .WithTrackingName("CollectGrammarProject")
+            .Combine(generatorOptions)
+            .WithTrackingName("GenerateGrammarProject");
 
         context.RegisterSourceOutput(parsedGrammarProject, static (productionContext, source) =>
         {
@@ -143,33 +157,45 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
     }
 
     /// <summary>
-    /// Parses one grammar additional file into an immutable per-file model used by project-wide validation and per-file emission.
+    /// Reads the AdditionalFiles metadata needed to name one generated grammar type.
     /// </summary>
     /// <param name="file">Grammar additional file being processed.</param>
     /// <param name="optionsProvider">Analyzer config options provider associated with the current run.</param>
-    /// <param name="generatorOptions">Project-wide generator options.</param>
+    /// <returns>A deterministic metadata value for the file.</returns>
+    private static GrammarFileMetadata GetGrammarFileMetadata(AdditionalText file, AnalyzerConfigOptionsProvider optionsProvider)
+    {
+        var options = optionsProvider.GetOptions(file);
+        options.TryGetValue("build_metadata.AdditionalFiles.Namespace", out var namespaceName);
+        options.TryGetValue("build_metadata.AdditionalFiles.ClassName", out var className);
+
+        if (string.IsNullOrWhiteSpace(className))
+        {
+            className = Path.GetFileNameWithoutExtension(file.Path);
+        }
+
+        if (string.IsNullOrWhiteSpace(namespaceName))
+        {
+            namespaceName = string.Empty;
+        }
+
+        bool metadataValid = SyntaxColorizationValidation.TryValidateTypeMetadata(namespaceName!, className!, out string metadataError);
+        return new GrammarFileMetadata(namespaceName!, className!, metadataValid, metadataError);
+    }
+
+    /// <summary>
+    /// Parses one grammar additional file into a per-file model used by project-wide validation and per-file emission.
+    /// </summary>
+    /// <param name="file">Grammar additional file being processed.</param>
+    /// <param name="metadata">Per-file generator metadata.</param>
     /// <param name="cancellationToken">Cancellation token for reading the file text.</param>
     /// <returns>The parsed grammar-file model.</returns>
-    private static ParsedGrammarFile ParseGrammarFile(AdditionalText file, AnalyzerConfigOptionsProvider optionsProvider, Antlr4GrammarGeneratorOptions generatorOptions, CancellationToken cancellationToken)
+    private static ParsedGrammarFile ParseGrammarFile(AdditionalText file, GrammarFileMetadata metadata, CancellationToken cancellationToken)
     {
         var text = file.GetText(cancellationToken);
         string fileName = Path.GetFileName(file.Path);
-        var options = optionsProvider.GetOptions(file);
-
-        options.TryGetValue("build_metadata.AdditionalFiles.Namespace", out var namespaceName);
-        options.TryGetValue("build_metadata.AdditionalFiles.ClassName",  out var className);
-
-        if (string.IsNullOrWhiteSpace(className))
-            className = Path.GetFileNameWithoutExtension(file.Path);
-
-        if (string.IsNullOrWhiteSpace(namespaceName))
-            namespaceName = string.Empty;
-
-        string metadataError = string.Empty;
-        bool metadataValid = SyntaxColorizationValidation.TryValidateTypeMetadata(namespaceName!, className!, out metadataError);
-        if (text == null || !metadataValid)
+        if (text == null || !metadata.IsValid)
         {
-            return new ParsedGrammarFile(file, file.Path, fileName, text, string.Empty, namespaceName!, className!, null, new DiagnosticBag(), metadataValid, metadataError, generatorOptions);
+            return new ParsedGrammarFile(file, file.Path, fileName, text, string.Empty, metadata.NamespaceName, metadata.ClassName, null, new DiagnosticBag(), metadata.IsValid, metadata.Error);
         }
 
         try
@@ -177,11 +203,11 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
             string source = text.ToString();
             var diagnostics = new DiagnosticBag();
             var grammar = new G4Parser(new G4Tokenizer(source).Tokenize(), diagnostics).Parse();
-            return new ParsedGrammarFile(file, file.Path, fileName, text, source, namespaceName!, className!, grammar, diagnostics, true, string.Empty, generatorOptions);
+            return new ParsedGrammarFile(file, file.Path, fileName, text, source, metadata.NamespaceName, metadata.ClassName, grammar, diagnostics, true, string.Empty);
         }
         catch (Exception ex)
         {
-            return new ParsedGrammarFile(file, file.Path, fileName, text, text.ToString(), namespaceName!, className!, null, new DiagnosticBag(), true, string.Empty, generatorOptions, ex.Message);
+            return new ParsedGrammarFile(file, file.Path, fileName, text, text.ToString(), metadata.NamespaceName, metadata.ClassName, null, new DiagnosticBag(), true, string.Empty, ex.Message);
         }
     }
 
