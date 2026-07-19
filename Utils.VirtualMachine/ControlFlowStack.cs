@@ -199,23 +199,58 @@ public class ControlFlowStack
     }
 
     /// <summary>
-    /// Handles an ENDFINALLY instruction: if a catch handler is pending (stored by a prior
-    /// <see cref="Throw"/> call when both <see cref="ExceptionBlock.CatchAddress"/> and
-    /// <see cref="ExceptionBlock.FinallyAddress"/> were set), redirects
-    /// <see cref="Context.InstructionPointer"/> to that catch handler and clears the pending
-    /// address, then transitions the block to <see cref="ExceptionBlockPhase.Catch"/>.
-    /// When no pending catch is present but an exception is in flight (finally-only
-    /// block, or the innermost finally in a nested try), pops the block and propagates the
-    /// exception to the next outer handler by calling <see cref="Throw"/> recursively.
-    /// Otherwise, simply pops the block (normal exit from a try/finally without an exception).
+    /// Handles an ENDCATCH instruction: closes the catch body and, when a finally clause is
+    /// pending (stored by a prior <see cref="Throw"/> call when both
+    /// <see cref="ExceptionBlock.CatchAddress"/> and <see cref="ExceptionBlock.FinallyAddress"/>
+    /// were set), redirects <see cref="Context.InstructionPointer"/> to that finally block and
+    /// clears <see cref="ExceptionBlock.ExceptionInFlight"/> so that <see cref="EndFinally"/>
+    /// will not attempt to re-propagate the now-handled exception. When no pending finally is
+    /// present (catch-only block), the block is popped.
     /// </summary>
     /// <param name="context">The current execution context.</param>
     /// <returns>
-    /// <see langword="true"/> if execution was redirected to a catch handler (either a pending
-    /// one on this block or an outer one found via propagation);
-    /// <see langword="false"/> if the block was popped with no handler to redirect to
+    /// <see langword="true"/> if execution was redirected to a finally block;
+    /// <see langword="false"/> if the block was popped with no finally to redirect to.
+    /// </returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="context"/> is <see langword="null"/>.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the innermost open block is not an <see cref="ExceptionBlock"/> in the
+    /// <see cref="ExceptionBlockPhase.Catch"/> phase.
+    /// </exception>
+    public bool EndCatch(Context context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        if (_blocks.TryPeek(out var top) && top is ExceptionBlock ex && ex.Phase == ExceptionBlockPhase.Catch)
+        {
+            if (ex.PendingFinallyAddress.HasValue)
+            {
+                // Exception was handled by catch; run finally for cleanup.
+                // ExceptionInFlight cleared so EndFinally just pops normally.
+                ex.ExceptionInFlight = false;
+                ex.Phase = ExceptionBlockPhase.Finally;
+                context.InstructionPointer = ex.PendingFinallyAddress.Value;
+                ex.PendingFinallyAddress = null;
+                return true;
+            }
+            _blocks.Pop();
+            return false;
+        }
+        throw new InvalidOperationException("ENDCATCH used outside of a catch block.");
+    }
+
+    /// <summary>
+    /// Handles an ENDFINALLY instruction: when an exception is still in flight (finally-only
+    /// path, or a nested finally inside a catch that rethrew), pops the block and propagates
+    /// the exception to the next outer handler by calling <see cref="Throw"/> recursively.
+    /// Otherwise, simply pops the block (normal try-exit or cleanup after a catch body).
+    /// </summary>
+    /// <param name="context">The current execution context.</param>
+    /// <returns>
+    /// <see langword="true"/> if the exception was propagated to an outer handler;
+    /// <see langword="false"/> if the block was popped with no propagation
     /// (normal exit, or unhandled exception that reached the top of the control-flow stack).
     /// </returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="context"/> is <see langword="null"/>.</exception>
     /// <exception cref="InvalidOperationException">
     /// Thrown when the innermost open block is not an <see cref="ExceptionBlock"/>.
     /// </exception>
@@ -224,13 +259,6 @@ public class ControlFlowStack
         ArgumentNullException.ThrowIfNull(context);
         if (_blocks.TryPeek(out var top) && top is ExceptionBlock ex)
         {
-            if (ex.PendingCatchAddress.HasValue)
-            {
-                context.InstructionPointer = ex.PendingCatchAddress.Value;
-                ex.PendingCatchAddress = null;
-                ex.Phase = ExceptionBlockPhase.Catch;
-                return true;
-            }
             _blocks.Pop();
             if (ex.ExceptionInFlight)
                 return Throw(context, ex.ThrownValue);
@@ -253,22 +281,25 @@ public class ControlFlowStack
     /// Handles a THROW instruction: pops all blocks until the nearest <see cref="ExceptionBlock"/>
     /// whose <see cref="ExceptionBlock.Phase"/> is <see cref="ExceptionBlockPhase.Try"/> is found,
     /// stores the thrown value in <see cref="ExceptionBlock.ThrownValue"/>, and redirects
-    /// <see cref="Context.InstructionPointer"/> according to the following rules:
+    /// <see cref="Context.InstructionPointer"/> according to conventional structured-exception
+    /// semantics (catch executes before finally):
     /// <list type="bullet">
-    ///   <item>If the block has a finally clause, jumps to <see cref="ExceptionBlock.FinallyAddress"/>
-    ///     first. When a catch clause is also present, its address is stored in
-    ///     <see cref="ExceptionBlock.PendingCatchAddress"/> so the ENDFINALLY handler can jump there
-    ///     after the finally block completes. The block transitions to
-    ///     <see cref="ExceptionBlockPhase.Finally"/>.</item>
-    ///   <item>If the block has only a catch clause (no finally), jumps directly to
-    ///     <see cref="ExceptionBlock.CatchAddress"/>. The block transitions to
+    ///   <item>If the block has a catch clause, jumps to <see cref="ExceptionBlock.CatchAddress"/>
+    ///     first. When a finally clause is also present, its address is stored in
+    ///     <see cref="ExceptionBlock.PendingFinallyAddress"/> so the ENDCATCH handler can jump
+    ///     there after the catch body completes normally. The block transitions to
     ///     <see cref="ExceptionBlockPhase.Catch"/>.</item>
+    ///   <item>If the block has only a finally clause (no catch), jumps directly to
+    ///     <see cref="ExceptionBlock.FinallyAddress"/> and sets
+    ///     <see cref="ExceptionBlock.ExceptionInFlight"/> so that <see cref="EndFinally"/> can
+    ///     propagate to the next outer handler. The block transitions to
+    ///     <see cref="ExceptionBlockPhase.Finally"/>.</item>
     /// </list>
     /// Blocks already in <see cref="ExceptionBlockPhase.Finally"/> or
     /// <see cref="ExceptionBlockPhase.Catch"/> are skipped so that a throw from inside a handler
     /// body propagates to the next outer try scope instead of re-entering the current handler.
     /// The matched <see cref="ExceptionBlock"/> remains on the stack so that the handler body can
-    /// read <see cref="ExceptionBlock.ThrownValue"/>; ENDTRY pops it.
+    /// read <see cref="ExceptionBlock.ThrownValue"/>; ENDCATCH or ENDTRY closes it.
     /// </summary>
     /// <param name="context">The current execution context.</param>
     /// <param name="value">The value being thrown.</param>
@@ -289,22 +320,22 @@ public class ControlFlowStack
                     continue;
 
                 ex.ThrownValue = value;
-                ex.ExceptionInFlight = true;
                 _blocks.Push(ex);
-                if (ex.FinallyAddress.HasValue)
+                if (ex.CatchAddress.HasValue)
                 {
-                    // Always run finally first. If there is also a catch, store it so ENDFINALLY can jump there.
-                    ex.PendingCatchAddress = ex.CatchAddress;
-                    ex.Phase = ExceptionBlockPhase.Finally;
-                    context.InstructionPointer = ex.FinallyAddress.Value;
+                    // Catch-first (conventional): jump to catch. If there is also a finally,
+                    // store it so ENDCATCH can jump there after the catch body completes.
+                    ex.PendingFinallyAddress = ex.FinallyAddress;
+                    ex.Phase = ExceptionBlockPhase.Catch;
+                    context.InstructionPointer = ex.CatchAddress.Value;
                 }
                 else
                 {
-                    // CatchAddress is guaranteed non-null here: PushException enforces that at
-                    // least one of CatchAddress/FinallyAddress is set, so if FinallyAddress is
-                    // absent then CatchAddress must be present.
-                    ex.Phase = ExceptionBlockPhase.Catch;
-                    context.InstructionPointer = ex.CatchAddress.GetValueOrDefault();
+                    // Finally-only: FinallyAddress is guaranteed non-null here.
+                    // Exception remains in flight so EndFinally can propagate after cleanup.
+                    ex.ExceptionInFlight = true;
+                    ex.Phase = ExceptionBlockPhase.Finally;
+                    context.InstructionPointer = ex.FinallyAddress.GetValueOrDefault();
                 }
                 return true;
             }

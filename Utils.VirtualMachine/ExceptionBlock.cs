@@ -23,17 +23,23 @@ public enum ExceptionBlockPhase
 /// Represents an active try/catch/finally block on a <see cref="ControlFlowStack"/>.
 /// </summary>
 /// <remarks>
-/// Typical VM usage:
+/// Typical VM usage follows conventional structured-exception semantics
+/// (catch executes before finally):
 /// <list type="bullet">
 ///   <item>TRY instruction: push an <see cref="ExceptionBlock"/> with the handler addresses.</item>
 ///   <item>THROW instruction: call <see cref="ControlFlowStack.Throw"/>; unwinds to this block,
-///     sets <see cref="ThrownValue"/>, and redirects execution to <see cref="FinallyAddress"/>
-///     when present (storing the catch address in <see cref="PendingCatchAddress"/> for later),
-///     or directly to <see cref="CatchAddress"/> when there is no finally clause.
+///     sets <see cref="ThrownValue"/>, and redirects execution to <see cref="CatchAddress"/>
+///     when present (storing <see cref="FinallyAddress"/> in <see cref="PendingFinallyAddress"/>
+///     for later), or directly to <see cref="FinallyAddress"/> when there is no catch clause.
 ///     The block stays on the stack so that the handler body can inspect <see cref="ThrownValue"/>.</item>
-///   <item>ENDFINALLY instruction: read <see cref="PendingCatchAddress"/>; if non-null, jump there
-///     to enter the catch body; if null, call <see cref="ControlFlowStack.Pop"/> and propagate.</item>
-///   <item>ENDTRY instruction: call <see cref="ControlFlowStack.Pop"/>.</item>
+///   <item>ENDCATCH instruction (catch body completed normally): call
+///     <see cref="ControlFlowStack.EndCatch"/>; if <see cref="PendingFinallyAddress"/> is set,
+///     jumps there for cleanup; otherwise pops the block.</item>
+///   <item>ENDFINALLY instruction: call <see cref="ControlFlowStack.EndFinally"/>; if an exception
+///     is still in flight (finally-only path), propagates to the next outer handler; otherwise
+///     pops the block (normal cleanup after catch, or normal try-exit).</item>
+///   <item>ENDTRY instruction: call <see cref="ControlFlowStack.Pop"/> to close the block on the
+///     normal (non-exception) path through a try body.</item>
 /// </list>
 /// At least one of <see cref="CatchAddress"/> or <see cref="FinallyAddress"/> must be provided.
 /// </remarks>
@@ -56,28 +62,30 @@ public sealed class ExceptionBlock : IControlFlowBlock
     public object? ThrownValue { get; internal set; }
 
     /// <summary>
-    /// When <see cref="ControlFlowStack.Throw"/> routes execution through a finally block because
-    /// both <see cref="FinallyAddress"/> and <see cref="CatchAddress"/> are present, this property
-    /// stores the catch handler address so that the ENDFINALLY instruction handler can jump there
-    /// after the finally block completes. <see langword="null"/> when there is no pending catch
+    /// When <see cref="ControlFlowStack.Throw"/> routes execution into a catch handler and both
+    /// <see cref="CatchAddress"/> and <see cref="FinallyAddress"/> are present, this property
+    /// stores the finally address so that the ENDCATCH instruction handler can jump there after
+    /// the catch body completes normally. <see langword="null"/> when there is no pending finally
     /// (finally-only or catch-only scenarios, or when the block has not been thrown into yet).
     /// </summary>
-    public int? PendingCatchAddress { get; internal set; }
+    public int? PendingFinallyAddress { get; internal set; }
 
     /// <summary>
     /// <see langword="true"/> when an exception is currently in flight through this block —
-    /// set by <see cref="ControlFlowStack.Throw"/> and consumed by
+    /// set by <see cref="ControlFlowStack.Throw"/> on the finally-only path and consumed by
     /// <see cref="ControlFlowStack.EndFinally"/> to propagate the exception to outer handlers
     /// once the finally block completes.
-    /// <see langword="false"/> when the finally block was entered during normal (non-exception) execution.
+    /// <see langword="false"/> when the finally block was entered during normal (non-exception)
+    /// execution, or after <see cref="ControlFlowStack.EndCatch"/> consumed the exception.
     /// </summary>
     internal bool ExceptionInFlight { get; set; }
 
     /// <summary>
     /// Current handler phase. Starts at <see cref="ExceptionBlockPhase.Try"/>; transitions to
-    /// <see cref="ExceptionBlockPhase.Finally"/> when <see cref="ControlFlowStack.Throw"/> routes
-    /// execution into the finally clause, and to <see cref="ExceptionBlockPhase.Catch"/> when
-    /// <see cref="ControlFlowStack.EndFinally"/> redirects to the catch clause.
+    /// <see cref="ExceptionBlockPhase.Catch"/> when <see cref="ControlFlowStack.Throw"/> routes
+    /// execution into the catch clause, and to <see cref="ExceptionBlockPhase.Finally"/> when
+    /// execution enters the finally clause (either via <see cref="ControlFlowStack.EndCatch"/>
+    /// or directly from <see cref="ControlFlowStack.Throw"/> in the finally-only case).
     /// <see cref="ControlFlowStack.Throw"/> skips blocks whose <see cref="Phase"/> is not
     /// <see cref="ExceptionBlockPhase.Try"/> so that a throw from inside a handler propagates
     /// to the next outer handler instead of re-entering the same block.
