@@ -1,6 +1,6 @@
 # Utils.VirtualMachine — Quality and correctness audit (2026-07-11)
 
-> **Partially completed 2026-07-18/19.** Items 1, 2, 3, 11, 12 addressed in PR fix/utils-vm-quality-audit-p0-p1. Items 8, 13 addressed in PR fix/utils-vm-quality-audit-round2. Items 7, 9–10, 14, 16 addressed in PR fix/utils-vm-quality-audit-round3. Items 5, 6 addressed in PR fix/utils-vm-quality-audit-round3. Items 4, 15 remain open.
+> **Partially completed 2026-07-18/19.** Items 1, 2, 3, 11, 12 addressed in PR fix/utils-vm-quality-audit-p0-p1. Items 8, 13 addressed in PR fix/utils-vm-quality-audit-round2. Items 7, 9–10, 14, 16 addressed in PR fix/utils-vm-quality-audit-round3. Items 4, 5, 6 addressed in PR fix/utils-vm-quality-audit-round3. Item 15 remains open.
 
 Static review of the processor, scheduler, virtual-memory model, stacks, and structured control-flow helpers. The review focuses on deterministic bytecode dispatch, malformed-program handling, memory isolation, lifecycle state, resource bounds, and duplicated intent. No production code is changed by this commit.
 
@@ -40,7 +40,7 @@ The fast lookup explicitly detects shared first bytes and routes them to the slo
 
 **Priority: P1 deterministic dispatch.**
 
-### 4. Instruction method signatures are only partially validated
+### ✅ 4. Instruction method signatures are only partially validated
 
 Discovery checks only that a non-parameterless method's first parameter is exactly `T`. It does not explicitly reject generic methods, non-void return types, `ref`/`out` parameters, pointer/byref-like types, static methods, unsupported optional parameters, or unsupported operand types. Operand lookup uses `_numberReaderMethods[parameter.ParameterType]`, so an unsupported type fails with an unhelpful `KeyNotFoundException` during processor construction.
 

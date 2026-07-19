@@ -113,6 +113,41 @@ public abstract class VirtualProcessor<T> where T : Context
     }
 
     /// <summary>
+    /// Validates the signature of a method annotated with <see cref="InstructionAttribute"/>.
+    /// Throws <see cref="InvalidOperationException"/> when the method is generic, non-void,
+    /// has unsupported parameter kinds (ref, out, pointer, byref-like), or has operand parameters
+    /// whose types are not registered in <see cref="_numberReaderMethods"/>.
+    /// </summary>
+    private static void ValidateInstructionSignature(MethodInfo method)
+    {
+        if (method.IsGenericMethod || method.ContainsGenericParameters)
+            throw new InvalidOperationException(
+                $"Instruction method '{method.Name}': generic methods are not supported as instruction handlers.");
+
+        if (method.ReturnType != typeof(void))
+            throw new InvalidOperationException(
+                $"Instruction method '{method.Name}': must return void, found '{method.ReturnType.Name}'.");
+
+        foreach (var param in method.GetParameters().Skip(1)) // first param is the context T, already checked
+        {
+            if (param.IsOut || param.ParameterType.IsByRef)
+                throw new InvalidOperationException(
+                    $"Instruction method '{method.Name}': parameter '{param.Name}' is ref/out, which is not supported.");
+
+            if (param.ParameterType.IsPointer || param.ParameterType.IsByRefLike)
+                throw new InvalidOperationException(
+                    $"Instruction method '{method.Name}': parameter '{param.Name}' has an unsupported type " +
+                    $"(pointer or byref-like type '{param.ParameterType.Name}').");
+
+            if (!_numberReaderMethods.ContainsKey(param.ParameterType))
+                throw new InvalidOperationException(
+                    $"Instruction method '{method.Name}': parameter '{param.Name}' has unsupported operand type " +
+                    $"'{param.ParameterType.Name}'. Supported types are: " +
+                    string.Join(", ", _numberReaderMethods.Keys.Select(t => t.Name)) + ".");
+        }
+    }
+
+    /// <summary>
     /// Discovers all instruction methods via reflection, collecting them into a dictionary
     /// keyed by their associated byte sequences.
     /// </summary>
@@ -131,6 +166,7 @@ public abstract class VirtualProcessor<T> where T : Context
 
             var parameters = method.GetParameters();
             if (parameters.Length > 0 && parameters[0].ParameterType != typeof(T)) continue;
+            ValidateInstructionSignature(method);
             InstructionDelegate instructionDelegate;
             if (parameters.Length == 0)
             {

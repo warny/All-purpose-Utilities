@@ -1505,6 +1505,85 @@ namespace UtilsTest.VirtualMachine
         }
     }
 
+    // ── Item 4: instruction signature validation at construction ─────────────────────────────────
+
+    [TestClass]
+    public class InstructionSignatureValidationTests
+    {
+        private sealed class GenericHandlerMachine : VirtualProcessor<DefaultContext>
+        {
+            [Instruction("GEN", 0xC0)]
+            void Generic<TValue>(DefaultContext ctx) { }
+        }
+
+        private sealed class NonVoidHandlerMachine : VirtualProcessor<DefaultContext>
+        {
+            [Instruction("RET", 0xC1)]
+            int ReturnValue(DefaultContext ctx) => 42;
+        }
+
+        private sealed class UnsupportedOperandMachine : VirtualProcessor<DefaultContext>
+        {
+            [Instruction("OP_STR", 0xC2)]
+            void TakesString(DefaultContext ctx, string s) { }
+        }
+
+        private sealed class OutParamMachine : VirtualProcessor<DefaultContext>
+        {
+            [Instruction("OUT", 0xC3)]
+            void WithOut(DefaultContext ctx, out int x) { x = 0; }
+        }
+
+        private sealed class RefParamMachine : VirtualProcessor<DefaultContext>
+        {
+            [Instruction("REF", 0xC4)]
+            void WithRef(DefaultContext ctx, ref int x) { }
+        }
+
+        [TestMethod]
+        public void GenericMethod_ThrowsInvalidOperationException()
+        {
+            // Generic instruction methods cannot be compiled by expression-tree dispatch.
+            var ex = Assert.ThrowsException<InvalidOperationException>(
+                () => new GenericHandlerMachine());
+            StringAssert.Contains(ex.Message, "Generic");
+        }
+
+        [TestMethod]
+        public void NonVoidReturn_ThrowsInvalidOperationException()
+        {
+            // Non-void instruction methods are not callable as InstructionDelegate.
+            var ex = Assert.ThrowsException<InvalidOperationException>(
+                () => new NonVoidHandlerMachine());
+            StringAssert.Contains(ex.Message, "void");
+        }
+
+        [TestMethod]
+        public void UnsupportedOperandType_ThrowsInvalidOperationException()
+        {
+            // An operand type not present in INumberReader gives a clear error, not KeyNotFoundException.
+            var ex = Assert.ThrowsException<InvalidOperationException>(
+                () => new UnsupportedOperandMachine());
+            StringAssert.Contains(ex.Message, "unsupported operand type");
+        }
+
+        [TestMethod]
+        public void OutParameter_ThrowsInvalidOperationException()
+        {
+            var ex = Assert.ThrowsException<InvalidOperationException>(
+                () => new OutParamMachine());
+            StringAssert.Contains(ex.Message, "out");
+        }
+
+        [TestMethod]
+        public void RefParameter_ThrowsInvalidOperationException()
+        {
+            var ex = Assert.ThrowsException<InvalidOperationException>(
+                () => new RefParamMachine());
+            StringAssert.Contains(ex.Message, "ref");
+        }
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     /// <summary>
