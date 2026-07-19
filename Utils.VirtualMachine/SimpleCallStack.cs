@@ -38,7 +38,7 @@ public class SimpleCallStack : ICallStack
             throw new ArgumentOutOfRangeException(nameof(returnAddress),
                 "Return address must be non-negative. Negative values are reserved as termination sentinels.");
         if (_returnAddresses.Count >= MaxDepth)
-            throw new InvalidOperationException($"Call stack overflow: maximum depth of {MaxDepth} exceeded.");
+            throw new VmLimitExceededException(VmLimitKind.CallStackDepth, MaxDepth, _returnAddresses.Count + 1L);
         _returnAddresses.Push(returnAddress);
     }
 
