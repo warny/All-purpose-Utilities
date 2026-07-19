@@ -466,11 +466,14 @@ public abstract class VirtualProcessor<T> where T : Context
     /// Reuses the instance-level <see cref="_buffer"/> array; not thread-safe.
     /// </summary>
     /// <exception cref="VirtualProcessorException">
-    /// Thrown when no instruction matches the bytes at the current position, or when a matched
-    /// instruction's handler raises <see cref="IndexOutOfRangeException"/> or
-    /// <see cref="ArgumentOutOfRangeException"/> (indicating truncated operand data).
+    /// Thrown when no instruction matches the bytes at the current position, or when operand
+    /// reading via an <see cref="INumberReader"/> method raises <see cref="EndOfBytecodeException"/>
+    /// (indicating the stream ended before all operand bytes were available).
     /// On failure, <see cref="Context.InstructionPointer"/> is restored to the instruction's
     /// start address so that callers can identify the failing instruction or retry.
+    /// Exceptions that originate in the handler's own domain logic (including
+    /// <see cref="IndexOutOfRangeException"/> and <see cref="ArgumentOutOfRangeException"/>
+    /// from handler-side collections or computations) propagate unchanged.
     /// </exception>
     private void TryDispatch(T context)
     {
@@ -490,8 +493,10 @@ public abstract class VirtualProcessor<T> where T : Context
             {
                 fast.Handler(context);
             }
-            catch (Exception ex) when (ex is IndexOutOfRangeException or ArgumentOutOfRangeException)
+            catch (EndOfBytecodeException ex)
             {
+                // INumberReader throws EndOfBytecodeException when the stream ends before all
+                // operand bytes are read. Restore IP so the caller can identify the failing instruction.
                 context.InstructionPointer = instructionStart;
                 throw new VirtualProcessorException(instructionStart, new ArraySegment<byte>([firstByte]), fast.Name, ex);
             }
@@ -506,21 +511,23 @@ public abstract class VirtualProcessor<T> where T : Context
             var segment = new ArraySegment<byte>(_buffer, 0, _bufferLength);
             if (InstructionsSet.TryGetValue(segment, out var entry))
             {
-                // IP has already advanced past the opcode bytes: pass the post-opcode position
-                // as the expected value so NotifyInspector can distinguish a genuine redirect
-                // from the normal advancement due to reading a multi-byte opcode.
                 int afterOpcodeIp = context.InstructionPointer;
-                NotifyInspector(context, instructionStart, afterOpcodeIp, entry.Name);
+                // Restore IP to instructionStart before notifying the inspector so that both fast
+                // and slow dispatch paths expose the same consistent pointer state to callbacks.
+                context.InstructionPointer = instructionStart;
+                NotifyInspector(context, instructionStart, instructionStart, entry.Name);
                 // Same guard: inspector may redirect before operands are consumed.
-                if (context.InstructionPointer != afterOpcodeIp) return;
+                if (context.InstructionPointer != instructionStart) return;
+                // Advance IP past the opcode bytes before invoking the handler.
+                context.InstructionPointer = afterOpcodeIp;
                 try
                 {
                     entry.Handler(context);
                 }
-                catch (Exception ex) when (ex is IndexOutOfRangeException or ArgumentOutOfRangeException)
+                catch (EndOfBytecodeException ex)
                 {
-                    // INumberReader methods throw these when the byte stream ends before all operand bytes are read.
-                    // Restore IP to the start of the failed instruction so that callers can identify and retry it.
+                    // INumberReader throws EndOfBytecodeException when the stream ends before all
+                    // operand bytes are read. Restore IP so the caller can identify the failing instruction.
                     context.InstructionPointer = instructionStart;
                     throw new VirtualProcessorException(instructionStart, segment, entry.Name, ex);
                 }

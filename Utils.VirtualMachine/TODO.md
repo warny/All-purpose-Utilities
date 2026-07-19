@@ -1,6 +1,6 @@
 # Utils.VirtualMachine — Quality and correctness audit (2026-07-11)
 
-> **Partially completed 2026-07-18/19.** Items 1, 2, 3, 11, 12 addressed in PR fix/utils-vm-quality-audit-p0-p1. Items 8, 13 addressed in PR fix/utils-vm-quality-audit-round2. Items 7, 9–10, 14, 16 addressed in PR fix/utils-vm-quality-audit-round3. Items 4–6, 15 remain open.
+> **Partially completed 2026-07-18/19.** Items 1, 2, 3, 11, 12 addressed in PR fix/utils-vm-quality-audit-p0-p1. Items 8, 13 addressed in PR fix/utils-vm-quality-audit-round2. Items 7, 9–10, 14, 16 addressed in PR fix/utils-vm-quality-audit-round3. Items 5, 6 addressed in PR fix/utils-vm-quality-audit-round3. Items 4, 15 remain open.
 
 Static review of the processor, scheduler, virtual-memory model, stacks, and structured control-flow helpers. The review focuses on deterministic bytecode dispatch, malformed-program handling, memory isolation, lifecycle state, resource bounds, and duplicated intent. No production code is changed by this commit.
 
@@ -50,7 +50,7 @@ Discovery checks only that a non-parameterless method's first parameter is exact
 
 **Priority: P1 configuration robustness.**
 
-### 5. Operand-truncation handling can misclassify instruction-handler bugs
+### ✅ 5. Operand-truncation handling can misclassify instruction-handler bugs
 
 The dispatcher catches every `IndexOutOfRangeException` and `ArgumentOutOfRangeException` thrown by the handler and wraps it as truncated operand data. These exceptions may instead originate from the instruction's own domain logic, stack manipulation, collections, or user code.
 
@@ -60,7 +60,7 @@ The dispatcher catches every `IndexOutOfRangeException` and `ArgumentOutOfRangeE
 
 **Priority: P1 diagnostics and correctness.**
 
-### 6. Inspector callbacks observe inconsistent instruction-pointer states
+### ✅ 6. Inspector callbacks observe inconsistent instruction-pointer states
 
 For unambiguous one-byte opcodes, the inspector is notified before the instruction pointer is advanced. In the slow path, opcode bytes are consumed first and the inspector is notified with the pointer already positioned after the opcode. Redirection checks consequently compare against different baselines.
 

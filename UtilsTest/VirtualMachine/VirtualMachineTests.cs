@@ -1320,6 +1320,191 @@ namespace UtilsTest.VirtualMachine
         }
     }
 
+    // ── Item 5: operand truncation vs handler exceptions ─────────────────────────────────────────
+
+    [TestClass]
+    public class OperandTruncationTests
+    {
+        /// <summary>
+        /// Fast-path (single-byte opcodes): handlers that throw IOOB/AOOB from their own domain
+        /// logic; and one instruction where the expression-tree wrapper reads a truncated operand.
+        /// </summary>
+        private sealed class FastPathFaultMachine : VirtualProcessor<DefaultContext>
+        {
+            [Instruction("FAULT_IOOB", 0xA0)]
+            void FaultIndexOutOfRange(DefaultContext ctx)
+            {
+                int[] arr = [1, 2, 3];
+                _ = arr[10]; // IndexOutOfRangeException from handler domain logic, not bytecode reader
+            }
+
+            [Instruction("FAULT_AOOB", 0xA1)]
+            void FaultArgumentOutOfRange(DefaultContext ctx)
+                => throw new ArgumentOutOfRangeException("x", "handler bug"); // not a truncated operand
+
+            [Instruction("TRUNCATED_BYTE", 0xA2)]
+            void TruncatedByte(DefaultContext ctx, byte operand)
+            {
+                // Expression-tree calls ReadByte before this body; with no operand byte, it truncates.
+            }
+        }
+
+        /// <summary>
+        /// Slow-path (multi-byte opcode): handler that throws IOOB from its own domain logic.
+        /// </summary>
+        private sealed class SlowPathFaultMachine : VirtualProcessor<DefaultContext>
+        {
+            [Instruction("FAULT_MULTI_IOOB", 0xB0, 0x01)]
+            void FaultMultiByte(DefaultContext ctx)
+            {
+                int[] arr = [1, 2, 3];
+                _ = arr[10]; // IOOB from handler domain logic, slow dispatch path
+            }
+        }
+
+        [TestMethod]
+        public void FastPath_Handler_IndexOutOfRangeException_PropagatesUnchanged()
+        {
+            // A handler that throws IOOB from its own logic must NOT be wrapped as VirtualProcessorException.
+            var machine = new FastPathFaultMachine();
+            byte[] program = [0xA0];
+            Assert.ThrowsException<IndexOutOfRangeException>(
+                () => machine.Execute(new DefaultContext(program)));
+        }
+
+        [TestMethod]
+        public void FastPath_Handler_ArgumentOutOfRangeException_PropagatesUnchanged()
+        {
+            // A handler that throws AOOB from its own logic must NOT be wrapped as VirtualProcessorException.
+            var machine = new FastPathFaultMachine();
+            byte[] program = [0xA1];
+            Assert.ThrowsException<ArgumentOutOfRangeException>(
+                () => machine.Execute(new DefaultContext(program)));
+        }
+
+        [TestMethod]
+        public void FastPath_TruncatedOperand_WrappedAsVirtualProcessorException()
+        {
+            // Genuine end-of-stream during operand read must be wrapped as VirtualProcessorException.
+            var machine = new FastPathFaultMachine();
+            byte[] program = [0xA2]; // opcode only, no operand byte
+            var ex = Assert.ThrowsException<VirtualProcessorException>(
+                () => machine.Execute(new DefaultContext(program)));
+            Assert.AreEqual(0, ex.InstructionPointer);
+            Assert.AreEqual("TRUNCATED_BYTE", ex.InstructionName);
+        }
+
+        [TestMethod]
+        public void SlowPath_Handler_IndexOutOfRangeException_PropagatesUnchanged()
+        {
+            // Same guarantee for the slow dispatch path (multi-byte opcode).
+            var machine = new SlowPathFaultMachine();
+            byte[] program = [0xB0, 0x01]; // opcode only, no operands
+            Assert.ThrowsException<IndexOutOfRangeException>(
+                () => machine.Execute(new DefaultContext(program)));
+        }
+    }
+
+    // ── Item 6: inspector IP timing consistency ───────────────────────────────────────────────
+
+    [TestClass]
+    public class InspectorIpTimingTests
+    {
+        private sealed class RecordingIpInspector : IVmInspector<DefaultContext>
+        {
+            public readonly List<int> SeenIps = [];
+            public void BeforeInstruction(DefaultContext ctx, int addr, string name)
+                => SeenIps.Add(ctx.InstructionPointer);
+            public void OnBreakpoint(DefaultContext ctx, int addr, string name) { }
+        }
+
+        private sealed class ActionInspector : IVmInspector<DefaultContext>
+        {
+            private readonly Action<DefaultContext, int, string> _before;
+            private readonly Action<DefaultContext, int, string> _onBp;
+            internal ActionInspector(Action<DefaultContext, int, string> before, Action<DefaultContext, int, string> onBp)
+            { _before = before; _onBp = onBp; }
+            public void BeforeInstruction(DefaultContext ctx, int addr, string name) => _before(ctx, addr, name);
+            public void OnBreakpoint(DefaultContext ctx, int addr, string name) => _onBp(ctx, addr, name);
+        }
+
+        [TestMethod]
+        public void SlowPath_Inspector_SeesIpAtInstructionStart()
+        {
+            // Multi-byte opcode (slow dispatch path): IP must equal instructionStart, not afterOpcodeIp.
+            var machine = new TestMachine();
+            var inspector = new RecordingIpInspector();
+            machine.Inspector = inspector;
+            // PUSH_BYTE opcode [0x01, 0x01] at address 0 + operand 0x42 — 3 bytes total.
+            // Without the fix, inspector would see IP = 2 (after opcode bytes); with the fix: 0.
+            byte[] program = [0x01, 0x01, 0x42];
+            machine.Execute(new DefaultContext(program));
+            Assert.AreEqual(1, inspector.SeenIps.Count);
+            Assert.AreEqual(0, inspector.SeenIps[0],
+                "Inspector must see IP = instructionStart (0), not the post-opcode position (2).");
+        }
+
+        [TestMethod]
+        public void FastAndSlowPath_InspectorSees_SameIpPhase()
+        {
+            // Both dispatch paths must expose IP = instructionStart to the inspector.
+            var fastMachine = new InspectorMachine(); // single-byte opcodes → fast path
+            var fastInspector = new RecordingIpInspector();
+            fastMachine.Inspector = fastInspector;
+            fastMachine.Execute(new DefaultContext(new byte[] { 0x01 })); // PUSH_A at address 0
+
+            var slowMachine = new TestMachine(); // multi-byte opcodes → slow path
+            var slowInspector = new RecordingIpInspector();
+            slowMachine.Inspector = slowInspector;
+            slowMachine.Execute(new DefaultContext(new byte[] { 0x01, 0x01, 0x42 })); // PUSH_BYTE at address 0
+
+            Assert.AreEqual(0, fastInspector.SeenIps[0]);
+            Assert.AreEqual(0, slowInspector.SeenIps[0],
+                "Both dispatch paths must expose instructionStart as the IP seen by the inspector.");
+        }
+
+        [TestMethod]
+        public void SlowPath_Inspector_ConsistentAcrossMultipleInstructions()
+        {
+            // After a slow-path instruction at address 0 (3 bytes), the next instruction is at address 3.
+            // The inspector must see IP = 3, not some intermediate value.
+            var machine = new TestMachine();
+            var inspector = new RecordingIpInspector();
+            machine.Inspector = inspector;
+            // Two PUSH_BYTE instructions: [0x01,0x01,0x10] at address 0, [0x01,0x01,0x01] at address 3
+            byte[] program = [0x01, 0x01, 0x10,  0x01, 0x01, 0x01];
+            machine.Execute(new DefaultContext(program));
+            Assert.AreEqual(2, inspector.SeenIps.Count);
+            Assert.AreEqual(0, inspector.SeenIps[0]);
+            Assert.AreEqual(3, inspector.SeenIps[1]);
+        }
+
+        [TestMethod]
+        public void SlowPath_OnBreakpointRedirect_BeforeInstructionNotCalledWithStaleIp()
+        {
+            // When OnBreakpoint redirects execution on a slow-path instruction, BeforeInstruction
+            // must not be called. IP seen by OnBreakpoint must be instructionStart.
+            int? seenIpInBreakpoint = null;
+            bool beforeInstructionCalled = false;
+
+            var machine = new TestMachine();
+            machine.Breakpoints.Add(0);
+            machine.Inspector = new ActionInspector(
+                before: (ctx, addr, name) => beforeInstructionCalled = true,
+                onBp: (ctx, addr, name) =>
+                {
+                    seenIpInBreakpoint = ctx.InstructionPointer;
+                    ctx.InstructionPointer = ctx.Data.Length; // redirect to EOF
+                });
+
+            byte[] program = [0x01, 0x01, 0x42];
+            machine.Execute(new DefaultContext(program));
+
+            Assert.AreEqual(0, seenIpInBreakpoint, "OnBreakpoint must see IP = instructionStart for multi-byte opcodes.");
+            Assert.IsFalse(beforeInstructionCalled, "BeforeInstruction must not be called after a breakpoint redirect.");
+        }
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     /// <summary>
