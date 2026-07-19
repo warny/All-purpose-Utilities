@@ -67,6 +67,12 @@ public abstract class VirtualProcessor<T> where T : Context
     /// Gets a read-only enumeration of all registered instructions, including those discovered via
     /// <see cref="InstructionAttribute"/> and those added with <see cref="RegisterInstruction"/>.
     /// </summary>
+    /// <remarks>
+    /// This is a live view over the internal instruction dictionary. Registering new instructions
+    /// via <see cref="RegisterInstruction"/> while enumerating may throw
+    /// <see cref="System.InvalidOperationException"/>; take a snapshot (<c>.ToList()</c>) when
+    /// stable enumeration is required.
+    /// </remarks>
     public IEnumerable<(IReadOnlyCollection<byte> Opcode, string Name)> Instructions
         => InstructionsSet.Select(kv => (kv.Key, kv.Value.Name));
 
@@ -82,6 +88,12 @@ public abstract class VirtualProcessor<T> where T : Context
     /// <see cref="IVmInspector{T}.OnBreakpoint"/> when execution reaches them.
     /// Breakpoints are only checked when <see cref="Inspector"/> is non-null.
     /// </summary>
+    /// <remarks>
+    /// Addresses are raw integers and are not validated against the current program image.
+    /// Negative, past-end, and mid-operand values are accepted silently and will never be hit
+    /// unless the instruction pointer happens to equal that exact value during dispatch. Stale
+    /// breakpoints are not removed when a new program is loaded into the context.
+    /// </remarks>
     public HashSet<int> Breakpoints { get; } = [];
 
     /// <summary>

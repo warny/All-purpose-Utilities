@@ -59,6 +59,13 @@ public class VirtualProcess<TAddress> where TAddress : IBinaryInteger<TAddress>
     /// Gets all current page mappings for this process as an enumerable of
     /// (virtual page index, physical page, access rights) tuples.
     /// </summary>
+    /// <remarks>
+    /// This is a live view over the internal page table. Calling <see cref="MapPage"/>,
+    /// <see cref="UnmapPage"/>, or <see cref="VirtualMemory{TAddress}.FreeProcess"/> while
+    /// enumerating this sequence may throw <see cref="System.InvalidOperationException"/>.
+    /// Take a snapshot (e.g. <c>.ToList()</c>) before modifying mappings when stable enumeration
+    /// is required.
+    /// </remarks>
     /// <exception cref="ObjectDisposedException">Thrown when the process has been freed.</exception>
     public IEnumerable<(TAddress VirtualPageIndex, VirtualPage Page, PageAccess Access)> Mappings
     {

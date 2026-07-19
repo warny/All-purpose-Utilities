@@ -42,10 +42,21 @@ public class VirtualMemory<TAddress> where TAddress : IBinaryInteger<TAddress>
     /// </summary>
     public VirtualProcess<TAddress> MasterProcess { get; }
 
-    /// <summary>Gets the list of all physical pages managed by this instance.</summary>
+    /// <summary>
+    /// Gets the list of all physical pages managed by this instance.
+    /// </summary>
+    /// <remarks>This is a live view over the internal page list. Allocating new pages while
+    /// enumerating may modify the list; take a snapshot (<c>.ToList()</c>) for stable enumeration.
+    /// </remarks>
     public IReadOnlyList<VirtualPage> Pages => _pages;
 
-    /// <summary>Gets the list of all processes, including the master process.</summary>
+    /// <summary>
+    /// Gets the list of all processes, including the master process.
+    /// </summary>
+    /// <remarks>This is a live view over the internal process list. Creating or freeing processes
+    /// while enumerating may modify the list; take a snapshot (<c>.ToList()</c>) for stable
+    /// enumeration.
+    /// </remarks>
     public IReadOnlyList<VirtualProcess<TAddress>> Processes => _processes;
 
     /// <summary>

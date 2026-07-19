@@ -1,6 +1,6 @@
 # Utils.VirtualMachine — Quality and correctness audit (2026-07-11)
 
-> **Partially completed 2026-07-18/19.** Items 1, 2, 3, 11, 12 addressed in PR fix/utils-vm-quality-audit-p0-p1. Items 8, 13 addressed in PR fix/utils-vm-quality-audit-round2. Items 7, 9–10, 14 addressed in PR fix/utils-vm-quality-audit-round3. Items 4–6, 15–16 remain open.
+> **Partially completed 2026-07-18/19.** Items 1, 2, 3, 11, 12 addressed in PR fix/utils-vm-quality-audit-p0-p1. Items 8, 13 addressed in PR fix/utils-vm-quality-audit-round2. Items 7, 9–10, 14, 16 addressed in PR fix/utils-vm-quality-audit-round3. Items 4–6, 15 remain open.
 
 Static review of the processor, scheduler, virtual-memory model, stacks, and structured control-flow helpers. The review focuses on deterministic bytecode dispatch, malformed-program handling, memory isolation, lifecycle state, resource bounds, and duplicated intent. No production code is changed by this commit.
 
@@ -160,7 +160,7 @@ Call depth has a limit, control-flow depth does not, processor execution has can
 
 **Priority: P2 architecture.**
 
-### 16. Public collections are live views over mutable internal state
+### ✅ 16. Public collections are live views over mutable internal state
 
 `Instructions`, `Breakpoints`, `Pages`, `Processes`, and process `Mappings` expose live mutable state or enumerations. Even when collection mutation is blocked by the static type, concurrent registration/allocation/removal can invalidate enumeration. `Breakpoints` is directly mutable with no synchronization or validation.
 
