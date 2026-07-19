@@ -1,16 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Text;
-using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Utils.Expressions.CSyntax.Runtime;
 using Utils.Format;
-using Utils.Randomization;
 
 namespace UtilsTest.Objects
 {
@@ -35,20 +31,18 @@ namespace UtilsTest.Objects
         [TestMethod]
         public void StringFormatFromIDataRecordTest()
         {
-            Random r = new Random();
-
             var formatter = new CustomFormatter(CultureInfo.InvariantCulture);
-            formatter.AddFormatter("fluc", (string s) => CultureInfo.CurrentCulture.TextInfo.ToTitleCase(s));
-            formatter.AddFormatter("uc", (string s) => s.ToUpper());
-            formatter.AddFormatter("lc", (string s) => s.ToLower());
+            formatter.AddFormatter("fluc", (string s) => CultureInfo.InvariantCulture.TextInfo.ToTitleCase(s));
+            formatter.AddFormatter("uc", (string s) => s.ToUpperInvariant());
+            formatter.AddFormatter("lc", (string s) => s.ToLowerInvariant());
 
             var result = new
             {
-                Field1 = r.RandomString(5, 10),
-                Field2 = r.Next(-100, 100),
-                Field3 = new DateTime(r.Next(2000, 2100), 1, 1).AddDays(r.Next(0, 365)),
-                Field3_1 = r.RandomFrom(null, r.RandomString(5, 10)),
-                Field4 = r.RandomString(5, 10)
+                Field1 = "alpha",
+                Field2 = 42,
+                Field3 = new DateTime(2026, 7, 19),
+                Field3_1 = "mixed case",
+                Field4 = "omega"
             };
 
 
@@ -80,15 +74,41 @@ namespace UtilsTest.Objects
             Assert.AreEqual(expected, format(dr));
         }
 
+        /// <summary>
+        /// Test interpolated string handler that appends all output to an injected <see cref="StringBuilder"/>.
+        /// </summary>
         private struct SimpleHandler
         {
             private readonly StringBuilder _sb;
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="SimpleHandler"/> struct.
+            /// </summary>
+            /// <param name="literalLength">The literal length requested by interpolated-string construction.</param>
+            /// <param name="formattedCount">The formatted value count requested by interpolated-string construction.</param>
+            /// <param name="sb">The builder that receives literal and formatted output.</param>
             public SimpleHandler(int literalLength, int formattedCount, StringBuilder sb)
             {
                 _sb = sb;
             }
+
+            /// <summary>
+            /// Appends a literal segment to the backing builder.
+            /// </summary>
+            /// <param name="s">The literal segment to append.</param>
             public void AppendLiteral(string s) => _sb.Append(s);
+
+            /// <summary>
+            /// Appends a formatted value to the backing builder.
+            /// </summary>
+            /// <typeparam name="T">The formatted value type.</typeparam>
+            /// <param name="value">The formatted value to append.</param>
             public void AppendFormatted<T>(T value) => _sb.Append(value);
+
+            /// <summary>
+            /// Returns the accumulated formatted text.
+            /// </summary>
+            /// <returns>The accumulated formatted text.</returns>
             public override string ToString() => _sb.ToString();
         }
 
