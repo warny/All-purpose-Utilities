@@ -5,9 +5,9 @@ using System.Collections.Generic;
 namespace Utils.VirtualMachine;
 
 /// <summary>
-/// A stack with a configurable maximum depth. Push throws <see cref="InvalidOperationException"/>
-/// when the depth limit is reached; Pop and Peek throw when the stack is empty.
-/// All exceptions carry VM-specific messages that include the depth limit for diagnostics.
+/// A stack with a configurable maximum depth. Push throws <see cref="VmLimitExceededException"/>
+/// (with <see cref="VmLimitKind.OperandStackDepth"/>) when the depth limit is reached;
+/// Pop and Peek throw <see cref="InvalidOperationException"/> when the stack is empty.
 /// </summary>
 /// <typeparam name="T">Element type.</typeparam>
 public sealed class BoundedStack<T> : IEnumerable<T>

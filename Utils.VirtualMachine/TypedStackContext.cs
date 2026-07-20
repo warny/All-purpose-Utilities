@@ -48,8 +48,9 @@ public class TypedStackContext<TValue> : Context
 
     /// <summary>
     /// A bounded strongly-typed operand stack for storing values without boxing overhead.
-    /// Push throws <see cref="InvalidOperationException"/> when the depth limit is reached;
-    /// Pop and Peek throw when the stack is empty.
+    /// Push throws <see cref="VmLimitExceededException"/> (<see cref="VmLimitKind.OperandStackDepth"/>)
+    /// when the depth limit is reached; Pop and Peek throw <see cref="InvalidOperationException"/>
+    /// when the stack is empty.
     /// </summary>
     public BoundedStack<TValue> Stack { get; } = new BoundedStack<TValue>();
 }

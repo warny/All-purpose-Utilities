@@ -190,6 +190,40 @@ public class VmLimitsPolicyTests
         Assert.AreEqual(100L, ex.Budget); // alias
     }
 
+    [TestMethod]
+    public void InstructionBudgetExceededException_MessageConstructor_DoesNotReportCallStackLimit()
+    {
+        // Regression: before the fix, LimitKind defaulted to CallStackDepth (first enum value).
+        var ex = new InstructionBudgetExceededException("custom message");
+        Assert.AreEqual(VmLimitKind.InstructionCount, ex.LimitKind);
+    }
+
+    [TestMethod]
+    public void InstructionBudgetExceededException_DefaultConstructor_ReportsInstructionCount()
+    {
+        var ex = new InstructionBudgetExceededException();
+        Assert.AreEqual(VmLimitKind.InstructionCount, ex.LimitKind);
+        Assert.AreEqual(0L, ex.Budget);
+    }
+
+    [TestMethod]
+    public void InstructionBudgetExceededException_MessageInnerConstructor_ReportsInstructionCount()
+    {
+        var inner = new InvalidOperationException("inner");
+        var ex = new InstructionBudgetExceededException("outer", inner);
+        Assert.AreEqual(VmLimitKind.InstructionCount, ex.LimitKind);
+        Assert.AreSame(inner, ex.InnerException);
+    }
+
+    [TestMethod]
+    public void InstructionBudgetExceededException_LongMaxValue_AttemptedValueDoesNotOverflow()
+    {
+        // AttemptedValue must not wrap to long.MinValue when budget == long.MaxValue.
+        var ex = new InstructionBudgetExceededException(long.MaxValue);
+        Assert.AreEqual(long.MaxValue, ex.Budget);
+        Assert.AreEqual(long.MaxValue, ex.AttemptedValue);
+    }
+
     // ── BoundedStack overflow ─────────────────────────────────────────────────
 
     [TestMethod]

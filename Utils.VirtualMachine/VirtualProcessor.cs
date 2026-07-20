@@ -731,8 +731,9 @@ public class DefaultContext : Context
 
     /// <summary>
     /// A bounded operand stack for temporary values during instruction execution.
-    /// Push throws <see cref="InvalidOperationException"/> when the depth limit is reached;
-    /// Pop and Peek throw when the stack is empty.
+    /// Push throws <see cref="VmLimitExceededException"/> (<see cref="VmLimitKind.OperandStackDepth"/>)
+    /// when the depth limit is reached; Pop and Peek throw <see cref="InvalidOperationException"/>
+    /// when the stack is empty.
     /// </summary>
     public BoundedStack<object> Stack { get; } = new BoundedStack<object>();
 }

@@ -10,6 +10,12 @@ namespace Utils.VirtualMachine;
 /// and per-execution instruction budgets. Hard identifier-space exhaustion
 /// (<see cref="int.MaxValue"/> process/page IDs) is reported separately as
 /// <see cref="InvalidOperationException"/>.
+/// <para>
+/// Every public instance carries valid <see cref="LimitKind"/>, <see cref="Limit"/>, and
+/// <see cref="AttemptedValue"/> metadata. Constructors that cannot supply real metadata are
+/// restricted to subclasses via <c>protected</c> access so that catch handlers can always rely
+/// on these properties to identify and route limit violations.
+/// </para>
 /// </remarks>
 public class VmLimitExceededException : Exception
 {
@@ -21,16 +27,6 @@ public class VmLimitExceededException : Exception
 
     /// <summary>Gets the value that the operation attempted to reach, which exceeded <see cref="Limit"/>.</summary>
     public long AttemptedValue { get; }
-
-    /// <summary>Initializes a new instance with no diagnostic data.</summary>
-    public VmLimitExceededException() { }
-
-    /// <summary>Initializes a new instance with a specified error message.</summary>
-    public VmLimitExceededException(string message) : base(message) { }
-
-    /// <summary>Initializes a new instance with a specified error message and inner exception.</summary>
-    public VmLimitExceededException(string message, Exception innerException)
-        : base(message, innerException) { }
 
     /// <summary>
     /// Initializes a new instance with full limit metadata.
@@ -48,13 +44,31 @@ public class VmLimitExceededException : Exception
 
     /// <summary>
     /// Initializes a new instance with full limit metadata and a custom message.
+    /// For use by subclasses that need to supply a specialized message without auto-generation.
     /// </summary>
     /// <param name="limitKind">The kind of limit that was exhausted.</param>
-    /// <param name="limit">The configured maximum.</param>
-    /// <param name="attemptedValue">The value the operation attempted to reach.</param>
+    /// <param name="limit">The configured maximum. Zero when the budget is unknown (legacy constructors).</param>
+    /// <param name="attemptedValue">The value the operation attempted to reach. Zero when unknown.</param>
     /// <param name="message">Custom exception message.</param>
     protected VmLimitExceededException(VmLimitKind limitKind, long limit, long attemptedValue, string message)
         : base(message)
+    {
+        LimitKind = limitKind;
+        Limit = limit;
+        AttemptedValue = attemptedValue;
+    }
+
+    /// <summary>
+    /// Initializes a new instance with full limit metadata, a custom message, and an inner exception.
+    /// For use by subclasses that wrap another exception.
+    /// </summary>
+    /// <param name="limitKind">The kind of limit that was exhausted.</param>
+    /// <param name="limit">The configured maximum. Zero when the budget is unknown (legacy constructors).</param>
+    /// <param name="attemptedValue">The value the operation attempted to reach. Zero when unknown.</param>
+    /// <param name="message">Custom exception message.</param>
+    /// <param name="innerException">The exception that is the cause of this exception.</param>
+    protected VmLimitExceededException(VmLimitKind limitKind, long limit, long attemptedValue, string message, Exception innerException)
+        : base(message, innerException)
     {
         LimitKind = limitKind;
         Limit = limit;
