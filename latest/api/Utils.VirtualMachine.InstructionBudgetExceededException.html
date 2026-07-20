@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_VirtualMachine_InstructionBudgetExceededException" data-uid="Utils.VirtualMachine.InstructionBudgetExceededException" class="text-break">
-Class InstructionBudgetExceededException  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/InstructionBudgetExceededException.cs/#L12"><i class="bi bi-code-slash"></i></a>
+Class InstructionBudgetExceededException  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/InstructionBudgetExceededException.cs/#L21"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -102,7 +102,7 @@ Class InstructionBudgetExceededException  <a class="header-action link-secondary
   <div class="markdown conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public class InstructionBudgetExceededException : Exception, ISerializable</code></pre>
+    <pre><code class="lang-csharp hljs">public class InstructionBudgetExceededException : VmLimitExceededException, ISerializable</code></pre>
   </div>
 
 
@@ -113,6 +113,11 @@ Class InstructionBudgetExceededException  <a class="header-action link-secondary
     <dd>
       <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
       <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.exception">Exception</a></div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.systemexception">SystemException</a></div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a></div>
+      <div><a class="xref" href="Utils.VirtualMachine.VmInvalidOperationException.html">VmInvalidOperationException</a></div>
+      <div><a class="xref" href="Utils.VirtualMachine.VmLimitException.html">VmLimitException</a></div>
+      <div><a class="xref" href="Utils.VirtualMachine.VmLimitExceededException.html">VmLimitExceededException</a></div>
       <div><span class="xref">InstructionBudgetExceededException</span></div>
     </dd>
   </dl>
@@ -128,6 +133,15 @@ Class InstructionBudgetExceededException  <a class="header-action link-secondary
   <dl class="typelist inheritedMembers">
     <dt>Inherited Members</dt>
     <dd>
+    <div>
+      <a class="xref" href="Utils.VirtualMachine.VmLimitException.html#Utils_VirtualMachine_VmLimitException_LimitKind">VmLimitException.LimitKind</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.VirtualMachine.VmLimitException.html#Utils_VirtualMachine_VmLimitException_Limit">VmLimitException.Limit</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.VirtualMachine.VmLimitException.html#Utils_VirtualMachine_VmLimitException_AttemptedValue">VmLimitException.AttemptedValue</a>
+    </div>
     <div>
       <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.exception.getbaseexception">Exception.GetBaseException()</a>
     </div>
@@ -276,8 +290,17 @@ Class InstructionBudgetExceededException  <a class="header-action link-secondary
 
 
   <h2 id="Utils_VirtualMachine_InstructionBudgetExceededException_remarks">Remarks</h2>
-  <div class="markdown level0 remarks"><p>This exception is not marked <code>[Serializable]</code> because the <a class="xref" href="Utils.VirtualMachine.InstructionBudgetExceededException.html#Utils_VirtualMachine_InstructionBudgetExceededException_Budget">Budget</a> field
-has no corresponding serialization constructor or <code>GetObjectData</code> override.</p>
+  <div class="markdown level0 remarks"><p>Derives from <a class="xref" href="Utils.VirtualMachine.VmLimitExceededException.html">VmLimitExceededException</a> with
+VmLimitExceededException.LimitKind always equal to
+<a class="xref" href="Utils.VirtualMachine.VmLimitKind.html#Utils_VirtualMachine_VmLimitKind_InstructionCount">InstructionCount</a>. The <a class="xref" href="Utils.VirtualMachine.InstructionBudgetExceededException.html#Utils_VirtualMachine_InstructionBudgetExceededException_Budget">Budget</a> property is a convenience
+alias for VmLimitExceededException.Limit.</p>
+<p>
+When a budget is unknown (legacy message-only constructors), <a class="xref" href="Utils.VirtualMachine.InstructionBudgetExceededException.html#Utils_VirtualMachine_InstructionBudgetExceededException_Budget">Budget</a> and
+VmLimitExceededException.AttemptedValue are both zero; callers should check
+the message text instead of relying on these fields.
+</p>
+<p>Existing callers catching <a class="xref" href="Utils.VirtualMachine.InstructionBudgetExceededException.html">InstructionBudgetExceededException</a> specifically
+continue to work regardless of which constructor was used.</p>
 </div>
 
 
@@ -289,10 +312,12 @@ has no corresponding serialization constructor or <code>GetObjectData</code> ove
 
   <h3 id="Utils_VirtualMachine_InstructionBudgetExceededException__ctor" data-uid="Utils.VirtualMachine.InstructionBudgetExceededException.#ctor">
   InstructionBudgetExceededException()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/InstructionBudgetExceededException.cs/#L18"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/InstructionBudgetExceededException.cs/#L34"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.VirtualMachine.InstructionBudgetExceededException.html">InstructionBudgetExceededException</a> class.</p>
+  <div class="markdown level1 summary"><p>Initializes a new instance with no budget information.
+<a class="xref" href="Utils.VirtualMachine.InstructionBudgetExceededException.html#Utils_VirtualMachine_InstructionBudgetExceededException_Budget">Budget</a> is zero; VmLimitExceededException.LimitKind is
+<a class="xref" href="Utils.VirtualMachine.VmLimitKind.html#Utils_VirtualMachine_VmLimitKind_InstructionCount">InstructionCount</a>.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -316,7 +341,7 @@ has no corresponding serialization constructor or <code>GetObjectData</code> ove
 
   <h3 id="Utils_VirtualMachine_InstructionBudgetExceededException__ctor_System_Int64_" data-uid="Utils.VirtualMachine.InstructionBudgetExceededException.#ctor(System.Int64)">
   InstructionBudgetExceededException(long)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/InstructionBudgetExceededException.cs/#L34"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/InstructionBudgetExceededException.cs/#L67"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance reporting the budget limit that was exceeded.</p>
@@ -349,10 +374,12 @@ has no corresponding serialization constructor or <code>GetObjectData</code> ove
 
   <h3 id="Utils_VirtualMachine_InstructionBudgetExceededException__ctor_System_String_" data-uid="Utils.VirtualMachine.InstructionBudgetExceededException.#ctor(System.String)">
   InstructionBudgetExceededException(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/InstructionBudgetExceededException.cs/#L22"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/InstructionBudgetExceededException.cs/#L46"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Initializes a new instance with a specified error message.</p>
+  <div class="markdown level1 summary"><p>Initializes a new instance with a specified error message and no budget information.
+<a class="xref" href="Utils.VirtualMachine.InstructionBudgetExceededException.html#Utils_VirtualMachine_InstructionBudgetExceededException_Budget">Budget</a> is zero; VmLimitExceededException.LimitKind is
+<a class="xref" href="Utils.VirtualMachine.VmLimitKind.html#Utils_VirtualMachine_VmLimitKind_InstructionCount">InstructionCount</a>.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -382,10 +409,12 @@ has no corresponding serialization constructor or <code>GetObjectData</code> ove
 
   <h3 id="Utils_VirtualMachine_InstructionBudgetExceededException__ctor_System_String_System_Exception_" data-uid="Utils.VirtualMachine.InstructionBudgetExceededException.#ctor(System.String,System.Exception)">
   InstructionBudgetExceededException(string, Exception)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/InstructionBudgetExceededException.cs/#L27"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/InstructionBudgetExceededException.cs/#L58"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Initializes a new instance with a specified error message and inner exception.</p>
+  <div class="markdown level1 summary"><p>Initializes a new instance with a specified error message and inner exception.
+<a class="xref" href="Utils.VirtualMachine.InstructionBudgetExceededException.html#Utils_VirtualMachine_InstructionBudgetExceededException_Budget">Budget</a> is zero; VmLimitExceededException.LimitKind is
+<a class="xref" href="Utils.VirtualMachine.VmLimitKind.html#Utils_VirtualMachine_VmLimitKind_InstructionCount">InstructionCount</a>.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -422,10 +451,11 @@ has no corresponding serialization constructor or <code>GetObjectData</code> ove
 
   <h3 id="Utils_VirtualMachine_InstructionBudgetExceededException_Budget" data-uid="Utils.VirtualMachine.InstructionBudgetExceededException.Budget">
   Budget
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/InstructionBudgetExceededException.cs/#L15"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/InstructionBudgetExceededException.cs/#L27"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets the instruction budget that was exceeded.</p>
+  <div class="markdown level1 summary"><p>Gets the instruction budget that was exceeded, or zero when the budget is not known
+(message-only constructors). Alias for VmLimitExceededException.Limit.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -454,7 +484,7 @@ has no corresponding serialization constructor or <code>GetObjectData</code> ove
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/InstructionBudgetExceededException.cs/#L12" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/InstructionBudgetExceededException.cs/#L21" class="edit-link">Edit this page</a>
         </div>
 
 

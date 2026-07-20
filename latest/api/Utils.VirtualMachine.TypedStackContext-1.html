@@ -339,6 +339,49 @@ custom operand-stack depth limit.</p>
 
 
 
+  <a id="Utils_VirtualMachine_TypedStackContext_1__ctor_" data-uid="Utils.VirtualMachine.TypedStackContext`1.#ctor*"></a>
+
+  <h3 id="Utils_VirtualMachine_TypedStackContext_1__ctor_System_ReadOnlyMemory_System_Byte__Utils_VirtualMachine_VirtualMachineLimits_" data-uid="Utils.VirtualMachine.TypedStackContext`1.#ctor(System.ReadOnlyMemory{System.Byte},Utils.VirtualMachine.VirtualMachineLimits)">
+  TypedStackContext(ReadOnlyMemory&lt;byte&gt;, VirtualMachineLimits)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/TypedStackContext.cs/#L44"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.VirtualMachine.TypedStackContext-1.html">TypedStackContext&lt;TValue&gt;</a> class with limits
+sourced from a <a class="xref" href="Utils.VirtualMachine.VirtualMachineLimits.html">VirtualMachineLimits</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public TypedStackContext(ReadOnlyMemory&lt;byte&gt; data, VirtualMachineLimits limits)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>data</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.readonlymemory-1">ReadOnlyMemory</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>&gt;</dt>
+    <dd><p>The byte data containing the instruction stream.</p>
+</dd>
+    <dt><code>limits</code> <a class="xref" href="Utils.VirtualMachine.VirtualMachineLimits.html">VirtualMachineLimits</a></dt>
+    <dd><p>The limits policy. <a class="xref" href="Utils.VirtualMachine.VirtualMachineLimits.html#Utils_VirtualMachine_VirtualMachineLimits_MaxOperandStackDepth">MaxOperandStackDepth</a> is used.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">limits</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+  </dl>
+
+
+
   <h2 class="section" id="properties">Properties
 </h2>
 
@@ -347,12 +390,13 @@ custom operand-stack depth limit.</p>
 
   <h3 id="Utils_VirtualMachine_TypedStackContext_1_Stack" data-uid="Utils.VirtualMachine.TypedStackContext`1.Stack">
   Stack
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/TypedStackContext.cs/#L42"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/TypedStackContext.cs/#L55"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>A bounded strongly-typed operand stack for storing values without boxing overhead.
-Push throws <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a> when the depth limit is reached;
-Pop and Peek throw when the stack is empty.</p>
+Push throws <a class="xref" href="Utils.VirtualMachine.VmLimitExceededException.html">VmLimitExceededException</a> (<a class="xref" href="Utils.VirtualMachine.VmLimitKind.html#Utils_VirtualMachine_VmLimitKind_OperandStackDepth">OperandStackDepth</a>)
+when the depth limit is reached; Pop and Peek throw <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a>
+when the stack is empty.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 

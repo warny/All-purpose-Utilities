@@ -516,11 +516,69 @@ instructions have been dispatched without the program terminating.</p>
 
 
 
+  <a id="Utils_VirtualMachine_VirtualProcessor_1_Execute_" data-uid="Utils.VirtualMachine.VirtualProcessor`1.Execute*"></a>
+
+  <h3 id="Utils_VirtualMachine_VirtualProcessor_1_Execute__0_Utils_VirtualMachine_ExecutionLimits_System_Threading_CancellationToken_" data-uid="Utils.VirtualMachine.VirtualProcessor`1.Execute(`0,Utils.VirtualMachine.ExecutionLimits,System.Threading.CancellationToken)">
+  Execute(T, ExecutionLimits, CancellationToken)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L442"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Executes all instructions until the end of the data stream, until
+<a class="xref" href="Utils.VirtualMachine.Context.html#Utils_VirtualMachine_Context_InstructionPointer">InstructionPointer</a> becomes negative (program termination signal),
+until <code class="paramref">cancellationToken</code> is cancelled, or until the budget in
+<code class="paramref">limits</code> is exhausted.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void Execute(T context, ExecutionLimits limits, CancellationToken cancellationToken)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>context</code> <span class="xref">T</span></dt>
+    <dd><p>The execution context.</p>
+</dd>
+    <dt><code>limits</code> <a class="xref" href="Utils.VirtualMachine.ExecutionLimits.html">ExecutionLimits</a></dt>
+    <dd><p>Execution limits controlling the instruction budget.</p>
+</dd>
+    <dt><code>cancellationToken</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></dt>
+    <dd><p>Token that can stop execution between instructions.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">context</code> or <code class="paramref">limits</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+    <dt><a class="xref" href="Utils.VirtualMachine.VirtualProcessorException.html">VirtualProcessorException</a></dt>
+    <dd><p>Thrown on an unknown opcode sequence.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.operationcanceledexception">OperationCanceledException</a></dt>
+    <dd><p>Thrown when <code class="paramref">cancellationToken</code> is cancelled.</p>
+</dd>
+    <dt><a class="xref" href="Utils.VirtualMachine.InstructionBudgetExceededException.html">InstructionBudgetExceededException</a></dt>
+    <dd><p>Thrown when <code class="paramref">limits</code> specifies a budget and that many instructions have been
+dispatched without the program terminating naturally.</p>
+</dd>
+  </dl>
+
+
+
   <a id="Utils_VirtualMachine_VirtualProcessor_1_ExecuteStep_" data-uid="Utils.VirtualMachine.VirtualProcessor`1.ExecuteStep*"></a>
 
   <h3 id="Utils_VirtualMachine_VirtualProcessor_1_ExecuteStep__0_" data-uid="Utils.VirtualMachine.VirtualProcessor`1.ExecuteStep(`0)">
   ExecuteStep(T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L443"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L468"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Executes exactly one instruction at the current instruction pointer.</p>
@@ -1072,7 +1130,7 @@ first byte of the instruction about to execute.</p>
 
   <h3 id="Utils_VirtualMachine_VirtualProcessor_1_RegisterInstruction_System_Byte___System_String_System_Action__0__System_Boolean_" data-uid="Utils.VirtualMachine.VirtualProcessor`1.RegisterInstruction(System.Byte[],System.String,System.Action{`0},System.Boolean)">
   RegisterInstruction(byte[], string, Action&lt;T&gt;, bool)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L468"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L493"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Registers an instruction handler at runtime, supplementing or overriding

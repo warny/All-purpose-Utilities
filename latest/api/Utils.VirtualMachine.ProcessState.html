@@ -231,8 +231,8 @@ Enum ProcessState  <a class="header-action link-secondary" title="View source" h
   <dd><p>The process encountered an unhandled exception during instruction execution.
 The exception is available via <a class="xref" href="Utils.VirtualMachine.ScheduledProcess-1.html#Utils_VirtualMachine_ScheduledProcess_1_FaultException">FaultException</a>.
 A faulted process will not run again; it is treated the same as
-<a class="xref" href="Utils.VirtualMachine.ProcessState.html#Utils_VirtualMachine_ProcessState_Terminated">Terminated</a> by <a class="xref" href="Utils.VirtualMachine.Scheduler-1.html#Utils_VirtualMachine_Scheduler_1_Run_System_Threading_CancellationToken_System_Int64_">Run(CancellationToken, long)</a> and
-<a class="xref" href="Utils.VirtualMachine.Scheduler-1.html#Utils_VirtualMachine_Scheduler_1_RunAsync_System_Threading_CancellationToken_System_Int64_">RunAsync(CancellationToken, long)</a>.</p>
+<a class="xref" href="Utils.VirtualMachine.ProcessState.html#Utils_VirtualMachine_ProcessState_Terminated">Terminated</a> by <a class="xref" href="Utils.VirtualMachine.Scheduler-1.html#Utils_VirtualMachine_Scheduler_1_Run_Utils_VirtualMachine_ExecutionLimits_System_Threading_CancellationToken_">Run(ExecutionLimits, CancellationToken)</a> and
+<a class="xref" href="Utils.VirtualMachine.Scheduler-1.html#Utils_VirtualMachine_Scheduler_1_RunAsync_Utils_VirtualMachine_ExecutionLimits_System_Threading_CancellationToken_">RunAsync(ExecutionLimits, CancellationToken)</a>.</p>
 </dd>
     <dt id="Utils_VirtualMachine_ProcessState_Ready"><code>Ready = 0</code></dt>
   

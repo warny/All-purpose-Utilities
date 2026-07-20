@@ -13406,7 +13406,7 @@
       "Uid": null,
       "IsMRef": true,
       "Title": "Utils.VirtualMachine.BoundedStack<T>",
-      "Summary": "<p sourcefile=\"api/Utils.VirtualMachine.BoundedStack-1.yml\" sourcestartlinenumber=\"1\">A stack with a configurable maximum depth. Push throws <xref href=\"System.InvalidOperationException\" data-throw-if-not-resolved=\"false\"></xref>\nwhen the depth limit is reached; Pop and Peek throw when the stack is empty.\nAll exceptions carry VM-specific messages that include the depth limit for diagnostics.</p>\n"
+      "Summary": "<p sourcefile=\"api/Utils.VirtualMachine.BoundedStack-1.yml\" sourcestartlinenumber=\"1\">A stack with a configurable maximum depth. Push throws <xref href=\"Utils.VirtualMachine.VmLimitExceededException\" data-throw-if-not-resolved=\"false\"></xref>\n(with <xref href=\"Utils.VirtualMachine.VmLimitKind.OperandStackDepth\" data-throw-if-not-resolved=\"false\"></xref>) when the depth limit is reached;\nPop and Peek throw <xref href=\"System.InvalidOperationException\" data-throw-if-not-resolved=\"false\"></xref> when the stack is empty.</p>\n"
     },
     {
       "type": "ManagedReference",
@@ -13547,6 +13547,20 @@
       "IsMRef": true,
       "Title": "Utils.VirtualMachine.ExceptionBlockPhase",
       "Summary": "<p sourcefile=\"api/Utils.VirtualMachine.ExceptionBlockPhase.yml\" sourcestartlinenumber=\"1\">Tracks the lifecycle phase of an <xref href=\"Utils.VirtualMachine.ExceptionBlock\" data-throw-if-not-resolved=\"false\"></xref> so that\n<xref href=\"Utils.VirtualMachine.ControlFlowStack.Throw(Utils.VirtualMachine.Context%2cSystem.Object)\" data-throw-if-not-resolved=\"false\"></xref> can skip blocks whose protected try-region is\nno longer active and avoid re-entering the same handler.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.VirtualMachine.ExecutionLimits.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.VirtualMachine.ExecutionLimits.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.VirtualMachine.ExecutionLimits",
+      "Summary": "<p sourcefile=\"api/Utils.VirtualMachine.ExecutionLimits.yml\" sourcestartlinenumber=\"1\">Immutable execution parameters for a single call to\n<xref href=\"Utils.VirtualMachine.VirtualProcessor%601.Execute(%600%2cUtils.VirtualMachine.ExecutionLimits%2cSystem.Threading.CancellationToken)\" data-throw-if-not-resolved=\"false\"></xref>,\n<xref href=\"Utils.VirtualMachine.Scheduler%601.Run(Utils.VirtualMachine.ExecutionLimits%2cSystem.Threading.CancellationToken)\" data-throw-if-not-resolved=\"false\"></xref>, or\n<xref href=\"Utils.VirtualMachine.Scheduler%601.RunAsync(Utils.VirtualMachine.ExecutionLimits%2cSystem.Threading.CancellationToken)\" data-throw-if-not-resolved=\"false\"></xref>.</p>\n"
     },
     {
       "type": "ManagedReference",
@@ -13774,6 +13788,20 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.VirtualMachine.VirtualMachineLimits.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.VirtualMachine.VirtualMachineLimits.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.VirtualMachine.VirtualMachineLimits",
+      "Summary": "<p sourcefile=\"api/Utils.VirtualMachine.VirtualMachineLimits.yml\" sourcestartlinenumber=\"1\">Immutable structural configuration for a virtual machine instance.\nEncapsulates capacity limits for stacks, scheduler, and virtual memory.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.VirtualMachine.VirtualMemory-1.yml",
       "output": {
         ".html": {
@@ -13897,6 +13925,62 @@
       "IsMRef": true,
       "Title": "Utils.VirtualMachine.VmInspectorPhase",
       "Summary": "<p sourcefile=\"api/Utils.VirtualMachine.VmInspectorPhase.yml\" sourcestartlinenumber=\"1\">Identifies which <xref href=\"Utils.VirtualMachine.IVmInspector%601\" data-throw-if-not-resolved=\"false\"></xref> callback threw.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.VirtualMachine.VmInvalidOperationException.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.VirtualMachine.VmInvalidOperationException.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.VirtualMachine.VmInvalidOperationException",
+      "Summary": "<p sourcefile=\"api/Utils.VirtualMachine.VmInvalidOperationException.yml\" sourcestartlinenumber=\"1\">Thrown when a VM operation is performed in an invalid state (e.g. stack underflow,\nmalformed bytecode structure, or exhausted hard identifier counters).</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.VirtualMachine.VmLimitExceededException.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.VirtualMachine.VmLimitExceededException.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.VirtualMachine.VmLimitExceededException",
+      "Summary": "<p sourcefile=\"api/Utils.VirtualMachine.VmLimitExceededException.yml\" sourcestartlinenumber=\"1\">Thrown when a caller-configured VM resource limit is exhausted.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.VirtualMachine.VmLimitException.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.VirtualMachine.VmLimitException.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.VirtualMachine.VmLimitException",
+      "Summary": "<p sourcefile=\"api/Utils.VirtualMachine.VmLimitException.yml\" sourcestartlinenumber=\"1\">Abstract base for all exceptions thrown when a caller-configured VM resource limit is exhausted.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.VirtualMachine.VmLimitKind.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.VirtualMachine.VmLimitKind.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.VirtualMachine.VmLimitKind",
+      "Summary": "<p sourcefile=\"api/Utils.VirtualMachine.VmLimitKind.yml\" sourcestartlinenumber=\"1\">Identifies which configured resource limit was exhausted when a\n<xref href=\"Utils.VirtualMachine.VmLimitExceededException\" data-throw-if-not-resolved=\"false\"></xref> is thrown.</p>\n"
     },
     {
       "type": "ManagedReference",

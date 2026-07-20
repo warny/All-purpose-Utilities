@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_VirtualMachine_DefaultContext" data-uid="Utils.VirtualMachine.DefaultContext" class="text-break">
-Class DefaultContext  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L669"><i class="bi bi-code-slash"></i></a>
+Class DefaultContext  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L694"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -268,7 +268,7 @@ Class DefaultContext  <a class="header-action link-secondary" title="View source
 
   <h3 id="Utils_VirtualMachine_DefaultContext__ctor_System_ReadOnlyMemory_System_Byte__" data-uid="Utils.VirtualMachine.DefaultContext.#ctor(System.ReadOnlyMemory{System.Byte})">
   DefaultContext(ReadOnlyMemory&lt;byte&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L676"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L701"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.VirtualMachine.DefaultContext.html">DefaultContext</a> class with the given data buffer
@@ -302,7 +302,7 @@ and the default operand-stack depth limit (<a class="xref" href="Utils.VirtualMa
 
   <h3 id="Utils_VirtualMachine_DefaultContext__ctor_System_ReadOnlyMemory_System_Byte__System_Int32_" data-uid="Utils.VirtualMachine.DefaultContext.#ctor(System.ReadOnlyMemory{System.Byte},System.Int32)">
   DefaultContext(ReadOnlyMemory&lt;byte&gt;, int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L690"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L715"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.VirtualMachine.DefaultContext.html">DefaultContext</a> class with the given data buffer
@@ -342,6 +342,49 @@ Defaults to <a class="xref" href="Utils.VirtualMachine.BoundedStack-1.html#Utils
 
 
 
+  <a id="Utils_VirtualMachine_DefaultContext__ctor_" data-uid="Utils.VirtualMachine.DefaultContext.#ctor*"></a>
+
+  <h3 id="Utils_VirtualMachine_DefaultContext__ctor_System_ReadOnlyMemory_System_Byte__Utils_VirtualMachine_VirtualMachineLimits_" data-uid="Utils.VirtualMachine.DefaultContext.#ctor(System.ReadOnlyMemory{System.Byte},Utils.VirtualMachine.VirtualMachineLimits)">
+  DefaultContext(ReadOnlyMemory&lt;byte&gt;, VirtualMachineLimits)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L727"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.VirtualMachine.DefaultContext.html">DefaultContext</a> class with the given data buffer
+and limits sourced from a <a class="xref" href="Utils.VirtualMachine.VirtualMachineLimits.html">VirtualMachineLimits</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public DefaultContext(ReadOnlyMemory&lt;byte&gt; data, VirtualMachineLimits limits)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>data</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.readonlymemory-1">ReadOnlyMemory</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>&gt;</dt>
+    <dd><p>The byte data containing all instructions or data to process.</p>
+</dd>
+    <dt><code>limits</code> <a class="xref" href="Utils.VirtualMachine.VirtualMachineLimits.html">VirtualMachineLimits</a></dt>
+    <dd><p>The limits policy. <a class="xref" href="Utils.VirtualMachine.VirtualMachineLimits.html#Utils_VirtualMachine_VirtualMachineLimits_MaxOperandStackDepth">MaxOperandStackDepth</a> is used.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">limits</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+  </dl>
+
+
+
   <h2 class="section" id="properties">Properties
 </h2>
 
@@ -350,12 +393,13 @@ Defaults to <a class="xref" href="Utils.VirtualMachine.BoundedStack-1.html#Utils
 
   <h3 id="Utils_VirtualMachine_DefaultContext_Stack" data-uid="Utils.VirtualMachine.DefaultContext.Stack">
   Stack
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L700"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L738"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>A bounded operand stack for temporary values during instruction execution.
-Push throws <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a> when the depth limit is reached;
-Pop and Peek throw when the stack is empty.</p>
+Push throws <a class="xref" href="Utils.VirtualMachine.VmLimitExceededException.html">VmLimitExceededException</a> (<a class="xref" href="Utils.VirtualMachine.VmLimitKind.html#Utils_VirtualMachine_VmLimitKind_OperandStackDepth">OperandStackDepth</a>)
+when the depth limit is reached; Pop and Peek throw <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a>
+when the stack is empty.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -384,7 +428,7 @@ Pop and Peek throw when the stack is empty.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L669" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.VirtualMachine/VirtualProcessor.cs/#L694" class="edit-link">Edit this page</a>
         </div>
 
 

@@ -96,9 +96,9 @@ Classes
 </h3>
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.VirtualMachine.BoundedStack-1.html">BoundedStack&lt;T&gt;</a></dt>
-      <dd><p>A stack with a configurable maximum depth. Push throws <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a>
-when the depth limit is reached; Pop and Peek throw when the stack is empty.
-All exceptions carry VM-specific messages that include the depth limit for diagnostics.</p>
+      <dd><p>A stack with a configurable maximum depth. Push throws <a class="xref" href="Utils.VirtualMachine.VmLimitExceededException.html">VmLimitExceededException</a>
+(with <a class="xref" href="Utils.VirtualMachine.VmLimitKind.html#Utils_VirtualMachine_VmLimitKind_OperandStackDepth">OperandStackDepth</a>) when the depth limit is reached;
+Pop and Peek throw <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a> when the stack is empty.</p>
 </dd>
     </dl>
     <dl class="jumplist">
@@ -150,6 +150,14 @@ and exception handlers (<a class="xref" href="Utils.VirtualMachine.ExceptionBloc
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.VirtualMachine.ExceptionBlock.html">ExceptionBlock</a></dt>
       <dd><p>Represents an active try/catch/finally block on a <a class="xref" href="Utils.VirtualMachine.ControlFlowStack.html">ControlFlowStack</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.VirtualMachine.ExecutionLimits.html">ExecutionLimits</a></dt>
+      <dd><p>Immutable execution parameters for a single call to
+<a class="xref" href="Utils.VirtualMachine.VirtualProcessor-1.html#Utils_VirtualMachine_VirtualProcessor_1_Execute__0_Utils_VirtualMachine_ExecutionLimits_System_Threading_CancellationToken_">Execute(T, ExecutionLimits, CancellationToken)</a>,
+<a class="xref" href="Utils.VirtualMachine.Scheduler-1.html#Utils_VirtualMachine_Scheduler_1_Run_Utils_VirtualMachine_ExecutionLimits_System_Threading_CancellationToken_">Run(ExecutionLimits, CancellationToken)</a>, or
+<a class="xref" href="Utils.VirtualMachine.Scheduler-1.html#Utils_VirtualMachine_Scheduler_1_RunAsync_Utils_VirtualMachine_ExecutionLimits_System_Threading_CancellationToken_">RunAsync(ExecutionLimits, CancellationToken)</a>.</p>
 </dd>
     </dl>
     <dl class="jumplist">
@@ -212,6 +220,12 @@ Use this instead of <a class="xref" href="Utils.VirtualMachine.DefaultContext.ht
 </dd>
     </dl>
     <dl class="jumplist">
+      <dt><a class="xref" href="Utils.VirtualMachine.VirtualMachineLimits.html">VirtualMachineLimits</a></dt>
+      <dd><p>Immutable structural configuration for a virtual machine instance.
+Encapsulates capacity limits for stacks, scheduler, and virtual memory.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
       <dt><a class="xref" href="Utils.VirtualMachine.VirtualMemoryContext-1.html">VirtualMemoryContext&lt;TAddress&gt;</a></dt>
       <dd><p>A <a class="xref" href="Utils.VirtualMachine.DefaultContext.html">DefaultContext</a> that associates an instruction stream with a specific
 <a class="xref" href="Utils.VirtualMachine.VirtualProcess-1.html">VirtualProcess&lt;TAddress&gt;</a>, allowing the executing processor to perform
@@ -253,6 +267,22 @@ annotated with <a class="xref" href="Utils.VirtualMachine.InstructionAttribute.h
       <dt><a class="xref" href="Utils.VirtualMachine.VmInspectorException.html">VmInspectorException</a></dt>
       <dd><p>Thrown when an <a class="xref" href="Utils.VirtualMachine.IVmInspector-1.html">IVmInspector&lt;T&gt;</a> callback raises an exception, allowing callers
 to distinguish inspector failures from instruction-execution faults.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.VirtualMachine.VmInvalidOperationException.html">VmInvalidOperationException</a></dt>
+      <dd><p>Thrown when a VM operation is performed in an invalid state (e.g. stack underflow,
+malformed bytecode structure, or exhausted hard identifier counters).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.VirtualMachine.VmLimitExceededException.html">VmLimitExceededException</a></dt>
+      <dd><p>Thrown when a caller-configured VM resource limit is exhausted.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.VirtualMachine.VmLimitException.html">VmLimitException</a></dt>
+      <dd><p>Abstract base for all exceptions thrown when a caller-configured VM resource limit is exhausted.</p>
 </dd>
     </dl>
     <h3 id="interfaces">
@@ -304,6 +334,12 @@ no longer active and avoid re-entering the same handler.</p>
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.VirtualMachine.VmInspectorPhase.html">VmInspectorPhase</a></dt>
       <dd><p>Identifies which <a class="xref" href="Utils.VirtualMachine.IVmInspector-1.html">IVmInspector&lt;T&gt;</a> callback threw.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.VirtualMachine.VmLimitKind.html">VmLimitKind</a></dt>
+      <dd><p>Identifies which configured resource limit was exhausted when a
+<a class="xref" href="Utils.VirtualMachine.VmLimitExceededException.html">VmLimitExceededException</a> is thrown.</p>
 </dd>
     </dl>
     <h3 id="delegates">
