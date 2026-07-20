@@ -4,14 +4,14 @@ namespace Utils.VirtualMachine;
 
 /// <summary>
 /// Thrown when a VM operation is performed in an invalid state (e.g. stack underflow,
-/// malformed bytecode, or exhausted hard identifier counters).
+/// malformed bytecode structure, or exhausted hard identifier counters).
 /// </summary>
 /// <remarks>
-/// Represents the VM-specific analogue of <see cref="InvalidOperationException"/>.
-/// Callers may catch either type; the VM library guarantees this class is thrown in
-/// preference to the BCL base for all VM-originated invalid-state conditions.
+/// Derives from <see cref="InvalidOperationException"/> so that existing
+/// <c>catch (InvalidOperationException)</c> handlers — historically used to intercept
+/// VM state errors such as stack underflow — continue to work without modification.
 /// </remarks>
-public class VmInvalidOperationException : VirtualMachineException
+public class VmInvalidOperationException : InvalidOperationException
 {
     /// <summary>Initializes a new instance with no message.</summary>
     public VmInvalidOperationException() { }

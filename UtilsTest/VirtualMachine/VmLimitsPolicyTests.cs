@@ -171,21 +171,21 @@ public class VmLimitsPolicyTests
     // ── Exception hierarchy ───────────────────────────────────────────────────
 
     [TestMethod]
-    public void VirtualMachineException_IsInvalidOperationException()
+    public void VmInvalidOperationException_IsInvalidOperationException()
     {
-        // VirtualMachineException : InvalidOperationException preserves backward compatibility.
+        // Backward compat: VmInvalidOperationException : InvalidOperationException.
         var ex = new VmInvalidOperationException("test");
         Assert.IsInstanceOfType<InvalidOperationException>(ex);
-        Assert.IsInstanceOfType<VirtualMachineException>(ex);
     }
 
     [TestMethod]
     public void VmLimitExceededException_IsInvalidOperationException()
     {
+        // Stack overflow (limit exceeded) remains catchable as InvalidOperationException.
         var ex = new VmLimitExceededException(VmLimitKind.CallStackDepth, 5L, 6L);
         Assert.IsInstanceOfType<InvalidOperationException>(ex);
+        Assert.IsInstanceOfType<VmInvalidOperationException>(ex);
         Assert.IsInstanceOfType<VmLimitException>(ex);
-        Assert.IsInstanceOfType<VirtualMachineException>(ex);
     }
 
     // ── VmLimitExceededException ───────────────────────────────────────────────

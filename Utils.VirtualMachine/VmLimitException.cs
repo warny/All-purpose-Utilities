@@ -6,12 +6,17 @@ namespace Utils.VirtualMachine;
 /// Abstract base for all exceptions thrown when a caller-configured VM resource limit is exhausted.
 /// </summary>
 /// <remarks>
+/// Derives from <see cref="VmInvalidOperationException"/> so that limits previously reported as
+/// <see cref="System.InvalidOperationException"/> (e.g. operand-stack overflow) remain catchable
+/// by the same handlers after the migration to the structured limit hierarchy.
+/// <para>
 /// Carries the three diagnostic fields common to every limit violation:
 /// <see cref="LimitKind"/>, <see cref="Limit"/>, and <see cref="AttemptedValue"/>.
 /// Catch handlers may target this type to intercept any limit violation regardless of
 /// which specific resource was exhausted.
+/// </para>
 /// </remarks>
-public abstract class VmLimitException : VirtualMachineException
+public abstract class VmLimitException : VmInvalidOperationException
 {
     /// <summary>Gets the kind of limit that was exhausted.</summary>
     public VmLimitKind LimitKind { get; }
