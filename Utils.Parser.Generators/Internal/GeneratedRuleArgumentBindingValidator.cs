@@ -16,10 +16,10 @@ internal static class GeneratedRuleArgumentBindingValidator
         return Validate(grammar, callSite => localResolver.Resolve(grammar, callSite.RuleName));
     }
 
-    /// <summary>Validates all parser rule references whose targets are resolved deterministically by the provided resolver.</summary>
+    /// <summary>Validates all parser rule references whose local targets are resolved deterministically by the provided resolver.</summary>
     /// <param name="grammar">Caller grammar whose parser-rule bodies contain the call sites.</param>
     /// <param name="resolveRule">Resolver that maps a call site to a structured target resolution.</param>
-    /// <returns>Deterministic binding issues for unique local or imported parser-rule targets.</returns>
+    /// <returns>Deterministic binding issues for unique local parser-rule targets.</returns>
     internal static ImmutableArray<GeneratedRuleArgumentBindingIssue> Validate(G4Grammar grammar, Func<G4RuleRef, G4RuleResolution> resolveRule)
     {
         var issues = ImmutableArray.CreateBuilder<GeneratedRuleArgumentBindingIssue>();
@@ -28,7 +28,7 @@ internal static class GeneratedRuleArgumentBindingValidator
         {
             if (callSite.RawArguments is null) continue;
             var resolution = resolveRule(callSite);
-            if ((resolution.Kind == G4RuleResolutionKind.Local || resolution.Kind == G4RuleResolutionKind.Imported) && resolution.Rule is not null)
+            if (resolution.Kind == G4RuleResolutionKind.Local && resolution.Rule is not null)
             {
                 ValidateCallSite(resolution.Rule, callSite, issues);
             }

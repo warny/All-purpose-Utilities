@@ -297,12 +297,12 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
     /// <param name="file">Grammar additional file.</param>
     /// <param name="text">Grammar source text used to create locations.</param>
     /// <param name="grammar">Parsed grammar AST.</param>
-    /// <param name="resolver">Project-wide resolver that identifies unique local or imported parser-rule targets.</param>
+    /// <param name="resolver">Project-wide resolver retained for project import analysis; generated binding diagnostics currently validate only local parser-rule targets.</param>
     /// <returns><see langword="true"/> when at least one deterministic binding error was reported.</returns>
     private static bool ReportGeneratedRuleArgumentBindingDiagnostics(SourceProductionContext context, AdditionalText file, SourceText text, G4Grammar grammar, G4ImportedRuleResolver resolver)
     {
         bool hasErrors = false;
-        foreach (GeneratedRuleArgumentBindingIssue issue in GeneratedRuleArgumentBindingValidator.Validate(grammar, callSite => resolver.Resolve(grammar, callSite.RuleName)))
+        foreach (GeneratedRuleArgumentBindingIssue issue in GeneratedRuleArgumentBindingValidator.Validate(grammar))
         {
             hasErrors = true;
             context.ReportDiagnostic(Diagnostic.Create(
