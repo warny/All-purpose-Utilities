@@ -201,7 +201,7 @@ public class ControlFlowStackTests
     {
         var cfs = new ControlFlowStack();
         var ctx = new ControlFlowContext(new byte[0]);
-        Assert.ThrowsException<InvalidOperationException>(() => cfs.Break(ctx));
+        Assert.ThrowsException<VmInvalidOperationException>(() => cfs.Break(ctx));
     }
 
     [TestMethod]
@@ -233,7 +233,7 @@ public class ControlFlowStackTests
     {
         var cfs = new ControlFlowStack();
         var ctx = new ControlFlowContext(new byte[0]);
-        Assert.ThrowsException<InvalidOperationException>(() => cfs.Continue(ctx));
+        Assert.ThrowsException<VmInvalidOperationException>(() => cfs.Continue(ctx));
     }
 
     // â"€â"€ ExceptionBlock â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
@@ -326,7 +326,7 @@ public class ControlFlowStackTests
     public void Pop_EmptyStack_Throws()
     {
         var cfs = new ControlFlowStack();
-        Assert.ThrowsException<InvalidOperationException>(() => cfs.Pop());
+        Assert.ThrowsException<VmInvalidOperationException>(() => cfs.Pop());
     }
 
     // â"€â"€ Typed Pop<T> â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
@@ -365,7 +365,7 @@ public class ControlFlowStackTests
     public void PopTyped_EmptyStack_Throws()
     {
         var cfs = new ControlFlowStack();
-        Assert.ThrowsException<InvalidOperationException>(() => cfs.Pop<LoopBlock>());
+        Assert.ThrowsException<VmInvalidOperationException>(() => cfs.Pop<LoopBlock>());
     }
 
     // ── Item 12: Break/Continue are transactional — no stack corruption on failure ──
@@ -378,7 +378,7 @@ public class ControlFlowStackTests
         cfs.PushConditional(0, 10);
         cfs.PushConditional(5, 8);
         var ctx = new ControlFlowContext(new byte[0]);
-        Assert.ThrowsException<InvalidOperationException>(() => cfs.Break(ctx));
+        Assert.ThrowsException<VmInvalidOperationException>(() => cfs.Break(ctx));
         Assert.AreEqual(2, cfs.Depth); // both blocks must still be present
     }
 
@@ -388,7 +388,7 @@ public class ControlFlowStackTests
         var cfs = new ControlFlowStack();
         cfs.PushConditional(0, 10);
         var ctx = new ControlFlowContext(new byte[0]);
-        Assert.ThrowsException<InvalidOperationException>(() => cfs.Continue(ctx));
+        Assert.ThrowsException<VmInvalidOperationException>(() => cfs.Continue(ctx));
         Assert.AreEqual(1, cfs.Depth);
     }
 
@@ -758,7 +758,7 @@ public class ControlFlowStackTests
         var cfs = new ControlFlowStack();
         cfs.PushLoop(0, 10);
         var ctx = new ControlFlowContext(new byte[0]);
-        Assert.ThrowsException<InvalidOperationException>(() => cfs.EndCatch(ctx));
+        Assert.ThrowsException<VmInvalidOperationException>(() => cfs.EndCatch(ctx));
     }
 
     [TestMethod]
@@ -766,7 +766,7 @@ public class ControlFlowStackTests
     {
         var cfs = new ControlFlowStack();
         var ctx = new ControlFlowContext(new byte[0]);
-        Assert.ThrowsException<InvalidOperationException>(() => cfs.EndCatch(ctx));
+        Assert.ThrowsException<VmInvalidOperationException>(() => cfs.EndCatch(ctx));
     }
 
     [TestMethod]
@@ -778,7 +778,7 @@ public class ControlFlowStackTests
         var ctx = new ControlFlowContext(new byte[50]);
         cfs.Throw(ctx, "error");
         cfs.EndCatch(ctx); // now in Finally phase
-        Assert.ThrowsException<InvalidOperationException>(() => cfs.EndCatch(ctx));
+        Assert.ThrowsException<VmInvalidOperationException>(() => cfs.EndCatch(ctx));
     }
 
     [TestMethod]
@@ -807,7 +807,7 @@ public class ControlFlowStackTests
         var cfs = new ControlFlowStack();
         cfs.PushLoop(0, 10);
         var ctx = new ControlFlowContext(new byte[0]);
-        Assert.ThrowsException<InvalidOperationException>(() => cfs.EndFinally(ctx));
+        Assert.ThrowsException<VmInvalidOperationException>(() => cfs.EndFinally(ctx));
     }
 
     [TestMethod]
@@ -815,7 +815,7 @@ public class ControlFlowStackTests
     {
         var cfs = new ControlFlowStack();
         var ctx = new ControlFlowContext(new byte[0]);
-        Assert.ThrowsException<InvalidOperationException>(() => cfs.EndFinally(ctx));
+        Assert.ThrowsException<VmInvalidOperationException>(() => cfs.EndFinally(ctx));
     }
 
     [TestMethod]

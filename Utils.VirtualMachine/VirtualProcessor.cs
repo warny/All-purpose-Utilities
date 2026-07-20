@@ -121,26 +121,26 @@ public abstract class VirtualProcessor<T> where T : Context
     private static void ValidateInstructionSignature(MethodInfo method)
     {
         if (method.IsGenericMethod || method.ContainsGenericParameters)
-            throw new InvalidOperationException(
+            throw new VmInvalidOperationException(
                 $"Instruction method '{method.Name}': generic methods are not supported as instruction handlers.");
 
         if (method.ReturnType != typeof(void))
-            throw new InvalidOperationException(
+            throw new VmInvalidOperationException(
                 $"Instruction method '{method.Name}': must return void, found '{method.ReturnType.Name}'.");
 
         foreach (var param in method.GetParameters().Skip(1)) // first param is the context T, already checked
         {
             if (param.IsOut || param.ParameterType.IsByRef)
-                throw new InvalidOperationException(
+                throw new VmInvalidOperationException(
                     $"Instruction method '{method.Name}': parameter '{param.Name}' is ref/out, which is not supported.");
 
             if (param.ParameterType.IsPointer || param.ParameterType.IsByRefLike)
-                throw new InvalidOperationException(
+                throw new VmInvalidOperationException(
                     $"Instruction method '{method.Name}': parameter '{param.Name}' has an unsupported type " +
                     $"(pointer or byref-like type '{param.ParameterType.Name}').");
 
             if (!_numberReaderMethods.ContainsKey(param.ParameterType))
-                throw new InvalidOperationException(
+                throw new VmInvalidOperationException(
                     $"Instruction method '{method.Name}': parameter '{param.Name}' has unsupported operand type " +
                     $"'{param.ParameterType.Name}'. Supported types are: " +
                     string.Join(", ", _numberReaderMethods.Keys.Select(t => t.Name)) + ".");

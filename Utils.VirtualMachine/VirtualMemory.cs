@@ -101,7 +101,7 @@ public class VirtualMemory<TAddress> where TAddress : IBinaryInteger<TAddress>
     /// </summary>
     /// <returns>The newly allocated page.</returns>
     /// <exception cref="VmLimitExceededException">Thrown when the soft page limit has been reached.</exception>
-    /// <exception cref="InvalidOperationException">
+    /// <exception cref="VmInvalidOperationException">
     /// Thrown when the hard page identifier counter has reached its maximum value, or when the
     /// master process virtual address space is exhausted.
     /// </exception>
@@ -112,13 +112,13 @@ public class VirtualMemory<TAddress> where TAddress : IBinaryInteger<TAddress>
             throw new VmLimitExceededException(VmLimitKind.PhysicalPageCount, _maxPhysicalPages, _pages.Count + 1L);
         // Hard limit.
         if (_nextPageId == int.MaxValue)
-            throw new InvalidOperationException(
+            throw new VmInvalidOperationException(
                 $"Cannot allocate more pages: the page identifier counter has reached its maximum value ({int.MaxValue}).");
         TAddress nextIndex;
         try { nextIndex = checked(_masterNextVirtualIndex + TAddress.One); }
         catch (OverflowException)
         {
-            throw new InvalidOperationException(
+            throw new VmInvalidOperationException(
                 "Cannot allocate more pages: the master process virtual address space is exhausted.");
         }
         // All checks passed — mutate.
@@ -135,14 +135,14 @@ public class VirtualMemory<TAddress> where TAddress : IBinaryInteger<TAddress>
     /// </summary>
     /// <returns>The new process.</returns>
     /// <exception cref="VmLimitExceededException">Thrown when the soft process limit has been reached.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when the hard process identifier counter has reached its maximum value.</exception>
+    /// <exception cref="VmInvalidOperationException">Thrown when the hard process identifier counter has reached its maximum value.</exception>
     public VirtualProcess<TAddress> CreateProcess()
     {
         // Soft limit: check before hard id-counter limit.
         if (_processes.Count >= _maxMemoryProcesses)
             throw new VmLimitExceededException(VmLimitKind.MemoryProcessCount, _maxMemoryProcesses, _processes.Count + 1L);
         if (_nextProcessId == int.MaxValue)
-            throw new InvalidOperationException(
+            throw new VmInvalidOperationException(
                 $"Cannot create more processes: the process identifier counter has reached its maximum value ({int.MaxValue}).");
         var process = new VirtualProcess<TAddress>(_nextProcessId++, PageSize, isMaster: false);
         _processes.Add(process);
@@ -220,7 +220,7 @@ public class VirtualMemory<TAddress> where TAddress : IBinaryInteger<TAddress>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="page"/> is <see langword="null"/>.</exception>
     /// <exception cref="ArgumentException">Thrown when <paramref name="page"/> was not allocated by this instance.</exception>
     /// <exception cref="ObjectDisposedException">Thrown when <paramref name="page"/> has already been freed.</exception>
-    /// <exception cref="InvalidOperationException">
+    /// <exception cref="VmInvalidOperationException">
     /// Thrown when <paramref name="force"/> is <see langword="false"/> and the page is still
     /// mapped into one or more non-master processes. Unmap the page first or use <c>force: true</c>.
     /// </exception>
@@ -240,7 +240,7 @@ public class VirtualMemory<TAddress> where TAddress : IBinaryInteger<TAddress>
             .ToList();
 
         if (!force && nonMasterWithPage.Count > 0)
-            throw new InvalidOperationException(
+            throw new VmInvalidOperationException(
                 $"Cannot free page #{page.PageId}: it is still mapped into " +
                 $"{nonMasterWithPage.Count} non-master process(es). " +
                 "Unmap the page from all processes first, or call FreePage with force: true.");

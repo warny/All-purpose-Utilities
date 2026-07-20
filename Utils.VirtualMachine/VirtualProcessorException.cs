@@ -14,7 +14,7 @@ namespace Utils.VirtualMachine;
 /// <c>GetObjectData</c> override. Cross-process fault reporting should use a dedicated
 /// diagnostic DTO instead of binary exception serialization.
 /// </remarks>
-public class VirtualProcessorException : Exception
+public class VirtualProcessorException : VirtualMachineException
 {
     /// <summary>Gets the byte offset in the instruction stream where the error occurred, if available.</summary>
     public int? InstructionPointer { get; }

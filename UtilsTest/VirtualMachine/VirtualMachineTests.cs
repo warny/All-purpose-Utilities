@@ -1113,14 +1113,14 @@ namespace UtilsTest.VirtualMachine
         public void BoundedStack_Pop_EmptyStack_ThrowsInvalidOperationException()
         {
             var stack = new BoundedStack<int>();
-            Assert.ThrowsException<InvalidOperationException>(() => stack.Pop());
+            Assert.ThrowsException<VmInvalidOperationException>(() => stack.Pop());
         }
 
         [TestMethod]
         public void BoundedStack_Peek_EmptyStack_ThrowsInvalidOperationException()
         {
             var stack = new BoundedStack<int>();
-            Assert.ThrowsException<InvalidOperationException>(() => stack.Peek());
+            Assert.ThrowsException<VmInvalidOperationException>(() => stack.Peek());
         }
 
         [TestMethod]
@@ -1544,7 +1544,7 @@ namespace UtilsTest.VirtualMachine
         public void GenericMethod_ThrowsInvalidOperationException()
         {
             // Generic instruction methods cannot be compiled by expression-tree dispatch.
-            var ex = Assert.ThrowsException<InvalidOperationException>(
+            var ex = Assert.ThrowsException<VmInvalidOperationException>(
                 () => new GenericHandlerMachine());
             StringAssert.Contains(ex.Message, "Generic");
         }
@@ -1553,7 +1553,7 @@ namespace UtilsTest.VirtualMachine
         public void NonVoidReturn_ThrowsInvalidOperationException()
         {
             // Non-void instruction methods are not callable as InstructionDelegate.
-            var ex = Assert.ThrowsException<InvalidOperationException>(
+            var ex = Assert.ThrowsException<VmInvalidOperationException>(
                 () => new NonVoidHandlerMachine());
             StringAssert.Contains(ex.Message, "void");
         }
@@ -1562,7 +1562,7 @@ namespace UtilsTest.VirtualMachine
         public void UnsupportedOperandType_ThrowsInvalidOperationException()
         {
             // An operand type not present in INumberReader gives a clear error, not KeyNotFoundException.
-            var ex = Assert.ThrowsException<InvalidOperationException>(
+            var ex = Assert.ThrowsException<VmInvalidOperationException>(
                 () => new UnsupportedOperandMachine());
             StringAssert.Contains(ex.Message, "unsupported operand type");
         }
@@ -1570,7 +1570,7 @@ namespace UtilsTest.VirtualMachine
         [TestMethod]
         public void OutParameter_ThrowsInvalidOperationException()
         {
-            var ex = Assert.ThrowsException<InvalidOperationException>(
+            var ex = Assert.ThrowsException<VmInvalidOperationException>(
                 () => new OutParamMachine());
             StringAssert.Contains(ex.Message, "out");
         }
@@ -1578,7 +1578,7 @@ namespace UtilsTest.VirtualMachine
         [TestMethod]
         public void RefParameter_ThrowsInvalidOperationException()
         {
-            var ex = Assert.ThrowsException<InvalidOperationException>(
+            var ex = Assert.ThrowsException<VmInvalidOperationException>(
                 () => new RefParamMachine());
             StringAssert.Contains(ex.Message, "ref");
         }

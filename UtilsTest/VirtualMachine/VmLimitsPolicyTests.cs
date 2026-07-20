@@ -168,6 +168,26 @@ public class VmLimitsPolicyTests
         Assert.AreEqual(1_000_000L, el.MaxInstructions);
     }
 
+    // ── Exception hierarchy ───────────────────────────────────────────────────
+
+    [TestMethod]
+    public void VirtualMachineException_IsInvalidOperationException()
+    {
+        // VirtualMachineException : InvalidOperationException preserves backward compatibility.
+        var ex = new VmInvalidOperationException("test");
+        Assert.IsInstanceOfType<InvalidOperationException>(ex);
+        Assert.IsInstanceOfType<VirtualMachineException>(ex);
+    }
+
+    [TestMethod]
+    public void VmLimitExceededException_IsInvalidOperationException()
+    {
+        var ex = new VmLimitExceededException(VmLimitKind.CallStackDepth, 5L, 6L);
+        Assert.IsInstanceOfType<InvalidOperationException>(ex);
+        Assert.IsInstanceOfType<VmLimitException>(ex);
+        Assert.IsInstanceOfType<VirtualMachineException>(ex);
+    }
+
     // ── VmLimitExceededException ───────────────────────────────────────────────
 
     [TestMethod]

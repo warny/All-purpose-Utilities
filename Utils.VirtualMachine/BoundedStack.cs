@@ -55,11 +55,11 @@ public sealed class BoundedStack<T> : IEnumerable<T>
     /// Removes and returns the element at the top of the stack.
     /// </summary>
     /// <returns>The element removed from the top.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when the stack is empty.</exception>
+    /// <exception cref="VmInvalidOperationException">Thrown when the stack is empty.</exception>
     public T Pop()
     {
         if (_inner.Count == 0)
-            throw new InvalidOperationException("Operand stack underflow: Pop called on an empty stack.");
+            throw new VmInvalidOperationException("Operand stack underflow: Pop called on an empty stack.");
         return _inner.Pop();
     }
 
@@ -67,11 +67,11 @@ public sealed class BoundedStack<T> : IEnumerable<T>
     /// Returns the element at the top of the stack without removing it.
     /// </summary>
     /// <returns>The element at the top.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when the stack is empty.</exception>
+    /// <exception cref="VmInvalidOperationException">Thrown when the stack is empty.</exception>
     public T Peek()
     {
         if (_inner.Count == 0)
-            throw new InvalidOperationException("Operand stack underflow: Peek called on an empty stack.");
+            throw new VmInvalidOperationException("Operand stack underflow: Peek called on an empty stack.");
         return _inner.Peek();
     }
 

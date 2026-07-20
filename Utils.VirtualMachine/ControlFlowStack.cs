@@ -72,7 +72,7 @@ public class ControlFlowStack
     /// <param name="endAddress">Address immediately after the ENDIF.</param>
     /// <param name="elseAddress">Address of the ELSE branch, or <see langword="null"/> if absent.</param>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when any non-null address is negative.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when <see cref="MaxDepth"/> would be exceeded.</exception>
+    /// <exception cref="VmLimitExceededException">Thrown when <see cref="MaxDepth"/> would be exceeded.</exception>
     public void PushConditional(int startAddress, int endAddress, int? elseAddress = null)
     {
         ThrowIfDepthExceeded();
@@ -83,7 +83,7 @@ public class ControlFlowStack
     /// <param name="startAddress">Address of the loop header; target of CONTINUE.</param>
     /// <param name="endAddress">Address after the loop; target of BREAK.</param>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when any address is negative.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when <see cref="MaxDepth"/> would be exceeded.</exception>
+    /// <exception cref="VmLimitExceededException">Thrown when <see cref="MaxDepth"/> would be exceeded.</exception>
     public void PushLoop(int startAddress, int endAddress)
     {
         ThrowIfDepthExceeded();
@@ -99,7 +99,7 @@ public class ControlFlowStack
     /// An exception block with no handler is unreachable and indicates malformed bytecode.
     /// </exception>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when any non-null address is negative.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when <see cref="MaxDepth"/> would be exceeded.</exception>
+    /// <exception cref="VmLimitExceededException">Thrown when <see cref="MaxDepth"/> would be exceeded.</exception>
     public void PushException(int startAddress, int? catchAddress, int? finallyAddress)
     {
         if (catchAddress is null && finallyAddress is null)
@@ -118,11 +118,11 @@ public class ControlFlowStack
     /// <summary>
     /// Closes the innermost open block. Called at ENDIF, ENDLOOP, or ENDTRY.
     /// </summary>
-    /// <exception cref="InvalidOperationException">Thrown when no block is open.</exception>
+    /// <exception cref="VmInvalidOperationException">Thrown when no block is open.</exception>
     public IControlFlowBlock Pop()
     {
         if (_blocks.Count == 0)
-            throw new InvalidOperationException("Control flow stack underflow: no open block to close.");
+            throw new VmInvalidOperationException("Control flow stack underflow: no open block to close.");
         return _blocks.Pop();
     }
 
@@ -133,14 +133,14 @@ public class ControlFlowStack
     /// </summary>
     /// <typeparam name="T">The expected concrete block type.</typeparam>
     /// <returns>The closed block cast to <typeparamref name="T"/>.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when no block is open.</exception>
+    /// <exception cref="VmInvalidOperationException">Thrown when no block is open.</exception>
     /// <exception cref="VirtualProcessorException">
     /// Thrown when the innermost block is not of type <typeparamref name="T"/>.
     /// </exception>
     public T Pop<T>() where T : class, IControlFlowBlock
     {
         if (_blocks.Count == 0)
-            throw new InvalidOperationException("Control flow stack underflow: no open block to close.");
+            throw new VmInvalidOperationException("Control flow stack underflow: no open block to close.");
         if (_blocks.Peek() is not T)
             throw new VirtualProcessorException(
                 $"Control flow type mismatch: expected {typeof(T).Name} but found {_blocks.Peek().GetType().Name}.");
@@ -157,14 +157,14 @@ public class ControlFlowStack
     /// The exception is thrown before any block is popped, so the stack remains intact when
     /// malformed bytecode issues BREAK outside a loop.
     /// </remarks>
-    /// <exception cref="InvalidOperationException">Thrown when no enclosing loop is in scope.</exception>
+    /// <exception cref="VmInvalidOperationException">Thrown when no enclosing loop is in scope.</exception>
     public void Break(Context context)
     {
         ArgumentNullException.ThrowIfNull(context);
         // Validate first — locate the nearest loop without mutating the stack.
         LoopBlock? target = FindEnclosing<LoopBlock>();
         if (target is null)
-            throw new InvalidOperationException("BREAK used outside of a loop.");
+            throw new VmInvalidOperationException("BREAK used outside of a loop.");
 
         // Commit: pop all inner blocks, including the loop itself.
         while (_blocks.TryPop(out var block))
@@ -187,14 +187,14 @@ public class ControlFlowStack
     /// The exception is thrown before any block is popped, so the stack remains intact when
     /// malformed bytecode issues CONTINUE outside a loop.
     /// </remarks>
-    /// <exception cref="InvalidOperationException">Thrown when no enclosing loop is in scope.</exception>
+    /// <exception cref="VmInvalidOperationException">Thrown when no enclosing loop is in scope.</exception>
     public void Continue(Context context)
     {
         ArgumentNullException.ThrowIfNull(context);
         // Validate first — locate the nearest loop without mutating the stack.
         LoopBlock? target = FindEnclosing<LoopBlock>();
         if (target is null)
-            throw new InvalidOperationException("CONTINUE used outside of a loop.");
+            throw new VmInvalidOperationException("CONTINUE used outside of a loop.");
 
         // Commit: pop all inner blocks that are nested inside the loop, but keep the loop itself.
         while (_blocks.TryPeek(out var block))
@@ -223,7 +223,7 @@ public class ControlFlowStack
     /// <see langword="false"/> if the block was popped with no finally to redirect to.
     /// </returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="context"/> is <see langword="null"/>.</exception>
-    /// <exception cref="InvalidOperationException">
+    /// <exception cref="VmInvalidOperationException">
     /// Thrown when the innermost open block is not an <see cref="ExceptionBlock"/> in the
     /// <see cref="ExceptionBlockPhase.Catch"/> phase.
     /// </exception>
@@ -245,7 +245,7 @@ public class ControlFlowStack
             _blocks.Pop();
             return false;
         }
-        throw new InvalidOperationException("ENDCATCH used outside of a catch block.");
+        throw new VmInvalidOperationException("ENDCATCH used outside of a catch block.");
     }
 
     /// <summary>
@@ -261,7 +261,7 @@ public class ControlFlowStack
     /// (normal exit, or unhandled exception that reached the top of the control-flow stack).
     /// </returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="context"/> is <see langword="null"/>.</exception>
-    /// <exception cref="InvalidOperationException">
+    /// <exception cref="VmInvalidOperationException">
     /// Thrown when the innermost open block is not an <see cref="ExceptionBlock"/>.
     /// </exception>
     public bool EndFinally(Context context)
@@ -274,7 +274,7 @@ public class ControlFlowStack
                 return Throw(context, ex.ThrownValue);
             return false;
         }
-        throw new InvalidOperationException("ENDFINALLY used outside of an exception block.");
+        throw new VmInvalidOperationException("ENDFINALLY used outside of an exception block.");
     }
 
     /// <summary>

@@ -89,7 +89,7 @@ public class Scheduler<T> where T : Context
     /// instruction pointer and stack state.
     /// </exception>
     /// <exception cref="VmLimitExceededException">Thrown when the soft process limit has been reached.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when the process identifier counter has reached its maximum value.</exception>
+    /// <exception cref="VmInvalidOperationException">Thrown when the process identifier counter has reached its maximum value.</exception>
     public ScheduledProcess<T> AddProcess(T context, VirtualProcessor<T> processor, int priority = 0, string? name = null)
     {
         ArgumentNullException.ThrowIfNull(context);
@@ -98,7 +98,7 @@ public class Scheduler<T> where T : Context
         if (_processes.Count >= _maxScheduledProcesses)
             throw new VmLimitExceededException(VmLimitKind.ScheduledProcessCount, _maxScheduledProcesses, _processes.Count + 1L);
         if (_nextId == int.MaxValue)
-            throw new InvalidOperationException(
+            throw new VmInvalidOperationException(
                 $"Cannot add more processes: the process identifier counter has reached its maximum value ({int.MaxValue}).");
         if (_processes.Any(p => ReferenceEquals(p.Context, context)))
             throw new ArgumentException(
