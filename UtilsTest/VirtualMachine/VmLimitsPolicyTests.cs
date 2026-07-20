@@ -364,7 +364,7 @@ public class VmLimitsPolicyTests
     {
         var proc = new LimitTestProcessor();
         var ctx = new DefaultContext(BuildNStepProgram(5));
-        proc.Execute(ctx, ExecutionLimits.Unlimited);
+        proc.Execute(ctx, ExecutionLimits.Unlimited, CancellationToken.None);
         // If no exception, the program ran to completion.
         Assert.AreEqual(-1, ctx.InstructionPointer);
     }
@@ -374,7 +374,7 @@ public class VmLimitsPolicyTests
     {
         var proc = new LimitTestProcessor();
         var ctx = new DefaultContext(BuildNStepProgram(3)); // 4 instructions: 3 STEP + HALT
-        proc.Execute(ctx, new ExecutionLimits(100));
+        proc.Execute(ctx, new ExecutionLimits(100), CancellationToken.None);
         Assert.AreEqual(-1, ctx.InstructionPointer);
     }
 
@@ -385,7 +385,7 @@ public class VmLimitsPolicyTests
         // Budget of 4 should allow all 4 to dispatch before the loop exits naturally.
         var proc = new LimitTestProcessor();
         var ctx = new DefaultContext(BuildNStepProgram(3)); // 4 instructions
-        proc.Execute(ctx, new ExecutionLimits(4));
+        proc.Execute(ctx, new ExecutionLimits(4), CancellationToken.None);
         Assert.AreEqual(-1, ctx.InstructionPointer);
     }
 
@@ -396,7 +396,7 @@ public class VmLimitsPolicyTests
         var proc = new LimitTestProcessor();
         var ctx = new DefaultContext(BuildNStepProgram(3));
         Assert.ThrowsException<InstructionBudgetExceededException>(
-            () => proc.Execute(ctx, new ExecutionLimits(2)));
+            () => proc.Execute(ctx, new ExecutionLimits(2), CancellationToken.None));
     }
 
     [TestMethod]
@@ -406,7 +406,7 @@ public class VmLimitsPolicyTests
         var proc = new LimitTestProcessor();
         var ctx = new DefaultContext(BuildNStepProgram(5));
         var ex = Assert.ThrowsException<InstructionBudgetExceededException>(
-            () => proc.Execute(ctx, new ExecutionLimits(3)));
+            () => proc.Execute(ctx, new ExecutionLimits(3), CancellationToken.None));
         Assert.AreEqual(3L, ex.Budget);
         Assert.IsInstanceOfType<VmLimitExceededException>(ex);
     }
@@ -440,7 +440,7 @@ public class VmLimitsPolicyTests
     {
         var scheduler = new Scheduler<DefaultContext>();
         scheduler.AddProcess(SchCtx(0x01, 0x01, 0x00), SchProc()); // 2 STEP + HALT
-        scheduler.Run(ExecutionLimits.Unlimited);
+        scheduler.Run(ExecutionLimits.Unlimited, CancellationToken.None);
         Assert.IsTrue(scheduler.Processes[0].State == ProcessState.Terminated);
     }
 
@@ -454,7 +454,7 @@ public class VmLimitsPolicyTests
         program[10] = 0x00;
         scheduler.AddProcess(new DefaultContext(program), SchProc());
         Assert.ThrowsException<InstructionBudgetExceededException>(
-            () => scheduler.Run(new ExecutionLimits(3)));
+            () => scheduler.Run(new ExecutionLimits(3), CancellationToken.None));
     }
 
     [TestMethod]
@@ -465,7 +465,7 @@ public class VmLimitsPolicyTests
         for (int i = 0; i < 10; i++) program[i] = 0x01;
         program[10] = 0x00;
         var proc = scheduler.AddProcess(new DefaultContext(program), SchProc());
-        try { scheduler.Run(new ExecutionLimits(3)); } catch (InstructionBudgetExceededException) { }
+        try { scheduler.Run(new ExecutionLimits(3), CancellationToken.None); } catch (InstructionBudgetExceededException) { }
         Assert.AreEqual(ProcessState.Ready, proc.State);
     }
 
@@ -623,7 +623,7 @@ public class VmLimitsPolicyTests
         scheduler.AddProcess(new DefaultContext(program), SchProc());
         scheduler.AddProcess(new DefaultContext((byte[])program.Clone()), SchProc());
         Assert.ThrowsException<InstructionBudgetExceededException>(
-            () => scheduler.Run(new ExecutionLimits(5)));
+            () => scheduler.Run(new ExecutionLimits(5), CancellationToken.None));
     }
 
     // ── SchedulerRun_RunAsync with ExecutionLimits ─────────────────────────────
@@ -637,7 +637,7 @@ public class VmLimitsPolicyTests
         program[10] = 0x00;
         scheduler.AddProcess(new DefaultContext(program), SchProc());
         await Assert.ThrowsExceptionAsync<InstructionBudgetExceededException>(
-            () => scheduler.RunAsync(new ExecutionLimits(3)));
+            () => scheduler.RunAsync(new ExecutionLimits(3), CancellationToken.None));
     }
 
     [TestMethod]

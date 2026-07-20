@@ -439,7 +439,7 @@ public abstract class VirtualProcessor<T> where T : Context
     /// Thrown when <paramref name="limits"/> specifies a budget and that many instructions have been
     /// dispatched without the program terminating naturally.
     /// </exception>
-    public void Execute(T context, ExecutionLimits limits, CancellationToken cancellationToken = default)
+    public void Execute(T context, ExecutionLimits limits, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(limits);

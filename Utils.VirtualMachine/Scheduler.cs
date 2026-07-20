@@ -269,7 +269,7 @@ public class Scheduler<T> where T : Context
     /// Thrown when <paramref name="limits"/> specifies a budget and that many instructions have been
     /// dispatched in this call without all processes terminating.
     /// </exception>
-    public void Run(ExecutionLimits limits, CancellationToken cancellationToken = default)
+    public void Run(ExecutionLimits limits, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(limits);
         long startCount = InstructionsExecuted;
@@ -334,7 +334,7 @@ public class Scheduler<T> where T : Context
     /// Thrown when <paramref name="limits"/> specifies a budget and that many instructions have been
     /// dispatched in this call without all processes terminating.
     /// </exception>
-    public async Task RunAsync(ExecutionLimits limits, CancellationToken cancellationToken = default)
+    public async Task RunAsync(ExecutionLimits limits, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(limits);
         long startCount = InstructionsExecuted;
