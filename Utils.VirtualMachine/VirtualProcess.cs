@@ -18,12 +18,26 @@ namespace Utils.VirtualMachine;
 /// <see cref="Read"/> or <see cref="Write"/> to access memory; both methods handle cross-page
 /// operations transparently.
 /// <para>
-/// <see cref="Read"/> and <see cref="Write"/> are fully atomic: either the entire range is
-/// validated and transferred, or no bytes are copied and a <see cref="MemoryAccessException"/>
-/// is thrown. Partial updates do not occur.
+/// <b>Atomicity:</b> <see cref="Read"/> and <see cref="Write"/> are fully atomic for
+/// supported single-threaded use. All range validation occurs before any byte is transferred.
+/// Either the entire requested range is successfully processed, or a
+/// <see cref="MemoryAccessException"/> is thrown and no memory or destination buffer is modified.
+/// Partial updates do not occur. This guarantee applies to the supported single-threaded use
+/// model; it does not imply hardware atomicity or thread safety.
 /// </para>
 /// <para>
-/// Negative addresses are always rejected for signed <typeparamref name="TAddress"/> types.
+/// <b>Address range:</b> virtual address ranges are strictly contiguous. A range must not wrap
+/// around the address space (e.g. from <c>uint.MaxValue</c> to <c>0</c>). Any operation whose
+/// end address exceeds the maximum representable value of <typeparamref name="TAddress"/> is
+/// rejected before copying any byte.
+/// </para>
+/// <para>
+/// <b>Negative addresses</b> are always rejected for signed <typeparamref name="TAddress"/> types,
+/// including for zero-length operations.
+/// </para>
+/// <para>
+/// <b>Zero-length operations:</b> <see cref="Read"/> and <see cref="Write"/> with an empty span
+/// succeed without requiring any page mapping, provided the start address is non-negative.
 /// </para>
 /// <para>
 /// <b>Thread safety:</b> this class is not thread-safe. All reads, writes, and mapping
@@ -127,69 +141,64 @@ public class VirtualProcess<TAddress> where TAddress : IBinaryInteger<TAddress>
     /// <summary>
     /// Reads <paramref name="destination"/><c>.Length</c> bytes starting at
     /// <paramref name="virtualAddress"/>. Transparently crosses page boundaries.
-    /// The operation is atomic: either all bytes are copied or none are (the destination
-    /// buffer is not modified when a <see cref="MemoryAccessException"/> is thrown).
     /// </summary>
     /// <param name="virtualAddress">The virtual address to read from. Must be non-negative for signed address types.</param>
     /// <param name="destination">Buffer that receives the bytes.</param>
+    /// <remarks>
+    /// The operation is atomic: all validation is performed before any byte is copied. If any
+    /// byte of the range is invalid (negative address, range overflow, unmapped page), no bytes
+    /// are written to <paramref name="destination"/> and a <see cref="MemoryAccessException"/>
+    /// is thrown. A zero-length <paramref name="destination"/> succeeds without requiring a mapping.
+    /// </remarks>
     /// <exception cref="ObjectDisposedException">Thrown when the process has been freed.</exception>
     /// <exception cref="MemoryAccessException">
-    /// Thrown when the address is negative (for signed types) or when any byte of the range
-    /// falls in an unmapped page. No bytes are copied in this case.
+    /// Thrown when the address is negative (for signed types), when the range exceeds the maximum
+    /// representable address, or when any byte of the range falls in an unmapped page.
+    /// No bytes are copied in this case.
     /// </exception>
     public void Read(TAddress virtualAddress, Span<byte> destination)
     {
         ThrowIfFreed();
-        // Validate the entire range first; no bytes are copied until all pages are confirmed mapped.
-        ValidateRange(virtualAddress, destination.Length, PageAccess.ReadOnly);
-
-        int remaining = destination.Length;
-        int destOffset = 0;
-        TAddress currentAddress = virtualAddress;
-        while (remaining > 0)
+        var plan = BuildTransferPlan(virtualAddress, destination.Length, PageAccess.ReadOnly);
+        int offset = 0;
+        foreach (var segment in plan)
         {
-            var (pageIndex, byteOffset) = Decompose(currentAddress);
-            var entry = _pageTable[pageIndex];
-            int bytesInPage = Math.Min(remaining, _pageSize - byteOffset);
-            entry.Page.Data.AsSpan(byteOffset, bytesInPage).CopyTo(destination.Slice(destOffset, bytesInPage));
-            remaining -= bytesInPage;
-            destOffset += bytesInPage;
-            currentAddress += TAddress.CreateChecked(bytesInPage);
+            segment.Page.Data
+                .AsSpan(segment.PageOffset, segment.Length)
+                .CopyTo(destination.Slice(offset, segment.Length));
+            offset += segment.Length;
         }
     }
 
     /// <summary>
     /// Writes <paramref name="source"/> bytes starting at <paramref name="virtualAddress"/>.
     /// Transparently crosses page boundaries.
-    /// The operation is atomic: either all bytes are written or none are (memory is not
-    /// modified when a <see cref="MemoryAccessException"/> is thrown).
     /// </summary>
     /// <param name="virtualAddress">The virtual address to write to. Must be non-negative for signed address types.</param>
     /// <param name="source">Bytes to write.</param>
+    /// <remarks>
+    /// The operation is atomic: all validation is performed before any byte is written. If any
+    /// byte of the range is invalid (negative address, range overflow, unmapped page, read-only
+    /// page), no physical page is modified and a <see cref="MemoryAccessException"/> is thrown.
+    /// A zero-length <paramref name="source"/> succeeds without requiring a mapping.
+    /// </remarks>
     /// <exception cref="ObjectDisposedException">Thrown when the process has been freed.</exception>
     /// <exception cref="MemoryAccessException">
-    /// Thrown when the address is negative (for signed types), when any byte of the range falls
-    /// in an unmapped page, or when any touched page has <see cref="PageAccess.ReadOnly"/> rights.
+    /// Thrown when the address is negative (for signed types), when the range exceeds the maximum
+    /// representable address, when any byte of the range falls in an unmapped page, or when any
+    /// touched page has <see cref="PageAccess.ReadOnly"/> rights.
     /// No bytes are written in this case.
     /// </exception>
     public void Write(TAddress virtualAddress, ReadOnlySpan<byte> source)
     {
         ThrowIfFreed();
-        // Validate the entire range first; no bytes are written until all pages are confirmed writable.
-        ValidateRange(virtualAddress, source.Length, PageAccess.ReadWrite);
-
-        int remaining = source.Length;
-        int srcOffset = 0;
-        TAddress currentAddress = virtualAddress;
-        while (remaining > 0)
+        var plan = BuildTransferPlan(virtualAddress, source.Length, PageAccess.ReadWrite);
+        int offset = 0;
+        foreach (var segment in plan)
         {
-            var (pageIndex, byteOffset) = Decompose(currentAddress);
-            var entry = _pageTable[pageIndex];
-            int bytesInPage = Math.Min(remaining, _pageSize - byteOffset);
-            source.Slice(srcOffset, bytesInPage).CopyTo(entry.Page.Data.AsSpan(byteOffset, bytesInPage));
-            remaining -= bytesInPage;
-            srcOffset += bytesInPage;
-            currentAddress += TAddress.CreateChecked(bytesInPage);
+            source.Slice(offset, segment.Length)
+                .CopyTo(segment.Page.Data.AsSpan(segment.PageOffset, segment.Length));
+            offset += segment.Length;
         }
     }
 
@@ -219,18 +228,71 @@ public class VirtualProcess<TAddress> where TAddress : IBinaryInteger<TAddress>
     }
 
     /// <summary>
-    /// Validates that every page touched by <paramref name="length"/> bytes starting at
-    /// <paramref name="startAddress"/> is mapped and has at least <paramref name="requiredAccess"/>.
-    /// Throws <see cref="MemoryAccessException"/> on the first violation without modifying any state.
+    /// A validated segment of a multi-page transfer: the physical page to read from or write to,
+    /// the byte offset within that page, and the number of bytes in this fragment.
     /// </summary>
-    private void ValidateRange(TAddress startAddress, int length, PageAccess requiredAccess)
+    private readonly record struct MemorySegment(VirtualPage Page, int PageOffset, int Length);
+
+    /// <summary>
+    /// Validates the full address range and collects one <see cref="MemorySegment"/> per touched
+    /// page. All checks complete before any byte is transferred; the returned array is ready to
+    /// execute without further validation.
+    /// </summary>
+    /// <param name="startAddress">The first byte's virtual address.</param>
+    /// <param name="length">Number of bytes to transfer. Must be non-negative.</param>
+    /// <param name="requiredAccess">
+    /// <see cref="PageAccess.ReadOnly"/> for reads, <see cref="PageAccess.ReadWrite"/> for writes.
+    /// </param>
+    /// <returns>
+    /// An array of segments covering the requested range in address order. Empty when
+    /// <paramref name="length"/> is zero.
+    /// </returns>
+    /// <exception cref="MemoryAccessException">
+    /// Thrown when:
+    /// <list type="bullet">
+    ///   <item><paramref name="startAddress"/> is negative for a signed address type;</item>
+    ///   <item>the range <c>[startAddress, startAddress + length − 1]</c> wraps around or exceeds
+    ///   the maximum representable <typeparamref name="TAddress"/> value;</item>
+    ///   <item>any touched page is not mapped in this process's page table;</item>
+    ///   <item><paramref name="requiredAccess"/> is <see cref="PageAccess.ReadWrite"/> and any
+    ///   touched page has <see cref="PageAccess.ReadOnly"/> rights.</item>
+    /// </list>
+    /// No state is mutated when this method throws.
+    /// </exception>
+    private MemorySegment[] BuildTransferPlan(TAddress startAddress, int length, PageAccess requiredAccess)
     {
-        // Enforce the negative-address contract even for zero-length operations.
+        // Negative addresses are always invalid, even for zero-length operations.
         if (TAddress.IsNegative(startAddress))
             throw new MemoryAccessException(FormatAddress(startAddress), requiredAccess);
-        if (length == 0) return;
-        TAddress currentAddress = startAddress;
+
+        // Zero-length: succeed immediately without requiring any mapping.
+        if (length == 0)
+            return [];
+
+        // Validate the full address range before traversing mappings.
+        // Required: startAddress + (length − 1) must be representable by TAddress.
+        // Using checked arithmetic catches both signed overflow (int, long, sbyte) and
+        // unsigned wrap-around (uint, ulong, byte). This is the same pattern already used
+        // in VirtualMemory.AllocatePage.
+        try
+        {
+            var lengthMinusOne = TAddress.CreateChecked(length - 1);
+            _ = checked(startAddress + lengthMinusOne);
+        }
+        catch (OverflowException)
+        {
+            throw new MemoryAccessException(FormatAddress(startAddress), requiredAccess);
+        }
+
+        // Collect one segment per touched page.
+        // Loop termination: `remaining` decreases by at least 1 per iteration (bytesInPage ≥ 1
+        // since _pageSize ≥ 1 and byteOffset < _pageSize). At most `length` iterations total.
+        // Address arithmetic: the pre-validated range guarantees no intermediate address overflows.
+        int estimatedSegments = _pageSize > 1 ? (length - 1) / _pageSize + 2 : length;
+        var segments = new List<MemorySegment>(capacity: estimatedSegments);
         int remaining = length;
+        TAddress currentAddress = startAddress;
+
         while (remaining > 0)
         {
             var (pageIndex, byteOffset) = Decompose(currentAddress);
@@ -238,10 +300,14 @@ public class VirtualProcess<TAddress> where TAddress : IBinaryInteger<TAddress>
                 throw new MemoryAccessException(FormatAddress(currentAddress), requiredAccess);
             if (requiredAccess == PageAccess.ReadWrite && entry.Access == PageAccess.ReadOnly)
                 throw new MemoryAccessException(FormatAddress(currentAddress), requiredAccess, PageAccess.ReadOnly);
+
             int bytesInPage = Math.Min(remaining, _pageSize - byteOffset);
+            segments.Add(new MemorySegment(entry.Page, byteOffset, bytesInPage));
             remaining -= bytesInPage;
             currentAddress += TAddress.CreateChecked(bytesInPage);
         }
+
+        return [.. segments];
     }
 
     /// <summary>
