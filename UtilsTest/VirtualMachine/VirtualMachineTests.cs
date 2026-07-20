@@ -1101,12 +1101,12 @@ namespace UtilsTest.VirtualMachine
     public class BoundedStackTests
     {
         [TestMethod]
-        public void BoundedStack_Push_BeyondMaxDepth_ThrowsInvalidOperationException()
+        public void BoundedStack_Push_BeyondMaxDepth_ThrowsVmLimitExceededException()
         {
             var stack = new BoundedStack<int>(maxDepth: 2);
             stack.Push(1);
             stack.Push(2);
-            Assert.ThrowsException<InvalidOperationException>(() => stack.Push(3));
+            Assert.ThrowsException<VmLimitExceededException>(() => stack.Push(3));
         }
 
         [TestMethod]
@@ -1157,7 +1157,7 @@ namespace UtilsTest.VirtualMachine
         {
             var ctx = new DefaultContext(ReadOnlyMemory<byte>.Empty, maxOperandStackDepth: 1);
             ctx.Stack.Push(42);
-            Assert.ThrowsException<InvalidOperationException>(() => ctx.Stack.Push(99));
+            Assert.ThrowsException<VmLimitExceededException>(() => ctx.Stack.Push(99));
         }
 
         [TestMethod]
@@ -1165,7 +1165,7 @@ namespace UtilsTest.VirtualMachine
         {
             var ctx = new TypedStackContext<int>(ReadOnlyMemory<byte>.Empty, maxOperandStackDepth: 1);
             ctx.Stack.Push(1);
-            Assert.ThrowsException<InvalidOperationException>(() => ctx.Stack.Push(2));
+            Assert.ThrowsException<VmLimitExceededException>(() => ctx.Stack.Push(2));
         }
 
         // ── Context.Data defensive copy (item 43) ─────────────────────────────────────────────

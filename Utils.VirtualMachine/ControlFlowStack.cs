@@ -56,6 +56,17 @@ public class ControlFlowStack
         MaxDepth = maxDepth;
     }
 
+    /// <summary>
+    /// Initializes a new <see cref="ControlFlowStack"/> from a <see cref="VirtualMachineLimits"/>,
+    /// using <see cref="VirtualMachineLimits.MaxControlFlowDepth"/> as the maximum depth.
+    /// </summary>
+    /// <param name="limits">The limits policy to apply.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="limits"/> is <see langword="null"/>.</exception>
+    public ControlFlowStack(VirtualMachineLimits limits)
+        : this((limits ?? throw new ArgumentNullException(nameof(limits))).MaxControlFlowDepth)
+    {
+    }
+
     /// <summary>Opens a conditional (if/else) block.</summary>
     /// <param name="startAddress">Address of the IF instruction.</param>
     /// <param name="endAddress">Address immediately after the ENDIF.</param>
@@ -101,8 +112,7 @@ public class ControlFlowStack
     private void ThrowIfDepthExceeded()
     {
         if (_blocks.Count >= MaxDepth)
-            throw new InvalidOperationException(
-                $"Control-flow stack overflow: maximum nesting depth of {MaxDepth} exceeded.");
+            throw new VmLimitExceededException(VmLimitKind.ControlFlowDepth, MaxDepth, _blocks.Count + 1L);
     }
 
     /// <summary>

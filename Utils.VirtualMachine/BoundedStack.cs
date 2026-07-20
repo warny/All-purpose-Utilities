@@ -41,14 +41,13 @@ public sealed class BoundedStack<T> : IEnumerable<T>
     /// Pushes an element onto the stack.
     /// </summary>
     /// <param name="item">The element to push.</param>
-    /// <exception cref="InvalidOperationException">
+    /// <exception cref="VmLimitExceededException">
     /// Thrown when the stack already contains <see cref="MaxDepth"/> elements.
     /// </exception>
     public void Push(T item)
     {
         if (_inner.Count >= MaxDepth)
-            throw new InvalidOperationException(
-                $"Operand stack overflow: cannot push more than {MaxDepth} elements.");
+            throw new VmLimitExceededException(VmLimitKind.OperandStackDepth, MaxDepth, _inner.Count + 1L);
         _inner.Push(item);
     }
 

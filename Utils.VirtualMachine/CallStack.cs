@@ -38,6 +38,17 @@ public class CallStack : ICallStack
         MaxDepth = maxDepth;
     }
 
+    /// <summary>
+    /// Initializes a new instance from a <see cref="VirtualMachineLimits"/>, using
+    /// <see cref="VirtualMachineLimits.MaxCallStackDepth"/> as the maximum depth.
+    /// </summary>
+    /// <param name="limits">The limits policy to apply.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="limits"/> is <see langword="null"/>.</exception>
+    public CallStack(VirtualMachineLimits limits)
+        : this((limits ?? throw new ArgumentNullException(nameof(limits))).MaxCallStackDepth)
+    {
+    }
+
     /// <inheritdoc/>
     public void Call(int returnAddress)
     {
@@ -45,7 +56,7 @@ public class CallStack : ICallStack
             throw new ArgumentOutOfRangeException(nameof(returnAddress),
                 "Return address must be non-negative. Negative values are reserved as termination sentinels.");
         if (_frames.Count >= MaxDepth)
-            throw new InvalidOperationException($"Call stack overflow: maximum depth of {MaxDepth} exceeded.");
+            throw new VmLimitExceededException(VmLimitKind.CallStackDepth, MaxDepth, _frames.Count + 1L);
         _frames.Push(new CallFrame(returnAddress));
     }
 
@@ -73,6 +84,19 @@ public class CallStackContext : DefaultContext
     public CallStackContext(ReadOnlyMemory<byte> data) : base(data)
     {
         CallStack = new CallStack();
+    }
+
+    /// <summary>
+    /// Initializes a new instance with limits from a <see cref="VirtualMachineLimits"/>.
+    /// Uses <see cref="VirtualMachineLimits.MaxCallStackDepth"/> and
+    /// <see cref="VirtualMachineLimits.MaxOperandStackDepth"/>.
+    /// </summary>
+    /// <param name="data">The byte data containing the instruction stream.</param>
+    /// <param name="limits">The limits policy to apply.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="limits"/> is <see langword="null"/>.</exception>
+    public CallStackContext(ReadOnlyMemory<byte> data, VirtualMachineLimits limits) : base(data, (limits ?? throw new ArgumentNullException(nameof(limits))).MaxOperandStackDepth)
+    {
+        CallStack = new CallStack(limits);
     }
 
     /// <summary>

@@ -6,15 +6,17 @@ namespace Utils.VirtualMachine;
 /// Thrown when the number of dispatched instructions exceeds the configured instruction budget.
 /// </summary>
 /// <remarks>
-/// This exception is not marked <c>[Serializable]</c> because the <see cref="Budget"/> field
-/// has no corresponding serialization constructor or <c>GetObjectData</c> override.
+/// Derives from <see cref="VmLimitExceededException"/> with
+/// <see cref="VmLimitExceededException.LimitKind"/> equal to <see cref="VmLimitKind.InstructionCount"/>.
+/// The <see cref="Budget"/> property is a convenience alias for <see cref="VmLimitExceededException.Limit"/>.
+/// Existing callers catching <see cref="InstructionBudgetExceededException"/> specifically continue to work.
 /// </remarks>
-public class InstructionBudgetExceededException : Exception
+public class InstructionBudgetExceededException : VmLimitExceededException
 {
-    /// <summary>Gets the instruction budget that was exceeded.</summary>
-    public long Budget { get; }
+    /// <summary>Gets the instruction budget that was exceeded. Alias for <see cref="VmLimitExceededException.Limit"/>.</summary>
+    public long Budget => Limit;
 
-    /// <summary>Initializes a new instance of the <see cref="InstructionBudgetExceededException"/> class.</summary>
+    /// <summary>Initializes a new instance with no diagnostic data.</summary>
     public InstructionBudgetExceededException() { }
 
     /// <summary>Initializes a new instance with a specified error message.</summary>
@@ -32,8 +34,8 @@ public class InstructionBudgetExceededException : Exception
     /// </summary>
     /// <param name="budget">The instruction budget that was exceeded.</param>
     public InstructionBudgetExceededException(long budget)
-        : base($"Instruction budget of {budget:N0} instructions was exceeded.")
+        : base(VmLimitKind.InstructionCount, budget, budget + 1,
+               $"Instruction budget of {budget:N0} instructions was exceeded.")
     {
-        Budget = budget;
     }
 }

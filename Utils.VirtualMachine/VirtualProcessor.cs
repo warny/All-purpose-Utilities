@@ -417,13 +417,38 @@ public abstract class VirtualProcessor<T> where T : Context
     /// </exception>
     public void Execute(T context, CancellationToken cancellationToken = default, long maxInstructions = 0)
     {
+        if (maxInstructions < 0)
+            throw new ArgumentOutOfRangeException(nameof(maxInstructions),
+                "maxInstructions must be zero (unlimited) or positive.");
+        Execute(context, maxInstructions > 0 ? new ExecutionLimits(maxInstructions) : ExecutionLimits.Unlimited, cancellationToken);
+    }
+
+    /// <summary>
+    /// Executes all instructions until the end of the data stream, until
+    /// <see cref="Context.InstructionPointer"/> becomes negative (program termination signal),
+    /// until <paramref name="cancellationToken"/> is cancelled, or until the budget in
+    /// <paramref name="limits"/> is exhausted.
+    /// </summary>
+    /// <param name="context">The execution context.</param>
+    /// <param name="limits">Execution limits controlling the instruction budget.</param>
+    /// <param name="cancellationToken">Token that can stop execution between instructions.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="context"/> or <paramref name="limits"/> is <see langword="null"/>.</exception>
+    /// <exception cref="VirtualProcessorException">Thrown on an unknown opcode sequence.</exception>
+    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is cancelled.</exception>
+    /// <exception cref="InstructionBudgetExceededException">
+    /// Thrown when <paramref name="limits"/> specifies a budget and that many instructions have been
+    /// dispatched without the program terminating naturally.
+    /// </exception>
+    public void Execute(T context, ExecutionLimits limits, CancellationToken cancellationToken = default)
+    {
         ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(limits);
         long dispatched = 0;
         while (context.InstructionPointer >= 0 && context.InstructionPointer < context.Data.Length)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (maxInstructions > 0 && dispatched >= maxInstructions)
-                throw new InstructionBudgetExceededException(maxInstructions);
+            if (limits.MaxInstructions.HasValue && dispatched >= limits.MaxInstructions.Value)
+                throw new InstructionBudgetExceededException(limits.MaxInstructions.Value);
             OnStep(context);
             TryDispatch(context);
             dispatched++;
@@ -690,6 +715,18 @@ public class DefaultContext : Context
     public DefaultContext(ReadOnlyMemory<byte> data, int maxOperandStackDepth) : base(data)
     {
         Stack = new BoundedStack<object>(maxOperandStackDepth);
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DefaultContext"/> class with the given data buffer
+    /// and limits sourced from a <see cref="VirtualMachineLimits"/>.
+    /// </summary>
+    /// <param name="data">The byte data containing all instructions or data to process.</param>
+    /// <param name="limits">The limits policy. <see cref="VirtualMachineLimits.MaxOperandStackDepth"/> is used.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="limits"/> is <see langword="null"/>.</exception>
+    public DefaultContext(ReadOnlyMemory<byte> data, VirtualMachineLimits limits)
+        : this(data, (limits ?? throw new ArgumentNullException(nameof(limits))).MaxOperandStackDepth)
+    {
     }
 
     /// <summary>
