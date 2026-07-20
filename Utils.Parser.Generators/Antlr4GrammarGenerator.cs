@@ -212,23 +212,16 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
     }
 
     /// <summary>
-    /// Processes all parsed project grammars so imported-rule diagnostics can use a project-wide index without reparsing files.
+    /// Processes all parsed project grammars in deterministic path order after the incremental parser stage.
     /// </summary>
     /// <param name="context">Context used to report diagnostics and add generated files.</param>
     /// <param name="files">Parsed grammar files collected from project AdditionalFiles.</param>
     /// <param name="generatorOptions">Project-wide options parsed from analyzer config global options.</param>
     private static void ProcessGrammarProject(SourceProductionContext context, System.Collections.Immutable.ImmutableArray<ParsedGrammarFile> files, Antlr4GrammarGeneratorOptions generatorOptions)
     {
-        var validGrammars = files
-            .Where(static file => file.MetadataValid && file.Grammar is not null)
-            .Select(static file => new G4GrammarProjectEntry(file.Path, file.Grammar!))
-            .ToArray();
-        var index = new G4GrammarProjectIndex(validGrammars);
-        var resolver = new G4ImportedRuleResolver(index);
-
         foreach (var file in files.OrderBy(static file => file.Path, StringComparer.Ordinal))
         {
-            ProcessParsedGrammarFile(context, file, generatorOptions, resolver);
+            ProcessParsedGrammarFile(context, file, generatorOptions);
         }
     }
 
@@ -238,8 +231,7 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
     /// <param name="context">Context used to report diagnostics and add generated files.</param>
     /// <param name="file">Parsed grammar file.</param>
     /// <param name="generatorOptions">Project-wide options parsed from analyzer config global options.</param>
-    /// <param name="resolver">Project-wide imported-rule resolver.</param>
-    private static void ProcessParsedGrammarFile(SourceProductionContext context, ParsedGrammarFile file, Antlr4GrammarGeneratorOptions generatorOptions, G4ImportedRuleResolver resolver)
+    private static void ProcessParsedGrammarFile(SourceProductionContext context, ParsedGrammarFile file, Antlr4GrammarGeneratorOptions generatorOptions)
     {
         if (!file.MetadataValid)
         {
@@ -268,7 +260,7 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
             ReportEmbeddedParserAttributeDiagnostics(context, file.File, file.Text, grammar);
             ReportUnsupportedEmbeddedCodeDiagnostics(context, file.File, file.Text, grammar);
             if (generatorOptions.EnableGeneratedRuleArgumentBinding
-                && ReportGeneratedRuleArgumentBindingDiagnostics(context, file.File, file.Text, grammar, resolver))
+                && ReportGeneratedRuleArgumentBindingDiagnostics(context, file.File, file.Text, grammar))
             {
                 ReportParserDiagnostics(context, file.ParseDiagnostics, file.FileName);
                 return;
@@ -297,12 +289,11 @@ public sealed class Antlr4GrammarGenerator : IIncrementalGenerator
     /// <param name="file">Grammar additional file.</param>
     /// <param name="text">Grammar source text used to create locations.</param>
     /// <param name="grammar">Parsed grammar AST.</param>
-    /// <param name="resolver">Project-wide resolver that identifies unique local or imported parser-rule targets.</param>
     /// <returns><see langword="true"/> when at least one deterministic binding error was reported.</returns>
-    private static bool ReportGeneratedRuleArgumentBindingDiagnostics(SourceProductionContext context, AdditionalText file, SourceText text, G4Grammar grammar, G4ImportedRuleResolver resolver)
+    private static bool ReportGeneratedRuleArgumentBindingDiagnostics(SourceProductionContext context, AdditionalText file, SourceText text, G4Grammar grammar)
     {
         bool hasErrors = false;
-        foreach (GeneratedRuleArgumentBindingIssue issue in GeneratedRuleArgumentBindingValidator.Validate(grammar, callSite => resolver.Resolve(grammar, callSite.RuleName)))
+        foreach (GeneratedRuleArgumentBindingIssue issue in GeneratedRuleArgumentBindingValidator.Validate(grammar))
         {
             hasErrors = true;
             context.ReportDiagnostic(Diagnostic.Create(
