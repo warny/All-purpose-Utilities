@@ -32,6 +32,8 @@ public class VirtualMemory<TAddress> where TAddress : IBinaryInteger<TAddress>
     private int _nextPageId;
     private int _nextProcessId;
     private TAddress _masterNextVirtualIndex = TAddress.Zero;
+    private readonly int _maxPhysicalPages;
+    private readonly int _maxMemoryProcesses;
 
     /// <summary>Gets the size in bytes of each physical page.</summary>
     public int PageSize { get; }
@@ -68,6 +70,27 @@ public class VirtualMemory<TAddress> where TAddress : IBinaryInteger<TAddress>
     {
         if (pageSize < 1) throw new ArgumentOutOfRangeException(nameof(pageSize), "Page size must be at least 1.");
         PageSize = pageSize;
+        _maxPhysicalPages = int.MaxValue;
+        _maxMemoryProcesses = int.MaxValue;
+        MasterProcess = new VirtualProcess<TAddress>(_nextProcessId++, pageSize, isMaster: true);
+        _processes.Add(MasterProcess);
+    }
+
+    /// <summary>
+    /// Initializes a new <see cref="VirtualMemory{TAddress}"/> with limits from a
+    /// <see cref="VirtualMachineLimits"/>, and creates the master process.
+    /// </summary>
+    /// <param name="pageSize">Size in bytes of each physical page. Defaults to <c>4096</c>.</param>
+    /// <param name="limits">The limits policy to apply.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="limits"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="pageSize"/> is less than one.</exception>
+    public VirtualMemory(int pageSize, VirtualMachineLimits limits)
+    {
+        ArgumentNullException.ThrowIfNull(limits);
+        if (pageSize < 1) throw new ArgumentOutOfRangeException(nameof(pageSize), "Page size must be at least 1.");
+        PageSize = pageSize;
+        _maxPhysicalPages = limits.MaxPhysicalPages;
+        _maxMemoryProcesses = limits.MaxMemoryProcesses;
         MasterProcess = new VirtualProcess<TAddress>(_nextProcessId++, pageSize, isMaster: true);
         _processes.Add(MasterProcess);
     }
@@ -77,18 +100,28 @@ public class VirtualMemory<TAddress> where TAddress : IBinaryInteger<TAddress>
     /// at the next sequential virtual page index with <see cref="PageAccess.ReadWrite"/> rights.
     /// </summary>
     /// <returns>The newly allocated page.</returns>
+    /// <exception cref="VmLimitExceededException">Thrown when the soft page limit has been reached.</exception>
+    /// <exception cref="VmInvalidOperationException">
+    /// Thrown when the hard page identifier counter has reached its maximum value, or when the
+    /// master process virtual address space is exhausted.
+    /// </exception>
     public VirtualPage AllocatePage()
     {
+        // Soft limit: check before any mutation.
+        if (_pages.Count >= _maxPhysicalPages)
+            throw new VmLimitExceededException(VmLimitKind.PhysicalPageCount, _maxPhysicalPages, _pages.Count + 1L);
+        // Hard limit.
         if (_nextPageId == int.MaxValue)
-            throw new InvalidOperationException(
+            throw new VmInvalidOperationException(
                 $"Cannot allocate more pages: the page identifier counter has reached its maximum value ({int.MaxValue}).");
         TAddress nextIndex;
         try { nextIndex = checked(_masterNextVirtualIndex + TAddress.One); }
         catch (OverflowException)
         {
-            throw new InvalidOperationException(
+            throw new VmInvalidOperationException(
                 "Cannot allocate more pages: the master process virtual address space is exhausted.");
         }
+        // All checks passed — mutate.
         var page = new VirtualPage(_nextPageId++, PageSize);
         _pages.Add(page);
         MasterProcess.MapPage(_masterNextVirtualIndex, page, PageAccess.ReadWrite);
@@ -101,11 +134,15 @@ public class VirtualMemory<TAddress> where TAddress : IBinaryInteger<TAddress>
     /// <see cref="VirtualMemory{TAddress}"/>.
     /// </summary>
     /// <returns>The new process.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when the process identifier counter has reached its maximum value.</exception>
+    /// <exception cref="VmLimitExceededException">Thrown when the soft process limit has been reached.</exception>
+    /// <exception cref="VmInvalidOperationException">Thrown when the hard process identifier counter has reached its maximum value.</exception>
     public VirtualProcess<TAddress> CreateProcess()
     {
+        // Soft limit: check before hard id-counter limit.
+        if (_processes.Count >= _maxMemoryProcesses)
+            throw new VmLimitExceededException(VmLimitKind.MemoryProcessCount, _maxMemoryProcesses, _processes.Count + 1L);
         if (_nextProcessId == int.MaxValue)
-            throw new InvalidOperationException(
+            throw new VmInvalidOperationException(
                 $"Cannot create more processes: the process identifier counter has reached its maximum value ({int.MaxValue}).");
         var process = new VirtualProcess<TAddress>(_nextProcessId++, PageSize, isMaster: false);
         _processes.Add(process);
@@ -183,7 +220,7 @@ public class VirtualMemory<TAddress> where TAddress : IBinaryInteger<TAddress>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="page"/> is <see langword="null"/>.</exception>
     /// <exception cref="ArgumentException">Thrown when <paramref name="page"/> was not allocated by this instance.</exception>
     /// <exception cref="ObjectDisposedException">Thrown when <paramref name="page"/> has already been freed.</exception>
-    /// <exception cref="InvalidOperationException">
+    /// <exception cref="VmInvalidOperationException">
     /// Thrown when <paramref name="force"/> is <see langword="false"/> and the page is still
     /// mapped into one or more non-master processes. Unmap the page first or use <c>force: true</c>.
     /// </exception>
@@ -203,7 +240,7 @@ public class VirtualMemory<TAddress> where TAddress : IBinaryInteger<TAddress>
             .ToList();
 
         if (!force && nonMasterWithPage.Count > 0)
-            throw new InvalidOperationException(
+            throw new VmInvalidOperationException(
                 $"Cannot free page #{page.PageId}: it is still mapped into " +
                 $"{nonMasterWithPage.Count} non-master process(es). " +
                 "Unmap the page from all processes first, or call FreePage with force: true.");

@@ -121,26 +121,26 @@ public abstract class VirtualProcessor<T> where T : Context
     private static void ValidateInstructionSignature(MethodInfo method)
     {
         if (method.IsGenericMethod || method.ContainsGenericParameters)
-            throw new InvalidOperationException(
+            throw new VmInvalidOperationException(
                 $"Instruction method '{method.Name}': generic methods are not supported as instruction handlers.");
 
         if (method.ReturnType != typeof(void))
-            throw new InvalidOperationException(
+            throw new VmInvalidOperationException(
                 $"Instruction method '{method.Name}': must return void, found '{method.ReturnType.Name}'.");
 
         foreach (var param in method.GetParameters().Skip(1)) // first param is the context T, already checked
         {
             if (param.IsOut || param.ParameterType.IsByRef)
-                throw new InvalidOperationException(
+                throw new VmInvalidOperationException(
                     $"Instruction method '{method.Name}': parameter '{param.Name}' is ref/out, which is not supported.");
 
             if (param.ParameterType.IsPointer || param.ParameterType.IsByRefLike)
-                throw new InvalidOperationException(
+                throw new VmInvalidOperationException(
                     $"Instruction method '{method.Name}': parameter '{param.Name}' has an unsupported type " +
                     $"(pointer or byref-like type '{param.ParameterType.Name}').");
 
             if (!_numberReaderMethods.ContainsKey(param.ParameterType))
-                throw new InvalidOperationException(
+                throw new VmInvalidOperationException(
                     $"Instruction method '{method.Name}': parameter '{param.Name}' has unsupported operand type " +
                     $"'{param.ParameterType.Name}'. Supported types are: " +
                     string.Join(", ", _numberReaderMethods.Keys.Select(t => t.Name)) + ".");
@@ -417,13 +417,38 @@ public abstract class VirtualProcessor<T> where T : Context
     /// </exception>
     public void Execute(T context, CancellationToken cancellationToken = default, long maxInstructions = 0)
     {
+        if (maxInstructions < 0)
+            throw new ArgumentOutOfRangeException(nameof(maxInstructions),
+                "maxInstructions must be zero (unlimited) or positive.");
+        Execute(context, maxInstructions > 0 ? new ExecutionLimits(maxInstructions) : ExecutionLimits.Unlimited, cancellationToken);
+    }
+
+    /// <summary>
+    /// Executes all instructions until the end of the data stream, until
+    /// <see cref="Context.InstructionPointer"/> becomes negative (program termination signal),
+    /// until <paramref name="cancellationToken"/> is cancelled, or until the budget in
+    /// <paramref name="limits"/> is exhausted.
+    /// </summary>
+    /// <param name="context">The execution context.</param>
+    /// <param name="limits">Execution limits controlling the instruction budget.</param>
+    /// <param name="cancellationToken">Token that can stop execution between instructions.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="context"/> or <paramref name="limits"/> is <see langword="null"/>.</exception>
+    /// <exception cref="VirtualProcessorException">Thrown on an unknown opcode sequence.</exception>
+    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is cancelled.</exception>
+    /// <exception cref="InstructionBudgetExceededException">
+    /// Thrown when <paramref name="limits"/> specifies a budget and that many instructions have been
+    /// dispatched without the program terminating naturally.
+    /// </exception>
+    public void Execute(T context, ExecutionLimits limits, CancellationToken cancellationToken)
+    {
         ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(limits);
         long dispatched = 0;
         while (context.InstructionPointer >= 0 && context.InstructionPointer < context.Data.Length)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (maxInstructions > 0 && dispatched >= maxInstructions)
-                throw new InstructionBudgetExceededException(maxInstructions);
+            if (limits.MaxInstructions.HasValue && dispatched >= limits.MaxInstructions.Value)
+                throw new InstructionBudgetExceededException(limits.MaxInstructions.Value);
             OnStep(context);
             TryDispatch(context);
             dispatched++;
@@ -693,9 +718,22 @@ public class DefaultContext : Context
     }
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="DefaultContext"/> class with the given data buffer
+    /// and limits sourced from a <see cref="VirtualMachineLimits"/>.
+    /// </summary>
+    /// <param name="data">The byte data containing all instructions or data to process.</param>
+    /// <param name="limits">The limits policy. <see cref="VirtualMachineLimits.MaxOperandStackDepth"/> is used.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="limits"/> is <see langword="null"/>.</exception>
+    public DefaultContext(ReadOnlyMemory<byte> data, VirtualMachineLimits limits)
+        : this(data, (limits ?? throw new ArgumentNullException(nameof(limits))).MaxOperandStackDepth)
+    {
+    }
+
+    /// <summary>
     /// A bounded operand stack for temporary values during instruction execution.
-    /// Push throws <see cref="InvalidOperationException"/> when the depth limit is reached;
-    /// Pop and Peek throw when the stack is empty.
+    /// Push throws <see cref="VmLimitExceededException"/> (<see cref="VmLimitKind.OperandStackDepth"/>)
+    /// when the depth limit is reached; Pop and Peek throw <see cref="InvalidOperationException"/>
+    /// when the stack is empty.
     /// </summary>
     public BoundedStack<object> Stack { get; } = new BoundedStack<object>();
 }

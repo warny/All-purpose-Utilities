@@ -5,9 +5,9 @@ using System.Collections.Generic;
 namespace Utils.VirtualMachine;
 
 /// <summary>
-/// A stack with a configurable maximum depth. Push throws <see cref="InvalidOperationException"/>
-/// when the depth limit is reached; Pop and Peek throw when the stack is empty.
-/// All exceptions carry VM-specific messages that include the depth limit for diagnostics.
+/// A stack with a configurable maximum depth. Push throws <see cref="VmLimitExceededException"/>
+/// (with <see cref="VmLimitKind.OperandStackDepth"/>) when the depth limit is reached;
+/// Pop and Peek throw <see cref="InvalidOperationException"/> when the stack is empty.
 /// </summary>
 /// <typeparam name="T">Element type.</typeparam>
 public sealed class BoundedStack<T> : IEnumerable<T>
@@ -41,14 +41,13 @@ public sealed class BoundedStack<T> : IEnumerable<T>
     /// Pushes an element onto the stack.
     /// </summary>
     /// <param name="item">The element to push.</param>
-    /// <exception cref="InvalidOperationException">
+    /// <exception cref="VmLimitExceededException">
     /// Thrown when the stack already contains <see cref="MaxDepth"/> elements.
     /// </exception>
     public void Push(T item)
     {
         if (_inner.Count >= MaxDepth)
-            throw new InvalidOperationException(
-                $"Operand stack overflow: cannot push more than {MaxDepth} elements.");
+            throw new VmLimitExceededException(VmLimitKind.OperandStackDepth, MaxDepth, _inner.Count + 1L);
         _inner.Push(item);
     }
 
@@ -56,11 +55,11 @@ public sealed class BoundedStack<T> : IEnumerable<T>
     /// Removes and returns the element at the top of the stack.
     /// </summary>
     /// <returns>The element removed from the top.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when the stack is empty.</exception>
+    /// <exception cref="VmInvalidOperationException">Thrown when the stack is empty.</exception>
     public T Pop()
     {
         if (_inner.Count == 0)
-            throw new InvalidOperationException("Operand stack underflow: Pop called on an empty stack.");
+            throw new VmInvalidOperationException("Operand stack underflow: Pop called on an empty stack.");
         return _inner.Pop();
     }
 
@@ -68,11 +67,11 @@ public sealed class BoundedStack<T> : IEnumerable<T>
     /// Returns the element at the top of the stack without removing it.
     /// </summary>
     /// <returns>The element at the top.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when the stack is empty.</exception>
+    /// <exception cref="VmInvalidOperationException">Thrown when the stack is empty.</exception>
     public T Peek()
     {
         if (_inner.Count == 0)
-            throw new InvalidOperationException("Operand stack underflow: Peek called on an empty stack.");
+            throw new VmInvalidOperationException("Operand stack underflow: Peek called on an empty stack.");
         return _inner.Peek();
     }
 

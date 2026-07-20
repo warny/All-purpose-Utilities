@@ -20,6 +20,7 @@ public class Scheduler<T> where T : Context
 {
     private readonly List<ScheduledProcess<T>> _processes = [];
     private int _nextId;
+    private readonly int _maxScheduledProcesses;
 
     /// <summary>Gets the maximum number of instructions each process may execute per <see cref="Step"/> call.</summary>
     public int QuantumSteps { get; }
@@ -48,6 +49,23 @@ public class Scheduler<T> where T : Context
         if (quantumSteps < 1)
             throw new ArgumentOutOfRangeException(nameof(quantumSteps), "Quantum must be at least 1.");
         QuantumSteps = quantumSteps;
+        _maxScheduledProcesses = int.MaxValue;
+    }
+
+    /// <summary>
+    /// Initializes a new <see cref="Scheduler{T}"/> from a <see cref="VirtualMachineLimits"/>,
+    /// using <see cref="VirtualMachineLimits.SchedulerQuantumSteps"/> as the quantum size and
+    /// <see cref="VirtualMachineLimits.MaxScheduledProcesses"/> as the process cap.
+    /// </summary>
+    /// <param name="limits">The limits policy to apply.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="limits"/> is <see langword="null"/>.</exception>
+    public Scheduler(VirtualMachineLimits limits)
+    {
+        ArgumentNullException.ThrowIfNull(limits);
+        if (limits.SchedulerQuantumSteps < 1)
+            throw new ArgumentOutOfRangeException(nameof(limits), "Quantum must be at least 1.");
+        QuantumSteps = limits.SchedulerQuantumSteps;
+        _maxScheduledProcesses = limits.MaxScheduledProcesses;
     }
 
     /// <summary>
@@ -70,13 +88,17 @@ public class Scheduler<T> where T : Context
     /// single context across multiple processes produces contradictory lifecycle states and corrupts
     /// instruction pointer and stack state.
     /// </exception>
-    /// <exception cref="InvalidOperationException">Thrown when the process identifier counter has reached its maximum value.</exception>
+    /// <exception cref="VmLimitExceededException">Thrown when the soft process limit has been reached.</exception>
+    /// <exception cref="VmInvalidOperationException">Thrown when the process identifier counter has reached its maximum value.</exception>
     public ScheduledProcess<T> AddProcess(T context, VirtualProcessor<T> processor, int priority = 0, string? name = null)
     {
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(processor);
+        // Soft limit: check before hard id-counter limit and before mutation.
+        if (_processes.Count >= _maxScheduledProcesses)
+            throw new VmLimitExceededException(VmLimitKind.ScheduledProcessCount, _maxScheduledProcesses, _processes.Count + 1L);
         if (_nextId == int.MaxValue)
-            throw new InvalidOperationException(
+            throw new VmInvalidOperationException(
                 $"Cannot add more processes: the process identifier counter has reached its maximum value ({int.MaxValue}).");
         if (_processes.Any(p => ReferenceEquals(p.Context, context)))
             throw new ArgumentException(
@@ -237,6 +259,40 @@ public class Scheduler<T> where T : Context
     /// <summary>
     /// Runs the scheduler until no process remains in the <see cref="ProcessState.Ready"/>
     /// or <see cref="ProcessState.Running"/> state, until cancellation is requested, or until
+    /// the budget in <paramref name="limits"/> is exhausted.
+    /// </summary>
+    /// <param name="limits">Execution limits controlling the instruction budget.</param>
+    /// <param name="cancellationToken">Token that can interrupt the loop between steps.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="limits"/> is <see langword="null"/>.</exception>
+    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is cancelled.</exception>
+    /// <exception cref="InstructionBudgetExceededException">
+    /// Thrown when <paramref name="limits"/> specifies a budget and that many instructions have been
+    /// dispatched in this call without all processes terminating.
+    /// </exception>
+    public void Run(ExecutionLimits limits, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(limits);
+        long startCount = InstructionsExecuted;
+        while (_processes.Any(p => p.State is ProcessState.Ready or ProcessState.Running))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (limits.MaxInstructions.HasValue)
+            {
+                long remaining = limits.MaxInstructions.Value - (InstructionsExecuted - startCount);
+                if (remaining <= 0)
+                    throw new InstructionBudgetExceededException(limits.MaxInstructions.Value);
+                StepCore(remaining, limits.MaxInstructions.Value);
+            }
+            else
+            {
+                Step();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Runs the scheduler until no process remains in the <see cref="ProcessState.Ready"/>
+    /// or <see cref="ProcessState.Running"/> state, until cancellation is requested, or until
     /// <paramref name="maxInstructions"/> instructions have been dispatched in this call.
     /// Returns immediately when all processes are <see cref="ProcessState.Terminated"/> or
     /// <see cref="ProcessState.Suspended"/> (including when there are no processes at all).
@@ -260,23 +316,43 @@ public class Scheduler<T> where T : Context
         if (maxInstructions < 0)
             throw new ArgumentOutOfRangeException(nameof(maxInstructions),
                 "maxInstructions must be zero (unlimited) or a positive budget.");
+        Run(maxInstructions > 0 ? new ExecutionLimits(maxInstructions) : ExecutionLimits.Unlimited, cancellationToken);
+    }
 
+    /// <summary>
+    /// Asynchronously runs the scheduler until no process remains in the
+    /// <see cref="ProcessState.Ready"/> or <see cref="ProcessState.Running"/> state,
+    /// until cancellation is requested, or until the budget in <paramref name="limits"/> is exhausted.
+    /// Yields to the caller between each <see cref="Step"/> call so the calling thread is not
+    /// blocked for the duration.
+    /// </summary>
+    /// <param name="limits">Execution limits controlling the instruction budget.</param>
+    /// <param name="cancellationToken">Token that can interrupt the loop between steps.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="limits"/> is <see langword="null"/>.</exception>
+    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is cancelled.</exception>
+    /// <exception cref="InstructionBudgetExceededException">
+    /// Thrown when <paramref name="limits"/> specifies a budget and that many instructions have been
+    /// dispatched in this call without all processes terminating.
+    /// </exception>
+    public async Task RunAsync(ExecutionLimits limits, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(limits);
         long startCount = InstructionsExecuted;
-        // Faulted is treated as terminal: a faulted process will never be rescheduled.
         while (_processes.Any(p => p.State is ProcessState.Ready or ProcessState.Running))
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (maxInstructions > 0)
+            if (limits.MaxInstructions.HasValue)
             {
-                long remaining = maxInstructions - (InstructionsExecuted - startCount);
+                long remaining = limits.MaxInstructions.Value - (InstructionsExecuted - startCount);
                 if (remaining <= 0)
-                    throw new InstructionBudgetExceededException(maxInstructions);
-                StepCore(remaining, maxInstructions);
+                    throw new InstructionBudgetExceededException(limits.MaxInstructions.Value);
+                StepCore(remaining, limits.MaxInstructions.Value);
             }
             else
             {
                 Step();
             }
+            await Task.Yield();
         }
     }
 
@@ -314,23 +390,6 @@ public class Scheduler<T> where T : Context
         if (maxInstructions < 0)
             throw new ArgumentOutOfRangeException(nameof(maxInstructions),
                 "maxInstructions must be zero (unlimited) or a positive budget.");
-
-        long startCount = InstructionsExecuted;
-        while (_processes.Any(p => p.State is ProcessState.Ready or ProcessState.Running))
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (maxInstructions > 0)
-            {
-                long remaining = maxInstructions - (InstructionsExecuted - startCount);
-                if (remaining <= 0)
-                    throw new InstructionBudgetExceededException(maxInstructions);
-                StepCore(remaining, maxInstructions);
-            }
-            else
-            {
-                Step();
-            }
-            await Task.Yield();
-        }
+        await RunAsync(maxInstructions > 0 ? new ExecutionLimits(maxInstructions) : ExecutionLimits.Unlimited, cancellationToken);
     }
 }

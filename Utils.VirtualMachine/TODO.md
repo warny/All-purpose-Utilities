@@ -1,6 +1,6 @@
 # Utils.VirtualMachine — Quality and correctness audit (2026-07-11)
 
-> **Partially completed 2026-07-18/19.** Items 1, 2, 3, 11, 12 addressed in PR fix/utils-vm-quality-audit-p0-p1. Items 8, 13 addressed in PR fix/utils-vm-quality-audit-round2. Items 7, 9–10, 14, 16 addressed in PR fix/utils-vm-quality-audit-round3. Items 4, 5, 6 addressed in PR fix/utils-vm-quality-audit-round3. Item 15 remains open.
+> **Partially completed 2026-07-18/20.** Items 1, 2, 3, 11, 12 addressed in PR fix/utils-vm-quality-audit-p0-p1. Items 8, 13 addressed in PR fix/utils-vm-quality-audit-round2. Items 7, 9–10, 14, 16 addressed in PR fix/utils-vm-quality-audit-round3. Items 4, 5, 6 addressed in PR fix/utils-vm-quality-audit-round3. Item 15 addressed in PR feat/utils-vm-coherent-limits-policy. Item 9 (cross-page write atomicity) remains open.
 
 Static review of the processor, scheduler, virtual-memory model, stacks, and structured control-flow helpers. The review focuses on deterministic bytecode dispatch, malformed-program handling, memory isolation, lifecycle state, resource bounds, and duplicated intent. No production code is changed by this commit.
 
@@ -150,7 +150,7 @@ Unlike `CallStack`, structured blocks can be pushed without any bound. Malicious
 
 **Priority: P2 resource limits.**
 
-### 15. VM limits and fault policies are scattered across unrelated classes
+### ✅ 15. VM limits and fault policies are scattered across unrelated classes
 
 Call depth has a limit, control-flow depth does not, processor execution has cancellation but no instruction budget, scheduler uses a quantum but no total budget, virtual memory has page size but no page/process cap, and stack/memory faults use unrelated exception types.
 

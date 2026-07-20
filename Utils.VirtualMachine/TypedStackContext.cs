@@ -35,9 +35,22 @@ public class TypedStackContext<TValue> : Context
     }
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="TypedStackContext{TValue}"/> class with limits
+    /// sourced from a <see cref="VirtualMachineLimits"/>.
+    /// </summary>
+    /// <param name="data">The byte data containing the instruction stream.</param>
+    /// <param name="limits">The limits policy. <see cref="VirtualMachineLimits.MaxOperandStackDepth"/> is used.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="limits"/> is <see langword="null"/>.</exception>
+    public TypedStackContext(ReadOnlyMemory<byte> data, VirtualMachineLimits limits)
+        : this(data, (limits ?? throw new ArgumentNullException(nameof(limits))).MaxOperandStackDepth)
+    {
+    }
+
+    /// <summary>
     /// A bounded strongly-typed operand stack for storing values without boxing overhead.
-    /// Push throws <see cref="InvalidOperationException"/> when the depth limit is reached;
-    /// Pop and Peek throw when the stack is empty.
+    /// Push throws <see cref="VmLimitExceededException"/> (<see cref="VmLimitKind.OperandStackDepth"/>)
+    /// when the depth limit is reached; Pop and Peek throw <see cref="InvalidOperationException"/>
+    /// when the stack is empty.
     /// </summary>
     public BoundedStack<TValue> Stack { get; } = new BoundedStack<TValue>();
 }

@@ -688,7 +688,7 @@ public class VirtualMemoryTests
         var page = mem.AllocatePage();
         var proc = mem.CreateProcess();
         mem.MapPage(proc, page, 0, PageAccess.ReadOnly);
-        Assert.ThrowsException<InvalidOperationException>(() => mem.FreePage(page));
+        Assert.ThrowsException<VmInvalidOperationException>(() => mem.FreePage(page));
     }
 
     [TestMethod]
