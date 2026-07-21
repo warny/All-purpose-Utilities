@@ -102,6 +102,40 @@ public class BoundingBoxTests
     }
 
     [TestMethod]
+    public void ToStringProducesParseableFormatForFromStringRoundTrip()
+    {
+        // Before the fix, ToString() emitted "minLatitude=..., ..." which FromString cannot
+        // parse (it expects four comma-separated bare numbers). Now ToString() emits the
+        // parseable format so FromString(box.ToString()) round-trips correctly.
+        var original = new BoundingBox<double>(-10, -20, 10, 20);
+        var roundTripped = BoundingBox<double>.FromString(original.ToString());
+
+        Assert.AreEqual(original, roundTripped);
+    }
+
+    [TestMethod]
+    public void ToStringLabeledFormatContainsLabels()
+    {
+        var box = new BoundingBox<double>(-10, -20, 10, 20);
+        string labeled = box.ToString("L");
+
+        StringAssert.Contains(labeled, "minLatitude=");
+        StringAssert.Contains(labeled, "minLongitude=");
+        StringAssert.Contains(labeled, "maxLatitude=");
+        StringAssert.Contains(labeled, "maxLongitude=");
+    }
+
+    [TestMethod]
+    public void ToStringDefaultFormatDoesNotContainLabels()
+    {
+        var box = new BoundingBox<double>(-10, -20, 10, 20);
+        string text = box.ToString();
+
+        Assert.IsFalse(text.Contains("minLatitude"), "Default ToString() must not emit labels");
+        Assert.IsFalse(text.Contains("maxLatitude"), "Default ToString() must not emit labels");
+    }
+
+    [TestMethod]
     public void AntimeridianCrossingBoxIsNotSupportedAndConvertsToWideBox()
     {
         // Documents the known limitation: a box from 170°E to 170°W (20° arc across the

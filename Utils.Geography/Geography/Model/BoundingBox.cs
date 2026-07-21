@@ -214,33 +214,58 @@ namespace Utils.Geography.Model
         }
 
         /// <summary>
-        /// Returns a string that represents this bounding box using default formatting.
+        /// Returns a parseable representation of this bounding box in the order
+        /// <c>minLat,minLon,maxLat,maxLon</c> (invariant culture, no labels).
+        /// This format is accepted by <see cref="FromString"/>, so
+        /// <c>FromString(box.ToString())</c> round-trips correctly.
+        /// For a human-readable labeled representation use <c>ToString("L")</c>.
         /// </summary>
-        /// <returns>A string representation of the bounding box.</returns>
-        public override string ToString() => $"minLatitude={MinLatitude}, minLongitude={MinLongitude}, maxLatitude={MaxLatitude}, maxLongitude={MaxLongitude}";
+        /// <returns>A comma-separated coordinate string parseable by <see cref="FromString"/>.</returns>
+        public override string ToString() =>
+            $"{MinLatitude.ToString(null, CultureInfo.InvariantCulture)},{MinLongitude.ToString(null, CultureInfo.InvariantCulture)},{MaxLatitude.ToString(null, CultureInfo.InvariantCulture)},{MaxLongitude.ToString(null, CultureInfo.InvariantCulture)}";
 
         /// <summary>
-        /// Returns a string that represents this bounding box in a given format.
+        /// Returns a string that represents this bounding box in a given format and culture.
         /// </summary>
-        /// <param name="format">Format string for numeric values.</param>
+        /// <param name="format">
+        /// Numeric format string applied to each coordinate, or <c>"L"</c> to produce a
+        /// human-readable labeled representation (<c>minLatitude=…, minLongitude=…, …</c>)
+        /// that is <em>not</em> parseable by <see cref="FromString"/>.
+        /// </param>
         /// <returns>A string representing this bounding box.</returns>
         public string ToString(string format) => ToString(format, CultureInfo.CurrentCulture);
 
         /// <summary>
         /// Returns a string that represents this bounding box in a given format and culture.
         /// </summary>
-        /// <param name="format">Format string for numeric values.</param>
+        /// <param name="format">
+        /// Numeric format string applied to each coordinate, or <c>"L"</c> to produce a
+        /// human-readable labeled representation (<c>minLatitude=…, minLongitude=…, …</c>)
+        /// that is <em>not</em> parseable by <see cref="FromString"/>.
+        /// </param>
         /// <param name="formatProvider">Culture-specific format provider.</param>
         /// <returns>A string representing this bounding box.</returns>
         public string ToString(string? format, IFormatProvider? formatProvider)
         {
-            return string.Format(
+            if (format == "L")
+            {
+                return string.Format(
                     formatProvider,
                     "minLatitude={0}, minLongitude={1}, maxLatitude={2}, maxLongitude={3}",
-                    MinLatitude.ToString(format, formatProvider),
-                    MinLongitude.ToString(format, formatProvider),
-                    MaxLatitude.ToString(format, formatProvider),
-                    MaxLongitude.ToString(format, formatProvider)
+                    MinLatitude.ToString(null, formatProvider),
+                    MinLongitude.ToString(null, formatProvider),
+                    MaxLatitude.ToString(null, formatProvider),
+                    MaxLongitude.ToString(null, formatProvider)
+                );
+            }
+
+            return string.Format(
+                formatProvider,
+                "{0},{1},{2},{3}",
+                MinLatitude.ToString(format, formatProvider),
+                MinLongitude.ToString(format, formatProvider),
+                MaxLatitude.ToString(format, formatProvider),
+                MaxLongitude.ToString(format, formatProvider)
             );
         }
 
