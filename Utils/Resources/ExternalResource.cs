@@ -28,6 +28,18 @@ public sealed class ExternalResource : IReadOnlyDictionary<string, object>
 
     private readonly Dictionary<string, object> _resources;
     private readonly long _maxExternalFileBytes;
+    private readonly List<string> _diagnostics = [];
+
+    /// <summary>
+    /// Gets diagnostic messages recorded during parsing.
+    /// Each message describes a skipped or malformed .resx entry, including the resource name
+    /// (when available) and the reason it was not loaded (#47).
+    /// </summary>
+    /// <remarks>
+    /// This collection is populated in permissive mode (the default). An empty collection
+    /// indicates that all entries were processed successfully.
+    /// </remarks>
+    public IReadOnlyList<string> DiagnosticMessages => _diagnostics;
 
     static ExternalResource()
     {
@@ -146,7 +158,11 @@ public sealed class ExternalResource : IReadOnlyDictionary<string, object>
         string? type = xmlReader.GetAttribute("type");
 
         if (string.IsNullOrEmpty(name))
+        {
+            // Record a diagnostic so callers can distinguish malformed entries from absent resources (#47).
+            _diagnostics.Add("Skipped <data> element: missing or empty 'name' attribute.");
             return;
+        }
 
         string? rawValue = null;
 
@@ -164,7 +180,10 @@ public sealed class ExternalResource : IReadOnlyDictionary<string, object>
         }
 
         if (rawValue is null)
+        {
+            _diagnostics.Add($"Skipped resource '{name}': no <value> element found in <data> block (#47).");
             return;
+        }
 
         if (type != null && type.Contains("ResXFileRef", StringComparison.OrdinalIgnoreCase))
         {
@@ -186,7 +205,13 @@ public sealed class ExternalResource : IReadOnlyDictionary<string, object>
                     + Path.DirectorySeparatorChar;
 
                 if (!candidatePath.StartsWith(allowedRoot, pathComparison))
-                    return; // Path escapes the .resx directory — skip.
+                {
+                    // Path traversal attempt detected: record a diagnostic and skip (#40, #47).
+                    _diagnostics.Add(
+                        $"Skipped resource '{name}': file reference '{relativePath}' resolves outside " +
+                        $"the allowed directory '{allowedRoot}' (path-traversal guard).");
+                    return;
+                }
 
                 string filePath = candidatePath;
                 string typeOrEncoding = splitted[1];
@@ -221,6 +246,11 @@ public sealed class ExternalResource : IReadOnlyDictionary<string, object>
                     // Reject arbitrary custom type construction (#41).
                     // Unknown ResXFileRef types are treated as unsupported data rather
                     // than being constructed via reflection (code-execution risk).
+                    // Record a diagnostic so callers can detect unsupported configurations (#47).
+                    _diagnostics.Add(
+                        $"Skipped resource '{name}': ResXFileRef type '{typeOrEncoding}' is not " +
+                        "in the supported allowlist (System.String, Encoding, Byte[]). " +
+                        "Reflective construction is disabled (#41).");
                     return;
                 }
             }
