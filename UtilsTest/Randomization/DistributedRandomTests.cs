@@ -46,4 +46,83 @@ public class DistributedRandomTests
             Assert.IsTrue(value >= 0 && value < 100);
         }
     }
+
+    // ------------------------------------------------------------------ #18 normalization validation
+
+    [TestMethod]
+    public void Constructor_ThrowsOnConstantFunction()
+    {
+        Assert.ThrowsExactly<ArgumentException>(() => new DistributedRandom(_ => 42.0));
+    }
+
+    [TestMethod]
+    public void Constructor_ThrowsWhenF0IsInfinity()
+    {
+        Assert.ThrowsExactly<ArgumentException>(() => new DistributedRandom(x => x == 0 ? double.PositiveInfinity : x));
+    }
+
+    [TestMethod]
+    public void Constructor_ThrowsWhenF1IsNaN()
+    {
+        Assert.ThrowsExactly<ArgumentException>(() => new DistributedRandom(x => x == 1 ? double.NaN : x));
+    }
+
+    [TestMethod]
+    public void Constructor_ThrowsWhenF0IsNaN()
+    {
+        Assert.ThrowsExactly<ArgumentException>(() => new DistributedRandom(x => double.NaN));
+    }
+
+    [TestMethod]
+    public void Constructor_ThrowsWhenBothEndpointsAreInfinity()
+    {
+        Assert.ThrowsExactly<ArgumentException>(() => new DistributedRandom(x => double.PositiveInfinity));
+    }
+
+    // ------------------------------------------------------------------ #19 NextInt range correctness
+
+    [TestMethod]
+    public void NextInt_NeverReturnsUpperBound()
+    {
+        var distributed = new DistributedRandom(x => x, seed: 0);
+        for (int i = 0; i < 1000; i++)
+        {
+            int value = distributed.NextInt(0, 10);
+            Assert.IsTrue(value >= 0 && value < 10,
+                $"NextInt(0,10) returned {value}, which is outside [0,10).");
+        }
+    }
+
+    [TestMethod]
+    public void NextInt_WorksWithLargeRange_NoOverflow()
+    {
+        // Range = int.MaxValue - int.MinValue which overflows in int arithmetic.
+        var distributed = new DistributedRandom(x => x, seed: 1);
+        for (int i = 0; i < 100; i++)
+        {
+            int value = distributed.NextInt(int.MinValue, int.MaxValue);
+            // Just verify it does not throw and is within bounds.
+            Assert.IsTrue(value >= int.MinValue && value < int.MaxValue,
+                $"NextInt(int.MinValue, int.MaxValue) returned {value}.");
+        }
+    }
+
+    [TestMethod]
+    public void NextInt_WorksAtMinimumRange_ReturnsMin()
+    {
+        // When min and max differ by 1, result must always equal min.
+        var distributed = new DistributedRandom(x => x, seed: 2);
+        for (int i = 0; i < 20; i++)
+        {
+            int value = distributed.NextInt(5, 6);
+            Assert.AreEqual(5, value);
+        }
+    }
+
+    [TestMethod]
+    public void NextInt_ThrowsWhenMaxEqualsMin()
+    {
+        var distributed = new DistributedRandom(x => x, seed: 0);
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => distributed.NextInt(5, 5));
+    }
 }
