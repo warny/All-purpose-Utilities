@@ -174,6 +174,46 @@ namespace UtilsTest.Geography
         }
 
         [TestMethod]
+        public void TravelWithZeroAngleReturnsOriginalVector()
+        {
+            // Regression for Asin clamp: travelling 0° must return the same vector, not NaN.
+            var vector = new GeoVector<double>(45, 10, 90);
+            var result = vector.Travel(0);
+
+            Assert.IsFalse(double.IsNaN(result.Latitude), "Travel(0) must not produce NaN latitude");
+            Assert.AreEqual(vector.Latitude, result.Latitude, 1e-9);
+            Assert.AreEqual(vector.Longitude, result.Longitude, 1e-9);
+        }
+
+        [TestMethod]
+        public void TravelWithSmallAngleDoesNotReturnNaN()
+        {
+            // A very small angle (near 0) stresses the Asin clamp; if the argument drifts just
+            // above 1 due to floating-point rounding, unclamped Asin would return NaN.
+            var vector = new GeoVector<double>(89.9999, 0, 0);
+            var result = vector.Travel(1e-10);
+
+            Assert.IsFalse(double.IsNaN(result.Latitude), "Travel with tiny angle must not produce NaN");
+        }
+
+        [TestMethod]
+        public void IntersectionsOfNearlyIdenticalVectorsDoesNotReturnNaN()
+        {
+            // Before the clamp fix, Acos inputs could drift just outside [-1,1] for nearly
+            // identical vectors or near-degenerate great-circle configurations, producing NaN.
+            var v1 = new GeoVector<double>(0.0001, 0.0001, 90);
+            var v2 = new GeoVector<double>(0, 0, 90);
+
+            // Either returns empty (same great circle) or non-NaN intersections.
+            var result = v1.Intersections(v2);
+            foreach (var pt in result)
+            {
+                Assert.IsFalse(double.IsNaN(pt.Latitude), $"Intersection latitude must not be NaN: {pt}");
+                Assert.IsFalse(double.IsNaN(pt.Longitude), $"Intersection longitude must not be NaN: {pt}");
+            }
+        }
+
+        [TestMethod]
         public void RecenterOnSelfReturnsOrigin()
         {
             var vector = new GeoVector<double>(45, 30, 90);

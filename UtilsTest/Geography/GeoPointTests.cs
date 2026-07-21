@@ -224,6 +224,41 @@ namespace UtilsTest.Geography
         }
 
         [TestMethod]
+        public void AngleWithIdenticalPointsReturnsZeroNotNaN()
+        {
+            // Before the clamp fix, floating-point rounding could push the Acos argument just
+            // outside [-1, 1], returning NaN for identical or nearly identical points.
+            var point = new GeoPoint<double>(48.8566, 2.3522);
+            double angle = point.AngleWith(point);
+
+            Assert.IsFalse(double.IsNaN(angle), "AngleWith identical point should not return NaN");
+            Assert.AreEqual(0.0, angle, 1e-9);
+        }
+
+        [TestMethod]
+        public void AngleWithNearlyIdenticalPointsDoesNotReturnNaN()
+        {
+            var point1 = new GeoPoint<double>(48.8566, 2.3522);
+            var point2 = new GeoPoint<double>(48.8566 + 1e-12, 2.3522 + 1e-12);
+
+            double angle = point1.AngleWith(point2);
+
+            Assert.IsFalse(double.IsNaN(angle), "AngleWith nearly identical point should not return NaN");
+        }
+
+        [TestMethod]
+        public void AngleWithAntipodalPointIsOneHundredEightyDegrees()
+        {
+            var north = new GeoPoint<double>(0, 0);
+            var south = new GeoPoint<double>(0, 180);
+
+            double angle = north.AngleWith(south);
+
+            Assert.IsFalse(double.IsNaN(angle), "AngleWith antipodal point should not return NaN");
+            Assert.AreEqual(180.0, angle, 1e-6);
+        }
+
+        [TestMethod]
         public void NorthPolePointsWithDifferentLongitudesAreEqualAndHaveTheSameHashCode()
         {
             // All longitudes at a pole refer to the same geographic point.

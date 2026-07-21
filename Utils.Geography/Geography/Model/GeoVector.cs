@@ -318,10 +318,10 @@ public readonly struct GeoVector<T> : IEquatable<GeoVector<T>>, IFormattable, IU
                 degree.StraightAngle + bearingCorrection
             );
 
-        T φ2 = degree.Asin(
+        T φ2 = degree.Asin(T.Clamp(
             degree.Sin(φ) * degree.Cos(angle)
-            + degree.Cos(φ) * degree.Sin(angle) * degree.Cos(-Bearing)
-        );
+            + degree.Cos(φ) * degree.Sin(angle) * degree.Cos(-Bearing),
+            -T.One, T.One));
 
         if (φ2 == degree.RightAngle)
         {
@@ -459,14 +459,14 @@ public readonly struct GeoVector<T> : IEquatable<GeoVector<T>>, IFormattable, IU
             )
         );
 
-        T θa = degree.Acos(
+        T θa = degree.Acos(T.Clamp(
             (degree.Sin(other.φ) - degree.Sin(this.φ) * degree.Cos(δ12))
-            / (degree.Sin(δ12) * degree.Cos(this.φ))
-        );
-        T θb = degree.Acos(
+            / (degree.Sin(δ12) * degree.Cos(this.φ)),
+            -T.One, T.One));
+        T θb = degree.Acos(T.Clamp(
             (degree.Sin(this.φ) - degree.Sin(other.φ) * degree.Cos(δ12))
-            / (degree.Sin(δ12) * degree.Cos(other.φ))
-        );
+            / (degree.Sin(δ12) * degree.Cos(other.φ)),
+            -T.One, T.One));
 
         T θ12, θ21;
         if (degree.Sin(Δλ) <= T.Zero)
@@ -483,19 +483,19 @@ public readonly struct GeoVector<T> : IEquatable<GeoVector<T>>, IFormattable, IU
         T α1 = this.Bearing - θ12;
         T α2 = θ21 - other.Bearing;
 
-        T α3 = degree.Acos(
+        T α3 = degree.Acos(T.Clamp(
             -degree.Cos(α1) * degree.Cos(α2)
-            + degree.Sin(α1) * degree.Sin(α2) * degree.Cos(δ12)
-        );
+            + degree.Sin(α1) * degree.Sin(α2) * degree.Cos(δ12),
+            -T.One, T.One));
 
         T δ13 = degree.Atan2(
             degree.Sin(δ12) * degree.Sin(α1) * degree.Sin(α2),
             degree.Cos(α2) + degree.Cos(α1) * degree.Cos(α3)
         );
-        T φ3 = degree.Asin(
+        T φ3 = degree.Asin(T.Clamp(
             degree.Sin(this.φ) * degree.Cos(δ13)
-            + degree.Cos(this.φ) * degree.Sin(δ13) * degree.Cos(this.Bearing)
-        );
+            + degree.Cos(this.φ) * degree.Sin(δ13) * degree.Cos(this.Bearing),
+            -T.One, T.One));
         T Δλ13 = degree.Atan2(
             degree.Sin(this.Bearing) * degree.Sin(δ13) * degree.Cos(this.φ),
             degree.Cos(δ13) - degree.Sin(this.φ) * degree.Sin(φ3)

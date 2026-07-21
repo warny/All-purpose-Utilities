@@ -314,11 +314,13 @@ namespace Utils.Geography.Model
         /// </returns>
         public T AngleWith(GeoPoint<T> other)
         {
-            return degree.Acos(
-                degree.Sin(Latitude) * degree.Sin(other.Latitude)
+            // Clamp to [-1, 1] before Acos: the dot product is mathematically in that range, but
+            // floating-point rounding can produce values just outside it, yielding NaN for
+            // identical or nearly identical points.
+            T dot = degree.Sin(Latitude) * degree.Sin(other.Latitude)
                 + degree.Cos(Latitude) * degree.Cos(other.Latitude)
-                * degree.Cos(Longitude - other.Longitude)
-            );
+                * degree.Cos(Longitude - other.Longitude);
+            return degree.Acos(T.Clamp(dot, -T.One, T.One));
         }
 
 
