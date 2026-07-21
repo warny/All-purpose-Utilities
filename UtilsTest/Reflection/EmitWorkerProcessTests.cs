@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Security.Principal;
+using System.Threading;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -149,6 +152,44 @@ public class EmitWorkerProcessTests
                 TimeSpan.FromMilliseconds((double)int.MaxValue + 1), "timeout"));
     }
 
+    // ─── Finding #5: write failure must clean up pending entry immediately ────────
+
+    [TestMethod]
+    public void SendAndReceive_WriteFails_NoPendingEntryIsLeft()
+    {
+        // A stream that blocks Read() until released (keeps the reader loop alive) but throws on Write
+        // (simulates a broken pipe after connection). This lets us verify that when the frame write
+        // fails, SendAndReceive removes the pending entry immediately instead of leaving it registered
+        // until the per-request timeout fires (which would incorrectly credit an abandoned-call count
+        // increment to a request that was never sent).
+        using var blockingRead = new BlockingStream();
+        using var throwingWrite = new ThrowingStream();
+
+        var reader = new StreamReader(blockingRead);
+        // AutoFlush = true matches the real EmitWorkerProcess.Start behaviour and ensures every
+        // WriteLine flushes immediately to the underlying stream, making the IOException visible.
+        var writer = new StreamWriter(throwingWrite) { AutoFlush = true };
+
+        using var process = EmitWorkerProcess.CreateForTesting(reader, writer, TimeSpan.FromSeconds(30));
+
+        // Give the reader loop time to start and block on blockingRead.Read().
+        Thread.Sleep(50);
+
+        Assert.ThrowsException<InvalidOperationException>(
+            () => process.LoadInterface(
+                typeof(IDisposable), "does-not-matter.dll",
+                CallingConvention.Winapi, TimeSpan.FromSeconds(30)));
+
+        Assert.AreEqual(0, process.PendingCount,
+            "The pending entry for the failed write must be removed immediately, " +
+            "not left to expire via the per-request timeout.");
+        Assert.AreEqual(0, process.AbandonedCallCount,
+            "A frame that was never written must not increment the abandoned-call counter.");
+
+        // Let the reader loop exit cleanly.
+        blockingRead.Release();
+    }
+
     /// <summary>Stub container that always throws to simulate a failed sandbox launch.</summary>
     private sealed class ThrowingProcessContainer : IProcessContainer
     {
@@ -164,5 +205,46 @@ public class EmitWorkerProcessTests
         }
 
         public void Dispose() { }
+    }
+
+    /// <summary>Stream that blocks Read() calls until <see cref="Release"/> is called, simulating a live but idle pipe.</summary>
+    private sealed class BlockingStream : Stream
+    {
+        private readonly ManualResetEventSlim gate = new(false);
+        public override bool CanRead => true;
+        public override bool CanSeek => false;
+        public override bool CanWrite => false;
+        public override long Length => throw new NotSupportedException();
+        public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
+        public override void Flush() { }
+        public override int Read(byte[] buffer, int offset, int count) { gate.Wait(); return 0; }
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+        /// <summary>Unblocks Read(), which then returns 0 (end-of-stream).</summary>
+        public void Release() => gate.Set();
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+                gate.Set(); // Unblock any waiting Read() so the reader loop can exit.
+            base.Dispose(disposing);
+        }
+    }
+
+    /// <summary>Stream whose Write method always throws, simulating a broken pipe.</summary>
+    private sealed class ThrowingStream : Stream
+    {
+        public override bool CanRead => false;
+        public override bool CanSeek => false;
+        public override bool CanWrite => true;
+        public override long Length => throw new NotSupportedException();
+        public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
+        public override void Flush() { }
+        public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) =>
+            throw new System.IO.IOException("Simulated broken-pipe write failure.");
     }
 }

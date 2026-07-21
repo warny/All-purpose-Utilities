@@ -69,6 +69,12 @@ internal sealed class EmitWorkerProcess : IDisposable
     private volatile Exception? connectionFault;
     private bool disposed;
 
+    /// <summary>Number of requests currently awaiting a response. Exposed for unit testing only.</summary>
+    internal int PendingCount => pending.Count;
+
+    /// <summary>Number of calls that timed out while still running inside the worker. Exposed for unit testing only.</summary>
+    internal int AbandonedCallCount => abandonedCallCount;
+
     private EmitWorkerProcess(
         IProcessContainer? sandbox,
         Process workerProcess,
@@ -160,6 +166,25 @@ internal sealed class EmitWorkerProcess : IDisposable
         }
 
         return worker;
+    }
+
+    /// <summary>
+    /// Creates a minimal <see cref="EmitWorkerProcess"/> backed by caller-supplied streams, for unit
+    /// testing only. The <paramref name="reader"/> is used by the internal reader loop, so passing a
+    /// blocking stream keeps the loop alive while the test exercises <see cref="SendAndReceive"/>;
+    /// disposing or completing the stream lets the loop exit cleanly.
+    /// </summary>
+    internal static EmitWorkerProcess CreateForTesting(
+        System.IO.StreamReader reader,
+        System.IO.StreamWriter writer,
+        TimeSpan callTimeout)
+    {
+        var fakeProcess = new Process();
+        var fakePipe = new NamedPipeServerStream(
+            $"Utils.Reflection.EmitWorker.UnitTest.{Guid.NewGuid():N}",
+            PipeDirection.InOut, maxNumberOfServerInstances: 1,
+            PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
+        return new EmitWorkerProcess(null, fakeProcess, fakePipe, reader, writer, callTimeout);
     }
 
     /// <summary>
@@ -421,9 +446,23 @@ internal sealed class EmitWorkerProcess : IDisposable
             throw new InvalidOperationException($"An in-flight request with id {request.Id} already exists.");
         }
 
-        lock (writeLock)
+        // Write is done after the pending entry is registered (so the reader loop can complete it),
+        // but inside a try/catch: if serialization or the pipe write fails the entry is removed
+        // immediately so the timeout callback cannot later classify this unsent request as an
+        // abandoned worker call and unfairly increment the retirement counter.
+        try
         {
-            writer.WriteLine(JsonSerializer.Serialize(request));
+            lock (writeLock)
+            {
+                writer.WriteLine(JsonSerializer.Serialize(request));
+            }
+        }
+        catch (Exception writeEx)
+        {
+            pending.TryRemove(request.Id, out _);
+            throw new InvalidOperationException(
+                $"Failed to write a '{request.Kind}' request to the isolated Emit worker; " +
+                "the connection may have been closed or broken.", writeEx);
         }
 
         using var timeoutSource = new CancellationTokenSource(timeout);

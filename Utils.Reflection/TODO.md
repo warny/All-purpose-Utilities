@@ -44,13 +44,13 @@ Process termination eventually releases OS resources, but managed/native cleanup
 
 **Priority: P1 — deterministic cleanup.**
 
-### 5. A host-side write failure leaves a request pending until its timeout
+### ~~5. A host-side write failure leaves a request pending until its timeout~~ ✅ DONE
 
-`SendAndReceive` adds the request's completion source to `pending` before serializing/writing the request. If serialization or `writer.WriteLine` throws, the method exits without removing that pending entry. The timeout callback later classifies the request as an abandoned worker call and may contribute to worker retirement, even though the request was never sent.
+~~`SendAndReceive` adds the request's completion source to `pending` before serializing/writing the request. If serialization or `writer.WriteLine` throws, the method exits without removing that pending entry.~~
 
-**Fix:** wrap serialization/write in `try/catch`; remove and fault the exact pending entry immediately on failure. Count a call as abandoned only after a complete frame has been successfully written.
+**Fix applied:** `SendAndReceive` now wraps the lock/write block in try/catch; removes and the pending entry immediately on failure, so an unsent request can never be misclassified as an abandoned call. `PendingCount` and `AbandonedCallCount` are now `internal` for unit testing. A `CreateForTesting` factory enables testing with injected streams without spawning a real worker process.
 
-**Priority: P1 — protocol state integrity.**
+~~**Priority: P1 — protocol state integrity.**~~
 
 ### 6. Pool workers are never replaced after a connection fault or retirement
 
