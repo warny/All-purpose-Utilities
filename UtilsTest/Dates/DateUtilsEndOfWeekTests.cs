@@ -116,3 +116,39 @@ public class DateUtilsEndOfWeekTests
             $"{dt:yyyy-MM-dd} should be within [{start:yyyy-MM-dd}, {end:yyyy-MM-dd}].");
     }
 }
+
+// ------------------------------------------------------------------ #54 Unix timestamp round-trip
+
+[TestClass]
+public class DateUtilsUnixTimestampTests
+{
+    [TestMethod]
+    public void FromUnixTimeStamp_ReturnsUtc()
+    {
+        var result = DateUtils.FromUnixTimeStamp(0);
+        Assert.AreEqual(DateTimeKind.Utc, result.Kind, "FromUnixTimeStamp must return UTC.");
+        Assert.AreEqual(DateTime.UnixEpoch, result);
+    }
+
+    [TestMethod]
+    public void RoundTrip_PreservesUtcInstant()
+    {
+        var original = new DateTime(2024, 6, 15, 12, 30, 45, DateTimeKind.Utc);
+        long timestamp = original.ToUnixTimeStamp();
+        var roundTripped = DateUtils.FromUnixTimeStamp(timestamp);
+
+        Assert.AreEqual(DateTimeKind.Utc, roundTripped.Kind);
+        Assert.AreEqual(original, roundTripped);
+    }
+
+    [TestMethod]
+    public void RoundTrip_IsSymmetric_ForKnownTimestamp()
+    {
+        // Known: 2024-01-01T00:00:00Z = 1704067200
+        long knownTs = 1_704_067_200L;
+        var expected = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        var result = DateUtils.FromUnixTimeStamp(knownTs);
+        Assert.AreEqual(expected, result);
+        Assert.AreEqual(knownTs, result.ToUnixTimeStamp());
+    }
+}

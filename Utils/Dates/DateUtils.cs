@@ -178,12 +178,20 @@ public static class DateUtils
         => (long)(dateTime.ToUniversalTime() - DateTime.UnixEpoch).TotalSeconds;
 
     /// <summary>
-    /// Converts a Unix timestamp to a DateTime.
+    /// Converts a Unix timestamp to a <see cref="DateTime"/> in UTC.
     /// </summary>
-    /// <param name="timestamp">The Unix timestamp to convert.</param>
-    /// <returns>A DateTime representing the specified Unix timestamp.</returns>
+    /// <param name="timestamp">The Unix timestamp (seconds since 1970-01-01T00:00:00Z) to convert.</param>
+    /// <returns>
+    /// A <see cref="DateTime"/> with <see cref="DateTimeKind.Utc"/> representing the specified
+    /// Unix timestamp. Use <see cref="DateTime.ToLocalTime"/> explicitly when local time is required.
+    /// </returns>
+    /// <remarks>
+    /// The return value is always UTC to match <see cref="ToUnixTimeStamp"/>, which converts to
+    /// UTC before computing the timestamp. A round-trip therefore preserves the UTC instant without
+    /// being affected by the host time zone (#54).
+    /// </remarks>
     public static DateTime FromUnixTimeStamp(long timestamp)
-            => DateTime.UnixEpoch.AddSeconds(timestamp).ToLocalTime();
+            => DateTime.UnixEpoch.AddSeconds(timestamp);
 
     /// <summary>
     /// Adds a number of working days to the specified <paramref name="date"/>.
