@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -33,9 +34,16 @@ public class LRUCache<K, V> : IDictionary<K, V>
     /// <summary>
     /// Initializes a new instance of the <see cref="LRUCache{K, V}"/> class with the specified capacity.
     /// </summary>
-    /// <param name="capacity">The maximum number of elements that the cache can hold.</param>
+    /// <param name="capacity">The maximum number of elements that the cache can hold. Must be greater than zero.</param>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when <paramref name="capacity"/> is zero or negative. (#14)
+    /// </exception>
     public LRUCache(int capacity)
     {
+        if (capacity <= 0)
+            throw new ArgumentOutOfRangeException(nameof(capacity), capacity,
+                "Capacity must be greater than zero.");
+
         this.capacity = capacity;
         this.cacheMap = new Dictionary<K, LinkedListNode<KeyValuePair<K, V>>>(capacity);
         this.lruList = new LinkedList<KeyValuePair<K, V>>();
@@ -77,13 +85,17 @@ public class LRUCache<K, V> : IDictionary<K, V>
     /// </summary>
     /// <param name="key">The key whose value to get or set.</param>
     /// <returns>The value associated with the specified key.</returns>
+    /// <exception cref="KeyNotFoundException">
+    /// Thrown by the getter when <paramref name="key"/> is not present in the cache. (#15)
+    /// </exception>
     public V this[K key]
     {
         get
         {
             lock (syncRoot)
             {
-                TryGetValueCore(key, out V value);
+                if (!TryGetValueCore(key, out V value))
+                    throw new KeyNotFoundException($"The key '{key}' was not found in the cache.");
                 return value;
             }
         }
@@ -250,10 +262,19 @@ public class LRUCache<K, V> : IDictionary<K, V>
     /// </summary>
     /// <param name="array">The one-dimensional array that is the destination of the elements copied from the cache.</param>
     /// <param name="arrayIndex">The zero-based index in the array at which copying begins.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="array"/> is <see langword="null"/>. (#17)</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="arrayIndex"/> is negative. (#17)</exception>
+    /// <exception cref="ArgumentException">Thrown when the destination array does not have enough room. (#17)</exception>
     public void CopyTo(KeyValuePair<K, V>[] array, int arrayIndex)
     {
+        if (array is null) throw new ArgumentNullException(nameof(array));
+        if (arrayIndex < 0) throw new ArgumentOutOfRangeException(nameof(arrayIndex), arrayIndex, "Index must be non-negative.");
+
         lock (syncRoot)
         {
+            if (array.Length - arrayIndex < lruList.Count)
+                throw new ArgumentException("The destination array does not have sufficient space.", nameof(array));
+
             foreach (var item in lruList)
             {
                 array[arrayIndex++] = new KeyValuePair<K, V>(item.Key, item.Value);
@@ -263,10 +284,26 @@ public class LRUCache<K, V> : IDictionary<K, V>
 
     /// <summary>
     /// Removes the first occurrence of a specific key-value pair from the cache.
+    /// Both the key and value must match for the entry to be removed. (#16)
     /// </summary>
     /// <param name="item">The key-value pair to remove.</param>
-    /// <returns><see langword="true"/> if the key-value pair was successfully removed; otherwise, <see langword="false"/>.</returns>
-    public bool Remove(KeyValuePair<K, V> item) => Remove(item.Key);
+    /// <returns>
+    /// <see langword="true"/> if the key-value pair was found and the value matched; otherwise, <see langword="false"/>.
+    /// </returns>
+    public bool Remove(KeyValuePair<K, V> item)
+    {
+        lock (syncRoot)
+        {
+            if (cacheMap.TryGetValue(item.Key, out var node) &&
+                EqualityComparer<V>.Default.Equals(node.Value.Value, item.Value))
+            {
+                lruList.Remove(node);
+                cacheMap.Remove(item.Key);
+                return true;
+            }
+            return false;
+        }
+    }
 
     /// <summary>
     /// Returns an enumerator over a point-in-time snapshot of the cache, taken under the internal lock.
@@ -306,10 +343,24 @@ public class LRUCache<K, V> : IDictionary<K, V>
             }
         }
 
+        /// <summary>
+        /// Copies the keys to the specified array starting at <paramref name="arrayIndex"/>.
+        /// </summary>
+        /// <param name="array">Destination array.</param>
+        /// <param name="arrayIndex">Zero-based start index in <paramref name="array"/>.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="array"/> is <see langword="null"/>. (#17)</exception>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="arrayIndex"/> is negative. (#17)</exception>
+        /// <exception cref="ArgumentException">Thrown when the destination array does not have enough room. (#17)</exception>
         public void CopyTo(K[] array, int arrayIndex)
         {
+            if (array is null) throw new ArgumentNullException(nameof(array));
+            if (arrayIndex < 0) throw new ArgumentOutOfRangeException(nameof(arrayIndex), arrayIndex, "Index must be non-negative.");
+
             lock (_owner.syncRoot)
             {
+                if (array.Length - arrayIndex < _owner.lruList.Count)
+                    throw new ArgumentException("The destination array does not have sufficient space.", nameof(array));
+
                 foreach (var kvp in _owner.lruList)
                     array[arrayIndex++] = kvp.Key;
             }
@@ -355,10 +406,24 @@ public class LRUCache<K, V> : IDictionary<K, V>
             }
         }
 
+        /// <summary>
+        /// Copies the values to the specified array starting at <paramref name="arrayIndex"/>.
+        /// </summary>
+        /// <param name="array">Destination array.</param>
+        /// <param name="arrayIndex">Zero-based start index in <paramref name="array"/>.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="array"/> is <see langword="null"/>. (#17)</exception>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="arrayIndex"/> is negative. (#17)</exception>
+        /// <exception cref="ArgumentException">Thrown when the destination array does not have enough room. (#17)</exception>
         public void CopyTo(V[] array, int arrayIndex)
         {
+            if (array is null) throw new ArgumentNullException(nameof(array));
+            if (arrayIndex < 0) throw new ArgumentOutOfRangeException(nameof(arrayIndex), arrayIndex, "Index must be non-negative.");
+
             lock (_owner.syncRoot)
             {
+                if (array.Length - arrayIndex < _owner.lruList.Count)
+                    throw new ArgumentException("The destination array does not have sufficient space.", nameof(array));
+
                 foreach (var kvp in _owner.lruList)
                     array[arrayIndex++] = kvp.Value;
             }
