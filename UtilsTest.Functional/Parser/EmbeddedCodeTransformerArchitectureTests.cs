@@ -694,6 +694,7 @@ public sealed class EmbeddedCodeTransformerArchitectureTests
     {
         return !ContainsDirectory(file, "bin")
             && !ContainsDirectory(file, "obj")
+            && !ContainsDirectory(file, ".claude")
             && !ContainsDirectory(file, "UtilsTest")
             && !ContainsDirectory(file, "UtilsTest.Functional")
             && file.Contains($"{Path.DirectorySeparatorChar}Utils.Parser", StringComparison.Ordinal);

@@ -75,13 +75,39 @@ public class EmitWorkerHostLoopTests
     private sealed class LineQueueTextReader : TextReader
     {
         private readonly BlockingCollection<string?> lines = new();
+        private string? _currentLine;
+        private int _currentPos;
 
         public void Enqueue(string line) => lines.Add(line);
 
-        /// <summary>Signals end of input: the next <see cref="ReadLine"/> call returns <see langword="null"/>.</summary>
+        /// <summary>Signals end of input: the next <see cref="Read"/> call returns <c>-1</c>.</summary>
         public void Complete() => lines.Add(null);
 
+        // ReadLine() is kept for compatibility but is not called by ProtocolFraming.ReadBoundedLine.
         public override string? ReadLine() => lines.Take();
+
+        public override int Read()
+        {
+            if (_currentLine is not null)
+            {
+                if (_currentPos < _currentLine.Length)
+                    return _currentLine[_currentPos++];
+
+                // Line exhausted — emit the newline terminator, then clear the buffer.
+                _currentLine = null;
+                _currentPos = 0;
+                return '\n';
+            }
+
+            string? next = lines.Take();
+            if (next is null) return -1;
+
+            if (next.Length == 0) return '\n';
+
+            _currentLine = next;
+            _currentPos = 1;
+            return next[0];
+        }
 
         protected override void Dispose(bool disposing)
         {
