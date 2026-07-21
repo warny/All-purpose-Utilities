@@ -492,6 +492,31 @@ public class EmitWorkerHostLoopTests
         Assert.IsTrue(hostTask.Wait(timeout));
     }
 
+    // ─── Finding #11: protocol handshake ─────────────────────────────────────────
+
+    [TestMethod]
+    public void Run_HandshakeRequest_ReturnsAssemblyVersion()
+    {
+        // Handshake does not load a native DLL — no Windows-only guard needed.
+        TimeSpan timeout = TimeSpan.FromSeconds(10);
+        string expectedVersion = typeof(LibraryMapper).Assembly.GetName().Version?.ToString() ?? "0.0.0.0";
+
+        using var input = new LineQueueTextReader();
+        using var output = new LineQueueTextWriter();
+        Task hostTask = Task.Run(() => EmitWorkerHost.Run(input, output));
+
+        input.Enqueue(JsonSerializer.Serialize(new WorkerRequest { Id = 42, Kind = WorkerRequestKind.Handshake }));
+        WorkerResponse handshakeResponse = output.TakeResponse(42, timeout);
+
+        Assert.IsTrue(handshakeResponse.Success, handshakeResponse.ErrorMessage);
+        Assert.AreEqual(expectedVersion, handshakeResponse.WorkerVersion,
+            "WorkerVersion in the Handshake response must match the Utils.Reflection assembly version.");
+
+        input.Enqueue(JsonSerializer.Serialize(new WorkerRequest { Id = 99, Kind = WorkerRequestKind.Shutdown }));
+        Assert.IsTrue(output.TakeResponse(99, timeout).Success);
+        Assert.IsTrue(hostTask.Wait(timeout));
+    }
+
     // ─── Finding #12: exact argument-slot count is validated ─────────────────────
 
     [TestMethod]

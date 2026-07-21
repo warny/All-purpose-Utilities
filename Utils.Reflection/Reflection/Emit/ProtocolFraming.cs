@@ -12,10 +12,13 @@ internal static class ProtocolFraming
 {
     /// <summary>
     /// Maximum number of characters allowed in a single protocol line (request or response JSON).
-    /// 64 MiB covers the largest realistic P/Invoke payload while preventing unbounded allocation
-    /// from a fast or hostile producer.
+    /// 4 MiB is a generous upper bound on the argument and return-value JSON for the integer,
+    /// floating-point, and small struct types accepted by <see cref="CrossProcessMarshaling"/>.
+    /// This constant replaces the original 64 MiB limit to reduce single-frame allocation cost;
+    /// length-prefixed binary framing with configurable per-request budgets is deferred to a
+    /// future improvement.
     /// </summary>
-    internal const int MaxLineLength = 64 * 1024 * 1024;
+    internal const int MaxLineLength = 4 * 1024 * 1024;
 
     /// <summary>
     /// Reads one line from <paramref name="reader"/>, returning <see langword="null"/> at

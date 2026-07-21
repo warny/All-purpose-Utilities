@@ -284,7 +284,85 @@ internal sealed class EmitWorkerProcess : IDisposable
         var reader = new System.IO.StreamReader(serverPipe, leaveOpen: true);
         var writer = new System.IO.StreamWriter(serverPipe, leaveOpen: true) { AutoFlush = true };
 
+        try
+        {
+            PerformHandshakeOrThrow(reader, writer);
+        }
+        catch
+        {
+            reader.Dispose();
+            writer.Dispose();
+            serverPipe.Dispose();
+            KillSilently(process);
+            sandbox?.Dispose();
+            throw;
+        }
+
         return new EmitWorkerProcess(sandbox, process, serverPipe, reader, writer, callTimeout ?? DefaultCallTimeout, includeDiagnostics);
+    }
+
+    /// <summary>
+    /// Sends a <see cref="WorkerRequestKind.Handshake"/> request synchronously and validates that
+    /// the worker responds with a matching assembly version before the reader loop starts.
+    /// </summary>
+    /// <remarks>
+    /// Called in <see cref="Start()"/> after the pipe connection is established, before
+    /// <see cref="EmitWorkerProcess"/> is constructed (and therefore before <see cref="RunReaderLoop"/>
+    /// starts). This ensures the handshake response is consumed here — the reader loop never sees it.
+    /// </remarks>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the worker does not respond within 10 seconds, closes the connection, sends a
+    /// malformed response, or reports a different assembly version than the host.
+    /// </exception>
+    private static void PerformHandshakeOrThrow(System.IO.StreamReader reader, System.IO.StreamWriter writer)
+    {
+        writer.WriteLine(JsonSerializer.Serialize(new WorkerRequest { Id = 0, Kind = WorkerRequestKind.Handshake }));
+
+        // TextReader.Read() has no cancellation support; run on a background task to cap the
+        // wait so Start() does not block forever against a stale worker binary that ignores Handshake.
+        Task<string?> readTask = Task.Run(() => ProtocolFraming.ReadBoundedLine(reader));
+        if (!readTask.Wait(TimeSpan.FromSeconds(10)))
+        {
+            throw new InvalidOperationException(
+                "The isolated Emit worker did not respond to the protocol handshake within 10 seconds. " +
+                "Ensure the worker executable matches the host assembly and calls " +
+                "LibraryMapper.RunWorkerIfRequested before any other startup logic.");
+        }
+
+        string? handshakeLine = readTask.GetAwaiter().GetResult();
+        if (handshakeLine is null)
+        {
+            throw new InvalidOperationException(
+                "The isolated Emit worker closed the connection during the protocol handshake.");
+        }
+
+        WorkerResponse handshakeResponse;
+        try
+        {
+            handshakeResponse = JsonSerializer.Deserialize<WorkerResponse>(handshakeLine)
+                ?? throw new InvalidOperationException(
+                    "The isolated Emit worker sent a null handshake response.");
+        }
+        catch (JsonException ex)
+        {
+            throw new InvalidOperationException(
+                "The isolated Emit worker sent a malformed handshake response.", ex);
+        }
+
+        if (handshakeResponse.Id != 0 || !handshakeResponse.Success)
+        {
+            throw new InvalidOperationException(
+                $"The isolated Emit worker handshake failed: {handshakeResponse.ErrorMessage ?? "unexpected response format"}.");
+        }
+
+        string expectedVersion = typeof(EmitWorkerProcess).Assembly.GetName().Version?.ToString() ?? "0.0.0.0";
+        if (handshakeResponse.WorkerVersion != expectedVersion)
+        {
+            throw new InvalidOperationException(
+                $"The isolated Emit worker version ({handshakeResponse.WorkerVersion ?? "(none)"}) does not " +
+                $"match the host version ({expectedVersion}). The worker executable may be stale or from a " +
+                "different package version. Restart the application to pick up the updated binary.");
+        }
     }
 
     /// <summary>

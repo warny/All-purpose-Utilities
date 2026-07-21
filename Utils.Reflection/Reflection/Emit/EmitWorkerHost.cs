@@ -183,6 +183,19 @@ internal static class EmitWorkerHost
                     return;
                 }
 
+                // Handshake is handled inline (not dispatched to the thread pool) so the host can
+                // read the version response synchronously before the reader loop even starts.
+                if (request.Kind == WorkerRequestKind.Handshake)
+                {
+                    WriteResponse(output, writeLock, new WorkerResponse
+                    {
+                        Id = request.Id,
+                        Success = true,
+                        WorkerVersion = typeof(EmitWorkerHost).Assembly.GetName().Version?.ToString() ?? "0.0.0.0",
+                    });
+                    continue;
+                }
+
                 // Acquire the semaphore BEFORE Task.Run so the reader loop blocks (backs up into the
                 // OS pipe buffer) rather than enqueuing an unbounded number of thread-pool tasks.
                 concurrencyLimit.Wait();
@@ -206,7 +219,7 @@ internal static class EmitWorkerHost
                 // when the continuation fires, even if the task completes extremely quickly.
                 activeTasks[taskId] = task;
                 _ = task.ContinueWith(
-                    _ => activeTasks.TryRemove(taskId, out _),
+                    t => activeTasks.TryRemove(taskId, out _),
                     TaskContinuationOptions.ExecuteSynchronously);
             }
 

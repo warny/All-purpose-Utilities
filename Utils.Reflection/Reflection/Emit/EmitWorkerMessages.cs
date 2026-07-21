@@ -18,6 +18,13 @@ internal enum WorkerRequestKind
 
     /// <summary>Requests a graceful shutdown of the worker process.</summary>
     Shutdown,
+
+    /// <summary>
+    /// Protocol-version handshake: sent by the host as the very first request (before any Load)
+    /// so the worker can confirm its assembly version matches. Handled inline on the worker side
+    /// (not dispatched to the thread pool) and responded to immediately.
+    /// </summary>
+    Handshake,
 }
 
 /// <summary>
@@ -101,4 +108,10 @@ internal sealed class WorkerResponse
     /// surface it for diagnostics — see <see cref="EmitWorkerInvocationException.RemoteStackTrace"/>.
     /// </summary>
     public string? ErrorStackTrace { get; set; }
+
+    /// <summary>
+    /// (Handshake) Assembly version of the worker process, reported so the host can detect a
+    /// version mismatch before sending any Load request. Null for non-Handshake responses.
+    /// </summary>
+    public string? WorkerVersion { get; set; }
 }
