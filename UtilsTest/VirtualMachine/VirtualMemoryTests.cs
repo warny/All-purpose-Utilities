@@ -1104,4 +1104,32 @@ public class VirtualMemoryTests
         CollectionAssert.AreEqual(source, dest,
             "All 12 bytes must be copied in address order across three pages.");
     }
+
+    // ── Pre-allocation safety: unmapped range must throw MAE, not OOM ────────
+
+    [TestMethod]
+    public void Read_LargeUnmappedRange_PageSize1_ThrowsMemoryAccessException()
+    {
+        // With pageSize=1, the theoretical upper bound on segments is length.
+        // Pre-allocating that many entries before the first mapping check could throw
+        // OutOfMemoryException instead of MemoryAccessException.
+        // This test verifies the contract: an invalid range produces MemoryAccessException
+        // regardless of how large the requested length is.
+        var mem = new VirtualMemory<int>(pageSize: 1);
+        // No pages allocated; address 0 is unmapped.
+        var buf = new byte[1_000_000];
+        Assert.ThrowsException<MemoryAccessException>(
+            () => mem.MasterProcess.Read(0, buf),
+            "A large read on an unmapped address must throw MemoryAccessException, not OOM.");
+    }
+
+    [TestMethod]
+    public void Write_LargeUnmappedRange_PageSize1_ThrowsMemoryAccessException()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 1);
+        var buf = new byte[1_000_000];
+        Assert.ThrowsException<MemoryAccessException>(
+            () => mem.MasterProcess.Write(0, buf),
+            "A large write on an unmapped address must throw MemoryAccessException, not OOM.");
+    }
 }

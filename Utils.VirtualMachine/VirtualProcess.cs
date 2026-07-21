@@ -288,7 +288,14 @@ public class VirtualProcess<TAddress> where TAddress : IBinaryInteger<TAddress>
         // Loop termination: `remaining` decreases by at least 1 per iteration (bytesInPage ≥ 1
         // since _pageSize ≥ 1 and byteOffset < _pageSize). At most `length` iterations total.
         // Address arithmetic: the pre-validated range guarantees no intermediate address overflows.
-        int estimatedSegments = _pageSize > 1 ? (length - 1) / _pageSize + 2 : length;
+        //
+        // Pre-allocation: cap at 256 to prevent an OutOfMemoryException before the first page
+        // lookup. With pageSize = 1, the theoretical maximum is `length` segments; pre-allocating
+        // that many before confirming any page is mapped could throw OOM instead of the
+        // expected MemoryAccessException. The list grows on demand if the range is valid.
+        int estimatedSegments = Math.Min(
+            256,
+            _pageSize > 1 ? (length - 1) / _pageSize + 2 : length);
         var segments = new List<MemorySegment>(capacity: estimatedSegments);
         int remaining = length;
         TAddress currentAddress = startAddress;
