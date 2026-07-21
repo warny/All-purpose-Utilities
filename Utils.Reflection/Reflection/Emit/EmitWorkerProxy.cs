@@ -16,12 +16,14 @@ public class EmitWorkerProxy : DispatchProxy
     private EmitWorkerProcess? worker;
     private int handle;
     private bool ownsWorker;
+    private int disposeGuard; // 0 = alive, 1 = disposing/disposed (Interlocked)
 
     /// <summary>
     /// Coordinates concurrent invocations with disposal: every active call holds a read lock while
     /// the dispose path holds the write lock. <see cref="EnterWriteLock"/> therefore blocks until all
     /// in-progress <see cref="EmitWorkerProcess.InvokeMethod"/> calls complete before the worker is
     /// unloaded or killed, preventing use-after-free of the native DLL handle inside the worker.
+    /// Disposed after the write lock is released so its wait handles are reclaimed even under contention.
     /// </summary>
     private readonly ReaderWriterLockSlim invocationLock = new();
 
@@ -54,6 +56,10 @@ public class EmitWorkerProxy : DispatchProxy
 
         if (IsDisposeMethod(targetMethod))
         {
+            // Idempotent: only the first Dispose call runs cleanup.
+            if (Interlocked.CompareExchange(ref disposeGuard, 1, 0) != 0)
+                return null;
+
             // Write lock: blocks until every in-progress InvokeMethod call releases its read lock,
             // then prevents new invocations from starting. This ensures the worker is not killed
             // while a native call is still executing through it.
@@ -75,12 +81,27 @@ public class EmitWorkerProxy : DispatchProxy
                 invocationLock.ExitWriteLock();
             }
 
+            // No thread holds any lock at this point: the write lock serialises against all readers,
+            // so disposing here reclaims the lock's wait handles immediately.
+            invocationLock.Dispose();
             return null;
         }
 
+        // Fast path: check the dispose guard before taking the (now-possibly-disposed) read lock.
+        if (Volatile.Read(ref disposeGuard) != 0)
+            throw new ObjectDisposedException(targetMethod.DeclaringType?.FullName ?? nameof(EmitWorkerProxy));
+
         // Read lock: multiple callers may hold this concurrently; the write lock (Dispose) waits
-        // for all of them before it can proceed.
-        invocationLock.EnterReadLock();
+        // for all of them before it can proceed. Guard against ObjectDisposedException if Dispose
+        // races with this call between the check above and EnterReadLock.
+        try
+        {
+            invocationLock.EnterReadLock();
+        }
+        catch (ObjectDisposedException)
+        {
+            throw new ObjectDisposedException(targetMethod.DeclaringType?.FullName ?? nameof(EmitWorkerProxy));
+        }
         try
         {
             if (worker is null)

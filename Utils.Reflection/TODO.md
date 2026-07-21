@@ -114,13 +114,13 @@ The reader loop drops every response whose ID is not currently in `pending`, inc
 
 **Priority: P2 — protocol observability.**
 
-### 14. The proxy's synchronization primitive is never disposed
+### ~~14. The proxy's synchronization primitive is never disposed~~ ✅ DONE
 
-Every `EmitWorkerProxy` allocates a `ReaderWriterLockSlim`. Calling the proxied `Dispose` releases the worker/handle but does not dispose the lock. The lock can own wait handles after contention.
+~~Every `EmitWorkerProxy` allocates a `ReaderWriterLockSlim`. Calling the proxied `Dispose` releases the worker/handle but does not dispose the lock. The lock can own wait handles after contention.~~
 
-**Fix:** after acquiring the write lock, mark the proxy disposed and release resources; dispose the lock only when no future method can enter it, or replace it with a lighter lifecycle gate that does not require disposal.
+**Fix applied:** Added `disposeGuard` field (0=alive, 1=disposed) using `Interlocked.CompareExchange` to make `Dispose` idempotent. After releasing the write lock, `invocationLock.Dispose()` is called — safe because the write lock serialises against all readers so no thread can hold the lock at that point. The read path checks `disposeGuard` first (fast path) and catches `ObjectDisposedException` from `EnterReadLock` for the narrow concurrent-Dispose window, re-throwing as a proxy-scoped ODE. Unit test `Dispose_DisposesReaderWriterLockSlim_LockCannotBeAcquiredAfterwards` verifies the lock is disposed via reflection.
 
-**Priority: P2 — managed-resource lifecycle.**
+~~**Priority: P2 — managed-resource lifecycle.**~~
 
 ### 15. Worker creation and calls are synchronous-only despite process and IPC waits
 

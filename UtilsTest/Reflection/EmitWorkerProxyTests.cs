@@ -1,5 +1,6 @@
 using System;
 using System.Reflection;
+using System.Threading;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -66,5 +67,25 @@ public class EmitWorkerProxyTests
         ITinyInterface proxy = DispatchProxy.Create<ITinyInterface, EmitWorkerProxy>();
         proxy.Dispose();
         proxy.Dispose(); // Must be idempotent.
+    }
+
+    // ─── Finding #14: ReaderWriterLockSlim is disposed after Dispose ─────────────
+
+    [TestMethod]
+    public void Dispose_DisposesReaderWriterLockSlim_LockCannotBeAcquiredAfterwards()
+    {
+        ITinyInterface proxy = DispatchProxy.Create<ITinyInterface, EmitWorkerProxy>();
+
+        FieldInfo? lockField = typeof(EmitWorkerProxy)
+            .GetField("invocationLock", BindingFlags.NonPublic | BindingFlags.Instance);
+        Assert.IsNotNull(lockField, "invocationLock field must exist on EmitWorkerProxy.");
+
+        var lockSlim = (ReaderWriterLockSlim?)lockField.GetValue((EmitWorkerProxy)(object)proxy);
+        Assert.IsNotNull(lockSlim);
+
+        proxy.Dispose();
+
+        Assert.ThrowsException<ObjectDisposedException>(() => lockSlim.EnterReadLock(),
+            "After Dispose the ReaderWriterLockSlim must be disposed so its wait handles are reclaimed.");
     }
 }
