@@ -28,17 +28,82 @@ namespace Utils.Reflection.Reflection.Emit;
 internal static class EmitWorkerHost
 {
     /// <summary>
-    /// A single native mapping instance loaded by a <see cref="WorkerRequestKind.Load"/> request, kept
-    /// alive until a matching <see cref="WorkerRequestKind.Unload"/> request or worker shutdown.
+    /// Lifetime-managed slot for a single native mapping instance loaded by a
+    /// <see cref="WorkerRequestKind.Load"/> request. Tracks the number of <see cref="WorkerRequestKind.Call"/>
+    /// requests currently executing against this instance so that <see cref="WorkerRequestKind.Unload"/>
+    /// (triggered by <see cref="HandleUnload"/>) waits for all active calls to finish before disposing
+    /// the native library handle, preventing use-after-free of emitted delegates.
     /// </summary>
-    /// <param name="Instance">The emitted mapping instance (an <see cref="Utils.Reflection.LibraryMapper"/> subclass).</param>
-    /// <param name="InterfaceType">Interface the instance was mapped from, used to resolve method tokens on <see cref="WorkerRequestKind.Call"/>.</param>
-    /// <param name="AllowedMethodTokens">
-    /// Frozen set of metadata tokens for every method declared by (or inherited into) <paramref name="InterfaceType"/>,
-    /// computed once at load time. <see cref="HandleCall"/> rejects any <see cref="WorkerRequest.MethodMetadataToken"/>
-    /// not in this set so the worker cannot be directed to invoke arbitrary methods from the same module.
-    /// </param>
-    private readonly record struct LoadedInterface(object Instance, Type InterfaceType, FrozenSet<int> AllowedMethodTokens);
+    private sealed class LoadedInterfaceSlot : IDisposable
+    {
+        /// <summary>Gate protecting <see cref="_activeCallCount"/> and <see cref="_closing"/>.</summary>
+        private readonly object _gate = new();
+        private int _activeCallCount;
+        private bool _closing;
+
+        /// <summary>The emitted mapping instance (an <see cref="Utils.Reflection.LibraryMapper"/> subclass).</summary>
+        internal object Instance { get; }
+
+        /// <summary>Interface the instance was mapped from, used to resolve method tokens.</summary>
+        internal Type InterfaceType { get; }
+
+        /// <summary>
+        /// Frozen set of metadata tokens for every method declared by (or inherited into) <see cref="InterfaceType"/>.
+        /// </summary>
+        internal FrozenSet<int> AllowedMethodTokens { get; }
+
+        internal LoadedInterfaceSlot(object instance, Type interfaceType, FrozenSet<int> allowedMethodTokens)
+        {
+            Instance = instance;
+            InterfaceType = interfaceType;
+            AllowedMethodTokens = allowedMethodTokens;
+        }
+
+        /// <summary>
+        /// Tries to start a call on this slot. Increments the active-call count and returns
+        /// <see langword="true"/> when the slot is still open; returns <see langword="false"/>
+        /// when an Unload (<see cref="Dispose"/>) has already been initiated.
+        /// </summary>
+        internal bool TryBeginCall()
+        {
+            lock (_gate)
+            {
+                if (_closing)
+                    return false;
+                _activeCallCount++;
+                return true;
+            }
+        }
+
+        /// <summary>Ends a call started with <see cref="TryBeginCall"/> and notifies any waiting Dispose.</summary>
+        internal void EndCall()
+        {
+            lock (_gate)
+            {
+                _activeCallCount--;
+                if (_closing && _activeCallCount == 0)
+                    Monitor.PulseAll(_gate);
+            }
+        }
+
+        /// <summary>
+        /// Marks the slot as closing (rejecting new <see cref="TryBeginCall"/> attempts), waits for
+        /// all currently executing calls to complete via <see cref="EndCall"/>, and then disposes
+        /// <see cref="Instance"/> if it implements <see cref="IDisposable"/>.
+        /// </summary>
+        public void Dispose()
+        {
+            lock (_gate)
+            {
+                _closing = true;
+                while (_activeCallCount > 0)
+                    Monitor.Wait(_gate);
+            }
+
+            if (Instance is IDisposable disposable)
+                disposable.Dispose();
+        }
+    }
 
     /// <summary>
     /// Maximum number of requests that may be executing concurrently inside a single worker
@@ -69,7 +134,7 @@ internal static class EmitWorkerHost
     /// <param name="output">Writer for outgoing JSON-line responses.</param>
     internal static void Run(TextReader input, TextWriter output)
     {
-        var loaded = new ConcurrentDictionary<int, LoadedInterface>();
+        var loaded = new ConcurrentDictionary<int, LoadedInterfaceSlot>();
         var nextHandleBox = new int[1];
         var writeLock = new object();
         // Only active (not-yet-completed) tasks are kept. Each task removes itself via a
@@ -156,9 +221,9 @@ internal static class EmitWorkerHost
             // (normal Shutdown, abrupt end-of-stream, or an unhandled exception).
             foreach (int key in loaded.Keys.ToArray())
             {
-                if (loaded.TryRemove(key, out LoadedInterface entry) && entry.Instance is IDisposable disposable)
+                if (loaded.TryRemove(key, out LoadedInterfaceSlot? slot))
                 {
-                    try { disposable.Dispose(); }
+                    try { slot.Dispose(); }
                     catch { /* best-effort; move on to the next */ }
                 }
             }
@@ -193,7 +258,7 @@ internal static class EmitWorkerHost
     /// other in-flight request on the same worker — see the class remarks.
     /// </summary>
     private static void ProcessRequest(
-        WorkerRequest request, ConcurrentDictionary<int, LoadedInterface> loaded, int[] nextHandleBox,
+        WorkerRequest request, ConcurrentDictionary<int, LoadedInterfaceSlot> loaded, int[] nextHandleBox,
         TextWriter output, object writeLock)
     {
         WorkerResponse response;
@@ -202,7 +267,7 @@ internal static class EmitWorkerHost
             response = request.Kind switch
             {
                 WorkerRequestKind.Load => HandleLoad(request, loaded, nextHandleBox),
-                WorkerRequestKind.Call => HandleCall(GetLoadedOrThrow(loaded, request.Handle), request),
+                WorkerRequestKind.Call => HandleCall(GetSlotOrThrow(loaded, request.Handle), request),
                 WorkerRequestKind.Unload => HandleUnload(loaded, request),
                 _ => throw new InvalidOperationException($"Unknown worker request kind '{request.Kind}'."),
             };
@@ -233,7 +298,7 @@ internal static class EmitWorkerHost
     /// requests must never be handed the same handle. A plain <see langword="ref"/> local cannot be
     /// captured by the <see cref="Task.Run(Action)"/> closures in <see cref="Run"/>, hence the boxed array.
     /// </param>
-    private static WorkerResponse HandleLoad(WorkerRequest request, ConcurrentDictionary<int, LoadedInterface> loaded, int[] nextHandleBox)
+    private static WorkerResponse HandleLoad(WorkerRequest request, ConcurrentDictionary<int, LoadedInterfaceSlot> loaded, int[] nextHandleBox)
     {
         Assembly interfaceAssembly = Assembly.LoadFrom(
             request.InterfaceAssemblyPath ?? throw new InvalidOperationException("Load request is missing the interface assembly path."));
@@ -256,7 +321,7 @@ internal static class EmitWorkerHost
 
         FrozenSet<int> allowedTokens = interfaceType.GetMethods().Select(m => m.MetadataToken).ToFrozenSet();
         int handle = Interlocked.Increment(ref nextHandleBox[0]);
-        loaded[handle] = new LoadedInterface(nativeInstance, interfaceType, allowedTokens);
+        loaded[handle] = new LoadedInterfaceSlot(nativeInstance, interfaceType, allowedTokens);
 
         return new WorkerResponse { Id = request.Id, Success = true, Handle = handle };
     }
@@ -271,17 +336,18 @@ internal static class EmitWorkerHost
     /// </summary>
     /// <remarks>
     /// A <see cref="WorkerRequestKind.Call"/> for the same handle dispatched concurrently with this
-    /// request races exactly as a concurrent Dispose/call pair would in-process: whichever runs first
-    /// wins, and a Call that loses the race fails with an unknown-handle error rather than corrupting
-    /// state. Callers that need a strict ordering between the two must serialize them themselves (for
-    /// example, only calling <see cref="EmitWorkerProcess.UnloadInterface"/> once no other thread holds
-    /// a reference to the corresponding proxy).
+    /// request is safe: <see cref="LoadedInterfaceSlot.Dispose"/> marks the slot as closing and waits
+    /// for any in-progress call to complete via <see cref="LoadedInterfaceSlot.EndCall"/> before
+    /// disposing the native library handle. A call that arrives after the slot is removed from the
+    /// dictionary gets an unknown-handle error. A call that is already executing completes normally;
+    /// a call that races at <see cref="LoadedInterfaceSlot.TryBeginCall"/> after marking is rejected
+    /// with an error instead of running against a freed handle.
     /// </remarks>
-    private static WorkerResponse HandleUnload(ConcurrentDictionary<int, LoadedInterface> loaded, WorkerRequest request)
+    private static WorkerResponse HandleUnload(ConcurrentDictionary<int, LoadedInterfaceSlot> loaded, WorkerRequest request)
     {
-        if (loaded.TryRemove(request.Handle, out LoadedInterface entry) && entry.Instance is IDisposable disposable)
+        if (loaded.TryRemove(request.Handle, out LoadedInterfaceSlot? slot))
         {
-            disposable.Dispose();
+            slot.Dispose();
         }
 
         return new WorkerResponse { Id = request.Id, Success = true };
@@ -291,15 +357,15 @@ internal static class EmitWorkerHost
     /// Resolves the <see cref="WorkerRequestKind.Load"/>-allocated handle referenced by a
     /// <see cref="WorkerRequestKind.Call"/> request.
     /// </summary>
-    private static LoadedInterface GetLoadedOrThrow(ConcurrentDictionary<int, LoadedInterface> loaded, int handle)
+    private static LoadedInterfaceSlot GetSlotOrThrow(ConcurrentDictionary<int, LoadedInterfaceSlot> loaded, int handle)
     {
-        if (!loaded.TryGetValue(handle, out LoadedInterface entry))
+        if (!loaded.TryGetValue(handle, out LoadedInterfaceSlot? slot))
         {
             throw new InvalidOperationException(
                 $"Received a Call request for handle {handle}, which was never loaded (or was already unloaded) on this worker.");
         }
 
-        return entry;
+        return slot;
     }
 
     /// <summary>
@@ -308,7 +374,7 @@ internal static class EmitWorkerHost
     /// </summary>
     /// <remarks>
     /// Exposed as <see langword="internal"/> so it can be unit-tested without instantiating the
-    /// private <c>LoadedInterface</c> record. Production callers go through
+    /// private <c>LoadedInterfaceSlot</c> class. Production callers go through
     /// <see cref="HandleCall"/>, which delegates here before calling <c>Module.ResolveMethod</c>.
     /// </remarks>
     /// <exception cref="InvalidOperationException">
@@ -332,49 +398,69 @@ internal static class EmitWorkerHost
     /// </summary>
     /// <remarks>
     /// The metadata token in the request is validated against the frozen allowlist built at load time
-    /// (<see cref="LoadedInterface.AllowedMethodTokens"/>) by <see cref="ValidateMethodToken"/>. A
+    /// (<see cref="LoadedInterfaceSlot.AllowedMethodTokens"/>) by <see cref="ValidateMethodToken"/>. A
     /// token that is not in the allowlist is rejected before <c>Module.ResolveMethod</c> is ever
     /// called, preventing the worker from being directed to invoke arbitrary methods from the same
     /// module (for example, private helpers or static constructors from the interface's assembly that
     /// were not part of the interface contract).
+    /// <para>
+    /// Call lifetime is coordinated with <see cref="HandleUnload"/> via
+    /// <see cref="LoadedInterfaceSlot.TryBeginCall"/> / <see cref="LoadedInterfaceSlot.EndCall"/>:
+    /// the slot refuses new calls once an Unload has started, and the Unload waits for any call
+    /// already past <see cref="LoadedInterfaceSlot.TryBeginCall"/> to complete before disposing
+    /// the native library handle.
+    /// </para>
     /// </remarks>
-    private static WorkerResponse HandleCall(LoadedInterface loadedInterface, WorkerRequest request)
+    private static WorkerResponse HandleCall(LoadedInterfaceSlot slot, WorkerRequest request)
     {
-        ValidateMethodToken(loadedInterface.InterfaceType, loadedInterface.AllowedMethodTokens, request.MethodMetadataToken);
-
-        var method = (MethodInfo)loadedInterface.InterfaceType.Module.ResolveMethod(request.MethodMetadataToken);
-        ParameterInfo[] parameters = method.GetParameters();
-        string?[] argumentsJson = request.ArgumentsJson ?? [];
-        object?[] arguments = new object?[parameters.Length];
-
-        for (int i = 0; i < parameters.Length; i++)
+        if (!slot.TryBeginCall())
         {
-            Type parameterType = parameters[i].ParameterType;
-            Type effectiveType = parameterType.IsByRef ? parameterType.GetElementType()! : parameterType;
-            string? argumentJson = i < argumentsJson.Length ? argumentsJson[i] : null;
-            arguments[i] = argumentJson is null ? null : JsonSerializer.Deserialize(argumentJson, effectiveType, CrossProcessMarshaling.JsonOptions);
+            throw new InvalidOperationException(
+                $"Call request for handle {request.Handle} was rejected because the interface is being unloaded.");
         }
 
-        object? result = method.Invoke(loadedInterface.Instance, arguments);
-
-        string?[] byRefValuesJson = new string?[parameters.Length];
-        for (int i = 0; i < parameters.Length; i++)
+        try
         {
-            if (parameters[i].ParameterType.IsByRef)
+            ValidateMethodToken(slot.InterfaceType, slot.AllowedMethodTokens, request.MethodMetadataToken);
+
+            var method = (MethodInfo)slot.InterfaceType.Module.ResolveMethod(request.MethodMetadataToken);
+            ParameterInfo[] parameters = method.GetParameters();
+            string?[] argumentsJson = request.ArgumentsJson ?? [];
+            object?[] arguments = new object?[parameters.Length];
+
+            for (int i = 0; i < parameters.Length; i++)
             {
-                Type effectiveType = parameters[i].ParameterType.GetElementType()!;
-                byRefValuesJson[i] = JsonSerializer.Serialize(arguments[i], effectiveType, CrossProcessMarshaling.JsonOptions);
+                Type parameterType = parameters[i].ParameterType;
+                Type effectiveType = parameterType.IsByRef ? parameterType.GetElementType()! : parameterType;
+                string? argumentJson = i < argumentsJson.Length ? argumentsJson[i] : null;
+                arguments[i] = argumentJson is null ? null : JsonSerializer.Deserialize(argumentJson, effectiveType, CrossProcessMarshaling.JsonOptions);
             }
-        }
 
-        return new WorkerResponse
+            object? result = method.Invoke(slot.Instance, arguments);
+
+            string?[] byRefValuesJson = new string?[parameters.Length];
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                if (parameters[i].ParameterType.IsByRef)
+                {
+                    Type effectiveType = parameters[i].ParameterType.GetElementType()!;
+                    byRefValuesJson[i] = JsonSerializer.Serialize(arguments[i], effectiveType, CrossProcessMarshaling.JsonOptions);
+                }
+            }
+
+            return new WorkerResponse
+            {
+                Id = request.Id,
+                Success = true,
+                Handle = request.Handle,
+                ReturnValueJson = method.ReturnType == typeof(void) ? null : JsonSerializer.Serialize(result, method.ReturnType, CrossProcessMarshaling.JsonOptions),
+                ByRefValuesJson = byRefValuesJson,
+            };
+        }
+        finally
         {
-            Id = request.Id,
-            Success = true,
-            Handle = request.Handle,
-            ReturnValueJson = method.ReturnType == typeof(void) ? null : JsonSerializer.Serialize(result, method.ReturnType, CrossProcessMarshaling.JsonOptions),
-            ByRefValuesJson = byRefValuesJson,
-        };
+            slot.EndCall();
+        }
     }
 
     /// <summary>

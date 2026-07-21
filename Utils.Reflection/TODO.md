@@ -14,15 +14,13 @@ Metadata tokens are unique only inside one module. An inherited interface method
 
 **Priority: P0 — remote-dispatch integrity.**
 
-### 2. `Unload` can dispose a native mapping while a call is executing
+### ~~2. `Unload` can dispose a native mapping while a call is executing~~ ✅ DONE
 
-`HandleCall` retrieves a `LoadedInterface` value from the concurrent dictionary and then invokes it. A concurrent `Unload` can remove that dictionary entry and immediately call `Dispose` on the same instance after `HandleCall` has already retrieved it.
+~~`HandleCall` retrieves a `LoadedInterface` value from the concurrent dictionary and then invokes it. A concurrent `Unload` can remove that dictionary entry and immediately call `Dispose` on the same instance after `HandleCall` has already retrieved it.~~
 
-The current documentation says the losing call should fail with an unknown-handle error, but that is only true when removal wins before lookup. When lookup wins first, disposal can occur during native execution, creating a use-after-free race for the native library handle and emitted delegates.
+**Fix applied:** `LoadedInterface` (a struct) replaced by `LoadedInterfaceSlot` (a class with ref-counting). `TryBeginCall()` atomically checks `_closing` and increments the active-call count; `EndCall()` decrements and signals; `Dispose()` marks `_closing = true` then `Monitor.Wait`s for count to reach 0 before disposing. `HandleCall` calls `TryBeginCall` in a try/finally with `EndCall`; `HandleUnload` calls `slot.Dispose()`. Functional test `Run_UnloadWhileCallInProgress_WaitsForCallBeforeDisposing` verifies the race is resolved.
 
-**Fix:** introduce per-handle lifetime coordination. Calls must acquire a lease/read lock or increment an active-call count before accessing the instance. Unload must first mark the handle as closing, reject new calls, wait for active calls to finish, and only then dispose it.
-
-**Priority: P0 — native-resource safety.**
+~~**Priority: P0 — native-resource safety.**~~
 
 ## High-priority findings
 

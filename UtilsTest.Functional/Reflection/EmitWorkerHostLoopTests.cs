@@ -387,6 +387,59 @@ public class EmitWorkerHostLoopTests
         Assert.IsFalse(string.IsNullOrEmpty(response.ErrorMessage));
     }
 
+    // ─── Finding #2: per-handle call leasing prevents Unload/Call race ──────────
+
+    [TestMethod]
+    public void Run_UnloadWhileCallInProgress_WaitsForCallBeforeDisposing()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            Assert.Inconclusive("This test requires kernel32.dll, available on Windows only.");
+            return;
+        }
+
+        // Sends a long-running Call (Sleep 500ms) and an Unload for the same handle concurrently.
+        // With the per-handle call-lease (TryBeginCall/EndCall), the Unload must wait for the
+        // sleeping call to complete before it can dispose the native handle, and both responses
+        // must indicate success. Without the lease the Unload could dispose the handle while the
+        // call is still executing its delegate — a use-after-free of the native library.
+        Type sleepType = typeof(IKernel32Sleep);
+        MethodInfo sleepMethod = sleepType.GetMethod(nameof(IKernel32Sleep.Sleep))!;
+        TimeSpan timeout = TimeSpan.FromSeconds(10);
+        const uint sleepMs = 500;
+
+        using var input = new LineQueueTextReader();
+        using var output = new LineQueueTextWriter();
+        Task hostTask = Task.Run(() => EmitWorkerHost.Run(input, output));
+
+        input.Enqueue(JsonSerializer.Serialize(new WorkerRequest
+        {
+            Id = 1, Kind = WorkerRequestKind.Load,
+            InterfaceAssemblyPath = sleepType.Assembly.Location, InterfaceTypeFullName = sleepType.FullName,
+            DllPath = "kernel32.dll", CallingConvention = CallingConvention.Winapi,
+        }));
+        int handle = output.TakeResponse(1, timeout).Handle;
+
+        // Enqueue a slow Call and an Unload back-to-back without waiting for the Call to respond.
+        input.Enqueue(JsonSerializer.Serialize(new WorkerRequest
+        {
+            Id = 2, Kind = WorkerRequestKind.Call, Handle = handle,
+            MethodMetadataToken = sleepMethod.MetadataToken,
+            ArgumentsJson = [JsonSerializer.Serialize(sleepMs)],
+        }));
+        input.Enqueue(JsonSerializer.Serialize(new WorkerRequest { Id = 3, Kind = WorkerRequestKind.Unload, Handle = handle }));
+
+        WorkerResponse callResponse = output.TakeResponse(2, timeout);
+        WorkerResponse unloadResponse = output.TakeResponse(3, timeout);
+
+        Assert.IsTrue(callResponse.Success, $"Call must succeed: {callResponse.ErrorMessage}");
+        Assert.IsTrue(unloadResponse.Success, $"Unload must succeed: {unloadResponse.ErrorMessage}");
+
+        input.Enqueue(JsonSerializer.Serialize(new WorkerRequest { Id = 4, Kind = WorkerRequestKind.Shutdown }));
+        Assert.IsTrue(output.TakeResponse(4, timeout).Success);
+        Assert.IsTrue(hostTask.Wait(timeout));
+    }
+
     // ─── Finding #3: Shutdown truthfulness ───────────────────────────────────────
 
     [TestMethod]
