@@ -17,6 +17,7 @@ namespace UtilsTest.Geography
             (45.5,-45.5, "N45.5, W45.5", "N45°30', W45°30'"),
         ];
 
+
         [TestMethod]
         public void GeoPoint1()
         {
@@ -153,6 +154,46 @@ namespace UtilsTest.Geography
             var point2 = new GeoPoint<double>(90, -170);
 
             Assert.IsTrue(point1.IsApproximately(point2, 1e-9));
+        }
+
+        [TestMethod]
+        public void FormatDms_WithNonZeroSeconds_SecondsAreInRange()
+        {
+            // Before the fix, seconds were multiplied by SecondsInDegree (3600) instead of
+            // SecondsInMinute (60), producing values such as 2649 for 12.3456° (correct: 44).
+            // After the fix, seconds must always be in [0, 59].
+            double[] testLatitudes = [12.3456, 45.6789, -33.7654, 89.9999, -0.001];
+            foreach (double lat in testLatitudes)
+            {
+                var point = new GeoPoint<double>(lat, 0);
+                string formatted = point.ToString("D");
+                string latPart = formatted.Split(',')[0].Trim();
+
+                int quoteIdx = latPart.IndexOf('"');
+                Assert.IsTrue(quoteIdx >= 0, $"No seconds in output for lat={lat}: {formatted}");
+                int apostrIdx = latPart.LastIndexOf('\'', quoteIdx - 1);
+                int sec = int.Parse(latPart[(apostrIdx + 1)..quoteIdx]);
+
+                Assert.IsTrue(sec >= 0 && sec < 60,
+                    $"Seconds={sec} out of [0,59] for lat={lat}. Full output: {formatted}");
+            }
+        }
+
+        [TestMethod]
+        public void FormatDms_RoundTripWithSeconds_ParsesBackWithinOneSecond()
+        {
+            // Round-trip through DMS format: parsed value may differ by up to 1 second (1/3600°)
+            // because the format truncates (floor) to whole seconds.
+            double[] testLatitudes = [12.3456, 45.6789, -33.7654];
+            foreach (double lat in testLatitudes)
+            {
+                var original = new GeoPoint<double>(lat, 0);
+                string dms = original.ToString("D");
+                var parsed = new GeoPoint<double>(dms);
+
+                Assert.AreEqual(original.Latitude, parsed.Latitude, 1.0 / 3600.0,
+                    $"Round-trip latitude mismatch for {lat}. DMS was: {dms}");
+            }
         }
 
         [TestMethod]

@@ -502,7 +502,8 @@ namespace Utils.Geography.Model
                 var degrees = T.Floor(absPos);
                 absPos = (absPos - degrees) * MinutesInDegree;
                 var minutes = T.Floor(absPos);
-                absPos = (absPos - minutes) * SecondsInDegree;
+                // absPos is now a fractional minute; multiply by 60 (SecondsInMinute) to get seconds.
+                absPos = (absPos - minutes) * SecondsInMinute;
                 var seconds = T.Floor(absPos);
 
                 // If seconds non-zero or format == "D", include all
