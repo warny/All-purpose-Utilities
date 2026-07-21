@@ -85,6 +85,10 @@ public class DistributedRandom
 
         // Apply the distribution function and normalize the result to [0, 1].
         double distributedValue = distributionFunction(uniformRandom);
+        if (!double.IsFinite(distributedValue))
+            throw new InvalidOperationException(
+                $"The distribution function returned a non-finite value ({distributedValue}) " +
+                $"for input {uniformRandom}. The function must return finite values for all inputs in [0, 1].");
         distributedValue = (distributedValue - minValue) / (maxValue - minValue);
 
         return distributedValue;

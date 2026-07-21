@@ -107,6 +107,10 @@ public sealed class ExternalResource : IReadOnlyDictionary<string, object>
                 $"The directory '{dir.FullName}' does not exist.");
         }
 
+        if (maxExternalFileBytes <= 0)
+            throw new ArgumentOutOfRangeException(nameof(maxExternalFileBytes), maxExternalFileBytes,
+                "maxExternalFileBytes must be a positive value.");
+
         _maxExternalFileBytes = maxExternalFileBytes;
         _resources = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
 
@@ -210,6 +214,17 @@ public sealed class ExternalResource : IReadOnlyDictionary<string, object>
                     _diagnostics.Add(
                         $"Skipped resource '{name}': file reference '{relativePath}' resolves outside " +
                         $"the allowed directory '{allowedRoot}' (path-traversal guard).");
+                    return;
+                }
+
+                // Reject paths that contain a symlink or junction point anywhere in the hierarchy.
+                // A lexical containment check is not sufficient because a symlink inside allowedRoot
+                // can redirect to any arbitrary location on the file system (#40).
+                if (ContainsSymlinkOrJunction(candidatePath))
+                {
+                    _diagnostics.Add(
+                        $"Skipped resource '{name}': file reference '{relativePath}' contains a " +
+                        "symbolic link or junction point (security policy).");
                     return;
                 }
 
@@ -377,6 +392,31 @@ public sealed class ExternalResource : IReadOnlyDictionary<string, object>
         object Value { get; }
     }
 
+    /// <summary>
+    /// Returns <see langword="true"/> when <paramref name="path"/> or any of its ancestor
+    /// directories in the file system is a symbolic link or a reparse-point junction (#40).
+    /// </summary>
+    private static bool ContainsSymlinkOrJunction(string path)
+    {
+        string? current = path;
+        while (!string.IsNullOrEmpty(current))
+        {
+            // Check as a file first (the leaf node), then as a directory (intermediate nodes).
+            var fi = new FileInfo(current);
+            if (fi.Exists && fi.LinkTarget is not null)
+                return true;
+
+            var di = new DirectoryInfo(current);
+            if (di.Exists && di.LinkTarget is not null)
+                return true;
+
+            string? parent = Path.GetDirectoryName(current);
+            if (parent == current) break; // reached the root
+            current = parent;
+        }
+        return false;
+    }
+
     #region Lazy Wrappers
 
     /// <summary>
@@ -406,14 +446,26 @@ public sealed class ExternalResource : IReadOnlyDictionary<string, object>
                 if (_cachedContent is null)
                 {
                     string fullPath = Path.GetFullPath(_filePath);
-                    // Enforce size limit before allocating (#43).
-                    var info = new FileInfo(fullPath);
-                    if (info.Length > _maxBytes)
+                    // Open the file once so the length check and the read share the same
+                    // file-system handle — eliminates the TOCTOU window (#43).
+                    using var fs = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                    if (fs.Length > _maxBytes)
                         throw new InvalidOperationException(
-                            $"External resource file '{fullPath}' ({info.Length} bytes) exceeds the " +
+                            $"External resource file '{fullPath}' ({fs.Length} bytes) exceeds the " +
                             $"configured maximum of {_maxBytes} bytes.");
 
-                    _cachedContent = File.ReadAllText(fullPath, _encoding);
+                    // Read up to _maxBytes + 1 raw bytes from the same stream.
+                    // Reading one extra byte lets us detect in-flight file growth.
+                    byte[] buffer = new byte[_maxBytes + 1];
+                    int total = 0, read;
+                    while ((read = fs.Read(buffer, total, buffer.Length - total)) > 0)
+                        total += read;
+
+                    if (total > _maxBytes)
+                        throw new InvalidOperationException(
+                            $"External resource file '{fullPath}' grew beyond {_maxBytes} bytes during reading.");
+
+                    _cachedContent = _encoding.GetString(buffer, 0, total);
                 }
                 return _cachedContent;
             }
@@ -448,14 +500,27 @@ public sealed class ExternalResource : IReadOnlyDictionary<string, object>
                 if (_cachedBytes is null)
                 {
                     string fullPath = Path.GetFullPath(_filePath);
-                    // Enforce size limit before allocating (#43).
-                    var info = new FileInfo(fullPath);
-                    if (info.Length > _maxBytes)
+                    // Open the file once so the length check and the read share the same
+                    // file-system handle — eliminates the TOCTOU window (#43).
+                    using var fs = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                    if (fs.Length > _maxBytes)
                         throw new InvalidOperationException(
-                            $"External resource file '{fullPath}' ({info.Length} bytes) exceeds the " +
+                            $"External resource file '{fullPath}' ({fs.Length} bytes) exceeds the " +
                             $"configured maximum of {_maxBytes} bytes.");
 
-                    _cachedBytes = File.ReadAllBytes(fullPath);
+                    // Read up to _maxBytes + 1 bytes from the same stream.
+                    // Reading one extra byte lets us detect in-flight file growth.
+                    byte[] buffer = new byte[_maxBytes + 1];
+                    int total = 0, read;
+                    while ((read = fs.Read(buffer, total, buffer.Length - total)) > 0)
+                        total += read;
+
+                    if (total > _maxBytes)
+                        throw new InvalidOperationException(
+                            $"External resource file '{fullPath}' grew beyond {_maxBytes} bytes during reading.");
+
+                    _cachedBytes = new byte[total];
+                    Buffer.BlockCopy(buffer, 0, _cachedBytes, 0, total);
                 }
                 // Return a copy so callers cannot mutate the cached array (#46).
                 return (byte[])_cachedBytes.Clone();

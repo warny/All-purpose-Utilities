@@ -158,21 +158,21 @@ public class ArrayAccessorTests
     }
 
     [TestMethod]
-    public void Sizes_IsReadOnly_CannotBeDowncastToArray()
+    public void Sizes_ReturnsDefensiveCopy_MutationDoesNotAffectLayout()
     {
-        // Sizes must not be a raw int[] — callers must not be able to mutate it
-        // through an array cast and thereby desync it from the internal caches (#50).
+        // Sizes returns a defensive copy — mutating the returned array must not affect
+        // the accessor's internal layout (#50).
         int[] data = new int[6];
         var accessor = new ArrayAccessor<int>(data, 0, 2, 3);
 
-        // The property type is IReadOnlyList<int>; a direct cast to int[] must fail.
-        Assert.IsNotInstanceOfType<int[]>(accessor.Sizes,
-            "Sizes must not expose a raw int[] that callers could mutate.");
+        int[] copy = accessor.Sizes;
+        copy[0] = 99;
+        copy[1] = 99;
 
-        // Values are still readable through the interface.
+        // Internal layout must be unchanged.
         Assert.AreEqual(2, accessor.Sizes[0]);
         Assert.AreEqual(3, accessor.Sizes[1]);
-        Assert.AreEqual(2, accessor.Sizes.Count);
+        Assert.AreEqual(2, accessor.Sizes.Length);
     }
 
     // ------------------------------------------------------------------ #52 enumeration covers only the logical slice

@@ -19,14 +19,11 @@ public abstract class ArrayAccessor<T, D> : IEnumerable<T> where D : IEnumerable
     /// Gets the sizes of each dimension of the array.
     /// </summary>
     /// <remarks>
-    /// Exposed as <see cref="IReadOnlyList{T}"/> so that callers cannot mutate the
-    /// accessor's layout after construction. The backing store is a defensive copy of
-    /// the dimensions supplied at construction time (#50).
+    /// Each call returns a fresh defensive copy of the internal dimension array so that
+    /// callers cannot mutate the accessor's layout after construction (#50).
     /// </remarks>
-    public IReadOnlyList<int> Sizes { get; }
+    public int[] Sizes => (int[])_sizes.Clone();
 
-    // Private backing array so internal hot-paths can use array indexing without
-    // an extra virtual dispatch through the IReadOnlyList wrapper.
     private readonly int[] _sizes;
 
     /// <summary>
@@ -57,7 +54,6 @@ public abstract class ArrayAccessor<T, D> : IEnumerable<T> where D : IEnumerable
         // change the accessor's layout (#50). Exposed as IReadOnlyList so the caller
         // cannot mutate the returned object either.
         _sizes = (int[])sizes.Clone();
-        this.Sizes = Array.AsReadOnly(_sizes);
         // NOTE: CheckSize() is virtual. Calling it here would invoke the derived override
         // before the derived constructor has had the chance to assign its own fields (e.g. Offset).
         // Each derived class is responsible for calling ValidateSize() at the end of its constructor.

@@ -125,4 +125,23 @@ public class DistributedRandomTests
         var distributed = new DistributedRandom(x => x, seed: 0);
         Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => distributed.NextInt(5, 5));
     }
+
+    // ------------------------------------------------------------------ mid-function non-finite guard (#18)
+
+    [TestMethod]
+    public void NextDouble_ThrowsInvalidOperation_WhenFunctionReturnsNaN()
+    {
+        // Function is valid at endpoints (f(0)=0, f(1)=1) but returns NaN for
+        // intermediate inputs — must be rejected at call time, not silently propagated.
+        var distributed = new DistributedRandom(x => x == 0 || x == 1 ? x : double.NaN);
+        Assert.ThrowsExactly<InvalidOperationException>(() => distributed.NextDouble());
+    }
+
+    [TestMethod]
+    public void NextDouble_ThrowsInvalidOperation_WhenFunctionReturnsInfinity()
+    {
+        // Valid endpoints, but returns +∞ for an intermediate value.
+        var distributed = new DistributedRandom(x => x == 0 || x == 1 ? x : double.PositiveInfinity);
+        Assert.ThrowsExactly<InvalidOperationException>(() => distributed.NextDouble());
+    }
 }

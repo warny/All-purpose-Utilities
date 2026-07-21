@@ -165,6 +165,99 @@ public class ExternalResourceContractTests
         }
     }
 
+    // ------------------------------------------------------------------ #43 maxExternalFileBytes validation
+
+    [TestMethod]
+    public void Constructor_ThrowsOnZeroMaxExternalFileBytes()
+    {
+        string dir = CreateTempDir();
+        try
+        {
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(
+                () => new ExternalResource(dir, "Res", CultureInfo.InvariantCulture, maxExternalFileBytes: 0));
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [TestMethod]
+    public void Constructor_ThrowsOnNegativeMaxExternalFileBytes()
+    {
+        string dir = CreateTempDir();
+        try
+        {
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(
+                () => new ExternalResource(dir, "Res", CultureInfo.InvariantCulture, maxExternalFileBytes: -1));
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [TestMethod]
+    public void ExternalTextFile_ExceedingSizeLimit_ThrowsInvalidOperation()
+    {
+        string dir = CreateTempDir();
+        try
+        {
+            // Write a small data file.
+            string dataFile = Path.Combine(dir, "big.txt");
+            File.WriteAllText(dataFile, "ABCDE", Encoding.UTF8); // 5 bytes
+
+            // Write a .resx referencing it with a 3-byte limit.
+            string resxPath = Path.Combine(dir, "Res.resx");
+            var sb = new StringBuilder();
+            sb.AppendLine("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
+            sb.AppendLine("<root>");
+            sb.AppendLine("  <data name=\"BigFile\" type=\"System.Resources.ResXFileRef, System.Windows.Forms\">");
+            sb.AppendLine("    <value>big.txt;System.String;utf-8</value>");
+            sb.AppendLine("  </data>");
+            sb.AppendLine("</root>");
+            File.WriteAllText(resxPath, sb.ToString());
+
+            var resource = new ExternalResource(dir, "Res", CultureInfo.InvariantCulture, maxExternalFileBytes: 3);
+
+            // Accessing the value must throw because the file exceeds the 3-byte limit.
+            Assert.ThrowsExactly<InvalidOperationException>(() => _ = resource["BigFile"]);
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [TestMethod]
+    public void ExternalBinaryFile_ExceedingSizeLimit_ThrowsInvalidOperation()
+    {
+        string dir = CreateTempDir();
+        try
+        {
+            string dataFile = Path.Combine(dir, "data.bin");
+            File.WriteAllBytes(dataFile, new byte[] { 1, 2, 3, 4, 5 }); // 5 bytes
+
+            string resxPath = Path.Combine(dir, "Res.resx");
+            var sb = new StringBuilder();
+            sb.AppendLine("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
+            sb.AppendLine("<root>");
+            sb.AppendLine("  <data name=\"BinFile\" type=\"System.Resources.ResXFileRef, System.Windows.Forms\">");
+            sb.AppendLine("    <value>data.bin;System.Byte[]</value>");
+            sb.AppendLine("  </data>");
+            sb.AppendLine("</root>");
+            File.WriteAllText(resxPath, sb.ToString());
+
+            var resource = new ExternalResource(dir, "Res", CultureInfo.InvariantCulture, maxExternalFileBytes: 3);
+
+            Assert.ThrowsExactly<InvalidOperationException>(() => _ = resource["BinFile"]);
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
     // ------------------------------------------------------------------ #41 arbitrary type rejection
 
     [TestMethod]
