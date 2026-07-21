@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Security.Cryptography;
 using System.Text;
 using Utils.Dates;
@@ -6,24 +6,37 @@ using Utils.Dates;
 namespace Utils.Security;
 
 /// <summary>
-/// Provides a way to generate and verify time-based one-time passwords (TOTP), compatible with Google Authenticator and similar services.
+/// Provides a way to generate and verify time-based one-time passwords (TOTP), compatible
+/// with Google Authenticator and similar services.
 /// </summary>
+/// <remarks>
+/// <para>
+/// This class is safe for concurrent use: each HMAC computation creates a fresh, keyed
+/// algorithm instance that is disposed after use (#31, #32).
+/// </para>
+/// <para>
+/// The secret key is copied at construction time and is never exposed through a public
+/// property (#30). To export the key for provisioning purposes, call <see cref="ExportKey"/>.
+/// </para>
+/// </remarks>
 public class Authenticator
 {
+    // Pre-computed power-of-ten table to avoid int overflow from Math.Pow (#29).
+    private static readonly int[] _powersOfTen = [1, 10, 100, 1_000, 10_000, 100_000,
+        1_000_000, 10_000_000, 100_000_000, 1_000_000_000];
+
+    // Minimum key lengths per algorithm (bytes). Shorter keys violate RFC 6238 guidance.
+    private const int MinKeyLength = 16;
+
     /// <summary>
     /// The number of digits in the generated code.
     /// </summary>
     public int Digits { get; }
 
     /// <summary>
-    /// The HMAC algorithm used for generating the hash.
+    /// The name of the HMAC algorithm used for generating the hash (e.g., "HMACSHA256").
     /// </summary>
-    public HMAC Algorithm { get; }
-
-    /// <summary>
-    /// The key used for the HMAC algorithm.
-    /// </summary>
-    public byte[] Key { get; }
+    public string AlgorithmName { get; }
 
     /// <summary>
     /// The length of time, in seconds, that each generated code is valid for.
@@ -31,49 +44,104 @@ public class Authenticator
     public int IntervalLength { get; }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Authenticator"/> class.
+    /// A private, defensive copy of the key. Never exposed directly (#30).
     /// </summary>
-    /// <param name="algorithm">The name of the HMAC algorithm to use (e.g., "HMACSHA256").</param>
-    /// <param name="key">The binary key used for generating the hash.</param>
-    /// <param name="digits">The number of digits in the generated code.</param>
-    /// <param name="intervalLength">The duration, in seconds, for which each code is valid.</param>
-    public Authenticator(string algorithm, byte[] key, int digits, int intervalLength)
-        : this((HMAC)CryptoConfig.CreateFromName(algorithm), key, digits, intervalLength) { }
+    private readonly byte[] _key;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Authenticator"/> class.
     /// </summary>
-    /// <param name="algorithm">The HMAC algorithm used for generating the hash.</param>
-    /// <param name="key">The binary key used for generating the hash.</param>
-    /// <param name="digits">The number of digits in the generated code.</param>
-    /// <param name="intervalLength">The duration, in seconds, for which each code is valid.</param>
-    public Authenticator(HMAC algorithm, byte[] key, int digits, int intervalLength)
+    /// <param name="algorithmName">
+    /// The name of the HMAC algorithm to use (e.g., <c>"HMACSHA256"</c>, <c>"HMACSHA1"</c>).
+    /// The name is resolved through <see cref="CryptoConfig"/>; unknown or non-HMAC names
+    /// throw <see cref="ArgumentException"/> (#33).
+    /// </param>
+    /// <param name="key">
+    /// The binary secret key. Must be at least <c>16</c> bytes. A defensive copy is made;
+    /// mutating the original array after construction has no effect (#30).
+    /// </param>
+    /// <param name="digits">
+    /// The number of digits in the generated code. Must be between 1 and 10 inclusive (#29).
+    /// </param>
+    /// <param name="intervalLength">
+    /// The duration in seconds for which each code is valid. Must be positive (#29).
+    /// </param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="algorithmName"/> or <paramref name="key"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="algorithmName"/> does not resolve to a supported HMAC algorithm (#33),
+    /// or when <paramref name="key"/> is shorter than the minimum length.
+    /// </exception>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when <paramref name="digits"/> is not in [1, 10] or <paramref name="intervalLength"/> is not positive (#29).
+    /// </exception>
+    public Authenticator(string algorithmName, byte[] key, int digits, int intervalLength)
     {
-        ArgumentNullException.ThrowIfNull(algorithm);
+        ArgumentNullException.ThrowIfNull(algorithmName);
         ArgumentNullException.ThrowIfNull(key);
+
+        if (digits < 1 || digits > 10)
+            throw new ArgumentOutOfRangeException(nameof(digits), digits, "Digits must be between 1 and 10.");
+
+        if (intervalLength <= 0)
+            throw new ArgumentOutOfRangeException(nameof(intervalLength), intervalLength, "IntervalLength must be positive.");
+
+        if (key.Length < MinKeyLength)
+            throw new ArgumentException($"Key must be at least {MinKeyLength} bytes.", nameof(key));
+
+        // Validate the algorithm name by creating and immediately disposing a test instance (#33).
+        object? candidate = CryptoConfig.CreateFromName(algorithmName);
+        if (candidate is not HMAC testHmac)
+        {
+            (candidate as IDisposable)?.Dispose();
+            throw new ArgumentException(
+                $"'{algorithmName}' does not resolve to a supported HMAC algorithm.", nameof(algorithmName));
+        }
+        testHmac.Dispose();
+
+        AlgorithmName = algorithmName;
         Digits = digits;
-        Algorithm = algorithm;
-        Key = key;
         IntervalLength = intervalLength;
+        _key = (byte[])key.Clone(); // defensive copy (#30)
     }
 
     /// <summary>
-    /// Creates an authenticator compatible with Google Authenticator.
+    /// Returns a defensive copy of the secret key for provisioning or export purposes.
     /// </summary>
-    /// <param name="key">The binary key used for generating the hash.</param>
-    /// <returns>An instance of <see cref="Authenticator"/> configured for Google Authenticator.</returns>
-    public static Authenticator GoogleAuthenticator(byte[] key) => new Authenticator("HMACSHA256", key, 6, 30);
+    /// <returns>A copy of the secret key bytes.</returns>
+    public byte[] ExportKey() => (byte[])_key.Clone();
 
     /// <summary>
-    /// Computes the current authentication code based on the current timestamp.
+    /// Creates an authenticator configured with the standard TOTP profile:
+    /// HMAC-SHA1, 6 digits, 30-second window (RFC 6238 / default Google Authenticator profile).
+    /// </summary>
+    /// <param name="key">The binary secret key. Must be at least <c>16</c> bytes.</param>
+    /// <returns>An <see cref="Authenticator"/> compatible with default TOTP provisioning.</returns>
+    /// <remarks>
+    /// The previous factory used HMAC-SHA256 which does not match the default RFC 6238 profile
+    /// and would produce codes that don't match a normally provisioned Google Authenticator
+    /// account (#34). Use <see cref="GoogleAuthenticatorSha256"/> if SHA-256 is required.
+    /// </remarks>
+    public static Authenticator GoogleAuthenticator(byte[] key) => new("HMACSHA1", key, 6, 30);
+
+    /// <summary>
+    /// Creates an authenticator using HMAC-SHA256, 6 digits, 30-second window.
+    /// This profile requires explicit provisioning metadata — it does not match the
+    /// default Google Authenticator TOTP profile (#34).
+    /// </summary>
+    /// <param name="key">The binary secret key. Must be at least <c>16</c> bytes.</param>
+    /// <returns>An <see cref="Authenticator"/> using the SHA-256 profile.</returns>
+    public static Authenticator GoogleAuthenticatorSha256(byte[] key) => new("HMACSHA256", key, 6, 30);
+
+    /// <summary>
+    /// Computes the current authentication code based on the current UTC timestamp.
     /// </summary>
     /// <returns>The current one-time password.</returns>
     public string ComputeAuthenticator() => ComputeAuthenticator(CurrentMessage);
 
     /// <summary>
-    /// Computes the authentication code based on a specific numeric message.
+    /// Computes the authentication code for a specific counter value.
     /// </summary>
-    /// <param name="message">The numeric message, typically a timestamp.</param>
+    /// <param name="message">The counter value (typically a timestamp divided by the interval).</param>
     /// <returns>The computed one-time password.</returns>
     public string ComputeAuthenticator(long message)
     {
@@ -86,14 +154,17 @@ public class Authenticator
     }
 
     /// <summary>
-    /// Computes the authentication code based on a binary message.
+    /// Computes the authentication code from a binary message.
     /// </summary>
-    /// <param name="message">The binary message, typically a timestamp.</param>
+    /// <param name="message">The binary message.</param>
     /// <returns>The computed one-time password.</returns>
     public string ComputeAuthenticator(byte[] message)
     {
-        Algorithm.Key = Key;
-        var hash = Algorithm.ComputeHash(message);
+        // Create a fresh keyed HMAC instance per call to avoid shared state across threads (#31, #32).
+        using HMAC hmac = (HMAC)CryptoConfig.CreateFromName(AlgorithmName)!;
+        hmac.Key = (byte[])_key.Clone(); // copy so the HMAC cannot mutate our stored key
+
+        var hash = hmac.ComputeHash(message);
 
         // Calculate the offset
         int offset = hash[^1] & 0xf;
@@ -104,7 +175,6 @@ public class Authenticator
 
         if (BitConverter.IsLittleEndian)
         {
-            // Convert bytes to big-endian format
             Array.Reverse(selectedBytes);
         }
 
@@ -112,31 +182,49 @@ public class Authenticator
         // Remove the most significant bit for interoperability
         int binary = selectedInteger & 0x7FFFFFFF;
 
-        // Compute the one-time password (OTP)
-        int otp = binary % (int)Math.Pow(10, Digits);
+        // Compute the OTP using the pre-computed power table to avoid int overflow (#29).
+        int otp = binary % _powersOfTen[Digits];
         return otp.ToString(new string('0', Digits));
     }
 
     /// <summary>
-    /// Verifies the authentication code by checking the current code and adjacent codes within the specified range.
+    /// Verifies the authentication code by checking the current code and adjacent codes
+    /// within the specified window.
     /// </summary>
-    /// <param name="range">The number of previous and future codes to check.</param>
-    /// <param name="code">The code to verify.</param>
-    /// <returns><see langword="true"/> if the code is valid; otherwise, <see langword="false"/>.</returns>
+    /// <param name="range">
+    /// The number of previous and future counter windows to accept. Must be non-negative (#29).
+    /// </param>
+    /// <param name="code">The code to verify. Must consist of exactly <see cref="Digits"/> ASCII digits (#35).</param>
+    /// <returns><see langword="true"/> if the code is valid within the window; otherwise, <see langword="false"/>.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when <paramref name="range"/> is negative (#29).
+    /// </exception>
     public bool VerifyAuthenticator(int range, string code)
     {
+        if (range < 0)
+            throw new ArgumentOutOfRangeException(nameof(range), range, "Range must be non-negative.");
+
         if (string.IsNullOrEmpty(code) || code.Length != Digits)
-        {
             return false;
+
+        // Reject non-digit characters before performing HMAC operations (#35).
+        foreach (char c in code)
+        {
+            if (c < '0' || c > '9')
+                return false;
         }
 
         long baseMessage = CurrentMessage;
 
         for (long i = 0; i <= range; i++)
         {
-            if (SecureEquals(code, ComputeAuthenticator(baseMessage + i)) || SecureEquals(code, ComputeAuthenticator(baseMessage - i - 1)))
+            // Use checked arithmetic to prevent counter overflow on extreme ranges (#35).
+            checked
             {
-                return true;
+                if (SecureEquals(code, ComputeAuthenticator(baseMessage + i)))
+                    return true;
+                if (i > 0 && SecureEquals(code, ComputeAuthenticator(baseMessage - i)))
+                    return true;
             }
         }
 
@@ -152,9 +240,7 @@ public class Authenticator
     private static bool SecureEquals(string left, string right)
     {
         if (left.Length != right.Length)
-        {
             return false;
-        }
 
         byte[] leftBytes = Encoding.UTF8.GetBytes(left);
         byte[] rightBytes = Encoding.UTF8.GetBytes(right);
@@ -162,7 +248,7 @@ public class Authenticator
     }
 
     /// <summary>
-    /// Gets the current message used to generate the code, typically based on the Unix timestamp.
+    /// Gets the current TOTP counter value derived from the UTC clock.
     /// </summary>
     public long CurrentMessage => DateTime.UtcNow.ToUnixTimeStamp() / IntervalLength;
 }
