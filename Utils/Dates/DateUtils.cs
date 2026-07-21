@@ -56,29 +56,42 @@ public static class DateUtils
     /// <param name="period">The period type.</param>
     /// <param name="firstDayOfWeek">First day of the week.</param>
     /// <param name="calendar">Calendar used for computations.</param>
-    /// <returns>The start date of the period.</returns>
+    /// <returns>
+    /// The start date of the period. The returned value always carries the same
+    /// <see cref="DateTimeKind"/> as <paramref name="dateTime"/> (#56).
+    /// </returns>
     private static DateTime StartOfInternal(DateTime dateTime, PeriodTypeEnum period, DayOfWeek firstDayOfWeek, Calendar calendar)
     {
+        // All branches apply the input Kind so that the result is always consistent with the
+        // caller's time-zone context (#56).  Calendar.ToDateTime always produces Unspecified,
+        // so we re-specify the Kind explicitly after every calendar operation.
+        DateTimeKind kind = dateTime.Kind;
         switch (period)
         {
             case PeriodTypeEnum.None:
                 return dateTime;
             case PeriodTypeEnum.Day:
             case PeriodTypeEnum.WorkingDay:
-                return calendar.AddDays(dateTime, 0).Date;
+                return DateTime.SpecifyKind(calendar.AddDays(dateTime, 0).Date, kind);
             case PeriodTypeEnum.Week:
                 var difference = (7 + ((int)calendar.GetDayOfWeek(dateTime) - (int)firstDayOfWeek)) % 7;
                 DateTime weekDate = calendar.AddDays(dateTime.Date, -difference);
-                return calendar.AddDays(weekDate, 0).Date;
+                return DateTime.SpecifyKind(calendar.AddDays(weekDate, 0).Date, kind);
             case PeriodTypeEnum.Month:
-                return calendar.ToDateTime(calendar.GetYear(dateTime), calendar.GetMonth(dateTime), 1, 0, 0, 0, 0);
+                return DateTime.SpecifyKind(
+                    calendar.ToDateTime(calendar.GetYear(dateTime), calendar.GetMonth(dateTime), 1, 0, 0, 0, 0),
+                    kind);
             case PeriodTypeEnum.Quarter:
                 var month = calendar.GetMonth(dateTime);
                 var quarter = (month - 1) / 3;
                 var startMonth = quarter * 3 + 1;
-                return calendar.ToDateTime(calendar.GetYear(dateTime), startMonth, 1, 0, 0, 0, 0);
+                return DateTime.SpecifyKind(
+                    calendar.ToDateTime(calendar.GetYear(dateTime), startMonth, 1, 0, 0, 0, 0),
+                    kind);
             case PeriodTypeEnum.Year:
-                return calendar.ToDateTime(calendar.GetYear(dateTime), 1, 1, 0, 0, 0, 0);
+                return DateTime.SpecifyKind(
+                    calendar.ToDateTime(calendar.GetYear(dateTime), 1, 1, 0, 0, 0, 0),
+                    kind);
             default:
                 throw new ArgumentOutOfRangeException(nameof(period), period, null);
         }
@@ -130,34 +143,52 @@ public static class DateUtils
     /// <param name="period">The period type.</param>
     /// <param name="firstDayOfWeek">First day of the week.</param>
     /// <param name="calendar">Calendar used for computations.</param>
-    /// <returns>The end date of the period.</returns>
+    /// <returns>
+    /// The end date of the period. The returned value always carries the same
+    /// <see cref="DateTimeKind"/> as <paramref name="dateTime"/> (#56).
+    /// </returns>
     private static DateTime EndOfInternal(DateTime dateTime, PeriodTypeEnum period, DayOfWeek firstDayOfWeek, Calendar calendar)
     {
+        // All branches re-specify the input Kind on each intermediate DateTime produced by Calendar
+        // methods (which always yield Unspecified) before calling AddTicks(-1) so the final value
+        // carries the caller's Kind throughout (#56).
+        DateTimeKind kind = dateTime.Kind;
         switch (period)
         {
             case PeriodTypeEnum.None:
                 return dateTime;
             case PeriodTypeEnum.Day:
             case PeriodTypeEnum.WorkingDay:
-                return calendar.AddDays(dateTime.Date, 1).AddTicks(-1);
+                return DateTime.SpecifyKind(calendar.AddDays(dateTime.Date, 1), kind).AddTicks(-1);
             case PeriodTypeEnum.Week:
-                var difference = (7 - ((int)calendar.GetDayOfWeek(dateTime) - (int)firstDayOfWeek)) % 7;
-                DateTime endWeek = calendar.AddDays(dateTime.Date, difference);
-                return calendar.AddDays(endWeek, 1).AddTicks(-1);
+                // Compute the start of the week using the same formula as StartOf(Week), then
+                // advance exactly 7 days so the result is always the last instant of the 7th day.
+                // The previous formula used (7 - diff) % 7 which produced 0 when the date was
+                // already on the first day of the week, yielding end-of-current-day instead of
+                // end-of-week (#53).
+                var startDiff = (7 + ((int)calendar.GetDayOfWeek(dateTime) - (int)firstDayOfWeek)) % 7;
+                DateTime startOfWeek = DateTime.SpecifyKind(calendar.AddDays(dateTime.Date, -startDiff), kind);
+                return startOfWeek.AddDays(7).AddTicks(-1);
             case PeriodTypeEnum.Month:
-                var startOfMonth = calendar.ToDateTime(calendar.GetYear(dateTime), calendar.GetMonth(dateTime), 1, 0, 0, 0, 0);
-                DateTime startOfNextMonth = calendar.AddMonths(startOfMonth, 1);
+                var startOfMonth = DateTime.SpecifyKind(
+                    calendar.ToDateTime(calendar.GetYear(dateTime), calendar.GetMonth(dateTime), 1, 0, 0, 0, 0),
+                    kind);
+                DateTime startOfNextMonth = DateTime.SpecifyKind(calendar.AddMonths(startOfMonth, 1), kind);
                 return startOfNextMonth.AddTicks(-1);
             case PeriodTypeEnum.Quarter:
                 var month = calendar.GetMonth(dateTime);
                 var quarter = (month - 1) / 3 + 1;
                 var endMonth = quarter * 3;
-                var startOfQuarter = calendar.ToDateTime(calendar.GetYear(dateTime), endMonth, 1, 0, 0, 0, 0);
-                DateTime startOfNextQuarter = calendar.AddMonths(startOfQuarter, 1);
+                var startOfQuarter = DateTime.SpecifyKind(
+                    calendar.ToDateTime(calendar.GetYear(dateTime), endMonth, 1, 0, 0, 0, 0),
+                    kind);
+                DateTime startOfNextQuarter = DateTime.SpecifyKind(calendar.AddMonths(startOfQuarter, 1), kind);
                 return startOfNextQuarter.AddTicks(-1);
             case PeriodTypeEnum.Year:
-                var startOfYear = calendar.ToDateTime(calendar.GetYear(dateTime), 1, 1, 0, 0, 0, 0);
-                DateTime startOfNextYear = calendar.AddYears(startOfYear, 1);
+                var startOfYear = DateTime.SpecifyKind(
+                    calendar.ToDateTime(calendar.GetYear(dateTime), 1, 1, 0, 0, 0, 0),
+                    kind);
+                DateTime startOfNextYear = DateTime.SpecifyKind(calendar.AddYears(startOfYear, 1), kind);
                 return startOfNextYear.AddTicks(-1);
             default:
                 throw new ArgumentOutOfRangeException(nameof(period), period, null);
@@ -173,12 +204,33 @@ public static class DateUtils
         => (long)(dateTime.ToUniversalTime() - DateTime.UnixEpoch).TotalSeconds;
 
     /// <summary>
-    /// Converts a Unix timestamp to a DateTime.
+    /// Converts a Unix timestamp to a <see cref="DateTime"/> in UTC.
     /// </summary>
-    /// <param name="timestamp">The Unix timestamp to convert.</param>
-    /// <returns>A DateTime representing the specified Unix timestamp.</returns>
+    /// <param name="timestamp">The Unix timestamp (seconds since 1970-01-01T00:00:00Z) to convert.</param>
+    /// <returns>
+    /// A <see cref="DateTime"/> with <see cref="DateTimeKind.Utc"/> representing the specified
+    /// Unix timestamp. Use <see cref="DateTime.ToLocalTime"/> explicitly when local time is required.
+    /// </returns>
+    /// <remarks>
+    /// The return value is always UTC to match <see cref="ToUnixTimeStamp"/>, which converts to
+    /// UTC before computing the timestamp. A round-trip therefore preserves the UTC instant without
+    /// being affected by the host time zone (#54).
+    /// </remarks>
     public static DateTime FromUnixTimeStamp(long timestamp)
-            => DateTime.UnixEpoch.AddSeconds(timestamp).ToLocalTime();
+            => DateTime.UnixEpoch.AddSeconds(timestamp);
+
+    /// <summary>
+    /// Maximum number of non-working-day extension calendar days accumulated across all
+    /// iterations of <see cref="AddWorkingDays"/> or <see cref="PreviousWorkingDay"/>.
+    /// Guards against hostile or misconfigured <see cref="ICalendarProvider"/>
+    /// implementations that never report a working day within any reasonable period (#55).
+    /// </summary>
+    /// <remarks>
+    /// Only non-working days returned as extensions are counted, so a large legitimate
+    /// request such as <c>AddWorkingDays(5000, allWorkingProvider)</c> completes in a
+    /// single iteration without accumulating anything toward this limit.
+    /// </remarks>
+    public const int WorkingDaySearchHorizonDays = 3_652; // ~10 years of non-working extensions
 
     /// <summary>
     /// Adds a number of working days to the specified <paramref name="date"/>.
@@ -187,6 +239,10 @@ public static class DateUtils
     /// <param name="workingDays">Number of working days to add.</param>
     /// <param name="calendarProvider">Calendar providing working day information.</param>
     /// <returns>The resulting date including additional non working days.</returns>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the calendar provider prevents forward progress for more than
+    /// <see cref="WorkingDaySearchHorizonDays"/> calendar days, indicating a defective provider (#55).
+    /// </exception>
     public static DateTime AddWorkingDays(this DateTime date, int workingDays, ICalendarProvider calendarProvider)
     {
         workingDays.ArgMustBeGreaterOrEqualsThan(0);
@@ -194,11 +250,31 @@ public static class DateUtils
 
         var toAdd = workingDays;
         var current = date;
+        int calendarDaysElapsed = 0;
 
         while (toAdd > 0)
         {
             var end = current.AddDays(toAdd);
-            toAdd = calendarProvider.GetNonWorkingDaysCount(current.AddDays(1), end);
+            int nonWorking = calendarProvider.GetNonWorkingDaysCount(current.AddDays(1), end);
+
+            // Guard against providers that report more non-working days than exist in the range,
+            // which would cause toAdd to grow and the loop to never terminate (#55).
+            int rangeCalendarDays = (int)(end.Date - current.Date).TotalDays;
+            if (nonWorking < 0 || nonWorking > rangeCalendarDays)
+                throw new InvalidOperationException(
+                    $"ICalendarProvider.GetNonWorkingDaysCount returned an invalid value ({nonWorking}) " +
+                    $"for range [{current.AddDays(1):yyyy-MM-dd}, {end:yyyy-MM-dd}] ({rangeCalendarDays} days).");
+
+            // Count only the non-working-day extensions, not the total working days
+            // requested. A legitimate large request (e.g. AddWorkingDays(5000, allWorking))
+            // returns nonWorking == 0 and never accumulates toward the limit (#55).
+            calendarDaysElapsed += nonWorking;
+            if (calendarDaysElapsed > WorkingDaySearchHorizonDays)
+                throw new InvalidOperationException(
+                    $"AddWorkingDays exceeded the non-working-day search horizon of {WorkingDaySearchHorizonDays} calendar days. " +
+                    "Verify that the ICalendarProvider reports at least one working day within any reasonable period.");
+
+            toAdd = nonWorking;
             current = end;
         }
 
@@ -211,6 +287,9 @@ public static class DateUtils
     /// <param name="date">Base date.</param>
     /// <param name="calendarProvider">Calendar providing working day information.</param>
     /// <returns>The first working day on or after <paramref name="date"/>.</returns>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when no working day can be found within <see cref="WorkingDaySearchHorizonDays"/> calendar days.
+    /// </exception>
     public static DateTime NextWorkingDay(this DateTime date, ICalendarProvider calendarProvider)
     {
         calendarProvider.Arg().MustNotBeNull();
@@ -227,6 +306,10 @@ public static class DateUtils
     /// <param name="date">Base date.</param>
     /// <param name="calendarProvider">Calendar providing working day information.</param>
     /// <returns>The first working day on or before <paramref name="date"/>.</returns>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when no working day can be found within <see cref="WorkingDaySearchHorizonDays"/> calendar days
+    /// before <paramref name="date"/> (#55).
+    /// </exception>
     public static DateTime PreviousWorkingDay(this DateTime date, ICalendarProvider calendarProvider)
     {
         calendarProvider.Arg().MustNotBeNull();
@@ -235,8 +318,15 @@ public static class DateUtils
             return date;
 
         var current = date.AddDays(-1);
+        int daysSearched = 0;
         while (calendarProvider.GetNonWorkingDaysCount(current, current) > 0)
+        {
+            if (++daysSearched > WorkingDaySearchHorizonDays)
+                throw new InvalidOperationException(
+                    $"PreviousWorkingDay exceeded the search horizon of {WorkingDaySearchHorizonDays} calendar days. " +
+                    "Verify that the ICalendarProvider reports at least one working day within any reasonable period.");
             current = current.AddDays(-1);
+        }
 
         return current;
     }

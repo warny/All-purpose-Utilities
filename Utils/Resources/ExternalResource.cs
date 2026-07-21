@@ -1,4 +1,5 @@
-﻿using System.Collections;
+using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -11,15 +12,34 @@ namespace Utils.Resources;
 
 /// <summary>
 /// A cross-platform .resx reader that does not rely on <c>System.Windows.Forms</c>.
-/// It manually parses .resx XML to load both inline string data 
+/// It manually parses .resx XML to load both inline string data
 /// and external file references (similar to ResXFileRef).
-/// 
-/// This class implements <see cref="IReadOnlyDictionary{TKey,TValue}"/> 
+///
+/// This class implements <see cref="IReadOnlyDictionary{TKey,TValue}"/>
 /// so that it behaves like a read-only resource collection.
 /// </summary>
 public sealed class ExternalResource : IReadOnlyDictionary<string, object>
 {
+    /// <summary>
+    /// Default maximum size in bytes for any single external file resource.
+    /// Override via the <c>maxExternalFileBytes</c> constructor parameter.
+    /// </summary>
+    public const long DefaultMaxExternalFileBytes = 10 * 1024 * 1024; // 10 MB
+
     private readonly Dictionary<string, object> _resources;
+    private readonly long _maxExternalFileBytes;
+    private readonly List<string> _diagnostics = [];
+
+    /// <summary>
+    /// Gets diagnostic messages recorded during parsing.
+    /// Each message describes a skipped or malformed .resx entry, including the resource name
+    /// (when available) and the reason it was not loaded (#47).
+    /// </summary>
+    /// <remarks>
+    /// This collection is populated in permissive mode (the default). An empty collection
+    /// indicates that all entries were processed successfully.
+    /// </remarks>
+    public IReadOnlyList<string> DiagnosticMessages => _diagnostics.AsReadOnly();
 
     static ExternalResource()
     {
@@ -72,8 +92,13 @@ public sealed class ExternalResource : IReadOnlyDictionary<string, object>
     /// <param name="baseDirectory">The folder path containing .resx files or subfolders.</param>
     /// <param name="resourceName">The root name of the .resx file (without extension).</param>
     /// <param name="cultureInfo">The culture to load resources for.</param>
+    /// <param name="maxExternalFileBytes">
+    /// Maximum number of bytes that may be read from any single external file resource.
+    /// Defaults to <see cref="DefaultMaxExternalFileBytes"/> (#43).
+    /// </param>
     /// <exception cref="DirectoryNotFoundException">If <paramref name="baseDirectory"/> does not exist.</exception>
-    public ExternalResource(string baseDirectory, string resourceName, CultureInfo cultureInfo)
+    public ExternalResource(string baseDirectory, string resourceName, CultureInfo cultureInfo,
+        long maxExternalFileBytes = DefaultMaxExternalFileBytes)
     {
         var dir = new DirectoryInfo(baseDirectory);
         if (!dir.Exists)
@@ -82,14 +107,13 @@ public sealed class ExternalResource : IReadOnlyDictionary<string, object>
                 $"The directory '{dir.FullName}' does not exist.");
         }
 
+        if (maxExternalFileBytes <= 0)
+            throw new ArgumentOutOfRangeException(nameof(maxExternalFileBytes), maxExternalFileBytes,
+                "maxExternalFileBytes must be a positive value.");
+
+        _maxExternalFileBytes = maxExternalFileBytes;
         _resources = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
 
-        // This replicates typical resource fallback layering: 
-        //   1. base resx (resourceName.resx)
-        //   2. resourceName.[lang].resx
-        //   3. subfolder lang -> resourceName.resx
-        //   4. resourceName.[lang-region].resx
-        //   5. subfolder lang-region -> resourceName.resx
         var candidateFiles = new List<FileInfo?>();
         candidateFiles.AddRange(dir.GetFiles($"{resourceName}.resx"));
         candidateFiles.AddRange(dir.GetFiles($"{resourceName}.{cultureInfo.TwoLetterISOLanguageName}.resx"));
@@ -97,7 +121,6 @@ public sealed class ExternalResource : IReadOnlyDictionary<string, object>
         candidateFiles.AddRange(dir.GetFiles($"{resourceName}.{cultureInfo.Name}.resx"));
         candidateFiles.AddRange(dir.GetDirectories(cultureInfo.Name).SelectMany(d => d.GetFiles($"{resourceName}.resx")));
 
-        // Merge each file (later entries overwrite earlier ones if key collisions occur).
         foreach (var file in candidateFiles.Where(f => f?.Exists ?? false))
         {
             MergeResxFile(file!);
@@ -109,34 +132,20 @@ public sealed class ExternalResource : IReadOnlyDictionary<string, object>
     #region Core Parsing
 
     /// <summary>
-    /// Reads and merges one .resx file into the dictionary. If the same key 
-    /// was already present, it is overwritten by this file's entry.
+    /// Reads and merges one .resx file into the dictionary.
     /// </summary>
-    /// <param name="file">The .resx file to parse.</param>
     private void MergeResxFile(FileInfo file)
     {
         using var stream = file.OpenRead();
         using var xmlReader = XmlReader.Create(stream, new XmlReaderSettings
         {
-            // You can customize XML settings if needed
             IgnoreComments = true,
             IgnoreWhitespace = true
         });
 
-        // We expect something like:
-        // <root>
-        //   <resheader>...</resheader>
-        //   <data name="key" xml:space="preserve" ...>
-        //     <value>some text</value>
-        //   </data>
-        //   <data name="fileRefKey" type="System.Resources.ResXFileRef, System.Windows.Forms"> 
-        //     <value>filename;System.Text.UTF8Encoding</value>
-        //   </data>
-        // </root>
         string basePath = Path.GetDirectoryName(file.FullName) ?? string.Empty;
         while (xmlReader.Read())
         {
-            // Advance to "data" elements
             if (xmlReader.NodeType == XmlNodeType.Element && xmlReader.Name == "data")
             {
                 ProcessDataElement(xmlReader, basePath);
@@ -145,171 +154,194 @@ public sealed class ExternalResource : IReadOnlyDictionary<string, object>
     }
 
     /// <summary>
-    /// Processes a single &lt;data&gt; element from the .resx,
-    /// reading "name", "type" attributes, and nested &lt;value&gt;.
+    /// Processes a single &lt;data&gt; element from the .resx.
     /// </summary>
-    /// <param name="xmlReader">The XmlReader positioned on &lt;data&gt; start.</param>
-    /// <param name="basePath">The base path used to resolve relative file references in the resource.</param>
     private void ProcessDataElement(XmlReader xmlReader, string basePath)
     {
-        // We want to read the attributes of <data> before we move on:
-        // e.g. <data name="MyKey" type="System.Resources.ResXFileRef, ...">
         string? name = xmlReader.GetAttribute("name");
         string? type = xmlReader.GetAttribute("type");
 
         if (string.IsNullOrEmpty(name))
         {
-            // No key => skip
+            // Record a diagnostic so callers can distinguish malformed entries from absent resources (#47).
+            _diagnostics.Add("Skipped <data> element: missing or empty 'name' attribute.");
             return;
         }
 
         string? rawValue = null;
 
-        // We have to move the reader forward so we can read child <value> elements
         while (xmlReader.Read())
         {
             if (xmlReader.NodeType == XmlNodeType.Element && xmlReader.Name == "value")
             {
-                // Grab the text inside <value></value>
                 rawValue = xmlReader.ReadElementContentAsString();
-                // After reading <value> content, the reader is on the end tag, 
-                // so we can break if we want only the first <value> child
                 break;
             }
             else if (xmlReader.NodeType == XmlNodeType.EndElement && xmlReader.Name == "data")
             {
-                // We reached the end of this <data> element without finding <value>, so break
                 break;
             }
         }
 
         if (rawValue is null)
         {
-            // No <value> found => skip
+            _diagnostics.Add($"Skipped resource '{name}': no <value> element found in <data> block (#47).");
             return;
         }
 
-        // Check if it's a ResXFileRef or just a plain string
-        // The "type" attribute might be e.g. "System.Resources.ResXFileRef, System.Windows.Forms"
-        // But we do NOT want to rely on Windows.Forms, so let's parse it ourselves.
-        // A standard ResXFileRef <value> looks like "filename;System.Text.UTF8Encoding"
-        // or possibly "filename;System.Byte[], mscorlib" for binary data, etc.
         if (type != null && type.Contains("ResXFileRef", StringComparison.OrdinalIgnoreCase))
         {
-            // It's an external file reference
-            // Typically "filename;[type]" or "filename;[type];[extra params]"
             var splitted = rawValue.Split(';');
 
             if (splitted.Length >= 2)
             {
-                // splitted[0] = path
-                // splitted[1] = type or encoding
-                // splitted[2..] = more optional parameters (e.g. for text encoding or reflection type info)
                 string relativePath = splitted[0].Replace('\\', Path.DirectorySeparatorChar);
                 string candidatePath = Path.GetFullPath(Path.Combine(basePath, relativePath));
 
-                // Guard against path traversal: the resolved path must stay within the
-                // directory that contains the .resx file. A crafted value such as
-                // "../../secret.txt" would otherwise escape to an arbitrary location.
+                // Guard against path traversal (#40). Use platform-appropriate comparison:
+                // OrdinalIgnoreCase on Windows (case-insensitive FS), Ordinal on case-sensitive systems.
+                StringComparison pathComparison = OperatingSystem.IsWindows()
+                    ? StringComparison.OrdinalIgnoreCase
+                    : StringComparison.Ordinal;
+
                 string allowedRoot = Path.GetFullPath(basePath).TrimEnd(
                     Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
                     + Path.DirectorySeparatorChar;
 
-                if (!candidatePath.StartsWith(allowedRoot, StringComparison.OrdinalIgnoreCase))
+                if (!candidatePath.StartsWith(allowedRoot, pathComparison))
                 {
-                    // Path escapes the .resx directory — skip this resource entry.
+                    // Path traversal attempt detected: record a diagnostic and skip (#40, #47).
+                    _diagnostics.Add(
+                        $"Skipped resource '{name}': file reference '{relativePath}' resolves outside " +
+                        $"the allowed directory '{allowedRoot}' (path-traversal guard).");
+                    return;
+                }
+
+                // Reject paths that contain a symlink or junction point between allowedRoot and
+                // the candidate file. Ancestors above allowedRoot are not examined — the caller
+                // is responsible for the security of the base directory itself (#40).
+                if (ContainsSymlinkOrJunction(allowedRoot, candidatePath))
+                {
+                    _diagnostics.Add(
+                        $"Skipped resource '{name}': file reference '{relativePath}' contains a " +
+                        "symbolic link or junction point (security policy).");
                     return;
                 }
 
                 string filePath = candidatePath;
                 string typeOrEncoding = splitted[1];
 
-                // If it’s a recognized encoding name (like "System.Text.UTF8Encoding"), 
-                // treat it as a text file reference:
-                if (typeOrEncoding.Contains("Encoding", StringComparison.OrdinalIgnoreCase))
-                {
-                    // Some ResXFileRefs for text look like "myFile.txt;System.Text.UTF8Encoding"
-                    // or "myFile.txt;System.Text.ASCIIEncoding"
-                    // We can parse the type name to get an actual Encoding instance. 
-                    // If you only care about a subset, or want a direct match, adapt as needed.
-                    Encoding enc = GetEncodingFromTypeName(typeOrEncoding);
+                // ResXFileRef value format: "path;type[;encoding]"
+                // Recognized type patterns (allowlist to prevent reflective construction - #41):
+                //   1. "System.String..." — text file.  Encoding comes from splitted[2] if present.
+                //   2. "...Encoding..."  — legacy text-file shorthand using an encoding class name.
+                //   3. "...Byte[]..."   — binary file.
+                // Any other type string is silently rejected (#41).
 
-                    // Optionally check if splitted[2] is something else. 
-                    // For now, we treat it simply as text.
-                    _resources[name] = new LazyTextFile(filePath, enc);
+                if (typeOrEncoding.Contains("System.String", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Standard ResXFileRef text format: the encoding is in splitted[2] if provided.
+                    Encoding enc = splitted.Length >= 3
+                        ? GetEncodingFromCodePageOrName(splitted[2])
+                        : Encoding.UTF8;
+                    _resources[name] = new LazyTextFile(filePath, enc, _maxExternalFileBytes, allowedRoot);
+                }
+                else if (typeOrEncoding.Contains("Encoding", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Legacy shorthand: encoding class name is the type itself.
+                    Encoding enc = GetEncodingFromTypeName(typeOrEncoding);
+                    _resources[name] = new LazyTextFile(filePath, enc, _maxExternalFileBytes, allowedRoot);
                 }
                 else if (typeOrEncoding.Contains("Byte[]", StringComparison.OrdinalIgnoreCase))
                 {
-                    // It's presumably binary data => store as lazy bytes
-                    _resources[name] = new LazyBinaryFile(filePath);
+                    _resources[name] = new LazyBinaryFile(filePath, _maxExternalFileBytes, allowedRoot);
                 }
                 else
                 {
-                    // Possibly a custom type. The .resx might say "filename;MyAssembly.MyCustomType, MyAssembly"
-                    // We'll store it as a lazy "object from file constructor" if you want:
-                    var customType = Type.GetType(typeOrEncoding, throwOnError: false);
-                    _resources[name] = new LazyCustomObject(filePath, customType);
+                    // Reject arbitrary custom type construction (#41).
+                    // Unknown ResXFileRef types are treated as unsupported data rather
+                    // than being constructed via reflection (code-execution risk).
+                    // Record a diagnostic so callers can detect unsupported configurations (#47).
+                    _diagnostics.Add(
+                        $"Skipped resource '{name}': ResXFileRef type '{typeOrEncoding}' is not " +
+                        "in the supported allowlist (System.String, Encoding, Byte[]). " +
+                        "Reflective construction is disabled (#41).");
+                    return;
                 }
             }
             else
             {
-                // Malformed? We'll just store the rawValue as plain text
                 _resources[name] = rawValue;
             }
         }
         else
         {
-            // Plain inline string data => store as-is
             _resources[name] = rawValue;
         }
     }
 
-#pragma warning disable SYSLIB0001 // Le type ou le membre est obsolète
-    private static readonly Dictionary<string, Encoding> _encodings = new(StringComparer.InvariantCultureIgnoreCase)
-    {
-        {"System.Text.ASCIIEncoding", Encoding.ASCII },
-        {"System.Text.UTF8Encoding", Encoding.UTF8},
-        {"System.Text.UnicodeEncoding", Encoding.Unicode},
-        {"System.Text.UTF7Encoding", Encoding.UTF7},
-        { "System.Text.UTF32Encoding", Encoding.UTF32},
-    };
-#pragma warning restore SYSLIB0001 // Le type ou le membre est obsolète
+#pragma warning disable SYSLIB0001 // UTF-7 is obsolete but kept for backward compatibility with existing .resx files
+    /// <summary>
+    /// Immutable map of known encoding type names to <see cref="Encoding"/> instances.
+    /// A <see cref="ConcurrentDictionary{TKey,TValue}"/> is used for safe concurrent extension (#44).
+    /// </summary>
+    private static readonly ConcurrentDictionary<string, Encoding> _encodings =
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["System.Text.ASCIIEncoding"] = Encoding.ASCII,
+            ["System.Text.UTF8Encoding"] = Encoding.UTF8,
+            ["System.Text.UnicodeEncoding"] = Encoding.Unicode,
+            ["System.Text.UTF7Encoding"] = Encoding.UTF7,
+            ["System.Text.UTF32Encoding"] = Encoding.UTF32,
+        };
+#pragma warning restore SYSLIB0001
 
     /// <summary>
-    /// Tries to instantiate an <see cref="Encoding"/> from a type name,
-    /// e.g. "System.Text.UTF8Encoding" or "System.Text.ASCIIEncoding".
-    /// Returns <see cref="Encoding.Default"/> if unknown.
+    /// Returns an <see cref="Encoding"/> for the given type name, or
+    /// <see cref="Encoding.UTF8"/> when the name is not recognized (#44, #45).
+    /// The result is cached in a thread-safe dictionary.
     /// </summary>
     private static Encoding GetEncodingFromTypeName(string typeName)
     {
-        // This is a naive approach. 
-        // In a real library, you'd map known type names more robustly:
-        // "System.Text.UTF8Encoding" => Encoding.UTF8
-        // "System.Text.ASCIIEncoding" => Encoding.ASCII
-        // ...
-        try
-        {
-            if (_encodings.TryGetValue(typeName, out var result)) return result;
-            result = (Encoding)Activator.CreateInstance(Type.GetType(typeName, throwOnError: false));
-            result ??= Encoding.Default;
-            _encodings.Add(typeName, result);
+        // Try the pre-populated known-name map first (fast, no reflection).
+        if (_encodings.TryGetValue(typeName, out Encoding? result))
             return result;
-        }
-        catch
+
+        // Unknown encoding name: fall back to UTF-8 (deterministic across platforms).
+        return Encoding.UTF8;
+    }
+
+    /// <summary>
+    /// Returns an <see cref="Encoding"/> identified by a code-page name (e.g. "Windows-1252") or
+    /// by the standard <see cref="Encoding.WebName"/> identifier.  Falls back to
+    /// <see cref="Encoding.UTF8"/> when the identifier is unrecognized.
+    /// </summary>
+    private static Encoding GetEncodingFromCodePageOrName(string encodingName)
+    {
+        if (string.IsNullOrWhiteSpace(encodingName))
+            return Encoding.UTF8;
+
+        string key = encodingName.Trim();
+        return _encodings.GetOrAdd(key, k =>
         {
-            // ignore
-        }
-        return Encoding.Default;
+            try { return Encoding.GetEncoding(k); }
+            catch { return Encoding.UTF8; }
+        });
     }
 
     #endregion
 
-    #region IReadOnlyDictionary<string, object> Implementation
+    #region IReadOnlyDictionary<string, object> — uniform value resolution (#42)
+
+    /// <summary>
+    /// Resolves a stored entry to its logical value, unwrapping lazy wrappers.
+    /// </summary>
+    private static object ResolveValue(object raw) => raw is IResXValue v ? v.Value : raw;
 
     /// <summary>
     /// Gets the resource value for the specified key.
     /// </summary>
-    public object this[string key] => _resources[key] is IResXValue value ? value.Value : _resources[key];
+    public object this[string key] => ResolveValue(_resources[key]);
 
     /// <summary>
     /// Gets all resource keys in the dictionary.
@@ -317,9 +349,9 @@ public sealed class ExternalResource : IReadOnlyDictionary<string, object>
     public IEnumerable<string> Keys => _resources.Keys;
 
     /// <summary>
-    /// Gets all resource values in the dictionary.
+    /// Gets all resolved resource values in the dictionary (#42).
     /// </summary>
-    public IEnumerable<object> Values => _resources.Values;
+    public IEnumerable<object> Values => _resources.Values.Select(ResolveValue);
 
     /// <summary>
     /// Gets the total number of resources loaded.
@@ -332,14 +364,24 @@ public sealed class ExternalResource : IReadOnlyDictionary<string, object>
     public bool ContainsKey(string key) => _resources.ContainsKey(key);
 
     /// <summary>
-    /// Tries to get the resource value for the specified key.
+    /// Tries to get the resolved resource value for the specified key (#42).
     /// </summary>
-    public bool TryGetValue(string key, out object value) => _resources.TryGetValue(key, out value);
+    public bool TryGetValue(string key, out object value)
+    {
+        if (_resources.TryGetValue(key, out object? raw))
+        {
+            value = ResolveValue(raw);
+            return true;
+        }
+        value = null!;
+        return false;
+    }
 
     /// <summary>
-    /// Returns an enumerator of key-value pairs for all resources in the dictionary.
+    /// Returns an enumerator of key-resolved-value pairs for all resources (#42).
     /// </summary>
-    public IEnumerator<KeyValuePair<string, object>> GetEnumerator() => _resources.GetEnumerator();
+    public IEnumerator<KeyValuePair<string, object>> GetEnumerator()
+        => _resources.Select(kv => new KeyValuePair<string, object>(kv.Key, ResolveValue(kv.Value))).GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
@@ -347,25 +389,70 @@ public sealed class ExternalResource : IReadOnlyDictionary<string, object>
 
     private interface IResXValue
     {
-        public object Value { get; }
+        object Value { get; }
+    }
+
+    /// <summary>
+    /// Returns <see langword="true"/> when <paramref name="candidatePath"/> or any directory
+    /// between <paramref name="allowedRoot"/> and that path is a symbolic link or a
+    /// reparse-point junction (#40).
+    /// </summary>
+    /// <remarks>
+    /// The walk stops at <paramref name="allowedRoot"/> so that symlinks in parent directories
+    /// (e.g. <c>/tmp → /private/tmp</c> on macOS) do not incorrectly reject valid resources.
+    /// <paramref name="allowedRoot"/> itself is not checked; the caller is responsible for
+    /// the integrity of the base directory.
+    /// </remarks>
+    private static bool ContainsSymlinkOrJunction(string allowedRoot, string candidatePath)
+    {
+        string normalizedRoot = Path.GetFullPath(allowedRoot)
+            .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+        string? current = candidatePath;
+        while (!string.IsNullOrEmpty(current))
+        {
+            // Stop once we reach (or pass) the allowed root.
+            string normalizedCurrent = Path.GetFullPath(current)
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+            if (string.Equals(normalizedCurrent, normalizedRoot, StringComparison.OrdinalIgnoreCase))
+                break;
+
+            // Check as a file (leaf node) then as a directory (intermediate node).
+            var fi = new FileInfo(current);
+            if (fi.Exists && fi.LinkTarget is not null)
+                return true;
+
+            var di = new DirectoryInfo(current);
+            if (di.Exists && di.LinkTarget is not null)
+                return true;
+
+            string? parent = Path.GetDirectoryName(current);
+            if (parent is null || parent == current) break;
+            current = parent;
+        }
+        return false;
     }
 
     #region Lazy Wrappers
 
     /// <summary>
-    /// Represents a lazily loaded text file resource, 
-    /// created when its <see cref="Value"/> is first accessed.
+    /// Represents a lazily loaded text file resource.
     /// </summary>
     private sealed class LazyTextFile : IResXValue
     {
         private readonly string _filePath;
         private readonly Encoding _encoding;
+        private readonly long _maxBytes;
+        private readonly string _allowedRoot;
         private string? _cachedContent;
 
-        public LazyTextFile(string filePath, Encoding encoding)
+        public LazyTextFile(string filePath, Encoding encoding, long maxBytes, string allowedRoot)
         {
             _filePath = filePath;
             _encoding = encoding;
+            _maxBytes = maxBytes;
+            _allowedRoot = allowedRoot;
         }
 
         /// <summary>
@@ -377,10 +464,37 @@ public sealed class ExternalResource : IReadOnlyDictionary<string, object>
             {
                 if (_cachedContent is null)
                 {
-                    // Resolve path relative to current directory if needed
-                    // or leave it as-is if absolute
                     string fullPath = Path.GetFullPath(_filePath);
-                    _cachedContent = File.ReadAllText(fullPath, _encoding);
+                    // Re-check for symlinks immediately before opening: a file that was a regular
+                    // file at parse time may have been replaced by a symlink since then (#40).
+                    if (ContainsSymlinkOrJunction(_allowedRoot, fullPath))
+                        throw new InvalidOperationException(
+                            $"External resource file '{fullPath}' contains a symbolic link or junction " +
+                            "point (security policy). The resource cannot be read.");
+                    // Open the file once so the length check and the read share the same
+                    // file-system handle — eliminates the TOCTOU window (#43).
+                    using var fs = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                    if (fs.Length > _maxBytes)
+                        throw new InvalidOperationException(
+                            $"External resource file '{fullPath}' ({fs.Length} bytes) exceeds the " +
+                            $"configured maximum of {_maxBytes} bytes.");
+
+                    // Read progressively so we never allocate the full _maxBytes ceiling up front.
+                    // A small fixed-size chunk avoids a massive allocation when _maxBytes is large (#43).
+                    byte[] chunk = new byte[81_920];
+                    using var output = new MemoryStream();
+                    long total = 0;
+                    int read;
+                    while ((read = fs.Read(chunk, 0, chunk.Length)) > 0)
+                    {
+                        total += read;
+                        if (total > _maxBytes)
+                            throw new InvalidOperationException(
+                                $"External resource file '{fullPath}' grew beyond {_maxBytes} bytes during reading.");
+                        output.Write(chunk, 0, read);
+                    }
+
+                    _cachedContent = _encoding.GetString(output.GetBuffer(), 0, (int)output.Length);
                 }
                 return _cachedContent;
             }
@@ -390,20 +504,25 @@ public sealed class ExternalResource : IReadOnlyDictionary<string, object>
     }
 
     /// <summary>
-    /// Represents a lazily loaded binary file resource (returns a <c>byte[]</c>).
+    /// Represents a lazily loaded binary file resource.
     /// </summary>
     private sealed class LazyBinaryFile : IResXValue
     {
         private readonly string _filePath;
+        private readonly long _maxBytes;
+        private readonly string _allowedRoot;
         private byte[]? _cachedBytes;
 
-        public LazyBinaryFile(string filePath)
+        public LazyBinaryFile(string filePath, long maxBytes, string allowedRoot)
         {
             _filePath = filePath;
+            _maxBytes = maxBytes;
+            _allowedRoot = allowedRoot;
         }
 
         /// <summary>
         /// Reads all bytes from the file, loading them only once.
+        /// Returns a defensive copy on each access so callers cannot mutate the cache (#46).
         /// </summary>
         public object Value
         {
@@ -412,61 +531,39 @@ public sealed class ExternalResource : IReadOnlyDictionary<string, object>
                 if (_cachedBytes is null)
                 {
                     string fullPath = Path.GetFullPath(_filePath);
-                    _cachedBytes = File.ReadAllBytes(fullPath);
+                    // Re-check for symlinks immediately before opening: a file that was a regular
+                    // file at parse time may have been replaced by a symlink since then (#40).
+                    if (ContainsSymlinkOrJunction(_allowedRoot, fullPath))
+                        throw new InvalidOperationException(
+                            $"External resource file '{fullPath}' contains a symbolic link or junction " +
+                            "point (security policy). The resource cannot be read.");
+                    // Open the file once so the length check and the read share the same
+                    // file-system handle — eliminates the TOCTOU window (#43).
+                    using var fs = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                    if (fs.Length > _maxBytes)
+                        throw new InvalidOperationException(
+                            $"External resource file '{fullPath}' ({fs.Length} bytes) exceeds the " +
+                            $"configured maximum of {_maxBytes} bytes.");
+
+                    // Read progressively so we never allocate the full _maxBytes ceiling up front.
+                    // A small fixed-size chunk avoids a massive allocation when _maxBytes is large (#43).
+                    byte[] chunk = new byte[81_920];
+                    using var output = new MemoryStream();
+                    long total = 0;
+                    int read;
+                    while ((read = fs.Read(chunk, 0, chunk.Length)) > 0)
+                    {
+                        total += read;
+                        if (total > _maxBytes)
+                            throw new InvalidOperationException(
+                                $"External resource file '{fullPath}' grew beyond {_maxBytes} bytes during reading.");
+                        output.Write(chunk, 0, read);
+                    }
+
+                    _cachedBytes = output.ToArray();
                 }
-                return _cachedBytes;
-            }
-        }
-    }
-
-    /// <summary>
-    /// Represents a lazily constructed object from a file, 
-    /// e.g. if the .resx specified <c>filename;MyNamespace.MyType</c>.
-    /// </summary>
-    private sealed class LazyCustomObject : IResXValue
-    {
-        private readonly string _filePath;
-        private readonly Type? _type;
-        private object? _instance;
-
-        public LazyCustomObject(string filePath, Type? customType)
-        {
-            _filePath = filePath;
-            _type = customType;
-        }
-
-        /// <summary>
-        /// If a type was provided, this instantiates the type via reflection, 
-        /// passing the file path to its constructor. 
-        /// Otherwise, returns a byte[].
-        /// </summary>
-        public object Value
-        {
-            get
-            {
-                if (_instance is null)
-                {
-                    string fullPath = Path.GetFullPath(_filePath);
-                    if (_type == null)
-                    {
-                        // If we have no type, default to raw binary
-                        _instance = File.ReadAllBytes(fullPath);
-                    }
-                    else if (_type == typeof(string))
-                    {
-                        // If the type has a constructor that takes (string path), 
-                        // create an instance:
-                        _instance = File.ReadAllText(fullPath);
-                    }
-                    else
-                    {
-                        // If the type has a constructor that takes (string path), 
-                        // create an instance:
-                        var datas = File.ReadAllBytes(fullPath);
-                        _instance = Activator.CreateInstance(_type, datas);
-                    }
-                }
-                return _instance;
+                // Return a copy so callers cannot mutate the cached array (#46).
+                return (byte[])_cachedBytes.Clone();
             }
         }
     }

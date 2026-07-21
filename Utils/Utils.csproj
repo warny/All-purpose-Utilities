@@ -1,8 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
+		<!-- TargetFramework remains net8.0 until dependent projects (Utils.Imaging, Utils.Geography,
+		     Utils.VirtualMachine, Utils.Parser.Expressions) are also upgraded to net9.0 (#27).
+		     Upgrading Utils in isolation breaks NU1201 compatibility checks. -->
 		<TargetFramework>net8.0</TargetFramework>
-		<EnablePreviewFeatures>True</EnablePreviewFeatures>
+		<!-- AllowUnsafeBlocks is required: unsafe code is used in Arrays, Collections, and String
+		     helpers for performance-sensitive operations (pointer arithmetic, Span<T> interop).
+		     This cannot be removed without refactoring those files (#27). -->
 		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
 		<Copyright>Olivier MARTY 2025</Copyright>
 		<Authors>Olivier MARTY</Authors>
@@ -26,8 +31,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\Utils.Parser\Utils.Parser.csproj" />
-                <PackageReference Include="System.Runtime" Version="4.3.1" />
+		<!-- Utils.Parser project reference was removed: Utils source files have no 'using Utils.Parser'
+		     dependency. The reference was an inverted dependency that pulled the parser into all
+		     consumers of the base package (#28). -->
+		<!-- System.Runtime is a framework meta-package, no need to reference it explicitly on net9.0 (#27). -->
                 <PackageReference Include="System.Text.Encoding.CodePages" Version="9.0.6" />
         </ItemGroup>
 

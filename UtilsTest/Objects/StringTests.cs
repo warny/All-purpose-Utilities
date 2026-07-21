@@ -202,7 +202,16 @@ namespace UtilsTest.Objects
                 ("a b ", new string[] { "a", "b" }),
                 ("a b \"c d\"", new string[] { "a", "b", "c d" }),
                 ("a b \"c\"\"d\"", new string[] { "a", "b", "c\"d" }),
-                (@"/src:""C:\tmp\Some Folder\Sub Folder"" /users:""abcdefg@hijkl.com"" tasks:""SomeTask,Some Other Task"" -someParam", new string[] { @"/src:""C:\tmp\Some Folder\Sub Folder""", @"/users:""abcdefg@hijkl.com""", @"tasks:""SomeTask,Some Other Task""", @"-someParam" })
+                // Quotes mid-token: the new explicit grammar strips the delimiters and concatenates
+                // the unquoted prefix with the quoted content (#57, #58).
+                // Input: /src:"C:\tmp\Some Folder\Sub Folder" /users:"abcdefg@hijkl.com" tasks:"SomeTask,Some Other Task" -someParam
+                (@"/src:""C:\tmp\Some Folder\Sub Folder"" /users:""abcdefg@hijkl.com"" tasks:""SomeTask,Some Other Task"" -someParam",
+                 new string[] {
+                     @"/src:C:\tmp\Some Folder\Sub Folder",
+                     @"/users:abcdefg@hijkl.com",
+                     @"tasks:SomeTask,Some Other Task",
+                     @"-someParam"
+                 })
             };
 
             foreach (var (line, expected) in tests)

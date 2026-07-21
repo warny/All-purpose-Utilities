@@ -62,13 +62,25 @@ public abstract class CheckBase<T>
     /// <summary>
     /// Executes custom validation checks and records produced exceptions.
     /// </summary>
-    /// <param name="checks">Set of functions that return an exception when the value is invalid.</param>
+    /// <param name="checks">
+    /// Set of functions that return an exception when the value is invalid, or <see langword="null"/>
+    /// when the value is valid. Each delegate is invoked even when earlier checks have already
+    /// recorded errors, so that all independent failures are accumulated (#63).
+    /// </param>
     /// <returns>The current validation instance for fluent chaining.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="checks"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException">Thrown when any element in <paramref name="checks"/> is <see langword="null"/>.</exception>
     public CheckBase<T> Must(params Func<T, Exception>[] checks)
     {
-        foreach (var check in checks)
+        ArgumentNullException.ThrowIfNull(checks);
+        for (int i = 0; i < checks.Length; i++)
         {
-            var result = check(Value);
+            if (checks[i] is null)
+                throw new ArgumentException($"The delegate at index {i} is null.", nameof(checks));
+            // Evaluate against the private stored value, not the Value getter.
+            // The Value getter throws when errors have already accumulated, which would
+            // prevent later checks from running and collecting their own failures (#63).
+            var result = checks[i](value);
             if (result is not null)
             {
                 OnError(result);
@@ -91,12 +103,21 @@ public abstract class CheckBase<T>
     /// <summary>
     /// Throws the accumulated validation errors, if any were recorded.
     /// </summary>
-    /// <exception cref="Exception">Thrown with aggregated error information when multiple validations fail.</exception>
+    /// <remarks>
+    /// When exactly one error exists it is rethrown directly so callers can catch its specific type.
+    /// When multiple errors exist they are wrapped in an <see cref="AggregateException"/> so that
+    /// individual causes and stack traces remain accessible to callers (#64).
+    /// </remarks>
+    /// <exception cref="AggregateException">Thrown with all accumulated validation errors when more than one error was recorded.</exception>
     public virtual void ThrowErrors()
     {
         if (Errors.Count == 0) return;
         if (Errors.Count == 1) throw Errors[0];
-        throw new Exception($"{Name}{Environment.NewLine} - {string.Join(Environment.NewLine + " - ", Errors.Select(e => e.Message))}");
+        // Wrap all failures in AggregateException so callers can inspect individual causes.
+        // The message includes the validated name followed by each individual error message (#64).
+        throw new AggregateException(
+            $"{Name}: {Errors.Count} validation errors occurred.",
+            Errors);
     }
 
     /// <summary>
@@ -124,13 +145,21 @@ public class Arg<T> : CheckBase<T>
     protected override void OnNull() => throw new ArgumentNullException(Name);
 
     /// <summary>
-    /// Throws the accumulated validation errors as a single <see cref="ArgumentException"/>.
+    /// Throws the accumulated validation errors.
     /// </summary>
-    /// <exception cref="ArgumentException">Always thrown when at least one error has been recorded.</exception>
+    /// <remarks>
+    /// When exactly one error has been recorded, it is rethrown directly (preserving type and stack).
+    /// When multiple errors were recorded, they are wrapped in an <see cref="AggregateException"/>
+    /// so all individual causes remain accessible (#64).
+    /// </remarks>
+    /// <exception cref="AggregateException">Thrown when more than one validation error was recorded.</exception>
     public override void ThrowErrors()
     {
         if (Errors.Count == 0) return;
-        throw new ArgumentException($"{Name}{Environment.NewLine} - {string.Join(Environment.NewLine + " - ", Errors.Select(e => e.Message))}", Name);
+        if (Errors.Count == 1) throw Errors[0];
+        throw new AggregateException(
+            $"{Name}: {Errors.Count} argument validation errors occurred.",
+            Errors);
     }
 }
 
@@ -176,15 +205,18 @@ public static class Validations
     public static Variable<T> Variable<T>(this T value, [CallerArgumentExpression(nameof(value))] string name = "") => new Variable<T>(value, name);
 
     /// <summary>
-    /// Returns an exception describing the required rank for the provided array.
+    /// Returns an exception describing a rank mismatch, or <see langword="null"/> when the rank matches.
     /// </summary>
     /// <param name="value">Array to inspect.</param>
     /// <param name="rank">Expected rank.</param>
-    /// <returns>An exception describing the rank constraint when it is met; otherwise <see langword="null"/>.</returns>
-    public static Exception MustBeOfRank(this Array value, int rank)
+    /// <returns>
+    /// An <see cref="ArrayDimensionException"/> when the array rank does not equal <paramref name="rank"/>;
+    /// <see langword="null"/> when the rank matches.
+    /// </returns>
+    public static Exception? MustBeOfRank(this Array value, int rank)
     {
         if (value.Rank == rank) return null;
-        throw new Exception($"must be of rank {rank}");
+        return new ArrayDimensionException($"must be of rank {rank}");
     }
 
     /// <summary>

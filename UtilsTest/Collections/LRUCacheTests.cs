@@ -128,6 +128,153 @@ public class LRUCacheTests
         }
     }
 
+    // ------------------------------------------------------------------ #14 Capacity validation
+
+    [TestMethod]
+    public void Constructor_ThrowsOnZeroCapacity()
+    {
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new LRUCache<int, string>(0));
+    }
+
+    [TestMethod]
+    public void Constructor_ThrowsOnNegativeCapacity()
+    {
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new LRUCache<int, string>(-1));
+    }
+
+    [TestMethod]
+    public void Count_NeverExceedsCapacity()
+    {
+        var cache = new LRUCache<int, int>(3);
+        for (int i = 0; i < 10; i++)
+            cache.Add(i, i);
+        Assert.IsTrue(cache.Count <= 3, $"Count={cache.Count} exceeded capacity 3.");
+    }
+
+    // ------------------------------------------------------------------ #15 Indexer throws KeyNotFoundException
+
+    [TestMethod]
+    public void Indexer_ThrowsKeyNotFoundForMissingKey()
+    {
+        var cache = new LRUCache<int, string>(5);
+        Assert.ThrowsExactly<KeyNotFoundException>(() => _ = cache[99]);
+    }
+
+    [TestMethod]
+    public void TryGetValue_ReturnsFalseForMissingKey_DoesNotThrow()
+    {
+        var cache = new LRUCache<int, string>(5);
+        bool found = cache.TryGetValue(99, out string val);
+        Assert.IsFalse(found);
+        Assert.IsNull(val);
+    }
+
+    // ------------------------------------------------------------------ #16 Remove(KeyValuePair) requires value match
+
+    [TestMethod]
+    public void Remove_KeyValuePair_MatchingPair_Removes()
+    {
+        var cache = new LRUCache<int, string>(5);
+        cache.Add(1, "one");
+        bool result = cache.Remove(new KeyValuePair<int, string>(1, "one"));
+        Assert.IsTrue(result);
+        Assert.IsFalse(cache.ContainsKey(1));
+    }
+
+    [TestMethod]
+    public void Remove_KeyValuePair_WrongValue_DoesNotRemove()
+    {
+        var cache = new LRUCache<int, string>(5);
+        cache.Add(1, "one");
+        bool result = cache.Remove(new KeyValuePair<int, string>(1, "wrong"));
+        Assert.IsFalse(result, "Remove should return false when value does not match.");
+        Assert.IsTrue(cache.ContainsKey(1), "Entry should still exist after failed value-match removal.");
+    }
+
+    [TestMethod]
+    public void Remove_KeyValuePair_MissingKey_ReturnsFalse()
+    {
+        var cache = new LRUCache<int, string>(5);
+        bool result = cache.Remove(new KeyValuePair<int, string>(99, "anything"));
+        Assert.IsFalse(result);
+    }
+
+    // ------------------------------------------------------------------ #17 CopyTo upfront validation
+
+    [TestMethod]
+    public void CopyTo_ThrowsArgumentNullException_OnNullArray()
+    {
+        var cache = new LRUCache<int, string>(5);
+        cache.Add(1, "one");
+        Assert.ThrowsExactly<ArgumentNullException>(() => cache.CopyTo(null!, 0));
+    }
+
+    [TestMethod]
+    public void CopyTo_ThrowsArgumentOutOfRangeException_OnNegativeIndex()
+    {
+        var cache = new LRUCache<int, string>(5);
+        cache.Add(1, "one");
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => cache.CopyTo(new KeyValuePair<int, string>[5], -1));
+    }
+
+    [TestMethod]
+    public void CopyTo_ThrowsArgumentException_OnInsufficientSpace()
+    {
+        var cache = new LRUCache<int, string>(5);
+        cache.Add(1, "one");
+        cache.Add(2, "two");
+        // Array has 3 slots but we start at index 2 → only 1 slot left for 2 items.
+        var dest = new KeyValuePair<int, string>[3];
+        Assert.ThrowsExactly<ArgumentException>(() => cache.CopyTo(dest, 2));
+    }
+
+    [TestMethod]
+    public void CopyTo_ThrowsBeforePartialWrite()
+    {
+        // Verify no partial write occurs when the array is too small.
+        var cache = new LRUCache<int, string>(5);
+        cache.Add(1, "one");
+        cache.Add(2, "two");
+        var dest = new KeyValuePair<int, string>[1]; // only 1 slot for 2 items
+        try { cache.CopyTo(dest, 0); } catch (ArgumentException) { }
+        // Destination must remain unwritten.
+        Assert.AreEqual(default, dest[0]);
+    }
+
+    [TestMethod]
+    public void Keys_CopyTo_ThrowsArgumentNullException_OnNullArray()
+    {
+        var cache = new LRUCache<int, string>(5);
+        cache.Add(1, "one");
+        Assert.ThrowsExactly<ArgumentNullException>(() => cache.Keys.CopyTo(null!, 0));
+    }
+
+    [TestMethod]
+    public void Values_CopyTo_ThrowsArgumentNullException_OnNullArray()
+    {
+        var cache = new LRUCache<int, string>(5);
+        cache.Add(1, "one");
+        Assert.ThrowsExactly<ArgumentNullException>(() => cache.Values.CopyTo(null!, 0));
+    }
+
+    [TestMethod]
+    public void Keys_CopyTo_ThrowsArgumentException_OnInsufficientSpace()
+    {
+        var cache = new LRUCache<int, string>(5);
+        cache.Add(1, "one");
+        cache.Add(2, "two");
+        Assert.ThrowsExactly<ArgumentException>(() => cache.Keys.CopyTo(new int[1], 0));
+    }
+
+    [TestMethod]
+    public void Values_CopyTo_ThrowsArgumentException_OnInsufficientSpace()
+    {
+        var cache = new LRUCache<int, string>(5);
+        cache.Add(1, "one");
+        cache.Add(2, "two");
+        Assert.ThrowsExactly<ArgumentException>(() => cache.Values.CopyTo(new string[1], 0));
+    }
+
     [TestMethod]
     public void ConcurrentReadWriteEnumerateStress_DoesNotThrow()
     {
