@@ -191,8 +191,24 @@ public sealed class ExternalResource : IReadOnlyDictionary<string, object>
                 string filePath = candidatePath;
                 string typeOrEncoding = splitted[1];
 
-                if (typeOrEncoding.Contains("Encoding", StringComparison.OrdinalIgnoreCase))
+                // ResXFileRef value format: "path;type[;encoding]"
+                // Recognized type patterns (allowlist to prevent reflective construction - #41):
+                //   1. "System.String..." — text file.  Encoding comes from splitted[2] if present.
+                //   2. "...Encoding..."  — legacy text-file shorthand using an encoding class name.
+                //   3. "...Byte[]..."   — binary file.
+                // Any other type string is silently rejected (#41).
+
+                if (typeOrEncoding.Contains("System.String", StringComparison.OrdinalIgnoreCase))
                 {
+                    // Standard ResXFileRef text format: the encoding is in splitted[2] if provided.
+                    Encoding enc = splitted.Length >= 3
+                        ? GetEncodingFromCodePageOrName(splitted[2])
+                        : Encoding.UTF8;
+                    _resources[name] = new LazyTextFile(filePath, enc, _maxExternalFileBytes);
+                }
+                else if (typeOrEncoding.Contains("Encoding", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Legacy shorthand: encoding class name is the type itself.
                     Encoding enc = GetEncodingFromTypeName(typeOrEncoding);
                     _resources[name] = new LazyTextFile(filePath, enc, _maxExternalFileBytes);
                 }
@@ -248,6 +264,24 @@ public sealed class ExternalResource : IReadOnlyDictionary<string, object>
 
         // Unknown encoding name: fall back to UTF-8 (deterministic across platforms).
         return Encoding.UTF8;
+    }
+
+    /// <summary>
+    /// Returns an <see cref="Encoding"/> identified by a code-page name (e.g. "Windows-1252") or
+    /// by the standard <see cref="Encoding.WebName"/> identifier.  Falls back to
+    /// <see cref="Encoding.UTF8"/> when the identifier is unrecognized.
+    /// </summary>
+    private static Encoding GetEncodingFromCodePageOrName(string encodingName)
+    {
+        if (string.IsNullOrWhiteSpace(encodingName))
+            return Encoding.UTF8;
+
+        string key = encodingName.Trim();
+        return _encodings.GetOrAdd(key, k =>
+        {
+            try { return Encoding.GetEncoding(k); }
+            catch { return Encoding.UTF8; }
+        });
     }
 
     #endregion
