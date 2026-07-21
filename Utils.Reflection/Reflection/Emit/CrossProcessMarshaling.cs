@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Utils.Reflection.Reflection.Emit;
 
@@ -140,17 +141,32 @@ internal static class CrossProcessMarshaling
             foreach (FieldInfo field in type.GetFields(BindingFlags.Public | BindingFlags.Instance))
             {
                 if (!IsSupportedType(field.FieldType, depth + 1))
-                {
                     return false;
-                }
             }
 
             foreach (PropertyInfo property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
             {
-                if (property.CanRead && !IsSupportedType(property.PropertyType, depth + 1))
-                {
+                // Indexers (parameterized properties) are never serialized by System.Text.Json.
+                if (property.GetIndexParameters().Length > 0)
+                    continue;
+
+                // [JsonIgnore(Condition = Always)] explicitly excludes the property from the wire format.
+                if (property.GetCustomAttribute<JsonIgnoreAttribute>()?.Condition == JsonIgnoreCondition.Always)
+                    continue;
+
+                // Only properties with a public getter are included in the JSON by System.Text.Json.
+                if (property.GetGetMethod(nonPublic: false) is null)
+                    continue;
+
+                // A property that is serialized but has no public setter cannot be written back during
+                // deserialization, causing silent data loss on the round-trip. Reject these and require
+                // callers to mark them [JsonIgnore] to explicitly exclude them from the wire format, or
+                // to add a public (or init) setter.
+                if (property.GetSetMethod(nonPublic: false) is null)
                     return false;
-                }
+
+                if (!IsSupportedType(property.PropertyType, depth + 1))
+                    return false;
             }
 
             return true;

@@ -64,13 +64,13 @@ Fresh review of the current `Utils.Reflection` code after the previous audit ite
 
 ~~**Priority: P1 — argument and resource safety.**~~
 
-### 8. Cross-process type validation does not prove JSON round-tripability
+### ~~8. Cross-process type validation does not prove JSON round-tripability~~ ✅ DONE
 
-`IsSupportedType` accepts a value type when its public fields and readable public properties recursively use supported types. This does not prove that `System.Text.Json` can reconstruct the type. Read-only/computed properties, constructor-only invariants, custom converters, ignored members, duplicate field/property names, or throwing getters can still make serialization lossy or fail at runtime.
+~~`IsSupportedType` accepts a value type when its public fields and readable public properties recursively use supported types. This does not prove that `System.Text.Json` can reconstruct the type. Read-only/computed properties, constructor-only invariants, custom converters, ignored members, duplicate field/property names, or throwing getters can still make serialization lossy or fail at runtime.~~
 
-**Fix:** define the supported wire-shape contract independently from CLR reflection shape. Prefer DTO-like structs with public settable fields/properties and validated constructors, or generate/test a serializer contract for every method type at load time. Reject computed/indexed/read-only members unless explicitly supported.
+**Fix applied:** `IsSupportedType` now enforces the JSON wire contract for value-type properties: (1) indexers (parameterized properties) are skipped — not serialized by `System.Text.Json`; (2) properties marked `[JsonIgnore(Condition = Always)]` are skipped — explicitly excluded from the wire; (3) properties with a public getter but NO public setter are now REJECTED because `System.Text.Json` can serialize them but not deserialize them back, causing silent data loss on the round-trip. `init` setters and `get+set` setters are accepted. Users must add `[JsonIgnore]` to explicitly exclude computed/read-only properties. Tests cover all four cases: `IsSupportedType_ReturnsFalse_ForStructWithReadOnlyPropertyAndNoSetter`, `..._ReturnsTrue_ForStructWithJsonIgnoredReadOnlyProperty`, `..._ReturnsTrue_ForStructWithInitProperty`, `..._ReturnsTrue_ForStructWithIndexer`.
 
-**Priority: P1 — marshaling correctness.**
+~~**Priority: P1 — marshaling correctness.**~~
 
 ### ~~9. Remote exception details expose worker internals by default~~ ✅ DONE
 
