@@ -141,9 +141,14 @@ public static class DateUtils
             case PeriodTypeEnum.WorkingDay:
                 return calendar.AddDays(dateTime.Date, 1).AddTicks(-1);
             case PeriodTypeEnum.Week:
-                var difference = (7 - ((int)calendar.GetDayOfWeek(dateTime) - (int)firstDayOfWeek)) % 7;
-                DateTime endWeek = calendar.AddDays(dateTime.Date, difference);
-                return calendar.AddDays(endWeek, 1).AddTicks(-1);
+                // Compute the start of the week using the same formula as StartOf(Week), then
+                // advance exactly 7 days so the result is always the last instant of the 7th day.
+                // The previous formula used (7 - diff) % 7 which produced 0 when the date was
+                // already on the first day of the week, yielding end-of-current-day instead of
+                // end-of-week (#53).
+                var startDiff = (7 + ((int)calendar.GetDayOfWeek(dateTime) - (int)firstDayOfWeek)) % 7;
+                DateTime startOfWeek = calendar.AddDays(dateTime.Date, -startDiff);
+                return startOfWeek.AddDays(7).AddTicks(-1);
             case PeriodTypeEnum.Month:
                 var startOfMonth = calendar.ToDateTime(calendar.GetYear(dateTime), calendar.GetMonth(dateTime), 1, 0, 0, 0, 0);
                 DateTime startOfNextMonth = calendar.AddMonths(startOfMonth, 1);
