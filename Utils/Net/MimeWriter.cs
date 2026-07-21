@@ -46,15 +46,33 @@ public static class MimeWriter
     }
 
     /// <summary>
-    /// Returns <see langword="true"/> when <paramref name="encoding"/> preserves ASCII byte values
-    /// (each ASCII character 0x20–0x7E encodes to a single byte with the same numeric value).
+    /// Returns <see langword="true"/> when <paramref name="encoding"/> preserves every printable
+    /// ASCII character (0x20–0x7E, inclusive) as a single byte with the same numeric value (#23).
     /// </summary>
+    /// <remarks>
+    /// Testing a single character (e.g. 'A') is not sufficient: some encodings (e.g. UTF-7)
+    /// preserve most ASCII code points but apply special treatment to characters like '+' that
+    /// are used in MIME framing.
+    /// </remarks>
     private static bool IsAsciiCompatible(Encoding encoding)
     {
-        // A fast, reliable heuristic: encode a representative ASCII character and check the
-        // resulting byte count and value.
-        byte[] sample = encoding.GetBytes("A");
-        return sample.Length == 1 && sample[0] == (byte)'A';
+        // Build the 95-character printable ASCII range in one allocation.
+        char[] chars = new char[0x7F - 0x20]; // 95 characters: 0x20..0x7E
+        for (int i = 0; i < chars.Length; i++)
+            chars[i] = (char)(0x20 + i);
+
+        byte[] bytes = encoding.GetBytes(chars);
+
+        if (bytes.Length != chars.Length)
+            return false;
+
+        for (int i = 0; i < bytes.Length; i++)
+        {
+            if (bytes[i] != (byte)chars[i])
+                return false;
+        }
+
+        return true;
     }
 
     /// <summary>

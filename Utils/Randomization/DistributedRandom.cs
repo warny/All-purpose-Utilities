@@ -89,9 +89,20 @@ public class DistributedRandom
             throw new InvalidOperationException(
                 $"The distribution function returned a non-finite value ({distributedValue}) " +
                 $"for input {uniformRandom}. The function must return finite values for all inputs in [0, 1].");
-        distributedValue = (distributedValue - minValue) / (maxValue - minValue);
 
-        return distributedValue;
+        double normalized = (distributedValue - minValue) / (maxValue - minValue);
+
+        // A finite but non-monotone function can produce a value far outside [0, 1].
+        // Allow a small floating-point tolerance for values that differ from [0, 1] only due
+        // to rounding, but reject anything that genuinely falls outside the endpoint range.
+        const double tolerance = 1e-12;
+        if (!double.IsFinite(normalized) || normalized < -tolerance || normalized > 1.0 + tolerance)
+            throw new InvalidOperationException(
+                $"The distribution function produced a normalized value ({normalized:G17}) " +
+                "outside the range defined by its endpoints [f(0), f(1)]. " +
+                "The function must be monotone over [0, 1].");
+
+        return Math.Clamp(normalized, 0.0, 1.0);
     }
 
     /// <summary>

@@ -39,7 +39,7 @@ public sealed class ExternalResource : IReadOnlyDictionary<string, object>
     /// This collection is populated in permissive mode (the default). An empty collection
     /// indicates that all entries were processed successfully.
     /// </remarks>
-    public IReadOnlyList<string> DiagnosticMessages => _diagnostics;
+    public IReadOnlyList<string> DiagnosticMessages => _diagnostics.AsReadOnly();
 
     static ExternalResource()
     {
@@ -244,17 +244,17 @@ public sealed class ExternalResource : IReadOnlyDictionary<string, object>
                     Encoding enc = splitted.Length >= 3
                         ? GetEncodingFromCodePageOrName(splitted[2])
                         : Encoding.UTF8;
-                    _resources[name] = new LazyTextFile(filePath, enc, _maxExternalFileBytes);
+                    _resources[name] = new LazyTextFile(filePath, enc, _maxExternalFileBytes, allowedRoot);
                 }
                 else if (typeOrEncoding.Contains("Encoding", StringComparison.OrdinalIgnoreCase))
                 {
                     // Legacy shorthand: encoding class name is the type itself.
                     Encoding enc = GetEncodingFromTypeName(typeOrEncoding);
-                    _resources[name] = new LazyTextFile(filePath, enc, _maxExternalFileBytes);
+                    _resources[name] = new LazyTextFile(filePath, enc, _maxExternalFileBytes, allowedRoot);
                 }
                 else if (typeOrEncoding.Contains("Byte[]", StringComparison.OrdinalIgnoreCase))
                 {
-                    _resources[name] = new LazyBinaryFile(filePath, _maxExternalFileBytes);
+                    _resources[name] = new LazyBinaryFile(filePath, _maxExternalFileBytes, allowedRoot);
                 }
                 else
                 {
@@ -444,13 +444,15 @@ public sealed class ExternalResource : IReadOnlyDictionary<string, object>
         private readonly string _filePath;
         private readonly Encoding _encoding;
         private readonly long _maxBytes;
+        private readonly string _allowedRoot;
         private string? _cachedContent;
 
-        public LazyTextFile(string filePath, Encoding encoding, long maxBytes)
+        public LazyTextFile(string filePath, Encoding encoding, long maxBytes, string allowedRoot)
         {
             _filePath = filePath;
             _encoding = encoding;
             _maxBytes = maxBytes;
+            _allowedRoot = allowedRoot;
         }
 
         /// <summary>
@@ -463,6 +465,12 @@ public sealed class ExternalResource : IReadOnlyDictionary<string, object>
                 if (_cachedContent is null)
                 {
                     string fullPath = Path.GetFullPath(_filePath);
+                    // Re-check for symlinks immediately before opening: a file that was a regular
+                    // file at parse time may have been replaced by a symlink since then (#40).
+                    if (ContainsSymlinkOrJunction(_allowedRoot, fullPath))
+                        throw new InvalidOperationException(
+                            $"External resource file '{fullPath}' contains a symbolic link or junction " +
+                            "point (security policy). The resource cannot be read.");
                     // Open the file once so the length check and the read share the same
                     // file-system handle — eliminates the TOCTOU window (#43).
                     using var fs = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read);
@@ -502,12 +510,14 @@ public sealed class ExternalResource : IReadOnlyDictionary<string, object>
     {
         private readonly string _filePath;
         private readonly long _maxBytes;
+        private readonly string _allowedRoot;
         private byte[]? _cachedBytes;
 
-        public LazyBinaryFile(string filePath, long maxBytes)
+        public LazyBinaryFile(string filePath, long maxBytes, string allowedRoot)
         {
             _filePath = filePath;
             _maxBytes = maxBytes;
+            _allowedRoot = allowedRoot;
         }
 
         /// <summary>
@@ -521,6 +531,12 @@ public sealed class ExternalResource : IReadOnlyDictionary<string, object>
                 if (_cachedBytes is null)
                 {
                     string fullPath = Path.GetFullPath(_filePath);
+                    // Re-check for symlinks immediately before opening: a file that was a regular
+                    // file at parse time may have been replaced by a symlink since then (#40).
+                    if (ContainsSymlinkOrJunction(_allowedRoot, fullPath))
+                        throw new InvalidOperationException(
+                            $"External resource file '{fullPath}' contains a symbolic link or junction " +
+                            "point (security policy). The resource cannot be read.");
                     // Open the file once so the length check and the read share the same
                     // file-system handle — eliminates the TOCTOU window (#43).
                     using var fs = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read);

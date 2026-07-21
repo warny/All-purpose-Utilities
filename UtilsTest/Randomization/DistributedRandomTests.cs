@@ -144,4 +144,28 @@ public class DistributedRandomTests
         var distributed = new DistributedRandom(x => x == 0 || x == 1 ? x : double.PositiveInfinity);
         Assert.ThrowsExactly<InvalidOperationException>(() => distributed.NextDouble());
     }
+
+    [TestMethod]
+    public void NextDouble_ThrowsInvalidOperation_WhenFunctionIsNonMonotone()
+    {
+        // f(0)=0, f(1)≈1, but f(0.5)≈10.5 — strongly non-monotone.
+        // For any uniformRandom value strictly between 0 and 1 (which NextDouble always returns),
+        // the normalized value will exceed [0, 1+1e-12] and must be rejected.
+        var distributed = new DistributedRandom(
+            x => x + 10 * Math.Sin(Math.PI * x), seed: 42);
+        Assert.ThrowsExactly<InvalidOperationException>(() => distributed.NextDouble());
+    }
+
+    [TestMethod]
+    public void NextDouble_MonotoneFunction_ReturnsClamped01()
+    {
+        // A strictly monotone function must always produce values in [0, 1].
+        var distributed = new DistributedRandom(x => x * x, seed: 7); // f(0)=0, f(1)=1, monotone
+        for (int i = 0; i < 100; i++)
+        {
+            double v = distributed.NextDouble();
+            Assert.IsTrue(v >= 0.0 && v <= 1.0,
+                $"NextDouble() returned {v} which is outside [0, 1].");
+        }
+    }
 }

@@ -74,6 +74,18 @@ public class MimeWriterTests
     }
 
     [TestMethod]
+#pragma warning disable SYSLIB0001 // UTF-7 is obsolete but must still be rejected
+    public void Write_WithUtf7Encoding_ThrowsArgumentException()
+    {
+        // UTF-7 preserves most ASCII code points but encodes '+' (0x2B) differently,
+        // which corrupts MIME boundary markers. The full-range check must reject it (#23).
+        var doc = CreateSimpleDocument();
+        using var ms = new MemoryStream();
+        Assert.ThrowsExactly<ArgumentException>(() => MimeWriter.Write(doc, ms, Encoding.UTF7));
+    }
+#pragma warning restore SYSLIB0001
+
+    [TestMethod]
     public void Write_ToStream_ProducesValidAsciiFraming()
     {
         // The boundary, header names, and colon-separated values must all be pure ASCII bytes.
