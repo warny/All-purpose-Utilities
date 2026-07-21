@@ -391,10 +391,16 @@ namespace Utils.Geography.Model
         /// longitude is normalized (to handle antimeridian wraparound) and rounded, to
         /// <see cref="EqualityPrecision"/> decimal places before hashing — the exact same values that
         /// <see cref="Equals(GeoPoint{T})"/> compares on, so equal points always hash equally.
+        /// At either pole all longitudes refer to the same geographic point (matching <see cref="Equals(GeoPoint{T})"/>),
+        /// so longitude is excluded from the hash when the rounded latitude equals exactly ±90°.
         /// </summary>
         public override int GetHashCode()
         {
-            return ObjectUtils.ComputeHash(T.Round(Latitude, EqualityPrecision), degree.NormalizeRounded(Longitude, EqualityPrecision));
+            T roundedLat = T.Round(Latitude, EqualityPrecision);
+            // At a pole every longitude is the same physical point; longitude must not affect the hash.
+            if (roundedLat == MaxLatitude || roundedLat == MinLatitude)
+                return roundedLat.GetHashCode();
+            return ObjectUtils.ComputeHash(roundedLat, degree.NormalizeRounded(Longitude, EqualityPrecision));
         }
 
         /// <summary>

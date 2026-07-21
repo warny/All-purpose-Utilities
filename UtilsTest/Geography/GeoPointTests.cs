@@ -154,5 +154,41 @@ namespace UtilsTest.Geography
 
             Assert.IsTrue(point1.IsApproximately(point2, 1e-9));
         }
+
+        [TestMethod]
+        public void NorthPolePointsWithDifferentLongitudesAreEqualAndHaveTheSameHashCode()
+        {
+            // All longitudes at a pole refer to the same geographic point.
+            // Equals must return true and GetHashCode must return the same value.
+            var pole1 = new GeoPoint<double>(90, 10);
+            var pole2 = new GeoPoint<double>(90, -170);
+
+            Assert.AreEqual(pole1, pole2);
+            Assert.AreEqual(pole1.GetHashCode(), pole2.GetHashCode());
+        }
+
+        [TestMethod]
+        public void SouthPolePointsWithDifferentLongitudesAreEqualAndHaveTheSameHashCode()
+        {
+            var pole1 = new GeoPoint<double>(-90, 45);
+            var pole2 = new GeoPoint<double>(-90, -135);
+
+            Assert.AreEqual(pole1, pole2);
+            Assert.AreEqual(pole1.GetHashCode(), pole2.GetHashCode());
+        }
+
+        [TestMethod]
+        public void PolesCanBeUsedAsHashSetKeysWithDifferentLongitudes()
+        {
+            // Verify that a HashSet correctly treats all north-pole points as the same key.
+            var set = new HashSet<GeoPoint<double>>
+            {
+                new GeoPoint<double>(90, 0),
+                new GeoPoint<double>(90, 90),
+                new GeoPoint<double>(90, -180),
+            };
+
+            Assert.AreEqual(1, set.Count);
+        }
     }
 }
