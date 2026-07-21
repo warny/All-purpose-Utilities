@@ -35,11 +35,32 @@ public abstract class ArrayAccessor<T, D> : IEnumerable<T> where D : IEnumerable
     /// </summary>
     /// <param name="obj">The underlying data structure.</param>
     /// <param name="sizes">The sizes of each dimension of the array.</param>
+    /// <remarks>
+    /// Derived constructors must call <see cref="ValidateSize"/> once all their own fields
+    /// (such as an offset) have been assigned. <see cref="CheckSize"/> is virtual and must
+    /// not be invoked from this base constructor.
+    /// </remarks>
     protected ArrayAccessor(D obj, params int[] sizes)
     {
         this.innerObject = obj ?? throw new ArgumentNullException(nameof(obj));
         this.Sizes = sizes.Arg().MustNotBeNull();
-        if (!CheckSize()) throw new ArgumentOutOfRangeException(nameof(obj), "The underlying object does not match the specified dimensions.");
+        // NOTE: CheckSize() is virtual. Calling it here would invoke the derived override
+        // before the derived constructor has had the chance to assign its own fields (e.g. Offset).
+        // Each derived class is responsible for calling ValidateSize() at the end of its constructor.
+    }
+
+    /// <summary>
+    /// Validates the size of the underlying object against the declared dimensions by invoking
+    /// <see cref="CheckSize"/>. Derived constructors must call this method after all their
+    /// own fields have been fully assigned.
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when the underlying object does not have sufficient capacity for the declared dimensions.
+    /// </exception>
+    protected void ValidateSize()
+    {
+        if (!CheckSize())
+            throw new ArgumentOutOfRangeException("obj", "The underlying object does not match the specified dimensions.");
     }
 
     /// <summary>
@@ -129,10 +150,18 @@ public class ArrayAccessor<T> : ArrayAccessor<T, T[]>
     /// <param name="array">The underlying one-dimensional array.</param>
     /// <param name="offset">The offset in the array where elements start.</param>
     /// <param name="dimensions">The sizes of each dimension of the array.</param>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when <paramref name="offset"/> is negative, or when the combination of
+    /// <paramref name="offset"/> and <paramref name="dimensions"/> exceeds the length of
+    /// <paramref name="array"/>.
+    /// </exception>
     public ArrayAccessor(T[] array, int offset, params int[] dimensions) : base(array, dimensions)
     {
         this.Offset = offset.ArgMustBeGreaterOrEqualsThan(0);
         dimensionCaches = CreateDimensionCaches(dimensions);
+        // ValidateSize() is called here — after Offset is assigned — so that CheckSize()
+        // can use the correct offset value (fixes #48: virtual call from base constructor).
+        ValidateSize();
     }
 
     /// <summary>
