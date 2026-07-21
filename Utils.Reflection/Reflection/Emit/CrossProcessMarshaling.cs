@@ -37,6 +37,29 @@ internal static class CrossProcessMarshaling
     ];
 
     /// <summary>
+    /// Builds a deterministic, module-independent method command table for
+    /// <paramref name="interfaceType"/>. Both the host (<see cref="EmitWorkerProcess"/>) and the
+    /// worker (<see cref="EmitWorkerHost"/>) call this independently with the same interface type
+    /// (loaded from the same assembly path) to produce an identical ordering; the index of a method
+    /// in the returned array is its protocol <em>command ID</em>.
+    /// </summary>
+    /// <remarks>
+    /// Sorting by (declaring-type full name, method name, parameter types string) is stable across
+    /// all .NET processes and runtimes: it does not depend on <see cref="System.Reflection.MemberInfo.MetadataToken"/>,
+    /// which is only unique within one module and can collide when an interface inherits methods from
+    /// another assembly.
+    /// </remarks>
+    internal static MethodInfo[] BuildCommandTable(Type interfaceType) =>
+        interfaceType.GetMethods()
+            .OrderBy(m => m.DeclaringType!.FullName, StringComparer.Ordinal)
+            .ThenBy(m => m.Name, StringComparer.Ordinal)
+            .ThenBy(
+                m => string.Join(",", m.GetParameters().Select(
+                    p => p.ParameterType.AssemblyQualifiedName ?? p.ParameterType.FullName ?? string.Empty)),
+                StringComparer.Ordinal)
+            .ToArray();
+
+    /// <summary>
     /// Validates every method of <paramref name="interfaceType"/> and throws when a parameter or
     /// return type cannot cross a process boundary.
     /// </summary>

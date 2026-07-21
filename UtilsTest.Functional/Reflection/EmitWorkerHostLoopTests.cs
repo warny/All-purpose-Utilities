@@ -201,10 +201,11 @@ public class EmitWorkerHostLoopTests
         Assert.IsTrue(loadResponse.Success, loadResponse.ErrorMessage);
         int handle = loadResponse.Handle;
 
+        int methodCommandId = Array.IndexOf(CrossProcessMarshaling.BuildCommandTable(interfaceType), method);
         input.Enqueue(JsonSerializer.Serialize(new WorkerRequest
         {
             Id = 2, Kind = WorkerRequestKind.Call, Handle = handle,
-            MethodMetadataToken = method.MetadataToken, ArgumentsJson = [],
+            MethodCommandId = methodCommandId, ArgumentsJson = [],
         }));
         WorkerResponse callResponse = output.TakeResponse(2, timeout);
         Assert.IsTrue(callResponse.Success, callResponse.ErrorMessage);
@@ -260,10 +261,13 @@ public class EmitWorkerHostLoopTests
         int tickCountHandle = output.TakeResponse(2, timeout).Handle;
         Assert.AreNotEqual(processIdHandle, tickCountHandle);
 
+        int processIdCommandId = Array.IndexOf(CrossProcessMarshaling.BuildCommandTable(processIdType), processIdMethod);
+        int tickCountCommandId = Array.IndexOf(CrossProcessMarshaling.BuildCommandTable(tickCountType), tickCountMethod);
+
         input.Enqueue(JsonSerializer.Serialize(new WorkerRequest
         {
             Id = 3, Kind = WorkerRequestKind.Call, Handle = processIdHandle,
-            MethodMetadataToken = processIdMethod.MetadataToken, ArgumentsJson = [],
+            MethodCommandId = processIdCommandId, ArgumentsJson = [],
         }));
         WorkerResponse callProcessIdResponse = output.TakeResponse(3, timeout);
         Assert.IsTrue(callProcessIdResponse.Success, callProcessIdResponse.ErrorMessage);
@@ -272,7 +276,7 @@ public class EmitWorkerHostLoopTests
         input.Enqueue(JsonSerializer.Serialize(new WorkerRequest
         {
             Id = 4, Kind = WorkerRequestKind.Call, Handle = tickCountHandle,
-            MethodMetadataToken = tickCountMethod.MetadataToken, ArgumentsJson = [],
+            MethodCommandId = tickCountCommandId, ArgumentsJson = [],
         }));
         Assert.IsTrue(output.TakeResponse(4, timeout).Success);
 
@@ -283,7 +287,7 @@ public class EmitWorkerHostLoopTests
         input.Enqueue(JsonSerializer.Serialize(new WorkerRequest
         {
             Id = 6, Kind = WorkerRequestKind.Call, Handle = tickCountHandle,
-            MethodMetadataToken = tickCountMethod.MetadataToken, ArgumentsJson = [],
+            MethodCommandId = tickCountCommandId, ArgumentsJson = [],
         }));
         Assert.IsTrue(output.TakeResponse(6, timeout).Success);
 
@@ -291,7 +295,7 @@ public class EmitWorkerHostLoopTests
         input.Enqueue(JsonSerializer.Serialize(new WorkerRequest
         {
             Id = 7, Kind = WorkerRequestKind.Call, Handle = processIdHandle,
-            MethodMetadataToken = processIdMethod.MetadataToken, ArgumentsJson = [],
+            MethodCommandId = processIdCommandId, ArgumentsJson = [],
         }));
         Assert.IsFalse(output.TakeResponse(7, timeout).Success);
 
@@ -334,17 +338,18 @@ public class EmitWorkerHostLoopTests
         int handle = loadResponse.Handle;
 
         string sleepArgumentJson = JsonSerializer.Serialize(sleepMilliseconds);
+        int sleepCommandId = Array.IndexOf(CrossProcessMarshaling.BuildCommandTable(interfaceType), method);
         var stopwatch = Stopwatch.StartNew();
 
         input.Enqueue(JsonSerializer.Serialize(new WorkerRequest
         {
             Id = 2, Kind = WorkerRequestKind.Call, Handle = handle,
-            MethodMetadataToken = method.MetadataToken, ArgumentsJson = [sleepArgumentJson],
+            MethodCommandId = sleepCommandId, ArgumentsJson = [sleepArgumentJson],
         }));
         input.Enqueue(JsonSerializer.Serialize(new WorkerRequest
         {
             Id = 3, Kind = WorkerRequestKind.Call, Handle = handle,
-            MethodMetadataToken = method.MetadataToken, ArgumentsJson = [sleepArgumentJson],
+            MethodCommandId = sleepCommandId, ArgumentsJson = [sleepArgumentJson],
         }));
 
         WorkerResponse first = output.TakeResponse(2, timeout);
@@ -420,11 +425,13 @@ public class EmitWorkerHostLoopTests
         }));
         int handle = output.TakeResponse(1, timeout).Handle;
 
+        int sleepCommandId = Array.IndexOf(CrossProcessMarshaling.BuildCommandTable(sleepType), sleepMethod);
+
         // Enqueue a slow Call and an Unload back-to-back without waiting for the Call to respond.
         input.Enqueue(JsonSerializer.Serialize(new WorkerRequest
         {
             Id = 2, Kind = WorkerRequestKind.Call, Handle = handle,
-            MethodMetadataToken = sleepMethod.MetadataToken,
+            MethodCommandId = sleepCommandId,
             ArgumentsJson = [JsonSerializer.Serialize(sleepMs)],
         }));
         input.Enqueue(JsonSerializer.Serialize(new WorkerRequest { Id = 3, Kind = WorkerRequestKind.Unload, Handle = handle }));
@@ -437,6 +444,51 @@ public class EmitWorkerHostLoopTests
 
         input.Enqueue(JsonSerializer.Serialize(new WorkerRequest { Id = 4, Kind = WorkerRequestKind.Shutdown }));
         Assert.IsTrue(output.TakeResponse(4, timeout).Success);
+        Assert.IsTrue(hostTask.Wait(timeout));
+    }
+
+    // ─── Finding #1: stable command table — out-of-range ID is rejected ─────────
+
+    [TestMethod]
+    public void Run_CallWithOutOfRangeCommandId_ReturnsFailureResponse()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            Assert.Inconclusive("This test requires kernel32.dll, available on Windows only.");
+            return;
+        }
+
+        Type interfaceType = typeof(IKernel32ProcessId);
+        TimeSpan timeout = TimeSpan.FromSeconds(10);
+
+        using var input = new LineQueueTextReader();
+        using var output = new LineQueueTextWriter();
+        Task hostTask = Task.Run(() => EmitWorkerHost.Run(input, output));
+
+        input.Enqueue(JsonSerializer.Serialize(new WorkerRequest
+        {
+            Id = 1, Kind = WorkerRequestKind.Load,
+            InterfaceAssemblyPath = interfaceType.Assembly.Location,
+            InterfaceTypeFullName = interfaceType.FullName,
+            DllPath = "kernel32.dll", CallingConvention = CallingConvention.Winapi,
+        }));
+        int handle = output.TakeResponse(1, timeout).Handle;
+
+        // Command ID 9999 is far outside the command table (which has only a few entries).
+        input.Enqueue(JsonSerializer.Serialize(new WorkerRequest
+        {
+            Id = 2, Kind = WorkerRequestKind.Call, Handle = handle,
+            MethodCommandId = 9999, ArgumentsJson = [],
+        }));
+        WorkerResponse callResponse = output.TakeResponse(2, timeout);
+
+        Assert.IsFalse(callResponse.Success,
+            "A Call with an out-of-range MethodCommandId must be rejected.");
+        StringAssert.Contains(callResponse.ErrorMessage ?? string.Empty, "9999",
+            "The error message should include the invalid command ID.");
+
+        input.Enqueue(JsonSerializer.Serialize(new WorkerRequest { Id = 3, Kind = WorkerRequestKind.Shutdown }));
+        Assert.IsTrue(output.TakeResponse(3, timeout).Success);
         Assert.IsTrue(hostTask.Wait(timeout));
     }
 

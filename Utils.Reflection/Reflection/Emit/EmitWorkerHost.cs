@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Frozen;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -44,19 +43,22 @@ internal static class EmitWorkerHost
         /// <summary>The emitted mapping instance (an <see cref="Utils.Reflection.LibraryMapper"/> subclass).</summary>
         internal object Instance { get; }
 
-        /// <summary>Interface the instance was mapped from, used to resolve method tokens.</summary>
+        /// <summary>Interface the instance was mapped from.</summary>
         internal Type InterfaceType { get; }
 
         /// <summary>
-        /// Frozen set of metadata tokens for every method declared by (or inherited into) <see cref="InterfaceType"/>.
+        /// Stable command table: the <see cref="MethodInfo"/> at index <c>i</c> is the method
+        /// identified by command ID <c>i</c> in the protocol. Built once at load time via
+        /// <see cref="CrossProcessMarshaling.BuildCommandTable"/> to avoid cross-module metadata
+        /// token collisions.
         /// </summary>
-        internal FrozenSet<int> AllowedMethodTokens { get; }
+        internal MethodInfo[] CommandTable { get; }
 
-        internal LoadedInterfaceSlot(object instance, Type interfaceType, FrozenSet<int> allowedMethodTokens)
+        internal LoadedInterfaceSlot(object instance, Type interfaceType, MethodInfo[] commandTable)
         {
             Instance = instance;
             InterfaceType = interfaceType;
-            AllowedMethodTokens = allowedMethodTokens;
+            CommandTable = commandTable;
         }
 
         /// <summary>
@@ -319,9 +321,9 @@ internal static class EmitWorkerHost
             request.CallingConvention);
 #pragma warning restore UTILSREFL001
 
-        FrozenSet<int> allowedTokens = interfaceType.GetMethods().Select(m => m.MetadataToken).ToFrozenSet();
+        MethodInfo[] commandTable = CrossProcessMarshaling.BuildCommandTable(interfaceType);
         int handle = Interlocked.Increment(ref nextHandleBox[0]);
-        loaded[handle] = new LoadedInterfaceSlot(nativeInstance, interfaceType, allowedTokens);
+        loaded[handle] = new LoadedInterfaceSlot(nativeInstance, interfaceType, commandTable);
 
         return new WorkerResponse { Id = request.Id, Success = true, Handle = handle };
     }
@@ -369,40 +371,15 @@ internal static class EmitWorkerHost
     }
 
     /// <summary>
-    /// Validates that <paramref name="token"/> belongs to the interface contract by checking it
-    /// against the frozen allowlist computed at load time.
-    /// </summary>
-    /// <remarks>
-    /// Exposed as <see langword="internal"/> so it can be unit-tested without instantiating the
-    /// private <c>LoadedInterfaceSlot</c> class. Production callers go through
-    /// <see cref="HandleCall"/>, which delegates here before calling <c>Module.ResolveMethod</c>.
-    /// </remarks>
-    /// <exception cref="InvalidOperationException">
-    /// Thrown when <paramref name="token"/> is not in <paramref name="allowedTokens"/>, i.e. it
-    /// does not belong to the interface contract loaded by the prior <c>Load</c> request.
-    /// </exception>
-    internal static void ValidateMethodToken(Type interfaceType, FrozenSet<int> allowedTokens, int token)
-    {
-        if (!allowedTokens.Contains(token))
-        {
-            throw new InvalidOperationException(
-                $"Call request token 0x{token:X8} does not belong to " +
-                $"interface '{interfaceType.FullName}'. " +
-                "Only methods declared by the loaded interface contract may be invoked.");
-        }
-    }
-
-    /// <summary>
-    /// Resolves the requested interface method by metadata token and invokes it on the native
+    /// Resolves the requested interface method by command ID and invokes it on the native
     /// mapping instance, round-tripping arguments and the return value as JSON.
     /// </summary>
     /// <remarks>
-    /// The metadata token in the request is validated against the frozen allowlist built at load time
-    /// (<see cref="LoadedInterfaceSlot.AllowedMethodTokens"/>) by <see cref="ValidateMethodToken"/>. A
-    /// token that is not in the allowlist is rejected before <c>Module.ResolveMethod</c> is ever
-    /// called, preventing the worker from being directed to invoke arbitrary methods from the same
-    /// module (for example, private helpers or static constructors from the interface's assembly that
-    /// were not part of the interface contract).
+    /// The command ID in the request is an index into <see cref="LoadedInterfaceSlot.CommandTable"/>,
+    /// which is the same deterministic ordering produced by
+    /// <see cref="CrossProcessMarshaling.BuildCommandTable"/> on both the host and worker sides at load
+    /// time. Using a stable index avoids cross-module metadata token collisions for methods inherited
+    /// from another assembly/module.
     /// <para>
     /// Call lifetime is coordinated with <see cref="HandleUnload"/> via
     /// <see cref="LoadedInterfaceSlot.TryBeginCall"/> / <see cref="LoadedInterfaceSlot.EndCall"/>:
@@ -421,9 +398,15 @@ internal static class EmitWorkerHost
 
         try
         {
-            ValidateMethodToken(slot.InterfaceType, slot.AllowedMethodTokens, request.MethodMetadataToken);
+            int commandId = request.MethodCommandId;
+            if ((uint)commandId >= (uint)slot.CommandTable.Length)
+            {
+                throw new InvalidOperationException(
+                    $"Call request command ID {commandId} is out of range for interface " +
+                    $"'{slot.InterfaceType.FullName}' (command table has {slot.CommandTable.Length} entries).");
+            }
 
-            var method = (MethodInfo)slot.InterfaceType.Module.ResolveMethod(request.MethodMetadataToken);
+            MethodInfo method = slot.CommandTable[commandId];
             ParameterInfo[] parameters = method.GetParameters();
             string?[] argumentsJson = request.ArgumentsJson ?? [];
             object?[] arguments = new object?[parameters.Length];

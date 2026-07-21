@@ -43,8 +43,13 @@ internal sealed class WorkerRequest
     /// <summary>(Load) Calling convention used for the generated delegates.</summary>
     public CallingConvention CallingConvention { get; set; }
 
-    /// <summary>(Call) Metadata token of the interface method to invoke, resolved against the interface's module.</summary>
-    public int MethodMetadataToken { get; set; }
+    /// <summary>
+    /// (Call) Zero-based index of the method in the stable command table built by
+    /// <see cref="CrossProcessMarshaling.BuildCommandTable"/> at load time. Both the host and the
+    /// worker independently build the same table from the same interface type; using a table index
+    /// instead of a raw metadata token avoids cross-module token collisions for inherited methods.
+    /// </summary>
+    public int MethodCommandId { get; set; }
 
     /// <summary>(Call) JSON payload for each positional argument (including by-ref inputs).</summary>
     public string?[]? ArgumentsJson { get; set; }

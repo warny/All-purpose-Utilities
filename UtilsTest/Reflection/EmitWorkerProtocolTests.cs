@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Frozen;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -81,7 +80,7 @@ public class EmitWorkerProtocolTests
         {
             Id = 2,
             Kind = WorkerRequestKind.Call,
-            MethodMetadataToken = 0x06000123,
+            MethodCommandId = 3,
             ArgumentsJson = ["1", "\"hello\"", null],
         };
 
@@ -89,7 +88,7 @@ public class EmitWorkerProtocolTests
         WorkerRequest? roundTripped = JsonSerializer.Deserialize<WorkerRequest>(json);
 
         Assert.IsNotNull(roundTripped);
-        Assert.AreEqual(request.MethodMetadataToken, roundTripped.MethodMetadataToken);
+        Assert.AreEqual(request.MethodCommandId, roundTripped.MethodCommandId);
         CollectionAssert.AreEqual(request.ArgumentsJson, roundTripped.ArgumentsJson);
     }
 
@@ -208,50 +207,59 @@ public class EmitWorkerProtocolTests
         Assert.AreEqual(new string('x', 100), result);
     }
 
-    // ─── Item 38: method token restricted to loaded interface ────────────────────
+    // ─── Finding #1: stable method command table replaces raw metadata tokens ────
 
-    /// <summary>Minimal interface used only to supply real metadata tokens for token-restriction tests.</summary>
-    private interface ITokenTestContract
+    /// <summary>Interface with multiple methods — used to verify <see cref="CrossProcessMarshaling.BuildCommandTable"/>
+    /// produces a deterministic, alphabetically-sorted ordering independent of reflection enumeration order.</summary>
+    private interface IMultiMethodContract
+    {
+        string Describe();
+        int Compute(int a, int b);
+        void Initialize();
+    }
+
+    /// <summary>Single-method interface used to verify BuildCommandTable on the simplest case.</summary>
+    private interface ISingleMethodContract
     {
         int Compute(int a, int b);
     }
 
-    /// <summary>
-    /// A Call request whose <see cref="WorkerRequest.MethodMetadataToken"/> does not appear in the
-    /// loaded interface's method set must be rejected before <c>Module.ResolveMethod</c> is invoked,
-    /// preventing the worker from being directed to call arbitrary methods in the same module.
-    /// </summary>
     [TestMethod]
-    public void ValidateMethodToken_RejectsTokenOutsideInterfaceContract()
+    public void BuildCommandTable_SingleMethod_ReturnsThatMethod()
     {
-        FrozenSet<int> allowedTokens = typeof(ITokenTestContract)
-            .GetMethods()
-            .Select(m => m.MetadataToken)
-            .ToFrozenSet();
+        var table = CrossProcessMarshaling.BuildCommandTable(typeof(ISingleMethodContract));
 
-        // 0x06ABCDEF is a syntactically valid method token that is not in ITokenTestContract.
-        const int foreignToken = 0x06ABCDEF;
-
-        var ex = Assert.ThrowsException<InvalidOperationException>(
-            () => EmitWorkerHost.ValidateMethodToken(typeof(ITokenTestContract), allowedTokens, foreignToken));
-
-        // The error message should contain the token so it can be correlated in logs.
-        StringAssert.Contains(ex.Message, "0x06ABCDEF",
-            "The error message should include the rejected token value.");
+        Assert.AreEqual(1, table.Length);
+        Assert.AreEqual(nameof(ISingleMethodContract.Compute), table[0].Name);
     }
 
     [TestMethod]
-    public void ValidateMethodToken_AcceptsTokenFromInterface()
+    public void BuildCommandTable_MultipleMethodsSameDeclaringType_SortsByName()
     {
-        FrozenSet<int> allowedTokens = typeof(ITokenTestContract)
-            .GetMethods()
-            .Select(m => m.MetadataToken)
-            .ToFrozenSet();
+        // All three methods are on the same declaring type, so the tiebreaker is method name.
+        // Alphabetical order: Compute < Describe < Initialize.
+        var table = CrossProcessMarshaling.BuildCommandTable(typeof(IMultiMethodContract));
 
-        int validToken = typeof(ITokenTestContract).GetMethod(nameof(ITokenTestContract.Compute))!.MetadataToken;
+        Assert.AreEqual(3, table.Length);
+        Assert.AreEqual(nameof(IMultiMethodContract.Compute), table[0].Name,
+            "Compute must be first (C < D < I).");
+        Assert.AreEqual(nameof(IMultiMethodContract.Describe), table[1].Name,
+            "Describe must be second.");
+        Assert.AreEqual(nameof(IMultiMethodContract.Initialize), table[2].Name,
+            "Initialize must be third.");
+    }
 
-        // Must not throw — a valid interface method token is accepted.
-        EmitWorkerHost.ValidateMethodToken(typeof(ITokenTestContract), allowedTokens, validToken);
+    [TestMethod]
+    public void BuildCommandTable_IsDeterministic_SameOutputOnRepeatedCalls()
+    {
+        var table1 = CrossProcessMarshaling.BuildCommandTable(typeof(IMultiMethodContract));
+        var table2 = CrossProcessMarshaling.BuildCommandTable(typeof(IMultiMethodContract));
+
+        Assert.AreEqual(table1.Length, table2.Length);
+        for (int i = 0; i < table1.Length; i++)
+        {
+            Assert.AreEqual(table1[i], table2[i], $"Entry at index {i} must be identical across calls.");
+        }
     }
 
     // ─── Review #472 item 3: bounded active-task tracking ────────────────────────

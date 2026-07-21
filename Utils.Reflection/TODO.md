@@ -4,15 +4,15 @@ Fresh review of the current `Utils.Reflection` code after the previous audit ite
 
 ## Critical findings
 
-### 1. Method identity is not preserved across interface modules
+### ~~1. Method identity is not preserved across interface modules~~ ✅ DONE
 
-Worker calls identify a method only by `MethodInfo.MetadataToken`. At load time, tokens from `interfaceType.GetMethods()` are placed in one numeric allowlist. At call time, the token is resolved through `interfaceType.Module.ResolveMethod(token)`.
+~~Worker calls identify a method only by `MethodInfo.MetadataToken`. At load time, tokens from `interfaceType.GetMethods()` are placed in one numeric allowlist. At call time, the token is resolved through `interfaceType.Module.ResolveMethod(token)`.~~
 
-Metadata tokens are unique only inside one module. An inherited interface method declared in another assembly/module can therefore have the same numeric token as an unrelated method in the main interface module. The numeric allowlist can accept the token, after which `ResolveMethod` resolves a different method.
+~~Metadata tokens are unique only inside one module. An inherited interface method declared in another assembly/module can therefore have the same numeric token as an unrelated method in the main interface module. The numeric allowlist can accept the token, after which `ResolveMethod` resolves a different method.~~
 
-**Fix:** transmit and validate a stable method identity that includes the declaring assembly/module plus the method token, or build a load-time command table assigning private protocol method IDs directly to validated `MethodInfo` instances. Do not resolve caller-supplied tokens against a different module.
+**Fix applied:** `CrossProcessMarshaling.BuildCommandTable(interfaceType)` builds a deterministic `MethodInfo[]` sorted by `(DeclaringType.FullName, MethodName, ParameterTypes)` — stable across all runtimes, independent of metadata token values. Both host (`EmitWorkerProcess.LoadInterface`) and worker (`EmitWorkerHost.HandleLoad`) independently build the same table at load time and store a per-handle copy. `WorkerRequest.MethodCommandId` now carries the zero-based index into this table instead of a raw metadata token. `HandleCall` validates the index with a bounds check and looks up the `MethodInfo` directly — no `Module.ResolveMethod` call at all. `EmitWorkerProcess` stores a `FrozenDictionary<MethodInfo, int>` reverse table per handle so `InvokeMethod` can convert a `MethodInfo` to its command ID in O(1). Unit tests verify the ordering contract (`BuildCommandTable_MultipleMethodsSameDeclaringType_SortsByName`, `BuildCommandTable_IsDeterministic_SameOutputOnRepeatedCalls`); functional test `Run_CallWithOutOfRangeCommandId_ReturnsFailureResponse` verifies that an out-of-range command ID is rejected with a descriptive error.
 
-**Priority: P0 — remote-dispatch integrity.**
+~~**Priority: P0 — remote-dispatch integrity.**~~
 
 ### ~~2. `Unload` can dispose a native mapping while a call is executing~~ ✅ DONE
 

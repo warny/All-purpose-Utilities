@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Frozen;
 using System.Diagnostics;
 using System.IO.Pipes;
 using System.Reflection;
@@ -62,6 +63,16 @@ internal sealed class EmitWorkerProcess : IDisposable
     private readonly System.IO.StreamWriter writer;
     private readonly object writeLock = new();
     private readonly ConcurrentDictionary<long, TaskCompletionSource<WorkerResponse>> pending = new();
+
+    /// <summary>
+    /// Per-handle reverse command table, built at <see cref="LoadInterface"/> time and used by
+    /// <see cref="InvokeMethod"/> to convert a <see cref="MethodInfo"/> to the stable command ID
+    /// (<see cref="WorkerRequest.MethodCommandId"/>) that the worker expects. The key is the handle
+    /// returned by <see cref="LoadInterface"/>; the value maps each interface method to its zero-based
+    /// index in the array produced by <see cref="CrossProcessMarshaling.BuildCommandTable"/>.
+    /// </summary>
+    private readonly ConcurrentDictionary<int, FrozenDictionary<MethodInfo, int>> commandTables = new();
+
     private readonly Task readerLoop;
     private readonly TimeSpan callTimeout;
     private long nextId;
@@ -290,6 +301,16 @@ internal sealed class EmitWorkerProcess : IDisposable
 
         WorkerResponse response = SendAndReceive(request, timeout);
         ThrowIfFailed(response);
+
+        // Build the reverse command table on the host side using the same deterministic ordering
+        // as the worker (CrossProcessMarshaling.BuildCommandTable). Both sides produce an identical
+        // array from the same interface type, so commandId == Array.IndexOf(table, method).
+        MethodInfo[] commandTable = CrossProcessMarshaling.BuildCommandTable(interfaceType);
+        FrozenDictionary<MethodInfo, int> reverseTable = commandTable
+            .Select((m, i) => (m, i))
+            .ToFrozenDictionary(t => t.m, t => t.i);
+        commandTables[response.Handle] = reverseTable;
+
         return response.Handle;
     }
 
@@ -308,6 +329,7 @@ internal sealed class EmitWorkerProcess : IDisposable
             return;
         }
 
+        commandTables.TryRemove(handle, out _);
         var request = new WorkerRequest { Id = Interlocked.Increment(ref nextId), Kind = WorkerRequestKind.Unload, Handle = handle };
 
         try
@@ -353,12 +375,26 @@ internal sealed class EmitWorkerProcess : IDisposable
             argumentsJson[i] = JsonSerializer.Serialize(args[i], effectiveType, CrossProcessMarshaling.JsonOptions);
         }
 
+        if (!commandTables.TryGetValue(handle, out FrozenDictionary<MethodInfo, int>? reverseTable))
+        {
+            throw new InvalidOperationException(
+                $"No command table found for handle {handle}. " +
+                "The interface may not have been loaded on this worker, or may have already been unloaded.");
+        }
+
+        if (!reverseTable.TryGetValue(method, out int commandId))
+        {
+            throw new InvalidOperationException(
+                $"Method '{method.DeclaringType?.FullName}.{method.Name}' is not in the command table for handle {handle}. " +
+                "Only methods declared by the loaded interface contract may be invoked.");
+        }
+
         var request = new WorkerRequest
         {
             Id = Interlocked.Increment(ref nextId),
             Kind = WorkerRequestKind.Call,
             Handle = handle,
-            MethodMetadataToken = method.MetadataToken,
+            MethodCommandId = commandId,
             ArgumentsJson = argumentsJson,
         };
 
