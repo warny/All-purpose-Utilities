@@ -721,4 +721,415 @@ public class VirtualMemoryTests
         mem.FreePage(page); // must not throw
         Assert.IsTrue(page.IsFreed);
     }
+
+    // ── Item 9: cross-page atomicity and address-space overflow ──────────────────────────────────
+
+    // ── Write atomicity: multi-page faults leave all prior pages unchanged ───
+
+    [TestMethod]
+    public void Write_SecondPageUnmapped_FirstPageUnchanged()
+    {
+        // page0 mapped ReadWrite, no page1 mapping; write spans boundary.
+        var mem = new VirtualMemory<int>(pageSize: 4);
+        var page0 = mem.AllocatePage();
+        var proc = mem.CreateProcess();
+        mem.MapPage(proc, page0, 0, PageAccess.ReadWrite);
+        mem.MasterProcess.Write(0, new byte[] { 0xAA, 0xAA, 0xAA, 0xAA });
+
+        Assert.ThrowsException<MemoryAccessException>(() =>
+            proc.Write(2, new byte[] { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF }));
+
+        var buf = new byte[4];
+        proc.Read(0, buf);
+        CollectionAssert.AreEqual(new byte[] { 0xAA, 0xAA, 0xAA, 0xAA }, buf,
+            "First page must be unchanged after fault on unmapped second page.");
+    }
+
+    [TestMethod]
+    public void Write_ThirdPageReadOnly_FirstTwoPagesUnchanged()
+    {
+        // page0+page1 ReadWrite, page2 ReadOnly; write spans all three.
+        var mem = new VirtualMemory<int>(pageSize: 4);
+        var page0 = mem.AllocatePage();
+        var page1 = mem.AllocatePage();
+        var page2 = mem.AllocatePage();
+        var proc = mem.CreateProcess();
+        mem.MapPage(proc, page0, 0, PageAccess.ReadWrite);
+        mem.MapPage(proc, page1, 1, PageAccess.ReadWrite);
+        mem.MapPage(proc, page2, 2, PageAccess.ReadOnly);
+
+        mem.MasterProcess.Write(0, new byte[] { 0x11, 0x11, 0x11, 0x11 });
+        mem.MasterProcess.Write(4, new byte[] { 0x22, 0x22, 0x22, 0x22 });
+
+        Assert.ThrowsException<MemoryAccessException>(() =>
+            proc.Write(0, new byte[] { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF }));
+
+        var buf0 = new byte[4];
+        var buf1 = new byte[4];
+        proc.Read(0, buf0);
+        proc.Read(4, buf1);
+        CollectionAssert.AreEqual(new byte[] { 0x11, 0x11, 0x11, 0x11 }, buf0,
+            "Page 0 must be unchanged.");
+        CollectionAssert.AreEqual(new byte[] { 0x22, 0x22, 0x22, 0x22 }, buf1,
+            "Page 1 must be unchanged.");
+    }
+
+    [TestMethod]
+    public void Write_ThirdPageUnmapped_FirstTwoPagesUnchanged()
+    {
+        // page0+page1 ReadWrite, no page2; write spans all three.
+        var mem = new VirtualMemory<int>(pageSize: 4);
+        var page0 = mem.AllocatePage();
+        var page1 = mem.AllocatePage();
+        var proc = mem.CreateProcess();
+        mem.MapPage(proc, page0, 0, PageAccess.ReadWrite);
+        mem.MapPage(proc, page1, 1, PageAccess.ReadWrite);
+
+        mem.MasterProcess.Write(0, new byte[] { 0x11, 0x11, 0x11, 0x11 });
+        mem.MasterProcess.Write(4, new byte[] { 0x22, 0x22, 0x22, 0x22 });
+
+        Assert.ThrowsException<MemoryAccessException>(() =>
+            proc.Write(0, new byte[9]));
+
+        var buf0 = new byte[4];
+        var buf1 = new byte[4];
+        proc.Read(0, buf0);
+        proc.Read(4, buf1);
+        CollectionAssert.AreEqual(new byte[] { 0x11, 0x11, 0x11, 0x11 }, buf0,
+            "Page 0 must be unchanged.");
+        CollectionAssert.AreEqual(new byte[] { 0x22, 0x22, 0x22, 0x22 }, buf1,
+            "Page 1 must be unchanged.");
+    }
+
+    [TestMethod]
+    public void Write_ThreePages_AllBytesWrittenCorrectly()
+    {
+        // All three pages ReadWrite; exact 12-byte write across all three.
+        var mem = new VirtualMemory<int>(pageSize: 4);
+        mem.AllocatePage();
+        mem.AllocatePage();
+        mem.AllocatePage();
+
+        var data = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
+        mem.MasterProcess.Write(0, data);
+
+        var buf = new byte[12];
+        mem.MasterProcess.Read(0, buf);
+        CollectionAssert.AreEqual(data, buf,
+            "All 12 bytes must be transferred across three pages.");
+    }
+
+    // ── Write: unsigned address wrap-around must be rejected ────────────────
+
+    [TestMethod]
+    public void Write_UintAddress_OverflowNearMaxValue_NoPagesModified()
+    {
+        // pageSize=4; last virtual page index = uint.MaxValue / 4 = 1073741823.
+        // Write starting at uint.MaxValue - 1 (offset 2 of last page) with length 4
+        // would need address uint.MaxValue + 2 — overflow.  Neither the last page
+        // nor page-zero may be modified.
+        const uint lastPageIdx = uint.MaxValue / 4u;  // 1073741823
+
+        var mem = new VirtualMemory<uint>(pageSize: 4);
+        var lastPage = mem.AllocatePage(); // master at virtual index 0u
+        var pageZero = mem.AllocatePage(); // master at virtual index 1u
+        var proc = mem.CreateProcess();
+        mem.MapPage(proc, lastPage, lastPageIdx, PageAccess.ReadWrite);
+        mem.MapPage(proc, pageZero, 0u,          PageAccess.ReadWrite);
+
+        // Write sentinels via master (lastPage at master byte 0; pageZero at master byte 4).
+        mem.MasterProcess.Write(0u, new byte[] { 0xAA, 0xAA, 0xAA, 0xAA });
+        mem.MasterProcess.Write(4u, new byte[] { 0xBB, 0xBB, 0xBB, 0xBB });
+
+        uint startAddr = uint.MaxValue - 1u; // 0xFFFFFFFE, offset 2 in last page
+        var ex = Assert.ThrowsException<MemoryAccessException>(() =>
+            proc.Write(startAddr, new byte[] { 0xFF, 0xFF, 0xFF, 0xFF }));
+
+        var bufLast = new byte[4];
+        var bufZero = new byte[4];
+        mem.MasterProcess.Read(0u, bufLast);
+        mem.MasterProcess.Read(4u, bufZero);
+        CollectionAssert.AreEqual(new byte[] { 0xAA, 0xAA, 0xAA, 0xAA }, bufLast,
+            "Last page must not be modified.");
+        CollectionAssert.AreEqual(new byte[] { 0xBB, 0xBB, 0xBB, 0xBB }, bufZero,
+            "Page zero must not be treated as address-space continuation.");
+
+        Assert.IsNull(ex.ActualAccess, "Range overflow must report ActualAccess null.");
+        Assert.AreEqual(PageAccess.ReadWrite, ex.RequestedAccess);
+        StringAssert.Contains(ex.VirtualAddressText.ToUpperInvariant(), "FFFFFFFE",
+            "VirtualAddressText must report the start address, not a wrapped zero.");
+    }
+
+    [TestMethod]
+    public void Write_UintAddress_RangeEndingAtMaxValue_Succeeds()
+    {
+        // Valid range: startAddr = uint.MaxValue - 2 (offset 1 in last page), length = 3.
+        // End address = uint.MaxValue — exactly representable, must succeed.
+        const uint lastPageIdx = uint.MaxValue / 4u; // 1073741823
+
+        var mem = new VirtualMemory<uint>(pageSize: 4);
+        var lastPage = mem.AllocatePage(); // master at virtual index 0u
+        var proc = mem.CreateProcess();
+        mem.MapPage(proc, lastPage, lastPageIdx, PageAccess.ReadWrite);
+
+        uint startAddr = uint.MaxValue - 2u; // offset 1 in last page
+        proc.Write(startAddr, new byte[] { 0x11, 0x22, 0x33 });
+
+        var buf = new byte[3];
+        proc.Read(startAddr, buf);
+        CollectionAssert.AreEqual(new byte[] { 0x11, 0x22, 0x33 }, buf);
+    }
+
+    [TestMethod]
+    public void Write_ByteAddress_WrapAround_Rejected()
+    {
+        // byte address space: 0..255, pageSize=4, last page index=63 (addresses 252..255).
+        // Write at address 254 (offset 2 in page 63) with length 4 would reach address 257 > 255.
+        var mem = new VirtualMemory<byte>(pageSize: 4);
+        var lastPage = mem.AllocatePage(); // master at virtual index 0
+        var pageZero = mem.AllocatePage(); // master at virtual index 1
+        var proc = mem.CreateProcess();
+        mem.MapPage(proc, lastPage, (byte)63, PageAccess.ReadWrite);
+        mem.MapPage(proc, pageZero, (byte)0,  PageAccess.ReadWrite);
+
+        mem.MasterProcess.Write((byte)0, new byte[] { 0xAA, 0xAA, 0xAA, 0xAA });
+        mem.MasterProcess.Write((byte)4, new byte[] { 0xBB, 0xBB, 0xBB, 0xBB });
+
+        Assert.ThrowsException<MemoryAccessException>(() =>
+            proc.Write((byte)254, new byte[] { 0xFF, 0xFF, 0xFF, 0xFF }));
+
+        var bufLast = new byte[4];
+        var bufZero = new byte[4];
+        mem.MasterProcess.Read((byte)0, bufLast);
+        mem.MasterProcess.Read((byte)4, bufZero);
+        CollectionAssert.AreEqual(new byte[] { 0xAA, 0xAA, 0xAA, 0xAA }, bufLast,
+            "Last page must not be modified.");
+        CollectionAssert.AreEqual(new byte[] { 0xBB, 0xBB, 0xBB, 0xBB }, bufZero,
+            "Page zero must not be treated as continuation.");
+    }
+
+    [TestMethod]
+    public void Write_IntAddress_SignedOverflow_NoBytesWritten()
+    {
+        // startAddress = int.MaxValue - 1, length = 3: end = int.MaxValue + 1 → signed overflow.
+        // No page near int.MaxValue is needed; the overflow check fires first.
+        var mem = new VirtualMemory<int>(pageSize: 4);
+        mem.AllocatePage();
+        Assert.ThrowsException<MemoryAccessException>(() =>
+            mem.MasterProcess.Write(int.MaxValue - 1, new byte[] { 0x01, 0x02, 0x03 }));
+    }
+
+    // ── Read atomicity: destination must be unchanged when plan fails ────────
+
+    [TestMethod]
+    public void Read_ThirdPageUnmapped_DestinationUnchanged()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 4);
+        var page0 = mem.AllocatePage();
+        var page1 = mem.AllocatePage();
+        var proc = mem.CreateProcess();
+        mem.MapPage(proc, page0, 0, PageAccess.ReadOnly);
+        mem.MapPage(proc, page1, 1, PageAccess.ReadOnly);
+        mem.MasterProcess.Write(0, new byte[] { 0x11, 0x22, 0x33, 0x44 });
+        mem.MasterProcess.Write(4, new byte[] { 0x55, 0x66, 0x77, 0x88 });
+
+        byte[] dest = new byte[] { 0xDE, 0xAD, 0xBE, 0xEF, 0xDE, 0xAD, 0xBE, 0xEF, 0xFF };
+
+        Assert.ThrowsException<MemoryAccessException>(() =>
+            proc.Read(0, dest.AsSpan()));
+
+        // Every sentinel must remain intact.
+        CollectionAssert.AreEqual(
+            new byte[] { 0xDE, 0xAD, 0xBE, 0xEF, 0xDE, 0xAD, 0xBE, 0xEF, 0xFF }, dest,
+            "Destination must not be partially filled before the unmapped-page fault.");
+    }
+
+    [TestMethod]
+    public void Read_UintAddress_OverflowNearMaxValue_DestinationUnchanged()
+    {
+        const uint lastPageIdx = uint.MaxValue / 4u;
+
+        var mem = new VirtualMemory<uint>(pageSize: 4);
+        var lastPage = mem.AllocatePage();
+        var pageZero = mem.AllocatePage();
+        var proc = mem.CreateProcess();
+        mem.MapPage(proc, lastPage, lastPageIdx, PageAccess.ReadOnly);
+        mem.MapPage(proc, pageZero, 0u,          PageAccess.ReadOnly);
+
+        byte[] dest = new byte[] { 0xDE, 0xAD, 0xBE, 0xEF };
+
+        Assert.ThrowsException<MemoryAccessException>(() =>
+            proc.Read(uint.MaxValue - 1u, dest.AsSpan()));
+
+        CollectionAssert.AreEqual(new byte[] { 0xDE, 0xAD, 0xBE, 0xEF }, dest,
+            "Destination must be unchanged when read overflows the address space.");
+    }
+
+    [TestMethod]
+    public void Read_UintAddress_RangeEndingAtMaxValue_Succeeds()
+    {
+        // startAddr = uint.MaxValue - 2 (offset 1 in last page), length 3: exactly valid.
+        const uint lastPageIdx = uint.MaxValue / 4u;
+
+        var mem = new VirtualMemory<uint>(pageSize: 4);
+        var lastPage = mem.AllocatePage(); // master at virtual index 0u
+        var proc = mem.CreateProcess();
+        mem.MapPage(proc, lastPage, lastPageIdx, PageAccess.ReadOnly);
+
+        // Write test pattern via master (lastPage is at master byte address 0..3).
+        mem.MasterProcess.Write(0u, new byte[] { 0x11, 0x22, 0x33, 0x44 });
+
+        uint startAddr = uint.MaxValue - 2u; // offset 1 in last page
+        var buf = new byte[3];
+        proc.Read(startAddr, buf);
+
+        CollectionAssert.AreEqual(new byte[] { 0x22, 0x33, 0x44 }, buf);
+    }
+
+    [TestMethod]
+    public void Read_ByteAddress_WrapAround_DestinationUnchanged()
+    {
+        var mem = new VirtualMemory<byte>(pageSize: 4);
+        var lastPage = mem.AllocatePage();
+        var pageZero = mem.AllocatePage();
+        var proc = mem.CreateProcess();
+        mem.MapPage(proc, lastPage, (byte)63, PageAccess.ReadOnly);
+        mem.MapPage(proc, pageZero, (byte)0,  PageAccess.ReadOnly);
+
+        byte[] dest = new byte[] { 0xDE, 0xAD, 0xBE, 0xEF };
+
+        Assert.ThrowsException<MemoryAccessException>(() =>
+            proc.Read((byte)254, dest.AsSpan()));
+
+        CollectionAssert.AreEqual(new byte[] { 0xDE, 0xAD, 0xBE, 0xEF }, dest,
+            "Destination must be unchanged when read wraps the byte address space.");
+    }
+
+    [TestMethod]
+    public void Read_IntAddress_SignedOverflow_DestinationUnchanged()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 4);
+        mem.AllocatePage();
+
+        byte[] dest = new byte[] { 0xDE, 0xAD, 0xBE };
+
+        Assert.ThrowsException<MemoryAccessException>(() =>
+            mem.MasterProcess.Read(int.MaxValue - 1, dest.AsSpan()));
+
+        CollectionAssert.AreEqual(new byte[] { 0xDE, 0xAD, 0xBE }, dest,
+            "Destination must be unchanged on signed overflow.");
+    }
+
+    // ── Zero-length operations succeed without a mapping ─────────────────────
+
+    [TestMethod]
+    public void Read_ZeroLength_NonNegativeUnmappedAddress_Succeeds()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        // Address 42 is not mapped.
+        mem.MasterProcess.Read(42, Span<byte>.Empty); // must not throw
+    }
+
+    [TestMethod]
+    public void Write_ZeroLength_NonNegativeUnmappedAddress_Succeeds()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        mem.MasterProcess.Write(42, ReadOnlySpan<byte>.Empty); // must not throw
+    }
+
+    // ── Diagnostics ──────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void Read_UnmappedAddress_ActualAccess_IsNull()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 16);
+        var ex = Assert.ThrowsException<MemoryAccessException>(
+            () => mem.MasterProcess.Read(0, new byte[1]));
+        Assert.IsNull(ex.ActualAccess);
+        Assert.AreEqual(PageAccess.ReadOnly, ex.RequestedAccess);
+    }
+
+    [TestMethod]
+    public void Write_CrossPage_ReadOnlySecondPage_RequestedAndActualAccess_Correct()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 4);
+        var page0 = mem.AllocatePage();
+        var page1 = mem.AllocatePage();
+        var proc = mem.CreateProcess();
+        mem.MapPage(proc, page0, 0, PageAccess.ReadWrite);
+        mem.MapPage(proc, page1, 1, PageAccess.ReadOnly);
+
+        var ex = Assert.ThrowsException<MemoryAccessException>(() =>
+            proc.Write(2, new byte[] { 1, 2, 3, 4, 5 }));
+
+        Assert.AreEqual(PageAccess.ReadWrite, ex.RequestedAccess);
+        Assert.AreEqual(PageAccess.ReadOnly,  ex.ActualAccess);
+    }
+
+    [TestMethod]
+    public void Write_UintAddress_OverflowNearMaxValue_VirtualAddressTextIsStartAddress()
+    {
+        const uint lastPageIdx = uint.MaxValue / 4u;
+
+        var mem = new VirtualMemory<uint>(pageSize: 4);
+        var lastPage = mem.AllocatePage();
+        var proc = mem.CreateProcess();
+        mem.MapPage(proc, lastPage, lastPageIdx, PageAccess.ReadWrite);
+
+        var ex = Assert.ThrowsException<MemoryAccessException>(() =>
+            proc.Write(uint.MaxValue - 1u, new byte[] { 0x01, 0x02, 0x03, 0x04 }));
+
+        // Must report the start address (0xFFFFFFFE), not wrapped zero.
+        StringAssert.Contains(ex.VirtualAddressText.ToUpperInvariant(), "FFFFFFFE",
+            "VirtualAddressText must not show wrapped address zero.");
+        Assert.IsNull(ex.ActualAccess, "Range overflow must report ActualAccess null.");
+    }
+
+    // ── Plan consistency: bytes copied in address order without gaps ──────────
+
+    [TestMethod]
+    public void Read_MultiPage_BytesCopiedExactlyOnceInOrder()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 4);
+        mem.AllocatePage();
+        mem.AllocatePage();
+        mem.AllocatePage();
+
+        var source = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
+        mem.MasterProcess.Write(0, source);
+
+        var dest = new byte[12];
+        mem.MasterProcess.Read(0, dest);
+
+        CollectionAssert.AreEqual(source, dest,
+            "All 12 bytes must be copied in address order across three pages.");
+    }
+
+    // ── Pre-allocation safety: unmapped range must throw MAE, not OOM ────────
+
+    [TestMethod]
+    public void Read_LargeUnmappedRange_PageSize1_ThrowsMemoryAccessException()
+    {
+        // With pageSize=1, the theoretical upper bound on segments is length.
+        // Pre-allocating that many entries before the first mapping check could throw
+        // OutOfMemoryException instead of MemoryAccessException.
+        // This test verifies the contract: an invalid range produces MemoryAccessException
+        // regardless of how large the requested length is.
+        var mem = new VirtualMemory<int>(pageSize: 1);
+        // No pages allocated; address 0 is unmapped.
+        var buf = new byte[1_000_000];
+        Assert.ThrowsException<MemoryAccessException>(
+            () => mem.MasterProcess.Read(0, buf),
+            "A large read on an unmapped address must throw MemoryAccessException, not OOM.");
+    }
+
+    [TestMethod]
+    public void Write_LargeUnmappedRange_PageSize1_ThrowsMemoryAccessException()
+    {
+        var mem = new VirtualMemory<int>(pageSize: 1);
+        var buf = new byte[1_000_000];
+        Assert.ThrowsException<MemoryAccessException>(
+            () => mem.MasterProcess.Write(0, buf),
+            "A large write on an unmapped address must throw MemoryAccessException, not OOM.");
+    }
 }

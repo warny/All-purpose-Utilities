@@ -1,6 +1,6 @@
 # Utils.VirtualMachine — Quality and correctness audit (2026-07-11)
 
-> **Partially completed 2026-07-18/20.** Items 1, 2, 3, 11, 12 addressed in PR fix/utils-vm-quality-audit-p0-p1. Items 8, 13 addressed in PR fix/utils-vm-quality-audit-round2. Items 7, 9–10, 14, 16 addressed in PR fix/utils-vm-quality-audit-round3. Items 4, 5, 6 addressed in PR fix/utils-vm-quality-audit-round3. Item 15 addressed in PR feat/utils-vm-coherent-limits-policy. Item 9 (cross-page write atomicity) remains open.
+> **Completed 2026-07-18/20.** Items 1, 2, 3, 11, 12 addressed in PR fix/utils-vm-quality-audit-p0-p1. Items 8, 13 addressed in PR fix/utils-vm-quality-audit-round2. Items 7, 9–10, 14, 16 addressed in PR fix/utils-vm-quality-audit-round3. Items 4, 5, 6 addressed in PR fix/utils-vm-quality-audit-round3. Item 15 addressed in PR feat/utils-vm-coherent-limits-policy. Item 9 addressed in PR fix/utils-vm-cross-page-atomicity.
 
 Static review of the processor, scheduler, virtual-memory model, stacks, and structured control-flow helpers. The review focuses on deterministic bytecode dispatch, malformed-program handling, memory isolation, lifecycle state, resource bounds, and duplicated intent. No production code is changed by this commit.
 
@@ -90,13 +90,13 @@ For unambiguous one-byte opcodes, the inspector is notified before the instructi
 
 **Priority: P1 isolation model.**
 
-### 9. Cross-page writes are partially committed before an access fault
+### ✅ 9. Cross-page writes are partially committed before an access fault
 
 `VirtualProcess.Write` validates and writes one page chunk at a time. If a later page is unmapped or read-only, all earlier chunks have already modified physical memory.
 
 **Risk:** callers may assume a failed write leaves memory unchanged, but receive a partially applied operation. This is especially hazardous for multi-byte values, pointers, headers, and synchronization structures crossing a page boundary.
 
-**Fix:** define atomicity explicitly. For atomic writes, perform a complete validation pass over every touched page before copying any bytes. If partial writes are intentional, expose the number of bytes written or use a distinct streaming API and document the behavior.
+**Fix:** replaced the separate `ValidateRange` + copy loop with `BuildTransferPlan`, which collects all page/offset/length segments in a single validation pass before any byte is transferred. Also fixed a residual unsigned wrap-around defect in the range traversal. See `DONE-2026-07-20-item9.md`.
 
 **Priority: P1 memory consistency.**
 
