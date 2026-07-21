@@ -285,4 +285,25 @@ public class EmitWorkerProtocolTests
 
         EmitWorkerHost.Run(input, output); // Must not throw or block.
     }
+
+    // ─── Finding #3: Shutdown truthfulness ───────────────────────────────────────
+
+    [TestMethod]
+    public void Run_Shutdown_WithNoActiveTasks_ReturnsSuccess()
+    {
+        // When there are no active tasks the drain is trivially complete; Success must be true.
+        var shutdown = new WorkerRequest { Id = 99, Kind = WorkerRequestKind.Shutdown };
+        using var input = new StringReader(JsonSerializer.Serialize(shutdown) + "\n");
+        using var output = new StringWriter();
+
+        EmitWorkerHost.Run(input, output);
+
+        WorkerResponse? response = JsonSerializer.Deserialize<WorkerResponse>(output.ToString().Trim());
+        Assert.IsNotNull(response);
+        Assert.IsTrue(response.Success,
+            "Shutdown with no active tasks must return Success = true (drain is trivially complete).");
+        Assert.IsNull(response.ErrorMessage,
+            "Success shutdown must carry no ErrorMessage.");
+    }
+
 }

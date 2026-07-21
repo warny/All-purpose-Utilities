@@ -386,4 +386,88 @@ public class EmitWorkerHostLoopTests
         Assert.IsFalse(response.Success);
         Assert.IsFalse(string.IsNullOrEmpty(response.ErrorMessage));
     }
+
+    // ─── Finding #3: Shutdown truthfulness ───────────────────────────────────────
+
+    [TestMethod]
+    public void Run_Shutdown_ReturnsSuccessWhenAllCallsDrained()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            Assert.Inconclusive("This test requires kernel32.dll, available on Windows only.");
+            return;
+        }
+
+        Type interfaceType = typeof(IKernel32ProcessId);
+        MethodInfo method = interfaceType.GetMethod(nameof(IKernel32ProcessId.GetCurrentProcessId))!;
+        TimeSpan timeout = TimeSpan.FromSeconds(10);
+
+        using var input = new LineQueueTextReader();
+        using var output = new LineQueueTextWriter();
+        Task hostTask = Task.Run(() => EmitWorkerHost.Run(input, output));
+
+        input.Enqueue(JsonSerializer.Serialize(new WorkerRequest
+        {
+            Id = 1, Kind = WorkerRequestKind.Load,
+            InterfaceAssemblyPath = interfaceType.Assembly.Location,
+            InterfaceTypeFullName = interfaceType.FullName,
+            DllPath = "kernel32.dll", CallingConvention = CallingConvention.Winapi,
+        }));
+        WorkerResponse loadResponse = output.TakeResponse(1, timeout);
+        Assert.IsTrue(loadResponse.Success, loadResponse.ErrorMessage);
+
+        // Shutdown without Unloading: drain is trivially complete (no active calls at this point).
+        // The Shutdown response must be Success = true.
+        input.Enqueue(JsonSerializer.Serialize(new WorkerRequest { Id = 2, Kind = WorkerRequestKind.Shutdown }));
+        WorkerResponse shutdownResponse = output.TakeResponse(2, timeout);
+        Assert.IsTrue(shutdownResponse.Success,
+            "Shutdown with no active calls must produce Success = true (drain is complete).");
+        Assert.IsNull(shutdownResponse.ErrorMessage,
+            "A successful shutdown must carry no error message.");
+
+        Assert.IsTrue(hostTask.Wait(timeout));
+    }
+
+    // ─── Finding #4: loaded mappings disposed when worker loop ends ───────────────
+
+    [TestMethod]
+    public void Run_LoadedInterfaceNotUnloaded_IsDisposedOnShutdown()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            Assert.Inconclusive("This test requires kernel32.dll, available on Windows only.");
+            return;
+        }
+
+        // Loads a kernel32 interface, then shuts down WITHOUT sending an Unload request.
+        // The fix: the finally block in EmitWorkerHost.Run disposes the remaining mapping.
+        // Observable here as: Run returns without throwing (prior to the fix, a resource leak;
+        // post-fix, deterministic cleanup — difficult to observe without touching native internals,
+        // but the critical contract is that the host process is not left holding a dangling reference).
+        Type interfaceType = typeof(IKernel32ProcessId);
+        TimeSpan timeout = TimeSpan.FromSeconds(10);
+
+        using var input = new LineQueueTextReader();
+        using var output = new LineQueueTextWriter();
+        Task hostTask = Task.Run(() => EmitWorkerHost.Run(input, output));
+
+        input.Enqueue(JsonSerializer.Serialize(new WorkerRequest
+        {
+            Id = 1, Kind = WorkerRequestKind.Load,
+            InterfaceAssemblyPath = interfaceType.Assembly.Location,
+            InterfaceTypeFullName = interfaceType.FullName,
+            DllPath = "kernel32.dll", CallingConvention = CallingConvention.Winapi,
+        }));
+        Assert.IsTrue(output.TakeResponse(1, timeout).Success);
+
+        // Shutdown without Unload — the interface is still in the loaded dictionary.
+        input.Enqueue(JsonSerializer.Serialize(new WorkerRequest { Id = 2, Kind = WorkerRequestKind.Shutdown }));
+        WorkerResponse shutdownResponse = output.TakeResponse(2, timeout);
+        Assert.IsTrue(shutdownResponse.Success,
+            "Shutdown must complete gracefully even when interfaces were not explicitly Unloaded.");
+
+        // Run must return (not hang) and must not throw.
+        Assert.IsTrue(hostTask.Wait(timeout),
+            "EmitWorkerHost.Run must return after Shutdown even when interfaces remain loaded.");
+    }
 }

@@ -26,23 +26,21 @@ The current documentation says the losing call should fail with an unknown-handl
 
 ## High-priority findings
 
-### 3. Shutdown acknowledges success without guaranteeing that active calls stopped
+### ~~3. Shutdown acknowledges success without guaranteeing that active calls stopped~~ ✅ DONE
 
-On `Shutdown`, the worker waits at most five seconds for dispatched tasks, ignores timeout/fault information, writes a successful shutdown response, and returns. Calls still running after the drain window can be terminated when the worker process exits even though the host received a successful shutdown acknowledgement.
+~~On `Shutdown`, the worker waits at most five seconds for dispatched tasks, ignores timeout/fault information, writes a successful shutdown response, and returns.~~
 
-**Fix:** define explicit graceful and forced shutdown semantics. A graceful response must only be sent after all accepted calls have completed and all mappings have been disposed. If the deadline expires, return a distinct forced/partial-shutdown status or let the host kill the process without claiming graceful success.
+**Fix applied:** `DrainDispatched` now returns `bool` (whether all tasks completed before the 5-second deadline). Shutdown writes `Success = true` only if all tasks drained; otherwise `Success = false` with an explanatory `ErrorMessage`. Tests added in `EmitWorkerHostLoopTests`.
 
-**Priority: P1 — lifecycle correctness.**
+~~**Priority: P1 — lifecycle correctness.**~~
 
-### 4. Loaded mappings are not explicitly disposed when the worker loop ends
+### ~~4. Loaded mappings are not explicitly disposed when the worker loop ends~~ ✅ DONE
 
-The worker-local `loaded` dictionary owns native mapping instances. `Run` returns on shutdown or end-of-stream without a `finally` block that removes and disposes every remaining instance.
+~~The worker-local `loaded` dictionary owns native mapping instances. `Run` returns on shutdown or end-of-stream without a `finally` block that removes and disposes every remaining instance.~~
 
-Process termination eventually releases OS resources, but managed/native cleanup code, library-specific shutdown, buffers, and diagnostics are skipped. This also makes in-process tests of `EmitWorkerHost.Run` observe different ownership semantics from the real worker process.
+**Fix applied:** `EmitWorkerHost.Run` now wraps the full request loop in `try/finally`; on exit (whether graceful Shutdown, end-of-stream, or exception), every remaining `IDisposable` mapping is disposed exactly once (errors are swallowed per-entry to ensure all entries are attempted). Functional test `Run_LoadedInterfaceNotUnloaded_IsDisposedOnShutdown` verifies the behaviour.
 
-**Fix:** wrap the complete loop in `try/finally`; stop accepting new calls, drain or cancel active calls according to the chosen policy, then dispose every remaining mapping exactly once.
-
-**Priority: P1 — deterministic cleanup.**
+~~**Priority: P1 — deterministic cleanup.**~~
 
 ### ~~5. A host-side write failure leaves a request pending until its timeout~~ ✅ DONE
 

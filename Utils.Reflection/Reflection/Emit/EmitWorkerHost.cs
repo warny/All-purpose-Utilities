@@ -79,86 +79,111 @@ internal static class EmitWorkerHost
         int nextTaskId = 0;
         using var concurrencyLimit = new SemaphoreSlim(MaxConcurrency, MaxConcurrency);
 
-        string? line;
-        while ((line = ProtocolFraming.ReadBoundedLine(input)) is not null)
+        try
         {
-            WorkerRequest? request;
-            try
+            string? line;
+            while ((line = ProtocolFraming.ReadBoundedLine(input)) is not null)
             {
-                request = JsonSerializer.Deserialize<WorkerRequest>(line);
-            }
-            catch (JsonException ex)
-            {
-                // A malformed request line indicates framing corruption — the protocol is no longer
-                // trustworthy. Throw so the worker exits rather than continuing with an unknown state.
-                throw new InvalidOperationException(
-                    "The Emit worker host received a request line that could not be deserialized. " +
-                    "The connection is now unusable.", ex);
-            }
-
-            if (request is null)
-            {
-                continue;
-            }
-
-            if (request.Kind == WorkerRequestKind.Shutdown)
-            {
-                DrainDispatched(activeTasks);
-                WriteResponse(output, writeLock, new WorkerResponse { Id = request.Id, Success = true });
-                return;
-            }
-
-            // Acquire the semaphore BEFORE Task.Run so the reader loop blocks (backs up into the
-            // OS pipe buffer) rather than enqueuing an unbounded number of thread-pool tasks.
-            concurrencyLimit.Wait();
-
-            WorkerRequest dispatchedRequest = request;
-            int taskId = Interlocked.Increment(ref nextTaskId);
-
-            Task task = Task.Run(() =>
-            {
+                WorkerRequest? request;
                 try
                 {
-                    ProcessRequest(dispatchedRequest, loaded, nextHandleBox, output, writeLock);
+                    request = JsonSerializer.Deserialize<WorkerRequest>(line);
                 }
-                finally
+                catch (JsonException ex)
                 {
-                    concurrencyLimit.Release();
+                    // A malformed request line indicates framing corruption — the protocol is no longer
+                    // trustworthy. Throw so the worker exits rather than continuing with an unknown state.
+                    throw new InvalidOperationException(
+                        "The Emit worker host received a request line that could not be deserialized. " +
+                        "The connection is now unusable.", ex);
                 }
-            });
 
-            // Register before attaching the removal continuation so the entry is always present
-            // when the continuation fires, even if the task completes extremely quickly.
-            activeTasks[taskId] = task;
-            _ = task.ContinueWith(
-                _ => activeTasks.TryRemove(taskId, out _),
-                TaskContinuationOptions.ExecuteSynchronously);
+                if (request is null)
+                {
+                    continue;
+                }
+
+                if (request.Kind == WorkerRequestKind.Shutdown)
+                {
+                    bool allDrained = DrainDispatched(activeTasks);
+                    WriteResponse(output, writeLock, new WorkerResponse
+                    {
+                        Id = request.Id,
+                        Success = allDrained,
+                        ErrorMessage = allDrained ? null :
+                            "Forced shutdown: one or more active calls did not complete within the drain deadline.",
+                    });
+                    return;
+                }
+
+                // Acquire the semaphore BEFORE Task.Run so the reader loop blocks (backs up into the
+                // OS pipe buffer) rather than enqueuing an unbounded number of thread-pool tasks.
+                concurrencyLimit.Wait();
+
+                WorkerRequest dispatchedRequest = request;
+                int taskId = Interlocked.Increment(ref nextTaskId);
+
+                Task task = Task.Run(() =>
+                {
+                    try
+                    {
+                        ProcessRequest(dispatchedRequest, loaded, nextHandleBox, output, writeLock);
+                    }
+                    finally
+                    {
+                        concurrencyLimit.Release();
+                    }
+                });
+
+                // Register before attaching the removal continuation so the entry is always present
+                // when the continuation fires, even if the task completes extremely quickly.
+                activeTasks[taskId] = task;
+                _ = task.ContinueWith(
+                    _ => activeTasks.TryRemove(taskId, out _),
+                    TaskContinuationOptions.ExecuteSynchronously);
+            }
+
+            // The input ended without an explicit Shutdown request (for example, the host's side of
+            // the pipe closed abruptly). Still give already-dispatched requests a chance to finish
+            // and write their response before returning — otherwise a request dispatched just before
+            // the last line was read could be silently dropped.
+            DrainDispatched(activeTasks);
         }
-
-        // The input ended without an explicit Shutdown request (for example, the host's side of the
-        // pipe closed abruptly). Still give already-dispatched requests a chance to finish and write
-        // their response before returning, for the same reason the Shutdown path below does — otherwise
-        // a request dispatched just before the last line was read could be silently dropped.
-        DrainDispatched(activeTasks);
+        finally
+        {
+            // Dispose every still-loaded native mapping so their libraries are unloaded and any
+            // library-specific shutdown code runs deterministically, regardless of how Run exits
+            // (normal Shutdown, abrupt end-of-stream, or an unhandled exception).
+            foreach (int key in loaded.Keys.ToArray())
+            {
+                if (loaded.TryRemove(key, out LoadedInterface entry) && entry.Instance is IDisposable disposable)
+                {
+                    try { disposable.Dispose(); }
+                    catch { /* best-effort; move on to the next */ }
+                }
+            }
+        }
     }
 
     /// <summary>
-    /// Best-effort: waits for every still-active request to finish (and write its response) before
-    /// <see cref="Run"/> returns, so requests already in flight are not silently abandoned. Not a hard
-    /// guarantee — a request that is itself stuck is bounded by <see cref="EmitWorkerProcess.SendAndReceive"/>'s
-    /// per-request timeout on the host side, not by this drain, and can still be abandoned here.
+    /// Waits for every still-active request to finish (and write its response) before
+    /// <see cref="Run"/> exits, so requests already in flight are not silently abandoned.
     /// </summary>
-    private static void DrainDispatched(ConcurrentDictionary<int, Task> activeTasks)
+    /// <returns>
+    /// <see langword="true"/> when all active tasks completed before the drain deadline;
+    /// <see langword="false"/> when at least one task was still running when the deadline expired.
+    /// </returns>
+    private static bool DrainDispatched(ConcurrentDictionary<int, Task> activeTasks)
     {
         try
         {
             Task[] snapshot = [.. activeTasks.Values];
-            if (snapshot.Length > 0)
-                Task.WaitAll(snapshot, TimeSpan.FromSeconds(5));
+            return snapshot.Length == 0 || Task.WaitAll(snapshot, TimeSpan.FromSeconds(5));
         }
         catch
         {
-            // Best-effort; the caller proceeds (shuts down or returns) regardless.
+            // A faulted task is still a completed task from the drain perspective.
+            return false;
         }
     }
 
