@@ -50,9 +50,10 @@ public class DistributedRandom
                 nameof(distributionFunction));
 
         double interval = f1 - f0;
-        if (interval == 0.0)
+        if (!double.IsFinite(interval) || interval <= 0.0)
             throw new ArgumentException(
-                "The distribution function is constant (f(0) == f(1)). The normalization interval must be non-zero.",
+                "The distribution function must satisfy f(1) > f(0) with a finite difference. " +
+                "Constant, decreasing, and overflow-to-infinity cases are not supported.",
                 nameof(distributionFunction));
 
         minValue = f0;

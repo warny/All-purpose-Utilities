@@ -56,6 +56,21 @@ public class DistributedRandomTests
     }
 
     [TestMethod]
+    public void Constructor_ThrowsOnDecreasingFunction()
+    {
+        // f(0)=1, f(1)=0 — decreasing violates the f(1) > f(0) contract.
+        Assert.ThrowsExactly<ArgumentException>(() => new DistributedRandom(x => 1.0 - x));
+    }
+
+    [TestMethod]
+    public void Constructor_ThrowsWhenIntervalOverflowsToInfinity()
+    {
+        // f(0)=-MaxValue, f(1)=+MaxValue — f(1)-f(0) overflows to PositiveInfinity.
+        Assert.ThrowsExactly<ArgumentException>(
+            () => new DistributedRandom(x => x == 0 ? -double.MaxValue : double.MaxValue));
+    }
+
+    [TestMethod]
     public void Constructor_ThrowsWhenF0IsInfinity()
     {
         Assert.ThrowsExactly<ArgumentException>(() => new DistributedRandom(x => x == 0 ? double.PositiveInfinity : x));
