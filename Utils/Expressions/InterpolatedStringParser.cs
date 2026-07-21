@@ -149,6 +149,12 @@ public interface IInterpolatedStringPart { }
 /// <summary>
 /// Represents a literal (non-interpolated) part of a string.
 /// </summary>
+/// <remarks>
+/// Instances are constructed and fully assembled by <see cref="InterpolatedStringParser"/>
+/// before being published. The <see cref="Text"/> property is immutable from the caller's
+/// perspective; mutation is only possible through the <c>internal</c> <see cref="Append"/>
+/// method which is inaccessible outside this assembly (#26).
+/// </remarks>
 public class LiteralPart : IInterpolatedStringPart
 {
     private readonly StringBuilder _value = new();
@@ -174,10 +180,12 @@ public class LiteralPart : IInterpolatedStringPart
     }
 
     /// <summary>
-    /// Appends additional text to this literal part.
+    /// Appends additional text to this literal part during construction only.
+    /// This method is intentionally <c>internal</c> so external callers cannot mutate
+    /// a part after the parser has published it (#26).
     /// </summary>
     /// <param name="value">The text to append.</param>
-    public void Append(string value)
+    internal void Append(string value)
     {
         _value.Append(value);
     }
