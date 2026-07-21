@@ -38,6 +38,39 @@ public class AddWorkingDaysTests
                 => GetWorkingDays(start, end).Count();
     }
 
+    /// <summary>
+    /// A provider that classifies every day as non-working (hostile provider for #55 testing).
+    /// </summary>
+    private sealed class AllNonWorkingCalendarProvider : ICalendarProvider
+    {
+        public int GetNonWorkingDaysCount(DateTime start, DateTime end)
+                => (int)(end.Date - start.Date).TotalDays + 1;
+
+        public IEnumerable<DateTime> GetHollydays(DateTime start, DateTime end)
+        {
+            for (var d = start.Date; d <= end.Date; d = d.AddDays(1))
+                yield return d;
+        }
+
+        public IEnumerable<DateTime> GetWorkingDays(DateTime start, DateTime end)
+                => [];
+
+        public int GetWorkingDaysCount(DateTime start, DateTime end) => 0;
+    }
+
+    /// <summary>
+    /// A provider that always returns a non-working count larger than the queried range.
+    /// </summary>
+    private sealed class LyingCalendarProvider : ICalendarProvider
+    {
+        public int GetNonWorkingDaysCount(DateTime start, DateTime end)
+                => (int)(end.Date - start.Date).TotalDays + 100; // always lies
+
+        public IEnumerable<DateTime> GetHollydays(DateTime start, DateTime end) => [];
+        public IEnumerable<DateTime> GetWorkingDays(DateTime start, DateTime end) => [];
+        public int GetWorkingDaysCount(DateTime start, DateTime end) => 0;
+    }
+
     [TestMethod]
     public void AddWorkingDaysSkipsWeekEnds()
     {
@@ -77,5 +110,45 @@ public class AddWorkingDaysTests
         var expected = new DateTime(ey, em, ed);
         var result = start.AddWorkingDays(working, provider);
         Assert.AreEqual(expected, result);
+    }
+
+    // ------------------------------------------------------------------ #55 termination safety
+
+    [TestMethod]
+    public void AddWorkingDays_WithAllNonWorkingProvider_ThrowsInvalidOperation()
+    {
+        // A provider that calls every day non-working must be detected and rejected before
+        // the loop runs forever (#55).
+        var start = new DateTime(2024, 1, 1);
+        Assert.ThrowsExactly<InvalidOperationException>(
+            () => start.AddWorkingDays(1, new AllNonWorkingCalendarProvider()));
+    }
+
+    [TestMethod]
+    public void AddWorkingDays_WithLyingProvider_ThrowsInvalidOperation()
+    {
+        // A provider that reports more non-working days than calendar days in the range must
+        // be detected immediately (#55).
+        var start = new DateTime(2024, 1, 1);
+        Assert.ThrowsExactly<InvalidOperationException>(
+            () => start.AddWorkingDays(1, new LyingCalendarProvider()));
+    }
+
+    [TestMethod]
+    public void PreviousWorkingDay_WithAllNonWorkingProvider_ThrowsInvalidOperation()
+    {
+        // PreviousWorkingDay must not run indefinitely when no prior working day exists (#55).
+        var date = new DateTime(2024, 1, 1);
+        Assert.ThrowsExactly<InvalidOperationException>(
+            () => date.PreviousWorkingDay(new AllNonWorkingCalendarProvider()));
+    }
+
+    [TestMethod]
+    public void AddWorkingDays_ZeroWorkingDays_ReturnsSameDate()
+    {
+        // Zero working days added must return the base date immediately.
+        var start = new DateTime(2024, 1, 1);
+        var result = start.AddWorkingDays(0, new WeekEndCalendarProvider());
+        Assert.AreEqual(start, result);
     }
 }

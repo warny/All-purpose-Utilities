@@ -117,8 +117,115 @@ public class DateUtilsEndOfWeekTests
     }
 }
 
+// ------------------------------------------------------------------ #56 DateTime.Kind preservation
+
+/// <summary>
+/// Verifies that <see cref="DateUtils.StartOf"/> and <see cref="DateUtils.EndOf"/> preserve
+/// <see cref="DateTime.Kind"/> for every period type (#56).
+/// </summary>
+[TestClass]
+public class DateKindPreservationTests
+{
+    private static readonly DateTime _utcDate = new DateTime(2024, 6, 15, 10, 30, 0, DateTimeKind.Utc);
+    private static readonly DateTime _localDate = new DateTime(2024, 6, 15, 10, 30, 0, DateTimeKind.Local);
+    private static readonly DateTime _unspecifiedDate = new DateTime(2024, 6, 15, 10, 30, 0, DateTimeKind.Unspecified);
+
+    private static readonly PeriodTypeEnum[] _periodTypes =
+    [
+        PeriodTypeEnum.Day,
+        PeriodTypeEnum.Week,
+        PeriodTypeEnum.Month,
+        PeriodTypeEnum.Quarter,
+        PeriodTypeEnum.Year
+    ];
+
+    [TestMethod]
+    public void StartOf_PreservesUtcKind_ForAllPeriods()
+    {
+        foreach (var period in _periodTypes)
+        {
+            var result = _utcDate.StartOf(period, DayOfWeek.Monday);
+            Assert.AreEqual(DateTimeKind.Utc, result.Kind,
+                $"StartOf({period}) must return Utc when input is Utc.");
+        }
+    }
+
+    [TestMethod]
+    public void EndOf_PreservesUtcKind_ForAllPeriods()
+    {
+        foreach (var period in _periodTypes)
+        {
+            var result = _utcDate.EndOf(period, DayOfWeek.Monday);
+            Assert.AreEqual(DateTimeKind.Utc, result.Kind,
+                $"EndOf({period}) must return Utc when input is Utc.");
+        }
+    }
+
+    [TestMethod]
+    public void StartOf_PreservesLocalKind_ForAllPeriods()
+    {
+        foreach (var period in _periodTypes)
+        {
+            var result = _localDate.StartOf(period, DayOfWeek.Monday);
+            Assert.AreEqual(DateTimeKind.Local, result.Kind,
+                $"StartOf({period}) must return Local when input is Local.");
+        }
+    }
+
+    [TestMethod]
+    public void EndOf_PreservesLocalKind_ForAllPeriods()
+    {
+        foreach (var period in _periodTypes)
+        {
+            var result = _localDate.EndOf(period, DayOfWeek.Monday);
+            Assert.AreEqual(DateTimeKind.Local, result.Kind,
+                $"EndOf({period}) must return Local when input is Local.");
+        }
+    }
+
+    [TestMethod]
+    public void StartOf_PreservesUnspecifiedKind_ForAllPeriods()
+    {
+        foreach (var period in _periodTypes)
+        {
+            var result = _unspecifiedDate.StartOf(period, DayOfWeek.Monday);
+            Assert.AreEqual(DateTimeKind.Unspecified, result.Kind,
+                $"StartOf({period}) must return Unspecified when input is Unspecified.");
+        }
+    }
+
+    [TestMethod]
+    public void EndOf_PreservesUnspecifiedKind_ForAllPeriods()
+    {
+        foreach (var period in _periodTypes)
+        {
+            var result = _unspecifiedDate.EndOf(period, DayOfWeek.Monday);
+            Assert.AreEqual(DateTimeKind.Unspecified, result.Kind,
+                $"EndOf({period}) must return Unspecified when input is Unspecified.");
+        }
+    }
+
+    [TestMethod]
+    public void StartOf_None_ReturnsInputUnchanged()
+    {
+        // PeriodTypeEnum.None must return the original DateTime including its Kind and time component.
+        Assert.AreEqual(_utcDate, _utcDate.StartOf(PeriodTypeEnum.None));
+        Assert.AreEqual(DateTimeKind.Utc, _utcDate.StartOf(PeriodTypeEnum.None).Kind);
+    }
+
+    [TestMethod]
+    public void EndOf_None_ReturnsInputUnchanged()
+    {
+        Assert.AreEqual(_utcDate, _utcDate.EndOf(PeriodTypeEnum.None));
+        Assert.AreEqual(DateTimeKind.Utc, _utcDate.EndOf(PeriodTypeEnum.None).Kind);
+    }
+}
+
 // ------------------------------------------------------------------ #54 Unix timestamp round-trip
 
+/// <summary>
+/// Tests for <see cref="DateUtils.FromUnixTimeStamp"/> UTC correctness (#54).
+/// </summary>
 [TestClass]
 public class DateUtilsUnixTimestampTests
 {
