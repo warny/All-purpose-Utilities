@@ -337,6 +337,56 @@ internal sealed class EmitWorkerProcess : IDisposable
     }
 
     /// <summary>
+    /// Asynchronous counterpart of <see cref="LoadInterface"/>: requests the worker to load
+    /// <paramref name="dllPath"/> and emit the mapping class for <paramref name="interfaceType"/>
+    /// without blocking the calling thread.
+    /// </summary>
+    /// <param name="interfaceType">Interface whose members will be mapped to native exports.</param>
+    /// <param name="dllPath">Path to the native DLL to load inside the worker.</param>
+    /// <param name="callingConvention">Calling convention used for the generated delegates.</param>
+    /// <param name="timeout">Maximum time to wait for the worker's response.</param>
+    /// <param name="cancellationToken">Token that allows the caller to abort waiting for the response.</param>
+    /// <returns>A task that completes with the handle allocated for this interface on this worker.</returns>
+    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is cancelled before the response arrives.</exception>
+    internal async Task<int> LoadInterfaceAsync(
+        Type interfaceType, string dllPath, CallingConvention callingConvention,
+        TimeSpan timeout, CancellationToken cancellationToken = default)
+    {
+        ValidateTimeout(timeout, nameof(timeout));
+        cancellationToken.ThrowIfCancellationRequested();
+        CrossProcessMarshaling.EnsureInterfaceIsSupported(interfaceType);
+
+        if (string.IsNullOrEmpty(interfaceType.Assembly.Location))
+        {
+            throw new NotSupportedException(
+                $"The assembly declaring '{interfaceType.FullName}' has no on-disk location (for example, " +
+                $"a single-file publish or an in-memory assembly), so it cannot be loaded by an isolated " +
+                $"Emit worker. Use LibraryMapper.EmitInProcess<T> instead.");
+        }
+
+        var request = new WorkerRequest
+        {
+            Id = Interlocked.Increment(ref nextId),
+            Kind = WorkerRequestKind.Load,
+            InterfaceAssemblyPath = interfaceType.Assembly.Location,
+            InterfaceTypeFullName = interfaceType.FullName,
+            DllPath = dllPath,
+            CallingConvention = callingConvention,
+        };
+
+        WorkerResponse response = await SendAndReceiveAsync(request, timeout, cancellationToken).ConfigureAwait(false);
+        ThrowIfFailed(response);
+
+        MethodInfo[] commandTable = CrossProcessMarshaling.BuildCommandTable(interfaceType);
+        FrozenDictionary<MethodInfo, int> reverseTable = commandTable
+            .Select((m, i) => (m, i))
+            .ToFrozenDictionary(t => t.m, t => t.i);
+        commandTables[response.Handle] = reverseTable;
+
+        return response.Handle;
+    }
+
+    /// <summary>
     /// Releases the native mapping instance identified by <paramref name="handle"/> on the worker
     /// (disposing it, unloading its native DLL), without shutting down the worker process itself — the
     /// worker may still hold other interfaces loaded through <see cref="EmitWorkerPool"/>. Best-effort:
@@ -363,6 +413,32 @@ internal sealed class EmitWorkerProcess : IDisposable
             // Best-effort: a failed/timed-out Unload leaves the worker holding a now-unreferenced
             // instance until the worker itself is eventually disposed; not ideal, but not observable
             // by the caller, who has already discarded the handle either way.
+        }
+    }
+
+    /// <summary>
+    /// Asynchronous counterpart of <see cref="UnloadInterface"/>: releases the native mapping instance
+    /// identified by <paramref name="handle"/> on the worker without blocking the calling thread.
+    /// Best-effort: swallows failures, since the caller has already discarded the handle.
+    /// </summary>
+    /// <param name="handle">Handle previously returned by <see cref="LoadInterface"/>.</param>
+    internal async Task UnloadInterfaceAsync(int handle)
+    {
+        if (disposed)
+        {
+            return;
+        }
+
+        commandTables.TryRemove(handle, out _);
+        var request = new WorkerRequest { Id = Interlocked.Increment(ref nextId), Kind = WorkerRequestKind.Unload, Handle = handle };
+
+        try
+        {
+            await SendAndReceiveAsync(request, callTimeout).ConfigureAwait(false);
+        }
+        catch
+        {
+            // Best-effort: same rationale as UnloadInterface.
         }
     }
 
@@ -496,10 +572,12 @@ internal sealed class EmitWorkerProcess : IDisposable
     /// </remarks>
     /// <param name="request">Request to send.</param>
     /// <param name="timeout">Maximum time to wait for the response.</param>
+    /// <param name="cancellationToken">Optional token to cancel the wait before the timeout fires.</param>
     /// <returns>The deserialized response.</returns>
     /// <exception cref="TimeoutException">Thrown when the worker does not respond within <paramref name="timeout"/>.</exception>
+    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is cancelled before the response arrives.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the worker's connection has already failed.</exception>
-    private WorkerResponse SendAndReceive(WorkerRequest request, TimeSpan timeout)
+    private WorkerResponse SendAndReceive(WorkerRequest request, TimeSpan timeout, CancellationToken cancellationToken = default)
     {
         if (connectionFault is { } fault)
         {
@@ -532,25 +610,38 @@ internal sealed class EmitWorkerProcess : IDisposable
         }
 
         using var timeoutSource = new CancellationTokenSource(timeout);
-        using CancellationTokenRegistration registration = timeoutSource.Token.Register(() =>
+        using CancellationTokenSource? linked = cancellationToken.CanBeCanceled
+            ? CancellationTokenSource.CreateLinkedTokenSource(timeoutSource.Token, cancellationToken)
+            : null;
+        CancellationToken effectiveToken = linked?.Token ?? timeoutSource.Token;
+
+        using CancellationTokenRegistration registration = effectiveToken.Register(() =>
         {
-            if (pending.TryRemove(request.Id, out TaskCompletionSource<WorkerResponse>? timedOut))
+            if (pending.TryRemove(request.Id, out TaskCompletionSource<WorkerResponse>? cancelled))
             {
-                timedOut.TrySetCanceled(timeoutSource.Token);
+                cancelled.TrySetCanceled(effectiveToken);
 
-                // The native call is still running inside the worker — its result is indeterminate.
-                // After MaxAbandonedCalls, retire the worker so callers do not continue sending work
-                // to a process whose accumulated side-effect state has become unknowable.
-                int count = Interlocked.Increment(ref abandonedCallCount);
-                if (count >= MaxAbandonedCalls && connectionFault is null)
+                // Only count as an abandoned call when the cancellation originated from the timeout,
+                // not from an explicit external cancellation. An externally cancelled request was
+                // deliberately aborted by the caller — the worker may still be processing it (its
+                // outcome remains indeterminate) but the intent is clear. A pure timeout, by contrast,
+                // represents an unexpectedly slow worker that is accumulating unknown side effects.
+                if (timeoutSource.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
                 {
-                    var retirementFault = new InvalidOperationException(
-                        $"The isolated Emit worker has been retired after {count} abandoned calls " +
-                        "(requests that timed out while the worker was still processing them). " +
-                        "The outcome of each abandoned call is indeterminate.");
+                    // The native call is still running inside the worker — its result is indeterminate.
+                    // After MaxAbandonedCalls, retire the worker so callers do not continue sending work
+                    // to a process whose accumulated side-effect state has become unknowable.
+                    int count = Interlocked.Increment(ref abandonedCallCount);
+                    if (count >= MaxAbandonedCalls && connectionFault is null)
+                    {
+                        var retirementFault = new InvalidOperationException(
+                            $"The isolated Emit worker has been retired after {count} abandoned calls " +
+                            "(requests that timed out while the worker was still processing them). " +
+                            "The outcome of each abandoned call is indeterminate.");
 
-                    connectionFault = retirementFault;
-                    FailAllPending(retirementFault);
+                        connectionFault = retirementFault;
+                        FailAllPending(retirementFault);
+                    }
                 }
             }
         });
@@ -561,6 +652,94 @@ internal sealed class EmitWorkerProcess : IDisposable
         }
         catch (OperationCanceledException)
         {
+            // Re-throw external cancellation as-is so the caller sees OperationCanceledException
+            // with the caller's own token; only convert a pure timeout to TimeoutException.
+            cancellationToken.ThrowIfCancellationRequested();
+            throw new TimeoutException(
+                $"The isolated Emit worker did not respond to a '{request.Kind}' request within {timeout}.");
+        }
+    }
+
+    /// <summary>
+    /// Asynchronous counterpart of <see cref="SendAndReceive"/>: writes <paramref name="request"/> and
+    /// awaits its matching response without blocking the calling thread.
+    /// </summary>
+    /// <remarks>
+    /// Follows the same pending-registration, write-rollback, timeout, and abandoned-call-retirement
+    /// logic as the synchronous overload, but suspends via <see langword="await"/> instead of
+    /// <see cref="Task.GetAwaiter"/>/<see cref="System.Runtime.CompilerServices.TaskAwaiter.GetResult"/>.
+    /// </remarks>
+    /// <param name="request">Request to send.</param>
+    /// <param name="timeout">Maximum time to wait for the response.</param>
+    /// <param name="cancellationToken">Optional token to cancel the wait before the timeout fires.</param>
+    /// <returns>A task that completes with the deserialized response.</returns>
+    /// <exception cref="TimeoutException">Thrown when the worker does not respond within <paramref name="timeout"/>.</exception>
+    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is cancelled before the response arrives.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the worker's connection has already failed.</exception>
+    private async Task<WorkerResponse> SendAndReceiveAsync(WorkerRequest request, TimeSpan timeout, CancellationToken cancellationToken = default)
+    {
+        if (connectionFault is { } fault)
+        {
+            throw new InvalidOperationException("The isolated Emit worker's connection has already failed.", fault);
+        }
+
+        var completion = new TaskCompletionSource<WorkerResponse>(TaskCreationOptions.RunContinuationsAsynchronously);
+        if (!pending.TryAdd(request.Id, completion))
+        {
+            throw new InvalidOperationException($"An in-flight request with id {request.Id} already exists.");
+        }
+
+        try
+        {
+            lock (writeLock)
+            {
+                writer.WriteLine(JsonSerializer.Serialize(request));
+            }
+        }
+        catch (Exception writeEx)
+        {
+            pending.TryRemove(request.Id, out _);
+            throw new InvalidOperationException(
+                $"Failed to write a '{request.Kind}' request to the isolated Emit worker; " +
+                "the connection may have been closed or broken.", writeEx);
+        }
+
+        using var timeoutSource = new CancellationTokenSource(timeout);
+        using CancellationTokenSource? linked = cancellationToken.CanBeCanceled
+            ? CancellationTokenSource.CreateLinkedTokenSource(timeoutSource.Token, cancellationToken)
+            : null;
+        CancellationToken effectiveToken = linked?.Token ?? timeoutSource.Token;
+
+        using CancellationTokenRegistration registration = effectiveToken.Register(() =>
+        {
+            if (pending.TryRemove(request.Id, out TaskCompletionSource<WorkerResponse>? cancelled))
+            {
+                cancelled.TrySetCanceled(effectiveToken);
+
+                if (timeoutSource.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
+                {
+                    int count = Interlocked.Increment(ref abandonedCallCount);
+                    if (count >= MaxAbandonedCalls && connectionFault is null)
+                    {
+                        var retirementFault = new InvalidOperationException(
+                            $"The isolated Emit worker has been retired after {count} abandoned calls " +
+                            "(requests that timed out while the worker was still processing them). " +
+                            "The outcome of each abandoned call is indeterminate.");
+
+                        connectionFault = retirementFault;
+                        FailAllPending(retirementFault);
+                    }
+                }
+            }
+        });
+
+        try
+        {
+            return await completion.Task.ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
             throw new TimeoutException(
                 $"The isolated Emit worker did not respond to a '{request.Kind}' request within {timeout}.");
         }

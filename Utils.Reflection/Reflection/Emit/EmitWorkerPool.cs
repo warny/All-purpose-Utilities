@@ -1,6 +1,8 @@
 using System;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Utils.Reflection.Reflection.Emit;
 
@@ -35,7 +37,7 @@ namespace Utils.Reflection.Reflection.Emit;
 /// keeps running. Dispose the pool itself to shut the worker process down.
 /// </para>
 /// </remarks>
-public sealed class EmitWorkerPool : IDisposable
+public sealed class EmitWorkerPool : IDisposable, IAsyncDisposable
 {
     private readonly object gate = new();
     private readonly TimeSpan? loadTimeout;
@@ -145,6 +147,52 @@ public sealed class EmitWorkerPool : IDisposable
     }
 
     /// <summary>
+    /// Asynchronous counterpart of <see cref="Emit{TInterface}"/>: maps <paramref name="dllPath"/> to
+    /// <typeparamref name="TInterface"/> on this pool's shared worker without blocking the calling thread.
+    /// </summary>
+    /// <remarks>
+    /// Starts the shared worker process on the first call (same lazy semantics as
+    /// <see cref="Emit{TInterface}"/>), but suspends via <see langword="await"/> while waiting for the
+    /// worker's Load response instead of blocking the calling thread.
+    /// Note: individual method calls on the returned proxy are still synchronous — the
+    /// <see cref="System.Reflection.DispatchProxy"/> mechanism does not support asynchronous dispatch
+    /// of each <c>Invoke</c>. For truly non-blocking method calls, define interface methods returning
+    /// <c>Task&lt;T&gt;</c> and handle the wrapping in a custom proxy.
+    /// </remarks>
+    /// <typeparam name="TInterface">The interface that defines the functions to map.</typeparam>
+    /// <param name="dllPath">The path to the DLL.</param>
+    /// <param name="callingConvention">The calling convention of the functions.</param>
+    /// <param name="cancellationToken">Token that allows the caller to abort waiting for the Load response.</param>
+    /// <returns>A task that completes with a proxy implementing <typeparamref name="TInterface"/>.</returns>
+    /// <exception cref="ObjectDisposedException">Thrown when the pool has already been disposed.</exception>
+    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is cancelled before the Load response arrives.</exception>
+    /// <exception cref="NotSupportedException">
+    /// Thrown when <typeparamref name="TInterface"/> uses a type that cannot cross a process boundary.
+    /// </exception>
+    public async Task<TInterface> EmitAsync<TInterface>(
+        string dllPath, CallingConvention callingConvention, CancellationToken cancellationToken = default)
+        where TInterface : class, IDisposable
+    {
+        EmitWorkerProcess sharedWorker = GetOrStartWorker();
+
+        int handle = await sharedWorker.LoadInterfaceAsync(
+            typeof(TInterface), dllPath, callingConvention,
+            loadTimeout ?? EmitWorkerProcess.DefaultLoadTimeout, cancellationToken).ConfigureAwait(false);
+
+        try
+        {
+            TInterface proxy = DispatchProxy.Create<TInterface, EmitWorkerProxy>();
+            ((EmitWorkerProxy)(object)proxy).AttachWorker(sharedWorker, handle, ownsWorker: false);
+            return proxy;
+        }
+        catch
+        {
+            sharedWorker.UnloadInterface(handle);
+            throw;
+        }
+    }
+
+    /// <summary>
     /// Shuts down the shared worker process, invalidating every proxy previously returned by
     /// <see cref="Emit{TInterface}"/> on this pool.
     /// </summary>
@@ -160,5 +208,15 @@ public sealed class EmitWorkerPool : IDisposable
             disposed = true;
             worker?.Dispose();
         }
+    }
+
+    /// <summary>
+    /// Asynchronous counterpart of <see cref="Dispose"/>: shuts down the shared worker process on a
+    /// thread-pool thread, freeing the caller from blocking while the graceful shutdown handshake
+    /// completes. Enables <c>await using</c> patterns in async contexts.
+    /// </summary>
+    public ValueTask DisposeAsync()
+    {
+        return new ValueTask(Task.Run(Dispose));
     }
 }

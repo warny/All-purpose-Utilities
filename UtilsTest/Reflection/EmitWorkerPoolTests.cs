@@ -79,6 +79,39 @@ public class EmitWorkerPoolTests
             () => new EmitWorkerPool(callTimeout: TimeSpan.FromSeconds(-1)));
     }
 
+    // ─── Finding #15: EmitAsync with CancellationToken ───────────────────────────
+
+    [TestMethod]
+    public void EmitAsync_AlreadyCancelledToken_ThrowsImmediately()
+    {
+        using var pool = new EmitWorkerPool(callTimeout: TimeSpan.FromSeconds(1));
+
+        using var stream = new ReleasableStream();
+        pool.WorkerFactory = () => EmitWorkerProcess.CreateForTesting(
+            new StreamReader(stream),
+            new StreamWriter(new MemoryStream()) { AutoFlush = true },
+            TimeSpan.FromSeconds(1));
+
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        Task<ITinyInterface> task = pool.EmitAsync<ITinyInterface>("any.dll", CallingConvention.Winapi, cts.Token);
+
+        Assert.IsTrue(task.IsCompleted, "EmitAsync must complete synchronously for a pre-cancelled token.");
+        Assert.IsTrue(task.IsCanceled, "EmitAsync task must be cancelled.");
+
+        stream.Release();
+    }
+
+    [TestMethod]
+    public void DisposeAsync_CompletesWithoutThrowing()
+    {
+        // Verifies that DisposeAsync works for the 'await using' pattern.
+        var pool = new EmitWorkerPool();
+        ValueTask task = pool.DisposeAsync();
+        task.AsTask().Wait(TimeSpan.FromSeconds(5));
+    }
+
     // ─── Finding #6: faulted worker is replaced, not reused ─────────────────────
 
     /// <summary>

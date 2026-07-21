@@ -122,11 +122,18 @@ Host and worker are assumed to run exactly matching message definitions. A stale
 
 ~~**Priority: P2 — managed-resource lifecycle.**~~
 
-### 15. Worker creation and calls are synchronous-only despite process and IPC waits
+### ~~15. Worker creation and calls are synchronous-only despite process and IPC waits~~ ✅ DONE
 
-Public mapping and invocation paths block threads during process startup, pipe connection, load, calls, shutdown, and pool disposal. The implementation internally uses asynchronous pipe operations but immediately blocks with `GetAwaiter().GetResult()` or task waits.
+~~Public mapping and invocation paths block threads during process startup, pipe connection, load, calls, shutdown, and pool disposal. The implementation internally uses asynchronous pipe operations but immediately blocks with `GetAwaiter().GetResult()` or task waits.~~
 
-**Fix:** provide cancellation-aware asynchronous creation, load, invocation, unload, and disposal APIs. Keep synchronous wrappers only where required and document their blocking/deadlock characteristics.
+**Fix applied:** 
+- `SendAndReceive` now accepts an optional `CancellationToken`; a linked `CancellationTokenSource` combines the timeout with the external token. The timeout callback increments the abandoned-call counter only for pure timeouts, not external cancellations. `cancellationToken.ThrowIfCancellationRequested()` in the catch block re-throws external cancellation as `OperationCanceledException` (with the caller's own token) while converting pure timeouts to `TimeoutException`.
+- New private `SendAndReceiveAsync` — identical setup to `SendAndReceive` but `await completion.Task.ConfigureAwait(false)` instead of `GetAwaiter().GetResult()`, enabling a non-blocking call stack.
+- `EmitWorkerProcess.LoadInterfaceAsync(Type, string, CallingConvention, TimeSpan, CancellationToken)` — fully async, built on `SendAndReceiveAsync`.
+- `EmitWorkerProcess.UnloadInterfaceAsync(int)` — async unload, best-effort (same semantics as `UnloadInterface`).
+- `EmitWorkerPool.EmitAsync<TInterface>(string, CallingConvention, CancellationToken)` — starts the worker if needed and awaits `LoadInterfaceAsync`. Remarks document that individual method calls on the returned proxy are still synchronous (DispatchProxy.Invoke has no async counterpart; interfaces returning `Task<T>` would require a custom proxy).
+- `EmitWorkerPool` now implements `IAsyncDisposable`; `DisposeAsync` offloads the synchronous `Dispose` (which includes the Shutdown handshake) to a thread-pool thread via `Task.Run`, enabling `await using` in async call sites.
+- Unit tests: `LoadInterfaceAsync_AlreadyCancelledToken_ThrowsImmediately`, `LoadInterfaceAsync_CancellationDuringWait_ThrowsOperationCanceledException` (verifies abandoned-call counter is NOT incremented for external cancellation and worker remains healthy), `EmitAsync_AlreadyCancelledToken_ThrowsImmediately`, `DisposeAsync_CompletesWithoutThrowing`.
 
 **Priority: P2 — API scalability.**
 

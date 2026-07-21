@@ -314,6 +314,72 @@ public class EmitWorkerProcessTests
             "With diagnostics enabled, RemoteExceptionTypeName must be included.");
     }
 
+    // ─── Finding #15: async/cancellable load and unload APIs ─────────────────────
+
+    [TestMethod]
+    public void LoadInterfaceAsync_AlreadyCancelledToken_ThrowsImmediately()
+    {
+        using var blockingRead = new BlockingStream();
+        using var process = EmitWorkerProcess.CreateForTesting(
+            new StreamReader(blockingRead),
+            new StreamWriter(new MemoryStream()) { AutoFlush = true },
+            TimeSpan.FromSeconds(5));
+
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        var task = process.LoadInterfaceAsync(
+            typeof(IDiagnosticsTestInterface), "any.dll",
+            CallingConvention.Winapi, TimeSpan.FromSeconds(5), cts.Token);
+
+        Assert.IsTrue(task.IsCompleted, "Task must complete synchronously for a pre-cancelled token.");
+        Assert.IsTrue(task.IsCanceled, "Task must be cancelled, not faulted or successful.");
+
+        blockingRead.Release();
+    }
+
+    [TestMethod]
+    public void LoadInterfaceAsync_CancellationDuringWait_ThrowsOperationCanceledException()
+    {
+        // EnqueueableStream blocks until we enqueue a response — we cancel before delivering one.
+        using var responseStream = new EnqueueableStream();
+        using var requestDrain = new StreamWriter(new MemoryStream()) { AutoFlush = true };
+        using var process = EmitWorkerProcess.CreateForTesting(
+            new StreamReader(responseStream), requestDrain, TimeSpan.FromSeconds(30));
+
+        Thread.Sleep(50);
+
+        using var cts = new CancellationTokenSource();
+        Task<int> task = process.LoadInterfaceAsync(
+            typeof(IDiagnosticsTestInterface), "any.dll",
+            CallingConvention.Winapi, TimeSpan.FromSeconds(30), cts.Token);
+
+        // Wait until the request is registered as pending.
+        var deadline = Stopwatch.StartNew();
+        while (process.PendingCount == 0 && deadline.Elapsed < TimeSpan.FromSeconds(5))
+            Thread.Sleep(1);
+
+        cts.Cancel();
+
+        // Wait for the task to complete without calling task.Wait() (which throws AggregateException
+        // on a cancelled task).
+        var waitDeadline = Stopwatch.StartNew();
+        while (!task.IsCompleted && waitDeadline.Elapsed < TimeSpan.FromSeconds(5))
+            Thread.Sleep(5);
+
+        Assert.IsTrue(task.IsCompleted, "LoadInterfaceAsync must complete after cancellation.");
+        Assert.IsTrue(task.IsCanceled,
+            "LoadInterfaceAsync must be cancelled when the caller's token fires.");
+
+        // Worker must not be retired as unhealthy — external cancellation is not a timeout.
+        Assert.AreEqual(0, process.AbandonedCallCount,
+            "An externally cancelled request must not increment the abandoned-call counter.");
+        Assert.IsTrue(process.IsHealthy,
+            "The worker must remain healthy after an externally cancelled load.");
+
+        responseStream.Complete();
+    }
+
     // ─── Finding #13: unsolicited response IDs trigger a connection fault ────────
 
     [TestMethod]
