@@ -309,7 +309,7 @@ Class ArrayAccessor&lt;T, D&gt;  <a class="header-action link-secondary" title="
 
   <h3 id="Utils_Arrays_ArrayAccessor_2__ctor__1_System_Int32___" data-uid="Utils.Arrays.ArrayAccessor`2.#ctor(`1,System.Int32[])">
   ArrayAccessor(D, params int[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Arrays/ArrayAccessor.cs/#L38"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Arrays/ArrayAccessor.cs/#L49"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Arrays.ArrayAccessor-2.html">ArrayAccessor&lt;T, D&gt;</a> class.</p>
@@ -326,7 +326,7 @@ Class ArrayAccessor&lt;T, D&gt;  <a class="header-action link-secondary" title="
     <dd><p>The underlying data structure.</p>
 </dd>
     <dt><code>sizes</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a>[]</dt>
-    <dd><p>The sizes of each dimension of the array.</p>
+    <dd><p>The sizes of each dimension of the array. A defensive copy is made (#50).</p>
 </dd>
   </dl>
 
@@ -337,6 +337,11 @@ Class ArrayAccessor&lt;T, D&gt;  <a class="header-action link-secondary" title="
 
 
 
+  <h4 class="section" id="Utils_Arrays_ArrayAccessor_2__ctor__1_System_Int32____remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Derived constructors must call <a class="xref" href="Utils.Arrays.ArrayAccessor-2.html#Utils_Arrays_ArrayAccessor_2_ValidateSize">ValidateSize()</a> once all their own fields
+(such as an offset) have been assigned. <a class="xref" href="Utils.Arrays.ArrayAccessor-2.html#Utils_Arrays_ArrayAccessor_2_CheckSize">CheckSize()</a> is virtual and must
+not be invoked from this base constructor (#48).</p>
+</div>
 
 
 
@@ -348,7 +353,7 @@ Class ArrayAccessor&lt;T, D&gt;  <a class="header-action link-secondary" title="
 
   <h3 id="Utils_Arrays_ArrayAccessor_2_innerObject" data-uid="Utils.Arrays.ArrayAccessor`2.innerObject">
   innerObject
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Arrays/ArrayAccessor.cs/#L31"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Arrays/ArrayAccessor.cs/#L37"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>The underlying data source used by the accessor and returned when enumerating elements.</p>
@@ -384,7 +389,7 @@ Class ArrayAccessor&lt;T, D&gt;  <a class="header-action link-secondary" title="
 
   <h3 id="Utils_Arrays_ArrayAccessor_2_Dimensions" data-uid="Utils.Arrays.ArrayAccessor`2.Dimensions">
   Dimensions
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Arrays/ArrayAccessor.cs/#L26"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Arrays/ArrayAccessor.cs/#L32"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the number of dimensions in the array.</p>
@@ -416,7 +421,7 @@ Class ArrayAccessor&lt;T, D&gt;  <a class="header-action link-secondary" title="
 
   <h3 id="Utils_Arrays_ArrayAccessor_2_Item_System_Int32___" data-uid="Utils.Arrays.ArrayAccessor`2.Item(System.Int32[])">
   this[int[]]
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Arrays/ArrayAccessor.cs/#L50"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Arrays/ArrayAccessor.cs/#L81"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the element at the specified multi-dimensional index.</p>
@@ -455,7 +460,7 @@ Class ArrayAccessor&lt;T, D&gt;  <a class="header-action link-secondary" title="
 
   <h3 id="Utils_Arrays_ArrayAccessor_2_Sizes" data-uid="Utils.Arrays.ArrayAccessor`2.Sizes">
   Sizes
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Arrays/ArrayAccessor.cs/#L21"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Arrays/ArrayAccessor.cs/#L25"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the sizes of each dimension of the array.</p>
@@ -479,6 +484,10 @@ Class ArrayAccessor&lt;T, D&gt;  <a class="header-action link-secondary" title="
 
 
 
+  <h4 class="section" id="Utils_Arrays_ArrayAccessor_2_Sizes_remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Each call returns a fresh defensive copy of the internal dimension array so that
+callers cannot mutate the accessor's layout after construction (#50).</p>
+</div>
 
 
 
@@ -491,7 +500,7 @@ Class ArrayAccessor&lt;T, D&gt;  <a class="header-action link-secondary" title="
 
   <h3 id="Utils_Arrays_ArrayAccessor_2_CheckSize" data-uid="Utils.Arrays.ArrayAccessor`2.CheckSize">
   CheckSize()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Arrays/ArrayAccessor.cs/#L85"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Arrays/ArrayAccessor.cs/#L116"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Checks if the underlying object has a valid size based on the specified dimensions.</p>
@@ -524,7 +533,7 @@ Class ArrayAccessor&lt;T, D&gt;  <a class="header-action link-secondary" title="
 
   <h3 id="Utils_Arrays_ArrayAccessor_2_GetElement_System_Int32___" data-uid="Utils.Arrays.ArrayAccessor`2.GetElement(System.Int32[])">
   GetElement(int[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Arrays/ArrayAccessor.cs/#L93"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Arrays/ArrayAccessor.cs/#L124"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Retrieves the element at the specified multi-dimensional index.</p>
@@ -563,7 +572,7 @@ Class ArrayAccessor&lt;T, D&gt;  <a class="header-action link-secondary" title="
 
   <h3 id="Utils_Arrays_ArrayAccessor_2_GetEnumerator" data-uid="Utils.Arrays.ArrayAccessor`2.GetEnumerator">
   GetEnumerator()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Arrays/ArrayAccessor.cs/#L105"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Arrays/ArrayAccessor.cs/#L136"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns an enumerator that iterates through the collection.</p>
@@ -571,7 +580,7 @@ Class ArrayAccessor&lt;T, D&gt;  <a class="header-action link-secondary" title="
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public IEnumerator&lt;T&gt; GetEnumerator()</code></pre>
+    <pre><code class="lang-csharp hljs">public abstract IEnumerator&lt;T&gt; GetEnumerator()</code></pre>
   </div>
 
 
@@ -596,7 +605,7 @@ Class ArrayAccessor&lt;T, D&gt;  <a class="header-action link-secondary" title="
 
   <h3 id="Utils_Arrays_ArrayAccessor_2_SetElement__0_System_Int32___" data-uid="Utils.Arrays.ArrayAccessor`2.SetElement(`0,System.Int32[])">
   SetElement(T, int[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Arrays/ArrayAccessor.cs/#L101"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Arrays/ArrayAccessor.cs/#L132"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Sets the element at the specified multi-dimensional index.</p>
@@ -625,6 +634,41 @@ Class ArrayAccessor&lt;T, D&gt;  <a class="header-action link-secondary" title="
 
 
 
+
+
+
+  <a id="Utils_Arrays_ArrayAccessor_2_ValidateSize_" data-uid="Utils.Arrays.ArrayAccessor`2.ValidateSize*"></a>
+
+  <h3 id="Utils_Arrays_ArrayAccessor_2_ValidateSize" data-uid="Utils.Arrays.ArrayAccessor`2.ValidateSize">
+  ValidateSize()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Arrays/ArrayAccessor.cs/#L70"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Validates the size of the underlying object against the declared dimensions by invoking
+<a class="xref" href="Utils.Arrays.ArrayAccessor-2.html#Utils_Arrays_ArrayAccessor_2_CheckSize">CheckSize()</a>. Derived constructors must call this method after all their
+own fields have been fully assigned.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected void ValidateSize()</code></pre>
+  </div>
+
+
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when the underlying object does not have sufficient capacity for the declared dimensions.</p>
+</dd>
+  </dl>
 
 
 

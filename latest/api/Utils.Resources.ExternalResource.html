@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Resources_ExternalResource" data-uid="Utils.Resources.ExternalResource" class="text-break">
-Class ExternalResource  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Resources/ExternalResource.cs/#L20"><i class="bi bi-code-slash"></i></a>
+Class ExternalResource  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Resources/ExternalResource.cs/#L21"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -309,7 +309,7 @@ so that it behaves like a read-only resource collection.</p>
 
   <h3 id="Utils_Resources_ExternalResource__ctor_System_String_" data-uid="Utils.Resources.ExternalResource.#ctor(System.String)">
   ExternalResource(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Resources/ExternalResource.cs/#L38"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Resources/ExternalResource.cs/#L58"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Resources.ExternalResource.html">ExternalResource</a> class,
@@ -344,7 +344,7 @@ using the current UI culture.</p>
 
   <h3 id="Utils_Resources_ExternalResource__ctor_System_String_System_Globalization_CultureInfo_" data-uid="Utils.Resources.ExternalResource.#ctor(System.String,System.Globalization.CultureInfo)">
   ExternalResource(string, CultureInfo)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Resources/ExternalResource.cs/#L62"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Resources/ExternalResource.cs/#L82"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Resources.ExternalResource.html">ExternalResource</a> class,
@@ -382,7 +382,7 @@ but using a specified <a class="xref" href="https://learn.microsoft.com/dotnet/a
 
   <h3 id="Utils_Resources_ExternalResource__ctor_System_String_System_String_" data-uid="Utils.Resources.ExternalResource.#ctor(System.String,System.String)">
   ExternalResource(string, string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Resources/ExternalResource.cs/#L50"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Resources/ExternalResource.cs/#L70"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Resources.ExternalResource.html">ExternalResource</a> class,
@@ -418,9 +418,9 @@ using the current UI culture.</p>
 
   <a id="Utils_Resources_ExternalResource__ctor_" data-uid="Utils.Resources.ExternalResource.#ctor*"></a>
 
-  <h3 id="Utils_Resources_ExternalResource__ctor_System_String_System_String_System_Globalization_CultureInfo_" data-uid="Utils.Resources.ExternalResource.#ctor(System.String,System.String,System.Globalization.CultureInfo)">
-  ExternalResource(string, string, CultureInfo)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Resources/ExternalResource.cs/#L76"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_Resources_ExternalResource__ctor_System_String_System_String_System_Globalization_CultureInfo_System_Int64_" data-uid="Utils.Resources.ExternalResource.#ctor(System.String,System.String,System.Globalization.CultureInfo,System.Int64)">
+  ExternalResource(string, string, CultureInfo, long)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Resources/ExternalResource.cs/#L100"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Resources.ExternalResource.html">ExternalResource</a> class,
@@ -430,7 +430,7 @@ and merging them into a single read-only collection.</p>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public ExternalResource(string baseDirectory, string resourceName, CultureInfo cultureInfo)</code></pre>
+    <pre><code class="lang-csharp hljs">public ExternalResource(string baseDirectory, string resourceName, CultureInfo cultureInfo, long maxExternalFileBytes = 10485760)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
@@ -443,6 +443,10 @@ and merging them into a single read-only collection.</p>
 </dd>
     <dt><code>cultureInfo</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.globalization.cultureinfo">CultureInfo</a></dt>
     <dd><p>The culture to load resources for.</p>
+</dd>
+    <dt><code>maxExternalFileBytes</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int64">long</a></dt>
+    <dd><p>Maximum number of bytes that may be read from any single external file resource.
+Defaults to <a class="xref" href="Utils.Resources.ExternalResource.html#Utils_Resources_ExternalResource_DefaultMaxExternalFileBytes">DefaultMaxExternalFileBytes</a> (#43).</p>
 </dd>
   </dl>
 
@@ -463,6 +467,42 @@ and merging them into a single read-only collection.</p>
 
 
 
+  <h2 class="section" id="fields">Fields
+</h2>
+
+
+
+  <h3 id="Utils_Resources_ExternalResource_DefaultMaxExternalFileBytes" data-uid="Utils.Resources.ExternalResource.DefaultMaxExternalFileBytes">
+  DefaultMaxExternalFileBytes
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Resources/ExternalResource.cs/#L27"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Default maximum size in bytes for any single external file resource.
+Override via the <code>maxExternalFileBytes</code> constructor parameter.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public const long DefaultMaxExternalFileBytes = 10485760</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int64">long</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
   <h2 class="section" id="properties">Properties
 </h2>
 
@@ -471,7 +511,7 @@ and merging them into a single read-only collection.</p>
 
   <h3 id="Utils_Resources_ExternalResource_Count" data-uid="Utils.Resources.ExternalResource.Count">
   Count
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Resources/ExternalResource.cs/#L327"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Resources/ExternalResource.cs/#L359"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the total number of resources loaded.</p>
@@ -499,11 +539,49 @@ and merging them into a single read-only collection.</p>
 
 
 
+  <a id="Utils_Resources_ExternalResource_DiagnosticMessages_" data-uid="Utils.Resources.ExternalResource.DiagnosticMessages*"></a>
+
+  <h3 id="Utils_Resources_ExternalResource_DiagnosticMessages" data-uid="Utils.Resources.ExternalResource.DiagnosticMessages">
+  DiagnosticMessages
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Resources/ExternalResource.cs/#L42"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets diagnostic messages recorded during parsing.
+Each message describes a skipped or malformed .resx entry, including the resource name
+(when available) and the reason it was not loaded (#47).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public IReadOnlyList&lt;string&gt; DiagnosticMessages { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1">IReadOnlyList</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+  <h4 class="section" id="Utils_Resources_ExternalResource_DiagnosticMessages_remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>This collection is populated in permissive mode (the default). An empty collection
+indicates that all entries were processed successfully.</p>
+</div>
+
+
+
+
   <a id="Utils_Resources_ExternalResource_Item_" data-uid="Utils.Resources.ExternalResource.Item*"></a>
 
   <h3 id="Utils_Resources_ExternalResource_Item_System_String_" data-uid="Utils.Resources.ExternalResource.Item(System.String)">
   this[string]
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Resources/ExternalResource.cs/#L312"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Resources/ExternalResource.cs/#L344"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the resource value for the specified key.</p>
@@ -540,7 +618,7 @@ and merging them into a single read-only collection.</p>
 
   <h3 id="Utils_Resources_ExternalResource_Keys" data-uid="Utils.Resources.ExternalResource.Keys">
   Keys
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Resources/ExternalResource.cs/#L317"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Resources/ExternalResource.cs/#L349"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets all resource keys in the dictionary.</p>
@@ -572,10 +650,10 @@ and merging them into a single read-only collection.</p>
 
   <h3 id="Utils_Resources_ExternalResource_Values" data-uid="Utils.Resources.ExternalResource.Values">
   Values
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Resources/ExternalResource.cs/#L322"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Resources/ExternalResource.cs/#L354"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets all resource values in the dictionary.</p>
+  <div class="markdown level1 summary"><p>Gets all resolved resource values in the dictionary (#42).</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -608,7 +686,7 @@ and merging them into a single read-only collection.</p>
 
   <h3 id="Utils_Resources_ExternalResource_ContainsKey_System_String_" data-uid="Utils.Resources.ExternalResource.ContainsKey(System.String)">
   ContainsKey(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Resources/ExternalResource.cs/#L332"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Resources/ExternalResource.cs/#L364"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Checks if the specified key is present in the resources.</p>
@@ -645,10 +723,10 @@ and merging them into a single read-only collection.</p>
 
   <h3 id="Utils_Resources_ExternalResource_GetEnumerator" data-uid="Utils.Resources.ExternalResource.GetEnumerator">
   GetEnumerator()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Resources/ExternalResource.cs/#L342"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Resources/ExternalResource.cs/#L383"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Returns an enumerator of key-value pairs for all resources in the dictionary.</p>
+  <div class="markdown level1 summary"><p>Returns an enumerator of key-resolved-value pairs for all resources (#42).</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -677,10 +755,10 @@ and merging them into a single read-only collection.</p>
 
   <h3 id="Utils_Resources_ExternalResource_TryGetValue_System_String_System_Object__" data-uid="Utils.Resources.ExternalResource.TryGetValue(System.String,System.Object@)">
   TryGetValue(string, out object)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Resources/ExternalResource.cs/#L337"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Resources/ExternalResource.cs/#L369"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Tries to get the resource value for the specified key.</p>
+  <div class="markdown level1 summary"><p>Tries to get the resolved resource value for the specified key (#42).</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -716,7 +794,7 @@ and merging them into a single read-only collection.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Resources/ExternalResource.cs/#L20" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Resources/ExternalResource.cs/#L21" class="edit-link">Edit this page</a>
         </div>
 
 

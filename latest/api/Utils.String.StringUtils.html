@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_String_StringUtils" data-uid="Utils.String.StringUtils" class="text-break">
-Class StringUtils  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/String/StringUtils.cs/#L11"><i class="bi bi-code-slash"></i></a>
+Class StringUtils  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/String/StringUtils.cs/#L13"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -157,7 +157,7 @@ Class StringUtils  <a class="header-action link-secondary" title="View source" h
 
   <h3 id="Utils_String_StringUtils_EscapeForRegex_System_String_" data-uid="Utils.String.StringUtils.EscapeForRegex(System.String)">
   EscapeForRegex(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/String/StringUtils.cs/#L160"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/String/StringUtils.cs/#L208"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Cette procédure prend une chaîne de caractères en entrée et retourne une nouvelle chaîne de caractères dans laquelle certains caractères spéciaux ont été échappés en vue de les utiliser dans une expression régulière.</p>
@@ -196,10 +196,15 @@ Class StringUtils  <a class="header-action link-secondary" title="View source" h
 
   <h3 id="Utils_String_StringUtils_ParseCommandLine_System_String_" data-uid="Utils.String.StringUtils.ParseCommandLine(System.String)">
   ParseCommandLine(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/String/StringUtils.cs/#L94"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/String/StringUtils.cs/#L116"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Décompose la chaîne en tableau de ligne de commande</p>
+  <div class="markdown level1 summary"><p>Parses a command-line string into individual arguments using the following grammar:</p>
+<ul><li>Tokens are separated by one or more unquoted space characters.</li><li>
+      A double-quote character (<code>"</code>) starts a quoted region; content inside is
+      included verbatim including spaces. A doubled quote (<code>""</code>) inside a quoted
+      region is an escape sequence that yields a single literal <code>"</code> in the result.
+    </li><li>An explicitly quoted empty argument (<code>""</code>) is preserved as an empty string.</li><li>An unterminated quote is a format error (#57).</li></ul>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -210,14 +215,14 @@ Class StringUtils  <a class="header-action link-secondary" title="View source" h
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>line</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>Ligne de commande</p>
+    <dd><p>Command-line string to parse.</p>
 </dd>
   </dl>
 
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>[]</dt>
-    <dd><p>Décomposition en tableau</p>
+    <dd><p>Array of individual arguments.</p>
 </dd>
   </dl>
 
@@ -228,6 +233,15 @@ Class StringUtils  <a class="header-action link-secondary" title="View source" h
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">line</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.formatexception">FormatException</a></dt>
+    <dd><p>Thrown when the command line contains an unterminated quoted string (#57).</p>
+</dd>
+  </dl>
 
 
 
@@ -235,10 +249,11 @@ Class StringUtils  <a class="header-action link-secondary" title="View source" h
 
   <h3 id="Utils_String_StringUtils_SplitCommaSeparatedList_System_String_System_Char_System_Boolean_Utils_Expressions_Parenthesis___" data-uid="Utils.String.StringUtils.SplitCommaSeparatedList(System.String,System.Char,System.Boolean,Utils.Expressions.Parenthesis[])">
   SplitCommaSeparatedList(string, char, bool, params Parenthesis[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/String/StringUtils.cs/#L190"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/String/StringUtils.cs/#L243"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Splits a comma-separated string while respecting nested markers such as brackets or braces, with control over empty entries.</p>
+  <div class="markdown level1 summary"><p>Splits a comma-separated string while respecting nested markers such as brackets or braces,
+with control over empty entries.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -276,6 +291,13 @@ Class StringUtils  <a class="header-action link-secondary" title="View source" h
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.formatexception">FormatException</a></dt>
+    <dd><p>Thrown when a closing marker is encountered without a matching opening marker, or when
+one or more opening markers remain unclosed at the end of the string (#59, #60).</p>
+</dd>
+  </dl>
 
 
 
@@ -283,7 +305,7 @@ Class StringUtils  <a class="header-action link-secondary" title="View source" h
 
   <h3 id="Utils_String_StringUtils_SplitCommaSeparatedList_System_String_System_Char_Utils_Expressions_Parenthesis___" data-uid="Utils.String.StringUtils.SplitCommaSeparatedList(System.String,System.Char,Utils.Expressions.Parenthesis[])">
   SplitCommaSeparatedList(string, char, params Parenthesis[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/String/StringUtils.cs/#L179"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/String/StringUtils.cs/#L227"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Splits a comma-separated string while respecting nested markers such as brackets or braces.</p>
@@ -328,7 +350,7 @@ Class StringUtils  <a class="header-action link-secondary" title="View source" h
 
   <h3 id="Utils_String_StringUtils_ToPlural_System_String_System_Int64_" data-uid="Utils.String.StringUtils.ToPlural(System.String,System.Int64)">
   ToPlural(string, long)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/String/StringUtils.cs/#L74"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/String/StringUtils.cs/#L76"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Transform a string in the form &quot;word(s)&quot; or &quot;chev(al|aux)&quot; into its singular or plural form.</p>
@@ -369,7 +391,7 @@ Class StringUtils  <a class="header-action link-secondary" title="View source" h
 
   <h3 id="Utils_String_StringUtils_TrimBrackets_System_String_System_Char_" data-uid="Utils.String.StringUtils.TrimBrackets(System.String,System.Char)">
   TrimBrackets(string, char)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/String/StringUtils.cs/#L29"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/String/StringUtils.cs/#L31"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Removes the first pair of identical brackets from the provided string.</p>
@@ -411,7 +433,7 @@ Class StringUtils  <a class="header-action link-secondary" title="View source" h
 
   <h3 id="Utils_String_StringUtils_TrimBrackets_System_String_System_Char_System_Char_" data-uid="Utils.String.StringUtils.TrimBrackets(System.String,System.Char,System.Char)">
   TrimBrackets(string, char, char)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/String/StringUtils.cs/#L20"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/String/StringUtils.cs/#L22"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Removes the first pair of brackets from the provided string when it matches the supplied opening and closing characters.</p>
@@ -456,7 +478,7 @@ Class StringUtils  <a class="header-action link-secondary" title="View source" h
 
   <h3 id="Utils_String_StringUtils_TrimBrackets_System_String_Utils_String_Brackets___" data-uid="Utils.String.StringUtils.TrimBrackets(System.String,Utils.String.Brackets[])">
   TrimBrackets(string, params Brackets[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/String/StringUtils.cs/#L38"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/String/StringUtils.cs/#L40"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Removes the outermost brackets from the provided string using the supplied bracket definitions.</p>
@@ -498,7 +520,7 @@ Class StringUtils  <a class="header-action link-secondary" title="View source" h
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/String/StringUtils.cs/#L11" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/String/StringUtils.cs/#L13" class="edit-link">Edit this page</a>
         </div>
 
 

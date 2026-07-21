@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Collections_LRUCache_2" data-uid="Utils.Collections.LRUCache`2" class="text-break">
-Class LRUCache&lt;K, V&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L23"><i class="bi bi-code-slash"></i></a>
+Class LRUCache&lt;K, V&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L24"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -320,7 +320,7 @@ way to make such a sequence atomic from outside the class.</p>
 
   <h3 id="Utils_Collections_LRUCache_2__ctor_System_Int32_" data-uid="Utils.Collections.LRUCache`2.#ctor(System.Int32)">
   LRUCache(int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L37"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L41"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Collections.LRUCache-2.html">LRUCache&lt;K, V&gt;</a> class with the specified capacity.</p>
@@ -334,7 +334,7 @@ way to make such a sequence atomic from outside the class.</p>
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>capacity</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
-    <dd><p>The maximum number of elements that the cache can hold.</p>
+    <dd><p>The maximum number of elements that the cache can hold. Must be greater than zero.</p>
 </dd>
   </dl>
 
@@ -346,6 +346,12 @@ way to make such a sequence atomic from outside the class.</p>
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when <code class="paramref">capacity</code> is zero or negative. (#14)</p>
+</dd>
+  </dl>
 
 
 
@@ -357,7 +363,7 @@ way to make such a sequence atomic from outside the class.</p>
 
   <h3 id="Utils_Collections_LRUCache_2_Count" data-uid="Utils.Collections.LRUCache`2.Count">
   Count
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L59"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L67"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the number of elements contained in the cache.</p>
@@ -389,7 +395,7 @@ way to make such a sequence atomic from outside the class.</p>
 
   <h3 id="Utils_Collections_LRUCache_2_IsReadOnly" data-uid="Utils.Collections.LRUCache`2.IsReadOnly">
   IsReadOnly
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L73"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L81"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a value indicating whether the cache is read-only.</p>
@@ -421,7 +427,7 @@ way to make such a sequence atomic from outside the class.</p>
 
   <h3 id="Utils_Collections_LRUCache_2_Item__0_" data-uid="Utils.Collections.LRUCache`2.Item(`0)">
   this[K]
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L80"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L91"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the value associated with the specified key.</p>
@@ -453,6 +459,12 @@ way to make such a sequence atomic from outside the class.</p>
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.keynotfoundexception">KeyNotFoundException</a></dt>
+    <dd><p>Thrown by the getter when <code class="paramref">key</code> is not present in the cache. (#15)</p>
+</dd>
+  </dl>
 
 
 
@@ -460,7 +472,7 @@ way to make such a sequence atomic from outside the class.</p>
 
   <h3 id="Utils_Collections_LRUCache_2_Keys" data-uid="Utils.Collections.LRUCache`2.Keys">
   Keys
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L49"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L57"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the keys of the cache as a live read-only view — no allocation on each access.</p>
@@ -492,7 +504,7 @@ way to make such a sequence atomic from outside the class.</p>
 
   <h3 id="Utils_Collections_LRUCache_2_Values" data-uid="Utils.Collections.LRUCache`2.Values">
   Values
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L54"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L62"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the values of the cache as a live read-only view — no allocation on each access.</p>
@@ -528,7 +540,7 @@ way to make such a sequence atomic from outside the class.</p>
 
   <h3 id="Utils_Collections_LRUCache_2_Add_System_Collections_Generic_KeyValuePair__0__1__" data-uid="Utils.Collections.LRUCache`2.Add(System.Collections.Generic.KeyValuePair{`0,`1})">
   Add(KeyValuePair&lt;K, V&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L218"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L230"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Adds the specified key-value pair to the cache.</p>
@@ -561,7 +573,7 @@ way to make such a sequence atomic from outside the class.</p>
 
   <h3 id="Utils_Collections_LRUCache_2_Add__0__1_" data-uid="Utils.Collections.LRUCache`2.Add(`0,`1)">
   Add(K, V)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L132"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L144"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Adds the specified key and value to the cache. If the cache exceeds its capacity, it removes the least recently used item.</p>
@@ -597,7 +609,7 @@ way to make such a sequence atomic from outside the class.</p>
 
   <h3 id="Utils_Collections_LRUCache_2_Clear" data-uid="Utils.Collections.LRUCache`2.Clear">
   Clear()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L226"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L238"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Removes all elements from the cache.</p>
@@ -624,7 +636,7 @@ way to make such a sequence atomic from outside the class.</p>
 
   <h3 id="Utils_Collections_LRUCache_2_Contains_System_Collections_Generic_KeyValuePair__0__1__" data-uid="Utils.Collections.LRUCache`2.Contains(System.Collections.Generic.KeyValuePair{`0,`1})">
   Contains(KeyValuePair&lt;K, V&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L240"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L252"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether the cache contains a specific key-value pair.</p>
@@ -663,7 +675,7 @@ way to make such a sequence atomic from outside the class.</p>
 
   <h3 id="Utils_Collections_LRUCache_2_ContainsKey__0_" data-uid="Utils.Collections.LRUCache`2.ContainsKey(`0)">
   ContainsKey(K)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L119"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L131"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether the cache contains the specified key.</p>
@@ -702,7 +714,7 @@ way to make such a sequence atomic from outside the class.</p>
 
   <h3 id="Utils_Collections_LRUCache_2_CopyTo_System_Collections_Generic_KeyValuePair__0__1____System_Int32_" data-uid="Utils.Collections.LRUCache`2.CopyTo(System.Collections.Generic.KeyValuePair{`0,`1}[],System.Int32)">
   CopyTo(KeyValuePair&lt;K, V&gt;[], int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L253"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L268"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Copies the elements of the cache to an array, starting at a particular array index.</p>
@@ -731,6 +743,18 @@ way to make such a sequence atomic from outside the class.</p>
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">array</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>. (#17)</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when <code class="paramref">arrayIndex</code> is negative. (#17)</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when the destination array does not have enough room. (#17)</p>
+</dd>
+  </dl>
 
 
 
@@ -738,7 +762,7 @@ way to make such a sequence atomic from outside the class.</p>
 
   <h3 id="Utils_Collections_LRUCache_2_GetEnumerator" data-uid="Utils.Collections.LRUCache`2.GetEnumerator">
   GetEnumerator()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L275"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L312"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns an enumerator over a point-in-time snapshot of the cache, taken under the internal lock.</p>
@@ -771,10 +795,11 @@ way to make such a sequence atomic from outside the class.</p>
 
   <h3 id="Utils_Collections_LRUCache_2_Remove_System_Collections_Generic_KeyValuePair__0__1__" data-uid="Utils.Collections.LRUCache`2.Remove(System.Collections.Generic.KeyValuePair{`0,`1})">
   Remove(KeyValuePair&lt;K, V&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L269"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L293"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Removes the first occurrence of a specific key-value pair from the cache.</p>
+  <div class="markdown level1 summary"><p>Removes the first occurrence of a specific key-value pair from the cache.
+Both the key and value must match for the entry to be removed. (#16)</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -792,7 +817,7 @@ way to make such a sequence atomic from outside the class.</p>
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
-    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if the key-value pair was successfully removed; otherwise, <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if the key-value pair was found and the value matched; otherwise, <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
 </dd>
   </dl>
 
@@ -810,7 +835,7 @@ way to make such a sequence atomic from outside the class.</p>
 
   <h3 id="Utils_Collections_LRUCache_2_Remove__0_" data-uid="Utils.Collections.LRUCache`2.Remove(`0)">
   Remove(K)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L161"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L173"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Removes the element with the specified key from the cache.</p>
@@ -849,7 +874,7 @@ way to make such a sequence atomic from outside the class.</p>
 
   <h3 id="Utils_Collections_LRUCache_2_TryGetValue__0__1__" data-uid="Utils.Collections.LRUCache`2.TryGetValue(`0,`1@)">
   TryGetValue(K, out V)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L189"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L201"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the value associated with the specified key.</p>
@@ -891,7 +916,7 @@ way to make such a sequence atomic from outside the class.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L23" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Collections/LRUCache.cs/#L24" class="edit-link">Edit this page</a>
         </div>
 
 

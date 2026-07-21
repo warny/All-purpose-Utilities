@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Range_CyclicRange_1" data-uid="Utils.Range.CyclicRange`1" class="text-break">
-Class CyclicRange&lt;T&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/CyclicRange.cs/#L7"><i class="bi bi-code-slash"></i></a>
+Class CyclicRange&lt;T&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/CyclicRange.cs/#L20"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -256,6 +256,19 @@ Class CyclicRange&lt;T&gt;  <a class="header-action link-secondary" title="View 
 
 
 
+  <h2 id="Utils_Range_CyclicRange_1_remarks">Remarks</h2>
+  <div class="markdown level0 remarks"><p>
+A <a class="xref" href="Utils.Range.CyclicRange-1.html">CyclicRange&lt;T&gt;</a> where <a class="xref" href="Utils.Range.IRange-1.html#Utils_Range_IRange_1_Start">Start</a> equals
+<a class="xref" href="Utils.Range.IRange-1.html#Utils_Range_IRange_1_End">End</a> represents a <b>singleton</b> — a range containing exactly one
+value.  To represent the <b>full cycle</b> (all values from
+<a class="xref" href="Utils.Range.CyclicRange-1.html#Utils_Range_CyclicRange_1_MinValue">MinValue</a> to <a class="xref" href="Utils.Range.CyclicRange-1.html#Utils_Range_CyclicRange_1_MaxValue">MaxValue</a>), use the <a class="xref" href="Utils.Range.CyclicRange-1.html#Utils_Range_CyclicRange_1_FullCycle__0__0_">FullCycle(T, T)</a> factory
+method instead (#21).
+</p>
+<p>
+Both <a class="xref" href="Utils.Range.IRange-1.html#Utils_Range_IRange_1_Start">Start</a> and <a class="xref" href="Utils.Range.IRange-1.html#Utils_Range_IRange_1_End">End</a> must lie within
+[<a class="xref" href="Utils.Range.CyclicRange-1.html#Utils_Range_CyclicRange_1_MinValue">MinValue</a>, <a class="xref" href="Utils.Range.CyclicRange-1.html#Utils_Range_CyclicRange_1_MaxValue">MaxValue</a>] (#20).
+</p>
+</div>
 
 
   <h2 class="section" id="constructors">Constructors
@@ -266,7 +279,7 @@ Class CyclicRange&lt;T&gt;  <a class="header-action link-secondary" title="View 
 
   <h3 id="Utils_Range_CyclicRange_1__ctor__0__0__0__0_" data-uid="Utils.Range.CyclicRange`1.#ctor(`0,`0,`0,`0)">
   CyclicRange(T, T, T, T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/CyclicRange.cs/#L17"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/CyclicRange.cs/#L40"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Range.CyclicRange-1.html">CyclicRange&lt;T&gt;</a> class.</p>
@@ -280,10 +293,10 @@ Class CyclicRange&lt;T&gt;  <a class="header-action link-secondary" title="View 
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>start</code> <span class="xref">T</span></dt>
-    <dd><p>The start boundary in the cycle.</p>
+    <dd><p>The start boundary in the cycle. Must be within [<code class="paramref">minValue</code>, <code class="paramref">maxValue</code>].</p>
 </dd>
     <dt><code>end</code> <span class="xref">T</span></dt>
-    <dd><p>The end boundary in the cycle.</p>
+    <dd><p>The end boundary in the cycle. Must be within [<code class="paramref">minValue</code>, <code class="paramref">maxValue</code>].</p>
 </dd>
     <dt><code>minValue</code> <span class="xref">T</span></dt>
     <dd><p>The minimum representable value of the cycle.</p>
@@ -301,6 +314,17 @@ Class CyclicRange&lt;T&gt;  <a class="header-action link-secondary" title="View 
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when any of the arguments is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> (for reference types).</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when <code class="paramref">minValue</code> exceeds <code class="paramref">maxValue</code>, or when
+<code class="paramref">start</code> or <code class="paramref">end</code> lies outside
+[<code class="paramref">minValue</code>, <code class="paramref">maxValue</code>] (#20).</p>
+</dd>
+  </dl>
 
 
 
@@ -312,7 +336,7 @@ Class CyclicRange&lt;T&gt;  <a class="header-action link-secondary" title="View 
 
   <h3 id="Utils_Range_CyclicRange_1_ContainsEnd" data-uid="Utils.Range.CyclicRange`1.ContainsEnd">
   ContainsEnd
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/CyclicRange.cs/#L50"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/CyclicRange.cs/#L106"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a value indicating whether <a class="xref" href="Utils.Range.IRange-1.html#Utils_Range_IRange_1_End">End</a> belongs to the range.</p>
@@ -344,7 +368,7 @@ Class CyclicRange&lt;T&gt;  <a class="header-action link-secondary" title="View 
 
   <h3 id="Utils_Range_CyclicRange_1_ContainsStart" data-uid="Utils.Range.CyclicRange`1.ContainsStart">
   ContainsStart
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/CyclicRange.cs/#L47"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/CyclicRange.cs/#L103"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a value indicating whether <a class="xref" href="Utils.Range.IRange-1.html#Utils_Range_IRange_1_Start">Start</a> belongs to the range.</p>
@@ -376,7 +400,7 @@ Class CyclicRange&lt;T&gt;  <a class="header-action link-secondary" title="View 
 
   <h3 id="Utils_Range_CyclicRange_1_End" data-uid="Utils.Range.CyclicRange`1.End">
   End
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/CyclicRange.cs/#L34"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/CyclicRange.cs/#L90"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the end boundary of the range.</p>
@@ -408,7 +432,7 @@ Class CyclicRange&lt;T&gt;  <a class="header-action link-secondary" title="View 
 
   <h3 id="Utils_Range_CyclicRange_1_MaxValue" data-uid="Utils.Range.CyclicRange`1.MaxValue">
   MaxValue
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/CyclicRange.cs/#L44"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/CyclicRange.cs/#L100"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the maximum representable value in the cycle.</p>
@@ -440,7 +464,7 @@ Class CyclicRange&lt;T&gt;  <a class="header-action link-secondary" title="View 
 
   <h3 id="Utils_Range_CyclicRange_1_MinValue" data-uid="Utils.Range.CyclicRange`1.MinValue">
   MinValue
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/CyclicRange.cs/#L39"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/CyclicRange.cs/#L95"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the minimum representable value in the cycle.</p>
@@ -472,7 +496,7 @@ Class CyclicRange&lt;T&gt;  <a class="header-action link-secondary" title="View 
 
   <h3 id="Utils_Range_CyclicRange_1_Start" data-uid="Utils.Range.CyclicRange`1.Start">
   Start
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/CyclicRange.cs/#L31"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/CyclicRange.cs/#L87"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the start boundary of the range.</p>
@@ -508,7 +532,7 @@ Class CyclicRange&lt;T&gt;  <a class="header-action link-secondary" title="View 
 
   <h3 id="Utils_Range_CyclicRange_1_Contains_Utils_Range_IRange__0__" data-uid="Utils.Range.CyclicRange`1.Contains(Utils.Range.IRange{`0})">
   Contains(IRange&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/CyclicRange.cs/#L69"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/CyclicRange.cs/#L129"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether this range entirely contains another range.</p>
@@ -547,7 +571,7 @@ Class CyclicRange&lt;T&gt;  <a class="header-action link-secondary" title="View 
 
   <h3 id="Utils_Range_CyclicRange_1_Contains__0_" data-uid="Utils.Range.CyclicRange`1.Contains(`0)">
   Contains(T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/CyclicRange.cs/#L53"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/CyclicRange.cs/#L109"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether the supplied value belongs to the current range.</p>
@@ -582,11 +606,60 @@ Class CyclicRange&lt;T&gt;  <a class="header-action link-secondary" title="View 
 
 
 
+  <a id="Utils_Range_CyclicRange_1_FullCycle_" data-uid="Utils.Range.CyclicRange`1.FullCycle*"></a>
+
+  <h3 id="Utils_Range_CyclicRange_1_FullCycle__0__0_" data-uid="Utils.Range.CyclicRange`1.FullCycle(`0,`0)">
+  FullCycle(T, T)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/CyclicRange.cs/#L83"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Creates a <a class="xref" href="Utils.Range.CyclicRange-1.html">CyclicRange&lt;T&gt;</a> that covers the complete cycle from
+<code class="paramref">minValue</code> to <code class="paramref">maxValue</code>, inclusive (#21).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static CyclicRange&lt;T&gt; FullCycle(T minValue, T maxValue)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>minValue</code> <span class="xref">T</span></dt>
+    <dd><p>The minimum representable value of the cycle.</p>
+</dd>
+    <dt><code>maxValue</code> <span class="xref">T</span></dt>
+    <dd><p>The maximum representable value of the cycle.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Range.CyclicRange-1.html">CyclicRange</a>&lt;T&gt;</dt>
+    <dd><p>A cyclic range spanning the full domain.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when <code class="paramref">minValue</code> exceeds <code class="paramref">maxValue</code>.</p>
+</dd>
+  </dl>
+
+
+
   <a id="Utils_Range_CyclicRange_1_Intersect_" data-uid="Utils.Range.CyclicRange`1.Intersect*"></a>
 
   <h3 id="Utils_Range_CyclicRange_1_Intersect_Utils_Range_IRange__0__" data-uid="Utils.Range.CyclicRange`1.Intersect(Utils.Range.IRange{`0})">
   Intersect(IRange&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/CyclicRange.cs/#L83"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/CyclicRange.cs/#L143"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Computes one or more intersections between this range and another range.</p>
@@ -625,7 +698,7 @@ Class CyclicRange&lt;T&gt;  <a class="header-action link-secondary" title="View 
 
   <h3 id="Utils_Range_CyclicRange_1_IsCompatibleWith_Utils_Range_IRange__0__" data-uid="Utils.Range.CyclicRange`1.IsCompatibleWith(Utils.Range.IRange{`0})">
   IsCompatibleWith(IRange&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/CyclicRange.cs/#L139"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/CyclicRange.cs/#L208"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether the current range model is compatible with another range for aggregation in the same collection.</p>
@@ -656,6 +729,11 @@ Class CyclicRange&lt;T&gt;  <a class="header-action link-secondary" title="View 
 
 
 
+  <h4 class="section" id="Utils_Range_CyclicRange_1_IsCompatibleWith_Utils_Range_IRange__0___remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Two cyclic ranges are compatible when they share the same cycle bounds, determined by
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.icomparable-1.compareto">CompareTo(T)</a> so that the ordering relation used for containment
+and intersection is consistent with the compatibility test (#22).</p>
+</div>
 
 
 
@@ -664,7 +742,7 @@ Class CyclicRange&lt;T&gt;  <a class="header-action link-secondary" title="View 
 
   <h3 id="Utils_Range_CyclicRange_1_Overlap_Utils_Range_IRange__0__" data-uid="Utils.Range.CyclicRange`1.Overlap(Utils.Range.IRange{`0})">
   Overlap(IRange&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/CyclicRange.cs/#L76"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/CyclicRange.cs/#L136"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether this range overlaps with another range.</p>
@@ -703,7 +781,7 @@ Class CyclicRange&lt;T&gt;  <a class="header-action link-secondary" title="View 
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/CyclicRange.cs/#L7" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Range/CyclicRange.cs/#L20" class="edit-link">Edit this page</a>
         </div>
 
 

@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Transactions_TransactionExecutor" data-uid="Utils.Transactions.TransactionExecutor" class="text-break">
-Class TransactionExecutor  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Transactions/TransactionExecutor.cs/#L9"><i class="bi bi-code-slash"></i></a>
+Class TransactionExecutor  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Transactions/TransactionExecutor.cs/#L25"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -238,6 +238,22 @@ Class TransactionExecutor  <a class="header-action link-secondary" title="View s
 
 
 
+  <h2 id="Utils_Transactions_TransactionExecutor_remarks">Remarks</h2>
+  <div class="markdown level0 remarks"><p>
+The complete action list is validated and materialized before any action executes, so that
+null entries and enumeration side-effects cannot interleave with execution (#38).
+</p>
+<p>
+If a commit failure occurs, only the actions that have not yet committed are rolled back.
+Actions that already committed successfully are not rolled back, because rolling back a
+committed action is not guaranteed to be valid (#36).
+</p>
+<p>
+When rolling back, every action is attempted even if earlier rollbacks throw. All rollback
+failures are collected and surfaced as inner exceptions of a <a class="xref" href="Utils.Transactions.TransactionException.html">TransactionException</a>,
+so the original failure is always distinguishable (#37).
+</p>
+</div>
 
 
   <h2 class="section" id="methods">Methods
@@ -248,11 +264,11 @@ Class TransactionExecutor  <a class="header-action link-secondary" title="View s
 
   <h3 id="Utils_Transactions_TransactionExecutor_Execute_System_Collections_Generic_IEnumerable_Utils_Transactions_ITransactionalAction__" data-uid="Utils.Transactions.TransactionExecutor.Execute(System.Collections.Generic.IEnumerable{Utils.Transactions.ITransactionalAction})">
   Execute(IEnumerable&lt;ITransactionalAction&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Transactions/TransactionExecutor.cs/#L17"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Transactions/TransactionExecutor.cs/#L39"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Runs <code class="paramref">actions</code> sequentially, stopping at the first error.
-Completed actions are committed when all succeed or rolled back in reverse order if an error occurs.</p>
+Completed and uncommitted actions are rolled back in reverse order when a failure occurs.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -263,7 +279,7 @@ Completed actions are committed when all succeed or rolled back in reverse order
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>actions</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<a class="xref" href="Utils.Transactions.ITransactionalAction.html">ITransactionalAction</a>&gt;</dt>
-    <dd><p>Actions to execute.</p>
+    <dd><p>Actions to execute. The sequence is fully materialized before any action runs.</p>
 </dd>
   </dl>
 
@@ -280,6 +296,14 @@ Completed actions are committed when all succeed or rolled back in reverse order
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
     <dd><p>Thrown when <code class="paramref">actions</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
 </dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when any element in <code class="paramref">actions</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+    <dt><a class="xref" href="Utils.Transactions.TransactionException.html">TransactionException</a></dt>
+    <dd><p>Thrown when a failure occurs during execution, commit, or rollback. The
+<a class="xref" href="Utils.Transactions.TransactionException.html#Utils_Transactions_TransactionException_PrimaryException">PrimaryException</a> property holds the original failure;
+<a class="xref" href="Utils.Transactions.TransactionException.html#Utils_Transactions_TransactionException_RollbackExceptions">RollbackExceptions</a> holds any rollback failures (#37).</p>
+</dd>
   </dl>
 
 
@@ -288,7 +312,7 @@ Completed actions are committed when all succeed or rolled back in reverse order
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Transactions/TransactionExecutor.cs/#L9" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Transactions/TransactionExecutor.cs/#L25" class="edit-link">Edit this page</a>
         </div>
 
 

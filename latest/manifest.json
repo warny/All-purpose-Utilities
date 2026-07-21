@@ -13196,7 +13196,7 @@
       "Uid": null,
       "IsMRef": true,
       "Title": "Utils.Security.Authenticator",
-      "Summary": "<p sourcefile=\"api/Utils.Security.Authenticator.yml\" sourcestartlinenumber=\"1\">Provides a way to generate and verify time-based one-time passwords (TOTP), compatible with Google Authenticator and similar services.</p>\n"
+      "Summary": "<p sourcefile=\"api/Utils.Security.Authenticator.yml\" sourcestartlinenumber=\"1\">Provides a way to generate and verify time-based one-time passwords (TOTP), compatible\nwith Google Authenticator and similar services.</p>\n"
     },
     {
       "type": "ManagedReference",
@@ -13354,6 +13354,34 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Transactions.AsyncTransactionExecutor.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Transactions.AsyncTransactionExecutor.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Transactions.AsyncTransactionExecutor",
+      "Summary": "<p sourcefile=\"api/Utils.Transactions.AsyncTransactionExecutor.yml\" sourcestartlinenumber=\"1\">Executes a sequence of asynchronous transactional actions with cancellation support.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Transactions.IAsyncTransactionalAction.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Transactions.IAsyncTransactionalAction.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Transactions.IAsyncTransactionalAction",
+      "Summary": "<p sourcefile=\"api/Utils.Transactions.IAsyncTransactionalAction.yml\" sourcestartlinenumber=\"1\">Represents an asynchronous action that can be committed or rolled back.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.Transactions.ITransactionalAction.yml",
       "output": {
         ".html": {
@@ -13365,6 +13393,20 @@
       "IsMRef": true,
       "Title": "Utils.Transactions.ITransactionalAction",
       "Summary": "<p sourcefile=\"api/Utils.Transactions.ITransactionalAction.yml\" sourcestartlinenumber=\"1\">Represents an action that can be committed or rolled back.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Transactions.TransactionException.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Transactions.TransactionException.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Transactions.TransactionException",
+      "Summary": "<p sourcefile=\"api/Utils.Transactions.TransactionException.yml\" sourcestartlinenumber=\"1\">Represents a failure during transaction execution.</p>\n"
     },
     {
       "type": "ManagedReference",

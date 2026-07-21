@@ -401,7 +401,7 @@ Class CheckBase&lt;T&gt;  <a class="header-action link-secondary" title="View so
 
   <h3 id="Utils_Objects_CheckBase_1_Must_System_Func__0_System_Exception____" data-uid="Utils.Objects.CheckBase`1.Must(System.Func{`0,System.Exception}[])">
   Must(params Func&lt;T, Exception&gt;[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Objects/Validations.cs/#L67"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Objects/Validations.cs/#L73"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Executes custom validation checks and records produced exceptions.</p>
@@ -415,7 +415,9 @@ Class CheckBase&lt;T&gt;  <a class="header-action link-secondary" title="View so
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>checks</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.func-2">Func</a>&lt;T, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.exception">Exception</a>&gt;[]</dt>
-    <dd><p>Set of functions that return an exception when the value is invalid.</p>
+    <dd><p>Set of functions that return an exception when the value is invalid, or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>
+when the value is valid. Each delegate is invoked even when earlier checks have already
+recorded errors, so that all independent failures are accumulated (#63).</p>
 </dd>
   </dl>
 
@@ -433,6 +435,15 @@ Class CheckBase&lt;T&gt;  <a class="header-action link-secondary" title="View so
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">checks</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when any element in <code class="paramref">checks</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+  </dl>
 
 
 
@@ -473,7 +484,7 @@ Class CheckBase&lt;T&gt;  <a class="header-action link-secondary" title="View so
 
   <h3 id="Utils_Objects_CheckBase_1_OnError_System_Exception_" data-uid="Utils.Objects.CheckBase`1.OnError(System.Exception)">
   OnError(Exception)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Objects/Validations.cs/#L89"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Objects/Validations.cs/#L101"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Adds a validation error to the internal collection.</p>
@@ -506,7 +517,7 @@ Class CheckBase&lt;T&gt;  <a class="header-action link-secondary" title="View so
 
   <h3 id="Utils_Objects_CheckBase_1_OnNull" data-uid="Utils.Objects.CheckBase`1.OnNull">
   OnNull()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Objects/Validations.cs/#L83"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Objects/Validations.cs/#L95"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Handles the null-case for the value.</p>
@@ -533,7 +544,7 @@ Class CheckBase&lt;T&gt;  <a class="header-action link-secondary" title="View so
 
   <h3 id="Utils_Objects_CheckBase_1_ThrowErrors" data-uid="Utils.Objects.CheckBase`1.ThrowErrors">
   ThrowErrors()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Objects/Validations.cs/#L95"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Objects/Validations.cs/#L112"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Throws the accumulated validation errors, if any were recorded.</p>
@@ -552,11 +563,16 @@ Class CheckBase&lt;T&gt;  <a class="header-action link-secondary" title="View so
 
 
 
+  <h4 class="section" id="Utils_Objects_CheckBase_1_ThrowErrors_remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>When exactly one error exists it is rethrown directly so callers can catch its specific type.
+When multiple errors exist they are wrapped in an <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.aggregateexception">AggregateException</a> so that
+individual causes and stack traces remain accessible to callers (#64).</p>
+</div>
 
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.exception">Exception</a></dt>
-    <dd><p>Thrown with aggregated error information when multiple validations fail.</p>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.aggregateexception">AggregateException</a></dt>
+    <dd><p>Thrown with all accumulated validation errors when more than one error was recorded.</p>
 </dd>
   </dl>
 
@@ -570,7 +586,7 @@ Class CheckBase&lt;T&gt;  <a class="header-action link-secondary" title="View so
 
   <h3 id="Utils_Objects_CheckBase_1_op_Implicit_Utils_Objects_CheckBase__0____0" data-uid="Utils.Objects.CheckBase`1.op_Implicit(Utils.Objects.CheckBase{`0})~`0">
   implicit operator T(CheckBase&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Objects/Validations.cs/#L106"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Objects/Validations.cs/#L127"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Retrieves the validated value.</p>

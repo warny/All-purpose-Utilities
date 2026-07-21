@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Objects_Arg_1" data-uid="Utils.Objects.Arg`1" class="text-break">
-Class Arg&lt;T&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Objects/Validations.cs/#L113"><i class="bi bi-code-slash"></i></a>
+Class Arg&lt;T&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Objects/Validations.cs/#L134"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -273,7 +273,7 @@ Class Arg&lt;T&gt;  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_Objects_Arg_1__ctor__0_System_String_" data-uid="Utils.Objects.Arg`1.#ctor(`0,System.String)">
   Arg(T, string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Objects/Validations.cs/#L120"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Objects/Validations.cs/#L141"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Objects.Arg-1.html">Arg&lt;T&gt;</a> class.</p>
@@ -313,7 +313,7 @@ Class Arg&lt;T&gt;  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_Objects_Arg_1_OnNull" data-uid="Utils.Objects.Arg`1.OnNull">
   OnNull()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Objects/Validations.cs/#L124"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Objects/Validations.cs/#L145"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Handles the null-case for the value.</p>
@@ -340,10 +340,10 @@ Class Arg&lt;T&gt;  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_Objects_Arg_1_ThrowErrors" data-uid="Utils.Objects.Arg`1.ThrowErrors">
   ThrowErrors()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Objects/Validations.cs/#L130"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Objects/Validations.cs/#L156"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Throws the accumulated validation errors as a single <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a>.</p>
+  <div class="markdown level1 summary"><p>Throws the accumulated validation errors.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -359,11 +359,16 @@ Class Arg&lt;T&gt;  <a class="header-action link-secondary" title="View source" 
 
 
 
+  <h4 class="section" id="Utils_Objects_Arg_1_ThrowErrors_remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>When exactly one error has been recorded, it is rethrown directly (preserving type and stack).
+When multiple errors were recorded, they are wrapped in an <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.aggregateexception">AggregateException</a>
+so all individual causes remain accessible (#64).</p>
+</div>
 
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
-    <dd><p>Always thrown when at least one error has been recorded.</p>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.aggregateexception">AggregateException</a></dt>
+    <dd><p>Thrown when more than one validation error was recorded.</p>
 </dd>
   </dl>
 
@@ -373,7 +378,7 @@ Class Arg&lt;T&gt;  <a class="header-action link-secondary" title="View source" 
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Objects/Validations.cs/#L113" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Objects/Validations.cs/#L134" class="edit-link">Edit this page</a>
         </div>
 
 

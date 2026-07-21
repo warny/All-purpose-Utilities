@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_String_Brackets" data-uid="Utils.String.Brackets" class="text-break">
-Class Brackets  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/String/StringUtils.cs/#L233"><i class="bi bi-code-slash"></i></a>
+Class Brackets  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/String/StringUtils.cs/#L339"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -245,7 +245,7 @@ Class Brackets  <a class="header-action link-secondary" title="View source" href
 
   <h3 id="Utils_String_Brackets__ctor_System_Char_System_Char_" data-uid="Utils.String.Brackets.#ctor(System.Char,System.Char)">
   Brackets(char, char)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/String/StringUtils.cs/#L256"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/String/StringUtils.cs/#L375"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.String.Brackets.html">Brackets</a> class.</p>
@@ -281,7 +281,7 @@ Class Brackets  <a class="header-action link-secondary" title="View source" href
 
   <h3 id="Utils_String_Brackets__ctor_System_String_" data-uid="Utils.String.Brackets.#ctor(System.String)">
   Brackets(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/String/StringUtils.cs/#L249"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/String/StringUtils.cs/#L359"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.String.Brackets.html">Brackets</a> class using a two-character string.</p>
@@ -295,7 +295,7 @@ Class Brackets  <a class="header-action link-secondary" title="View source" href
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>brackets</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>A string containing the opening and closing characters.</p>
+    <dd><p>A string containing exactly two characters: the opening and the closing bracket.</p>
 </dd>
   </dl>
 
@@ -307,6 +307,15 @@ Class Brackets  <a class="header-action link-secondary" title="View source" href
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">brackets</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when <code class="paramref">brackets</code> does not have exactly two characters (#61).</p>
+</dd>
+  </dl>
 
 
 
@@ -318,10 +327,11 @@ Class Brackets  <a class="header-action link-secondary" title="View source" href
 
   <h3 id="Utils_String_Brackets_All" data-uid="Utils.String.Brackets.All">
   All
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/String/StringUtils.cs/#L280"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/String/StringUtils.cs/#L400"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets all bracket instances provided by the utility.</p>
+  <div class="markdown level1 summary"><p>Gets a read-only snapshot of all built-in bracket pairs.
+Each call returns a fresh defensive copy so callers cannot mutate the global state (#61).</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -350,7 +360,7 @@ Class Brackets  <a class="header-action link-secondary" title="View source" href
 
   <h3 id="Utils_String_Brackets_Braces" data-uid="Utils.String.Brackets.Braces">
   Braces
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/String/StringUtils.cs/#L275"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/String/StringUtils.cs/#L394"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a <a class="xref" href="Utils.String.Brackets.html">Brackets</a> instance representing braces.</p>
@@ -382,7 +392,7 @@ Class Brackets  <a class="header-action link-secondary" title="View source" href
 
   <h3 id="Utils_String_Brackets_Close" data-uid="Utils.String.Brackets.Close">
   Close
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/String/StringUtils.cs/#L243"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/String/StringUtils.cs/#L349"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the closing character of the bracket pair.</p>
@@ -414,7 +424,7 @@ Class Brackets  <a class="header-action link-secondary" title="View source" href
 
   <h3 id="Utils_String_Brackets_Open" data-uid="Utils.String.Brackets.Open">
   Open
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/String/StringUtils.cs/#L238"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/String/StringUtils.cs/#L344"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the opening character of the bracket pair.</p>
@@ -446,7 +456,7 @@ Class Brackets  <a class="header-action link-secondary" title="View source" href
 
   <h3 id="Utils_String_Brackets_RoundBrackets" data-uid="Utils.String.Brackets.RoundBrackets">
   RoundBrackets
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/String/StringUtils.cs/#L265"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/String/StringUtils.cs/#L384"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a <a class="xref" href="Utils.String.Brackets.html">Brackets</a> instance representing round brackets (parentheses).</p>
@@ -478,7 +488,7 @@ Class Brackets  <a class="header-action link-secondary" title="View source" href
 
   <h3 id="Utils_String_Brackets_SquareBrackets" data-uid="Utils.String.Brackets.SquareBrackets">
   SquareBrackets
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/String/StringUtils.cs/#L270"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/String/StringUtils.cs/#L389"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a <a class="xref" href="Utils.String.Brackets.html">Brackets</a> instance representing square brackets.</p>
@@ -514,7 +524,7 @@ Class Brackets  <a class="header-action link-secondary" title="View source" href
 
   <h3 id="Utils_String_Brackets_ToString" data-uid="Utils.String.Brackets.ToString">
   ToString()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/String/StringUtils.cs/#L286"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/String/StringUtils.cs/#L406"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns a string that represents the bracket pair.</p>
@@ -547,7 +557,7 @@ Class Brackets  <a class="header-action link-secondary" title="View source" href
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/String/StringUtils.cs/#L233" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/String/StringUtils.cs/#L339" class="edit-link">Edit this page</a>
         </div>
 
 

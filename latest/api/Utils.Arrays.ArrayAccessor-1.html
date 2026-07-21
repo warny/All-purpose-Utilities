@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Arrays_ArrayAccessor_1" data-uid="Utils.Arrays.ArrayAccessor`1" class="text-break">
-Class ArrayAccessor&lt;T&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Arrays/ArrayAccessor.cs/#L114"><i class="bi bi-code-slash"></i></a>
+Class ArrayAccessor&lt;T&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Arrays/ArrayAccessor.cs/#L145"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -143,6 +143,9 @@ Class ArrayAccessor&lt;T&gt;  <a class="header-action link-secondary" title="Vie
     </div>
     <div>
       <a class="xref" href="Utils.Arrays.ArrayAccessor-2.html#Utils_Arrays_ArrayAccessor_2_innerObject">ArrayAccessor&lt;T, T[]&gt;.innerObject</a>
+    </div>
+    <div>
+      <a class="xref" href="Utils.Arrays.ArrayAccessor-2.html#Utils_Arrays_ArrayAccessor_2_ValidateSize">ArrayAccessor&lt;T, T[]&gt;.ValidateSize()</a>
     </div>
     <div>
       <a class="xref" href="Utils.Arrays.ArrayAccessor-2.html#Utils_Arrays_ArrayAccessor_2_Item_System_Int32___">ArrayAccessor&lt;T, T[]&gt;.this[int[]]</a>
@@ -325,7 +328,7 @@ Class ArrayAccessor&lt;T&gt;  <a class="header-action link-secondary" title="Vie
 
   <h3 id="Utils_Arrays_ArrayAccessor_1__ctor__0___System_Int32_System_Int32___" data-uid="Utils.Arrays.ArrayAccessor`1.#ctor(`0[],System.Int32,System.Int32[])">
   ArrayAccessor(T[], int, params int[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Arrays/ArrayAccessor.cs/#L132"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Arrays/ArrayAccessor.cs/#L170"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Arrays.ArrayAccessor-1.html">ArrayAccessor&lt;T&gt;</a> class.</p>
@@ -357,6 +360,18 @@ Class ArrayAccessor&lt;T&gt;  <a class="header-action link-secondary" title="Vie
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">array</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when <code class="paramref">offset</code> is negative, when <code class="paramref">dimensions</code> is empty,
+when any dimension is non-positive, when dimension product overflows, or when the combination
+of <code class="paramref">offset</code> and <code class="paramref">dimensions</code> exceeds the length of
+<code class="paramref">array</code> (#49, #51).</p>
+</dd>
+  </dl>
 
 
 
@@ -368,7 +383,7 @@ Class ArrayAccessor&lt;T&gt;  <a class="header-action link-secondary" title="Vie
 
   <h3 id="Utils_Arrays_ArrayAccessor_1_Offset" data-uid="Utils.Arrays.ArrayAccessor`1.Offset">
   Offset
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Arrays/ArrayAccessor.cs/#L119"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Arrays/ArrayAccessor.cs/#L150"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the offset used in the underlying array to access elements.</p>
@@ -404,7 +419,7 @@ Class ArrayAccessor&lt;T&gt;  <a class="header-action link-secondary" title="Vie
 
   <h3 id="Utils_Arrays_ArrayAccessor_1_AsSpan_System_Int32___" data-uid="Utils.Arrays.ArrayAccessor`1.AsSpan(System.Int32[])">
   AsSpan(params int[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Arrays/ArrayAccessor.cs/#L218"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Arrays/ArrayAccessor.cs/#L289"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Retrieves a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.span-1">Span&lt;T&gt;</a> covering the requested indexes.</p>
@@ -445,10 +460,11 @@ remaining sub-dimensions.</p>
 
   <h3 id="Utils_Arrays_ArrayAccessor_1_CheckSize" data-uid="Utils.Arrays.ArrayAccessor`1.CheckSize">
   CheckSize()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Arrays/ArrayAccessor.cs/#L169"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Arrays/ArrayAccessor.cs/#L239"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Validates that the underlying array has sufficient size for the specified dimensions.</p>
+  <div class="markdown level1 summary"><p>Validates that the underlying array has sufficient size for the specified dimensions.
+Uses <code>long</code> arithmetic to avoid overflow (#49).</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -478,7 +494,7 @@ remaining sub-dimensions.</p>
 
   <h3 id="Utils_Arrays_ArrayAccessor_1_GetElement_System_Int32___" data-uid="Utils.Arrays.ArrayAccessor`1.GetElement(System.Int32[])">
   GetElement(int[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Arrays/ArrayAccessor.cs/#L198"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Arrays/ArrayAccessor.cs/#L269"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Retrieves the element at the specified multi-dimensional index.</p>
@@ -513,11 +529,45 @@ remaining sub-dimensions.</p>
 
 
 
+  <a id="Utils_Arrays_ArrayAccessor_1_GetEnumerator_" data-uid="Utils.Arrays.ArrayAccessor`1.GetEnumerator*"></a>
+
+  <h3 id="Utils_Arrays_ArrayAccessor_1_GetEnumerator" data-uid="Utils.Arrays.ArrayAccessor`1.GetEnumerator">
+  GetEnumerator()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Arrays/ArrayAccessor.cs/#L323"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns an enumerator over exactly the logical slice represented by this accessor
+(from <a class="xref" href="Utils.Arrays.ArrayAccessor-1.html#Utils_Arrays_ArrayAccessor_1_Offset">Offset</a> for the total number of elements), not the entire
+backing array (#52).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override IEnumerator&lt;T&gt; GetEnumerator()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerator-1">IEnumerator</a>&lt;T&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
   <a id="Utils_Arrays_ArrayAccessor_1_SetElement_" data-uid="Utils.Arrays.ArrayAccessor`1.SetElement*"></a>
 
   <h3 id="Utils_Arrays_ArrayAccessor_1_SetElement__0_System_Int32___" data-uid="Utils.Arrays.ArrayAccessor`1.SetElement(`0,System.Int32[])">
   SetElement(T, int[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Arrays/ArrayAccessor.cs/#L206"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Arrays/ArrayAccessor.cs/#L277"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Sets the element at the specified multi-dimensional index.</p>
@@ -553,7 +603,7 @@ remaining sub-dimensions.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Arrays/ArrayAccessor.cs/#L114" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Arrays/ArrayAccessor.cs/#L145" class="edit-link">Edit this page</a>
         </div>
 
 

@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Expressions_LiteralPart" data-uid="Utils.Expressions.LiteralPart" class="text-break">
-Class LiteralPart  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/InterpolatedStringParser.cs/#L123"><i class="bi bi-code-slash"></i></a>
+Class LiteralPart  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/InterpolatedStringParser.cs/#L158"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -244,6 +244,12 @@ Class LiteralPart  <a class="header-action link-secondary" title="View source" h
 
 
 
+  <h2 id="Utils_Expressions_LiteralPart_remarks">Remarks</h2>
+  <div class="markdown level0 remarks"><p>Instances are constructed and fully assembled by <a class="xref" href="Utils.Expressions.InterpolatedStringParser.html">InterpolatedStringParser</a>
+before being published. The <a class="xref" href="Utils.Expressions.LiteralPart.html#Utils_Expressions_LiteralPart_Text">Text</a> property is immutable from the caller's
+perspective; mutation is only possible through the <code>internal</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">Append(string)</a>
+method which is inaccessible outside this assembly (#26).</p>
+</div>
 
 
   <h2 class="section" id="constructors">Constructors
@@ -254,7 +260,7 @@ Class LiteralPart  <a class="header-action link-secondary" title="View source" h
 
   <h3 id="Utils_Expressions_LiteralPart__ctor_System_String_" data-uid="Utils.Expressions.LiteralPart.#ctor(System.String)">
   LiteralPart(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/InterpolatedStringParser.cs/#L141"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/InterpolatedStringParser.cs/#L176"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of <a class="xref" href="Utils.Expressions.LiteralPart.html">LiteralPart</a> with the specified text.</p>
@@ -291,7 +297,7 @@ Class LiteralPart  <a class="header-action link-secondary" title="View source" h
 
   <h3 id="Utils_Expressions_LiteralPart_Length" data-uid="Utils.Expressions.LiteralPart.Length">
   Length
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/InterpolatedStringParser.cs/#L135"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/InterpolatedStringParser.cs/#L170"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the text length of this literal part.</p>
@@ -323,7 +329,7 @@ Class LiteralPart  <a class="header-action link-secondary" title="View source" h
 
   <h3 id="Utils_Expressions_LiteralPart_Text" data-uid="Utils.Expressions.LiteralPart.Text">
   Text
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/InterpolatedStringParser.cs/#L130"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/InterpolatedStringParser.cs/#L165"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the text content of this literal part.</p>
@@ -351,48 +357,11 @@ Class LiteralPart  <a class="header-action link-secondary" title="View source" h
 
 
 
-  <h2 class="section" id="methods">Methods
-</h2>
-
-
-  <a id="Utils_Expressions_LiteralPart_Append_" data-uid="Utils.Expressions.LiteralPart.Append*"></a>
-
-  <h3 id="Utils_Expressions_LiteralPart_Append_System_String_" data-uid="Utils.Expressions.LiteralPart.Append(System.String)">
-  Append(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/InterpolatedStringParser.cs/#L151"><i class="bi bi-code-slash"></i></a>
-  </h3>
-
-  <div class="markdown level1 summary"><p>Appends additional text to this literal part.</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public void Append(string value)</code></pre>
-  </div>
-
-  <h4 class="section">Parameters</h4>
-  <dl class="parameters">
-    <dt><code>value</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>The text to append.</p>
-</dd>
-  </dl>
-
-
-
-
-
-
-
-
-
-
-
-
 
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/InterpolatedStringParser.cs/#L123" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/InterpolatedStringParser.cs/#L158" class="edit-link">Edit this page</a>
         </div>
 
 

@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Security_Authenticator" data-uid="Utils.Security.Authenticator" class="text-break">
-Class Authenticator  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Security/Authenticator.cs/#L11"><i class="bi bi-code-slash"></i></a>
+Class Authenticator  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Security/Authenticator.cs/#L23"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -97,12 +97,13 @@ Class Authenticator  <a class="header-action link-secondary" title="View source"
   <dl><dt>Assembly</dt><dd>Utils.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Provides a way to generate and verify time-based one-time passwords (TOTP), compatible with Google Authenticator and similar services.</p>
+  <div class="markdown summary"><p>Provides a way to generate and verify time-based one-time passwords (TOTP), compatible
+with Google Authenticator and similar services.</p>
 </div>
   <div class="markdown conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public class Authenticator</code></pre>
+    <pre><code class="lang-csharp hljs">public sealed class Authenticator</code></pre>
   </div>
 
 
@@ -132,9 +133,6 @@ Class Authenticator  <a class="header-action link-secondary" title="View source"
     </div>
     <div>
       <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone">object.MemberwiseClone()</a>
     </div>
     <div>
       <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
@@ -238,6 +236,17 @@ Class Authenticator  <a class="header-action link-secondary" title="View source"
 
 
 
+  <h2 id="Utils_Security_Authenticator_remarks">Remarks</h2>
+  <div class="markdown level0 remarks"><p>
+This class is safe for concurrent use: the <span class="xref">Utils.Security.Authenticator._algorithmFactory</span> is invoked
+on each computation to produce a fresh, privately owned <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.security.cryptography.hmac">HMAC</a> instance
+that is disposed immediately after use (#31, #32).
+</p>
+<p>
+The secret key is copied at construction time and is never exposed through a public
+property (#30). To export the key for provisioning, call <a class="xref" href="Utils.Security.Authenticator.html#Utils_Security_Authenticator_ExportKey">ExportKey()</a>.
+</p>
+</div>
 
 
   <h2 class="section" id="constructors">Constructors
@@ -246,32 +255,36 @@ Class Authenticator  <a class="header-action link-secondary" title="View source"
 
   <a id="Utils_Security_Authenticator__ctor_" data-uid="Utils.Security.Authenticator.#ctor*"></a>
 
-  <h3 id="Utils_Security_Authenticator__ctor_System_Security_Cryptography_HMAC_System_Byte___System_Int32_System_Int32_" data-uid="Utils.Security.Authenticator.#ctor(System.Security.Cryptography.HMAC,System.Byte[],System.Int32,System.Int32)">
-  Authenticator(HMAC, byte[], int, int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Security/Authenticator.cs/#L50"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_Security_Authenticator__ctor_System_Func_System_Security_Cryptography_HMAC__System_Byte___System_Int32_System_Int32_" data-uid="Utils.Security.Authenticator.#ctor(System.Func{System.Security.Cryptography.HMAC},System.Byte[],System.Int32,System.Int32)">
+  Authenticator(Func&lt;HMAC&gt;, byte[], int, int)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Security/Authenticator.cs/#L115"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Security.Authenticator.html">Authenticator</a> class.</p>
+  <div class="markdown level1 summary"><p>Initializes a new instance of <a class="xref" href="Utils.Security.Authenticator.html">Authenticator</a> using a caller-supplied
+algorithm factory. Prefer this overload when using custom or hardware-backed HMAC
+implementations.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public Authenticator(HMAC algorithm, byte[] key, int digits, int intervalLength)</code></pre>
+    <pre><code class="lang-csharp hljs">public Authenticator(Func&lt;HMAC&gt; algorithmFactory, byte[] key, int digits, int intervalLength)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
-    <dt><code>algorithm</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.security.cryptography.hmac">HMAC</a></dt>
-    <dd><p>The HMAC algorithm used for generating the hash.</p>
+    <dt><code>algorithmFactory</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.func-1">Func</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.security.cryptography.hmac">HMAC</a>&gt;</dt>
+    <dd><p>A factory that returns a fresh, unkeyed <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.security.cryptography.hmac">HMAC</a> instance on each call.
+See <span class="xref">Utils.Security.Authenticator._algorithmFactory</span> for the full contract. The factory is invoked
+once at construction time to validate that it produces a non-null instance.</p>
 </dd>
     <dt><code>key</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
-    <dd><p>The binary key used for generating the hash.</p>
+    <dd><p>The binary secret key. Must be at least <code>16</code> bytes. A defensive copy is made (#30).</p>
 </dd>
     <dt><code>digits</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
-    <dd><p>The number of digits in the generated code.</p>
+    <dd><p>Number of digits, [1, 9] (#29).</p>
 </dd>
     <dt><code>intervalLength</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
-    <dd><p>The duration, in seconds, for which each code is valid.</p>
+    <dd><p>Validity window in seconds. Must be positive (#29).</p>
 </dd>
   </dl>
 
@@ -283,6 +296,19 @@ Class Authenticator  <a class="header-action link-secondary" title="View source"
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p><code class="paramref">algorithmFactory</code> or <code class="paramref">key</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>The factory returned <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>, or <code class="paramref">key</code> is shorter than
+the minimum required length.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p><code class="paramref">digits</code> is not in [1, 9] or <code class="paramref">intervalLength</code> is not positive.</p>
+</dd>
+  </dl>
 
 
 
@@ -290,30 +316,35 @@ Class Authenticator  <a class="header-action link-secondary" title="View source"
 
   <h3 id="Utils_Security_Authenticator__ctor_System_String_System_Byte___System_Int32_System_Int32_" data-uid="Utils.Security.Authenticator.#ctor(System.String,System.Byte[],System.Int32,System.Int32)">
   Authenticator(string, byte[], int, int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Security/Authenticator.cs/#L40"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Security/Authenticator.cs/#L85"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Security.Authenticator.html">Authenticator</a> class.</p>
+  <div class="markdown level1 summary"><p>Initializes a new instance of <a class="xref" href="Utils.Security.Authenticator.html">Authenticator</a> using a named HMAC algorithm.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public Authenticator(string algorithm, byte[] key, int digits, int intervalLength)</code></pre>
+    <pre><code class="lang-csharp hljs">public Authenticator(string algorithmName, byte[] key, int digits, int intervalLength)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
-    <dt><code>algorithm</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>The name of the HMAC algorithm to use (e.g., &quot;HMACSHA256&quot;).</p>
+    <dt><code>algorithmName</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>The algorithm name resolved through <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.security.cryptography.cryptoconfig">CryptoConfig</a> (e.g. <code>&quot;HMACSHA1&quot;</code>,
+<code>&quot;HMACSHA256&quot;</code>). Throws if the name is blank or does not resolve to an
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.security.cryptography.hmac">HMAC</a> (#33).</p>
 </dd>
     <dt><code>key</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
-    <dd><p>The binary key used for generating the hash.</p>
+    <dd><p>The binary secret key. Must be at least <code>16</code> bytes. A defensive copy is made;
+mutating the original array after construction has no effect (#30).</p>
 </dd>
     <dt><code>digits</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
-    <dd><p>The number of digits in the generated code.</p>
+    <dd><p>The number of digits in the generated code. Must be in [1, 9]. Values above 9 are not
+supported because the HOTP 31-bit truncation step cannot produce a uniform 10-digit
+distribution within <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a> range (#29).</p>
 </dd>
     <dt><code>intervalLength</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
-    <dd><p>The duration, in seconds, for which each code is valid.</p>
+    <dd><p>The duration in seconds for which each code is valid. Must be positive (#29).</p>
 </dd>
   </dl>
 
@@ -325,6 +356,16 @@ Class Authenticator  <a class="header-action link-secondary" title="View source"
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p><code class="paramref">algorithmName</code> is null, blank, or does not resolve to an HMAC algorithm,
+or <code class="paramref">key</code> is shorter than the minimum length.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p><code class="paramref">digits</code> is not in [1, 9] or <code class="paramref">intervalLength</code> is not positive.</p>
+</dd>
+  </dl>
 
 
 
@@ -332,46 +373,14 @@ Class Authenticator  <a class="header-action link-secondary" title="View source"
 </h2>
 
 
-  <a id="Utils_Security_Authenticator_Algorithm_" data-uid="Utils.Security.Authenticator.Algorithm*"></a>
-
-  <h3 id="Utils_Security_Authenticator_Algorithm" data-uid="Utils.Security.Authenticator.Algorithm">
-  Algorithm
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Security/Authenticator.cs/#L21"><i class="bi bi-code-slash"></i></a>
-  </h3>
-
-  <div class="markdown level1 summary"><p>The HMAC algorithm used for generating the hash.</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public HMAC Algorithm { get; }</code></pre>
-  </div>
-
-
-
-
-
-  <h4 class="section">Property Value</h4>
-  <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.security.cryptography.hmac">HMAC</a></dt>
-    <dd></dd>
-  </dl>
-
-
-
-
-
-
-
-
   <a id="Utils_Security_Authenticator_CurrentMessage_" data-uid="Utils.Security.Authenticator.CurrentMessage*"></a>
 
   <h3 id="Utils_Security_Authenticator_CurrentMessage" data-uid="Utils.Security.Authenticator.CurrentMessage">
   CurrentMessage
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Security/Authenticator.cs/#L167"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Security/Authenticator.cs/#L276"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets the current message used to generate the code, typically based on the Unix timestamp.</p>
+  <div class="markdown level1 summary"><p>Gets the current TOTP counter value derived from the UTC clock.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -400,10 +409,10 @@ Class Authenticator  <a class="header-action link-secondary" title="View source"
 
   <h3 id="Utils_Security_Authenticator_Digits" data-uid="Utils.Security.Authenticator.Digits">
   Digits
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Security/Authenticator.cs/#L16"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Security/Authenticator.cs/#L53"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>The number of digits in the generated code.</p>
+  <div class="markdown level1 summary"><p>Gets the number of digits in the generated code.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -432,10 +441,10 @@ Class Authenticator  <a class="header-action link-secondary" title="View source"
 
   <h3 id="Utils_Security_Authenticator_IntervalLength" data-uid="Utils.Security.Authenticator.IntervalLength">
   IntervalLength
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Security/Authenticator.cs/#L31"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Security/Authenticator.cs/#L56"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>The length of time, in seconds, that each generated code is valid for.</p>
+  <div class="markdown level1 summary"><p>Gets the duration in seconds for which each code is valid.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -460,38 +469,6 @@ Class Authenticator  <a class="header-action link-secondary" title="View source"
 
 
 
-  <a id="Utils_Security_Authenticator_Key_" data-uid="Utils.Security.Authenticator.Key*"></a>
-
-  <h3 id="Utils_Security_Authenticator_Key" data-uid="Utils.Security.Authenticator.Key">
-  Key
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Security/Authenticator.cs/#L26"><i class="bi bi-code-slash"></i></a>
-  </h3>
-
-  <div class="markdown level1 summary"><p>The key used for the HMAC algorithm.</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public byte[] Key { get; }</code></pre>
-  </div>
-
-
-
-
-
-  <h4 class="section">Property Value</h4>
-  <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
-    <dd></dd>
-  </dl>
-
-
-
-
-
-
-
-
   <h2 class="section" id="methods">Methods
 </h2>
 
@@ -500,10 +477,10 @@ Class Authenticator  <a class="header-action link-secondary" title="View source"
 
   <h3 id="Utils_Security_Authenticator_ComputeAuthenticator" data-uid="Utils.Security.Authenticator.ComputeAuthenticator">
   ComputeAuthenticator()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Security/Authenticator.cs/#L71"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Security/Authenticator.cs/#L171"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Computes the current authentication code based on the current timestamp.</p>
+  <div class="markdown level1 summary"><p>Computes the current authentication code based on the current UTC timestamp.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -515,8 +492,7 @@ Class Authenticator  <a class="header-action link-secondary" title="View source"
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>The current one-time password.</p>
-</dd>
+    <dd></dd>
   </dl>
 
 
@@ -533,10 +509,10 @@ Class Authenticator  <a class="header-action link-secondary" title="View source"
 
   <h3 id="Utils_Security_Authenticator_ComputeAuthenticator_System_Byte___" data-uid="Utils.Security.Authenticator.ComputeAuthenticator(System.Byte[])">
   ComputeAuthenticator(byte[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Security/Authenticator.cs/#L93"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Security/Authenticator.cs/#L189"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Computes the authentication code based on a binary message.</p>
+  <div class="markdown level1 summary"><p>Computes the authentication code from a binary message.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -547,15 +523,14 @@ Class Authenticator  <a class="header-action link-secondary" title="View source"
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>message</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
-    <dd><p>The binary message, typically a timestamp.</p>
+    <dd><p>The binary message.</p>
 </dd>
   </dl>
 
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>The computed one-time password.</p>
-</dd>
+    <dd></dd>
   </dl>
 
 
@@ -572,10 +547,10 @@ Class Authenticator  <a class="header-action link-secondary" title="View source"
 
   <h3 id="Utils_Security_Authenticator_ComputeAuthenticator_System_Int64_" data-uid="Utils.Security.Authenticator.ComputeAuthenticator(System.Int64)">
   ComputeAuthenticator(long)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Security/Authenticator.cs/#L78"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Security/Authenticator.cs/#L177"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Computes the authentication code based on a specific numeric message.</p>
+  <div class="markdown level1 summary"><p>Computes the authentication code for a specific counter value.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -586,15 +561,46 @@ Class Authenticator  <a class="header-action link-secondary" title="View source"
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>message</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int64">long</a></dt>
-    <dd><p>The numeric message, typically a timestamp.</p>
+    <dd><p>The counter value (typically a timestamp divided by the interval).</p>
 </dd>
   </dl>
 
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>The computed one-time password.</p>
-</dd>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Security_Authenticator_ExportKey_" data-uid="Utils.Security.Authenticator.ExportKey*"></a>
+
+  <h3 id="Utils_Security_Authenticator_ExportKey" data-uid="Utils.Security.Authenticator.ExportKey">
+  ExportKey()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Security/Authenticator.cs/#L144"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns a defensive copy of the secret key for provisioning or export purposes.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public byte[] ExportKey()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
+    <dd></dd>
   </dl>
 
 
@@ -611,10 +617,11 @@ Class Authenticator  <a class="header-action link-secondary" title="View source"
 
   <h3 id="Utils_Security_Authenticator_GoogleAuthenticator_System_Byte___" data-uid="Utils.Security.Authenticator.GoogleAuthenticator(System.Byte[])">
   GoogleAuthenticator(byte[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Security/Authenticator.cs/#L65"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Security/Authenticator.cs/#L156"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Creates an authenticator compatible with Google Authenticator.</p>
+  <div class="markdown level1 summary"><p>Creates an authenticator configured with the standard TOTP profile:
+HMAC-SHA1, 6 digits, 30-second window (RFC 6238 / default Google Authenticator profile).</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -625,15 +632,59 @@ Class Authenticator  <a class="header-action link-secondary" title="View source"
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>key</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
-    <dd><p>The binary key used for generating the hash.</p>
+    <dd><p>The binary secret key. Must be at least <code>16</code> bytes.</p>
 </dd>
   </dl>
 
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="Utils.Security.Authenticator.html">Authenticator</a></dt>
-    <dd><p>An instance of <a class="xref" href="Utils.Security.Authenticator.html">Authenticator</a> configured for Google Authenticator.</p>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section" id="Utils_Security_Authenticator_GoogleAuthenticator_System_Byte____remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>The previous factory used HMAC-SHA256, which does not match the default RFC 6238
+profile and would produce codes that do not match a normally provisioned Google
+Authenticator account (#34). Use <a class="xref" href="Utils.Security.Authenticator.html#Utils_Security_Authenticator_GoogleAuthenticatorSha256_System_Byte___">GoogleAuthenticatorSha256(byte[])</a> for SHA-256.</p>
+</div>
+
+
+
+
+  <a id="Utils_Security_Authenticator_GoogleAuthenticatorSha256_" data-uid="Utils.Security.Authenticator.GoogleAuthenticatorSha256*"></a>
+
+  <h3 id="Utils_Security_Authenticator_GoogleAuthenticatorSha256_System_Byte___" data-uid="Utils.Security.Authenticator.GoogleAuthenticatorSha256(System.Byte[])">
+  GoogleAuthenticatorSha256(byte[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Security/Authenticator.cs/#L165"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Creates an authenticator using HMAC-SHA256, 6 digits, 30-second window.
+This profile requires explicit provisioning metadata — it does not match the
+default Google Authenticator TOTP profile (#34).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Authenticator GoogleAuthenticatorSha256(byte[] key)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>key</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.byte">byte</a>[]</dt>
+    <dd><p>The binary secret key. Must be at least <code>16</code> bytes.</p>
 </dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Security.Authenticator.html">Authenticator</a></dt>
+    <dd></dd>
   </dl>
 
 
@@ -650,10 +701,11 @@ Class Authenticator  <a class="header-action link-secondary" title="View source"
 
   <h3 id="Utils_Security_Authenticator_VerifyAuthenticator_System_Int32_System_String_" data-uid="Utils.Security.Authenticator.VerifyAuthenticator(System.Int32,System.String)">
   VerifyAuthenticator(int, string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Security/Authenticator.cs/#L126"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Security/Authenticator.cs/#L229"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Verifies the authentication code by checking the current code and adjacent codes within the specified range.</p>
+  <div class="markdown level1 summary"><p>Verifies the authentication code by checking the current code and adjacent codes
+within the specified window.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -664,17 +716,17 @@ Class Authenticator  <a class="header-action link-secondary" title="View source"
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>range</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
-    <dd><p>The number of previous and future codes to check.</p>
+    <dd><p>The number of previous and future counter windows to accept. Must be non-negative (#29).</p>
 </dd>
     <dt><code>code</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>The code to verify.</p>
+    <dd><p>The code to verify. Must consist of exactly <a class="xref" href="Utils.Security.Authenticator.html#Utils_Security_Authenticator_Digits">Digits</a> ASCII digit characters (#35).</p>
 </dd>
   </dl>
 
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
-    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if the code is valid; otherwise, <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if the code is valid within the window; otherwise <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
 </dd>
   </dl>
 
@@ -685,6 +737,12 @@ Class Authenticator  <a class="header-action link-secondary" title="View source"
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when <code class="paramref">range</code> is negative.</p>
+</dd>
+  </dl>
 
 
 
@@ -692,7 +750,7 @@ Class Authenticator  <a class="header-action link-secondary" title="View source"
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Security/Authenticator.cs/#L11" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Security/Authenticator.cs/#L23" class="edit-link">Edit this page</a>
         </div>
 
 

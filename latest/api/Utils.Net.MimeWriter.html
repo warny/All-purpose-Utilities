@@ -157,7 +157,7 @@ Class MimeWriter  <a class="header-action link-secondary" title="View source" hr
 
   <h3 id="Utils_Net_MimeWriter_Write_Utils_Net_MimeDocument_" data-uid="Utils.Net.MimeWriter.Write(Utils.Net.MimeDocument)">
   Write(MimeDocument)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Net/MimeWriter.cs/#L46"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Net/MimeWriter.cs/#L96"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Serializes the document to a string.</p>
@@ -196,7 +196,7 @@ Class MimeWriter  <a class="header-action link-secondary" title="View source" hr
 
   <h3 id="Utils_Net_MimeWriter_Write_Utils_Net_MimeDocument_System_IO_Stream_System_Text_Encoding_" data-uid="Utils.Net.MimeWriter.Write(Utils.Net.MimeDocument,System.IO.Stream,System.Text.Encoding)">
   Write(MimeDocument, Stream, Encoding?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Net/MimeWriter.cs/#L18"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Net/MimeWriter.cs/#L26"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Writes the document to a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a>.</p>
@@ -216,7 +216,10 @@ Class MimeWriter  <a class="header-action link-secondary" title="View source" hr
     <dd><p>The output stream.</p>
 </dd>
     <dt><code>encoding</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.text.encoding">Encoding</a></dt>
-    <dd><p>Optional text encoding. Defaults to UTF-8.</p>
+    <dd><p>Optional text encoding used for the overall wire transport. Must be an ASCII-compatible
+encoding (UTF-8, US-ASCII, or any single-byte encoding that maps ASCII code points
+identically). Non-ASCII-compatible encodings such as UTF-16 will corrupt MIME framing and
+boundary bytes. Defaults to <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.text.encoding.utf8">UTF8</a> (#23).</p>
 </dd>
   </dl>
 
@@ -228,6 +231,12 @@ Class MimeWriter  <a class="header-action link-secondary" title="View source" hr
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when <code class="paramref">encoding</code> is not ASCII-compatible (#23).</p>
+</dd>
+  </dl>
 
 
 
@@ -235,7 +244,7 @@ Class MimeWriter  <a class="header-action link-secondary" title="View source" hr
 
   <h3 id="Utils_Net_MimeWriter_Write_Utils_Net_MimeDocument_System_IO_TextWriter_" data-uid="Utils.Net.MimeWriter.Write(Utils.Net.MimeDocument,System.IO.TextWriter)">
   Write(MimeDocument, TextWriter)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Net/MimeWriter.cs/#L33"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Net/MimeWriter.cs/#L83"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Writes the document to a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.textwriter">TextWriter</a>.</p>
