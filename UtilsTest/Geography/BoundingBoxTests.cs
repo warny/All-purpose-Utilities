@@ -100,4 +100,19 @@ public class BoundingBoxTests
         StringAssert.Contains(text, "3");
         StringAssert.Contains(text, "4");
     }
+
+    [TestMethod]
+    public void AntimeridianCrossingBoxIsNotSupportedAndConvertsToWideBox()
+    {
+        // Documents the known limitation: a box from 170°E to 170°W (20° arc across the
+        // antimeridian) is silently stored as a 340°-wide box because ValidateBoundingBox
+        // uses T.Min/T.Max on the raw longitude values. The test pins the current behavior
+        // so any future fix is visible as a test change.
+        var box = new BoundingBox<double>(-10, 170, 10, -170);
+
+        // Current (unsupported) behavior: Min/Max ordering gives a 340° box.
+        Assert.AreEqual(-170.0, box.MinLongitude, 1e-9);
+        Assert.AreEqual(170.0, box.MaxLongitude, 1e-9);
+        Assert.AreEqual(340.0, box.LongitudeSpan, 1e-9);
+    }
 }

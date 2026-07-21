@@ -12,6 +12,18 @@ namespace Utils.Geography.Model
     /// Numeric type implementing <see cref="IFloatingPointIeee754{T}"/> (e.g., <c>float</c>, <c>double</c>, <c>decimal</c>).
     /// You may optionally add <c>IDivisionOperators&lt;T, T, T&gt;</c> if you need advanced math capabilities.
     /// </typeparam>
+    /// <remarks>
+    /// <para>
+    /// <b>Antimeridian-crossing boxes are not supported.</b>
+    /// <see cref="ValidateBoundingBox"/> always orders longitudes with <c>T.Min</c>/<c>T.Max</c>,
+    /// so a box intended to span from 170°E to 170°W (a 20° arc across the antimeridian) is
+    /// silently converted into a 340°-wide box instead. <see cref="Contains"/>,
+    /// <see cref="Intersects"/>, <see cref="LongitudeSpan"/>, and <see cref="GetCenterpoint"/>
+    /// all inherit that interpretation and will return incorrect results for such inputs.
+    /// If your use-case requires global coverage crossing ±180°, split the query into two
+    /// boxes (e.g. [170°, 180°] and [-180°, -170°]) and union the results.
+    /// </para>
+    /// </remarks>
     public sealed class BoundingBox<T> : IFormattable, IEquatable<BoundingBox<T>>, IEqualityOperators<BoundingBox<T>, BoundingBox<T>, bool>
         where T : struct, IFloatingPointIeee754<T>
     {
