@@ -617,8 +617,13 @@ namespace Utils.Geography.Model
                 string digits = $"[{key[..sep]}]+";
                 string dec = key[(sep + 1)..];
                 string number = $"{digits}({Regex.Escape(dec)}{digits})?";
+                // Anchors (^ / $) ensure the entire input is consumed, not just a valid substring;
+                // \s* allows optional surrounding whitespace while rejecting embedded garbage.
+                // Structure: degrees [° [minutes [' [seconds] ["]]]]
+                // The apostrophe (') and double-quote (") DMS separators are consumed when present.
+                // Seconds can only appear after minutes (outer optional group requires minutes first).
                 return new Regex(
-                    @$"(?<modifier>W|E|N|S|\-|\+)?(?<degrees>{number})(°(?<minutes>{number}))?('(?<seconds>{number}))?",
+                    @$"^\s*(?<modifier>W|E|N|S|\-|\+)?(?<degrees>{number})(?:°(?:(?<minutes>{number})(?:'(?<seconds>{number})?""?)?)?)?\s*$",
                     RegexOptions.Compiled | RegexOptions.IgnoreCase
                 );
             });

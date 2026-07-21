@@ -157,6 +157,33 @@ namespace UtilsTest.Geography
         }
 
         [TestMethod]
+        public void TryParse_StringWithTrailingGarbage_ReturnsFalse()
+        {
+            // Before the fix the regex had no anchors: Match() found a valid substring inside
+            // garbage input ("48.8566 INVALID" matched the leading "48.8566"), silently accepting
+            // malformed input. Anchored regex rejects any input not fully consumed by the pattern.
+            bool ok = GeoPoint<double>.TryParse("48.8566 INVALID, 2.3522", out _);
+            Assert.IsFalse(ok);
+        }
+
+        [TestMethod]
+        public void TryParse_StringWithLeadingGarbage_ReturnsFalse()
+        {
+            bool ok = GeoPoint<double>.TryParse("GARBAGE 48.8566, 2.3522", out _);
+            Assert.IsFalse(ok);
+        }
+
+        [TestMethod]
+        public void TryParse_StringWithLeadingAndTrailingWhitespace_ReturnsTrue()
+        {
+            // Surrounding whitespace is explicitly allowed by \s* in the anchored regex.
+            bool ok = GeoPoint<double>.TryParse("  48.8566  ,  2.3522  ", out GeoPoint<double> result);
+            Assert.IsTrue(ok);
+            Assert.AreEqual(48.8566, result.Latitude, 1e-9);
+            Assert.AreEqual(2.3522, result.Longitude, 1e-9);
+        }
+
+        [TestMethod]
         public void FormatDms_WithNonZeroSeconds_SecondsAreInRange()
         {
             // Before the fix, seconds were multiplied by SecondsInDegree (3600) instead of
