@@ -217,10 +217,10 @@ public sealed class ExternalResource : IReadOnlyDictionary<string, object>
                     return;
                 }
 
-                // Reject paths that contain a symlink or junction point anywhere in the hierarchy.
-                // A lexical containment check is not sufficient because a symlink inside allowedRoot
-                // can redirect to any arbitrary location on the file system (#40).
-                if (ContainsSymlinkOrJunction(candidatePath))
+                // Reject paths that contain a symlink or junction point between allowedRoot and
+                // the candidate file. Ancestors above allowedRoot are not examined — the caller
+                // is responsible for the security of the base directory itself (#40).
+                if (ContainsSymlinkOrJunction(allowedRoot, candidatePath))
                 {
                     _diagnostics.Add(
                         $"Skipped resource '{name}': file reference '{relativePath}' contains a " +
@@ -393,15 +393,32 @@ public sealed class ExternalResource : IReadOnlyDictionary<string, object>
     }
 
     /// <summary>
-    /// Returns <see langword="true"/> when <paramref name="path"/> or any of its ancestor
-    /// directories in the file system is a symbolic link or a reparse-point junction (#40).
+    /// Returns <see langword="true"/> when <paramref name="candidatePath"/> or any directory
+    /// between <paramref name="allowedRoot"/> and that path is a symbolic link or a
+    /// reparse-point junction (#40).
     /// </summary>
-    private static bool ContainsSymlinkOrJunction(string path)
+    /// <remarks>
+    /// The walk stops at <paramref name="allowedRoot"/> so that symlinks in parent directories
+    /// (e.g. <c>/tmp → /private/tmp</c> on macOS) do not incorrectly reject valid resources.
+    /// <paramref name="allowedRoot"/> itself is not checked; the caller is responsible for
+    /// the integrity of the base directory.
+    /// </remarks>
+    private static bool ContainsSymlinkOrJunction(string allowedRoot, string candidatePath)
     {
-        string? current = path;
+        string normalizedRoot = Path.GetFullPath(allowedRoot)
+            .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+        string? current = candidatePath;
         while (!string.IsNullOrEmpty(current))
         {
-            // Check as a file first (the leaf node), then as a directory (intermediate nodes).
+            // Stop once we reach (or pass) the allowed root.
+            string normalizedCurrent = Path.GetFullPath(current)
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+            if (string.Equals(normalizedCurrent, normalizedRoot, StringComparison.OrdinalIgnoreCase))
+                break;
+
+            // Check as a file (leaf node) then as a directory (intermediate node).
             var fi = new FileInfo(current);
             if (fi.Exists && fi.LinkTarget is not null)
                 return true;
@@ -411,7 +428,7 @@ public sealed class ExternalResource : IReadOnlyDictionary<string, object>
                 return true;
 
             string? parent = Path.GetDirectoryName(current);
-            if (parent == current) break; // reached the root
+            if (parent is null || parent == current) break;
             current = parent;
         }
         return false;
@@ -454,18 +471,22 @@ public sealed class ExternalResource : IReadOnlyDictionary<string, object>
                             $"External resource file '{fullPath}' ({fs.Length} bytes) exceeds the " +
                             $"configured maximum of {_maxBytes} bytes.");
 
-                    // Read up to _maxBytes + 1 raw bytes from the same stream.
-                    // Reading one extra byte lets us detect in-flight file growth.
-                    byte[] buffer = new byte[_maxBytes + 1];
-                    int total = 0, read;
-                    while ((read = fs.Read(buffer, total, buffer.Length - total)) > 0)
+                    // Read progressively so we never allocate the full _maxBytes ceiling up front.
+                    // A small fixed-size chunk avoids a massive allocation when _maxBytes is large (#43).
+                    byte[] chunk = new byte[81_920];
+                    using var output = new MemoryStream();
+                    long total = 0;
+                    int read;
+                    while ((read = fs.Read(chunk, 0, chunk.Length)) > 0)
+                    {
                         total += read;
+                        if (total > _maxBytes)
+                            throw new InvalidOperationException(
+                                $"External resource file '{fullPath}' grew beyond {_maxBytes} bytes during reading.");
+                        output.Write(chunk, 0, read);
+                    }
 
-                    if (total > _maxBytes)
-                        throw new InvalidOperationException(
-                            $"External resource file '{fullPath}' grew beyond {_maxBytes} bytes during reading.");
-
-                    _cachedContent = _encoding.GetString(buffer, 0, total);
+                    _cachedContent = _encoding.GetString(output.GetBuffer(), 0, (int)output.Length);
                 }
                 return _cachedContent;
             }
@@ -508,19 +529,22 @@ public sealed class ExternalResource : IReadOnlyDictionary<string, object>
                             $"External resource file '{fullPath}' ({fs.Length} bytes) exceeds the " +
                             $"configured maximum of {_maxBytes} bytes.");
 
-                    // Read up to _maxBytes + 1 bytes from the same stream.
-                    // Reading one extra byte lets us detect in-flight file growth.
-                    byte[] buffer = new byte[_maxBytes + 1];
-                    int total = 0, read;
-                    while ((read = fs.Read(buffer, total, buffer.Length - total)) > 0)
+                    // Read progressively so we never allocate the full _maxBytes ceiling up front.
+                    // A small fixed-size chunk avoids a massive allocation when _maxBytes is large (#43).
+                    byte[] chunk = new byte[81_920];
+                    using var output = new MemoryStream();
+                    long total = 0;
+                    int read;
+                    while ((read = fs.Read(chunk, 0, chunk.Length)) > 0)
+                    {
                         total += read;
+                        if (total > _maxBytes)
+                            throw new InvalidOperationException(
+                                $"External resource file '{fullPath}' grew beyond {_maxBytes} bytes during reading.");
+                        output.Write(chunk, 0, read);
+                    }
 
-                    if (total > _maxBytes)
-                        throw new InvalidOperationException(
-                            $"External resource file '{fullPath}' grew beyond {_maxBytes} bytes during reading.");
-
-                    _cachedBytes = new byte[total];
-                    Buffer.BlockCopy(buffer, 0, _cachedBytes, 0, total);
+                    _cachedBytes = output.ToArray();
                 }
                 // Return a copy so callers cannot mutate the cached array (#46).
                 return (byte[])_cachedBytes.Clone();

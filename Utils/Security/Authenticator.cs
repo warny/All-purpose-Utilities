@@ -191,7 +191,9 @@ public sealed class Authenticator
         ArgumentNullException.ThrowIfNull(message);
 
         // Fresh instance per call — thread-safe, no shared mutable state (#31, #32).
-        using HMAC hmac = _algorithmFactory();
+        using HMAC hmac = _algorithmFactory()
+            ?? throw new InvalidOperationException(
+                "The algorithm factory returned null. The factory must return a new HMAC instance on every call.");
         hmac.Key = _key;
 
         byte[] hash = hmac.ComputeHash(message);
