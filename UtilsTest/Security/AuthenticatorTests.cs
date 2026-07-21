@@ -67,9 +67,26 @@ public class AuthenticatorTests
     }
 
     [TestMethod]
-    public void Constructor_ThrowsOnDigitsAbove10()
+    public void Constructor_ThrowsOnDigits10()
+    {
+        // 10 digits would require modulus 10_000_000_000 which exceeds int.MaxValue.
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new Authenticator("HMACSHA256", ValidKey, 10, 30));
+    }
+
+    [TestMethod]
+    public void Constructor_ThrowsOnDigitsAbove9()
     {
         Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new Authenticator("HMACSHA256", ValidKey, 11, 30));
+    }
+
+    [TestMethod]
+    public void Constructor_Accepts9Digits()
+    {
+        var auth = new Authenticator("HMACSHA256", ValidKey, 9, 30);
+        string code = auth.ComputeAuthenticator(12345L);
+        Assert.AreEqual(9, code.Length);
+        foreach (char c in code)
+            Assert.IsTrue(char.IsAsciiDigit(c));
     }
 
     [TestMethod]

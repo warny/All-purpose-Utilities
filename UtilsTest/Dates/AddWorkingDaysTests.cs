@@ -151,4 +151,44 @@ public class AddWorkingDaysTests
         var result = start.AddWorkingDays(0, new WeekEndCalendarProvider());
         Assert.AreEqual(start, result);
     }
+
+    /// <summary>
+    /// A provider where every day is a working day (no weekends, no holidays).
+    /// </summary>
+    private sealed class AllWorkingCalendarProvider : ICalendarProvider
+    {
+        public int GetNonWorkingDaysCount(DateTime start, DateTime end) => 0;
+        public IEnumerable<DateTime> GetHollydays(DateTime start, DateTime end) => [];
+        public IEnumerable<DateTime> GetWorkingDays(DateTime start, DateTime end)
+        {
+            for (var d = start.Date; d <= end.Date; d = d.AddDays(1))
+                yield return d;
+        }
+        public int GetWorkingDaysCount(DateTime start, DateTime end)
+                => (int)(end.Date - start.Date).TotalDays + 1;
+    }
+
+    [TestMethod]
+    public void AddWorkingDays_LargeCount_AllWorkingProvider_DoesNotThrow()
+    {
+        // A legitimate large request with an all-working provider must not be rejected
+        // by the horizon guard. The horizon counts only non-working-day extensions, not
+        // the total number of working days requested (#55).
+        var start = new DateTime(2024, 1, 1);
+        var result = start.AddWorkingDays(3_653, new AllWorkingCalendarProvider());
+
+        // With an all-working calendar, adding 3653 working days equals 3653 calendar days.
+        Assert.AreEqual(start.AddDays(3_653), result,
+            "AddWorkingDays(3653, allWorking) must succeed and return start + 3653 days.");
+    }
+
+    [TestMethod]
+    public void AddWorkingDays_VeryLargeCount_AllWorkingProvider_DoesNotThrow()
+    {
+        // Confirm the fix scales well beyond the former 3652-day ceiling.
+        var start = new DateTime(2000, 1, 1);
+        int workingDays = 10_000;
+        var result = start.AddWorkingDays(workingDays, new AllWorkingCalendarProvider());
+        Assert.AreEqual(start.AddDays(workingDays), result);
+    }
 }

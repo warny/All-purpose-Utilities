@@ -220,11 +220,17 @@ public static class DateUtils
             => DateTime.UnixEpoch.AddSeconds(timestamp);
 
     /// <summary>
-    /// Maximum number of calendar days searched when looking for working days. Guards against
-    /// hostile or misconfigured <see cref="ICalendarProvider"/> implementations that never
-    /// report a working day (#55).
+    /// Maximum number of non-working-day extension calendar days accumulated across all
+    /// iterations of <see cref="AddWorkingDays"/> or <see cref="PreviousWorkingDay"/>.
+    /// Guards against hostile or misconfigured <see cref="ICalendarProvider"/>
+    /// implementations that never report a working day within any reasonable period (#55).
     /// </summary>
-    public const int WorkingDaySearchHorizonDays = 3_652; // 10 years
+    /// <remarks>
+    /// Only non-working days returned as extensions are counted, so a large legitimate
+    /// request such as <c>AddWorkingDays(5000, allWorkingProvider)</c> completes in a
+    /// single iteration without accumulating anything toward this limit.
+    /// </remarks>
+    public const int WorkingDaySearchHorizonDays = 3_652; // ~10 years of non-working extensions
 
     /// <summary>
     /// Adds a number of working days to the specified <paramref name="date"/>.
@@ -259,10 +265,13 @@ public static class DateUtils
                     $"ICalendarProvider.GetNonWorkingDaysCount returned an invalid value ({nonWorking}) " +
                     $"for range [{current.AddDays(1):yyyy-MM-dd}, {end:yyyy-MM-dd}] ({rangeCalendarDays} days).");
 
-            calendarDaysElapsed += rangeCalendarDays;
+            // Count only the non-working-day extensions, not the total working days
+            // requested. A legitimate large request (e.g. AddWorkingDays(5000, allWorking))
+            // returns nonWorking == 0 and never accumulates toward the limit (#55).
+            calendarDaysElapsed += nonWorking;
             if (calendarDaysElapsed > WorkingDaySearchHorizonDays)
                 throw new InvalidOperationException(
-                    $"AddWorkingDays exceeded the search horizon of {WorkingDaySearchHorizonDays} calendar days. " +
+                    $"AddWorkingDays exceeded the non-working-day search horizon of {WorkingDaySearchHorizonDays} calendar days. " +
                     "Verify that the ICalendarProvider reports at least one working day within any reasonable period.");
 
             toAdd = nonWorking;

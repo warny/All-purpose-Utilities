@@ -19,15 +19,20 @@ public abstract class ArrayAccessor<T, D> : IEnumerable<T> where D : IEnumerable
     /// Gets the sizes of each dimension of the array.
     /// </summary>
     /// <remarks>
-    /// This is a defensive copy of the dimensions passed at construction time; mutating
-    /// the original array does not affect the accessor layout (#50).
+    /// Exposed as <see cref="IReadOnlyList{T}"/> so that callers cannot mutate the
+    /// accessor's layout after construction. The backing store is a defensive copy of
+    /// the dimensions supplied at construction time (#50).
     /// </remarks>
-    public int[] Sizes { get; }
+    public IReadOnlyList<int> Sizes { get; }
+
+    // Private backing array so internal hot-paths can use array indexing without
+    // an extra virtual dispatch through the IReadOnlyList wrapper.
+    private readonly int[] _sizes;
 
     /// <summary>
     /// Gets the number of dimensions in the array.
     /// </summary>
-    public int Dimensions => Sizes.Length;
+    public int Dimensions => _sizes.Length;
 
     /// <summary>
     /// The underlying data source used by the accessor and returned when enumerating elements.
@@ -49,8 +54,10 @@ public abstract class ArrayAccessor<T, D> : IEnumerable<T> where D : IEnumerable
         this.innerObject = obj ?? throw new ArgumentNullException(nameof(obj));
         if (sizes is null) throw new ArgumentNullException(nameof(sizes));
         // Defensive copy so that mutating the caller's array after construction cannot
-        // change the accessor's layout (#50).
-        this.Sizes = (int[])sizes.Clone();
+        // change the accessor's layout (#50). Exposed as IReadOnlyList so the caller
+        // cannot mutate the returned object either.
+        _sizes = (int[])sizes.Clone();
+        this.Sizes = Array.AsReadOnly(_sizes);
         // NOTE: CheckSize() is virtual. Calling it here would invoke the derived override
         // before the derived constructor has had the chance to assign its own fields (e.g. Offset).
         // Each derived class is responsible for calling ValidateSize() at the end of its constructor.
@@ -96,10 +103,10 @@ public abstract class ArrayAccessor<T, D> : IEnumerable<T> where D : IEnumerable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void CheckReference(int[] references)
     {
-        if (references.Length != Sizes.Length) throw new ArgumentException("Reference dimensions do not match array dimensions.");
+        if (references.Length != _sizes.Length) throw new ArgumentException("Reference dimensions do not match array dimensions.");
         for (int i = 0; i < references.Length; i++)
         {
-            if (references[i] < 0 || references[i] >= Sizes[i])
+            if (references[i] < 0 || references[i] >= _sizes[i])
             {
                 throw new IndexOutOfRangeException($"Index {references[i]} is out of bounds for dimension {i}.");
             }

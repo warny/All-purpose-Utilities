@@ -157,6 +157,24 @@ public class ArrayAccessorTests
         Assert.AreEqual(4, accessor.Sizes[2]);
     }
 
+    [TestMethod]
+    public void Sizes_IsReadOnly_CannotBeDowncastToArray()
+    {
+        // Sizes must not be a raw int[] — callers must not be able to mutate it
+        // through an array cast and thereby desync it from the internal caches (#50).
+        int[] data = new int[6];
+        var accessor = new ArrayAccessor<int>(data, 0, 2, 3);
+
+        // The property type is IReadOnlyList<int>; a direct cast to int[] must fail.
+        Assert.IsNotInstanceOfType<int[]>(accessor.Sizes,
+            "Sizes must not expose a raw int[] that callers could mutate.");
+
+        // Values are still readable through the interface.
+        Assert.AreEqual(2, accessor.Sizes[0]);
+        Assert.AreEqual(3, accessor.Sizes[1]);
+        Assert.AreEqual(2, accessor.Sizes.Count);
+    }
+
     // ------------------------------------------------------------------ #52 enumeration covers only the logical slice
 
     [TestMethod]

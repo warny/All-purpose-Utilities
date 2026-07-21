@@ -22,6 +22,10 @@ namespace Utils.Security;
 public class Authenticator
 {
     // Pre-computed power-of-ten table to avoid int overflow from Math.Pow (#29).
+    // The HOTP truncation step yields a 31-bit value (max 2 147 483 647), which fits at
+    // most 9 significant decimal digits. Supporting 10 digits would require a modulus of
+    // 10 000 000 000 that exceeds int.MaxValue and produces non-uniform distribution.
+    // Digits is therefore capped at 9 (#29).
     private static readonly int[] _powersOfTen = [1, 10, 100, 1_000, 10_000, 100_000,
         1_000_000, 10_000_000, 100_000_000, 1_000_000_000];
 
@@ -61,7 +65,10 @@ public class Authenticator
     /// mutating the original array after construction has no effect (#30).
     /// </param>
     /// <param name="digits">
-    /// The number of digits in the generated code. Must be between 1 and 10 inclusive (#29).
+    /// The number of digits in the generated code. Must be between 1 and 9 inclusive.
+    /// Values above 9 are not supported: the HOTP truncation step yields a 31-bit value
+    /// whose maximum (2 147 483 647) has only 10 digits but the required modulus of
+    /// 10 000 000 000 exceeds <see cref="int.MaxValue"/> (#29).
     /// </param>
     /// <param name="intervalLength">
     /// The duration in seconds for which each code is valid. Must be positive (#29).
@@ -72,15 +79,15 @@ public class Authenticator
     /// or when <paramref name="key"/> is shorter than the minimum length.
     /// </exception>
     /// <exception cref="ArgumentOutOfRangeException">
-    /// Thrown when <paramref name="digits"/> is not in [1, 10] or <paramref name="intervalLength"/> is not positive (#29).
+    /// Thrown when <paramref name="digits"/> is not in [1, 9] or <paramref name="intervalLength"/> is not positive (#29).
     /// </exception>
     public Authenticator(string algorithmName, byte[] key, int digits, int intervalLength)
     {
         ArgumentNullException.ThrowIfNull(algorithmName);
         ArgumentNullException.ThrowIfNull(key);
 
-        if (digits < 1 || digits > 10)
-            throw new ArgumentOutOfRangeException(nameof(digits), digits, "Digits must be between 1 and 10.");
+        if (digits < 1 || digits > 9)
+            throw new ArgumentOutOfRangeException(nameof(digits), digits, "Digits must be between 1 and 9.");
 
         if (intervalLength <= 0)
             throw new ArgumentOutOfRangeException(nameof(intervalLength), intervalLength, "IntervalLength must be positive.");
