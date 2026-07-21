@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -18,6 +18,10 @@ public abstract class ArrayAccessor<T, D> : IEnumerable<T> where D : IEnumerable
     /// <summary>
     /// Gets the sizes of each dimension of the array.
     /// </summary>
+    /// <remarks>
+    /// This is a defensive copy of the dimensions passed at construction time; mutating
+    /// the original array does not affect the accessor layout (#50).
+    /// </remarks>
     public int[] Sizes { get; }
 
     /// <summary>
@@ -34,16 +38,19 @@ public abstract class ArrayAccessor<T, D> : IEnumerable<T> where D : IEnumerable
     /// Initializes a new instance of the <see cref="ArrayAccessor{T, D}"/> class.
     /// </summary>
     /// <param name="obj">The underlying data structure.</param>
-    /// <param name="sizes">The sizes of each dimension of the array.</param>
+    /// <param name="sizes">The sizes of each dimension of the array. A defensive copy is made (#50).</param>
     /// <remarks>
     /// Derived constructors must call <see cref="ValidateSize"/> once all their own fields
     /// (such as an offset) have been assigned. <see cref="CheckSize"/> is virtual and must
-    /// not be invoked from this base constructor.
+    /// not be invoked from this base constructor (#48).
     /// </remarks>
     protected ArrayAccessor(D obj, params int[] sizes)
     {
         this.innerObject = obj ?? throw new ArgumentNullException(nameof(obj));
-        this.Sizes = sizes.Arg().MustNotBeNull();
+        if (sizes is null) throw new ArgumentNullException(nameof(sizes));
+        // Defensive copy so that mutating the caller's array after construction cannot
+        // change the accessor's layout (#50).
+        this.Sizes = (int[])sizes.Clone();
         // NOTE: CheckSize() is virtual. Calling it here would invoke the derived override
         // before the derived constructor has had the chance to assign its own fields (e.g. Offset).
         // Each derived class is responsible for calling ValidateSize() at the end of its constructor.
@@ -123,9 +130,9 @@ public abstract class ArrayAccessor<T, D> : IEnumerable<T> where D : IEnumerable
     protected abstract void SetElement(T value, int[] references);
 
     /// <inheritdoc />
-    public IEnumerator<T> GetEnumerator() => innerObject.GetEnumerator();
+    public abstract IEnumerator<T> GetEnumerator();
 
-    IEnumerator IEnumerable.GetEnumerator() => innerObject.GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }
 
 /// <summary>
@@ -150,14 +157,44 @@ public class ArrayAccessor<T> : ArrayAccessor<T, T[]>
     /// <param name="array">The underlying one-dimensional array.</param>
     /// <param name="offset">The offset in the array where elements start.</param>
     /// <param name="dimensions">The sizes of each dimension of the array.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="array"/> is <see langword="null"/>.</exception>
     /// <exception cref="ArgumentOutOfRangeException">
-    /// Thrown when <paramref name="offset"/> is negative, or when the combination of
-    /// <paramref name="offset"/> and <paramref name="dimensions"/> exceeds the length of
-    /// <paramref name="array"/>.
+    /// Thrown when <paramref name="offset"/> is negative, when <paramref name="dimensions"/> is empty,
+    /// when any dimension is non-positive, when dimension product overflows, or when the combination
+    /// of <paramref name="offset"/> and <paramref name="dimensions"/> exceeds the length of
+    /// <paramref name="array"/> (#49, #51).
     /// </exception>
     public ArrayAccessor(T[] array, int offset, params int[] dimensions) : base(array, dimensions)
     {
-        this.Offset = offset.ArgMustBeGreaterOrEqualsThan(0);
+        // Validate offset (#51).
+        if (offset < 0)
+            throw new ArgumentOutOfRangeException(nameof(offset), offset, "Offset must be non-negative.");
+
+        // Require at least one dimension (#51).
+        if (dimensions is null || dimensions.Length == 0)
+            throw new ArgumentOutOfRangeException(nameof(dimensions), "At least one dimension must be specified.");
+
+        // Validate each dimension and compute the product with overflow detection (#49, #51).
+        checked
+        {
+            long product = 1;
+            for (int i = 0; i < dimensions.Length; i++)
+            {
+                if (dimensions[i] <= 0)
+                    throw new ArgumentOutOfRangeException(nameof(dimensions),
+                        $"Dimension {i} must be greater than zero (was {dimensions[i]}).");
+                product *= dimensions[i];
+                if (product > int.MaxValue)
+                    throw new OverflowException(
+                        $"The product of dimensions exceeds int.MaxValue.");
+            }
+
+            long required = (long)offset + product;
+            if (required > int.MaxValue)
+                throw new OverflowException("Offset + product of dimensions exceeds int.MaxValue.");
+        }
+
+        this.Offset = offset;
         dimensionCaches = CreateDimensionCaches(dimensions);
         // ValidateSize() is called here — after Offset is assigned — so that CheckSize()
         // can use the correct offset value (fixes #48: virtual call from base constructor).
@@ -193,12 +230,14 @@ public class ArrayAccessor<T> : ArrayAccessor<T, T[]>
 
     /// <summary>
     /// Validates that the underlying array has sufficient size for the specified dimensions.
+    /// Uses <c>long</c> arithmetic to avoid overflow (#49).
     /// </summary>
     /// <returns><see langword="true"/> if the array has sufficient size; otherwise, <see langword="false"/>.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected override bool CheckSize()
     {
-        int requiredSize = Sizes.Aggregate(1, (total, dimensionSize) => total * dimensionSize) + Offset;
+        long product = Sizes.Aggregate(1L, (total, dimensionSize) => total * dimensionSize);
+        long requiredSize = product + Offset;
         return this.innerObject.Length >= requiredSize;
     }
 
@@ -271,6 +310,20 @@ public class ArrayAccessor<T> : ArrayAccessor<T, T[]>
 
         int length = dimensionCaches[indexes.Length - 1].ElementCount;
         return this.innerObject.AsSpan(position, length);
+    }
+
+    /// <summary>
+    /// Returns an enumerator over exactly the logical slice represented by this accessor
+    /// (from <see cref="Offset"/> for the total number of elements), not the entire
+    /// backing array (#52).
+    /// </summary>
+    public override IEnumerator<T> GetEnumerator()
+    {
+        // Enumerate only the elements within the logical region [Offset, Offset + totalElements).
+        DimensionCache root = dimensionCaches[0];
+        int totalElements = root.ElementCount * root.Size;
+        for (int i = 0; i < totalElements; i++)
+            yield return innerObject[Offset + i];
     }
 
     /// <summary>
