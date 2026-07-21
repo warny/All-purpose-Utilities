@@ -114,6 +114,41 @@ public class EmitWorkerProcessTests
         Assert.IsNotNull(args[2], "Sandbox reference must not be cleared on failure (fail-closed contract).");
     }
 
+    // ─── Finding #7: timeout validation ─────────────────────────────────────────
+
+    [TestMethod]
+    public void ValidateTimeout_PositiveDuration_DoesNotThrow()
+    {
+        EmitWorkerProcess.ValidateTimeout(TimeSpan.FromSeconds(30), "timeout");
+        EmitWorkerProcess.ValidateTimeout(TimeSpan.FromMilliseconds(1), "timeout");
+        EmitWorkerProcess.ValidateTimeout(TimeSpan.FromMilliseconds(int.MaxValue), "timeout");
+    }
+
+    [TestMethod]
+    public void ValidateTimeout_ZeroDuration_ThrowsArgumentOutOfRangeException()
+    {
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => EmitWorkerProcess.ValidateTimeout(TimeSpan.Zero, "timeout"));
+    }
+
+    [TestMethod]
+    public void ValidateTimeout_NegativeDuration_ThrowsArgumentOutOfRangeException()
+    {
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => EmitWorkerProcess.ValidateTimeout(TimeSpan.FromMilliseconds(-1), "timeout"));
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => EmitWorkerProcess.ValidateTimeout(TimeSpan.FromSeconds(-100), "timeout"));
+    }
+
+    [TestMethod]
+    public void ValidateTimeout_ExcessivelyLargeDuration_ThrowsArgumentOutOfRangeException()
+    {
+        // int.MaxValue ms is the limit; int.MaxValue + 1 ms must be rejected.
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => EmitWorkerProcess.ValidateTimeout(
+                TimeSpan.FromMilliseconds((double)int.MaxValue + 1), "timeout"));
+    }
+
     /// <summary>Stub container that always throws to simulate a failed sandbox launch.</summary>
     private sealed class ThrowingProcessContainer : IProcessContainer
     {

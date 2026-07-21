@@ -46,4 +46,34 @@ public class EmitWorkerPoolTests
         // not attempt to shut down a worker that was never created.
         using var pool = new EmitWorkerPool();
     }
+
+    // ─── Finding #7: timeout validation in constructor ───────────────────────────
+
+    [TestMethod]
+    public void Constructor_WithPositiveTimeouts_DoesNotThrow()
+    {
+        using var pool = new EmitWorkerPool(
+            loadTimeout: TimeSpan.FromSeconds(30),
+            callTimeout: TimeSpan.FromSeconds(10));
+    }
+
+    [TestMethod]
+    public void Constructor_WithNullTimeouts_DoesNotThrow()
+    {
+        using var pool = new EmitWorkerPool(loadTimeout: null, callTimeout: null);
+    }
+
+    [TestMethod]
+    public void Constructor_WithZeroLoadTimeout_ThrowsArgumentOutOfRangeException()
+    {
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => new EmitWorkerPool(loadTimeout: TimeSpan.Zero));
+    }
+
+    [TestMethod]
+    public void Constructor_WithNegativeCallTimeout_ThrowsArgumentOutOfRangeException()
+    {
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => new EmitWorkerPool(callTimeout: TimeSpan.FromSeconds(-1)));
+    }
 }

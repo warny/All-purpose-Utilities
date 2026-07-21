@@ -87,6 +87,30 @@ internal sealed class EmitWorkerProcess : IDisposable
     }
 
     /// <summary>
+    /// Validates that <paramref name="timeout"/> is a positive, finite duration within the range
+    /// supported by <see cref="CancellationTokenSource"/>.
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when <paramref name="timeout"/> is zero, negative, <see cref="System.Threading.Timeout.InfiniteTimeSpan"/>,
+    /// or exceeds <see cref="System.Threading.Timeout.InfiniteTimeSpan"/> milliseconds.
+    /// </exception>
+    internal static void ValidateTimeout(TimeSpan timeout, string paramName)
+    {
+        if (timeout <= TimeSpan.Zero)
+        {
+            throw new ArgumentOutOfRangeException(paramName, timeout,
+                "Timeout must be a positive duration. Zero and negative values are not supported.");
+        }
+
+        // CancellationTokenSource(TimeSpan) accepts up to int.MaxValue milliseconds (~49 days).
+        if (timeout.TotalMilliseconds > int.MaxValue)
+        {
+            throw new ArgumentOutOfRangeException(paramName, timeout,
+                $"Timeout exceeds the maximum supported duration ({int.MaxValue} ms ≈ 49 days).");
+        }
+    }
+
+    /// <summary>
     /// Validates that <paramref name="interfaceType"/> can be marshaled across a process boundary,
     /// starts the isolated worker, and requests that it load <paramref name="dllPath"/> and emit the
     /// mapping class for the interface.
@@ -152,6 +176,9 @@ internal sealed class EmitWorkerProcess : IDisposable
     /// <returns>A connected worker, ready to receive <see cref="WorkerRequestKind.Load"/> requests.</returns>
     internal static EmitWorkerProcess Start(TimeSpan? callTimeout = null)
     {
+        if (callTimeout.HasValue)
+            ValidateTimeout(callTimeout.Value, nameof(callTimeout));
+
         string exePath = Environment.ProcessPath
             ?? throw new InvalidOperationException(
                 "Unable to determine the current process executable path, required to launch an isolated Emit worker.");
@@ -215,6 +242,7 @@ internal sealed class EmitWorkerProcess : IDisposable
     /// <returns>The handle allocated for this interface on this worker.</returns>
     internal int LoadInterface(Type interfaceType, string dllPath, CallingConvention callingConvention, TimeSpan timeout)
     {
+        ValidateTimeout(timeout, nameof(timeout));
         CrossProcessMarshaling.EnsureInterfaceIsSupported(interfaceType);
 
         if (string.IsNullOrEmpty(interfaceType.Assembly.Location))

@@ -59,6 +59,11 @@ public sealed class EmitWorkerPool : IDisposable
     /// </param>
     public EmitWorkerPool(TimeSpan? loadTimeout = null, TimeSpan? callTimeout = null)
     {
+        if (loadTimeout.HasValue)
+            EmitWorkerProcess.ValidateTimeout(loadTimeout.Value, nameof(loadTimeout));
+        if (callTimeout.HasValue)
+            EmitWorkerProcess.ValidateTimeout(callTimeout.Value, nameof(callTimeout));
+
         this.loadTimeout = loadTimeout;
         this.callTimeout = callTimeout;
     }

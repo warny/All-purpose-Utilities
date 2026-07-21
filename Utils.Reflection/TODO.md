@@ -60,13 +60,13 @@ Process termination eventually releases OS resources, but managed/native cleanup
 
 **Priority: P1 — availability and lifecycle contract.**
 
-### 7. Timeout values are stored without an explicit public validation contract
+### ~~7. Timeout values are stored without an explicit public validation contract~~ ✅ DONE
 
-`EmitWorkerPool` accepts arbitrary nullable `TimeSpan` values and forwards them later to `CancellationTokenSource`. Zero, negative, excessively large, or infinite values therefore fail late and inconsistently, potentially after spawning a process or loading an interface.
+~~`EmitWorkerPool` accepts arbitrary nullable `TimeSpan` values and forwards them later to `CancellationTokenSource`. Zero, negative, excessively large, or infinite values therefore fail late and inconsistently, potentially after spawning a process or loading an interface.~~
 
-**Fix:** validate load/call timeouts in constructors and entry points before allocating resources. Explicitly decide whether `Timeout.InfiniteTimeSpan` is supported; otherwise require a positive finite duration within the runtime-supported range.
+**Fix applied:** `EmitWorkerProcess.ValidateTimeout` rejects zero, negative, and >int.MaxValue ms durations. Called from `EmitWorkerPool` constructor, `EmitWorkerProcess.Start(TimeSpan?)`, and `EmitWorkerProcess.LoadInterface`. Tests added in `EmitWorkerProcessTests` and `EmitWorkerPoolTests`.
 
-**Priority: P1 — argument and resource safety.**
+~~**Priority: P1 — argument and resource safety.**~~
 
 ### 8. Cross-process type validation does not prove JSON round-tripability
 
