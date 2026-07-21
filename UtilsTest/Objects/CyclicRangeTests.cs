@@ -138,4 +138,114 @@ public class CyclicRangeTests
         Assert.AreEqual("Utils.Range.TimeRange", text);
     }
 
+    // ------------------------------------------------------------------ #20 boundary validation
+
+    [TestMethod]
+    public void Constructor_ThrowsWhenStartBelowMinValue()
+    {
+        Assert.ThrowsExactly<ArgumentException>(() => new CyclicRange<int>(-1, 5, 0, 23));
+    }
+
+    [TestMethod]
+    public void Constructor_ThrowsWhenStartAboveMaxValue()
+    {
+        Assert.ThrowsExactly<ArgumentException>(() => new CyclicRange<int>(25, 5, 0, 23));
+    }
+
+    [TestMethod]
+    public void Constructor_ThrowsWhenEndBelowMinValue()
+    {
+        Assert.ThrowsExactly<ArgumentException>(() => new CyclicRange<int>(5, -1, 0, 23));
+    }
+
+    [TestMethod]
+    public void Constructor_ThrowsWhenEndAboveMaxValue()
+    {
+        Assert.ThrowsExactly<ArgumentException>(() => new CyclicRange<int>(5, 25, 0, 23));
+    }
+
+    [TestMethod]
+    public void Constructor_ThrowsWhenMinValueExceedsMaxValue()
+    {
+        Assert.ThrowsExactly<ArgumentException>(() => new CyclicRange<int>(5, 10, 20, 5));
+    }
+
+    [TestMethod]
+    public void Constructor_AcceptsBoundaryValuesEqualToMin()
+    {
+        var range = new CyclicRange<int>(0, 5, 0, 23);
+        Assert.IsTrue(range.Contains(0));
+    }
+
+    [TestMethod]
+    public void Constructor_AcceptsBoundaryValuesEqualToMax()
+    {
+        var range = new CyclicRange<int>(5, 23, 0, 23);
+        Assert.IsTrue(range.Contains(23));
+    }
+
+    // ------------------------------------------------------------------ #21 singleton vs full-cycle semantics
+
+    [TestMethod]
+    public void EqualStartEnd_IsSingleton_ContainsOnlyThatValue()
+    {
+        var range = new CyclicRange<int>(5, 5, 0, 23);
+        Assert.IsTrue(range.Contains(5));
+        Assert.IsFalse(range.Contains(4));
+        Assert.IsFalse(range.Contains(6));
+        Assert.IsFalse(range.Contains(0));
+        Assert.IsFalse(range.Contains(23));
+    }
+
+    [TestMethod]
+    public void FullCycle_ContainsAllValues()
+    {
+        var range = CyclicRange<int>.FullCycle(0, 23);
+        for (int i = 0; i <= 23; i++)
+            Assert.IsTrue(range.Contains(i), $"FullCycle should contain {i}.");
+    }
+
+    [TestMethod]
+    public void FullCycle_DoesNotContainValuesOutsideDomain()
+    {
+        var range = CyclicRange<int>.FullCycle(0, 23);
+        Assert.IsFalse(range.Contains(-1));
+        Assert.IsFalse(range.Contains(24));
+    }
+
+    // ------------------------------------------------------------------ #22 compatibility uses CompareTo consistently
+
+    [TestMethod]
+    public void IsCompatibleWith_ReturnsTrueForSameBounds()
+    {
+        var a = new CyclicRange<int>(2, 5, 0, 23);
+        var b = new CyclicRange<int>(10, 15, 0, 23);
+        Assert.IsTrue(a.IsCompatibleWith(b));
+    }
+
+    [TestMethod]
+    public void IsCompatibleWith_ReturnsFalseForDifferentMinValue()
+    {
+        var a = new CyclicRange<int>(2, 5, 0, 23);
+        var b = new CyclicRange<int>(2, 5, 1, 23);
+        Assert.IsFalse(a.IsCompatibleWith(b));
+    }
+
+    [TestMethod]
+    public void IsCompatibleWith_ReturnsFalseForDifferentMaxValue()
+    {
+        var a = new CyclicRange<int>(2, 5, 0, 23);
+        var b = new CyclicRange<int>(2, 5, 0, 22);
+        Assert.IsFalse(a.IsCompatibleWith(b));
+    }
+
+    [TestMethod]
+    public void Intersect_ReturnsEmptyWhenIncompatibleCycleBounds()
+    {
+        var a = new CyclicRange<int>(2, 5, 0, 23);
+        var b = new CyclicRange<int>(2, 5, 0, 11);
+        var result = a.Intersect(b);
+        Assert.AreEqual(0, result.Length);
+    }
+
 }
