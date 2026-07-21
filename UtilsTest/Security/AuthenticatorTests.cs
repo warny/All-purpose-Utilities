@@ -15,6 +15,8 @@ public class AuthenticatorTests
         [0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x30,
          0x41, 0x42, 0x43, 0x44, 0x45, 0x46];
 
+    // ------------------------------------------------------------------ basic smoke tests
+
     [TestMethod]
     public void ComputeAuthenticator_ShouldReturnValidCode()
     {
@@ -22,7 +24,6 @@ public class AuthenticatorTests
         string code = authenticator.ComputeAuthenticator();
         Assert.IsNotNull(code);
         Assert.AreEqual(6, code.Length);
-        // Must be all digits.
         foreach (char c in code)
             Assert.IsTrue(char.IsAsciiDigit(c), $"Character '{c}' is not a digit.");
     }
@@ -41,10 +42,7 @@ public class AuthenticatorTests
     {
         var authenticator = new Authenticator("HMACSHA256", ValidKey, 6, 30);
         string validCode = authenticator.ComputeAuthenticator();
-        // Use a code that is extremely unlikely to match the current code.
         bool result = authenticator.VerifyAuthenticator(1, "000000");
-        // Note: there is a 1-in-1,000,000 chance this can produce a false positive;
-        // acceptable for a unit test.
         bool couldAlsoBeValid = validCode == "000000";
         if (!couldAlsoBeValid)
             Assert.IsFalse(result);
@@ -58,7 +56,7 @@ public class AuthenticatorTests
         Assert.IsFalse(result);
     }
 
-    // ------------------------------------------------------------------ #29 parameter validation
+    // ------------------------------------------------------------------ #29 parameter validation (string constructor)
 
     [TestMethod]
     public void Constructor_ThrowsOnZeroDigits()
@@ -115,7 +113,48 @@ public class AuthenticatorTests
         Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => authenticator.VerifyAuthenticator(-1, "123456"));
     }
 
-    // ------------------------------------------------------------------ #30 key isolation (mutation after construction)
+    // ------------------------------------------------------------------ #29 parameter validation (factory constructor)
+
+    [TestMethod]
+    public void FactoryConstructor_ThrowsOnNullFactory()
+    {
+        Assert.ThrowsExactly<ArgumentNullException>(
+            () => new Authenticator((Func<HMAC>)null!, ValidKey, 6, 30));
+    }
+
+    [TestMethod]
+    public void FactoryConstructor_ThrowsWhenFactoryReturnsNull()
+    {
+        Assert.ThrowsExactly<ArgumentException>(
+            () => new Authenticator(() => null!, ValidKey, 6, 30));
+    }
+
+    [TestMethod]
+    public void FactoryConstructor_AcceptsCustomFactory()
+    {
+        int callCount = 0;
+        var auth = new Authenticator(() => { callCount++; return new HMACSHA256(); }, ValidKey, 6, 30);
+        // One call at construction time (validation), one per ComputeAuthenticator.
+        int callsAfterConstruction = callCount;
+        string code = auth.ComputeAuthenticator(1L);
+        Assert.AreEqual(6, code.Length);
+        Assert.AreEqual(callsAfterConstruction + 1, callCount, "Factory must be called once per computation.");
+    }
+
+    [TestMethod]
+    public void FactoryConstructor_ProducesSameResultAsNameConstructor()
+    {
+        long counter = 999L;
+        var byName = new Authenticator("HMACSHA256", ValidKey, 6, 30);
+        var byFactory = new Authenticator(() => new HMACSHA256(), ValidKey, 6, 30);
+
+        Assert.AreEqual(
+            byName.ComputeAuthenticator(counter),
+            byFactory.ComputeAuthenticator(counter),
+            "Name and factory constructors must produce identical codes for the same algorithm.");
+    }
+
+    // ------------------------------------------------------------------ #30 key isolation
 
     [TestMethod]
     public void KeyMutationAfterConstruction_DoesNotAffectGeneratedCodes()
@@ -125,7 +164,6 @@ public class AuthenticatorTests
         long msg = authenticator.CurrentMessage;
         string codeBefore = authenticator.ComputeAuthenticator(msg);
 
-        // Mutate the original array.
         Array.Fill(key, (byte)0xFF);
 
         string codeAfter = authenticator.ComputeAuthenticator(msg);
@@ -138,7 +176,7 @@ public class AuthenticatorTests
     public void ConcurrentComputations_ProduceSameResultAsIsolatedInstances()
     {
         var auth = new Authenticator("HMACSHA256", ValidKey, 6, 30);
-        long msg = 100_000L; // Fixed counter for determinism.
+        long msg = 100_000L;
         string expected = auth.ComputeAuthenticator(msg);
         const int threadCount = 20;
         var results = new ConcurrentBag<string>();
@@ -160,26 +198,45 @@ public class AuthenticatorTests
     [TestMethod]
     public void Constructor_ThrowsForNonHmacAlgorithmName()
     {
-        // SHA256 is a valid algorithm but is not an HMAC.
+        // SHA256 is a valid algorithm but is not an HMAC — the factory constructor
+        // catches it at construction time when it validates the factory output.
         Assert.ThrowsExactly<ArgumentException>(() => new Authenticator("SHA256", ValidKey, 6, 30));
     }
 
-    // ------------------------------------------------------------------ #34 GoogleAuthenticator factory uses SHA-1 (standard TOTP profile)
+    // ------------------------------------------------------------------ #34 GoogleAuthenticator factory profiles
 
     [TestMethod]
-    public void GoogleAuthenticator_UsesHmacSha1Profile()
+    public void GoogleAuthenticator_UsesSha1AndMatchesRfc6238()
     {
-        var auth = Authenticator.GoogleAuthenticator(ValidKey);
-        Assert.AreEqual("HMACSHA1", auth.AlgorithmName);
-        Assert.AreEqual(6, auth.Digits);
-        Assert.AreEqual(30, auth.IntervalLength);
+        // Verify the factory delegates to HMAC-SHA1 by cross-checking with a direct instance.
+        var ga = Authenticator.GoogleAuthenticator(ValidKey);
+        var sha1 = new Authenticator(() => new HMACSHA1(), ValidKey, 6, 30);
+        long counter = 500L;
+        Assert.AreEqual(sha1.ComputeAuthenticator(counter), ga.ComputeAuthenticator(counter),
+            "GoogleAuthenticator must use HMAC-SHA1.");
+        Assert.AreEqual(6, ga.Digits);
+        Assert.AreEqual(30, ga.IntervalLength);
     }
 
     [TestMethod]
-    public void GoogleAuthenticatorSha256_UsesSha256Profile()
+    public void GoogleAuthenticatorSha256_UsesSha256()
     {
-        var auth = Authenticator.GoogleAuthenticatorSha256(ValidKey);
-        Assert.AreEqual("HMACSHA256", auth.AlgorithmName);
+        var ga256 = Authenticator.GoogleAuthenticatorSha256(ValidKey);
+        var sha256 = new Authenticator(() => new HMACSHA256(), ValidKey, 6, 30);
+        long counter = 500L;
+        Assert.AreEqual(sha256.ComputeAuthenticator(counter), ga256.ComputeAuthenticator(counter),
+            "GoogleAuthenticatorSha256 must use HMAC-SHA256.");
+    }
+
+    [TestMethod]
+    public void GoogleAuthenticator_ProducesDifferentCodesThanSha256()
+    {
+        var sha1 = Authenticator.GoogleAuthenticator(ValidKey);
+        var sha256 = Authenticator.GoogleAuthenticatorSha256(ValidKey);
+        long counter = 500L;
+        // SHA1 and SHA256 produce different hashes and therefore different OTP codes.
+        Assert.AreNotEqual(sha1.ComputeAuthenticator(counter), sha256.ComputeAuthenticator(counter),
+            "SHA-1 and SHA-256 profiles must produce different codes.");
     }
 
     // ------------------------------------------------------------------ #35 digit-only verification
