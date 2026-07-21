@@ -423,12 +423,20 @@ internal sealed class EmitWorkerProcess : IDisposable
         WorkerResponse response = SendAndReceive(request, callTimeout);
         ThrowIfFailed(response, method.Name);
 
+        if (response.ByRefValuesJson is { } byRefValues && byRefValues.Length != parameters.Length)
+        {
+            throw new InvalidOperationException(
+                $"The isolated Emit worker returned a ByRefValuesJson array of length {byRefValues.Length} " +
+                $"for '{method.Name}', which has {parameters.Length} parameter(s). " +
+                "This indicates a protocol version mismatch between host and worker.");
+        }
+
         for (int i = 0; i < parameters.Length; i++)
         {
             if (parameters[i].ParameterType.IsByRef)
             {
                 Type effectiveType = parameters[i].ParameterType.GetElementType()!;
-                string? valueJson = response.ByRefValuesJson is { } values && i < values.Length ? values[i] : null;
+                string? valueJson = response.ByRefValuesJson?[i];
                 args[i] = valueJson is null ? null : JsonSerializer.Deserialize(valueJson, effectiveType, CrossProcessMarshaling.JsonOptions);
             }
         }
@@ -593,9 +601,28 @@ internal sealed class EmitWorkerProcess : IDisposable
                         "The connection is now unusable.", ex);
                 }
 
-                if (response is not null && pending.TryRemove(response.Id, out TaskCompletionSource<WorkerResponse>? completion))
+                if (response is not null)
                 {
-                    completion.TrySetResult(response);
+                    if (pending.TryRemove(response.Id, out TaskCompletionSource<WorkerResponse>? completion))
+                    {
+                        completion.TrySetResult(response);
+                    }
+                    else
+                    {
+                        // Not in the pending set: either an expected late response (timed-out request whose
+                        // ID is in the valid range of sent IDs) or a protocol violation (ID that was never
+                        // sent, which indicates a compromised or mismatched worker).
+                        long maxSentId = Interlocked.Read(ref nextId);
+                        if (response.Id < 1 || response.Id > maxSentId)
+                        {
+                            throw new InvalidOperationException(
+                                $"The isolated Emit worker sent a response for request ID {response.Id}, " +
+                                $"which was never sent by this host (IDs 1–{maxSentId} have been issued). " +
+                                "This indicates a protocol error or a compromised worker.");
+                        }
+                        // ID is within the valid range but no longer pending: expected late response
+                        // for a timed-out request. Silently drop it.
+                    }
                 }
             }
 

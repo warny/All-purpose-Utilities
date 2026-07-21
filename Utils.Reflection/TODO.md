@@ -98,19 +98,19 @@ Host and worker are assumed to run exactly matching message definitions. A stale
 
 **Priority: P2 — compatibility and diagnostics.**
 
-### 12. Missing argument entries are silently converted to `null`
+### ~~12. Missing argument entries are silently converted to `null`~~ ✅ DONE
 
-The worker accepts an `ArgumentsJson` array shorter than the method parameter list and supplies `null` for missing entries. This shifts a malformed-protocol error into arbitrary deserialization, reflection, or native-call behavior.
+~~The worker accepts an `ArgumentsJson` array shorter than the method parameter list and supplies `null` for missing entries. This shifts a malformed-protocol error into arbitrary deserialization, reflection, or native-call behavior.~~
 
-**Fix:** require an exact argument-slot count for every call, including explicit slots for `out` parameters. Validate the response's by-ref array length in the host as well.
+**Fix applied:** `HandleCall` (`EmitWorkerHost`) now validates that `argumentsJson.Length == parameters.Length` before the deserialization loop and throws `InvalidOperationException` naming the method and both counts when they differ. The loop then accesses `argumentsJson[i]` directly (the bounds check is redundant after the guard). On the host side, `InvokeMethod` (`EmitWorkerProcess`) validates `response.ByRefValuesJson.Length == parameters.Length` before the by-ref assignment loop and throws `InvalidOperationException` with a protocol-mismatch message when they differ; the loop uses `response.ByRefValuesJson?[i]` (index safe after the guard). Functional test `Run_CallWithTooFewArgumentSlots_ReturnsFailureResponse` (Windows-only, uses `IKernel32Sleep.Sleep(uint)`) verifies that a Call with 0 slots instead of the required 1 returns `Success = false` with the method name in the error.
 
 **Priority: P2 — protocol validation.**
 
-### 13. Duplicate or unsolicited response IDs are silently ignored
+### ~~13. Duplicate or unsolicited response IDs are silently ignored~~ ✅ DONE
 
-The reader loop drops every response whose ID is not currently in `pending`, including duplicates, responses for never-sent IDs, and late responses. Late responses after a documented timeout may be expected, but all other cases indicate protocol corruption or worker bugs.
+~~The reader loop drops every response whose ID is not currently in `pending`, including duplicates, responses for never-sent IDs, and late responses. Late responses after a documented timeout may be expected, but all other cases indicate protocol corruption or worker bugs.~~
 
-**Fix:** retain a bounded set/range of timed-out IDs so expected late responses can be distinguished from impossible IDs. Treat duplicate or unsolicited live-protocol responses as a connection fault and include the offending ID in diagnostics.
+**Fix applied:** `RunReaderLoop` (`EmitWorkerProcess`) now distinguishes between the two cases when a response ID is not in `pending`. After a failed `TryRemove`, it reads `nextId` (the highest ID ever issued) atomically via `Interlocked.Read`: if `response.Id < 1` or `response.Id > nextId`, the ID was never sent by this host and the response is treated as a protocol violation — an `InvalidOperationException` is thrown, which propagates as `connectionFault` and fails all pending requests via `FailAllPending`. Otherwise the ID is within the valid sent range and no longer pending (expected late response for a timed-out request) — it is silently dropped. Unit tests: `RunReaderLoop_ResponseIdNeverSent_SetsConnectionFault` verifies that injecting a response with ID 99999 (never sent) causes the worker to become unhealthy; `RunReaderLoop_LateResponseForTimedOutRequest_IsDroppedSilently` verifies that a response for a formerly-pending but timed-out request leaves the worker healthy.
 
 **Priority: P2 — protocol observability.**
 

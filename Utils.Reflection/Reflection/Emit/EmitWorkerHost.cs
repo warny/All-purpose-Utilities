@@ -409,13 +409,22 @@ internal static class EmitWorkerHost
             MethodInfo method = slot.CommandTable[commandId];
             ParameterInfo[] parameters = method.GetParameters();
             string?[] argumentsJson = request.ArgumentsJson ?? [];
+
+            if (argumentsJson.Length != parameters.Length)
+            {
+                throw new InvalidOperationException(
+                    $"Call request for '{method.Name}' has {argumentsJson.Length} argument slot(s) but the " +
+                    $"method expects exactly {parameters.Length}. Every parameter, including 'out' parameters, " +
+                    "must have an explicit slot; use 'null' for uninitialized 'out' parameter slots.");
+            }
+
             object?[] arguments = new object?[parameters.Length];
 
             for (int i = 0; i < parameters.Length; i++)
             {
                 Type parameterType = parameters[i].ParameterType;
                 Type effectiveType = parameterType.IsByRef ? parameterType.GetElementType()! : parameterType;
-                string? argumentJson = i < argumentsJson.Length ? argumentsJson[i] : null;
+                string? argumentJson = argumentsJson[i];
                 arguments[i] = argumentJson is null ? null : JsonSerializer.Deserialize(argumentJson, effectiveType, CrossProcessMarshaling.JsonOptions);
             }
 

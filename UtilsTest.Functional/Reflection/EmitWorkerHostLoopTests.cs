@@ -492,6 +492,55 @@ public class EmitWorkerHostLoopTests
         Assert.IsTrue(hostTask.Wait(timeout));
     }
 
+    // ─── Finding #12: exact argument-slot count is validated ─────────────────────
+
+    [TestMethod]
+    public void Run_CallWithTooFewArgumentSlots_ReturnsFailureResponse()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            Assert.Inconclusive("This test requires kernel32.dll, available on Windows only.");
+            return;
+        }
+
+        // Sleep(uint milliseconds) has exactly 1 parameter. Sending 0 slots must be rejected
+        // rather than silently treating the missing argument as null.
+        Type interfaceType = typeof(IKernel32Sleep);
+        MethodInfo method = interfaceType.GetMethod(nameof(IKernel32Sleep.Sleep))!;
+        TimeSpan timeout = TimeSpan.FromSeconds(10);
+
+        using var input = new LineQueueTextReader();
+        using var output = new LineQueueTextWriter();
+        Task hostTask = Task.Run(() => EmitWorkerHost.Run(input, output));
+
+        input.Enqueue(JsonSerializer.Serialize(new WorkerRequest
+        {
+            Id = 1, Kind = WorkerRequestKind.Load,
+            InterfaceAssemblyPath = interfaceType.Assembly.Location,
+            InterfaceTypeFullName = interfaceType.FullName,
+            DllPath = "kernel32.dll", CallingConvention = CallingConvention.Winapi,
+        }));
+        int handle = output.TakeResponse(1, timeout).Handle;
+
+        int commandId = Array.IndexOf(CrossProcessMarshaling.BuildCommandTable(interfaceType), method);
+        input.Enqueue(JsonSerializer.Serialize(new WorkerRequest
+        {
+            Id = 2, Kind = WorkerRequestKind.Call, Handle = handle,
+            MethodCommandId = commandId,
+            ArgumentsJson = [], // 0 slots — Sleep expects exactly 1
+        }));
+        WorkerResponse callResponse = output.TakeResponse(2, timeout);
+
+        Assert.IsFalse(callResponse.Success,
+            "A Call with fewer argument slots than the method's parameter count must be rejected.");
+        StringAssert.Contains(callResponse.ErrorMessage ?? string.Empty, "Sleep",
+            "The error message should name the method whose slot count was wrong.");
+
+        input.Enqueue(JsonSerializer.Serialize(new WorkerRequest { Id = 3, Kind = WorkerRequestKind.Shutdown }));
+        Assert.IsTrue(output.TakeResponse(3, timeout).Success);
+        Assert.IsTrue(hostTask.Wait(timeout));
+    }
+
     // ─── Finding #3: Shutdown truthfulness ───────────────────────────────────────
 
     [TestMethod]

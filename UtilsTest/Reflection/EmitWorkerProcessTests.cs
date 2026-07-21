@@ -314,6 +314,64 @@ public class EmitWorkerProcessTests
             "With diagnostics enabled, RemoteExceptionTypeName must be included.");
     }
 
+    // ─── Finding #13: unsolicited response IDs trigger a connection fault ────────
+
+    [TestMethod]
+    public void RunReaderLoop_ResponseIdNeverSent_SetsConnectionFault()
+    {
+        // No requests have been sent, so nextId == 0. Any response ID is therefore impossible.
+        using var responseStream = new EnqueueableStream();
+        using var process = EmitWorkerProcess.CreateForTesting(
+            new StreamReader(responseStream),
+            new StreamWriter(new MemoryStream()) { AutoFlush = true },
+            TimeSpan.FromSeconds(5));
+
+        Thread.Sleep(50); // give the reader loop time to start
+
+        Assert.IsTrue(process.IsHealthy, "Worker must be healthy before injecting the bad response.");
+
+        responseStream.Enqueue(JsonSerializer.Serialize(new WorkerResponse { Id = 99999, Success = true }));
+        responseStream.Complete();
+
+        var deadline = Stopwatch.StartNew();
+        while (process.IsHealthy && deadline.Elapsed < TimeSpan.FromSeconds(5))
+            Thread.Sleep(5);
+
+        Assert.IsFalse(process.IsHealthy,
+            "Worker must become unhealthy when the peer sends a response for a never-issued request ID.");
+    }
+
+    [TestMethod]
+    public void RunReaderLoop_LateResponseForTimedOutRequest_IsDroppedSilently()
+    {
+        // A request is sent with a very short timeout so it times out before the response
+        // arrives. The worker must remain healthy when the late response is finally delivered,
+        // because the ID is in the range of sent IDs — it is an expected late response.
+        using var responseStream = new EnqueueableStream();
+        using var requestDrain = new StreamWriter(new MemoryStream()) { AutoFlush = true };
+        using var process = EmitWorkerProcess.CreateForTesting(
+            new StreamReader(responseStream), requestDrain, TimeSpan.FromSeconds(5));
+
+        Thread.Sleep(50);
+
+        // SendAndReceive with a 50ms timeout — times out before we inject any response.
+        Assert.ThrowsException<TimeoutException>(
+            () => process.LoadInterface(
+                typeof(IDiagnosticsTestInterface), "any.dll",
+                CallingConvention.Winapi, TimeSpan.FromMilliseconds(50)));
+
+        // ID 1 was sent but is no longer pending. Inject the late response now.
+        responseStream.Enqueue(JsonSerializer.Serialize(new WorkerResponse { Id = 1, Success = true, Handle = 42 }));
+
+        Thread.Sleep(100); // give the reader loop time to process the late response
+
+        Assert.IsTrue(process.IsHealthy,
+            "A late response for a formerly-pending (now timed-out) request must be silently dropped; " +
+            "the worker must remain healthy.");
+
+        responseStream.Complete();
+    }
+
     /// <summary>Stub container that always throws to simulate a failed sandbox launch.</summary>
     private sealed class ThrowingProcessContainer : IProcessContainer
     {
