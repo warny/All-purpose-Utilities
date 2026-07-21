@@ -40,6 +40,7 @@ public sealed class EmitWorkerPool : IDisposable
     private readonly object gate = new();
     private readonly TimeSpan? loadTimeout;
     private readonly TimeSpan? callTimeout;
+    private readonly bool includeDiagnostics;
     private EmitWorkerProcess? worker;
     private bool disposed;
 
@@ -57,7 +58,14 @@ public sealed class EmitWorkerPool : IDisposable
     /// proxy returned by this pool. Defaults to <see cref="EmitWorkerProcess.DefaultCallTimeout"/> when
     /// <see langword="null"/>.
     /// </param>
-    public EmitWorkerPool(TimeSpan? loadTimeout = null, TimeSpan? callTimeout = null)
+    /// <param name="includeDiagnostics">
+    /// When <see langword="true"/>, remote exception type names and stack traces captured inside the
+    /// worker are included in <see cref="EmitWorkerInvocationException.RemoteExceptionTypeName"/> and
+    /// <see cref="EmitWorkerInvocationException.RemoteStackTrace"/> on failure. When
+    /// <see langword="false"/> (the default), these details are suppressed to avoid exposing worker-internal
+    /// filesystem paths and generated type names to callers.
+    /// </param>
+    public EmitWorkerPool(TimeSpan? loadTimeout = null, TimeSpan? callTimeout = null, bool includeDiagnostics = false)
     {
         if (loadTimeout.HasValue)
             EmitWorkerProcess.ValidateTimeout(loadTimeout.Value, nameof(loadTimeout));
@@ -66,6 +74,7 @@ public sealed class EmitWorkerPool : IDisposable
 
         this.loadTimeout = loadTimeout;
         this.callTimeout = callTimeout;
+        this.includeDiagnostics = includeDiagnostics;
     }
 
     /// <summary>
@@ -108,7 +117,7 @@ public sealed class EmitWorkerPool : IDisposable
         lock (gate)
         {
             ObjectDisposedException.ThrowIf(disposed, this);
-            return worker ??= EmitWorkerProcess.Start(callTimeout);
+            return worker ??= EmitWorkerProcess.Start(callTimeout, includeDiagnostics);
         }
     }
 

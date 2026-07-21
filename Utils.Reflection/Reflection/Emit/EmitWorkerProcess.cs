@@ -75,6 +75,16 @@ internal sealed class EmitWorkerProcess : IDisposable
 
     private readonly Task readerLoop;
     private readonly TimeSpan callTimeout;
+
+    /// <summary>
+    /// When <see langword="true"/>, <see cref="ThrowIfFailed"/> includes
+    /// <see cref="WorkerResponse.ErrorTypeName"/> and <see cref="WorkerResponse.ErrorStackTrace"/> in
+    /// the thrown <see cref="EmitWorkerInvocationException"/>. When <see langword="false"/> (the
+    /// default), those fields are suppressed so local filesystem paths, generated type names, and
+    /// worker-internal stack frames are not exposed to callers by default (see TODO finding #9).
+    /// </summary>
+    private readonly bool includeDiagnostics;
+
     private long nextId;
     private int abandonedCallCount;
     private volatile Exception? connectionFault;
@@ -92,7 +102,8 @@ internal sealed class EmitWorkerProcess : IDisposable
         NamedPipeServerStream pipe,
         System.IO.StreamReader reader,
         System.IO.StreamWriter writer,
-        TimeSpan callTimeout)
+        TimeSpan callTimeout,
+        bool includeDiagnostics = false)
     {
         this.sandbox = sandbox;
         this.workerProcess = workerProcess;
@@ -100,6 +111,7 @@ internal sealed class EmitWorkerProcess : IDisposable
         this.reader = reader;
         this.writer = writer;
         this.callTimeout = callTimeout;
+        this.includeDiagnostics = includeDiagnostics;
         readerLoop = Task.Run(RunReaderLoop);
     }
 
@@ -149,7 +161,8 @@ internal sealed class EmitWorkerProcess : IDisposable
     /// <returns>A connected, loaded worker ready to receive <see cref="WorkerRequestKind.Call"/> requests.</returns>
     internal static EmitWorkerProcess Start(
         Type interfaceType, string dllPath, CallingConvention callingConvention,
-        TimeSpan? loadTimeout, TimeSpan? callTimeout, out int handle)
+        TimeSpan? loadTimeout, TimeSpan? callTimeout, out int handle,
+        bool includeDiagnostics = false)
     {
         // Validated again inside LoadInterface (needed there for EmitWorkerPool, which calls it
         // directly against an already-running shared worker), but checked here too so an unsupported
@@ -165,7 +178,7 @@ internal sealed class EmitWorkerProcess : IDisposable
                 $"Emit worker. Use LibraryMapper.EmitInProcess<T> instead.");
         }
 
-        EmitWorkerProcess worker = Start(callTimeout);
+        EmitWorkerProcess worker = Start(callTimeout, includeDiagnostics);
         try
         {
             handle = worker.LoadInterface(interfaceType, dllPath, callingConvention, loadTimeout ?? DefaultLoadTimeout);
@@ -188,14 +201,15 @@ internal sealed class EmitWorkerProcess : IDisposable
     internal static EmitWorkerProcess CreateForTesting(
         System.IO.StreamReader reader,
         System.IO.StreamWriter writer,
-        TimeSpan callTimeout)
+        TimeSpan callTimeout,
+        bool includeDiagnostics = false)
     {
         var fakeProcess = new Process();
         var fakePipe = new NamedPipeServerStream(
             $"Utils.Reflection.EmitWorker.UnitTest.{Guid.NewGuid():N}",
             PipeDirection.InOut, maxNumberOfServerInstances: 1,
             PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
-        return new EmitWorkerProcess(null, fakeProcess, fakePipe, reader, writer, callTimeout);
+        return new EmitWorkerProcess(null, fakeProcess, fakePipe, reader, writer, callTimeout, includeDiagnostics);
     }
 
     /// <summary>
@@ -210,7 +224,7 @@ internal sealed class EmitWorkerProcess : IDisposable
     /// <see langword="null"/>.
     /// </param>
     /// <returns>A connected worker, ready to receive <see cref="WorkerRequestKind.Load"/> requests.</returns>
-    internal static EmitWorkerProcess Start(TimeSpan? callTimeout = null)
+    internal static EmitWorkerProcess Start(TimeSpan? callTimeout = null, bool includeDiagnostics = false)
     {
         if (callTimeout.HasValue)
             ValidateTimeout(callTimeout.Value, nameof(callTimeout));
@@ -262,7 +276,7 @@ internal sealed class EmitWorkerProcess : IDisposable
         var reader = new System.IO.StreamReader(serverPipe, leaveOpen: true);
         var writer = new System.IO.StreamWriter(serverPipe, leaveOpen: true) { AutoFlush = true };
 
-        return new EmitWorkerProcess(sandbox, process, serverPipe, reader, writer, callTimeout ?? DefaultCallTimeout);
+        return new EmitWorkerProcess(sandbox, process, serverPipe, reader, writer, callTimeout ?? DefaultCallTimeout, includeDiagnostics);
     }
 
     /// <summary>
@@ -419,15 +433,15 @@ internal sealed class EmitWorkerProcess : IDisposable
         return JsonSerializer.Deserialize(response.ReturnValueJson, method.ReturnType, CrossProcessMarshaling.JsonOptions);
     }
 
-    private static void ThrowIfFailed(WorkerResponse response, string? methodName = null)
+    private void ThrowIfFailed(WorkerResponse response, string? methodName = null)
     {
         if (!response.Success)
         {
             string context = methodName is null ? "the Load request" : $"'{methodName}'";
             throw new EmitWorkerInvocationException(
                 $"The isolated Emit worker reported an error while handling {context}: {response.ErrorMessage}",
-                response.ErrorTypeName,
-                response.ErrorStackTrace);
+                includeDiagnostics ? response.ErrorTypeName : null,
+                includeDiagnostics ? response.ErrorStackTrace : null);
         }
     }
 

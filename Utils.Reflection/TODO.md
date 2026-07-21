@@ -72,13 +72,13 @@ Fresh review of the current `Utils.Reflection` code after the previous audit ite
 
 **Priority: P1 — marshaling correctness.**
 
-### 9. Remote exception details expose worker internals by default
+### ~~9. Remote exception details expose worker internals by default~~ ✅ DONE
 
-The worker returns the concrete exception type name and full remote stack trace for every request failure. These details can contain local filesystem paths, generated source/type names, native library information, and implementation details from code executed inside the sandbox.
+~~The worker returns the concrete exception type name and full remote stack trace for every request failure. These details can contain local filesystem paths, generated source/type names, native library information, and implementation details from code executed inside the sandbox.~~
 
-**Fix:** separate a safe public error payload from opt-in diagnostic details. Return a stable error code/category and sanitized message by default; expose stack traces only through an explicit trusted-debug option.
+**Fix applied:** `EmitWorkerProcess`, `EmitWorkerProcess.CreateForTesting`, and `EmitWorkerPool` now accept an `includeDiagnostics` flag (default `false`). `ThrowIfFailed` (now an instance method) passes `ErrorTypeName` and `ErrorStackTrace` to `EmitWorkerInvocationException` only when `includeDiagnostics=true`; otherwise those fields are `null`. Unit tests `LoadInterface_ByDefault_OmitsRemoteDiagnosticsFromException` and `LoadInterface_WithDiagnosticsEnabled_IncludesRemoteDiagnostics` verify both paths via injected streams (`EnqueueableStream`).
 
-**Priority: P1 — information disclosure.**
+~~**Priority: P1 — information disclosure.**~~
 
 ## Medium-priority findings
 

@@ -1,11 +1,15 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
+using System.Text;
+using System.Text.Json;
 using System.Threading;
+using System.Threading.Tasks;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -190,6 +194,89 @@ public class EmitWorkerProcessTests
         blockingRead.Release();
     }
 
+    // ─── Finding #9: remote diagnostics suppressed by default ────────────────────
+
+    /// <summary>A trivially supportable interface used as the Load target in diagnostics tests.</summary>
+    private interface IDiagnosticsTestInterface
+    {
+        int GetValue();
+    }
+
+    [TestMethod]
+    public void LoadInterface_ByDefault_OmitsRemoteDiagnosticsFromException()
+    {
+        using var responseStream = new EnqueueableStream();
+        using var requestDrain = new StreamWriter(new MemoryStream()) { AutoFlush = true };
+        using var process = EmitWorkerProcess.CreateForTesting(
+            new StreamReader(responseStream), requestDrain, TimeSpan.FromSeconds(5));
+
+        EmitWorkerInvocationException? caught = null;
+        Task task = Task.Run(() =>
+        {
+            try { process.LoadInterface(typeof(IDiagnosticsTestInterface), "any.dll", CallingConvention.Winapi, TimeSpan.FromSeconds(5)); }
+            catch (EmitWorkerInvocationException ex) { caught = ex; }
+        });
+
+        // Wait until SendAndReceive has registered the pending entry (Id=1).
+        var deadline = Stopwatch.StartNew();
+        while (process.PendingCount == 0 && deadline.Elapsed < TimeSpan.FromSeconds(5))
+            Thread.Sleep(1);
+
+        responseStream.Enqueue(JsonSerializer.Serialize(new WorkerResponse
+        {
+            Id = 1, Success = false,
+            ErrorMessage = "Something failed",
+            ErrorTypeName = "System.Exception",
+            ErrorStackTrace = "   at Worker.DoWork() in C:\\worker\\source.cs:line 42",
+        }));
+        responseStream.Complete();
+
+        task.Wait(TimeSpan.FromSeconds(5));
+        Assert.IsNotNull(caught, "A failure response must throw EmitWorkerInvocationException.");
+        Assert.IsNull(caught.RemoteStackTrace,
+            "By default, RemoteStackTrace must be suppressed to avoid exposing worker-internal paths.");
+        Assert.IsNull(caught.RemoteExceptionTypeName,
+            "By default, RemoteExceptionTypeName must be suppressed to avoid exposing generated type names.");
+    }
+
+    [TestMethod]
+    public void LoadInterface_WithDiagnosticsEnabled_IncludesRemoteDiagnostics()
+    {
+        using var responseStream = new EnqueueableStream();
+        using var requestDrain = new StreamWriter(new MemoryStream()) { AutoFlush = true };
+        using var process = EmitWorkerProcess.CreateForTesting(
+            new StreamReader(responseStream), requestDrain, TimeSpan.FromSeconds(5), includeDiagnostics: true);
+
+        EmitWorkerInvocationException? caught = null;
+        Task task = Task.Run(() =>
+        {
+            try { process.LoadInterface(typeof(IDiagnosticsTestInterface), "any.dll", CallingConvention.Winapi, TimeSpan.FromSeconds(5)); }
+            catch (EmitWorkerInvocationException ex) { caught = ex; }
+        });
+
+        var deadline = Stopwatch.StartNew();
+        while (process.PendingCount == 0 && deadline.Elapsed < TimeSpan.FromSeconds(5))
+            Thread.Sleep(1);
+
+        const string expectedTrace = "   at Worker.DoWork() in C:\\worker\\source.cs:line 42";
+        const string expectedType = "System.Exception";
+        responseStream.Enqueue(JsonSerializer.Serialize(new WorkerResponse
+        {
+            Id = 1, Success = false,
+            ErrorMessage = "Something failed",
+            ErrorTypeName = expectedType,
+            ErrorStackTrace = expectedTrace,
+        }));
+        responseStream.Complete();
+
+        task.Wait(TimeSpan.FromSeconds(5));
+        Assert.IsNotNull(caught, "A failure response must throw EmitWorkerInvocationException.");
+        Assert.AreEqual(expectedTrace, caught.RemoteStackTrace,
+            "With diagnostics enabled, RemoteStackTrace must be included.");
+        Assert.AreEqual(expectedType, caught.RemoteExceptionTypeName,
+            "With diagnostics enabled, RemoteExceptionTypeName must be included.");
+    }
+
     /// <summary>Stub container that always throws to simulate a failed sandbox launch.</summary>
     private sealed class ThrowingProcessContainer : IProcessContainer
     {
@@ -246,5 +333,62 @@ public class EmitWorkerProcessTests
         public override void SetLength(long value) => throw new NotSupportedException();
         public override void Write(byte[] buffer, int offset, int count) =>
             throw new System.IO.IOException("Simulated broken-pipe write failure.");
+    }
+
+    /// <summary>
+    /// Readable stream backed by a blocking queue: <see cref="Enqueue"/> lines to deliver them in
+    /// order; call <see cref="Complete"/> to signal EOF. Used to feed pre-scripted responses to a
+    /// <see cref="EmitWorkerProcess"/> reader loop in unit tests without timing on actual I/O.
+    /// </summary>
+    private sealed class EnqueueableStream : Stream
+    {
+        private readonly BlockingCollection<byte[]> chunks = new();
+        private byte[]? current;
+        private int pos;
+        private bool chunksDisposed;
+
+        public override bool CanRead => true;
+        public override bool CanSeek => false;
+        public override bool CanWrite => false;
+        public override long Length => throw new NotSupportedException();
+        public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
+        public override void Flush() { }
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+
+        /// <summary>Enqueues <paramref name="line"/> followed by a newline for the reader loop to consume.</summary>
+        public void Enqueue(string line) => chunks.Add(Encoding.UTF8.GetBytes(line + "\n"));
+
+        /// <summary>Signals end-of-stream: subsequent <see cref="Read"/> calls return 0 once all queued data is consumed.</summary>
+        public void Complete() => chunks.CompleteAdding();
+
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            while (current == null || pos >= current.Length)
+            {
+                if (!chunks.TryTake(out byte[]? next, Timeout.Infinite))
+                    return 0;
+                current = next;
+                pos = 0;
+            }
+
+            int toCopy = Math.Min(count, current.Length - pos);
+            System.Array.Copy(current, pos, buffer, offset, toCopy);
+            pos += toCopy;
+            return toCopy;
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && !chunksDisposed)
+            {
+                chunksDisposed = true;
+                chunks.CompleteAdding();
+                chunks.Dispose();
+            }
+
+            base.Dispose(disposing);
+        }
     }
 }
