@@ -194,6 +194,43 @@ public class EmitWorkerProcessTests
         blockingRead.Release();
     }
 
+    // ─── Finding #6: IsHealthy reflects worker liveness ─────────────────────────
+
+    [TestMethod]
+    public void IsHealthy_NewWorker_IsTrue()
+    {
+        using var blockingRead = new BlockingStream();
+        using var process = EmitWorkerProcess.CreateForTesting(
+            new StreamReader(blockingRead),
+            new StreamWriter(new MemoryStream()) { AutoFlush = true },
+            TimeSpan.FromSeconds(1));
+
+        Assert.IsTrue(process.IsHealthy, "A freshly created worker must be healthy.");
+
+        blockingRead.Release();
+    }
+
+    [TestMethod]
+    public void IsHealthy_AfterConnectionFault_IsFalse()
+    {
+        using var blockingRead = new BlockingStream();
+        using var process = EmitWorkerProcess.CreateForTesting(
+            new StreamReader(blockingRead),
+            new StreamWriter(new MemoryStream()) { AutoFlush = true },
+            TimeSpan.FromSeconds(1));
+
+        // Release the blocking stream → reader loop sees EOF → sets connectionFault.
+        blockingRead.Release();
+
+        // Wait until the reader loop detects the EOF and marks the worker unhealthy.
+        var deadline = Stopwatch.StartNew();
+        while (process.IsHealthy && deadline.Elapsed < TimeSpan.FromSeconds(5))
+            Thread.Sleep(5);
+
+        Assert.IsFalse(process.IsHealthy,
+            "Worker must become unhealthy once its connection stream reaches EOF.");
+    }
+
     // ─── Finding #9: remote diagnostics suppressed by default ────────────────────
 
     /// <summary>A trivially supportable interface used as the Load target in diagnostics tests.</summary>

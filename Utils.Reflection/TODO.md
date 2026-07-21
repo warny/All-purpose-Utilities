@@ -48,13 +48,13 @@ Fresh review of the current `Utils.Reflection` code after the previous audit ite
 
 ~~**Priority: P1 — protocol state integrity.**~~
 
-### 6. Pool workers are never replaced after a connection fault or retirement
+### ~~6. Pool workers are never replaced after a connection fault or retirement~~ ✅ DONE
 
-`EmitWorkerPool` caches one worker for its complete lifetime. Once that worker closes, faults, or retires after abandoned calls, later `Emit` operations keep using the same poisoned object and fail permanently.
+~~`EmitWorkerPool` caches one worker for its complete lifetime. Once that worker closes, faults, or retires after abandoned calls, later `Emit` operations keep using the same poisoned object and fail permanently.~~
 
-**Fix:** expose a reliable worker health state. Under the pool lock, replace a faulted worker before loading a new interface. Clearly define what happens to existing proxies and avoid automatic retry of calls whose side effects may be indeterminate.
+**Fix applied:** Added `EmitWorkerProcess.IsHealthy` (`!disposed && connectionFault is null`). `EmitWorkerPool.GetOrStartWorker` now checks `IsHealthy` before returning the cached worker: if unhealthy, the old worker is disposed, the field is cleared, and a fresh worker is started for the next call. Existing proxies backed by the old worker continue to fail — we deliberately do not retry indeterminate calls. `WorkerFactory` (internal) and `GetCurrentWorker()` (internal) enable unit testing without real process spawning. Tests: `IsHealthy_NewWorker_IsTrue`, `IsHealthy_AfterConnectionFault_IsFalse`, `GetOrStartWorker_FaultedWorker_IsDisposedAndReplacedOnNextCall`.
 
-**Priority: P1 — availability and lifecycle contract.**
+~~**Priority: P1 — availability and lifecycle contract.**~~
 
 ### ~~7. Timeout values are stored without an explicit public validation contract~~ ✅ DONE
 

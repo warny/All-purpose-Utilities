@@ -96,6 +96,14 @@ internal sealed class EmitWorkerProcess : IDisposable
     /// <summary>Number of calls that timed out while still running inside the worker. Exposed for unit testing only.</summary>
     internal int AbandonedCallCount => abandonedCallCount;
 
+    /// <summary>
+    /// <see langword="true"/> while this worker is connected and has not encountered a connection fault,
+    /// a retirement (too many abandoned calls), or been disposed. Used by <see cref="EmitWorkerPool"/> to
+    /// decide whether to replace this worker before accepting the next <see cref="EmitWorkerPool.Emit{TInterface}"/>
+    /// call.
+    /// </summary>
+    internal bool IsHealthy => !disposed && connectionFault is null;
+
     private EmitWorkerProcess(
         IProcessContainer? sandbox,
         Process workerProcess,

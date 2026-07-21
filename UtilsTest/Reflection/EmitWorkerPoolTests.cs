@@ -1,5 +1,7 @@
 using System;
+using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -75,5 +77,85 @@ public class EmitWorkerPoolTests
     {
         Assert.ThrowsException<ArgumentOutOfRangeException>(
             () => new EmitWorkerPool(callTimeout: TimeSpan.FromSeconds(-1)));
+    }
+
+    // ─── Finding #6: faulted worker is replaced, not reused ─────────────────────
+
+    /// <summary>
+    /// A <see cref="BlockingStream"/> whose <see cref="Release"/> method signals EOF so the reader loop
+    /// inside <see cref="EmitWorkerProcess"/> exits and sets <c>connectionFault</c>.
+    /// Shared with <c>EmitWorkerProcessTests</c> — kept here as a local private class so the two test
+    /// classes stay independent.
+    /// </summary>
+    private sealed class ReleasableStream : Stream
+    {
+        private readonly ManualResetEventSlim gate = new(false);
+        public override bool CanRead => true;
+        public override bool CanSeek => false;
+        public override bool CanWrite => false;
+        public override long Length => throw new NotSupportedException();
+        public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
+        public override void Flush() { }
+        public override int Read(byte[] buffer, int offset, int count) { gate.Wait(); return 0; }
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+        public void Release() => gate.Set();
+        protected override void Dispose(bool disposing) { if (disposing) gate.Set(); base.Dispose(disposing); }
+    }
+
+    [TestMethod]
+    public void GetOrStartWorker_FaultedWorker_IsDisposedAndReplacedOnNextCall()
+    {
+        int factoryCallCount = 0;
+
+        using var pool = new EmitWorkerPool(callTimeout: TimeSpan.FromSeconds(1));
+
+        // First worker — will be faulted; second worker — returned as replacement.
+        using var stream1 = new ReleasableStream();
+        EmitWorkerProcess? worker1 = null;
+        EmitWorkerProcess? worker2 = null;
+        using var stream2 = new ReleasableStream(); // blocking (never released) to keep reader alive
+
+        pool.WorkerFactory = () =>
+        {
+            factoryCallCount++;
+            if (factoryCallCount == 1)
+            {
+                worker1 = EmitWorkerProcess.CreateForTesting(
+                    new StreamReader(stream1),
+                    new StreamWriter(new MemoryStream()) { AutoFlush = true },
+                    TimeSpan.FromSeconds(1));
+                return worker1;
+            }
+            worker2 = EmitWorkerProcess.CreateForTesting(
+                new StreamReader(stream2),
+                new StreamWriter(new MemoryStream()) { AutoFlush = true },
+                TimeSpan.FromSeconds(1));
+            return worker2;
+        };
+
+        // Trigger first factory call.
+        pool.GetCurrentWorker(); // Caches worker1.
+
+        Assert.IsNotNull(worker1, "Factory must have been called once.");
+        Assert.IsTrue(worker1.IsHealthy, "worker1 must be healthy initially.");
+
+        // Fault worker1 by signalling EOF on its stream.
+        stream1.Release();
+        var deadline = System.Diagnostics.Stopwatch.StartNew();
+        while (worker1.IsHealthy && deadline.Elapsed < TimeSpan.FromSeconds(5))
+            Thread.Sleep(5);
+        Assert.IsFalse(worker1.IsHealthy, "worker1 must become unhealthy after its stream reaches EOF.");
+
+        // Trigger second factory call: the pool must detect the fault, dispose worker1, and create worker2.
+        EmitWorkerProcess returned = pool.GetCurrentWorker();
+
+        Assert.AreEqual(2, factoryCallCount, "Factory must be called a second time to replace the faulted worker.");
+        Assert.IsNotNull(worker2, "worker2 must have been created by the factory.");
+        Assert.AreSame(worker2, returned, "Pool must return the new replacement worker.");
+        Assert.IsTrue(worker2.IsHealthy, "Replacement worker must be healthy.");
+
+        stream2.Release(); // Let worker2's reader loop exit cleanly.
     }
 }

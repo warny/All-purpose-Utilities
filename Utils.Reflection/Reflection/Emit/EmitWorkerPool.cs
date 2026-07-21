@@ -45,6 +45,19 @@ public sealed class EmitWorkerPool : IDisposable
     private bool disposed;
 
     /// <summary>
+    /// Injectable factory for unit tests. When non-<see langword="null"/>, replaces the default
+    /// <see cref="EmitWorkerProcess.Start"/> call in <see cref="GetOrStartWorker"/> so tests can
+    /// supply pre-configured workers without spawning a real isolated process.
+    /// </summary>
+    internal Func<EmitWorkerProcess>? WorkerFactory;
+
+    /// <summary>
+    /// Triggers the same worker-health-check-and-start logic as <see cref="Emit{TInterface}"/> but
+    /// without loading any interface — for unit testing only.
+    /// </summary>
+    internal EmitWorkerProcess GetCurrentWorker() => GetOrStartWorker();
+
+    /// <summary>
     /// Creates an empty pool. The shared worker process is not started until the first
     /// <see cref="Emit{TInterface}"/> call.
     /// </summary>
@@ -117,7 +130,17 @@ public sealed class EmitWorkerPool : IDisposable
         lock (gate)
         {
             ObjectDisposedException.ThrowIf(disposed, this);
-            return worker ??= EmitWorkerProcess.Start(callTimeout, includeDiagnostics);
+
+            // Replace a faulted or retired worker before accepting new Emit calls. Existing proxies
+            // backed by the old worker continue to fail — we do not retry calls whose side effects
+            // may be indeterminate.
+            if (worker is { } existing && !existing.IsHealthy)
+            {
+                existing.Dispose();
+                worker = null;
+            }
+
+            return worker ??= (WorkerFactory?.Invoke() ?? EmitWorkerProcess.Start(callTimeout, includeDiagnostics));
         }
     }
 
