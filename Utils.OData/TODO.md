@@ -142,7 +142,7 @@ The LINQ literal formatter converts every enum to its underlying `Int64`. OData 
 
 ## Medium-priority findings
 
-### 13. **[FIXED]** Empty successful result sets are returned as errors
+### 13. **[FIXED]** Empty successful result sets are returned as errors (both QueryToJSon and QueryToDataReader)
 
 `QueryToJSon` returns error code 1 with “No data returned” when no rows are found; `QueryToDataReader` follows the same pattern. An empty collection is normally a successful OData query result, not an exceptional transport or protocol failure.
 
