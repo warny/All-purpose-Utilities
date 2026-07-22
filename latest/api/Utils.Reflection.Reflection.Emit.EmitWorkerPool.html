@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Reflection_Reflection_Emit_EmitWorkerPool" data-uid="Utils.Reflection.Reflection.Emit.EmitWorkerPool" class="text-break">
-Class EmitWorkerPool  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Emit/EmitWorkerPool.cs/#L38"><i class="bi bi-code-slash"></i></a>
+Class EmitWorkerPool  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Emit/EmitWorkerPool.cs/#L44"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -268,6 +268,12 @@ Disposing a proxy returned by <a class="xref" href="Utils.Reflection.Reflection.
 on the shared worker; the worker process itself, and any other interface loaded through this pool,
 keeps running. Dispose the pool itself to shut the worker process down.
 </p>
+<p>
+When the shared worker becomes unhealthy (faulted, retired after too many abandoned calls, or
+externally killed), the pool automatically replaces it with a fresh worker the next time
+<a class="xref" href="Utils.Reflection.Reflection.Emit.EmitWorkerPool.html#Utils_Reflection_Reflection_Emit_EmitWorkerPool_Emit__1_System_String_System_Runtime_InteropServices_CallingConvention_">Emit&lt;TInterface&gt;(string, CallingConvention)</a> is called. Proxies bound to the old worker remain invalid and will
+throw <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a> when invoked.
+</p>
 </div>
 
 
@@ -279,7 +285,7 @@ keeps running. Dispose the pool itself to shut the worker process down.
 
   <h3 id="Utils_Reflection_Reflection_Emit_EmitWorkerPool__ctor_System_Nullable_System_TimeSpan__System_Nullable_System_TimeSpan__" data-uid="Utils.Reflection.Reflection.Emit.EmitWorkerPool.#ctor(System.Nullable{System.TimeSpan},System.Nullable{System.TimeSpan})">
   EmitWorkerPool(TimeSpan?, TimeSpan?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Emit/EmitWorkerPool.cs/#L60"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Emit/EmitWorkerPool.cs/#L73"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Creates an empty pool. The shared worker process is not started until the first
@@ -296,12 +302,14 @@ keeps running. Dispose the pool itself to shut the worker process down.
     <dt><code>loadTimeout</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.timespan">TimeSpan</a>?</dt>
     <dd><p>Maximum time to wait for the shared worker's response to each <a class="xref" href="Utils.Reflection.Reflection.Emit.EmitWorkerPool.html#Utils_Reflection_Reflection_Emit_EmitWorkerPool_Emit__1_System_String_System_Runtime_InteropServices_CallingConvention_">Emit&lt;TInterface&gt;(string, CallingConvention)</a>
 call's load request. Defaults to <span class="xref">Utils.Reflection.Reflection.Emit.EmitWorkerProcess.DefaultLoadTimeout</span> when
-<a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+<a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>. When provided, must be a positive finite duration not exceeding
+approximately 24.9 days.</p>
 </dd>
     <dt><code>callTimeout</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.timespan">TimeSpan</a>?</dt>
     <dd><p>Maximum time to wait for the shared worker's response to each native call forwarded through any
 proxy returned by this pool. Defaults to <span class="xref">Utils.Reflection.Reflection.Emit.EmitWorkerProcess.DefaultCallTimeout</span> when
-<a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+<a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>. When provided, must be a positive finite duration not exceeding
+approximately 24.9 days.</p>
 </dd>
   </dl>
 
@@ -313,6 +321,14 @@ proxy returned by this pool. Defaults to <span class="xref">Utils.Reflection.Ref
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when either timeout is provided but is zero, negative, or exceeds the maximum supported
+range. Validation happens in the constructor so that callers discover invalid values before any
+worker process is spawned.</p>
+</dd>
+  </dl>
 
 
 
@@ -324,7 +340,7 @@ proxy returned by this pool. Defaults to <span class="xref">Utils.Reflection.Ref
 
   <h3 id="Utils_Reflection_Reflection_Emit_EmitWorkerPool_Dispose" data-uid="Utils.Reflection.Reflection.Emit.EmitWorkerPool.Dispose">
   Dispose()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Emit/EmitWorkerPool.cs/#L114"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Emit/EmitWorkerPool.cs/#L156"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Shuts down the shared worker process, invalidating every proxy previously returned by
@@ -352,11 +368,12 @@ proxy returned by this pool. Defaults to <span class="xref">Utils.Reflection.Ref
 
   <h3 id="Utils_Reflection_Reflection_Emit_EmitWorkerPool_Emit__1_System_String_System_Runtime_InteropServices_CallingConvention_" data-uid="Utils.Reflection.Reflection.Emit.EmitWorkerPool.Emit``1(System.String,System.Runtime.InteropServices.CallingConvention)">
   Emit&lt;TInterface&gt;(string, CallingConvention)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Emit/EmitWorkerPool.cs/#L78"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Emit/EmitWorkerPool.cs/#L99"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Maps <code class="paramref">dllPath</code> to <code class="typeparamref">TInterface</code> on this pool's shared
-worker, starting the worker first if this is the first call on this pool instance.</p>
+worker, starting the worker first if this is the first call on this pool instance, or replacing
+a faulted worker with a fresh one if the previous worker became unhealthy.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -410,7 +427,7 @@ worker, starting the worker first if this is the first call on this pool instanc
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Emit/EmitWorkerPool.cs/#L38" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Reflection/Reflection/Emit/EmitWorkerPool.cs/#L44" class="edit-link">Edit this page</a>
         </div>
 
 
