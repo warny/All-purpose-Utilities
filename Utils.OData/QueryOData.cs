@@ -51,6 +51,9 @@ public class QueryOData : IDisposable
     private readonly SemaphoreSlim _metadataLock = new(1, 1);
     // Item 46: cache keyed by canonical metadata URL so that calls with different
     // endpoints on the same QueryOData instance return the correct schema each time.
+    // Item 47: callers must treat the returned Edmx reference as read-only; the metadata
+    // model classes (Edmx, DataServices, Schema, EntityType, Property) are mutable and
+    // mutating a cached reference corrupts the schema for all concurrent and later readers.
     private readonly Dictionary<string, Edmx> _metadataCache = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
@@ -711,7 +714,9 @@ public class QueryOData : IDisposable
             string name = columnNames[index];
             Property? property = ResolveProperty(metadata, entityType, name);
             EdmFieldConverterRegistry.EdmFieldConverter converter = EdmFieldConverterRegistry.Resolve(property);
-            columns.Add(new ColumnDefinition(name, converter.ClrType, index, converter.Converter));
+            // Item 54: propagate EDM Nullable facet; default true when metadata is absent.
+            bool allowDbNull = property?.IsNullable ?? true;
+            columns.Add(new ColumnDefinition(name, converter.ClrType, index, converter.Converter, allowDbNull));
         }
 
         return columns;
@@ -772,20 +777,33 @@ public class QueryOData : IDisposable
     /// <returns>The matching JSON node when available; otherwise <see langword="null"/>.</returns>
     private static JsonNode? TryResolvePropertyValue(JsonObject jsonObject, string propertyName)
     {
+        // Item 53: use ordinal (case-sensitive) lookup first — OData property names are
+        // case-sensitive identifiers.
         if (jsonObject.TryGetPropertyValue(propertyName, out JsonNode? value))
         {
             return value;
         }
 
+        // Case-insensitive fallback for servers that deviate from the spec.
+        // If multiple keys differ only by case, the lookup is ambiguous and we return null
+        // rather than silently picking an arbitrary match.
+        JsonNode? candidate = null;
+        bool ambiguous = false;
         foreach (KeyValuePair<string, JsonNode?> entry in jsonObject)
         {
             if (string.Equals(entry.Key, propertyName, StringComparison.OrdinalIgnoreCase))
             {
-                return entry.Value;
+                if (candidate is not null)
+                {
+                    ambiguous = true;
+                    break;
+                }
+
+                candidate = entry.Value;
             }
         }
 
-        return null;
+        return ambiguous ? null : candidate;
     }
 
     /// <summary>
@@ -812,7 +830,12 @@ public class QueryOData : IDisposable
     /// <param name="FieldType">CLR type associated with the column.</param>
     /// <param name="Ordinal">Zero-based ordinal assigned to the column.</param>
     /// <param name="Converter">Converter used to materialize JSON nodes into column values.</param>
-    private sealed record ColumnDefinition(string Name, Type FieldType, int Ordinal, Func<JsonNode?, object> Converter);
+    /// <param name="AllowDbNull">
+    /// Indicates whether the column allows <see cref="DBNull"/> values.
+    /// Derived from the EDM <c>Nullable</c> facet when metadata is available;
+    /// defaults to <see langword="true"/> (item 54).
+    /// </param>
+    private sealed record ColumnDefinition(string Name, Type FieldType, int Ordinal, Func<JsonNode?, object> Converter, bool AllowDbNull = true);
 
     /// <summary>
     /// Raised by <see cref="ReadBoundedAsync"/> when the stream exceeds the configured byte limit.
@@ -966,7 +989,7 @@ public class QueryOData : IDisposable
                 row["ColumnName"] = column.Name;
                 row["ColumnOrdinal"] = column.Ordinal;
                 row["DataType"] = column.FieldType;
-                row["AllowDBNull"] = true;
+                row["AllowDBNull"] = column.AllowDbNull;
                 table.Rows.Add(row);
             }
 

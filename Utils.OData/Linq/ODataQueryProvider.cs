@@ -115,10 +115,18 @@ public sealed class ODataQueryProvider : IQueryProvider
     }
 
     /// <summary>
-    /// Resolves the element type produced by an <see cref="IQueryable"/> instance.
+    /// Resolves the element type produced by an <see cref="IQueryable"/> sequence expression.
     /// </summary>
+    /// <remarks>
+    /// Item 28: the previous implementation took the first generic argument of any generic type,
+    /// which is incorrect for types whose first type parameter is not the sequence element
+    /// (e.g. <c>Dictionary&lt;K, V&gt;</c>).  The correct strategy is to look for the
+    /// <see cref="IQueryable{T}"/> interface and extract its single type argument.
+    /// </remarks>
     /// <param name="sequenceType">Type describing the queryable sequence.</param>
     /// <returns>The element type.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="sequenceType"/> is <see langword="null"/>.</exception>
+    /// <exception cref="NotSupportedException">Thrown when no <see cref="IQueryable{T}"/> interface can be found.</exception>
     private static Type ResolveElementType(Type sequenceType)
     {
         if (sequenceType is null)
@@ -126,11 +134,22 @@ public sealed class ODataQueryProvider : IQueryProvider
             throw new ArgumentNullException(nameof(sequenceType));
         }
 
-        if (sequenceType.IsGenericType)
+        // Check the type itself first, then its interfaces.
+        if (sequenceType.IsGenericType && sequenceType.GetGenericTypeDefinition() == typeof(IQueryable<>))
         {
-            return sequenceType.GetGenericArguments().First();
+            return sequenceType.GetGenericArguments()[0];
         }
 
-        return typeof(object);
+        foreach (Type iface in sequenceType.GetInterfaces())
+        {
+            if (iface.IsGenericType && iface.GetGenericTypeDefinition() == typeof(IQueryable<>))
+            {
+                return iface.GetGenericArguments()[0];
+            }
+        }
+
+        throw new NotSupportedException(
+            $"Cannot determine the element type for '{sequenceType.FullName}': " +
+            "the type does not implement IQueryable<T>.");
     }
 }
