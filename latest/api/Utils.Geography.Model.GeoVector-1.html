@@ -801,15 +801,14 @@ This is an alias for the Bearing property.</p>
 
   <h3 id="Utils_Geography_Model_GeoVector_1_Equals_Utils_Geography_Model_GeoVector__0__" data-uid="Utils.Geography.Model.GeoVector`1.Equals(Utils.Geography.Model.GeoVector{`0})">
   Equals(GeoVector&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoVector.cs/#L544"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoVector.cs/#L542"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether the specified <a class="xref" href="Utils.Geography.Model.GeoVector-1.html">GeoVector&lt;T&gt;</a> has the same position and bearing as
 this instance: latitude/longitude are compared via <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html#Utils_Geography_Model_GeoPoint_1_Equals_Utils_Geography_Model_GeoPoint__0__">Equals(GeoPoint&lt;T&gt;)</a>
-(rounded to <span class="xref">Utils.Geography.Model.GeoPoint&lt;T&gt;.EqualityPrecision</span> decimal places), and bearing is compared the
-same way longitude is: normalized and rounded to the same precision via
-<a class="xref" href="Utils.Mathematics.IAngleCalculator-1.html#Utils_Mathematics_IAngleCalculator_1_AreEqualRounded__0__0_System_Int32_">AreEqualRounded(T, T, int)</a>, since bearing wraps around at 0°/360° just like
-longitude wraps around at the antimeridian.</p>
+(snapped to the <span class="xref">Utils.Geography.Model.GeoPoint&lt;T&gt;.EqualityStep</span> grid), and bearing is compared the same way
+longitude is — via <span class="xref">Utils.Geography.Model.GeoPoint&lt;T&gt;.SnapCircleIndex(T)</span> — since bearing wraps around at
+0°/360° just like longitude wraps around at the antimeridian.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -827,7 +826,7 @@ longitude wraps around at the antimeridian.</p>
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
-    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if both vectors round to the same latitude, longitude, and bearing;
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if both vectors snap to the same latitude, longitude, and bearing grid cell;
 otherwise <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
 </dd>
   </dl>
@@ -840,10 +839,9 @@ otherwise <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/
 
   <h4 class="section" id="Utils_Geography_Model_GeoVector_1_Equals_Utils_Geography_Model_GeoVector__0___remarks">Remarks</h4>
   <div class="markdown level1 remarks"><p>This has the exact same known limitation as <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html#Utils_Geography_Model_GeoPoint_1_Equals_Utils_Geography_Model_GeoPoint__0__">Equals(GeoPoint&lt;T&gt;)</a> (see its
-remarks for the full rationale and a worked example): rounding each coordinate before comparing
-keeps <a class="xref" href="Utils.Geography.Model.GeoVector-1.html#Utils_Geography_Model_GeoVector_1_Equals_Utils_Geography_Model_GeoVector__0__">Equals(GeoVector&lt;T&gt;)</a> and <a class="xref" href="Utils.Geography.Model.GeoVector-1.html#Utils_Geography_Model_GeoVector_1_GetHashCode">GetHashCode()</a> always consistent with each
-other, but two bearings that are extremely close yet fall on opposite sides of a rounding boundary
-(e.g. <code>1.0000449999</code> vs <code>1.0000450001</code>, with <span class="xref">Utils.Geography.Model.GeoPoint&lt;T&gt;.EqualityPrecision</span> = 5)
+remarks for the full rationale): snapping each coordinate to the <span class="xref">Utils.Geography.Model.GeoPoint&lt;T&gt;.EqualityStep</span>
+grid keeps <a class="xref" href="Utils.Geography.Model.GeoVector-1.html#Utils_Geography_Model_GeoVector_1_Equals_Utils_Geography_Model_GeoVector__0__">Equals(GeoVector&lt;T&gt;)</a> and <a class="xref" href="Utils.Geography.Model.GeoVector-1.html#Utils_Geography_Model_GeoVector_1_GetHashCode">GetHashCode()</a> always consistent, but
+two bearings straddling a grid boundary (e.g. <code>1.0000449999</code> vs <code>1.0000450001</code>)
 are treated as unequal. See <code>GeoVectorTests.VectorsOnOppositeSidesOfARoundingBoundaryAreNotEqual</code>
 for a regression test pinning down this behavior.</p>
 </div>
@@ -855,13 +853,13 @@ for a regression test pinning down this behavior.</p>
 
   <h3 id="Utils_Geography_Model_GeoVector_1_GetHashCode" data-uid="Utils.Geography.Model.GeoVector`1.GetHashCode">
   GetHashCode()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoVector.cs/#L554"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoVector.cs/#L552"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns a hash code consistent with <a class="xref" href="Utils.Geography.Model.GeoVector-1.html#Utils_Geography_Model_GeoVector_1_Equals_Utils_Geography_Model_GeoVector__0__">Equals(GeoVector&lt;T&gt;)</a>: it combines <a class="xref" href="Utils.Geography.Model.GeoVector-1.html#Utils_Geography_Model_GeoVector_1_Point">Point</a>'s
-own hash code (already rounded/normalized, see <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html#Utils_Geography_Model_GeoPoint_1_GetHashCode">GetHashCode()</a>) with the bearing,
-normalized (to handle 0°/360° wraparound) and rounded to <span class="xref">Utils.Geography.Model.GeoPoint&lt;T&gt;.EqualityPrecision</span>
-decimal places — the exact same values that <a class="xref" href="Utils.Geography.Model.GeoVector-1.html#Utils_Geography_Model_GeoVector_1_Equals_Utils_Geography_Model_GeoVector__0__">Equals(GeoVector&lt;T&gt;)</a> compares on.</p>
+own hash code (already snapped to grid, see <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html#Utils_Geography_Model_GeoPoint_1_GetHashCode">GetHashCode()</a>) with the bearing
+snapped via <span class="xref">Utils.Geography.Model.GeoPoint&lt;T&gt;.SnapCircleIndex(T)</span> (handles 0°/360° wraparound) — the exact same
+value that <a class="xref" href="Utils.Geography.Model.GeoVector-1.html#Utils_Geography_Model_GeoVector_1_Equals_Utils_Geography_Model_GeoVector__0__">Equals(GeoVector&lt;T&gt;)</a> compares on.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -930,7 +928,7 @@ and the <code class="paramref">other</code> one.</p>
 
   <h3 id="Utils_Geography_Model_GeoVector_1_IsApproximately_Utils_Geography_Model_GeoVector__0__" data-uid="Utils.Geography.Model.GeoVector`1.IsApproximately(Utils.Geography.Model.GeoVector{`0})">
   IsApproximately(GeoVector&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoVector.cs/#L580"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoVector.cs/#L578"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether this vector is within the default tolerance of <code class="paramref">other</code>.
@@ -970,7 +968,7 @@ See <a class="xref" href="Utils.Geography.Model.GeoVector-1.html#Utils_Geography
 
   <h3 id="Utils_Geography_Model_GeoVector_1_IsApproximately_Utils_Geography_Model_GeoVector__0___0_" data-uid="Utils.Geography.Model.GeoVector`1.IsApproximately(Utils.Geography.Model.GeoVector{`0},`0)">
   IsApproximately(GeoVector&lt;T&gt;, T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoVector.cs/#L571"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoVector.cs/#L569"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether this vector is within <code class="paramref">tolerance</code> of <code class="paramref">other</code>,
@@ -1061,7 +1059,7 @@ of each other; otherwise <a href="https://learn.microsoft.com/dotnet/csharp/lang
 
   <h3 id="Utils_Geography_Model_GeoVector_1_ToString" data-uid="Utils.Geography.Model.GeoVector`1.ToString">
   ToString()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoVector.cs/#L612"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoVector.cs/#L610"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns this geographic vector as a string in the format &quot;Latitude, Longitude, Bearing&quot;
@@ -1094,7 +1092,7 @@ with five decimal places by default.</p>
 
   <h3 id="Utils_Geography_Model_GeoVector_1_ToString_System_String_" data-uid="Utils.Geography.Model.GeoVector`1.ToString(System.String)">
   ToString(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoVector.cs/#L617"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoVector.cs/#L615"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns this geographic vector as a string in the specified format and the invariant culture.</p>
@@ -1131,7 +1129,7 @@ with five decimal places by default.</p>
 
   <h3 id="Utils_Geography_Model_GeoVector_1_ToString_System_String_System_IFormatProvider_" data-uid="Utils.Geography.Model.GeoVector`1.ToString(System.String,System.IFormatProvider)">
   ToString(string?, IFormatProvider?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoVector.cs/#L625"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoVector.cs/#L623"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns a string representation of the vector using the specified format and provider.</p>
@@ -1216,7 +1214,7 @@ with five decimal places by default.</p>
 
   <h3 id="Utils_Geography_Model_GeoVector_1_op_Equality_Utils_Geography_Model_GeoVector__0__Utils_Geography_Model_GeoVector__0__" data-uid="Utils.Geography.Model.GeoVector`1.op_Equality(Utils.Geography.Model.GeoVector{`0},Utils.Geography.Model.GeoVector{`0})">
   operator ==(GeoVector&lt;T&gt;, GeoVector&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoVector.cs/#L601"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoVector.cs/#L599"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether two geographic vectors are equal.</p>
@@ -1255,7 +1253,7 @@ with five decimal places by default.</p>
 
   <h3 id="Utils_Geography_Model_GeoVector_1_op_Inequality_Utils_Geography_Model_GeoVector__0__Utils_Geography_Model_GeoVector__0__" data-uid="Utils.Geography.Model.GeoVector`1.op_Inequality(Utils.Geography.Model.GeoVector{`0},Utils.Geography.Model.GeoVector{`0})">
   operator !=(GeoVector&lt;T&gt;, GeoVector&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoVector.cs/#L606"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoVector.cs/#L604"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether two geographic vectors are not equal.</p>
@@ -1294,7 +1292,7 @@ with five decimal places by default.</p>
 
   <h3 id="Utils_Geography_Model_GeoVector_1_op_UnaryNegation_Utils_Geography_Model_GeoVector__0__" data-uid="Utils.Geography.Model.GeoVector`1.op_UnaryNegation(Utils.Geography.Model.GeoVector{`0})">
   operator -(GeoVector&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoVector.cs/#L591"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/GeoVector.cs/#L589"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Negation operator for <a class="xref" href="Utils.Geography.Model.GeoVector-1.html">GeoVector&lt;T&gt;</a>.</p>

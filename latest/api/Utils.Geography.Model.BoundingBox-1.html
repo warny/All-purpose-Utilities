@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Geography_Model_BoundingBox_1" data-uid="Utils.Geography.Model.BoundingBox`1" class="text-break">
-Class BoundingBox&lt;T&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/BoundingBox.cs/#L15"><i class="bi bi-code-slash"></i></a>
+Class BoundingBox&lt;T&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/BoundingBox.cs/#L27"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -241,6 +241,18 @@ You may optionally add <code>IDivisionOperators&lt;T, T, T&gt;</code> if you nee
 
 
 
+  <h2 id="Utils_Geography_Model_BoundingBox_1_remarks">Remarks</h2>
+  <div class="markdown level0 remarks"><p>
+<b>Antimeridian-crossing boxes are not supported.</b>
+<a class="xref" href="Utils.Geography.Model.GeoPoint-1.html">ValidateBoundingBox(GeoPoint&lt;T&gt;, GeoPoint&lt;T&gt;)</a> always orders longitudes with <code>T.Min</code>/<code>T.Max</code>,
+so a box intended to span from 170°E to 170°W (a 20° arc across the antimeridian) is
+silently converted into a 340°-wide box instead. <a class="xref" href="Utils.Geography.Model.BoundingBox-1.html#Utils_Geography_Model_BoundingBox_1_Contains_Utils_Geography_Model_GeoPoint__0__">Contains(GeoPoint&lt;T&gt;)</a>,
+<a class="xref" href="Utils.Geography.Model.BoundingBox-1.html#Utils_Geography_Model_BoundingBox_1_Intersects_Utils_Geography_Model_BoundingBox__0__">Intersects(BoundingBox&lt;T&gt;)</a>, <a class="xref" href="Utils.Geography.Model.BoundingBox-1.html#Utils_Geography_Model_BoundingBox_1_LongitudeSpan">LongitudeSpan</a>, and <a class="xref" href="Utils.Geography.Model.BoundingBox-1.html#Utils_Geography_Model_BoundingBox_1_GetCenterpoint">GetCenterpoint()</a>
+all inherit that interpretation and will return incorrect results for such inputs.
+If your use-case requires global coverage crossing ±180°, split the query into two
+boxes (e.g. [170°, 180°] and [-180°, -170°]) and union the results.
+</p>
+</div>
 
 
   <h2 class="section" id="constructors">Constructors
@@ -251,7 +263,7 @@ You may optionally add <code>IDivisionOperators&lt;T, T, T&gt;</code> if you nee
 
   <h3 id="Utils_Geography_Model_BoundingBox_1__ctor_System_String_System_String_System_String_System_String_" data-uid="Utils.Geography.Model.BoundingBox`1.#ctor(System.String,System.String,System.String,System.String)">
   BoundingBox(string, string, string, string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/BoundingBox.cs/#L70"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/BoundingBox.cs/#L82"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Creates a <a class="xref" href="Utils.Geography.Model.BoundingBox-1.html">BoundingBox&lt;T&gt;</a> from four latitude/longitude strings.</p>
@@ -299,7 +311,7 @@ You may optionally add <code>IDivisionOperators&lt;T, T, T&gt;</code> if you nee
 
   <h3 id="Utils_Geography_Model_BoundingBox_1__ctor__0__0__0__0_" data-uid="Utils.Geography.Model.BoundingBox`1.#ctor(`0,`0,`0,`0)">
   BoundingBox(T, T, T, T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/BoundingBox.cs/#L88"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/BoundingBox.cs/#L100"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Creates a <a class="xref" href="Utils.Geography.Model.BoundingBox-1.html">BoundingBox&lt;T&gt;</a> from four numeric coordinates.</p>
@@ -351,7 +363,7 @@ You may optionally add <code>IDivisionOperators&lt;T, T, T&gt;</code> if you nee
 
   <h3 id="Utils_Geography_Model_BoundingBox_1_LatitudeSpan" data-uid="Utils.Geography.Model.BoundingBox`1.LatitudeSpan">
   LatitudeSpan
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/BoundingBox.cs/#L163"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/BoundingBox.cs/#L175"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns the latitude span of this bounding box in degrees.</p>
@@ -383,7 +395,7 @@ You may optionally add <code>IDivisionOperators&lt;T, T, T&gt;</code> if you nee
 
   <h3 id="Utils_Geography_Model_BoundingBox_1_LongitudeSpan" data-uid="Utils.Geography.Model.BoundingBox`1.LongitudeSpan">
   LongitudeSpan
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/BoundingBox.cs/#L168"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/BoundingBox.cs/#L180"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns the longitude span of this bounding box in degrees.</p>
@@ -415,7 +427,7 @@ You may optionally add <code>IDivisionOperators&lt;T, T, T&gt;</code> if you nee
 
   <h3 id="Utils_Geography_Model_BoundingBox_1_MaxLatitude" data-uid="Utils.Geography.Model.BoundingBox`1.MaxLatitude">
   MaxLatitude
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/BoundingBox.cs/#L45"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/BoundingBox.cs/#L57"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>The maximum latitude coordinate of this bounding box in degrees.</p>
@@ -447,7 +459,7 @@ You may optionally add <code>IDivisionOperators&lt;T, T, T&gt;</code> if you nee
 
   <h3 id="Utils_Geography_Model_BoundingBox_1_MaxLongitude" data-uid="Utils.Geography.Model.BoundingBox`1.MaxLongitude">
   MaxLongitude
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/BoundingBox.cs/#L50"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/BoundingBox.cs/#L62"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>The maximum longitude coordinate of this bounding box in degrees.</p>
@@ -479,7 +491,7 @@ You may optionally add <code>IDivisionOperators&lt;T, T, T&gt;</code> if you nee
 
   <h3 id="Utils_Geography_Model_BoundingBox_1_MinLatitude" data-uid="Utils.Geography.Model.BoundingBox`1.MinLatitude">
   MinLatitude
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/BoundingBox.cs/#L55"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/BoundingBox.cs/#L67"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>The minimum latitude coordinate of this bounding box in degrees.</p>
@@ -511,7 +523,7 @@ You may optionally add <code>IDivisionOperators&lt;T, T, T&gt;</code> if you nee
 
   <h3 id="Utils_Geography_Model_BoundingBox_1_MinLongitude" data-uid="Utils.Geography.Model.BoundingBox`1.MinLongitude">
   MinLongitude
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/BoundingBox.cs/#L60"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/BoundingBox.cs/#L72"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>The minimum longitude coordinate of this bounding box in degrees.</p>
@@ -547,7 +559,7 @@ You may optionally add <code>IDivisionOperators&lt;T, T, T&gt;</code> if you nee
 
   <h3 id="Utils_Geography_Model_BoundingBox_1_Contains_Utils_Geography_Model_GeoPoint__0__" data-uid="Utils.Geography.Model.BoundingBox`1.Contains(Utils.Geography.Model.GeoPoint{`0})">
   Contains(GeoPoint&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/BoundingBox.cs/#L128"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/BoundingBox.cs/#L140"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines if this bounding box contains the given <code class="paramref">geoPoint</code>.</p>
@@ -586,7 +598,7 @@ You may optionally add <code>IDivisionOperators&lt;T, T, T&gt;</code> if you nee
 
   <h3 id="Utils_Geography_Model_BoundingBox_1_Equals_System_Object_" data-uid="Utils.Geography.Model.BoundingBox`1.Equals(System.Object)">
   Equals(object?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/BoundingBox.cs/#L189"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/BoundingBox.cs/#L201"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether the specified object is equal to the current bounding box.</p>
@@ -625,7 +637,7 @@ You may optionally add <code>IDivisionOperators&lt;T, T, T&gt;</code> if you nee
 
   <h3 id="Utils_Geography_Model_BoundingBox_1_Equals_Utils_Geography_Model_BoundingBox__0__" data-uid="Utils.Geography.Model.BoundingBox`1.Equals(Utils.Geography.Model.BoundingBox{`0})">
   Equals(BoundingBox&lt;T&gt;?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/BoundingBox.cs/#L175"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/BoundingBox.cs/#L187"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether the specified bounding box has the same boundaries as the current instance.</p>
@@ -664,7 +676,7 @@ You may optionally add <code>IDivisionOperators&lt;T, T, T&gt;</code> if you nee
 
   <h3 id="Utils_Geography_Model_BoundingBox_1_FromString_System_String_" data-uid="Utils.Geography.Model.BoundingBox`1.FromString(System.String)">
   FromString(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/BoundingBox.cs/#L25"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/BoundingBox.cs/#L37"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Creates a new <a class="xref" href="Utils.Geography.Model.BoundingBox-1.html">BoundingBox&lt;T&gt;</a> from a comma-separated string of coordinates in the order
@@ -710,7 +722,7 @@ You may optionally add <code>IDivisionOperators&lt;T, T, T&gt;</code> if you nee
 
   <h3 id="Utils_Geography_Model_BoundingBox_1_GetCenterpoint" data-uid="Utils.Geography.Model.BoundingBox`1.GetCenterpoint">
   GetCenterpoint()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/BoundingBox.cs/#L152"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/BoundingBox.cs/#L164"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a new <a class="xref" href="Utils.Geography.Model.GeoPoint-1.html">GeoPoint&lt;T&gt;</a> at the center of this bounding box.</p>
@@ -743,7 +755,7 @@ You may optionally add <code>IDivisionOperators&lt;T, T, T&gt;</code> if you nee
 
   <h3 id="Utils_Geography_Model_BoundingBox_1_GetHashCode" data-uid="Utils.Geography.Model.BoundingBox`1.GetHashCode">
   GetHashCode()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/BoundingBox.cs/#L199"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/BoundingBox.cs/#L211"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns a hash code for the current bounding box.</p>
@@ -776,7 +788,7 @@ You may optionally add <code>IDivisionOperators&lt;T, T, T&gt;</code> if you nee
 
   <h3 id="Utils_Geography_Model_BoundingBox_1_Intersects_Utils_Geography_Model_BoundingBox__0__" data-uid="Utils.Geography.Model.BoundingBox`1.Intersects(Utils.Geography.Model.BoundingBox{`0})">
   Intersects(BoundingBox&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/BoundingBox.cs/#L139"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/BoundingBox.cs/#L151"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Checks if this <a class="xref" href="Utils.Geography.Model.BoundingBox-1.html">BoundingBox&lt;T&gt;</a> intersects with another one.</p>
@@ -815,10 +827,14 @@ You may optionally add <code>IDivisionOperators&lt;T, T, T&gt;</code> if you nee
 
   <h3 id="Utils_Geography_Model_BoundingBox_1_ToString" data-uid="Utils.Geography.Model.BoundingBox`1.ToString">
   ToString()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/BoundingBox.cs/#L208"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/BoundingBox.cs/#L224"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Returns a string that represents this bounding box using default formatting.</p>
+  <div class="markdown level1 summary"><p>Returns a parseable representation of this bounding box in the order
+<code>minLat,minLon,maxLat,maxLon</code> (invariant culture, no labels).
+This format is accepted by <a class="xref" href="Utils.Geography.Model.BoundingBox-1.html#Utils_Geography_Model_BoundingBox_1_FromString_System_String_">FromString(string)</a>, so
+<code>FromString(box.ToString())</code> round-trips correctly.
+For a human-readable labeled representation use <code>ToString(&quot;L&quot;)</code>.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -830,7 +846,7 @@ You may optionally add <code>IDivisionOperators&lt;T, T, T&gt;</code> if you nee
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>A string representation of the bounding box.</p>
+    <dd><p>A comma-separated coordinate string parseable by <a class="xref" href="Utils.Geography.Model.BoundingBox-1.html#Utils_Geography_Model_BoundingBox_1_FromString_System_String_">FromString(string)</a>.</p>
 </dd>
   </dl>
 
@@ -848,10 +864,10 @@ You may optionally add <code>IDivisionOperators&lt;T, T, T&gt;</code> if you nee
 
   <h3 id="Utils_Geography_Model_BoundingBox_1_ToString_System_String_" data-uid="Utils.Geography.Model.BoundingBox`1.ToString(System.String)">
   ToString(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/BoundingBox.cs/#L215"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/BoundingBox.cs/#L236"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Returns a string that represents this bounding box in a given format.</p>
+  <div class="markdown level1 summary"><p>Returns a string that represents this bounding box in a given format and culture.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -862,7 +878,9 @@ You may optionally add <code>IDivisionOperators&lt;T, T, T&gt;</code> if you nee
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>format</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>Format string for numeric values.</p>
+    <dd><p>Numeric format string applied to each coordinate, or <code>&quot;L&quot;</code> to produce a
+human-readable labeled representation (<code>minLatitude=…, minLongitude=…, …</code>)
+that is <em>not</em> parseable by <a class="xref" href="Utils.Geography.Model.BoundingBox-1.html#Utils_Geography_Model_BoundingBox_1_FromString_System_String_">FromString(string)</a>.</p>
 </dd>
   </dl>
 
@@ -887,7 +905,7 @@ You may optionally add <code>IDivisionOperators&lt;T, T, T&gt;</code> if you nee
 
   <h3 id="Utils_Geography_Model_BoundingBox_1_ToString_System_String_System_IFormatProvider_" data-uid="Utils.Geography.Model.BoundingBox`1.ToString(System.String,System.IFormatProvider)">
   ToString(string?, IFormatProvider?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/BoundingBox.cs/#L223"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/BoundingBox.cs/#L248"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns a string that represents this bounding box in a given format and culture.</p>
@@ -901,7 +919,9 @@ You may optionally add <code>IDivisionOperators&lt;T, T, T&gt;</code> if you nee
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>format</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>Format string for numeric values.</p>
+    <dd><p>Numeric format string applied to each coordinate, or <code>&quot;L&quot;</code> to produce a
+human-readable labeled representation (<code>minLatitude=…, minLongitude=…, …</code>)
+that is <em>not</em> parseable by <a class="xref" href="Utils.Geography.Model.BoundingBox-1.html#Utils_Geography_Model_BoundingBox_1_FromString_System_String_">FromString(string)</a>.</p>
 </dd>
     <dt><code>formatProvider</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.iformatprovider">IFormatProvider</a></dt>
     <dd><p>Culture-specific format provider.</p>
@@ -933,7 +953,7 @@ You may optionally add <code>IDivisionOperators&lt;T, T, T&gt;</code> if you nee
 
   <h3 id="Utils_Geography_Model_BoundingBox_1_op_Equality_Utils_Geography_Model_BoundingBox__0__Utils_Geography_Model_BoundingBox__0__" data-uid="Utils.Geography.Model.BoundingBox`1.op_Equality(Utils.Geography.Model.BoundingBox{`0},Utils.Geography.Model.BoundingBox{`0})">
   operator ==(BoundingBox&lt;T&gt;?, BoundingBox&lt;T&gt;?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/BoundingBox.cs/#L241"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/BoundingBox.cs/#L278"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether two bounding boxes are equal.</p>
@@ -975,7 +995,7 @@ You may optionally add <code>IDivisionOperators&lt;T, T, T&gt;</code> if you nee
 
   <h3 id="Utils_Geography_Model_BoundingBox_1_op_Inequality_Utils_Geography_Model_BoundingBox__0__Utils_Geography_Model_BoundingBox__0__" data-uid="Utils.Geography.Model.BoundingBox`1.op_Inequality(Utils.Geography.Model.BoundingBox{`0},Utils.Geography.Model.BoundingBox{`0})">
   operator !=(BoundingBox&lt;T&gt;?, BoundingBox&lt;T&gt;?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/BoundingBox.cs/#L249"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/BoundingBox.cs/#L286"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether two bounding boxes are not equal.</p>
@@ -1017,7 +1037,7 @@ You may optionally add <code>IDivisionOperators&lt;T, T, T&gt;</code> if you nee
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/BoundingBox.cs/#L15" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Geography/Geography/Model/BoundingBox.cs/#L27" class="edit-link">Edit this page</a>
         </div>
 
 
