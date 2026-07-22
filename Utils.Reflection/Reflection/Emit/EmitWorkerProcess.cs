@@ -552,9 +552,18 @@ internal sealed class EmitWorkerProcess : IDisposable, IAsyncDisposable
     {
         MethodInfo[] localMethods = interfaceType.GetMethods();
         var table = new Dictionary<MethodInfo, int>(descriptors.Length);
+        var seenMethodIds = new HashSet<int>(descriptors.Length);
 
         foreach (MethodDescriptorDto descriptor in descriptors)
         {
+            if (!seenMethodIds.Add(descriptor.MethodId))
+            {
+                throw new InvalidOperationException(
+                    $"The worker returned two descriptors with the same method ID {descriptor.MethodId} " +
+                    $"for interface '{interfaceType.FullName}'. Each method must have a unique worker-assigned ID; " +
+                    "a duplicate indicates a protocol violation or a corrupted Load response.");
+            }
+
             MethodInfo? matched = FindMatchingMethod(localMethods, descriptor);
             if (matched is null)
             {
