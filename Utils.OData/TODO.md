@@ -4,7 +4,7 @@ Initial review of the `Utils.OData` package, focused on URI/query construction, 
 
 ## Critical and high-priority findings
 
-### 1. Boolean query parameters are always emitted, including `$count=false`
+### 1. **[FIXED]** Boolean query parameters are always emitted, including `$count=false`
 
 `ODataQueryBuilder.AddQueryString(..., bool value, bool? defaultValue)` removes the parameter when it equals the default, but then immediately assigns it again unconditionally:
 
@@ -21,7 +21,7 @@ The constructor calls this method for `$count` with `defaultValue: false`, so `$
 
 **Priority: P0 deterministic query-generation bug.**
 
-### 2. String query parameters are removed and then immediately assigned again
+### 2. **[FIXED]** String query parameters are removed and then immediately assigned again
 
 The string overload performs:
 
@@ -36,7 +36,7 @@ Therefore the stated “adds or removes” contract is not implemented. Dependin
 
 **Priority: P1 URI correctness.**
 
-### 3. Numeric OData options use the current culture
+### 3. **[FIXED]** Numeric OData options use the current culture
 
 `$skip` and `$top` are serialized with `value.ToString()` rather than `CultureInfo.InvariantCulture`.
 
@@ -62,7 +62,7 @@ There is no validation that the base URI is absolute HTTP(S), no normalization o
 
 **Priority: P1 URL integrity and security boundary.**
 
-### 5. `skip`, `Top`, and `Skip` accept invalid/overflowing values
+### 5. **[FIXED]** `skip`, `Top`, and `Skip` accept invalid/overflowing values
 
 `ODataQueryBuilder` computes `skip + (query.Skip ?? 0)` with ordinary `int` arithmetic and no validation. Negative values are accepted, and sufficiently large values can overflow before serialization.
 
@@ -102,7 +102,7 @@ When a source cookie header is supplied, the code calls `CookieContainer.SetCook
 
 **Priority: P1 session isolation and concurrency.**
 
-### 9. Base URL and request URI validation are deferred and failures are swallowed in cookie handling
+### 9. **[FIXED]** Base URL and request URI validation are deferred and failures are swallowed in cookie handling
 
 Constructors accept any non-null string. Cookie propagation catches every exception from URI parsing and silently continues, while the eventual request may fail later with a different exception.
 
@@ -142,7 +142,7 @@ The LINQ literal formatter converts every enum to its underlying `Int64`. OData 
 
 ## Medium-priority findings
 
-### 13. Empty successful result sets are returned as errors
+### 13. **[FIXED]** Empty successful result sets are returned as errors
 
 `QueryToJSon` returns error code 1 with “No data returned” when no rows are found; `QueryToDataReader` follows the same pattern. An empty collection is normally a successful OData query result, not an exceptional transport or protocol failure.
 
