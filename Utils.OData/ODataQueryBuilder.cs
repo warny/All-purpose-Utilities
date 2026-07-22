@@ -15,11 +15,6 @@ public class ODataQueryBuilder
     public string Url { get; }
 
     /// <summary>
-    /// Gets the authorization header extracted from the base URL, if any.
-    /// </summary>
-    public string? Authorization { get; } = null;
-
-    /// <summary>
     /// Initializes a new instance of the <see cref="ODataQueryBuilder"/> class.
     /// </summary>
     /// <param name="UrlPrefix">The base URL of the OData endpoint.</param>
@@ -42,7 +37,19 @@ public class ODataQueryBuilder
 
         int combinedSkip = checked(skip + (query.Skip ?? 0));
 
-        var builder = new UriBuilderEx(UrlPrefix + "/" + query.Table);
+        // Item 4: normalize the slash boundary so that a trailing slash on the base URL
+        // and a leading slash on the table name do not produce a double slash, and so
+        // that a bare table name is always appended as a new path segment.
+        string tableSegment = (query.Table ?? string.Empty).TrimStart('/');
+        if (tableSegment.IndexOf('?') >= 0 || tableSegment.IndexOf('#') >= 0)
+        {
+            throw new ArgumentException(
+                "The Table value must be a plain entity-set path and must not contain query strings or fragment identifiers.",
+                nameof(query));
+        }
+
+        string normalizedBase = UrlPrefix.TrimEnd('/');
+        var builder = new UriBuilderEx($"{normalizedBase}/{tableSegment}");
 
         AddQueryString(builder.QueryString, "$select", query.Select);
         AddQueryString(builder.QueryString, "$filter", query.Filters);

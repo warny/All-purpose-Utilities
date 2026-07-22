@@ -46,6 +46,25 @@ public class ReturnValue<T> : Objects.ReturnValue<T, ErrorReturnValue>
 /// <summary>
 /// Represents an error returned by an OData operation.
 /// </summary>
-/// <param name="code">Application-specific or HTTP status code describing the failure.</param>
-/// <param name="message">Human-readable explanation of the error.</param>
-public record ErrorReturnValue(int code, string message);
+public sealed record ErrorReturnValue
+{
+    /// <summary>
+    /// Initializes a new <see cref="ErrorReturnValue"/> with the given code and message.
+    /// </summary>
+    /// <param name="code">Application-specific or HTTP status code describing the failure.</param>
+    /// <param name="message">Human-readable explanation of the error. Must not be null or empty.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="message"/> is null or empty.</exception>
+    public ErrorReturnValue(int code, string message)
+    {
+        if (string.IsNullOrEmpty(message))
+            throw new ArgumentException("Error message must not be null or empty.", nameof(message));
+        this.code = code;
+        this.message = message;
+    }
+
+    /// <summary>Application-specific or HTTP status code describing the failure.</summary>
+    public int code { get; init; }
+
+    /// <summary>Human-readable explanation of the error.</summary>
+    public string message { get; init; }
+}

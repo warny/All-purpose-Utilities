@@ -48,6 +48,12 @@ public sealed class ODataQueryCompilation
     /// <summary>
     /// Builds the URI fragment that corresponds to the compiled query.
     /// </summary>
+    /// <remarks>
+    /// Item 26: query option values are percent-encoded so that characters such as spaces,
+    /// ampersands, plus signs, and hash marks cannot corrupt the query-string boundary.
+    /// The entity set name is used as a path segment and is not encoded here; callers that
+    /// append this string to a base URI must ensure the overall URL is well-formed.
+    /// </remarks>
     /// <returns>The entity set name with appended OData query options when required.</returns>
     public string ToUriString()
     {
@@ -63,12 +69,14 @@ public sealed class ODataQueryCompilation
         var options = new List<string>();
         if (Expansions.Count > 0)
         {
-            options.Add("$expand=" + string.Join(',', Expansions));
+            string expandValue = string.Join(',', Expansions.Select(e => Uri.EscapeDataString(e)));
+            options.Add("$expand=" + expandValue);
         }
 
         if (Filters.Count > 0)
         {
-            options.Add("$filter=" + string.Join(" and ", Filters));
+            string filterExpression = string.Join(" and ", Filters);
+            options.Add("$filter=" + Uri.EscapeDataString(filterExpression));
         }
 
         builder.Append(string.Join('&', options));

@@ -46,7 +46,7 @@ Therefore the stated “adds or removes” contract is not implemented. Dependin
 
 **Priority: P1 protocol correctness.**
 
-### 4. Entity-set/table paths are concatenated without validation or segment escaping
+### 4. **[FIXED (partial)]** Entity-set/table paths are concatenated without validation or segment escaping
 
 The target is built as:
 
@@ -130,7 +130,7 @@ Constructors accept any non-null string. Cookie propagation catches every except
 
 **Priority: P1 LINQ semantic coverage.**
 
-### 12. Enum literals are serialized as integers regardless of EDM semantics
+### 12. **[FIXED (partial)]** Enum literals are serialized as integers regardless of EDM semantics
 
 The LINQ literal formatter converts every enum to its underlying `Int64`. OData enum values are normally represented with their EDM enum type/name semantics, and some services expose enums as strings rather than integers.
 
@@ -180,7 +180,7 @@ Each remote context construction creates and disposes a dedicated client/handler
 
 **Priority: P2 HTTP lifecycle and testability.**
 
-### 17. `ODataQueryBuilder.Authorization` is documented but never populated
+### 17. **[FIXED]** `ODataQueryBuilder.Authorization` is documented but never populated
 
 The property is initialized to null and no constructor logic extracts or sets authorization information.
 

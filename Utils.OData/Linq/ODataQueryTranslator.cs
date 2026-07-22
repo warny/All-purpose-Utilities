@@ -497,7 +497,13 @@ internal static class ODataQueryTranslator
                 DateTime dateTime => dateTime.ToString("o", CultureInfo.InvariantCulture),
                 DateTimeOffset dateTimeOffset => dateTimeOffset.ToString("o", CultureInfo.InvariantCulture),
                 Guid guid => guid.ToString("D", CultureInfo.InvariantCulture),
-                Enum enumValue => Convert.ToInt64(enumValue, CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture),
+                // Item 12: OData enum literals use the member name, not an integer.
+                // Full metadata-aware qualified format (Namespace.EnumType'Member') requires
+                // EDM type information that is not available at LINQ compile time; using the
+                // member name alone is accepted by most services and is at minimum correct for
+                // services that expose enums as strings.  Callers needing the fully qualified
+                // form should pre-convert the enum value to a string before building the query.
+                Enum enumValue => $"'{EscapeString(enumValue.ToString())}'",
                 IFormattable formattable => formattable.ToString(null, CultureInfo.InvariantCulture) ?? string.Empty,
                 _ => value.ToString() ?? string.Empty
             };

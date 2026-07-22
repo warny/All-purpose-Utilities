@@ -68,6 +68,18 @@ public class Property
     [XmlAttribute("MaxLength", Namespace = "http://docs.oasis-open.org/odata/ns/edm")]
     public int MaxLength { get; set; }
 
+    // Item 52/54: EDM Nullable facet — absent means nullable=true per OData spec.
+    [XmlAttribute("Nullable", Namespace = "http://docs.oasis-open.org/odata/ns/edm")]
+    public string? NullableFacet { get; set; }
+
+    /// <summary>
+    /// Returns <see langword="true"/> when the property allows null values.
+    /// Defaults to <see langword="true"/> when the EDM <c>Nullable</c> facet is absent,
+    /// as required by the OData specification.
+    /// </summary>
+    [XmlIgnore]
+    public bool IsNullable => !string.Equals(NullableFacet, "false", StringComparison.OrdinalIgnoreCase);
+
     [XmlElement("Annotation", Namespace = "http://docs.oasis-open.org/odata/ns/edm")]
     public Annotation[] Annotations { get; set; }
 }
