@@ -143,6 +143,53 @@ public class EmitWorkerProcessTests
         Assert.AreEqual(maxSupported, result);
     }
 
+    // ─── Item 15: async lifecycle APIs ───────────────────────────────────────────
+
+    [TestMethod]
+    public void EmitWorkerProcess_ImplementsIAsyncDisposable()
+    {
+        // Verify that the class declares IAsyncDisposable so callers in async contexts
+        // can avoid blocking a thread during the Shutdown round-trip.
+        Assert.IsTrue(typeof(IAsyncDisposable).IsAssignableFrom(typeof(EmitWorkerProcess)),
+            "EmitWorkerProcess must implement IAsyncDisposable (item 15).");
+    }
+
+    [TestMethod]
+    public void InvokeMethodAsync_MethodExists_ReturnsTaskOfObject()
+    {
+        MethodInfo? method = typeof(EmitWorkerProcess).GetMethod(
+            "InvokeMethodAsync",
+            BindingFlags.NonPublic | BindingFlags.Instance);
+
+        Assert.IsNotNull(method, "InvokeMethodAsync must be declared on EmitWorkerProcess.");
+        Assert.IsTrue(
+            typeof(System.Threading.Tasks.Task<object?>).IsAssignableFrom(method.ReturnType),
+            $"InvokeMethodAsync must return Task<object?>, found {method.ReturnType}.");
+    }
+
+    [TestMethod]
+    public void LoadInterfaceAsync_MethodExists_ReturnsTaskOfInt()
+    {
+        MethodInfo? method = typeof(EmitWorkerProcess).GetMethod(
+            "LoadInterfaceAsync",
+            BindingFlags.NonPublic | BindingFlags.Instance);
+
+        Assert.IsNotNull(method, "LoadInterfaceAsync must be declared on EmitWorkerProcess.");
+        Assert.IsTrue(
+            typeof(System.Threading.Tasks.Task<int>).IsAssignableFrom(method.ReturnType),
+            $"LoadInterfaceAsync must return Task<int>, found {method.ReturnType}.");
+    }
+
+    [TestMethod]
+    public void DisposeAsync_MethodExists_ReturnsValueTask()
+    {
+        MethodInfo? method = typeof(EmitWorkerProcess).GetMethod("DisposeAsync");
+
+        Assert.IsNotNull(method, "DisposeAsync must be declared on EmitWorkerProcess.");
+        Assert.AreEqual(typeof(ValueTask), method.ReturnType,
+            "DisposeAsync must return ValueTask.");
+    }
+
     // ─── Item 37: fail-closed sandbox fallback ───────────────────────────────────
 
     /// <summary>

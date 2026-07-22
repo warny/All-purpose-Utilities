@@ -33,7 +33,7 @@ namespace Utils.Reflection.Reflection.Emit;
 /// thread-safe for concurrent calls to be safe — that is the caller's responsibility, independent of this
 /// class.
 /// </remarks>
-internal sealed class EmitWorkerProcess : IDisposable
+internal sealed class EmitWorkerProcess : IDisposable, IAsyncDisposable
 {
     /// <summary>
     /// Current wire protocol version, matched against <see cref="EmitWorkerHost.ProtocolVersion"/> during
@@ -341,6 +341,16 @@ internal sealed class EmitWorkerProcess : IDisposable
     /// <param name="timeout">Maximum time to wait for the worker's response.</param>
     /// <returns>The handle allocated for this interface on this worker.</returns>
     internal int LoadInterface(Type interfaceType, string dllPath, CallingConvention callingConvention, TimeSpan timeout)
+        => LoadInterfaceAsync(interfaceType, dllPath, callingConvention, timeout).GetAwaiter().GetResult();
+
+    /// <summary>
+    /// Asynchronous variant of <see cref="LoadInterface"/>. Requests that the worker load
+    /// <paramref name="dllPath"/> and emit the mapping class for <paramref name="interfaceType"/>,
+    /// then builds the host-side method-ID table from the worker's Load response.
+    /// </summary>
+    internal async Task<int> LoadInterfaceAsync(
+        Type interfaceType, string dllPath, CallingConvention callingConvention,
+        TimeSpan timeout, CancellationToken cancellationToken = default)
     {
         CrossProcessMarshaling.EnsureInterfaceIsSupported(interfaceType);
 
@@ -362,7 +372,7 @@ internal sealed class EmitWorkerProcess : IDisposable
             CallingConvention = callingConvention,
         };
 
-        WorkerResponse response = SendAndReceive(request, timeout);
+        WorkerResponse response = await SendAndReceiveAsync(request, timeout, cancellationToken).ConfigureAwait(false);
         ThrowIfFailed(response);
 
         // Build the host-side MethodInfo→ID mapping from the worker-assigned descriptor table.
@@ -424,6 +434,21 @@ internal sealed class EmitWorkerProcess : IDisposable
     /// <param name="args">Argument values, in parameter order; by-ref/out slots are updated in place.</param>
     /// <returns>The method's return value, or <see langword="null"/> for <see langword="void"/> methods.</returns>
     internal object? InvokeMethod(int handle, MethodInfo method, object?[] args)
+        => InvokeMethodAsync(handle, method, args).GetAwaiter().GetResult();
+
+    /// <summary>
+    /// Asynchronous variant of <see cref="InvokeMethod"/>. Serializes <paramref name="args"/>, sends
+    /// the Call request, and awaits the worker's response without blocking a thread.
+    /// By-ref and out parameter values are written back into <paramref name="args"/> before returning.
+    /// </summary>
+    /// <param name="handle">Handle of the target interface instance, as returned by <see cref="LoadInterfaceAsync"/>.</param>
+    /// <param name="method">Interface method being invoked.</param>
+    /// <param name="args">Argument values in parameter order; by-ref/out slots are updated in place.</param>
+    /// <param name="cancellationToken">Token to cancel the wait before <see cref="callTimeout"/> expires.</param>
+    /// <returns>The method's return value, or <see langword="null"/> for <see langword="void"/> methods.</returns>
+    internal async Task<object?> InvokeMethodAsync(
+        int handle, MethodInfo method, object?[] args,
+        CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(disposed, this);
 
@@ -460,7 +485,7 @@ internal sealed class EmitWorkerProcess : IDisposable
             ArgumentsJson = argumentsJson,
         };
 
-        WorkerResponse response = SendAndReceive(request, callTimeout);
+        WorkerResponse response = await SendAndReceiveAsync(request, callTimeout, cancellationToken).ConfigureAwait(false);
         ThrowIfFailed(response, method.Name);
 
         for (int i = 0; i < parameters.Length; i++)
@@ -574,7 +599,29 @@ internal sealed class EmitWorkerProcess : IDisposable
     /// registered, or duplicate live-protocol responses, indicate a protocol violation.
     /// </para>
     /// </remarks>
+    /// <summary>
+    /// Synchronous wrapper for <see cref="SendAndReceiveAsync"/>. Blocks the calling thread until the
+    /// worker responds or the timeout expires. Avoid calling this from code that already owns a
+    /// synchronization context (e.g. ASP.NET request threads) unless the caller can guarantee that
+    /// the completion callbacks do not need to resume on that context.
+    /// </summary>
     private WorkerResponse SendAndReceive(WorkerRequest request, TimeSpan timeout)
+        => SendAndReceiveAsync(request, timeout).GetAwaiter().GetResult();
+
+    /// <summary>
+    /// Sends <paramref name="request"/> and asynchronously waits for the matching response.
+    /// Supports cancellation via <paramref name="cancellationToken"/> in addition to the per-request
+    /// <paramref name="timeout"/>.
+    /// </summary>
+    /// <param name="cancellationToken">
+    /// Optional token to cancel the wait before the timeout expires. When cancelled,
+    /// <see cref="OperationCanceledException"/> is thrown; when the timeout fires,
+    /// <see cref="TimeoutException"/> is thrown instead.
+    /// </param>
+    private async Task<WorkerResponse> SendAndReceiveAsync(
+        WorkerRequest request,
+        TimeSpan timeout,
+        CancellationToken cancellationToken = default)
     {
         if (connectionFault is { } fault)
         {
@@ -610,11 +657,17 @@ internal sealed class EmitWorkerProcess : IDisposable
         }
 
         using var timeoutSource = new CancellationTokenSource(timeout);
-        using CancellationTokenRegistration registration = timeoutSource.Token.Register(() =>
+        // Link the caller's token only when it can actually cancel, to avoid an extra allocation.
+        using CancellationTokenSource? linkedSource = cancellationToken.CanBeCanceled
+            ? CancellationTokenSource.CreateLinkedTokenSource(timeoutSource.Token, cancellationToken)
+            : null;
+        CancellationToken effectiveToken = linkedSource?.Token ?? timeoutSource.Token;
+
+        using CancellationTokenRegistration registration = effectiveToken.Register(() =>
         {
             if (pending.TryRemove(request.Id, out TaskCompletionSource<WorkerResponse>? timedOut))
             {
-                timedOut.TrySetCanceled(timeoutSource.Token);
+                timedOut.TrySetCanceled(effectiveToken);
 
                 // Track this ID so the reader loop can recognize its eventual late response.
                 TrackTimedOutId(request.Id);
@@ -639,10 +692,18 @@ internal sealed class EmitWorkerProcess : IDisposable
 
         try
         {
-            return completion.Task.GetAwaiter().GetResult();
+            return await completion.Task.ConfigureAwait(false);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException oce)
         {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                // Re-throw with the caller's token so the OperationCanceledException carries the
+                // right token for the caller's catch blocks.
+                throw new OperationCanceledException(
+                    $"The '{request.Kind}' request was cancelled.", oce, cancellationToken);
+            }
+
             throw new TimeoutException(
                 $"The isolated Emit worker did not respond to a '{request.Kind}' request within {timeout}.");
         }
@@ -904,6 +965,59 @@ internal sealed class EmitWorkerProcess : IDisposable
         try
         {
             readerLoop.Wait(TimeSpan.FromSeconds(1));
+        }
+        catch
+        {
+            // Best-effort.
+        }
+    }
+
+    /// <summary>
+    /// Async-friendly alternative to <see cref="Dispose"/>: sends the Shutdown request without
+    /// blocking a thread while waiting for the worker's response, then releases all resources.
+    /// Prefer this method from async callers to avoid holding a thread during the IPC round-trip.
+    /// </summary>
+    public async ValueTask DisposeAsync()
+    {
+        if (disposed)
+            return;
+
+        disposed = true;
+
+        try
+        {
+            if (!workerProcess.HasExited)
+            {
+                var shutdown = new WorkerRequest
+                {
+                    Id = Interlocked.Increment(ref nextId),
+                    Kind = WorkerRequestKind.Shutdown,
+                };
+                try
+                {
+                    await SendAndReceiveAsync(shutdown, ShutdownTimeout).ConfigureAwait(false);
+                }
+                catch
+                {
+                    // Best-effort graceful shutdown; the process is killed below regardless.
+                }
+            }
+        }
+        catch
+        {
+            // Ignore — workerProcess.HasExited itself can throw if the process handle is unusable.
+        }
+
+        reader.Dispose();
+        writer.Dispose();
+        pipe.Dispose();
+        KillSilently(workerProcess);
+
+        sandbox?.Dispose();
+
+        try
+        {
+            await readerLoop.WaitAsync(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
         }
         catch
         {
