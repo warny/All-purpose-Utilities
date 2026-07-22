@@ -174,7 +174,7 @@ public class QueryODataBehaviourTests
         var converter = BuildConverter(columns);
         var channel = Channel.CreateBounded<object?[]>(10);
 
-        var task = (Task)method.Invoke(null, [batch, columns, converter, channel.Writer, CancellationToken.None])!;
+        var task = (Task)method.Invoke(null, [batch, columns, converter, channel.Writer, CancellationToken.None, (int?)null])!;
 
         var ex = Assert.ThrowsException<AggregateException>(() => task.Wait());
         Assert.IsInstanceOfType<InvalidOperationException>(ex.InnerException,
@@ -194,7 +194,7 @@ public class QueryODataBehaviourTests
         var converter = BuildConverter(columns);
         var channel = Channel.CreateBounded<object?[]>(10);
 
-        var task = (Task)method.Invoke(null, [batch, columns, converter, channel.Writer, CancellationToken.None])!;
+        var task = (Task)method.Invoke(null, [batch, columns, converter, channel.Writer, CancellationToken.None, (int?)null])!;
 
         var ex = Assert.ThrowsException<AggregateException>(() => task.Wait());
         Assert.IsInstanceOfType<InvalidOperationException>(ex.InnerException,
@@ -214,7 +214,7 @@ public class QueryODataBehaviourTests
         var converter = BuildConverter(columns);
         var channel = Channel.CreateBounded<object?[]>(10);
 
-        var task = (Task)method.Invoke(null, [batch, columns, converter, channel.Writer, CancellationToken.None])!;
+        var task = (Task)method.Invoke(null, [batch, columns, converter, channel.Writer, CancellationToken.None, (int?)null])!;
 
         var ex = Assert.ThrowsException<AggregateException>(() => task.Wait());
         Assert.IsInstanceOfType<InvalidOperationException>(ex.InnerException,
@@ -234,7 +234,7 @@ public class QueryODataBehaviourTests
         var converter = BuildConverter(columns);
         var channel = Channel.CreateBounded<object?[]>(10);
 
-        var task = (Task)method.Invoke(null, [batch, columns, converter, channel.Writer, CancellationToken.None])!;
+        var task = (Task)method.Invoke(null, [batch, columns, converter, channel.Writer, CancellationToken.None, (int?)null])!;
         task.Wait();
 
         Assert.IsTrue(channel.Reader.TryRead(out _), "First row should be readable");

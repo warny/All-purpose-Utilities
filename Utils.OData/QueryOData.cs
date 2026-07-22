@@ -293,14 +293,20 @@ public class QueryOData : IDisposable
                 break;
             }
 
-            int chunkCount = chunkDataArray.Count;
+            // Cap the number of rows to satisfy the original $top exactly.
+            // When a nextLink page contains more rows than the remaining quota
+            // the excess must be discarded rather than returned to the caller.
+            int rowsToTake = remaining.HasValue
+                ? Math.Min(remaining.Value, chunkDataArray.Count)
+                : chunkDataArray.Count;
 
-            foreach (JsonNode? item in chunkDataArray)
-            {
-                aggregatedValues.Add(item?.DeepClone());
-            }
+            for (int i = 0; i < rowsToTake; i++)
+                aggregatedValues.Add(chunkDataArray[i]?.DeepClone());
 
-            totalRetrieved += chunkCount;
+            totalRetrieved += rowsToTake;
+
+            if (rowsToTake < chunkDataArray.Count)
+                break; // $top satisfied; the page was larger than the remaining quota.
         }
 
         return new((aggregatedValues, metadatas));
@@ -466,9 +472,13 @@ public class QueryOData : IDisposable
 
         try
         {
-            int totalRetrieved = 0;
-            await WriteBatchAsync(firstBatch, columns, rowConverter, writer, cancellationToken);
-            totalRetrieved += firstBatch.Count;
+            // Cap the first batch to originalTop so that a server-side page larger than the
+            // requested limit does not cause the reader to return excess rows.
+            int firstBatchRows = originalTop.HasValue
+                ? Math.Min(originalTop.Value, firstBatch.Count)
+                : firstBatch.Count;
+            await WriteBatchAsync(firstBatch, columns, rowConverter, writer, cancellationToken, firstBatchRows);
+            int totalRetrieved = firstBatchRows;
 
             while (true)
             {
@@ -522,8 +532,15 @@ public class QueryOData : IDisposable
                     break;
                 }
 
-                await WriteBatchAsync(nonEmptyBatch, columns, rowConverter, writer, cancellationToken);
-                totalRetrieved += nonEmptyBatch.Count;
+                // Cap the batch to the remaining quota so that a server-driven page larger
+                // than the requested $top does not cause the reader to emit excess rows.
+                int rowsToWrite = remaining.HasValue
+                    ? Math.Min(remaining.Value, nonEmptyBatch.Count)
+                    : nonEmptyBatch.Count;
+                await WriteBatchAsync(nonEmptyBatch, columns, rowConverter, writer, cancellationToken, rowsToWrite);
+                totalRetrieved += rowsToWrite;
+                if (rowsToWrite < nonEmptyBatch.Count)
+                    break; // $top satisfied; the page was larger than the remaining quota.
             }
 
             writer.TryComplete();
@@ -539,28 +556,34 @@ public class QueryOData : IDisposable
     }
 
     /// <summary>
-    /// Writes the specified JSON batch to the channel using the provided column definitions.
+    /// Writes up to <paramref name="maxRows"/> entries from <paramref name="batch"/> to the channel.
     /// </summary>
     /// <param name="batch">JSON array containing the rows to materialize.</param>
     /// <param name="columns">Column definitions describing the schema of the dataset.</param>
     /// <param name="rowConverter">Compiled converter used to materialize JSON rows.</param>
     /// <param name="writer">Channel writer that receives the materialized rows.</param>
     /// <param name="cancellationToken">Token used to cancel the write operation.</param>
+    /// <param name="maxRows">
+    /// Maximum number of rows to write. When <see langword="null"/>, all entries are written.
+    /// Used to enforce <c>$top</c> when a server-driven page is larger than the remaining quota.
+    /// </param>
     private static async Task WriteBatchAsync(
             JsonArray batch,
             IReadOnlyList<ColumnDefinition> columns,
             Func<JsonObject, object[]> rowConverter,
             ChannelWriter<object?[]> writer,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            int? maxRows = null)
     {
         ArgumentNullException.ThrowIfNull(batch);
         ArgumentNullException.ThrowIfNull(columns);
         ArgumentNullException.ThrowIfNull(rowConverter);
         ArgumentNullException.ThrowIfNull(writer);
-        
-        int rowIndex = 0;
-        foreach (JsonNode? entry in batch)
+
+        int limit = maxRows.HasValue ? Math.Min(maxRows.Value, batch.Count) : batch.Count;
+        for (int rowIndex = 0; rowIndex < limit; rowIndex++)
         {
+            JsonNode? entry = batch[rowIndex];
             if (entry is not JsonObject jsonObject)
             {
                 throw new InvalidOperationException(
@@ -569,7 +592,6 @@ public class QueryOData : IDisposable
             }
             object[] row = rowConverter(jsonObject);
             await writer.WriteAsync(row, cancellationToken);
-            rowIndex++;
         }
     }
 
