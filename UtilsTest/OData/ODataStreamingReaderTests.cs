@@ -149,6 +149,27 @@ public class ODataStreamingReaderTests
     }
 
     [TestMethod]
+    public void GetBytes_DestinationRangeOverflow_ThrowsArgumentException()
+    {
+        byte[] fieldValue = [1, 2, 3, 4, 5];
+        Func<JsonNode?, object> converter = _ => fieldValue;
+        var col = MakeColumnDefinition("Data", typeof(byte[]), 0, converter);
+        var channel = Channel.CreateBounded<object?[]>(10);
+        var cts = new CancellationTokenSource();
+        var reader = CreateReader(MakeColumnList(col), channel.Reader, cts, Task.CompletedTask);
+
+        channel.Writer.TryWrite([fieldValue]);
+        reader.Read();
+
+        // Buffer has 3 slots, offset 1 leaves 2 free, but we request 3 bytes → overflow.
+        Assert.ThrowsException<ArgumentException>(
+            () => reader.GetBytes(0, 0, new byte[3], 1, 3),
+            "bufferoffset + length > buffer.Length must throw ArgumentException");
+        reader.Dispose();
+        cts.Dispose();
+    }
+
+    [TestMethod]
     public void GetBytes_CopiesCorrectData()
     {
         byte[] fieldValue = [10, 20, 30, 40, 50];
@@ -241,6 +262,26 @@ public class ODataStreamingReaderTests
 
         Assert.ThrowsException<ArgumentOutOfRangeException>(
             () => reader.GetChars(0, 0, new char[10], 0, -1));
+        reader.Dispose();
+        cts.Dispose();
+    }
+
+    [TestMethod]
+    public void GetChars_DestinationRangeOverflow_ThrowsArgumentException()
+    {
+        Func<JsonNode?, object> converter = _ => "Hello";
+        var col = MakeColumnDefinition("Text", typeof(string), 0, converter);
+        var channel = Channel.CreateBounded<object?[]>(10);
+        var cts = new CancellationTokenSource();
+        var reader = CreateReader(MakeColumnList(col), channel.Reader, cts, Task.CompletedTask);
+
+        channel.Writer.TryWrite(["Hello"]);
+        reader.Read();
+
+        // Buffer has 3 slots, offset 1 leaves 2 free, but we request 3 chars → overflow.
+        Assert.ThrowsException<ArgumentException>(
+            () => reader.GetChars(0, 0, new char[3], 1, 3),
+            "bufferoffset + length > buffer.Length must throw ArgumentException");
         reader.Dispose();
         cts.Dispose();
     }

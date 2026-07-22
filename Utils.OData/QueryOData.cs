@@ -312,16 +312,39 @@ public class QueryOData : IDisposable
         }
 
         await using Stream firstStream = queryResult.Value;
-        var convertResult = ConvertDatas(firstStream, allowEmpty: false);
+        var convertResult = ConvertDatas(firstStream, allowEmpty: true);
         if (convertResult.IsError)
         {
             return new(convertResult.Error);
         }
 
         (JsonArray? Datas, Dictionary<string, string>? Metadatas) firstChunk = convertResult.Value;
+
+        // When the service returns no rows, build a valid empty reader without starting the streaming task.
         if (firstChunk.Datas is not JsonArray { Count: > 0 } firstBatch)
         {
-            return new(1, "No data returned.");
+            string[] selectedColumns = [];
+            string? selection = parameter.Select;
+            if (!string.IsNullOrWhiteSpace(selection)
+                    && !string.Equals(selection.Trim(), "*", StringComparison.Ordinal))
+            {
+                selectedColumns = selection.Split(',').Select(c => c.Trim()).ToArray();
+            }
+
+            IReadOnlyList<ColumnDefinition> emptyColumns = [];
+            if (selectedColumns.Length > 0)
+            {
+                var emptyMeta = await GetMetadataFromBaseAsync(cancellationToken);
+                Edmx? emptyEdmx = emptyMeta.IsError ? null : emptyMeta.Value;
+                string? emptyEntity = ExtractEntityName(firstChunk.Metadatas, parameter);
+                EntityType? emptyType = emptyEdmx is not null ? ResolveEntityType(emptyEdmx, emptyEntity) : null;
+                emptyColumns = BuildColumnDefinitions(selectedColumns, emptyType, emptyEdmx);
+            }
+
+            var emptyChannel = Channel.CreateBounded<object?[]>(1);
+            emptyChannel.Writer.TryComplete();
+            CancellationTokenSource emptyLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            return new(new ODataStreamingDataReader(emptyColumns, emptyChannel.Reader, emptyLinkedCts, Task.CompletedTask));
         }
 
         var metadataResult = await GetMetadataFromBaseAsync(cancellationToken);
@@ -700,7 +723,7 @@ public class QueryOData : IDisposable
     private static IReadOnlyList<ColumnDefinition> BuildColumnDefinitions(
             IReadOnlyList<string> columnNames,
             EntityType? entityType,
-            Edmx metadata)
+            Edmx? metadata)
     {
         if (columnNames is null)
         {
@@ -1087,10 +1110,14 @@ public class QueryOData : IDisposable
                 throw new ArgumentOutOfRangeException(nameof(bufferoffset), "Buffer offset must be non-negative.");
             if (bufferoffset > buffer.Length)
                 throw new ArgumentOutOfRangeException(nameof(bufferoffset), "Buffer offset exceeds buffer length.");
+            if (length > buffer.Length - bufferoffset)
+                throw new ArgumentException(
+                    "The requested copy length exceeds the available buffer capacity (bufferoffset + length > buffer.Length).",
+                    nameof(length));
 
             int sourceOffset = (int)fieldOffset;
             int available = Math.Max(0, data.Length - sourceOffset);
-            int count = Math.Min(available, Math.Min(length, buffer.Length - bufferoffset));
+            int count = Math.Min(available, length);
             if (count > 0)
                 Array.Copy(data, sourceOffset, buffer, bufferoffset, count);
 
@@ -1119,10 +1146,14 @@ public class QueryOData : IDisposable
                 throw new ArgumentOutOfRangeException(nameof(bufferoffset), "Buffer offset must be non-negative.");
             if (bufferoffset > buffer.Length)
                 throw new ArgumentOutOfRangeException(nameof(bufferoffset), "Buffer offset exceeds buffer length.");
+            if (length > buffer.Length - bufferoffset)
+                throw new ArgumentException(
+                    "The requested copy length exceeds the available buffer capacity (bufferoffset + length > buffer.Length).",
+                    nameof(length));
 
             int sourceOffset = (int)fieldoffset;
             int available = Math.Max(0, data.Length - sourceOffset);
-            int count = Math.Min(available, Math.Min(length, buffer.Length - bufferoffset));
+            int count = Math.Min(available, length);
             if (count > 0)
                 data.CopyTo(sourceOffset, buffer, bufferoffset, count);
 
