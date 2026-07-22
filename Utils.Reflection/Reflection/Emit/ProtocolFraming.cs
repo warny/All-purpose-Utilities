@@ -12,8 +12,11 @@ internal static class ProtocolFraming
 {
     /// <summary>
     /// Maximum number of characters allowed in a single protocol line (request or response JSON).
-    /// 64 MiB covers the largest realistic P/Invoke payload while preventing unbounded allocation
-    /// from a fast or hostile producer.
+    /// 64 MiB is retained to avoid a compatibility regression: callers that pass large arrays
+    /// (e.g. a multi-megabyte <c>byte[]</c>) would be silently broken by a lower limit because
+    /// a 1 MiB binary array encodes to roughly 3 MiB of JSON. Reducing this limit safely requires
+    /// length-prefixed binary framing so the receiver can reject oversized frames before allocating,
+    /// which is a separate protocol change tracked independently of this audit.
     /// </summary>
     internal const int MaxLineLength = 64 * 1024 * 1024;
 
@@ -36,14 +39,16 @@ internal static class ProtocolFraming
             if (c == '\r')
                 continue;
 
-            sb.Append((char)c);
-
-            if (sb.Length > maxLength)
+            // Check before appending so the StringBuilder never holds more than maxLength chars,
+            // avoiding a single off-by-one allocation that would double peak memory at the boundary.
+            if (sb.Length == maxLength)
             {
                 throw new InvalidOperationException(
                     $"Protocol framing error: an input line exceeded the maximum allowed length " +
                     $"of {maxLength:N0} characters. This may indicate a DoS attempt or a corrupt connection.");
             }
+
+            sb.Append((char)c);
         }
 
         // Distinguish "empty line" (c == '\n', sb is empty) from "end of stream" (c == -1, sb is empty).

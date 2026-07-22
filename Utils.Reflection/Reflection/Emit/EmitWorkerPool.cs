@@ -34,6 +34,12 @@ namespace Utils.Reflection.Reflection.Emit;
 /// on the shared worker; the worker process itself, and any other interface loaded through this pool,
 /// keeps running. Dispose the pool itself to shut the worker process down.
 /// </para>
+/// <para>
+/// When the shared worker becomes unhealthy (faulted, retired after too many abandoned calls, or
+/// externally killed), the pool automatically replaces it with a fresh worker the next time
+/// <see cref="Emit{TInterface}"/> is called. Proxies bound to the old worker remain invalid and will
+/// throw <see cref="InvalidOperationException"/> when invoked.
+/// </para>
 /// </remarks>
 public sealed class EmitWorkerPool : IDisposable
 {
@@ -50,22 +56,37 @@ public sealed class EmitWorkerPool : IDisposable
     /// <param name="loadTimeout">
     /// Maximum time to wait for the shared worker's response to each <see cref="Emit{TInterface}"/>
     /// call's load request. Defaults to <see cref="EmitWorkerProcess.DefaultLoadTimeout"/> when
-    /// <see langword="null"/>.
+    /// <see langword="null"/>. When provided, must be a positive finite duration not exceeding
+    /// approximately 24.9 days.
     /// </param>
     /// <param name="callTimeout">
     /// Maximum time to wait for the shared worker's response to each native call forwarded through any
     /// proxy returned by this pool. Defaults to <see cref="EmitWorkerProcess.DefaultCallTimeout"/> when
-    /// <see langword="null"/>.
+    /// <see langword="null"/>. When provided, must be a positive finite duration not exceeding
+    /// approximately 24.9 days.
     /// </param>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when either timeout is provided but is zero, negative, or exceeds the maximum supported
+    /// range. Validation happens in the constructor so that callers discover invalid values before any
+    /// worker process is spawned.
+    /// </exception>
     public EmitWorkerPool(TimeSpan? loadTimeout = null, TimeSpan? callTimeout = null)
     {
+        // Validate timeouts here, before any worker is created, so callers see ArgumentOutOfRangeException
+        // immediately instead of on the first Emit<T> call.
+        if (loadTimeout.HasValue)
+            EmitWorkerProcess.ValidateTimeout(loadTimeout, EmitWorkerProcess.DefaultLoadTimeout, nameof(loadTimeout));
+        if (callTimeout.HasValue)
+            EmitWorkerProcess.ValidateTimeout(callTimeout, EmitWorkerProcess.DefaultCallTimeout, nameof(callTimeout));
+
         this.loadTimeout = loadTimeout;
         this.callTimeout = callTimeout;
     }
 
     /// <summary>
     /// Maps <paramref name="dllPath"/> to <typeparamref name="TInterface"/> on this pool's shared
-    /// worker, starting the worker first if this is the first call on this pool instance.
+    /// worker, starting the worker first if this is the first call on this pool instance, or replacing
+    /// a faulted worker with a fresh one if the previous worker became unhealthy.
     /// </summary>
     /// <typeparam name="TInterface">The interface that defines the functions to map.</typeparam>
     /// <param name="dllPath">The path to the DLL.</param>
@@ -81,7 +102,8 @@ public sealed class EmitWorkerPool : IDisposable
         EmitWorkerProcess sharedWorker = GetOrStartWorker();
 
         int handle = sharedWorker.LoadInterface(
-            typeof(TInterface), dllPath, callingConvention, loadTimeout ?? EmitWorkerProcess.DefaultLoadTimeout);
+            typeof(TInterface), dllPath, callingConvention,
+            EmitWorkerProcess.ValidateTimeout(loadTimeout, EmitWorkerProcess.DefaultLoadTimeout, nameof(loadTimeout)));
 
         // If proxy construction or attachment fails after the handle has been allocated, unload
         // the handle immediately so it is not orphaned on the shared worker.
@@ -98,11 +120,31 @@ public sealed class EmitWorkerPool : IDisposable
         }
     }
 
+    /// <summary>
+    /// Returns the healthy shared worker, starting a new one if none exists or the current worker has
+    /// become unhealthy. Unhealthy workers are disposed before starting the replacement.
+    /// </summary>
+    /// <remarks>
+    /// When a worker is replaced, proxies previously returned by <see cref="Emit{TInterface}"/> that
+    /// were bound to the old worker remain invalid: calls through them will throw
+    /// <see cref="InvalidOperationException"/>. The old worker's resources are released by the dispose
+    /// call here.
+    /// </remarks>
     private EmitWorkerProcess GetOrStartWorker()
     {
         lock (gate)
         {
             ObjectDisposedException.ThrowIf(disposed, this);
+
+            // Replace a faulted or retired worker before loading a new interface. Do not migrate
+            // existing handles: proxies bound to the old worker will fail deterministically when
+            // invoked, which is the intended contract when a worker is replaced.
+            if (worker is not null && !worker.IsHealthy)
+            {
+                try { worker.Dispose(); } catch { /* best-effort */ }
+                worker = null;
+            }
+
             return worker ??= EmitWorkerProcess.Start(callTimeout);
         }
     }
@@ -116,9 +158,7 @@ public sealed class EmitWorkerPool : IDisposable
         lock (gate)
         {
             if (disposed)
-            {
                 return;
-            }
 
             disposed = true;
             worker?.Dispose();

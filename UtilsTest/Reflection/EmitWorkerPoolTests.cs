@@ -20,6 +20,46 @@ public class EmitWorkerPoolTests
         int Foo(int value);
     }
 
+    // ─── Item 7: timeout validation in pool constructor ───────────────────────────
+
+    [TestMethod]
+    public void Constructor_WithZeroLoadTimeout_ThrowsArgumentOutOfRange()
+    {
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => new EmitWorkerPool(loadTimeout: TimeSpan.Zero));
+    }
+
+    [TestMethod]
+    public void Constructor_WithNegativeCallTimeout_ThrowsArgumentOutOfRange()
+    {
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => new EmitWorkerPool(callTimeout: TimeSpan.FromSeconds(-1)));
+    }
+
+    [TestMethod]
+    public void Constructor_WithInfiniteLoadTimeout_ThrowsArgumentOutOfRange()
+    {
+        // Timeout.InfiniteTimeSpan is -1ms — not a valid positive finite duration.
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => new EmitWorkerPool(loadTimeout: System.Threading.Timeout.InfiniteTimeSpan));
+    }
+
+    [TestMethod]
+    public void Constructor_WithValidPositiveTimeouts_DoesNotThrow()
+    {
+        using var pool = new EmitWorkerPool(
+            loadTimeout: System.TimeSpan.FromSeconds(10),
+            callTimeout: System.TimeSpan.FromSeconds(15));
+        // No exception: validation passes.
+    }
+
+    [TestMethod]
+    public void Constructor_WithNullTimeouts_DoesNotThrow()
+    {
+        using var pool = new EmitWorkerPool(loadTimeout: null, callTimeout: null);
+        // Null means use the defaults — must be valid.
+    }
+
     [TestMethod]
     public void Emit_AfterDispose_ThrowsObjectDisposedException()
     {

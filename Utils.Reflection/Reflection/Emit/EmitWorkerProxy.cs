@@ -18,12 +18,25 @@ public class EmitWorkerProxy : DispatchProxy
     private bool ownsWorker;
 
     /// <summary>
-    /// Coordinates concurrent invocations with disposal: every active call holds a read lock while
-    /// the dispose path holds the write lock. <see cref="EnterWriteLock"/> therefore blocks until all
-    /// in-progress <see cref="EmitWorkerProcess.InvokeMethod"/> calls complete before the worker is
-    /// unloaded or killed, preventing use-after-free of the native DLL handle inside the worker.
+    /// Number of method invocations currently executing through this proxy. Incremented before
+    /// checking the dispose state; decremented in a finally block. The dispose path waits for this
+    /// counter to reach zero before releasing worker resources, replacing the previous
+    /// <see cref="System.Threading.ReaderWriterLockSlim"/> which was never disposed.
     /// </summary>
-    private readonly ReaderWriterLockSlim invocationLock = new();
+    private int activeCallCount;
+
+    /// <summary>
+    /// Set to 1 by the first <see cref="IDisposable.Dispose"/> call (via
+    /// <see cref="Interlocked.Exchange(ref int, int)"/>). Non-zero means the proxy is disposed or
+    /// in the process of being disposed.
+    /// </summary>
+    private volatile int disposeState;
+
+    /// <summary>
+    /// Used by the dispose path to wait (via <see cref="Monitor.Wait(object)"/>) for
+    /// <see cref="activeCallCount"/> to reach zero, and by active calls to pulse it when they exit.
+    /// </summary>
+    private readonly object disposeLock = new();
 
     /// <summary>
     /// Associates this proxy with the worker it forwards calls to. Called once, immediately after
@@ -54,35 +67,48 @@ public class EmitWorkerProxy : DispatchProxy
 
         if (IsDisposeMethod(targetMethod))
         {
-            // Write lock: blocks until every in-progress InvokeMethod call releases its read lock,
-            // then prevents new invocations from starting. This ensures the worker is not killed
-            // while a native call is still executing through it.
-            invocationLock.EnterWriteLock();
-            try
-            {
-                if (worker is { } activeWorker)
-                {
-                    if (ownsWorker)
-                        activeWorker.Dispose();
-                    else
-                        activeWorker.UnloadInterface(handle);
-                }
+            // Only the first Dispose call does real work; subsequent calls are no-ops.
+            if (Interlocked.Exchange(ref disposeState, 1) != 0)
+                return null;
 
-                worker = null;
-            }
-            finally
+            // Wait for any currently-executing InvokeMethod calls to complete.
+            // Active calls that started before disposeState was set to 1 will find it non-zero
+            // on their double-check and throw ObjectDisposedException from their finally block,
+            // but the decrement in their finally still runs and may pulse this lock.
+            lock (disposeLock)
             {
-                invocationLock.ExitWriteLock();
+                while (Volatile.Read(ref activeCallCount) > 0)
+                    Monitor.Wait(disposeLock);
             }
 
+            if (worker is { } activeWorker)
+            {
+                if (ownsWorker)
+                    activeWorker.Dispose();
+                else
+                    activeWorker.UnloadInterface(handle);
+            }
+
+            worker = null;
             return null;
         }
 
-        // Read lock: multiple callers may hold this concurrently; the write lock (Dispose) waits
-        // for all of them before it can proceed.
-        invocationLock.EnterReadLock();
+        // Fast path: check dispose state before entering the active-call tracking region.
+        if (disposeState != 0)
+        {
+            throw new ObjectDisposedException(targetMethod.DeclaringType?.FullName ?? nameof(EmitWorkerProxy));
+        }
+
+        // Increment before the second dispose check so the dispose path always sees our intent.
+        Interlocked.Increment(ref activeCallCount);
         try
         {
+            // Double-check after increment: the dispose path may have raced past the fast-path check.
+            if (disposeState != 0)
+            {
+                throw new ObjectDisposedException(targetMethod.DeclaringType?.FullName ?? nameof(EmitWorkerProxy));
+            }
+
             if (worker is null)
             {
                 throw new ObjectDisposedException(targetMethod.DeclaringType?.FullName ?? nameof(EmitWorkerProxy));
@@ -92,7 +118,11 @@ public class EmitWorkerProxy : DispatchProxy
         }
         finally
         {
-            invocationLock.ExitReadLock();
+            lock (disposeLock)
+            {
+                if (Interlocked.Decrement(ref activeCallCount) == 0)
+                    Monitor.PulseAll(disposeLock);
+            }
         }
     }
 
