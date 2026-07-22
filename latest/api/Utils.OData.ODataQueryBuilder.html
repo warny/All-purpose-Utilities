@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_OData_ODataQueryBuilder" data-uid="Utils.OData.ODataQueryBuilder" class="text-break">
-Class ODataQueryBuilder  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/ODataQueryBuilder.cs/#L9"><i class="bi bi-code-slash"></i></a>
+Class ODataQueryBuilder  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/ODataQueryBuilder.cs/#L10"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -248,7 +248,7 @@ Class ODataQueryBuilder  <a class="header-action link-secondary" title="View sou
 
   <h3 id="Utils_OData_ODataQueryBuilder__ctor_System_String_Utils_OData_IQuery_System_Int32_" data-uid="Utils.OData.ODataQueryBuilder.#ctor(System.String,Utils.OData.IQuery,System.Int32)">
   ODataQueryBuilder(string, IQuery, int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/ODataQueryBuilder.cs/#L28"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/ODataQueryBuilder.cs/#L31"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.OData.ODataQueryBuilder.html">ODataQueryBuilder</a> class.</p>
@@ -285,6 +285,12 @@ Class ODataQueryBuilder  <a class="header-action link-secondary" title="View sou
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
     <dd><p>Thrown when <code class="paramref">UrlPrefix</code> or <code class="paramref">query</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
 </dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when <code class="paramref">skip</code> is negative, when <a class="xref" href="Utils.OData.IQuery.html#Utils_OData_IQuery_Skip">Skip</a> is negative, or when <a class="xref" href="Utils.OData.IQuery.html#Utils_OData_IQuery_Top">Top</a> is zero or negative.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.overflowexception">OverflowException</a></dt>
+    <dd><p>Thrown when the combined skip value overflows <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a>.</p>
+</dd>
   </dl>
 
 
@@ -297,7 +303,7 @@ Class ODataQueryBuilder  <a class="header-action link-secondary" title="View sou
 
   <h3 id="Utils_OData_ODataQueryBuilder_Authorization" data-uid="Utils.OData.ODataQueryBuilder.Authorization">
   Authorization
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/ODataQueryBuilder.cs/#L19"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/ODataQueryBuilder.cs/#L20"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the authorization header extracted from the base URL, if any.</p>
@@ -329,7 +335,7 @@ Class ODataQueryBuilder  <a class="header-action link-secondary" title="View sou
 
   <h3 id="Utils_OData_ODataQueryBuilder_Url" data-uid="Utils.OData.ODataQueryBuilder.Url">
   Url
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/ODataQueryBuilder.cs/#L14"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/ODataQueryBuilder.cs/#L15"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the fully qualified URL generated from the provided query.</p>
@@ -361,7 +367,7 @@ Class ODataQueryBuilder  <a class="header-action link-secondary" title="View sou
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/ODataQueryBuilder.cs/#L9" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/ODataQueryBuilder.cs/#L10" class="edit-link">Edit this page</a>
         </div>
 
 
