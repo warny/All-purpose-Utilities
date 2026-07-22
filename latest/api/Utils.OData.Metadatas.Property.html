@@ -247,7 +247,7 @@ Class Property  <a class="header-action link-secondary" title="View source" href
 
   <h3 id="Utils_OData_Metadatas_Property_Annotations" data-uid="Utils.OData.Metadatas.Property.Annotations">
   Annotations
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/Metadatas/XmlObjects.cs/#L71"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/Metadatas/XmlObjects.cs/#L83"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"></div>
@@ -264,6 +264,40 @@ Class Property  <a class="header-action link-secondary" title="View source" href
   <h4 class="section">Property Value</h4>
   <dl class="parameters">
     <dt><a class="xref" href="Utils.OData.Metadatas.Annotation.html">Annotation</a>[]</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_OData_Metadatas_Property_IsNullable_" data-uid="Utils.OData.Metadatas.Property.IsNullable*"></a>
+
+  <h3 id="Utils_OData_Metadatas_Property_IsNullable" data-uid="Utils.OData.Metadatas.Property.IsNullable">
+  IsNullable
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/Metadatas/XmlObjects.cs/#L80"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when the property allows null values.
+Defaults to <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when the EDM <code>Nullable</code> facet is absent,
+as required by the OData specification.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool IsNullable { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
     <dd></dd>
   </dl>
 
@@ -317,6 +351,37 @@ Class Property  <a class="header-action link-secondary" title="View source" href
 
   <div class="codewrapper">
     <pre><code class="lang-csharp hljs">public string Name { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_OData_Metadatas_Property_NullableFacet_" data-uid="Utils.OData.Metadatas.Property.NullableFacet*"></a>
+
+  <h3 id="Utils_OData_Metadatas_Property_NullableFacet" data-uid="Utils.OData.Metadatas.Property.NullableFacet">
+  NullableFacet
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/Metadatas/XmlObjects.cs/#L72"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string? NullableFacet { get; set; }</code></pre>
   </div>
 
 

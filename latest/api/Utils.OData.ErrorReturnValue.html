@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_OData_ErrorReturnValue" data-uid="Utils.OData.ErrorReturnValue" class="text-break">
-Class ErrorReturnValue  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/ReturnValue.cs/#L51"><i class="bi bi-code-slash"></i></a>
+Class ErrorReturnValue  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/ReturnValue.cs/#L49"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -102,7 +102,7 @@ Class ErrorReturnValue  <a class="header-action link-secondary" title="View sour
   <div class="markdown conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public record ErrorReturnValue : IEquatable&lt;ErrorReturnValue&gt;</code></pre>
+    <pre><code class="lang-csharp hljs">public sealed record ErrorReturnValue : IEquatable&lt;ErrorReturnValue&gt;</code></pre>
   </div>
 
 
@@ -138,9 +138,6 @@ Class ErrorReturnValue  <a class="header-action link-secondary" title="View sour
     </div>
     <div>
       <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone">object.MemberwiseClone()</a>
     </div>
     <div>
       <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
@@ -254,10 +251,10 @@ Class ErrorReturnValue  <a class="header-action link-secondary" title="View sour
 
   <h3 id="Utils_OData_ErrorReturnValue__ctor_System_Int32_System_String_" data-uid="Utils.OData.ErrorReturnValue.#ctor(System.Int32,System.String)">
   ErrorReturnValue(int, string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/ReturnValue.cs/#L51"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/ReturnValue.cs/#L57"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Represents an error returned by an OData operation.</p>
+  <div class="markdown level1 summary"><p>Initializes a new <a class="xref" href="Utils.OData.ErrorReturnValue.html">ErrorReturnValue</a> with the given code and message.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -271,7 +268,7 @@ Class ErrorReturnValue  <a class="header-action link-secondary" title="View sour
     <dd><p>Application-specific or HTTP status code describing the failure.</p>
 </dd>
     <dt><code>message</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd><p>Human-readable explanation of the error.</p>
+    <dd><p>Human-readable explanation of the error. Must not be null or empty.</p>
 </dd>
   </dl>
 
@@ -283,6 +280,12 @@ Class ErrorReturnValue  <a class="header-action link-secondary" title="View sour
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when <code class="paramref">message</code> is null or empty.</p>
+</dd>
+  </dl>
 
 
 
@@ -294,7 +297,7 @@ Class ErrorReturnValue  <a class="header-action link-secondary" title="View sour
 
   <h3 id="Utils_OData_ErrorReturnValue_code" data-uid="Utils.OData.ErrorReturnValue.code">
   code
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/ReturnValue.cs/#L51"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/ReturnValue.cs/#L66"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Application-specific or HTTP status code describing the failure.</p>
@@ -326,7 +329,7 @@ Class ErrorReturnValue  <a class="header-action link-secondary" title="View sour
 
   <h3 id="Utils_OData_ErrorReturnValue_message" data-uid="Utils.OData.ErrorReturnValue.message">
   message
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/ReturnValue.cs/#L51"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/ReturnValue.cs/#L69"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Human-readable explanation of the error.</p>
@@ -358,7 +361,7 @@ Class ErrorReturnValue  <a class="header-action link-secondary" title="View sour
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/ReturnValue.cs/#L51" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/ReturnValue.cs/#L49" class="edit-link">Edit this page</a>
         </div>
 
 

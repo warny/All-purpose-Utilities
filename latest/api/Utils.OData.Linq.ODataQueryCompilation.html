@@ -397,7 +397,7 @@ Class ODataQueryCompilation  <a class="header-action link-secondary" title="View
 
   <h3 id="Utils_OData_Linq_ODataQueryCompilation_ToUriString" data-uid="Utils.OData.Linq.ODataQueryCompilation.ToUriString">
   ToUriString()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/Linq/ODataQueryCompilation.cs/#L52"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/Linq/ODataQueryCompilation.cs/#L58"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Builds the URI fragment that corresponds to the compiled query.</p>
@@ -422,6 +422,12 @@ Class ODataQueryCompilation  <a class="header-action link-secondary" title="View
 
 
 
+  <h4 class="section" id="Utils_OData_Linq_ODataQueryCompilation_ToUriString_remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Item 26: query option values are percent-encoded so that characters such as spaces,
+ampersands, plus signs, and hash marks cannot corrupt the query-string boundary.
+The entity set name is used as a path segment and is not encoded here; callers that
+append this string to a base URI must ensure the overall URL is well-formed.</p>
+</div>
 
 
 
