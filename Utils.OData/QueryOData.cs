@@ -45,8 +45,13 @@ public class QueryOData : IDisposable
     private readonly HttpClient? _httpClient;
     private readonly HttpClientHandler? _handler;
     private readonly bool _disposeClient;
+    // Item 48: 10 MiB limit applied consistently to all runtime metadata downloads.
+    private const int MaxMetadataBytes = 10 * 1024 * 1024;
+
     private readonly SemaphoreSlim _metadataLock = new(1, 1);
-    private Edmx? _metadataCache;
+    // Item 46: cache keyed by canonical metadata URL so that calls with different
+    // endpoints on the same QueryOData instance return the correct schema each time.
+    private readonly Dictionary<string, Edmx> _metadataCache = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Initializes a new instance of the <see cref="QueryOData"/> class with the specified base URL.
@@ -655,64 +660,29 @@ public class QueryOData : IDisposable
     /// <param name="entityType">Entity type inferred from the query.</param>
     /// <param name="columnName">Column name that requires metadata information.</param>
     /// <returns>The matching property when available; otherwise <see langword="null"/>.</returns>
-    private static Property? ResolveProperty(Edmx metadata, EntityType? entityType, string columnName)
+    /// <summary>
+    /// Resolves the metadata property for the given column within the specified entity type only.
+    /// </summary>
+    /// <remarks>
+    /// Item 45: the previous implementation fell back to a global name-only scan across every
+    /// entity type in the schema when the property was not found in <paramref name="entityType"/>.
+    /// A common name such as <c>Id</c> or <c>Name</c> could therefore borrow the EDM type of an
+    /// unrelated entity, causing wrong <c>FieldType</c> values and incorrect converters.  The
+    /// global fallback has been removed; if the property is not declared on the resolved entity
+    /// type the converter falls back to the default (string/untyped).
+    /// </remarks>
+    private static Property? ResolveProperty(Edmx? metadata, EntityType? entityType, string columnName)
     {
-        if (entityType?.Properties is not null)
-        {
-            foreach (Property property in entityType.Properties)
-            {
-                if (property is null || string.IsNullOrWhiteSpace(property.Name))
-                {
-                    continue;
-                }
-
-                if (string.Equals(property.Name, columnName, StringComparison.OrdinalIgnoreCase))
-                {
-                    return property;
-                }
-            }
-        }
-
-        if (metadata?.DataServices is null)
-        {
+        if (entityType?.Properties is null)
             return null;
-        }
 
-        foreach (DataServices dataServices in metadata.DataServices)
+        foreach (Property property in entityType.Properties)
         {
-            if (dataServices?.Schemas is null)
-            {
+            if (property is null || string.IsNullOrWhiteSpace(property.Name))
                 continue;
-            }
 
-            foreach (Schema schema in dataServices.Schemas)
-            {
-                if (schema?.EntityTypes is null)
-                {
-                    continue;
-                }
-
-                foreach (EntityType candidate in schema.EntityTypes)
-                {
-                    if (candidate?.Properties is null)
-                    {
-                        continue;
-                    }
-
-                    foreach (Property property in candidate.Properties)
-                    {
-                        if (property is null || string.IsNullOrWhiteSpace(property.Name))
-                        {
-                            continue;
-                        }
-
-                        if (string.Equals(property.Name, columnName, StringComparison.OrdinalIgnoreCase))
-                        {
-                            return property;
-                        }
-                    }
-                }
-            }
+            if (string.Equals(property.Name, columnName, StringComparison.OrdinalIgnoreCase))
+                return property;
         }
 
         return null;
@@ -843,6 +813,16 @@ public class QueryOData : IDisposable
     /// <param name="Ordinal">Zero-based ordinal assigned to the column.</param>
     /// <param name="Converter">Converter used to materialize JSON nodes into column values.</param>
     private sealed record ColumnDefinition(string Name, Type FieldType, int Ordinal, Func<JsonNode?, object> Converter);
+
+    /// <summary>
+    /// Raised by <see cref="ReadBoundedAsync"/> when the stream exceeds the configured byte limit.
+    /// Caught exclusively in <see cref="FetchMetadataAsync"/> to produce a uniform error return value.
+    /// </summary>
+    private sealed class MetadataSizeLimitException : Exception
+    {
+        public MetadataSizeLimitException(int maxBytes)
+            : base($"Metadata response stream exceeded the {maxBytes / (1024 * 1024)} MiB size limit.") { }
+    }
 
     /// <summary>
     /// Represents an error raised while streaming paginated OData results.
@@ -1205,6 +1185,8 @@ public class QueryOData : IDisposable
             {
                 DateTime dateTime => dateTime,
                 DateTimeOffset dateTimeOffset => dateTimeOffset.UtcDateTime,
+                // Edm.Date is materialised as DateOnly (item 23); convert to midnight DateTime.
+                DateOnly dateOnly => dateOnly.ToDateTime(TimeOnly.MinValue),
                 _ => Convert.ToDateTime(value, CultureInfo.InvariantCulture)
             };
         }
@@ -1605,6 +1587,8 @@ public class QueryOData : IDisposable
 
     /// <summary>
     /// Retrieves and caches the metadata document using the provided URL resolver.
+    /// The cache is keyed by canonical metadata URL (item 46): distinct URLs on the same
+    /// instance each receive their own cached entry.
     /// </summary>
     /// <param name="metadataUrlProvider">Delegate responsible for determining the metadata URL.</param>
     /// <param name="cancellationToken">Token used to cancel the retrieval operation.</param>
@@ -1613,27 +1597,38 @@ public class QueryOData : IDisposable
             Func<CancellationToken, Task<string?>> metadataUrlProvider,
             CancellationToken cancellationToken)
     {
-        if (_metadataCache is not null)
-            return new(_metadataCache);
+        var rawUrl = await metadataUrlProvider(cancellationToken);
+        if (string.IsNullOrWhiteSpace(rawUrl))
+            return new(new ErrorReturnValue(-10, "Metadata URL could not be determined."));
+
+        var resolvedUrl = ResolveMetadataUrl(rawUrl);
+
+        lock (_metadataCache)
+        {
+            if (_metadataCache.TryGetValue(resolvedUrl, out Edmx? cached))
+                return new(cached);
+        }
 
         await _metadataLock.WaitAsync(cancellationToken);
         try
         {
-            if (_metadataCache is not null)
-                return new(_metadataCache);
+            lock (_metadataCache)
+            {
+                if (_metadataCache.TryGetValue(resolvedUrl, out Edmx? cached))
+                    return new(cached);
+            }
 
-            var rawUrl = await metadataUrlProvider(cancellationToken);
-            if (string.IsNullOrWhiteSpace(rawUrl))
-                return new(new ErrorReturnValue(-10, "Metadata URL could not be determined."));
-
-            var resolvedUrl = ResolveMetadataUrl(rawUrl);
             var metadataResult = await FetchMetadataAsync(resolvedUrl, cancellationToken);
             if (metadataResult.IsError)
                 return metadataResult;
 
             var metadataValue = metadataResult.Value
                     ?? throw new InvalidOperationException("Metadata content cannot be null when the operation succeeds.");
-            _metadataCache = metadataValue;
+            lock (_metadataCache)
+            {
+                _metadataCache[resolvedUrl] = metadataValue;
+            }
+
             return new(metadataValue);
         }
         finally
@@ -1655,15 +1650,68 @@ public class QueryOData : IDisposable
         if (!response.IsSuccessStatusCode)
             return new(new ErrorReturnValue(-(int)response.StatusCode, response.ReasonPhrase ?? "Unknown error"));
 
+        // Item 48: reject oversized metadata before reading the body.
+        long? contentLength = response.Content.Headers.ContentLength;
+        if (contentLength.HasValue && contentLength.Value > MaxMetadataBytes)
+        {
+            return new(new ErrorReturnValue(-13,
+                $"Metadata response from '{metadataUrl}' exceeds the {MaxMetadataBytes / (1024 * 1024)} MiB limit."));
+        }
+
         await using var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
         if (contentStream is null || (contentStream.CanSeek && contentStream.Length == 0))
             return new(new ErrorReturnValue(-11, "Metadata document is empty."));
 
-        var metadata = DeserializeMetadatas.Deserialize(contentStream);
+        // Item 48: read with a bounded buffer so that streaming responses cannot allocate
+        // unbounded memory even when Content-Length is absent or spoofed.
+        MemoryStream bounded;
+        try
+        {
+            bounded = await ReadBoundedAsync(contentStream, MaxMetadataBytes, cancellationToken);
+        }
+        catch (MetadataSizeLimitException ex)
+        {
+            return new(new ErrorReturnValue(-13, ex.Message));
+        }
+
+        Edmx? metadata;
+        using (bounded)
+        {
+            metadata = DeserializeMetadatas.Deserialize(bounded);
+        }
+
         if (metadata is null)
             return new(new ErrorReturnValue(-12, "Metadata document could not be parsed."));
 
         return new(metadata);
+    }
+
+    /// <summary>
+    /// Copies <paramref name="source"/> into a <see cref="MemoryStream"/>, throwing when
+    /// the total byte count exceeds <paramref name="maxBytes"/>.
+    /// </summary>
+    private static async Task<MemoryStream> ReadBoundedAsync(
+            Stream source, int maxBytes, CancellationToken cancellationToken)
+    {
+        var buffer = new byte[81920];
+        int totalRead = 0;
+        var ms = new MemoryStream();
+
+        while (true)
+        {
+            int bytesRead = await source.ReadAsync(buffer, 0, buffer.Length, cancellationToken);
+            if (bytesRead == 0)
+                break;
+
+            totalRead += bytesRead;
+            if (totalRead > maxBytes)
+                throw new MetadataSizeLimitException(maxBytes);
+
+            ms.Write(buffer, 0, bytesRead);
+        }
+
+        ms.Position = 0;
+        return ms;
     }
 
     private static string? ExtractMetadataUrl(JsonNode jsonNode)
