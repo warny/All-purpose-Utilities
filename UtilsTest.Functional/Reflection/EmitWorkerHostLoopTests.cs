@@ -171,6 +171,21 @@ public class EmitWorkerHostLoopTests
         }
     }
 
+    /// <summary>
+    /// Finds the worker-assigned private method ID for a given method name in a Load response's
+    /// descriptor table. The protocol now uses stable private IDs instead of metadata tokens so
+    /// method identity is preserved across modules (item 1).
+    /// </summary>
+    private static int GetMethodId(WorkerResponse loadResponse, string methodName)
+    {
+        Assert.IsNotNull(loadResponse.MethodDescriptors,
+            "Load response must carry MethodDescriptors (item 1 requirement).");
+        MethodDescriptorDto? descriptor = System.Linq.Enumerable.FirstOrDefault(
+            loadResponse.MethodDescriptors, d => d.Name == methodName);
+        Assert.IsNotNull(descriptor, $"No descriptor found for method '{methodName}' in Load response.");
+        return descriptor.MethodId;
+    }
+
     [TestMethod]
     public void Run_HandlesLoadCallUnloadShutdown_ForRealNativeDll()
     {
@@ -181,7 +196,6 @@ public class EmitWorkerHostLoopTests
         }
 
         Type interfaceType = typeof(IKernel32ProcessId);
-        MethodInfo method = interfaceType.GetMethod(nameof(IKernel32ProcessId.GetCurrentProcessId))!;
 
         using var input = new LineQueueTextReader();
         using var output = new LineQueueTextWriter();
@@ -201,10 +215,14 @@ public class EmitWorkerHostLoopTests
         Assert.IsTrue(loadResponse.Success, loadResponse.ErrorMessage);
         int handle = loadResponse.Handle;
 
+        // Use the worker-assigned private method ID from the Load response descriptor table
+        // (item 1: stable cross-module identity instead of metadata tokens).
+        int methodId = GetMethodId(loadResponse, nameof(IKernel32ProcessId.GetCurrentProcessId));
+
         input.Enqueue(JsonSerializer.Serialize(new WorkerRequest
         {
             Id = 2, Kind = WorkerRequestKind.Call, Handle = handle,
-            MethodMetadataToken = method.MetadataToken, ArgumentsJson = [],
+            MethodId = methodId, ArgumentsJson = [],
         }));
         WorkerResponse callResponse = output.TakeResponse(2, timeout);
         Assert.IsTrue(callResponse.Success, callResponse.ErrorMessage);
@@ -249,7 +267,9 @@ public class EmitWorkerHostLoopTests
             InterfaceAssemblyPath = processIdType.Assembly.Location, InterfaceTypeFullName = processIdType.FullName,
             DllPath = "kernel32.dll", CallingConvention = CallingConvention.Winapi,
         }));
-        int processIdHandle = output.TakeResponse(1, timeout).Handle;
+        WorkerResponse processIdLoadResponse = output.TakeResponse(1, timeout);
+        int processIdHandle = processIdLoadResponse.Handle;
+        int processIdMethodId = GetMethodId(processIdLoadResponse, nameof(IKernel32ProcessId.GetCurrentProcessId));
 
         input.Enqueue(JsonSerializer.Serialize(new WorkerRequest
         {
@@ -257,13 +277,15 @@ public class EmitWorkerHostLoopTests
             InterfaceAssemblyPath = tickCountType.Assembly.Location, InterfaceTypeFullName = tickCountType.FullName,
             DllPath = "kernel32.dll", CallingConvention = CallingConvention.Winapi,
         }));
-        int tickCountHandle = output.TakeResponse(2, timeout).Handle;
+        WorkerResponse tickCountLoadResponse = output.TakeResponse(2, timeout);
+        int tickCountHandle = tickCountLoadResponse.Handle;
+        int tickCountMethodId = GetMethodId(tickCountLoadResponse, nameof(IKernel32TickCount.GetTickCount));
         Assert.AreNotEqual(processIdHandle, tickCountHandle);
 
         input.Enqueue(JsonSerializer.Serialize(new WorkerRequest
         {
             Id = 3, Kind = WorkerRequestKind.Call, Handle = processIdHandle,
-            MethodMetadataToken = processIdMethod.MetadataToken, ArgumentsJson = [],
+            MethodId = processIdMethodId, ArgumentsJson = [],
         }));
         WorkerResponse callProcessIdResponse = output.TakeResponse(3, timeout);
         Assert.IsTrue(callProcessIdResponse.Success, callProcessIdResponse.ErrorMessage);
@@ -272,7 +294,7 @@ public class EmitWorkerHostLoopTests
         input.Enqueue(JsonSerializer.Serialize(new WorkerRequest
         {
             Id = 4, Kind = WorkerRequestKind.Call, Handle = tickCountHandle,
-            MethodMetadataToken = tickCountMethod.MetadataToken, ArgumentsJson = [],
+            MethodId = tickCountMethodId, ArgumentsJson = [],
         }));
         Assert.IsTrue(output.TakeResponse(4, timeout).Success);
 
@@ -283,7 +305,7 @@ public class EmitWorkerHostLoopTests
         input.Enqueue(JsonSerializer.Serialize(new WorkerRequest
         {
             Id = 6, Kind = WorkerRequestKind.Call, Handle = tickCountHandle,
-            MethodMetadataToken = tickCountMethod.MetadataToken, ArgumentsJson = [],
+            MethodId = tickCountMethodId, ArgumentsJson = [],
         }));
         Assert.IsTrue(output.TakeResponse(6, timeout).Success);
 
@@ -291,7 +313,7 @@ public class EmitWorkerHostLoopTests
         input.Enqueue(JsonSerializer.Serialize(new WorkerRequest
         {
             Id = 7, Kind = WorkerRequestKind.Call, Handle = processIdHandle,
-            MethodMetadataToken = processIdMethod.MetadataToken, ArgumentsJson = [],
+            MethodId = processIdMethodId, ArgumentsJson = [],
         }));
         Assert.IsFalse(output.TakeResponse(7, timeout).Success);
 
@@ -332,6 +354,7 @@ public class EmitWorkerHostLoopTests
         WorkerResponse loadResponse = output.TakeResponse(1, timeout);
         Assert.IsTrue(loadResponse.Success, loadResponse.ErrorMessage);
         int handle = loadResponse.Handle;
+        int sleepMethodId = GetMethodId(loadResponse, nameof(IKernel32Sleep.Sleep));
 
         string sleepArgumentJson = JsonSerializer.Serialize(sleepMilliseconds);
         var stopwatch = Stopwatch.StartNew();
@@ -339,12 +362,12 @@ public class EmitWorkerHostLoopTests
         input.Enqueue(JsonSerializer.Serialize(new WorkerRequest
         {
             Id = 2, Kind = WorkerRequestKind.Call, Handle = handle,
-            MethodMetadataToken = method.MetadataToken, ArgumentsJson = [sleepArgumentJson],
+            MethodId = sleepMethodId, ArgumentsJson = [sleepArgumentJson],
         }));
         input.Enqueue(JsonSerializer.Serialize(new WorkerRequest
         {
             Id = 3, Kind = WorkerRequestKind.Call, Handle = handle,
-            MethodMetadataToken = method.MetadataToken, ArgumentsJson = [sleepArgumentJson],
+            MethodId = sleepMethodId, ArgumentsJson = [sleepArgumentJson],
         }));
 
         WorkerResponse first = output.TakeResponse(2, timeout);

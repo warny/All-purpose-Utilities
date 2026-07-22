@@ -86,6 +86,63 @@ public class EmitWorkerProcessTests
             "MaxAbandonedCalls should be low enough to retire a consistently slow worker promptly.");
     }
 
+    // ─── Item 7: timeout validation before resource allocation ───────────────────
+
+    [TestMethod]
+    public void ValidateTimeout_AcceptsPositiveFiniteDuration()
+    {
+        TimeSpan result = EmitWorkerProcess.ValidateTimeout(
+            TimeSpan.FromSeconds(5), EmitWorkerProcess.DefaultCallTimeout, "test");
+        Assert.AreEqual(TimeSpan.FromSeconds(5), result);
+    }
+
+    [TestMethod]
+    public void ValidateTimeout_UsesDefaultWhenNull()
+    {
+        TimeSpan result = EmitWorkerProcess.ValidateTimeout(
+            null, EmitWorkerProcess.DefaultCallTimeout, "test");
+        Assert.AreEqual(EmitWorkerProcess.DefaultCallTimeout, result);
+    }
+
+    [TestMethod]
+    public void ValidateTimeout_ThrowsOnZero()
+    {
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => EmitWorkerProcess.ValidateTimeout(TimeSpan.Zero, EmitWorkerProcess.DefaultCallTimeout, "test"));
+    }
+
+    [TestMethod]
+    public void ValidateTimeout_ThrowsOnNegative()
+    {
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => EmitWorkerProcess.ValidateTimeout(TimeSpan.FromSeconds(-1), EmitWorkerProcess.DefaultCallTimeout, "test"));
+    }
+
+    [TestMethod]
+    public void ValidateTimeout_ThrowsOnInfiniteTimeSpan()
+    {
+        // Timeout.InfiniteTimeSpan is -1ms, which is negative — must be rejected.
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => EmitWorkerProcess.ValidateTimeout(Timeout.InfiniteTimeSpan, EmitWorkerProcess.DefaultCallTimeout, "test"));
+    }
+
+    [TestMethod]
+    public void ValidateTimeout_ThrowsWhenExceedsMaximum()
+    {
+        TimeSpan tooLarge = TimeSpan.FromMilliseconds((double)int.MaxValue + 1);
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => EmitWorkerProcess.ValidateTimeout(tooLarge, EmitWorkerProcess.DefaultCallTimeout, "test"));
+    }
+
+    [TestMethod]
+    public void ValidateTimeout_AcceptsMaximumSupportedValue()
+    {
+        // int.MaxValue milliseconds is the largest value CancellationTokenSource accepts.
+        TimeSpan maxSupported = TimeSpan.FromMilliseconds(int.MaxValue);
+        TimeSpan result = EmitWorkerProcess.ValidateTimeout(maxSupported, EmitWorkerProcess.DefaultCallTimeout, "test");
+        Assert.AreEqual(maxSupported, result);
+    }
+
     // ─── Item 37: fail-closed sandbox fallback ───────────────────────────────────
 
     /// <summary>

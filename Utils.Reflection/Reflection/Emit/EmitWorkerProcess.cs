@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO.Pipes;
 using System.Reflection;
@@ -49,6 +50,12 @@ internal sealed class EmitWorkerProcess : IDisposable
     internal const int MaxAbandonedCalls = 5;
 
     /// <summary>
+    /// Maximum number of timed-out request IDs retained in <see cref="recentlyTimedOutIds"/>, used
+    /// to distinguish expected late responses from truly unsolicited or duplicate responses.
+    /// </summary>
+    private const int MaxTrackedTimedOutIds = 1024;
+
+    /// <summary>
     /// Timeout for the graceful <see cref="WorkerRequestKind.Shutdown"/> handshake in
     /// <see cref="Dispose"/>. Short and non-configurable: a slow shutdown response falls back to
     /// <see cref="KillSilently"/> regardless, so there is nothing to gain from waiting longer.
@@ -62,6 +69,23 @@ internal sealed class EmitWorkerProcess : IDisposable
     private readonly System.IO.StreamWriter writer;
     private readonly object writeLock = new();
     private readonly ConcurrentDictionary<long, TaskCompletionSource<WorkerResponse>> pending = new();
+
+    /// <summary>
+    /// Maps each loaded handle to the host-side method-ID table built from the Load response's
+    /// <see cref="WorkerResponse.MethodDescriptors"/>. Entries are added by <see cref="LoadInterface"/>
+    /// and removed by <see cref="UnloadInterface"/> so lookups in <see cref="InvokeMethod"/> always
+    /// find the table for any handle that was successfully loaded.
+    /// </summary>
+    private readonly ConcurrentDictionary<int, IReadOnlyDictionary<MethodInfo, int>> methodIdTableByHandle = new();
+
+    /// <summary>
+    /// Bounded set of request IDs that timed out while still pending in the worker. Used by
+    /// <see cref="RunReaderLoop"/> to distinguish expected late responses (safe to drop) from
+    /// unsolicited or duplicate responses that indicate a protocol violation.
+    /// </summary>
+    private readonly ConcurrentQueue<long> recentlyTimedOutIds = new();
+    private int timedOutIdCount;
+
     private readonly Task readerLoop;
     private readonly TimeSpan callTimeout;
     private long nextId;
@@ -87,6 +111,14 @@ internal sealed class EmitWorkerProcess : IDisposable
     }
 
     /// <summary>
+    /// <see langword="true"/> when this worker is usable for new requests: not disposed and not
+    /// retired or faulted (i.e. <see cref="connectionFault"/> is <see langword="null"/>).
+    /// <see langword="false"/> means the worker should be replaced by the caller (e.g.
+    /// <see cref="EmitWorkerPool"/>) before new interfaces are loaded.
+    /// </summary>
+    internal bool IsHealthy => connectionFault is null && !disposed;
+
+    /// <summary>
     /// Validates that <paramref name="interfaceType"/> can be marshaled across a process boundary,
     /// starts the isolated worker, and requests that it load <paramref name="dllPath"/> and emit the
     /// mapping class for the interface.
@@ -97,12 +129,12 @@ internal sealed class EmitWorkerProcess : IDisposable
     /// <param name="loadTimeout">
     /// Maximum time to wait for the worker's response to the initial <see cref="WorkerRequestKind.Load"/>
     /// request (compiling the mapping class and loading the native DLL). Defaults to
-    /// <see cref="DefaultLoadTimeout"/> when <see langword="null"/>.
+    /// <see cref="DefaultLoadTimeout"/> when <see langword="null"/>. Must be a positive finite duration.
     /// </param>
     /// <param name="callTimeout">
     /// Maximum time to wait for the worker's response to each subsequent
     /// <see cref="WorkerRequestKind.Call"/> request, applied by <see cref="InvokeMethod"/>. Defaults to
-    /// <see cref="DefaultCallTimeout"/> when <see langword="null"/>.
+    /// <see cref="DefaultCallTimeout"/> when <see langword="null"/>. Must be a positive finite duration.
     /// </param>
     /// <param name="handle">Handle allocated for <paramref name="interfaceType"/> on the new worker; pass to <see cref="InvokeMethod"/>.</param>
     /// <returns>A connected, loaded worker ready to receive <see cref="WorkerRequestKind.Call"/> requests.</returns>
@@ -112,8 +144,7 @@ internal sealed class EmitWorkerProcess : IDisposable
     {
         // Validated again inside LoadInterface (needed there for EmitWorkerPool, which calls it
         // directly against an already-running shared worker), but checked here too so an unsupported
-        // interface fails immediately instead of paying for a full sandboxed process spawn/teardown
-        // first.
+        // interface fails immediately instead of paying for a full sandboxed process spawn/teardown.
         CrossProcessMarshaling.EnsureInterfaceIsSupported(interfaceType);
 
         if (string.IsNullOrEmpty(interfaceType.Assembly.Location))
@@ -127,7 +158,9 @@ internal sealed class EmitWorkerProcess : IDisposable
         EmitWorkerProcess worker = Start(callTimeout);
         try
         {
-            handle = worker.LoadInterface(interfaceType, dllPath, callingConvention, loadTimeout ?? DefaultLoadTimeout);
+            handle = worker.LoadInterface(
+                interfaceType, dllPath, callingConvention,
+                ValidateTimeout(loadTimeout, DefaultLoadTimeout, nameof(loadTimeout)));
         }
         catch
         {
@@ -139,19 +172,20 @@ internal sealed class EmitWorkerProcess : IDisposable
     }
 
     /// <summary>
-    /// Starts the isolated worker process and connects to it, without loading any interface yet. Used
-    /// directly by <see cref="EmitWorkerPool"/> to share one worker across multiple
-    /// <see cref="LoadInterface"/> calls; the single-interface <see cref="Start(Type, string, CallingConvention, TimeSpan?, TimeSpan?, out int)"/>
-    /// overload calls this and then loads its one interface immediately.
+    /// Starts the isolated worker process and connects to it, without loading any interface yet.
+    /// Used directly by <see cref="EmitWorkerPool"/> to share one worker across multiple
+    /// <see cref="LoadInterface"/> calls.
     /// </summary>
     /// <param name="callTimeout">
     /// Maximum time to wait for the worker's response to each <see cref="WorkerRequestKind.Call"/>
     /// request, applied by <see cref="InvokeMethod"/>. Defaults to <see cref="DefaultCallTimeout"/> when
-    /// <see langword="null"/>.
+    /// <see langword="null"/>. Must be a positive finite duration.
     /// </param>
     /// <returns>A connected worker, ready to receive <see cref="WorkerRequestKind.Load"/> requests.</returns>
     internal static EmitWorkerProcess Start(TimeSpan? callTimeout = null)
     {
+        TimeSpan validatedCallTimeout = ValidateTimeout(callTimeout, DefaultCallTimeout, nameof(callTimeout));
+
         string exePath = Environment.ProcessPath
             ?? throw new InvalidOperationException(
                 "Unable to determine the current process executable path, required to launch an isolated Emit worker.");
@@ -196,17 +230,54 @@ internal sealed class EmitWorkerProcess : IDisposable
             throw;
         }
 
-        var reader = new System.IO.StreamReader(serverPipe, leaveOpen: true);
-        var writer = new System.IO.StreamWriter(serverPipe, leaveOpen: true) { AutoFlush = true };
+        var readerStream = new System.IO.StreamReader(serverPipe, leaveOpen: true);
+        var writerStream = new System.IO.StreamWriter(serverPipe, leaveOpen: true) { AutoFlush = true };
 
-        return new EmitWorkerProcess(sandbox, process, serverPipe, reader, writer, callTimeout ?? DefaultCallTimeout);
+        return new EmitWorkerProcess(sandbox, process, serverPipe, readerStream, writerStream, validatedCallTimeout);
+    }
+
+    /// <summary>
+    /// Validates that a timeout is a positive finite duration within the range supported by
+    /// <see cref="CancellationTokenSource"/>. Returns the effective timeout (the provided value
+    /// or <paramref name="defaultValue"/> when <see langword="null"/>).
+    /// </summary>
+    /// <param name="timeout">Candidate timeout; null means use <paramref name="defaultValue"/>.</param>
+    /// <param name="defaultValue">Default applied when <paramref name="timeout"/> is null.</param>
+    /// <param name="parameterName">Parameter name for the exception message.</param>
+    /// <returns>The validated effective timeout.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when the resolved timeout is zero, negative, or exceeds the maximum value that
+    /// <see cref="CancellationTokenSource"/> can accept (~24.9 days).
+    /// </exception>
+    internal static TimeSpan ValidateTimeout(TimeSpan? timeout, TimeSpan defaultValue, string parameterName)
+    {
+        TimeSpan effective = timeout ?? defaultValue;
+
+        if (effective <= TimeSpan.Zero)
+        {
+            throw new ArgumentOutOfRangeException(
+                parameterName,
+                effective,
+                "Timeout must be a positive finite duration.");
+        }
+
+        // CancellationTokenSource accepts up to int.MaxValue milliseconds.
+        if (effective > TimeSpan.FromMilliseconds(int.MaxValue))
+        {
+            throw new ArgumentOutOfRangeException(
+                parameterName,
+                effective,
+                $"Timeout must not exceed {TimeSpan.FromMilliseconds(int.MaxValue)}. " +
+                "Use a shorter positive timeout.");
+        }
+
+        return effective;
     }
 
     /// <summary>
     /// Requests that the worker load <paramref name="dllPath"/> and emit the mapping class for
-    /// <paramref name="interfaceType"/>, allocating a new handle for it. A single worker (typically one
-    /// obtained through <see cref="EmitWorkerPool"/>) can hold several independently loaded interfaces
-    /// at once; each gets its own handle and is invoked/unloaded independently of the others.
+    /// <paramref name="interfaceType"/>, then builds the host-side method-ID table from the
+    /// worker's Load response.
     /// </summary>
     /// <param name="interfaceType">Interface whose members will be mapped to native exports.</param>
     /// <param name="dllPath">Path to the native DLL to load inside the worker.</param>
@@ -237,25 +308,38 @@ internal sealed class EmitWorkerProcess : IDisposable
 
         WorkerResponse response = SendAndReceive(request, timeout);
         ThrowIfFailed(response);
+
+        // Build the host-side MethodInfo→ID mapping from the worker-assigned descriptor table.
+        if (response.MethodDescriptors is { } descriptors)
+        {
+            IReadOnlyDictionary<MethodInfo, int> methodIdTable =
+                BuildMethodIdTable(interfaceType, descriptors);
+            methodIdTableByHandle[response.Handle] = methodIdTable;
+        }
+
         return response.Handle;
     }
 
     /// <summary>
     /// Releases the native mapping instance identified by <paramref name="handle"/> on the worker
-    /// (disposing it, unloading its native DLL), without shutting down the worker process itself — the
-    /// worker may still hold other interfaces loaded through <see cref="EmitWorkerPool"/>. Best-effort:
-    /// swallows failures, since there is nothing more the caller can do with a handle it is done with
-    /// either way.
+    /// (disposing it, unloading its native DLL), without shutting down the worker process itself.
+    /// Best-effort: swallows failures, since there is nothing more the caller can do with a handle
+    /// it is done with either way.
     /// </summary>
     /// <param name="handle">Handle previously returned by <see cref="LoadInterface"/>.</param>
     internal void UnloadInterface(int handle)
     {
         if (disposed)
-        {
             return;
-        }
 
-        var request = new WorkerRequest { Id = Interlocked.Increment(ref nextId), Kind = WorkerRequestKind.Unload, Handle = handle };
+        methodIdTableByHandle.TryRemove(handle, out _);
+
+        var request = new WorkerRequest
+        {
+            Id = Interlocked.Increment(ref nextId),
+            Kind = WorkerRequestKind.Unload,
+            Handle = handle,
+        };
 
         try
         {
@@ -264,24 +348,20 @@ internal sealed class EmitWorkerProcess : IDisposable
         catch
         {
             // Best-effort: a failed/timed-out Unload leaves the worker holding a now-unreferenced
-            // instance until the worker itself is eventually disposed; not ideal, but not observable
-            // by the caller, who has already discarded the handle either way.
+            // instance until the worker itself is eventually disposed.
         }
     }
 
     /// <summary>
-    /// Serializes <paramref name="args"/>, forwards the call to the worker for the interface instance
-    /// identified by <paramref name="handle"/>, applies any by-ref/out results back into
+    /// Serializes <paramref name="args"/>, looks up the worker-assigned method ID from the per-handle
+    /// table, forwards the call to the worker, applies any by-ref/out results back into
     /// <paramref name="args"/>, and returns the deserialized return value.
     /// </summary>
     /// <remarks>
-    /// Safe to call concurrently from multiple threads, including for different <paramref name="handle"/>
-    /// values on a worker shared through <see cref="EmitWorkerPool"/>: each call gets its own
-    /// <see cref="WorkerRequest.Id"/> and is independently correlated to its response by
-    /// <see cref="RunReaderLoop"/>, and the worker dispatches each request it receives to the thread pool
-    /// rather than serializing them (see <see cref="EmitWorkerHost.Run"/>). Concurrent calls that target
-    /// the very same <paramref name="handle"/> race exactly as concurrent calls into the same native
-    /// library would in-process — safe only if that library itself tolerates concurrent calls.
+    /// The method ID sent to the worker is a load-time assigned private integer, not the CLR metadata
+    /// token. Metadata tokens are module-scoped and can collide when methods are inherited from another
+    /// assembly; private IDs are assigned during <see cref="LoadInterface"/> and are unique within one
+    /// loaded handle for its entire lifetime.
     /// </remarks>
     /// <param name="handle">Handle of the target interface instance, as returned by <see cref="LoadInterface"/>.</param>
     /// <param name="method">Interface method being invoked, resolved by the caller's <see cref="System.Reflection.DispatchProxy"/>.</param>
@@ -290,6 +370,21 @@ internal sealed class EmitWorkerProcess : IDisposable
     internal object? InvokeMethod(int handle, MethodInfo method, object?[] args)
     {
         ObjectDisposedException.ThrowIf(disposed, this);
+
+        if (!methodIdTableByHandle.TryGetValue(handle, out IReadOnlyDictionary<MethodInfo, int>? methodIdTable))
+        {
+            throw new InvalidOperationException(
+                $"No method-ID table found for handle {handle}. " +
+                "The interface may not have been loaded, or may have already been unloaded.");
+        }
+
+        if (!methodIdTable.TryGetValue(method, out int methodId))
+        {
+            throw new InvalidOperationException(
+                $"Method '{method.DeclaringType?.FullName}.{method.Name}' is not in the method-ID " +
+                $"table for handle {handle}. Only methods declared by the originally loaded interface " +
+                "contract may be invoked.");
+        }
 
         ParameterInfo[] parameters = method.GetParameters();
         string?[] argumentsJson = new string?[parameters.Length];
@@ -305,7 +400,7 @@ internal sealed class EmitWorkerProcess : IDisposable
             Id = Interlocked.Increment(ref nextId),
             Kind = WorkerRequestKind.Call,
             Handle = handle,
-            MethodMetadataToken = method.MetadataToken,
+            MethodId = methodId,
             ArgumentsJson = argumentsJson,
         };
 
@@ -318,14 +413,14 @@ internal sealed class EmitWorkerProcess : IDisposable
             {
                 Type effectiveType = parameters[i].ParameterType.GetElementType()!;
                 string? valueJson = response.ByRefValuesJson is { } values && i < values.Length ? values[i] : null;
-                args[i] = valueJson is null ? null : JsonSerializer.Deserialize(valueJson, effectiveType, CrossProcessMarshaling.JsonOptions);
+                args[i] = valueJson is null
+                    ? null
+                    : JsonSerializer.Deserialize(valueJson, effectiveType, CrossProcessMarshaling.JsonOptions);
             }
         }
 
         if (method.ReturnType == typeof(void) || response.ReturnValueJson is null)
-        {
             return null;
-        }
 
         return JsonSerializer.Deserialize(response.ReturnValueJson, method.ReturnType, CrossProcessMarshaling.JsonOptions);
     }
@@ -338,48 +433,91 @@ internal sealed class EmitWorkerProcess : IDisposable
             throw new EmitWorkerInvocationException(
                 $"The isolated Emit worker reported an error while handling {context}: {response.ErrorMessage}",
                 response.ErrorTypeName,
-                response.ErrorStackTrace);
+                remoteStackTrace: null); // Stack trace omitted by default (worker sanitizes by item 9)
         }
     }
 
     /// <summary>
+    /// Builds the host-side <see cref="MethodInfo"/>→method-ID table by matching each
+    /// <see cref="MethodDescriptorDto"/> returned by the worker to a local <see cref="MethodInfo"/>
+    /// on <paramref name="interfaceType"/>.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when a descriptor cannot be matched to a local method, which indicates that the
+    /// interface definition differs between the host and worker assemblies.
+    /// </exception>
+    private static IReadOnlyDictionary<MethodInfo, int> BuildMethodIdTable(
+        Type interfaceType,
+        MethodDescriptorDto[] descriptors)
+    {
+        MethodInfo[] localMethods = interfaceType.GetMethods();
+        var table = new Dictionary<MethodInfo, int>(descriptors.Length);
+
+        foreach (MethodDescriptorDto descriptor in descriptors)
+        {
+            MethodInfo? matched = FindMatchingMethod(localMethods, descriptor);
+            if (matched is null)
+            {
+                throw new InvalidOperationException(
+                    $"Could not match the worker descriptor for method '{descriptor.DeclaringType}.{descriptor.Name}' " +
+                    $"to any method on the local interface type '{interfaceType.FullName}'. " +
+                    "The interface definition may differ between the host and the worker assembly.");
+            }
+
+            table[matched] = descriptor.MethodId;
+        }
+
+        return table;
+    }
+
+    /// <summary>
+    /// Finds the <see cref="MethodInfo"/> in <paramref name="candidates"/> that matches the given
+    /// <paramref name="descriptor"/> by name, declaring type, and parameter types.
+    /// </summary>
+    private static MethodInfo? FindMatchingMethod(MethodInfo[] candidates, MethodDescriptorDto descriptor)
+    {
+        foreach (MethodInfo m in candidates)
+        {
+            if (m.Name != descriptor.Name) continue;
+            if (m.DeclaringType?.FullName != descriptor.DeclaringType) continue;
+
+            ParameterInfo[] parameters = m.GetParameters();
+            if (parameters.Length != descriptor.ParameterTypes.Length) continue;
+
+            bool match = true;
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                if (parameters[i].ParameterType.FullName != descriptor.ParameterTypes[i])
+                {
+                    match = false;
+                    break;
+                }
+            }
+
+            if (match) return m;
+        }
+
+        return null;
+    }
+
+    /// <summary>
     /// Writes <paramref name="request"/> and waits for its matching response, up to
-    /// <paramref name="timeout"/>, without blocking any other concurrently in-flight request on this
-    /// worker.
+    /// <paramref name="timeout"/>. Registers the pending completion source before writing so that
+    /// a late response can always be matched; cleans up the pending entry immediately if serialization
+    /// or the write itself throws, rather than leaving a stale entry until a timeout fires.
     /// </summary>
     /// <remarks>
     /// <para>
-    /// Registers a <see cref="TaskCompletionSource{TResult}"/> under <see cref="WorkerRequest.Id"/>
-    /// before writing the request line (guarded by <see cref="writeLock"/> only for the duration of the
-    /// write itself, to avoid interleaving concurrent writers on the shared pipe — never held while
-    /// waiting for the response). <see cref="RunReaderLoop"/> completes it once the matching response
-    /// line arrives.
+    /// On timeout, the request's pending entry is removed and the abandoned-call count is incremented
+    /// only when a complete frame was successfully written. A serialization or write failure is a
+    /// local error, not an abandoned remote call.
     /// </para>
     /// <para>
-    /// On timeout, only <em>this</em> request's <see cref="TaskCompletionSource{TResult}"/> is
-    /// abandoned; the worker process and every other in-flight request are left untouched. This is safe
-    /// specifically because responses are correlated by id — a late response for the timed-out request
-    /// simply finds no matching pending entry once it eventually arrives and is silently dropped, rather
-    /// than being misread as the response to a different, still-pending request. (Before requests were
-    /// individually correlated, any single timeout had to assume the worst and kill the whole worker; see
-    /// the superseded <c>PoisonAfterTimeout</c> note in <c>Utils.Reflection/TODO.md</c> item 28/34.)
-    /// </para>
-    /// <para>
-    /// The worker-side native call behind a timed-out request keeps running to completion on its own
-    /// thread-pool thread inside the worker (see <see cref="EmitWorkerHost.Run"/>) — abandoned, not
-    /// cancelled — until it finishes and its answer is dropped for lack of a listener. The outcome is
-    /// therefore <em>indeterminate</em>: side effects may or may not have occurred. Each abandoned call
-    /// increments <see cref="abandonedCallCount"/>; when that counter reaches <see cref="MaxAbandonedCalls"/>
-    /// the worker is retired (<see cref="connectionFault"/> is set and all in-flight requests are failed)
-    /// so that callers do not continue sending work to a process whose cumulative state has become
-    /// unknowable.
+    /// Responses arriving after timeout are recognized as expected late arrivals via
+    /// <see cref="recentlyTimedOutIds"/> and dropped silently. Responses for IDs that were never
+    /// registered, or duplicate live-protocol responses, indicate a protocol violation.
     /// </para>
     /// </remarks>
-    /// <param name="request">Request to send.</param>
-    /// <param name="timeout">Maximum time to wait for the response.</param>
-    /// <returns>The deserialized response.</returns>
-    /// <exception cref="TimeoutException">Thrown when the worker does not respond within <paramref name="timeout"/>.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when the worker's connection has already failed.</exception>
     private WorkerResponse SendAndReceive(WorkerRequest request, TimeSpan timeout)
     {
         if (connectionFault is { } fault)
@@ -393,9 +531,26 @@ internal sealed class EmitWorkerProcess : IDisposable
             throw new InvalidOperationException($"An in-flight request with id {request.Id} already exists.");
         }
 
-        lock (writeLock)
+        // Serialize and write AFTER registering so a late response can always be matched.
+        // If serialization or the write fails, clean up the pending entry immediately and rethrow.
+        bool frameWritten = false;
+        try
         {
-            writer.WriteLine(JsonSerializer.Serialize(request));
+            string serialized = JsonSerializer.Serialize(request);
+            lock (writeLock)
+            {
+                writer.WriteLine(serialized);
+            }
+            frameWritten = true;
+        }
+        catch (Exception writeEx)
+        {
+            // Remove the pending entry immediately; this is a local failure, not an abandoned call.
+            if (pending.TryRemove(request.Id, out TaskCompletionSource<WorkerResponse>? failed))
+            {
+                failed.TrySetException(writeEx);
+            }
+            throw;
         }
 
         using var timeoutSource = new CancellationTokenSource(timeout);
@@ -405,19 +560,23 @@ internal sealed class EmitWorkerProcess : IDisposable
             {
                 timedOut.TrySetCanceled(timeoutSource.Token);
 
-                // The native call is still running inside the worker — its result is indeterminate.
-                // After MaxAbandonedCalls, retire the worker so callers do not continue sending work
-                // to a process whose accumulated side-effect state has become unknowable.
-                int count = Interlocked.Increment(ref abandonedCallCount);
-                if (count >= MaxAbandonedCalls && connectionFault is null)
-                {
-                    var retirementFault = new InvalidOperationException(
-                        $"The isolated Emit worker has been retired after {count} abandoned calls " +
-                        "(requests that timed out while the worker was still processing them). " +
-                        "The outcome of each abandoned call is indeterminate.");
+                // Track this ID so the reader loop can recognize its eventual late response.
+                TrackTimedOutId(request.Id);
 
-                    connectionFault = retirementFault;
-                    FailAllPending(retirementFault);
+                // Only count as abandoned if a complete frame was written.
+                if (frameWritten)
+                {
+                    int count = Interlocked.Increment(ref abandonedCallCount);
+                    if (count >= MaxAbandonedCalls && connectionFault is null)
+                    {
+                        var retirementFault = new InvalidOperationException(
+                            $"The isolated Emit worker has been retired after {count} abandoned calls " +
+                            "(requests that timed out while the worker was still processing them). " +
+                            "The outcome of each abandoned call is indeterminate.");
+
+                        connectionFault = retirementFault;
+                        FailAllPending(retirementFault);
+                    }
                 }
             }
         });
@@ -434,17 +593,43 @@ internal sealed class EmitWorkerProcess : IDisposable
     }
 
     /// <summary>
-    /// Continuously reads response lines for the lifetime of the connection and completes the matching
-    /// <see cref="TaskCompletionSource{TResult}"/> registered by <see cref="SendAndReceive"/>, so several
-    /// requests can be in flight at once instead of one at a time.
+    /// Adds <paramref name="requestId"/> to the bounded <see cref="recentlyTimedOutIds"/> queue
+    /// so <see cref="RunReaderLoop"/> can distinguish its eventual late response from a protocol
+    /// violation.
     /// </summary>
-    /// <remarks>
-    /// When the loop ends — the worker closed the connection (<c>ReadBoundedLine</c> returns <see langword="null"/>)
-    /// or the read faulted (broken pipe, disposed stream, line-length limit exceeded) — every still-pending request fails with that
-    /// cause via <see cref="FailAllPending"/>, and, unless this was already a deliberate <see cref="Dispose"/>
-    /// (which handles the worker process itself), the worker process is killed so it cannot linger as an
-    /// unreachable orphan.
-    /// </remarks>
+    private void TrackTimedOutId(long requestId)
+    {
+        recentlyTimedOutIds.Enqueue(requestId);
+
+        // Trim the oldest entry when the queue exceeds the cap.
+        if (Interlocked.Increment(ref timedOutIdCount) > MaxTrackedTimedOutIds)
+        {
+            recentlyTimedOutIds.TryDequeue(out _);
+            Interlocked.Decrement(ref timedOutIdCount);
+        }
+    }
+
+    /// <summary>
+    /// Returns <see langword="true"/> when <paramref name="responseId"/> appears in
+    /// <see cref="recentlyTimedOutIds"/>, meaning it is a late response for a request that already
+    /// timed out on the host side, and can therefore be dropped silently.
+    /// </summary>
+    private bool IsExpectedLateResponse(long responseId)
+    {
+        foreach (long id in recentlyTimedOutIds)
+        {
+            if (id == responseId) return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Continuously reads response lines for the lifetime of the connection and completes the matching
+    /// pending request. Responses whose ID is not found in <see cref="pending"/> are checked against
+    /// <see cref="recentlyTimedOutIds"/>: if found, they are dropped as expected late arrivals;
+    /// otherwise they are treated as protocol violations (duplicate or unsolicited IDs) and the
+    /// connection is faulted.
+    /// </summary>
     private void RunReaderLoop()
     {
         Exception fault;
@@ -460,18 +645,28 @@ internal sealed class EmitWorkerProcess : IDisposable
                 }
                 catch (JsonException ex)
                 {
-                    // A malformed response line indicates framing corruption, which breaks the
-                    // correlated request/response protocol. Treat it as fatal so the caller learns
-                    // immediately rather than waiting for an individual per-request timeout.
                     throw new InvalidOperationException(
                         "The isolated Emit worker sent a response line that could not be deserialized. " +
                         "The connection is now unusable.", ex);
                 }
 
-                if (response is not null && pending.TryRemove(response.Id, out TaskCompletionSource<WorkerResponse>? completion))
+                if (response is null)
+                    continue;
+
+                if (pending.TryRemove(response.Id, out TaskCompletionSource<WorkerResponse>? completion))
                 {
                     completion.TrySetResult(response);
                 }
+                else if (!IsExpectedLateResponse(response.Id))
+                {
+                    // A response whose ID was never registered and never timed out indicates protocol
+                    // corruption (duplicate response, unsolicited ID, or worker bug).
+                    throw new InvalidOperationException(
+                        $"The isolated Emit worker sent a response with ID {response.Id}, which is not " +
+                        "associated with any pending or recently-timed-out request. This indicates " +
+                        "a protocol violation and the connection is now unusable.");
+                }
+                // else: expected late arrival for a previously timed-out request — drop silently.
             }
 
             fault = new InvalidOperationException("The isolated Emit worker closed the connection unexpectedly.");
@@ -537,39 +732,18 @@ internal sealed class EmitWorkerProcess : IDisposable
     }
 
     /// <summary>
-    /// Starts the worker process inside the sandbox when one is available (returned by
-    /// <see cref="ProcessContainerFactory.TryCreate"/>), or as a plain child process when no sandbox
-    /// could be created for the current platform/configuration.
+    /// Starts the worker process inside the sandbox when one is available, or as a plain child
+    /// process when no sandbox could be created for the current platform/configuration.
     /// </summary>
-    /// <remarks>
-    /// <para>
-    /// When a sandbox <em>was</em> created but its <see cref="IProcessContainer.StartProcess"/> call
-    /// fails, the method now throws rather than falling back silently to an unsandboxed process.
-    /// Previously the exception was swallowed and the worker was relaunched without isolation, giving
-    /// the caller no indication that the security boundary had been crossed.
-    /// </para>
-    /// <para>
-    /// When <see cref="ProcessContainerFactory.TryCreate"/> returns <see langword="null"/> (no sandbox
-    /// is available on the current platform or configuration), the worker is started without isolation
-    /// from the start. This path does not represent a failure — it is the expected behaviour on
-    /// platforms where no process container is implemented.
-    /// </para>
-    /// </remarks>
     private static Process StartWorkerProcess(string exePath, string pipeName, ref IProcessContainer? sandbox)
     {
         string[] arguments = BuildWorkerArguments(exePath, pipeName);
 
         if (sandbox is not null)
         {
-            // A sandbox was successfully created. Any failure to launch the process inside it is
-            // treated as fatal: falling back silently would let an arbitrarily-permissioned process
-            // run as if it were sandboxed, defeating the isolation contract.
             return sandbox.StartProcess(exePath, arguments);
         }
 
-        // No sandbox available for this platform/configuration — start as a plain child process.
-        // This is expected on platforms without an implemented process container (e.g. Linux when
-        // bwrap is not installed); it is not a fallback from a sandbox failure.
         var psi = new ProcessStartInfo(exePath)
         {
             UseShellExecute = false,
@@ -590,21 +764,6 @@ internal sealed class EmitWorkerProcess : IDisposable
     /// Builds the argument list passed to <paramref name="exePath"/> to make it enter
     /// <see cref="LibraryMapper.RunWorkerIfRequested"/>.
     /// </summary>
-    /// <remarks>
-    /// When the host process is running under a generic launcher — most commonly the <c>dotnet</c>
-    /// muxer (<c>dotnet MyApp.dll</c>, or an <c>UseAppHost=false</c> deployment) —
-    /// <see cref="Environment.ProcessPath"/> resolves to the launcher executable, not the managed
-    /// entry assembly. Re-launching that path with just <c>[marker, pipeName]</c> makes the launcher
-    /// try to parse the marker as its own first argument (e.g. <c>dotnet
-    /// --utils-reflection-emit-worker</c>) instead of forwarding it to the managed <c>Main</c>, so the
-    /// worker never starts. Detected by comparing the launcher's file name against
-    /// <see cref="Assembly.GetEntryAssembly"/>'s location: when they differ, the managed assembly path
-    /// is inserted before the marker (<c>dotnet MyApp.dll --utils-reflection-emit-worker &lt;pipe&gt;</c>),
-    /// matching how <c>dotnet</c> itself is invoked to run a framework-dependent deployment.
-    /// </remarks>
-    /// <param name="exePath">Executable that will be relaunched (<see cref="Environment.ProcessPath"/>).</param>
-    /// <param name="pipeName">Name of the named pipe the worker should connect back to.</param>
-    /// <returns>The complete, ordered argument list for the relaunched process.</returns>
     internal static string[] BuildWorkerArguments(string exePath, string pipeName)
     {
         string? entryAssemblyLocation = Assembly.GetEntryAssembly()?.Location;
@@ -621,35 +780,7 @@ internal sealed class EmitWorkerProcess : IDisposable
         return [LibraryMapper.WorkerArgumentMarker, pipeName];
     }
 
-    /// <summary>
-    /// Builds the permission set requested for the isolated Emit worker.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// <see cref="ProcessContainerPermissions.AllowDiskWrite"/> is granted on Linux/macOS only, even
-    /// though the worker itself has no legitimate need to write files: on those platforms the
-    /// host/worker named pipe is backed by a Unix domain socket file under the OS temp directory
-    /// (<see cref="System.IO.Pipes.NamedPipeServerStream"/>'s Unix implementation). Without this flag,
-    /// <see cref="ProcessIsolation.LinuxBubblewrapContainer"/> mounts a fresh, empty <c>tmpfs</c> over
-    /// <c>/tmp</c> and <see cref="ProcessIsolation.MacOsSandboxExecContainer"/> denies
-    /// <c>file-write*</c>, so the sandboxed worker can never see or connect to the socket and
-    /// <see cref="Start(TimeSpan?)"/> always fails with a connection timeout. Broader than a single-socket bind
-    /// would be, but scoping the sandbox to that one path would require extending
-    /// <see cref="IProcessContainer"/> beyond what can be validated without a real Linux/macOS
-    /// environment — see the equivalent trade-off already documented for
-    /// <see cref="ProcessIsolation.LinuxBubblewrapContainer"/>'s and
-    /// <see cref="ProcessIsolation.MacOsSandboxExecContainer"/>'s read posture.
-    /// </para>
-    /// <para>
-    /// <b>Must stay <see langword="false"/> on Windows.</b> Windows named pipes are kernel objects
-    /// outside the filesystem, so the flag brings no benefit there — and
-    /// <see cref="ProcessIsolation.ProcessContainerFactory.TryCreate"/> treats
-    /// <see cref="ProcessContainerPermissions.AllowDiskWrite"/> as a request for broader-than-restrictive
-    /// permissions and skips AppContainer creation entirely when it is set, which would silently
-    /// disable sandboxing for the worker instead of merely being a no-op.
-    /// </para>
-    /// </remarks>
-    /// <returns>The permission set to request for the isolated Emit worker.</returns>
+    /// <summary>Builds the permission set requested for the isolated Emit worker.</summary>
     internal static ProcessContainerPermissions CreateWorkerPermissions() =>
         new() { AllowDiskRead = true, AllowDiskWrite = !OperatingSystem.IsWindows() };
 
@@ -673,12 +804,11 @@ internal sealed class EmitWorkerProcess : IDisposable
         }
     }
 
+    /// <inheritdoc/>
     public void Dispose()
     {
         if (disposed)
-        {
             return;
-        }
 
         disposed = true;
 
@@ -686,7 +816,11 @@ internal sealed class EmitWorkerProcess : IDisposable
         {
             if (!workerProcess.HasExited)
             {
-                var shutdown = new WorkerRequest { Id = Interlocked.Increment(ref nextId), Kind = WorkerRequestKind.Shutdown };
+                var shutdown = new WorkerRequest
+                {
+                    Id = Interlocked.Increment(ref nextId),
+                    Kind = WorkerRequestKind.Shutdown,
+                };
                 try
                 {
                     SendAndReceive(shutdown, ShutdownTimeout);
@@ -709,16 +843,15 @@ internal sealed class EmitWorkerProcess : IDisposable
 
         sandbox?.Dispose();
 
-        // Best-effort: give the background reader loop a moment to observe the disposed reader and
-        // exit cleanly. Not awaited indefinitely — Dispose must not block on a stuck reader loop.
+        // Best-effort: give the background reader loop a moment to observe the disposed reader
+        // and exit cleanly.
         try
         {
             readerLoop.Wait(TimeSpan.FromSeconds(1));
         }
         catch
         {
-            // Best-effort; the loop will still exit on its own once the disposed reader faults its
-            // in-flight read, even if this Dispose call doesn't wait around to see it.
+            // Best-effort.
         }
     }
 }

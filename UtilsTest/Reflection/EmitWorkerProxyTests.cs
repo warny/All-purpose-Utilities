@@ -67,4 +67,39 @@ public class EmitWorkerProxyTests
         proxy.Dispose();
         proxy.Dispose(); // Must be idempotent.
     }
+
+    // ─── Item 14: synchronization gate replaced (no ReaderWriterLockSlim) ────────
+
+    [TestMethod]
+    public void Dispose_AfterConcurrentInvocationAttempt_DoesNotDeadlock()
+    {
+        // Verify that the active-call counting mechanism does not deadlock when concurrent
+        // invocations and a dispose race. Since we have no worker attached, invocations throw
+        // ObjectDisposedException, but the finally block must always decrement the counter.
+        ITinyInterface proxy = DispatchProxy.Create<ITinyInterface, EmitWorkerProxy>();
+
+        // Fire-and-forget: invoke on a background thread; it will throw ObjectDisposedException
+        // because no worker is attached, but must still release the active-call count.
+        var invokeThread = new System.Threading.Thread(() =>
+        {
+            try { proxy.Foo(1); }
+            catch (ObjectDisposedException) { /* expected */ }
+        });
+        invokeThread.Start();
+        invokeThread.Join(System.TimeSpan.FromSeconds(2));
+
+        // Dispose must succeed without deadlocking, even after the concurrent attempt.
+        proxy.Dispose();
+    }
+
+    [TestMethod]
+    public void Invoke_AfterDispose_ThrowsImmediately()
+    {
+        ITinyInterface proxy = DispatchProxy.Create<ITinyInterface, EmitWorkerProxy>();
+        proxy.Dispose();
+
+        // The fast-path check (disposeState != 0) must fire before entering the active-call region.
+        var ex = Assert.ThrowsException<ObjectDisposedException>(() => proxy.Foo(42));
+        Assert.IsNotNull(ex);
+    }
 }
