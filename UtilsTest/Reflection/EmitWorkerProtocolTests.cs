@@ -537,4 +537,107 @@ public class EmitWorkerProtocolTests
         Assert.IsNotNull(response);
         Assert.IsTrue(response.Success);
     }
+
+    // ─── Item 11: protocol versioning and Hello handshake ────────────────────────
+
+    [TestMethod]
+    public void ProtocolVersion_IsConsistentBetweenHostAndProcess()
+    {
+        // Both sides declare the same constant to ensure an incompatibility is caught at
+        // compile time, not only at runtime. Mismatching the values here is a build error.
+        Assert.AreEqual(EmitWorkerHost.ProtocolVersion, EmitWorkerProcess.ProtocolVersion);
+    }
+
+    [TestMethod]
+    public void WorkerRequest_Hello_CarriesProtocolVersion()
+    {
+        var request = new WorkerRequest
+        {
+            Id = 1,
+            Kind = WorkerRequestKind.Hello,
+            ProtocolVersion = EmitWorkerHost.ProtocolVersion,
+        };
+
+        string json = JsonSerializer.Serialize(request);
+        WorkerRequest? deserialized = JsonSerializer.Deserialize<WorkerRequest>(json);
+
+        Assert.IsNotNull(deserialized);
+        Assert.AreEqual(WorkerRequestKind.Hello, deserialized.Kind);
+        Assert.AreEqual(EmitWorkerHost.ProtocolVersion, deserialized.ProtocolVersion);
+    }
+
+    [TestMethod]
+    public void WorkerResponse_Hello_CarriesProtocolVersion()
+    {
+        var response = new WorkerResponse
+        {
+            Id = 1,
+            Success = true,
+            ProtocolVersion = EmitWorkerHost.ProtocolVersion,
+        };
+
+        string json = JsonSerializer.Serialize(response);
+        WorkerResponse? deserialized = JsonSerializer.Deserialize<WorkerResponse>(json);
+
+        Assert.IsNotNull(deserialized);
+        Assert.IsTrue(deserialized.Success);
+        Assert.AreEqual(EmitWorkerHost.ProtocolVersion, deserialized.ProtocolVersion);
+    }
+
+    [TestMethod]
+    public void Run_Hello_WithMatchingVersion_RespondsSuccessfully()
+    {
+        var helloRequest = new WorkerRequest
+        {
+            Id = 42,
+            Kind = WorkerRequestKind.Hello,
+            ProtocolVersion = EmitWorkerHost.ProtocolVersion,
+        };
+        var shutdownRequest = new WorkerRequest { Id = 99, Kind = WorkerRequestKind.Shutdown };
+
+        string input = JsonSerializer.Serialize(helloRequest) + "\n"
+                     + JsonSerializer.Serialize(shutdownRequest) + "\n";
+        using var reader = new StringReader(input);
+        using var writer = new StringWriter();
+
+        EmitWorkerHost.Run(reader, writer);
+
+        string[] lines = writer.ToString().Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        WorkerResponse? helloResponse = lines
+            .Select(l => JsonSerializer.Deserialize<WorkerResponse>(l))
+            .FirstOrDefault(r => r?.Id == 42);
+
+        Assert.IsNotNull(helloResponse, "Hello response not found in output.");
+        Assert.IsTrue(helloResponse.Success, helloResponse.ErrorMessage);
+        Assert.AreEqual(EmitWorkerHost.ProtocolVersion, helloResponse.ProtocolVersion);
+    }
+
+    [TestMethod]
+    public void Run_Hello_WithMismatchedVersion_RespondsWithFailure()
+    {
+        int wrongVersion = EmitWorkerHost.ProtocolVersion + 100;
+        var helloRequest = new WorkerRequest
+        {
+            Id = 7,
+            Kind = WorkerRequestKind.Hello,
+            ProtocolVersion = wrongVersion,
+        };
+
+        // Send only the Hello; worker processes it and we check the failure response.
+        // Then close the stream — Run exits on end-of-stream after processing the one request.
+        string input = JsonSerializer.Serialize(helloRequest) + "\n";
+        using var reader = new StringReader(input);
+        using var writer = new StringWriter();
+
+        EmitWorkerHost.Run(reader, writer);
+
+        string[] lines = writer.ToString().Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        WorkerResponse? helloResponse = lines
+            .Select(l => JsonSerializer.Deserialize<WorkerResponse>(l))
+            .FirstOrDefault(r => r?.Id == 7);
+
+        Assert.IsNotNull(helloResponse, "Hello response not found in output.");
+        Assert.IsFalse(helloResponse.Success, "Worker must reject a mismatched protocol version.");
+        StringAssert.Contains(helloResponse.ErrorMessage, wrongVersion.ToString());
+    }
 }

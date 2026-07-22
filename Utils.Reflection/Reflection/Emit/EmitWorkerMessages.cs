@@ -9,6 +9,12 @@ namespace Utils.Reflection.Reflection.Emit;
 /// </summary>
 internal enum WorkerRequestKind
 {
+    /// <summary>
+    /// Initial capability exchange: verifies that host and worker share the same protocol version
+    /// before any <see cref="Load"/> request is sent. Should be the first request on every new connection.
+    /// </summary>
+    Hello,
+
     /// <summary>Loads the native DLL and emits the mapping class for an interface, allocating a new handle for it.</summary>
     Load,
 
@@ -32,6 +38,12 @@ internal sealed class WorkerRequest
 
     /// <summary>Purpose of this request.</summary>
     public WorkerRequestKind Kind { get; set; }
+
+    /// <summary>
+    /// (Hello) Protocol version declared by the host. The worker rejects versions it does not implement.
+    /// See <see cref="EmitWorkerHost.ProtocolVersion"/> for the current value.
+    /// </summary>
+    public int ProtocolVersion { get; set; }
 
     /// <summary>(Load) Location on disk of the assembly declaring the interface to map.</summary>
     public string? InterfaceAssemblyPath { get; set; }
@@ -113,6 +125,13 @@ internal sealed class WorkerResponse
     /// stripped; only the short type name is returned.
     /// </summary>
     public string? ErrorTypeName { get; set; }
+
+    /// <summary>
+    /// (Hello) Protocol version implemented by the worker, echoed back so the host can confirm the
+    /// value even if it already checked <see cref="Success"/>. Only meaningful when
+    /// <see cref="Success"/> is <see langword="true"/>.
+    /// </summary>
+    public int ProtocolVersion { get; set; }
 
     /// <summary>
     /// (Shutdown) <see langword="true"/> when all active requests completed and all loaded mappings

@@ -28,6 +28,14 @@ namespace Utils.Reflection.Reflection.Emit;
 internal static class EmitWorkerHost
 {
     /// <summary>
+    /// Current wire protocol version. Both the host (in <see cref="EmitWorkerProcess.ProtocolVersion"/>)
+    /// and the worker declare this constant with the same value; mismatches are detected during the
+    /// initial <see cref="WorkerRequestKind.Hello"/> handshake so stale executables are rejected before
+    /// any <see cref="WorkerRequestKind.Load"/> request is sent.
+    /// </summary>
+    internal const int ProtocolVersion = 1;
+
+    /// <summary>
     /// Maximum number of requests that may be executing concurrently inside a single worker
     /// process. When this limit is reached, the reader loop blocks (backs up into the OS pipe
     /// buffer) rather than dispatching another <see cref="Task.Run"/>, preventing a fast
@@ -355,6 +363,7 @@ internal static class EmitWorkerHost
         {
             response = request.Kind switch
             {
+                WorkerRequestKind.Hello => HandleHello(request),
                 WorkerRequestKind.Load => HandleLoad(request, loaded, nextHandleBox),
                 WorkerRequestKind.Call => HandleCall(GetLoadedOrThrow(loaded, request.Handle), request),
                 WorkerRequestKind.Unload => HandleUnload(loaded, request),
@@ -376,6 +385,33 @@ internal static class EmitWorkerHost
         }
 
         WriteResponse(output, writeLock, response);
+    }
+
+    /// <summary>
+    /// Validates the host's protocol version and echoes the worker's version back. A mismatched
+    /// version causes an immediate failure response so the host can decide whether to kill the worker.
+    /// </summary>
+    private static WorkerResponse HandleHello(WorkerRequest request)
+    {
+        if (request.ProtocolVersion != ProtocolVersion)
+        {
+            return new WorkerResponse
+            {
+                Id = request.Id,
+                Success = false,
+                ErrorMessage =
+                    $"Protocol version mismatch: host uses version {request.ProtocolVersion}, " +
+                    $"worker implements version {ProtocolVersion}. " +
+                    "Ensure both the host process and the worker executable are from the same build.",
+            };
+        }
+
+        return new WorkerResponse
+        {
+            Id = request.Id,
+            Success = true,
+            ProtocolVersion = ProtocolVersion,
+        };
     }
 
     /// <summary>

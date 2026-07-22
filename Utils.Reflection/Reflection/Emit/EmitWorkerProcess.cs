@@ -35,6 +35,13 @@ namespace Utils.Reflection.Reflection.Emit;
 /// </remarks>
 internal sealed class EmitWorkerProcess : IDisposable
 {
+    /// <summary>
+    /// Current wire protocol version, matched against <see cref="EmitWorkerHost.ProtocolVersion"/> during
+    /// the initial <see cref="WorkerRequestKind.Hello"/> handshake. Both constants must equal the same value
+    /// in any compatible pair of host and worker binaries.
+    /// </summary>
+    internal const int ProtocolVersion = EmitWorkerHost.ProtocolVersion;
+
     /// <summary>Default timeout for the initial <see cref="WorkerRequestKind.Load"/> request.</summary>
     internal static readonly TimeSpan DefaultLoadTimeout = TimeSpan.FromSeconds(30);
 
@@ -54,6 +61,13 @@ internal sealed class EmitWorkerProcess : IDisposable
     /// to distinguish expected late responses from truly unsolicited or duplicate responses.
     /// </summary>
     private const int MaxTrackedTimedOutIds = 1024;
+
+    /// <summary>
+    /// Timeout for the initial <see cref="WorkerRequestKind.Hello"/> handshake performed immediately
+    /// after connecting to the worker. Short and non-configurable: the worker must already be running
+    /// and waiting before we connect, so the round-trip should be near-instantaneous.
+    /// </summary>
+    private static readonly TimeSpan HandshakeTimeout = TimeSpan.FromSeconds(5);
 
     /// <summary>
     /// Timeout for the graceful <see cref="WorkerRequestKind.Shutdown"/> handshake in
@@ -233,7 +247,49 @@ internal sealed class EmitWorkerProcess : IDisposable
         var readerStream = new System.IO.StreamReader(serverPipe, leaveOpen: true);
         var writerStream = new System.IO.StreamWriter(serverPipe, leaveOpen: true) { AutoFlush = true };
 
-        return new EmitWorkerProcess(sandbox, process, serverPipe, readerStream, writerStream, validatedCallTimeout);
+        var worker = new EmitWorkerProcess(sandbox, process, serverPipe, readerStream, writerStream, validatedCallTimeout);
+        try
+        {
+            worker.Handshake();
+        }
+        catch
+        {
+            worker.Dispose();
+            throw;
+        }
+
+        return worker;
+    }
+
+    /// <summary>
+    /// Sends a <see cref="WorkerRequestKind.Hello"/> request and validates that the worker's protocol
+    /// version matches <see cref="ProtocolVersion"/>. Called once per connection, immediately after the
+    /// pipe is established, so version mismatches are caught before any <see cref="LoadInterface"/> call.
+    /// </summary>
+    private void Handshake()
+    {
+        var request = new WorkerRequest
+        {
+            Id = Interlocked.Increment(ref nextId),
+            Kind = WorkerRequestKind.Hello,
+            ProtocolVersion = ProtocolVersion,
+        };
+
+        WorkerResponse response = SendAndReceive(request, HandshakeTimeout);
+
+        if (!response.Success)
+        {
+            throw new InvalidOperationException(
+                $"Emit worker rejected the protocol handshake: {response.ErrorMessage}");
+        }
+
+        if (response.ProtocolVersion != ProtocolVersion)
+        {
+            throw new InvalidOperationException(
+                $"Emit worker returned protocol version {response.ProtocolVersion}; " +
+                $"host requires version {ProtocolVersion}. " +
+                "Ensure both the host process and the worker executable are from the same build.");
+        }
     }
 
     /// <summary>
