@@ -53,11 +53,12 @@ public class QueryOData : IDisposable
     /// </summary>
     /// <remarks>This constructor sets up an <see cref="HttpClient"/> with default credentials and a timeout of 600
     /// seconds.</remarks>
-    /// <param name="baseUrl">The base URL for the OData service. Cannot be null.</param>
+    /// <param name="baseUrl">The base URL for the OData service. Must be a valid absolute HTTP or HTTPS URI.</param>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="baseUrl"/> is null.</exception>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="baseUrl"/> is not a valid absolute HTTP or HTTPS URI.</exception>
     public QueryOData(string baseUrl)
     {
-        BaseUrl = baseUrl ?? throw new ArgumentNullException(nameof(baseUrl));
+        BaseUrl = ValidateBaseUrl(baseUrl);
         _handler = new HttpClientHandler()
         {
             UseDefaultCredentials = true,
@@ -76,14 +77,35 @@ public class QueryOData : IDisposable
     /// <summary>
     /// Initializes a new instance of the <see cref="QueryOData"/> class with the specified base URL and HTTP client.
     /// </summary>
-    /// <param name="baseUrl">The base URL for the OData service. Cannot be null.</param>
+    /// <param name="baseUrl">The base URL for the OData service. Must be a valid absolute HTTP or HTTPS URI.</param>
     /// <param name="httpClient">The HTTP client used to send requests. Cannot be null.</param>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="baseUrl"/> or <paramref name="httpClient"/> is null.</exception>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="baseUrl"/> is not a valid absolute HTTP or HTTPS URI.</exception>
     public QueryOData(string baseUrl, HttpClient httpClient)
     {
-        BaseUrl = baseUrl ?? throw new ArgumentNullException(nameof(baseUrl));
+        BaseUrl = ValidateBaseUrl(baseUrl);
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         _disposeClient = false;
+    }
+
+    /// <summary>
+    /// Validates the base URL at construction time and returns the normalized string.
+    /// </summary>
+    /// <param name="baseUrl">The base URL supplied by the caller.</param>
+    /// <returns>The validated base URL string.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="baseUrl"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException">Thrown when the URL is not an absolute HTTP or HTTPS URI.</exception>
+    private static string ValidateBaseUrl(string baseUrl)
+    {
+        ArgumentNullException.ThrowIfNull(baseUrl);
+        if (!Uri.TryCreate(baseUrl, UriKind.Absolute, out Uri? uri)
+            || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+        {
+            throw new ArgumentException(
+                $"The base URL must be a valid absolute HTTP or HTTPS URI. Provided value: '{baseUrl}'.",
+                nameof(baseUrl));
+        }
+        return baseUrl;
     }
 
     /// <summary>
@@ -152,17 +174,17 @@ public class QueryOData : IDisposable
             }
 
             // Copy cookies to the handler container when available.
+            // BaseUrl is already validated as a valid URI in the constructor.
             if (_handler?.CookieContainer is not null && sourceRequest.Headers.TryGetValues("Cookie", out var cookieHeaders))
             {
                 var cookieHeader = string.Join("; ", cookieHeaders);
                 try
                 {
-                    var uri = new Uri(BaseUrl);
-                    _handler.CookieContainer.SetCookies(uri, cookieHeader);
+                    _handler.CookieContainer.SetCookies(new Uri(BaseUrl), cookieHeader);
                 }
-                catch
+                catch (System.Net.CookieException)
                 {
-                    // Ignore failures (for instance when BaseUrl is not a valid URI) and continue the request.
+                    // Malformed cookie header from the source request; skip forwarding and proceed.
                 }
             }
         }
