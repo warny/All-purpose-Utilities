@@ -131,11 +131,17 @@ public class DateFormulaTests
     [TestMethod]
     public void FormulaWorkingDaysUsesCalendar()
     {
+        // "FS+3O" from Friday 2024-04-05 (fr-FR, first-day-of-week = Monday):
+        //   "FS"  = EndOf(Week)  = Sunday 2024-04-07  (Mon Apr 1 + 7 days - 1 tick, .Date = Apr 7)
+        //   "+3O" = AddWorkingDays(Apr 7, 3) = Mon(1)=Apr 8, Tue(2)=Apr 9, Wed(3)=Apr 10
+        // The test previously expected Apr 11, which matched the old (buggy) EndOf(Week) formula
+        // that returned Monday Apr 8 instead of Sunday Apr 7 (#53). After the fix the correct
+        // result is Apr 10.
         var culture = new CultureInfo("fr-FR");
         ICalendarProvider provider = new WeekEndCalendarProvider();
         var date = new DateTime(2024, 4, 5); // Friday
         var result = date.Calculate("FS+3O", culture, provider);
-        Assert.AreEqual(new DateTime(2024, 4, 11), result);
+        Assert.AreEqual(new DateTime(2024, 4, 10), result);
     }
 
     [TestMethod]
@@ -160,13 +166,17 @@ public class DateFormulaTests
     [TestMethod]
     public void FormulaWorkingDayAdjust()
     {
+        // "FS" from Saturday 2024-04-06 (fr-FR, first-day-of-week = Monday):
+        //   EndOf(Week) = Sunday 2024-04-07
+        // "+O" = NextWorkingDay(Apr 7) = Monday Apr 8  (still correct)
+        // "-O" = PreviousWorkingDay(Apr 7) = Friday Apr 5  (was Apr 8 under old buggy EndOf #53)
         var culture = new CultureInfo("fr-FR");
         ICalendarProvider provider = new WeekEndCalendarProvider();
         var date = new DateTime(2024, 4, 6); // Saturday
         var result = date.Calculate("FS+O", culture, provider);
         Assert.AreEqual(new DateTime(2024, 4, 8), result);
         result = date.Calculate("FS-O", culture, provider);
-        Assert.AreEqual(new DateTime(2024, 4, 8), result);
+        Assert.AreEqual(new DateTime(2024, 4, 5), result);
     }
 
     [TestMethod]
