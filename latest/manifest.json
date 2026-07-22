@@ -1076,6 +1076,20 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Dates.DateFormulaExpression.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Dates.DateFormulaExpression.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Dates.DateFormulaExpression",
+      "Summary": "<p sourcefile=\"api/Utils.Dates.DateFormulaExpression.yml\" sourcestartlinenumber=\"1\">Culture-neutral intermediate representation of a date formula.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.Dates.DateFormulaLanguage.yml",
       "output": {
         ".html": {
@@ -1087,6 +1101,34 @@
       "IsMRef": true,
       "Title": "Utils.Dates.DateFormulaLanguage",
       "Summary": "<p sourcefile=\"api/Utils.Dates.DateFormulaLanguage.yml\" sourcestartlinenumber=\"1\">Represents culture specific tokens used to interpret date formulas.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Dates.DateFormulaStep.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Dates.DateFormulaStep.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Dates.DateFormulaStep",
+      "Summary": "<p sourcefile=\"api/Utils.Dates.DateFormulaStep.yml\" sourcestartlinenumber=\"1\">Represents a single operation step within a <xref href=\"Utils.Dates.DateFormulaExpression\" data-throw-if-not-resolved=\"false\"></xref>.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Dates.DateFormulaStepKind.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Dates.DateFormulaStepKind.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Dates.DateFormulaStepKind",
+      "Summary": "<p sourcefile=\"api/Utils.Dates.DateFormulaStepKind.yml\" sourcestartlinenumber=\"1\">Describes the kind of operation represented by a single <xref href=\"Utils.Dates.DateFormulaStep\" data-throw-if-not-resolved=\"false\"></xref>.</p>\n"
     },
     {
       "type": "ManagedReference",

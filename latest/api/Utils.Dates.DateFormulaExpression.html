@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Class DateFormulaExpression | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Class DateFormulaExpression | omy.Utils Documentation ">
+      
+      <meta name="description" content="Culture-neutral intermediate representation of a date formula.">
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_Dates_DateFormulaExpression.md&amp;value=---%0Auid%3A%20Utils.Dates.DateFormulaExpression%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="Utils.Dates.DateFormulaExpression">
+
+
+
+  <h1 id="Utils_Dates_DateFormulaExpression" data-uid="Utils.Dates.DateFormulaExpression" class="text-break">
+Class DateFormulaExpression  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateFormulaExpression.cs/#L106"><i class="bi bi-code-slash"></i></a>
+  </h1>
+
+  <div class="facts text-secondary">
+    <dl><dt>Namespace</dt><dd><a class="xref" href="Utils.html">Utils</a>.<a class="xref" href="Utils.Dates.html">Dates</a></dd></dl>
+  <dl><dt>Assembly</dt><dd>Utils.dll</dd></dl>
+  </div>
+
+  <div class="markdown summary"><p>Culture-neutral intermediate representation of a date formula.</p>
+</div>
+  <div class="markdown conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public sealed class DateFormulaExpression : IFormattable, IEquatable&lt;DateFormulaExpression&gt;</code></pre>
+  </div>
+
+
+
+
+  <dl class="typelist inheritance">
+    <dt>Inheritance</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
+      <div><span class="xref">DateFormulaExpression</span></div>
+    </dd>
+  </dl>
+
+  <dl class="typelist implements">
+    <dt>Implements</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.iformattable">IFormattable</a></div>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a class="xref" href="Utils.Dates.DateFormulaExpression.html">DateFormulaExpression</a>&gt;</div>
+    </dd>
+  </dl>
+
+
+  <dl class="typelist inheritedMembers">
+    <dt>Inherited Members</dt>
+    <dd>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)">object.Equals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
+    </div>
+  </dd></dl>
+
+  <dl class="typelist extensionMethods">
+    <dt>Extension Methods</dt>
+    <dd>
+  <div>
+      <a class="xref" href="Utils.Data.DataUtils.html#Utils_Data_DataUtils_ToDbValue_System_Object_">DataUtils.ToDbValue(object?)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Mathematics.MathEx.html#Utils_Mathematics_MathEx_Clamp__1___0___0___0_System_Collections_Generic_IComparer___0__">MathEx.Clamp&lt;T&gt;(T, T, T, IComparer&lt;T&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Failure__1___0_">FluentExtensions.Failure&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsEqualTo__2___0___1_">FluentExtensions.IsEqualTo&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterOrEqualsThan__2___0___1_">FluentExtensions.IsGreaterOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterThan__2___0___1_">FluentExtensions.IsGreaterThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsIn__1___0___0___">FluentExtensions.IsIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerOrEqualsThan__2___0___1_">FluentExtensions.IsLowerOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerThan__2___0___1_">FluentExtensions.IsLowerThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotIn__1___0___0___">FluentExtensions.IsNotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotNull__1___0_">FluentExtensions.IsNotNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNull__1___0_">FluentExtensions.IsNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Success__1___0_">FluentExtensions.Success&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Test__1___0_System_Func___0_System_Boolean__">FluentExtensions.Test&lt;T&gt;(T, Func&lt;T, bool&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_System_Boolean_System_Boolean_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T, bool, bool)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0_System_Threading_Tasks_Task___1___System_Func_System_Threading_Tasks_Task___1___">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Task&lt;Result&gt;&gt;, Func&lt;Task&lt;Result&gt;&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0_System_Threading_Tasks_Task___1_____1_">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Task&lt;Result&gt;&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1____1_">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1____1_">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_In__1___0___0___">ObjectUtils.In&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_NotIn__1___0___0___">ObjectUtils.NotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustNotBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustNotBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Arg__1___0_System_String_">Validations.Arg&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ValueMustNotBeNull__1___0_System_String_">Validations.ValueMustNotBeNull&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Variable__1___0_System_String_">Validations.Variable&lt;T&gt;(T, string)</a>
+  </div>
+  </dd></dl>
+
+
+
+  <h2 id="Utils_Dates_DateFormulaExpression_remarks">Remarks</h2>
+  <div class="markdown level0 remarks"><p>
+A <a class="xref" href="Utils.Dates.DateFormulaExpression.html">DateFormulaExpression</a> is produced from a culture-specific formula string
+(e.g., French <code>"FS+3O"</code> or English <code>"EW+3O"</code>) by <a class="xref" href="Utils.Dates.DateFormulaExpression.html#Utils_Dates_DateFormulaExpression_Parse_System_String_System_Globalization_CultureInfo_">Parse(string, CultureInfo)</a>.
+All tokens are converted to culture-neutral enum values at parse time, so the same expression
+can be serialised into any supported culture's formula syntax.
+</p>
+<p>
+Call <a class="xref" href="Utils.Dates.DateFormulaExpression.html#Utils_Dates_DateFormulaExpression_ToString_System_Globalization_CultureInfo_">ToString(CultureInfo)</a> with <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.globalization.cultureinfo.invariantculture">InvariantCulture</a> to obtain a
+stable English-token representation suitable for database persistence (the invariant culture
+falls back to the English token set).
+Call <a class="xref" href="Utils.Dates.DateFormulaExpression.html#Utils_Dates_DateFormulaExpression_Compile_System_Globalization_CultureInfo_Utils_Dates_ICalendarProvider_">Compile(CultureInfo, ICalendarProvider?)</a> to produce an executable delegate.
+</p>
+</div>
+
+
+  <h2 class="section" id="properties">Properties
+</h2>
+
+
+  <a id="Utils_Dates_DateFormulaExpression_BasePeriod_" data-uid="Utils.Dates.DateFormulaExpression.BasePeriod*"></a>
+
+  <h3 id="Utils_Dates_DateFormulaExpression_BasePeriod" data-uid="Utils.Dates.DateFormulaExpression.BasePeriod">
+  BasePeriod
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateFormulaExpression.cs/#L121"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>The base calendar period that the input date is snapped to before steps are applied.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public PeriodTypeEnum BasePeriod { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Dates.PeriodTypeEnum.html">PeriodTypeEnum</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Dates_DateFormulaExpression_Comparer_" data-uid="Utils.Dates.DateFormulaExpression.Comparer*"></a>
+
+  <h3 id="Utils_Dates_DateFormulaExpression_Comparer" data-uid="Utils.Dates.DateFormulaExpression.Comparer">
+  Comparer
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateFormulaExpression.cs/#L392"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>A shared <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.iequalitycomparer-1">IEqualityComparer&lt;T&gt;</a> for <a class="xref" href="Utils.Dates.DateFormulaExpression.html">DateFormulaExpression</a>
+that delegates to <a class="xref" href="Utils.Dates.DateFormulaExpression.html#Utils_Dates_DateFormulaExpression_Equals_Utils_Dates_DateFormulaExpression_">Equals(DateFormulaExpression?)</a> and <a class="xref" href="Utils.Dates.DateFormulaExpression.html#Utils_Dates_DateFormulaExpression_GetHashCode">GetHashCode()</a>.
+Suitable for use as a dictionary or hash-set key comparer.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static IEqualityComparer&lt;DateFormulaExpression&gt; Comparer { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.iequalitycomparer-1">IEqualityComparer</a>&lt;<a class="xref" href="Utils.Dates.DateFormulaExpression.html">DateFormulaExpression</a>&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Dates_DateFormulaExpression_IsStart_" data-uid="Utils.Dates.DateFormulaExpression.IsStart*"></a>
+
+  <h3 id="Utils_Dates_DateFormulaExpression_IsStart" data-uid="Utils.Dates.DateFormulaExpression.IsStart">
+  IsStart
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateFormulaExpression.cs/#L118"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if the formula is anchored to the start of <a class="xref" href="Utils.Dates.DateFormulaExpression.html#Utils_Dates_DateFormulaExpression_BasePeriod">BasePeriod</a>;
+<a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> if anchored to the end.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool IsStart { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Dates_DateFormulaExpression_Steps_" data-uid="Utils.Dates.DateFormulaExpression.Steps*"></a>
+
+  <h3 id="Utils_Dates_DateFormulaExpression_Steps" data-uid="Utils.Dates.DateFormulaExpression.Steps">
+  Steps
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateFormulaExpression.cs/#L124"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>The ordered list of transformation steps applied after the base period is resolved.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public IReadOnlyList&lt;DateFormulaStep&gt; Steps { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1">IReadOnlyList</a>&lt;<a class="xref" href="Utils.Dates.DateFormulaStep.html">DateFormulaStep</a>&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h2 class="section" id="methods">Methods
+</h2>
+
+
+  <a id="Utils_Dates_DateFormulaExpression_Compile_" data-uid="Utils.Dates.DateFormulaExpression.Compile*"></a>
+
+  <h3 id="Utils_Dates_DateFormulaExpression_Compile_System_Globalization_CultureInfo_Utils_Dates_ICalendarProvider_" data-uid="Utils.Dates.DateFormulaExpression.Compile(System.Globalization.CultureInfo,Utils.Dates.ICalendarProvider)">
+  Compile(CultureInfo, ICalendarProvider?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateFormulaExpression.cs/#L306"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Compiles this expression into an executable delegate.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Func&lt;DateTime, DateTime&gt; Compile(CultureInfo culture = null, ICalendarProvider? calendarProvider = null)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>culture</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.globalization.cultureinfo">CultureInfo</a></dt>
+    <dd><p>Culture used for calendar arithmetic and week-start day resolution.</p>
+</dd>
+    <dt><code>calendarProvider</code> <a class="xref" href="Utils.Dates.ICalendarProvider.html">ICalendarProvider</a></dt>
+    <dd><p>Required when any step involves working days.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.func-2">Func</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a>&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Dates_DateFormulaExpression_Equals_" data-uid="Utils.Dates.DateFormulaExpression.Equals*"></a>
+
+  <h3 id="Utils_Dates_DateFormulaExpression_Equals_System_Object_" data-uid="Utils.Dates.DateFormulaExpression.Equals(System.Object)">
+  Equals(object?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateFormulaExpression.cs/#L409"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Determines whether the specified object is equal to the current object.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override bool Equals(object? obj)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>obj</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></dt>
+    <dd><p>The object to compare with the current object.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if the specified object  is equal to the current object; otherwise, <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Dates_DateFormulaExpression_Equals_" data-uid="Utils.Dates.DateFormulaExpression.Equals*"></a>
+
+  <h3 id="Utils_Dates_DateFormulaExpression_Equals_Utils_Dates_DateFormulaExpression_" data-uid="Utils.Dates.DateFormulaExpression.Equals(Utils.Dates.DateFormulaExpression)">
+  Equals(DateFormulaExpression?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateFormulaExpression.cs/#L399"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when <code class="paramref">other</code> represents the same formula
+(same start/end anchor, same base period, and the same sequence of steps).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool Equals(DateFormulaExpression? other)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>other</code> <a class="xref" href="Utils.Dates.DateFormulaExpression.html">DateFormulaExpression</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Dates_DateFormulaExpression_GetHashCode_" data-uid="Utils.Dates.DateFormulaExpression.GetHashCode*"></a>
+
+  <h3 id="Utils_Dates_DateFormulaExpression_GetHashCode" data-uid="Utils.Dates.DateFormulaExpression.GetHashCode">
+  GetHashCode()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateFormulaExpression.cs/#L412"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Serves as the default hash function.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override int GetHashCode()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd><p>A hash code for the current object.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Dates_DateFormulaExpression_Parse_" data-uid="Utils.Dates.DateFormulaExpression.Parse*"></a>
+
+  <h3 id="Utils_Dates_DateFormulaExpression_Parse_System_String_System_Globalization_CultureInfo_" data-uid="Utils.Dates.DateFormulaExpression.Parse(System.String,System.Globalization.CultureInfo)">
+  Parse(string, CultureInfo)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateFormulaExpression.cs/#L136"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Parses <code class="paramref">formula</code> using the default language provider and <code class="paramref">culture</code>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static DateFormulaExpression Parse(string formula, CultureInfo culture = null)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>formula</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+    <dt><code>culture</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.globalization.cultureinfo">CultureInfo</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Dates.DateFormulaExpression.html">DateFormulaExpression</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Dates_DateFormulaExpression_Parse_" data-uid="Utils.Dates.DateFormulaExpression.Parse*"></a>
+
+  <h3 id="Utils_Dates_DateFormulaExpression_Parse_System_String_Utils_Dates_IDateFormulaLanguageProvider_System_Globalization_CultureInfo_" data-uid="Utils.Dates.DateFormulaExpression.Parse(System.String,Utils.Dates.IDateFormulaLanguageProvider,System.Globalization.CultureInfo)">
+  Parse(string, IDateFormulaLanguageProvider, CultureInfo)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateFormulaExpression.cs/#L142"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Parses <code class="paramref">formula</code> using a custom <code class="paramref">provider</code> and <code class="paramref">culture</code>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static DateFormulaExpression Parse(string formula, IDateFormulaLanguageProvider provider, CultureInfo culture = null)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>formula</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+    <dt><code>provider</code> <a class="xref" href="Utils.Dates.IDateFormulaLanguageProvider.html">IDateFormulaLanguageProvider</a></dt>
+    <dd></dd>
+    <dt><code>culture</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.globalization.cultureinfo">CultureInfo</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Dates.DateFormulaExpression.html">DateFormulaExpression</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Dates_DateFormulaExpression_ToExpression_" data-uid="Utils.Dates.DateFormulaExpression.ToExpression*"></a>
+
+  <h3 id="Utils_Dates_DateFormulaExpression_ToExpression_System_Globalization_CultureInfo_Utils_Dates_ICalendarProvider_" data-uid="Utils.Dates.DateFormulaExpression.ToExpression(System.Globalization.CultureInfo,Utils.Dates.ICalendarProvider)">
+  ToExpression(CultureInfo, ICalendarProvider?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateFormulaExpression.cs/#L242"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Builds a LINQ expression tree that evaluates this formula for a given <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a> input.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Expression&lt;Func&lt;DateTime, DateTime&gt;&gt; ToExpression(CultureInfo culture = null, ICalendarProvider? calendarProvider = null)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>culture</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.globalization.cultureinfo">CultureInfo</a></dt>
+    <dd><p>Culture used for calendar arithmetic and week-start day resolution.</p>
+</dd>
+    <dt><code>calendarProvider</code> <a class="xref" href="Utils.Dates.ICalendarProvider.html">ICalendarProvider</a></dt>
+    <dd><p>Required when any step involves working days.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression-1">Expression</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.func-2">Func</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a>&gt;&gt;</dt>
+    <dd><p>A strongly-typed lambda expression ready for further composition or compilation.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Dates_DateFormulaExpression_ToString_" data-uid="Utils.Dates.DateFormulaExpression.ToString*"></a>
+
+  <h3 id="Utils_Dates_DateFormulaExpression_ToString" data-uid="Utils.Dates.DateFormulaExpression.ToString">
+  ToString()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateFormulaExpression.cs/#L330"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns the English-token form of this expression.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override string ToString()</code></pre>
+  </div>
+
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Dates_DateFormulaExpression_ToString_" data-uid="Utils.Dates.DateFormulaExpression.ToString*"></a>
+
+  <h3 id="Utils_Dates_DateFormulaExpression_ToString_System_Globalization_CultureInfo_" data-uid="Utils.Dates.DateFormulaExpression.ToString(System.Globalization.CultureInfo)">
+  ToString(CultureInfo)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateFormulaExpression.cs/#L315"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Renders this expression as a formula string in the language for <code class="paramref">culture</code>,
+using the default language provider.
+Pass <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.globalization.cultureinfo.invariantculture">InvariantCulture</a> to obtain the English-token form
+suitable for database persistence.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string ToString(CultureInfo culture)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>culture</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.globalization.cultureinfo">CultureInfo</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Dates_DateFormulaExpression_ToString_" data-uid="Utils.Dates.DateFormulaExpression.ToString*"></a>
+
+  <h3 id="Utils_Dates_DateFormulaExpression_ToString_System_String_System_IFormatProvider_" data-uid="Utils.Dates.DateFormulaExpression.ToString(System.String,System.IFormatProvider)">
+  ToString(string?, IFormatProvider?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateFormulaExpression.cs/#L333"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Formats the value of the current instance using the specified format.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string ToString(string? format, IFormatProvider? formatProvider)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>format</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>The format to use.</p>
+<p>-or-</p>
+<p>A null reference (<code>Nothing</code> in Visual Basic) to use the default format defined for the type of the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.iformattable">IFormattable</a> implementation.</p>
+</dd>
+    <dt><code>formatProvider</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.iformatprovider">IFormatProvider</a></dt>
+    <dd><p>The provider to use to format the value.</p>
+<p>-or-</p>
+<p>A null reference (<code>Nothing</code> in Visual Basic) to obtain the numeric format information from the current locale setting of the operating system.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>The value of the current instance in the specified format.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Dates_DateFormulaExpression_ToString_" data-uid="Utils.Dates.DateFormulaExpression.ToString*"></a>
+
+  <h3 id="Utils_Dates_DateFormulaExpression_ToString_Utils_Dates_IDateFormulaLanguageProvider_System_Globalization_CultureInfo_" data-uid="Utils.Dates.DateFormulaExpression.ToString(Utils.Dates.IDateFormulaLanguageProvider,System.Globalization.CultureInfo)">
+  ToString(IDateFormulaLanguageProvider, CultureInfo)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateFormulaExpression.cs/#L322"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Renders this expression as a formula string in the language for <code class="paramref">culture</code>,
+using an explicit <code class="paramref">provider</code>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string ToString(IDateFormulaLanguageProvider provider, CultureInfo culture)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>provider</code> <a class="xref" href="Utils.Dates.IDateFormulaLanguageProvider.html">IDateFormulaLanguageProvider</a></dt>
+    <dd></dd>
+    <dt><code>culture</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.globalization.cultureinfo">CultureInfo</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <h2 class="section" id="operators">Operators
+</h2>
+
+
+  <a id="Utils_Dates_DateFormulaExpression_op_Equality_" data-uid="Utils.Dates.DateFormulaExpression.op_Equality*"></a>
+
+  <h3 id="Utils_Dates_DateFormulaExpression_op_Equality_Utils_Dates_DateFormulaExpression_Utils_Dates_DateFormulaExpression_" data-uid="Utils.Dates.DateFormulaExpression.op_Equality(Utils.Dates.DateFormulaExpression,Utils.Dates.DateFormulaExpression)">
+  operator ==(DateFormulaExpression?, DateFormulaExpression?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateFormulaExpression.cs/#L421"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when both expressions represent the same formula.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator ==(DateFormulaExpression? left, DateFormulaExpression? right)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>left</code> <a class="xref" href="Utils.Dates.DateFormulaExpression.html">DateFormulaExpression</a></dt>
+    <dd></dd>
+    <dt><code>right</code> <a class="xref" href="Utils.Dates.DateFormulaExpression.html">DateFormulaExpression</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Dates_DateFormulaExpression_op_Inequality_" data-uid="Utils.Dates.DateFormulaExpression.op_Inequality*"></a>
+
+  <h3 id="Utils_Dates_DateFormulaExpression_op_Inequality_Utils_Dates_DateFormulaExpression_Utils_Dates_DateFormulaExpression_" data-uid="Utils.Dates.DateFormulaExpression.op_Inequality(Utils.Dates.DateFormulaExpression,Utils.Dates.DateFormulaExpression)">
+  operator !=(DateFormulaExpression?, DateFormulaExpression?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateFormulaExpression.cs/#L425"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Returns <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when the expressions represent different formulas.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator !=(DateFormulaExpression? left, DateFormulaExpression? right)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>left</code> <a class="xref" href="Utils.Dates.DateFormulaExpression.html">DateFormulaExpression</a></dt>
+    <dd></dd>
+    <dt><code>right</code> <a class="xref" href="Utils.Dates.DateFormulaExpression.html">DateFormulaExpression</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateFormulaExpression.cs/#L106" class="edit-link">Edit this page</a>
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

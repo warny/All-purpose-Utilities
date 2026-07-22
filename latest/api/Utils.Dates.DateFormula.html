@@ -157,7 +157,7 @@ Class DateFormula  <a class="header-action link-secondary" title="View source" h
 
   <h3 id="Utils_Dates_DateFormula_Calculate_System_DateTime_System_String_System_Globalization_CultureInfo_Utils_Dates_ICalendarProvider_" data-uid="Utils.Dates.DateFormula.Calculate(System.DateTime,System.String,System.Globalization.CultureInfo,Utils.Dates.ICalendarProvider)">
   Calculate(DateTime, string, CultureInfo, ICalendarProvider?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateFormula.cs/#L56"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateFormula.cs/#L59"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Calculates the date described by <code class="paramref">formula</code>.</p>
@@ -205,7 +205,7 @@ Class DateFormula  <a class="header-action link-secondary" title="View source" h
 
   <h3 id="Utils_Dates_DateFormula_Calculate_System_DateTime_System_String_Utils_Dates_IDateFormulaLanguageProvider_System_Globalization_CultureInfo_Utils_Dates_ICalendarProvider_" data-uid="Utils.Dates.DateFormula.Calculate(System.DateTime,System.String,Utils.Dates.IDateFormulaLanguageProvider,System.Globalization.CultureInfo,Utils.Dates.ICalendarProvider)">
   Calculate(DateTime, string, IDateFormulaLanguageProvider, CultureInfo, ICalendarProvider?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateFormula.cs/#L68"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateFormula.cs/#L71"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Calculates the date described by <code class="paramref">formula</code> using a custom provider.</p>
@@ -256,7 +256,7 @@ Class DateFormula  <a class="header-action link-secondary" title="View source" h
 
   <h3 id="Utils_Dates_DateFormula_Compile_System_String_System_Globalization_CultureInfo_Utils_Dates_ICalendarProvider_" data-uid="Utils.Dates.DateFormula.Compile(System.String,System.Globalization.CultureInfo,Utils.Dates.ICalendarProvider)">
   Compile(string, CultureInfo, ICalendarProvider?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateFormula.cs/#L82"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateFormula.cs/#L97"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Compiles the provided <code class="paramref">formula</code> into a delegate.</p>
@@ -301,7 +301,7 @@ Class DateFormula  <a class="header-action link-secondary" title="View source" h
 
   <h3 id="Utils_Dates_DateFormula_Compile_System_String_Utils_Dates_IDateFormulaLanguageProvider_System_Globalization_CultureInfo_Utils_Dates_ICalendarProvider_" data-uid="Utils.Dates.DateFormula.Compile(System.String,Utils.Dates.IDateFormulaLanguageProvider,System.Globalization.CultureInfo,Utils.Dates.ICalendarProvider)">
   Compile(string, IDateFormulaLanguageProvider, CultureInfo, ICalendarProvider?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateFormula.cs/#L93"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateFormula.cs/#L121"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Compiles the provided <code class="paramref">formula</code> using a custom provider.</p>
@@ -333,6 +333,171 @@ Class DateFormula  <a class="header-action link-secondary" title="View source" h
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.func-2">Func</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a>&gt;</dt>
     <dd><p>A delegate computing the resulting date.</p>
 </dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Dates_DateFormula_Parse_" data-uid="Utils.Dates.DateFormula.Parse*"></a>
+
+  <h3 id="Utils_Dates_DateFormula_Parse_System_String_System_Globalization_CultureInfo_" data-uid="Utils.Dates.DateFormula.Parse(System.String,System.Globalization.CultureInfo)">
+  Parse(string, CultureInfo)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateFormula.cs/#L103"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Parses <code class="paramref">formula</code> into a culture-neutral <a class="xref" href="Utils.Dates.DateFormulaExpression.html">DateFormulaExpression</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static DateFormulaExpression Parse(string formula, CultureInfo culture = null)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>formula</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+    <dt><code>culture</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.globalization.cultureinfo">CultureInfo</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Dates.DateFormulaExpression.html">DateFormulaExpression</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Dates_DateFormula_Parse_" data-uid="Utils.Dates.DateFormula.Parse*"></a>
+
+  <h3 id="Utils_Dates_DateFormula_Parse_System_String_Utils_Dates_IDateFormulaLanguageProvider_System_Globalization_CultureInfo_" data-uid="Utils.Dates.DateFormula.Parse(System.String,Utils.Dates.IDateFormulaLanguageProvider,System.Globalization.CultureInfo)">
+  Parse(string, IDateFormulaLanguageProvider, CultureInfo)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateFormula.cs/#L110"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Parses <code class="paramref">formula</code> into a culture-neutral <a class="xref" href="Utils.Dates.DateFormulaExpression.html">DateFormulaExpression</a>
+using a custom <code class="paramref">provider</code>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static DateFormulaExpression Parse(string formula, IDateFormulaLanguageProvider provider, CultureInfo culture = null)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>formula</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+    <dt><code>provider</code> <a class="xref" href="Utils.Dates.IDateFormulaLanguageProvider.html">IDateFormulaLanguageProvider</a></dt>
+    <dd></dd>
+    <dt><code>culture</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.globalization.cultureinfo">CultureInfo</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Dates.DateFormulaExpression.html">DateFormulaExpression</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Dates_DateFormula_ToExpression_" data-uid="Utils.Dates.DateFormula.ToExpression*"></a>
+
+  <h3 id="Utils_Dates_DateFormula_ToExpression_System_String_System_Globalization_CultureInfo_Utils_Dates_ICalendarProvider_" data-uid="Utils.Dates.DateFormula.ToExpression(System.String,System.Globalization.CultureInfo,Utils.Dates.ICalendarProvider)">
+  ToExpression(string, CultureInfo, ICalendarProvider?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateFormula.cs/#L81"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Builds an expression tree for <code class="paramref">formula</code>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Expression&lt;Func&lt;DateTime, DateTime&gt;&gt; ToExpression(string formula, CultureInfo culture = null, ICalendarProvider? calendarProvider = null)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>formula</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+    <dt><code>culture</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.globalization.cultureinfo">CultureInfo</a></dt>
+    <dd></dd>
+    <dt><code>calendarProvider</code> <a class="xref" href="Utils.Dates.ICalendarProvider.html">ICalendarProvider</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression-1">Expression</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.func-2">Func</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a>&gt;&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Dates_DateFormula_ToExpression_" data-uid="Utils.Dates.DateFormula.ToExpression*"></a>
+
+  <h3 id="Utils_Dates_DateFormula_ToExpression_System_String_Utils_Dates_IDateFormulaLanguageProvider_System_Globalization_CultureInfo_Utils_Dates_ICalendarProvider_" data-uid="Utils.Dates.DateFormula.ToExpression(System.String,Utils.Dates.IDateFormulaLanguageProvider,System.Globalization.CultureInfo,Utils.Dates.ICalendarProvider)">
+  ToExpression(string, IDateFormulaLanguageProvider, CultureInfo, ICalendarProvider?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Dates/DateFormula.cs/#L87"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Builds an expression tree for <code class="paramref">formula</code> using a custom provider.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Expression&lt;Func&lt;DateTime, DateTime&gt;&gt; ToExpression(string formula, IDateFormulaLanguageProvider provider, CultureInfo culture = null, ICalendarProvider? calendarProvider = null)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>formula</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+    <dt><code>provider</code> <a class="xref" href="Utils.Dates.IDateFormulaLanguageProvider.html">IDateFormulaLanguageProvider</a></dt>
+    <dd></dd>
+    <dt><code>culture</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.globalization.cultureinfo">CultureInfo</a></dt>
+    <dd></dd>
+    <dt><code>calendarProvider</code> <a class="xref" href="Utils.Dates.ICalendarProvider.html">ICalendarProvider</a></dt>
+    <dd></dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression-1">Expression</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.func-2">Func</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a>&gt;&gt;</dt>
+    <dd></dd>
   </dl>
 
 
