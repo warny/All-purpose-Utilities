@@ -258,19 +258,47 @@ internal static class ODataQueryTranslator
         }
 
         /// <summary>
-        /// Returns <see langword="true"/> when the expression (after stripping Convert nodes)
-        /// is a member access or untyped column accessor.
+        /// Returns <see langword="true"/> when the expression is an OData column access:
+        /// either a member chain that roots at the lambda parameter (entity property), or an
+        /// untyped row column accessor.
         /// </summary>
+        /// <remarks>
+        /// A <see cref="MemberExpression"/> whose root is a <see cref="ConstantExpression"/> (the
+        /// compiler-generated closure class) is a captured local variable and must be evaluated,
+        /// not translated as an OData path.  We only consider a member chain an OData access when
+        /// it traces back to a <see cref="ParameterExpression"/>.
+        /// </remarks>
         private static bool IsMemberOrColumnAccess(Expression expression)
         {
             Expression inner = RemoveConvert(expression);
+
             if (inner is MemberExpression)
-                return true;
+                return IsMemberDependentOnParameter(inner);
+
             if (inner is MethodCallExpression mc && IsColumnAccessor(mc))
                 return true;
+
             if (inner is IndexExpression)
                 return true;
+
             return false;
+        }
+
+        /// <summary>
+        /// Walks a member-access chain upward and returns <see langword="true"/> when the root
+        /// of the chain is a <see cref="ParameterExpression"/> (the lambda entity parameter),
+        /// meaning this is an OData property path rather than a captured closure field.
+        /// </summary>
+        private static bool IsMemberDependentOnParameter(Expression expression)
+        {
+            Expression current = RemoveConvert(expression);
+            while (current is MemberExpression member)
+            {
+                if (member.Expression is null)
+                    return false;
+                current = RemoveConvert(member.Expression);
+            }
+            return current is ParameterExpression;
         }
 
         /// <summary>

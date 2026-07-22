@@ -110,4 +110,32 @@ public class ODataQueryTranslatorTests
         var uri = Filter<Item>(x => 0 != x.Quantity);
         StringAssert.Contains(uri, "Quantity ne 0");
     }
+
+    // -----------------------------------------------------------------------
+    // Item 11 — captured variables must be evaluated, not emitted as paths
+    // -----------------------------------------------------------------------
+
+    [TestMethod]
+    public void CapturedVariable_MemberLeft_EvaluatesLocally()
+    {
+        // threshold is a captured local — must become the literal 5, not "threshold"
+        int threshold = 5;
+        var uri = Filter<Item>(x => x.Quantity > threshold);
+        StringAssert.Contains(uri, "Quantity gt 5",
+            "Captured variable must be evaluated to its value, not emitted as a path.");
+        StringAssert.DoesNotMatch(uri, new System.Text.RegularExpressions.Regex("threshold"),
+            "The identifier 'threshold' must never appear in the generated filter.");
+    }
+
+    [TestMethod]
+    public void CapturedVariable_ValueLeft_NormalisedAndEvaluated()
+    {
+        // threshold < x.Quantity  →  Quantity gt 5
+        int threshold = 5;
+        var uri = Filter<Item>(x => threshold < x.Quantity);
+        StringAssert.Contains(uri, "Quantity gt 5",
+            "Reversed comparison with captured variable must normalise and evaluate correctly.");
+        StringAssert.DoesNotMatch(uri, new System.Text.RegularExpressions.Regex("threshold"),
+            "The identifier 'threshold' must never appear in the generated filter.");
+    }
 }

@@ -254,6 +254,12 @@ internal static class EdmFieldConverterRegistry
     /// (item 24: dedicated ISO 8601 duration parser; OData duration uses the P…T… form
     /// that is not reliably parsed by <c>TimeSpan.TryParse</c>).
     /// </summary>
+    /// <remarks>
+    /// Components are accumulated as ticks using <see langword="checked"/> arithmetic so that
+    /// overflowing durations return <see cref="DBNull.Value"/> instead of throwing.
+    /// The fractional-seconds part is converted via <see cref="decimal"/> to avoid the
+    /// floating-point rounding that caused millisecond values of 1000 (e.g. <c>PT0.9999S</c>).
+    /// </remarks>
     private static object ConvertDuration(JsonNode? node)
     {
         if (node is null)
@@ -267,16 +273,48 @@ internal static class EdmFieldConverterRegistry
         if (!match.Success)
             return DBNull.Value;
 
-        bool negative = match.Groups[1].Value == "-";
-        int days = match.Groups[2].Success ? int.Parse(match.Groups[2].Value, CultureInfo.InvariantCulture) : 0;
-        int hours = match.Groups[3].Success ? int.Parse(match.Groups[3].Value, CultureInfo.InvariantCulture) : 0;
-        int minutes = match.Groups[4].Success ? int.Parse(match.Groups[4].Value, CultureInfo.InvariantCulture) : 0;
-        double seconds = match.Groups[5].Success ? double.Parse(match.Groups[5].Value, CultureInfo.InvariantCulture) : 0.0;
-        int wholeSeconds = (int)Math.Truncate(seconds);
-        int ms = (int)Math.Round((seconds - wholeSeconds) * 1000.0, MidpointRounding.AwayFromZero);
+        try
+        {
+            bool negative = match.Groups[1].Value == "-";
 
-        var ts = new TimeSpan(days, hours, minutes, wholeSeconds, ms);
-        return negative ? ts.Negate() : (object)ts;
+            long days = match.Groups[2].Success
+                ? long.Parse(match.Groups[2].Value, CultureInfo.InvariantCulture)
+                : 0L;
+            long hours = match.Groups[3].Success
+                ? long.Parse(match.Groups[3].Value, CultureInfo.InvariantCulture)
+                : 0L;
+            long minutes = match.Groups[4].Success
+                ? long.Parse(match.Groups[4].Value, CultureInfo.InvariantCulture)
+                : 0L;
+
+            // Use decimal to preserve sub-millisecond precision and avoid the
+            // floating-point rounding bug where PT0.9999S → ms=1000 (invalid).
+            long secondTicks = 0L;
+            if (match.Groups[5].Success)
+            {
+                decimal secDecimal = decimal.Parse(match.Groups[5].Value, CultureInfo.InvariantCulture);
+                secondTicks = checked((long)(secDecimal * TimeSpan.TicksPerSecond));
+            }
+
+            long ticks;
+            checked
+            {
+                ticks = days * TimeSpan.TicksPerDay
+                      + hours * TimeSpan.TicksPerHour
+                      + minutes * TimeSpan.TicksPerMinute
+                      + secondTicks;
+            }
+
+            return new TimeSpan(negative ? -ticks : ticks);
+        }
+        catch (OverflowException)
+        {
+            return DBNull.Value;
+        }
+        catch (FormatException)
+        {
+            return DBNull.Value;
+        }
     }
 
     // -----------------------------------------------------------------------

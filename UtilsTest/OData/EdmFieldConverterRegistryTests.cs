@@ -135,6 +135,25 @@ public class EdmFieldConverterRegistryTests
     public void EdmDuration_MalformedValue_ReturnsDBNull()
         => Assert.AreEqual(DBNull.Value, Convert("Edm.Duration", JsonValue.Create("1:30:00")));
 
+    [TestMethod]
+    public void EdmDuration_FractionalSecondsNearOne_DoesNotThrow()
+    {
+        // PT0.9999S must not produce ms=1000 (which the TimeSpan ctor rejects).
+        var result = Convert("Edm.Duration", JsonValue.Create("PT0.9999S"));
+        Assert.IsInstanceOfType<TimeSpan>(result, "PT0.9999S must parse to a TimeSpan, not DBNull.");
+        Assert.IsTrue(((TimeSpan)result).TotalSeconds < 1.0,
+            "PT0.9999S must be less than 1 second.");
+    }
+
+    [TestMethod]
+    public void EdmDuration_OverflowingValue_ReturnsDBNull()
+    {
+        // A duration with absurdly large days exceeds TimeSpan.MaxValue — must return DBNull.
+        var result = Convert("Edm.Duration", JsonValue.Create("P999999999999999999D"));
+        Assert.AreEqual(DBNull.Value, result,
+            "An overflowing duration must return DBNull, not throw.");
+    }
+
     // -----------------------------------------------------------------------
     // Items 21+22 — Malformed values must not return wrong CLR type
     // -----------------------------------------------------------------------
