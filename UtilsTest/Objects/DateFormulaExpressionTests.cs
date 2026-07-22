@@ -368,4 +368,152 @@ public class DateFormulaExpressionTests
         // Steps is backed by ReadOnlyCollection, not List — the downcast must fail.
         Assert.IsFalse(expr.Steps is List<DateFormulaStep>);
     }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    //  Equality — DateFormulaStep (accessed via parsed IR)
+    // ──────────────────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void DateFormulaStep_EqualSteps_AreEqual()
+    {
+        // Both formulas produce AddPeriod(3, WorkingDay) as their only step.
+        var s1 = DateFormulaExpression.Parse("FM+3O", Fr).Steps[0];
+        var s2 = DateFormulaExpression.Parse("FM+3O", Fr).Steps[0];
+        Assert.IsTrue(s1 == s2);
+        Assert.AreEqual(s1.GetHashCode(), s2.GetHashCode());
+    }
+
+    [TestMethod]
+    public void DateFormulaStep_SameStepParsedInDifferentLanguages_AreEqual()
+    {
+        // FR "FM+1J" and EN "EM+1D" both produce AddPeriod(1, Day).
+        var frStep = DateFormulaExpression.Parse("FM+1J", Fr).Steps[0];
+        var enStep = DateFormulaExpression.Parse("EM+1D", En).Steps[0];
+        Assert.IsTrue(frStep == enStep);
+        Assert.AreEqual(frStep.GetHashCode(), enStep.GetHashCode());
+    }
+
+    [TestMethod]
+    public void DateFormulaStep_DifferentKind_AreNotEqual()
+    {
+        // "FM+1M" → AddPeriod(1, Month) ; "+O" snap → AdjustWorkingDay(+1)
+        var addPeriod    = DateFormulaExpression.Parse("FM+1M", Fr).Steps[0];
+        var workingDay   = DateFormulaExpression.Parse("FM+1M+O", Fr).Steps[1];
+        Assert.IsTrue(addPeriod != workingDay);
+    }
+
+    [TestMethod]
+    public void DateFormulaStep_DifferentSignedValue_AreNotEqual()
+    {
+        var plus3  = DateFormulaExpression.Parse("FM+3M", Fr).Steps[0];
+        var minus3 = DateFormulaExpression.Parse("FM-3M", Fr).Steps[0];
+        Assert.IsTrue(plus3 != minus3);
+    }
+
+    [TestMethod]
+    public void DateFormulaStep_DifferentWeekDay_AreNotEqual()
+    {
+        // "FM+1JLu" → [AddPeriod(1,Day), MoveToSameWeekDay(Monday)]
+        // "FM+1JVe" → [AddPeriod(1,Day), MoveToSameWeekDay(Friday)]
+        var monday = DateFormulaExpression.Parse("FM+1JLu", Fr).Steps[1];
+        var friday = DateFormulaExpression.Parse("FM+1JVe", Fr).Steps[1];
+        Assert.IsTrue(monday != friday);
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    //  Equality — DateFormulaExpression
+    // ──────────────────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void Equals_SameFormula_ReturnsTrue()
+    {
+        var a = DateFormulaExpression.Parse("FM+1J", Fr);
+        var b = DateFormulaExpression.Parse("FM+1J", Fr);
+        Assert.IsTrue(a.Equals(b));
+        Assert.IsTrue(a == b);
+    }
+
+    [TestMethod]
+    public void Equals_EquivalentFormulasInDifferentLanguages_ReturnsTrue()
+    {
+        // "FM+1J" (FR) and "EM+1D" (EN) describe the same computation.
+        var fr = DateFormulaExpression.Parse("FM+1J", Fr);
+        var en = DateFormulaExpression.Parse("EM+1D", En);
+        Assert.IsTrue(fr.Equals(en));
+        Assert.IsTrue(fr == en);
+        Assert.AreEqual(fr.GetHashCode(), en.GetHashCode());
+    }
+
+    [TestMethod]
+    public void Equals_DifferentBasePeriod_ReturnsFalse()
+    {
+        var month = DateFormulaExpression.Parse("FM+1J", Fr);
+        var year  = DateFormulaExpression.Parse("FA+1J", Fr);
+        Assert.IsFalse(month.Equals(year));
+        Assert.IsTrue(month != year);
+    }
+
+    [TestMethod]
+    public void Equals_DifferentStepCount_ReturnsFalse()
+    {
+        var simple   = DateFormulaExpression.Parse("FM+1J", Fr);
+        var withSnap = DateFormulaExpression.Parse("FM+1J+O", Fr);  // AdjustWorkingDay step added
+        Assert.IsFalse(simple.Equals(withSnap));
+    }
+
+    [TestMethod]
+    public void Equals_DifferentStartEnd_ReturnsFalse()
+    {
+        var start = DateFormulaExpression.Parse("DM+1J", Fr);
+        var end   = DateFormulaExpression.Parse("FM+1J", Fr);
+        Assert.IsFalse(start.Equals(end));
+        Assert.IsTrue(start != end);
+    }
+
+    [TestMethod]
+    public void Equals_Null_ReturnsFalse()
+    {
+        var expr = DateFormulaExpression.Parse("FM+1J", Fr);
+        Assert.IsFalse(expr.Equals(null));
+        Assert.IsTrue(expr != null);
+    }
+
+    [TestMethod]
+    public void Equals_ReferenceEqual_ReturnsTrue()
+    {
+        var expr = DateFormulaExpression.Parse("FM+1J", Fr);
+#pragma warning disable CS1718
+        Assert.IsTrue(expr == expr);
+#pragma warning restore CS1718
+    }
+
+    [TestMethod]
+    public void GetHashCode_EqualExpressions_SameHash()
+    {
+        var a = DateFormulaExpression.Parse("FS+3O", Fr);
+        var b = DateFormulaExpression.Parse("EW+3O", En);
+        Assert.AreEqual(a.GetHashCode(), b.GetHashCode());
+    }
+
+    [TestMethod]
+    public void Comparer_CanBeUsedAsHashSetKey()
+    {
+        var fr = DateFormulaExpression.Parse("FM+1J", Fr);
+        var en = DateFormulaExpression.Parse("EM+1D", En);  // same formula
+
+        var set = new HashSet<DateFormulaExpression>(DateFormulaExpression.Comparer) { fr, en };
+
+        Assert.AreEqual(1, set.Count, "Equivalent expressions should occupy one slot in the set.");
+    }
+
+    [TestMethod]
+    public void Comparer_DifferentFormulas_OccupyDifferentSlots()
+    {
+        var a = DateFormulaExpression.Parse("FM+1J", Fr);
+        var b = DateFormulaExpression.Parse("FA+1J", Fr);
+
+        var set = new HashSet<DateFormulaExpression>(DateFormulaExpression.Comparer) { a, b };
+
+        Assert.AreEqual(2, set.Count);
+    }
 }

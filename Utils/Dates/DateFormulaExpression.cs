@@ -24,7 +24,7 @@ public enum DateFormulaStepKind
 }
 
 /// <summary>Represents a single operation step within a <see cref="DateFormulaExpression"/>.</summary>
-public readonly struct DateFormulaStep
+public readonly struct DateFormulaStep : IEquatable<DateFormulaStep>
 {
     /// <summary>The kind of operation this step performs.</summary>
     public DateFormulaStepKind Kind { get; }
@@ -65,6 +65,25 @@ public readonly struct DateFormulaStep
 
     internal static DateFormulaStep ForAdjustWorkingDay(int sign)
         => new(DateFormulaStepKind.AdjustWorkingDay, sign, default, default);
+
+    /// <inheritdoc/>
+    public bool Equals(DateFormulaStep other)
+        => Kind == other.Kind
+        && SignedValue == other.SignedValue
+        && Unit == other.Unit
+        && WeekDay == other.WeekDay;
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj) => obj is DateFormulaStep other && Equals(other);
+
+    /// <inheritdoc/>
+    public override int GetHashCode() => HashCode.Combine(Kind, SignedValue, Unit, WeekDay);
+
+    /// <summary>Returns <see langword="true"/> when both steps represent the same operation.</summary>
+    public static bool operator ==(DateFormulaStep left, DateFormulaStep right) => left.Equals(right);
+
+    /// <summary>Returns <see langword="true"/> when the steps represent different operations.</summary>
+    public static bool operator !=(DateFormulaStep left, DateFormulaStep right) => !left.Equals(right);
 }
 
 /// <summary>
@@ -84,7 +103,7 @@ public readonly struct DateFormulaStep
 /// Call <see cref="Compile(CultureInfo, ICalendarProvider)"/> to produce an executable delegate.
 /// </para>
 /// </remarks>
-public sealed class DateFormulaExpression : IFormattable
+public sealed class DateFormulaExpression : IFormattable, IEquatable<DateFormulaExpression>
 {
     private static readonly MethodInfo _adjustToDayOfWeekMethod =
         typeof(DateFormula).GetMethod("AdjustToDayOfWeek", BindingFlags.NonPublic | BindingFlags.Static)!;
@@ -362,6 +381,49 @@ public sealed class DateFormulaExpression : IFormattable
 
     private static string DayToString(DayOfWeek day, DateFormulaLanguage lang)
         => lang.Days.First(kvp => kvp.Value == day).Key;
+
+    // ── Equality ─────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// A shared <see cref="IEqualityComparer{T}"/> for <see cref="DateFormulaExpression"/>
+    /// that delegates to <see cref="Equals(DateFormulaExpression)"/> and <see cref="GetHashCode()"/>.
+    /// Suitable for use as a dictionary or hash-set key comparer.
+    /// </summary>
+    public static IEqualityComparer<DateFormulaExpression> Comparer { get; }
+        = EqualityComparer<DateFormulaExpression>.Default;
+
+    /// <summary>
+    /// Returns <see langword="true"/> when <paramref name="other"/> represents the same formula
+    /// (same start/end anchor, same base period, and the same sequence of steps).
+    /// </summary>
+    public bool Equals(DateFormulaExpression? other)
+    {
+        if (other is null) return false;
+        if (ReferenceEquals(this, other)) return true;
+        return IsStart == other.IsStart
+            && BasePeriod == other.BasePeriod
+            && Steps.SequenceEqual(other.Steps);
+    }
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj) => obj is DateFormulaExpression other && Equals(other);
+
+    /// <inheritdoc/>
+    public override int GetHashCode()
+    {
+        var hash = HashCode.Combine(IsStart, BasePeriod);
+        foreach (var step in Steps)
+            hash = HashCode.Combine(hash, step);
+        return hash;
+    }
+
+    /// <summary>Returns <see langword="true"/> when both expressions represent the same formula.</summary>
+    public static bool operator ==(DateFormulaExpression? left, DateFormulaExpression? right)
+        => left is null ? right is null : left.Equals(right);
+
+    /// <summary>Returns <see langword="true"/> when the expressions represent different formulas.</summary>
+    public static bool operator !=(DateFormulaExpression? left, DateFormulaExpression? right)
+        => !(left == right);
 }
 
 #pragma warning restore S3011
