@@ -122,7 +122,7 @@ Constructors accept any non-null string. Cookie propagation catches every except
 
 **Priority: P1 expression safety and predictability.**
 
-### 11. Binary translation assumes “member on the left, value on the right”
+### 11. **[FIXED]** Binary translation assumes “member on the left, value on the right”
 
 `TranslateBinary` always calls `TranslateMember(binary.Left)` and `TranslateValue(binary.Right)`. Valid LINQ such as `5 < entity.Quantity` is rejected rather than normalized to `Quantity gt 5`. Member-to-member comparisons are also not distinguished clearly.
 
