@@ -204,7 +204,6 @@ public class QueryOData : IDisposable
         Dictionary<string, string>? metadatas = null;
         int totalRetrieved = 0;
         int? originalTop = parameter.Top;
-        bool hasAnyData = false;
 
         while (true)
         {
@@ -241,8 +240,6 @@ public class QueryOData : IDisposable
                 break;
             }
 
-            hasAnyData = true;
-
             int chunkCount = chunkDataArray.Count;
 
             foreach (JsonNode? item in chunkDataArray)
@@ -251,11 +248,6 @@ public class QueryOData : IDisposable
             }
 
             totalRetrieved += chunkCount;
-        }
-
-        if (!hasAnyData)
-        {
-            return new(1, "No data returned.");
         }
 
         return new((aggregatedValues, metadatas));
@@ -416,9 +408,9 @@ public class QueryOData : IDisposable
 
             writer.TryComplete();
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException oce)
         {
-            writer.TryComplete();
+            writer.TryComplete(oce);
         }
         catch (Exception exception)
         {
@@ -446,12 +438,18 @@ public class QueryOData : IDisposable
         ArgumentNullException.ThrowIfNull(rowConverter);
         ArgumentNullException.ThrowIfNull(writer);
         
+        int rowIndex = 0;
         foreach (JsonNode? entry in batch)
         {
-            object[] row = entry is JsonObject jsonObject
-                    ? rowConverter(jsonObject)
-                    : CreateEmptyRow(columns.Count);
+            if (entry is not JsonObject jsonObject)
+            {
+                throw new InvalidOperationException(
+                    $"Row {rowIndex} in the OData response is not a JSON object (actual type: {entry?.GetValueKind().ToString() ?? "null"}). " +
+                    "Only object entries are supported in the value array.");
+            }
+            object[] row = rowConverter(jsonObject);
             await writer.WriteAsync(row, cancellationToken);
+            rowIndex++;
         }
     }
 
@@ -854,14 +852,6 @@ public class QueryOData : IDisposable
             }
         }
 
-        /// <summary>
-        /// Finalizes the reader instance.
-        /// </summary>
-        ~ODataStreamingDataReader()
-        {
-            Dispose(disposing: false);
-        }
-
         /// <inheritdoc />
         public int FieldCount => _columns.Count;
 
@@ -890,13 +880,12 @@ public class QueryOData : IDisposable
         public void Dispose()
         {
             Dispose(disposing: true);
-            GC.SuppressFinalize(this);
         }
 
         /// <summary>
-        /// Releases unmanaged resources and optionally managed ones.
+        /// Releases managed resources.
         /// </summary>
-        /// <param name="disposing">Indicates whether managed resources should be released.</param>
+        /// <param name="disposing">Always <see langword="true"/>; kept for extensibility.</param>
         private void Dispose(bool disposing)
         {
             if (_isClosed)
@@ -912,15 +901,15 @@ public class QueryOData : IDisposable
                 {
                     _backgroundTask.Wait();
                 }
-                catch (AggregateException aggregate) when (aggregate.InnerExceptions.Count == 1)
+                catch (AggregateException aggregate)
+                        when (aggregate.InnerExceptions.Count == 1
+                              && aggregate.InnerExceptions[0] is OperationCanceledException)
                 {
-                    // Swallow exceptions during disposal to avoid masking the original exception.
-                    // AggregateException with a single OperationCanceledException is the expected case.
-                    _ = aggregate;
+                    // Suppress only cancellation that was initiated by this Dispose call.
                 }
                 catch (OperationCanceledException)
                 {
-                    // Ignore cancellation during disposal.
+                    // Suppress only cancellation that was initiated by this Dispose call.
                 }
 
                 _cancellationSource.Dispose();
@@ -976,7 +965,7 @@ public class QueryOData : IDisposable
             catch (OperationCanceledException)
             {
                 _currentRow = null;
-                return false;
+                throw;
             }
         }
 
