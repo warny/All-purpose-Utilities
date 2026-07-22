@@ -176,6 +176,15 @@ namespace UtilsTest.Geography
             Assert.IsFalse(ok);
         }
 
+        [DataTestMethod]
+        [DataRow("45°30'\"")]
+        [DataRow("45°'\"")]
+        [DataRow("45°30''")]
+        public void TryParse_MalformedDmsSeparators_ReturnsFalse(string value)
+        {
+            Assert.IsFalse(GeoPoint<double>.TryParse($"{value}, 2", out _));
+        }
+
         [TestMethod]
         public void TryParse_StringWithLeadingAndTrailingWhitespace_ReturnsTrue()
         {
