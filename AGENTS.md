@@ -20,7 +20,13 @@ This project targets **.NET 9**.
 
 ## Testing  
 - Every change must include a corresponding **test**.  
-- The only exception is when modifying **library metadata**.  
+- When a **project** is modified, you **must** execute all tests from the projects to make sure that the project is still working. 
+**If a test fails**, you must fix the project until all tests pass. You must not modify the tests unless you are adding new tests for new functionality.
+- **Utils is referenced in all other projects**. If you modify the **Utils** project, you must execute all tests from all other projects 
+to make sure that the modification does not break any other project. **If a test fails**, you must fix the utils project until all tests pass. 
+- You must not modify the tests unless you are adding new tests for new functionality.
+- The only exception is when modifying **library metadata** or **library documentation**. 
+ 
 
 ### Test projects
 
@@ -221,6 +227,11 @@ Add `docs/getting-started.md` (and optional `/docs/fr` version) covering:
 - feedback / issues.
 
 ---
+
+### Step 8 - TODO files
+
+If a modification fixex an issue listed in a TODO file, you must mark the issue as fiwed. If alll issues in a TODO file are fixed, rename the file as **DONE-yyyy-mm-dd(x).md**
+where yyyy-mm-dd is the current date and (x) is the file index if several files are fixed within the same day.
 
 ### Validation checklist (required)
 
