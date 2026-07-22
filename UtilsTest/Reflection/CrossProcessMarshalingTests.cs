@@ -222,4 +222,70 @@ public class CrossProcessMarshalingTests
         Assert.ThrowsException<NotSupportedException>(
             () => CrossProcessMarshaling.EnsureInterfaceIsSupported(typeof(IStructWithUnsupportedProp)));
     }
+
+    // ─── Item 8: JSON round-trip contract validation ─────────────────────────────
+
+    /// <summary>Struct with an indexer — rejected because indexers cannot be serialized as named JSON members.</summary>
+    public struct StructWithIndexer
+    {
+#pragma warning disable CS0649
+        private int[] _data;
+#pragma warning restore CS0649
+        public int this[int i] => _data?[i] ?? 0;
+    }
+
+    /// <summary>
+    /// Struct with a read-only computed property derived from public fields — round-trips correctly
+    /// because the computed value is re-derived from the restored fields after deserialization.
+    /// </summary>
+    public struct StructWithComputedPropFromPublicFields
+    {
+        public int X;
+        public int Y;
+        public int Sum => X + Y;
+    }
+
+    /// <summary>Struct whose getter always throws — caught by the round-trip serialization test.</summary>
+    public struct StructWithThrowingGetter
+    {
+        public int X { get; set; }
+        public string Description => throw new InvalidOperationException("getter always throws");
+    }
+
+    public interface IStructWithIndexer : IDisposable { StructWithIndexer Get(); }
+    public interface IStructWithComputedProp : IDisposable { StructWithComputedPropFromPublicFields Get(); }
+    public interface IStructWithThrowingGetter : IDisposable { StructWithThrowingGetter Get(); }
+
+    [TestMethod]
+    public void IsSupportedType_ReturnsFalse_ForStructWithIndexer()
+    {
+        // Indexers appear in GetProperties() but have index parameters — they cannot be
+        // serialized as named JSON members, so the struct must be rejected.
+        Assert.IsFalse(CrossProcessMarshaling.IsSupportedType(typeof(StructWithIndexer), 0));
+    }
+
+    [TestMethod]
+    public void EnsureInterfaceIsSupported_Throws_ForStructWithIndexer()
+    {
+        Assert.ThrowsException<NotSupportedException>(
+            () => CrossProcessMarshaling.EnsureInterfaceIsSupported(typeof(IStructWithIndexer)));
+    }
+
+    [TestMethod]
+    public void EnsureInterfaceIsSupported_DoesNotThrow_ForStructWithComputedPropFromPublicFields()
+    {
+        // A getter-only property computed purely from public fields does not break round-trip
+        // correctness: the fields are serialized and restored; the computed value is then
+        // re-derived from those fields on re-serialization, producing the same JSON.
+        CrossProcessMarshaling.EnsureInterfaceIsSupported(typeof(IStructWithComputedProp));
+    }
+
+    [TestMethod]
+    public void EnsureInterfaceIsSupported_Throws_ForStructWithThrowingGetter()
+    {
+        // A getter that throws prevents serialization of the default instance, which is detected
+        // by the round-trip validation in EnsureInterfaceIsSupported.
+        Assert.ThrowsException<NotSupportedException>(
+            () => CrossProcessMarshaling.EnsureInterfaceIsSupported(typeof(IStructWithThrowingGetter)));
+    }
 }
