@@ -241,7 +241,7 @@ public class QueryOData : IDisposable
                 break;
             }
 
-            ReturnValue<Stream> queryResult;
+            ReturnValue<HttpQueryResult> queryResult;
             if (nextLink is not null)
             {
                 // Item 6: follow the server-provided continuation link instead of
@@ -262,8 +262,9 @@ public class QueryOData : IDisposable
                 return new(queryResult.Error);
             }
 
-            await using Stream stream = queryResult.Value;
-            var convertResult = ConvertDatas(stream, allowEmpty: true);
+            await using HttpQueryResult httpResult = queryResult.Value;
+            Uri? pageUri = httpResult.ResponseUri;
+            var convertResult = ConvertDatas(httpResult.Stream, allowEmpty: true);
             if (convertResult.IsError)
             {
                 return convertResult;
@@ -276,11 +277,12 @@ public class QueryOData : IDisposable
             }
 
             // Item 6: extract and validate the continuation link from the current page.
+            // Resolve relative links against the page URI, not the service root (item 6 fix).
             // A present but invalid/out-of-origin link is an error — do not silently fall back.
             string? rawNextLink = ExtractNextLink(chunk.Metadatas);
             if (rawNextLink is not null)
             {
-                var (resolved, linkError) = ResolveNextLink(rawNextLink);
+                var (resolved, linkError) = ResolveNextLink(rawNextLink, pageUri);
                 if (linkError is not null)
                     return new(linkError);
                 nextLink = resolved;
@@ -340,8 +342,9 @@ public class QueryOData : IDisposable
             return new(queryResult.Error);
         }
 
-        await using Stream firstStream = queryResult.Value;
-        var convertResult = ConvertDatas(firstStream, allowEmpty: true);
+        await using HttpQueryResult firstHttpResult = queryResult.Value;
+        Uri? firstPageUri = firstHttpResult.ResponseUri;
+        var convertResult = ConvertDatas(firstHttpResult.Stream, allowEmpty: true);
         if (convertResult.IsError)
         {
             return new(convertResult.Error);
@@ -402,12 +405,13 @@ public class QueryOData : IDisposable
         Channel<object?[]> channel = Channel.CreateBounded<object?[]>(channelOptions);
         CancellationTokenSource linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
-        // Item 6: resolve and validate the continuation link from the first page.
+        // Item 6: resolve the continuation link from the first page against the first page's
+        // own URI so that path-relative links preserve the entity path.
         string? initialNextLink = null;
         string? rawInitialNextLink = ExtractNextLink(firstChunk.Metadatas);
         if (rawInitialNextLink is not null)
         {
-            var (resolved, linkError) = ResolveNextLink(rawInitialNextLink);
+            var (resolved, linkError) = ResolveNextLink(rawInitialNextLink, firstPageUri);
             if (linkError is not null)
                 return new(linkError);
             initialNextLink = resolved;
@@ -474,7 +478,7 @@ public class QueryOData : IDisposable
                     break;
                 }
 
-                ReturnValue<Stream> queryResult;
+                ReturnValue<HttpQueryResult> queryResult;
                 if (nextLink is not null)
                 {
                     // Item 6: follow the server-provided continuation link.
@@ -493,18 +497,20 @@ public class QueryOData : IDisposable
                     throw new ODataDataReaderException(queryResult.Error);
                 }
 
-                await using Stream stream = queryResult.Value;
-                var convertResult = ConvertDatas(stream, allowEmpty: true);
+                await using HttpQueryResult httpResult = queryResult.Value;
+                Uri? pageUri = httpResult.ResponseUri;
+                var convertResult = ConvertDatas(httpResult.Stream, allowEmpty: true);
                 if (convertResult.IsError)
                 {
                     throw new ODataDataReaderException(convertResult.Error);
                 }
 
-                // Item 6: resolve and validate the continuation link; an invalid link is an error.
+                // Item 6: resolve the continuation link against the page URI that provided it
+                // so that path-relative and query-string-only links work correctly.
                 string? rawChunkNextLink = ExtractNextLink(convertResult.Value.Metadatas);
                 if (rawChunkNextLink is not null)
                 {
-                    var (resolved, linkError) = ResolveNextLink(rawChunkNextLink);
+                    var (resolved, linkError) = ResolveNextLink(rawChunkNextLink, pageUri);
                     if (linkError is not null)
                         throw new ODataDataReaderException(linkError);
                     nextLink = resolved;
@@ -892,6 +898,16 @@ public class QueryOData : IDisposable
     /// defaults to <see langword="true"/> (item 54).
     /// </param>
     private sealed record ColumnDefinition(string Name, Type FieldType, int Ordinal, Func<JsonNode?, object> Converter, bool AllowDbNull = true);
+
+    /// <summary>
+    /// Pairs an HTTP response body stream with the final effective request URI so that relative
+    /// <c>@odata.nextLink</c> values can be resolved against the correct page.
+    /// </summary>
+    private sealed record HttpQueryResult(Stream Stream, Uri? ResponseUri) : IAsyncDisposable
+    {
+        /// <inheritdoc />
+        public ValueTask DisposeAsync() => Stream.DisposeAsync();
+    }
 
     /// <summary>
     /// Raised by <see cref="ReadBoundedAsync"/> when the stream exceeds the configured byte limit.
@@ -1577,29 +1593,39 @@ public class QueryOData : IDisposable
     }
 
     /// <summary>
-    /// Resolves a raw <c>@odata.nextLink</c> value (absolute or relative) to an absolute URI,
-    /// validates that it stays within the same HTTP origin as <see cref="BaseUrl"/>, and returns
-    /// the resolved absolute link string, or an explicit error (item 6 / item 30).
+    /// Resolves a raw <c>@odata.nextLink</c> value to an absolute URI and validates that it
+    /// stays within the same HTTP origin as <paramref name="baseUri"/> (item 6 / item 30).
+    /// Exposed as <c>internal static</c> so the resolution behaviour can be unit-tested without
+    /// an HTTP server.
     /// </summary>
-    /// <remarks>
-    /// Relative continuation links (e.g. <c>Products?$skiptoken=abc</c>) are resolved against
-    /// <see cref="BaseUrl"/>. A link that cannot be parsed, cannot be resolved, or whose origin
-    /// differs from <see cref="BaseUrl"/> (different scheme, host, or port) is rejected with an
-    /// error rather than silently ignored.
-    /// </remarks>
-    private (string? resolvedLink, ErrorReturnValue? error) ResolveNextLink(string rawLink)
+    /// <param name="rawLink">Raw value of the <c>@odata.nextLink</c> property.</param>
+    /// <param name="contextUri">
+    /// Effective URI of the response page that provided the nextLink.
+    /// Relative links (e.g. <c>Products?$skiptoken=abc</c> or <c>?$skiptoken=abc</c>) are
+    /// resolved against this URI so that path segments like <c>/odata/</c> are preserved.
+    /// When <see langword="null"/>, falls back to <paramref name="baseUri"/>.
+    /// </param>
+    /// <param name="baseUri">Absolute base URI of the service; used exclusively for same-origin validation.</param>
+    /// <returns>
+    /// The resolved absolute link string, or an explicit error when the link is unparseable,
+    /// unresolvable, or outside the allowed origin.
+    /// </returns>
+    internal static (string? resolvedLink, ErrorReturnValue? error) ResolveAndValidateNextLink(
+        string rawLink, Uri? contextUri, Uri baseUri)
     {
-        if (!Uri.TryCreate(BaseUrl, UriKind.Absolute, out Uri? baseUri))
-            return (null, new ErrorReturnValue(-6, "The service base URL is invalid; cannot validate @odata.nextLink origin."));
-
         Uri? nextUri;
         if (!Uri.TryCreate(rawLink, UriKind.Absolute, out nextUri))
         {
-            // Relative link — resolve against the service base URL.
-            if (!Uri.TryCreate(baseUri, rawLink, out nextUri))
-                return (null, new ErrorReturnValue(-6, $"The @odata.nextLink value '{rawLink}' could not be resolved to a valid URI."));
+            // Relative link: resolve against the context URI (the page that provided the nextLink)
+            // so that path-relative and query-string-only links preserve the correct entity path.
+            // Fall back to the service base URI when the context is not available.
+            Uri resolveBase = contextUri ?? baseUri;
+            if (!Uri.TryCreate(resolveBase, rawLink, out nextUri))
+                return (null, new ErrorReturnValue(-6,
+                    $"The @odata.nextLink value '{rawLink}' could not be resolved to a valid URI."));
         }
 
+        // Same-origin check is always performed against the configured service base URL.
         if (!string.Equals(nextUri.Scheme, baseUri.Scheme, StringComparison.OrdinalIgnoreCase)
             || !string.Equals(nextUri.Host, baseUri.Host, StringComparison.OrdinalIgnoreCase)
             || nextUri.Port != baseUri.Port)
@@ -1612,10 +1638,29 @@ public class QueryOData : IDisposable
     }
 
     /// <summary>
-    /// Fetches a raw URL and wraps the response as a <see cref="ReturnValue{Stream}"/> (item 6).
-    /// Used to follow <c>@odata.nextLink</c> continuation links.
+    /// Instance wrapper around <see cref="ResolveAndValidateNextLink"/> that supplies the
+    /// configured <see cref="BaseUrl"/> as the origin anchor (item 6).
     /// </summary>
-    private async Task<ReturnValue<Stream>> QueryUrl(string url, CancellationToken cancellationToken = default)
+    /// <param name="rawLink">Raw value of the <c>@odata.nextLink</c> property.</param>
+    /// <param name="contextUri">
+    /// Effective URI of the response page that contained the nextLink; used to resolve
+    /// relative continuation links correctly.
+    /// </param>
+    private (string? resolvedLink, ErrorReturnValue? error) ResolveNextLink(string rawLink, Uri? contextUri)
+    {
+        if (!Uri.TryCreate(BaseUrl, UriKind.Absolute, out Uri? baseUri))
+            return (null, new ErrorReturnValue(-6,
+                "The service base URL is invalid; cannot validate @odata.nextLink origin."));
+        return ResolveAndValidateNextLink(rawLink, contextUri, baseUri);
+    }
+
+    /// <summary>
+    /// Fetches a raw URL and wraps the response as an <see cref="HttpQueryResult"/> (item 6).
+    /// Used to follow <c>@odata.nextLink</c> continuation links; the effective request URI is
+    /// captured from <see cref="HttpRequestMessage.RequestUri"/> so relative nextLinks on the
+    /// returned page can be resolved correctly.
+    /// </summary>
+    private async Task<ReturnValue<HttpQueryResult>> QueryUrl(string url, CancellationToken cancellationToken = default)
     {
         var response = await HttpGet(url, sourceRequest: null, cancellationToken);
         if (!response.IsSuccessStatusCode)
@@ -1629,7 +1674,8 @@ public class QueryOData : IDisposable
             response.Dispose();
             return new(-3, "The HTTP response did not contain a readable stream.");
         }
-        return CreateResponseStream(response, contentStream);
+        Uri? responseUri = response.RequestMessage?.RequestUri;
+        return new(new HttpQueryResult(CreateResponseStream(response, contentStream), responseUri));
     }
 
     /// <summary>
@@ -1656,7 +1702,7 @@ public class QueryOData : IDisposable
     /// <param name="cancellationToken">Token used to cancel the HTTP request.</param>
     /// <returns>A <see cref="ReturnValue{Stream}"/> containing the query result stream if successful; otherwise, an error code and
     /// message.</returns>
-    private async Task<ReturnValue<Stream>> QueryDatas(IQuery parameter, int skip = 0, CancellationToken cancellationToken = default)
+    private async Task<ReturnValue<HttpQueryResult>> QueryDatas(IQuery parameter, int skip = 0, CancellationToken cancellationToken = default)
     {
         var response = await SimpleQuery(parameter, skip: skip, cancellationToken: cancellationToken);
 
@@ -1684,7 +1730,8 @@ public class QueryOData : IDisposable
             return new(-3, "The HTTP response did not contain a readable stream.");
         }
 
-        return CreateResponseStream(response, contentStream);
+        Uri? responseUri = response.RequestMessage?.RequestUri;
+        return new(new HttpQueryResult(CreateResponseStream(response, contentStream), responseUri));
     }
 
     /// <summary>
