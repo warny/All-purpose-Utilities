@@ -53,11 +53,12 @@ public class QueryOData : IDisposable
     /// </summary>
     /// <remarks>This constructor sets up an <see cref="HttpClient"/> with default credentials and a timeout of 600
     /// seconds.</remarks>
-    /// <param name="baseUrl">The base URL for the OData service. Cannot be null.</param>
+    /// <param name="baseUrl">The base URL for the OData service. Must be a valid absolute HTTP or HTTPS URI.</param>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="baseUrl"/> is null.</exception>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="baseUrl"/> is not a valid absolute HTTP or HTTPS URI.</exception>
     public QueryOData(string baseUrl)
     {
-        BaseUrl = baseUrl ?? throw new ArgumentNullException(nameof(baseUrl));
+        BaseUrl = ValidateBaseUrl(baseUrl);
         _handler = new HttpClientHandler()
         {
             UseDefaultCredentials = true,
@@ -76,14 +77,35 @@ public class QueryOData : IDisposable
     /// <summary>
     /// Initializes a new instance of the <see cref="QueryOData"/> class with the specified base URL and HTTP client.
     /// </summary>
-    /// <param name="baseUrl">The base URL for the OData service. Cannot be null.</param>
+    /// <param name="baseUrl">The base URL for the OData service. Must be a valid absolute HTTP or HTTPS URI.</param>
     /// <param name="httpClient">The HTTP client used to send requests. Cannot be null.</param>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="baseUrl"/> or <paramref name="httpClient"/> is null.</exception>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="baseUrl"/> is not a valid absolute HTTP or HTTPS URI.</exception>
     public QueryOData(string baseUrl, HttpClient httpClient)
     {
-        BaseUrl = baseUrl ?? throw new ArgumentNullException(nameof(baseUrl));
+        BaseUrl = ValidateBaseUrl(baseUrl);
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         _disposeClient = false;
+    }
+
+    /// <summary>
+    /// Validates the base URL at construction time and returns the normalized string.
+    /// </summary>
+    /// <param name="baseUrl">The base URL supplied by the caller.</param>
+    /// <returns>The validated base URL string.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="baseUrl"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException">Thrown when the URL is not an absolute HTTP or HTTPS URI.</exception>
+    private static string ValidateBaseUrl(string baseUrl)
+    {
+        ArgumentNullException.ThrowIfNull(baseUrl);
+        if (!Uri.TryCreate(baseUrl, UriKind.Absolute, out Uri? uri)
+            || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+        {
+            throw new ArgumentException(
+                $"The base URL must be a valid absolute HTTP or HTTPS URI. Provided value: '{baseUrl}'.",
+                nameof(baseUrl));
+        }
+        return baseUrl;
     }
 
     /// <summary>
@@ -152,17 +174,17 @@ public class QueryOData : IDisposable
             }
 
             // Copy cookies to the handler container when available.
+            // BaseUrl is already validated as a valid URI in the constructor.
             if (_handler?.CookieContainer is not null && sourceRequest.Headers.TryGetValues("Cookie", out var cookieHeaders))
             {
                 var cookieHeader = string.Join("; ", cookieHeaders);
                 try
                 {
-                    var uri = new Uri(BaseUrl);
-                    _handler.CookieContainer.SetCookies(uri, cookieHeader);
+                    _handler.CookieContainer.SetCookies(new Uri(BaseUrl), cookieHeader);
                 }
-                catch
+                catch (System.Net.CookieException)
                 {
-                    // Ignore failures (for instance when BaseUrl is not a valid URI) and continue the request.
+                    // Malformed cookie header from the source request; skip forwarding and proceed.
                 }
             }
         }
@@ -204,7 +226,6 @@ public class QueryOData : IDisposable
         Dictionary<string, string>? metadatas = null;
         int totalRetrieved = 0;
         int? originalTop = parameter.Top;
-        bool hasAnyData = false;
 
         while (true)
         {
@@ -241,8 +262,6 @@ public class QueryOData : IDisposable
                 break;
             }
 
-            hasAnyData = true;
-
             int chunkCount = chunkDataArray.Count;
 
             foreach (JsonNode? item in chunkDataArray)
@@ -251,11 +270,6 @@ public class QueryOData : IDisposable
             }
 
             totalRetrieved += chunkCount;
-        }
-
-        if (!hasAnyData)
-        {
-            return new(1, "No data returned.");
         }
 
         return new((aggregatedValues, metadatas));
@@ -298,16 +312,44 @@ public class QueryOData : IDisposable
         }
 
         await using Stream firstStream = queryResult.Value;
-        var convertResult = ConvertDatas(firstStream, allowEmpty: false);
+        var convertResult = ConvertDatas(firstStream, allowEmpty: true);
         if (convertResult.IsError)
         {
             return new(convertResult.Error);
         }
 
         (JsonArray? Datas, Dictionary<string, string>? Metadatas) firstChunk = convertResult.Value;
+
+        // When the service returns no rows, build a valid empty reader without starting the streaming task.
         if (firstChunk.Datas is not JsonArray { Count: > 0 } firstBatch)
         {
-            return new(1, "No data returned.");
+            string[] selectedColumns = [];
+            string? selection = parameter.Select;
+            if (!string.IsNullOrWhiteSpace(selection)
+                    && !string.Equals(selection.Trim(), "*", StringComparison.Ordinal))
+            {
+                selectedColumns = selection.Split(',').Select(c => c.Trim()).ToArray();
+            }
+
+            IReadOnlyList<ColumnDefinition> emptyColumns = [];
+            if (selectedColumns.Length > 0)
+            {
+                var emptyMeta = await GetMetadataFromBaseAsync(cancellationToken);
+                // A metadata failure is intentionally ignored here: an empty result set is a
+                // valid OData response and must not become an error just because the schema
+                // endpoint is unavailable.  Columns fall back to generic (object/DBNull)
+                // types.  The non-empty path, by contrast, does propagate metadata errors
+                // because type converters are required to materialise rows correctly.
+                Edmx? emptyEdmx = emptyMeta.IsError ? null : emptyMeta.Value;
+                string? emptyEntity = ExtractEntityName(firstChunk.Metadatas, parameter);
+                EntityType? emptyType = emptyEdmx is not null ? ResolveEntityType(emptyEdmx, emptyEntity) : null;
+                emptyColumns = BuildColumnDefinitions(selectedColumns, emptyType, emptyEdmx);
+            }
+
+            var emptyChannel = Channel.CreateBounded<object?[]>(1);
+            emptyChannel.Writer.TryComplete();
+            CancellationTokenSource emptyLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            return new(new ODataStreamingDataReader(emptyColumns, emptyChannel.Reader, emptyLinkedCts, Task.CompletedTask));
         }
 
         var metadataResult = await GetMetadataFromBaseAsync(cancellationToken);
@@ -416,9 +458,9 @@ public class QueryOData : IDisposable
 
             writer.TryComplete();
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException oce)
         {
-            writer.TryComplete();
+            writer.TryComplete(oce);
         }
         catch (Exception exception)
         {
@@ -446,12 +488,18 @@ public class QueryOData : IDisposable
         ArgumentNullException.ThrowIfNull(rowConverter);
         ArgumentNullException.ThrowIfNull(writer);
         
+        int rowIndex = 0;
         foreach (JsonNode? entry in batch)
         {
-            object[] row = entry is JsonObject jsonObject
-                    ? rowConverter(jsonObject)
-                    : CreateEmptyRow(columns.Count);
+            if (entry is not JsonObject jsonObject)
+            {
+                throw new InvalidOperationException(
+                    $"Row {rowIndex} in the OData response is not a JSON object (actual type: {entry?.GetValueKind().ToString() ?? "null"}). " +
+                    "Only object entries are supported in the value array.");
+            }
+            object[] row = rowConverter(jsonObject);
             await writer.WriteAsync(row, cancellationToken);
+            rowIndex++;
         }
     }
 
@@ -680,7 +728,7 @@ public class QueryOData : IDisposable
     private static IReadOnlyList<ColumnDefinition> BuildColumnDefinitions(
             IReadOnlyList<string> columnNames,
             EntityType? entityType,
-            Edmx metadata)
+            Edmx? metadata)
     {
         if (columnNames is null)
         {
@@ -850,16 +898,13 @@ public class QueryOData : IDisposable
             _ordinals = new Dictionary<string, int>(columns.Count, StringComparer.OrdinalIgnoreCase);
             foreach (ColumnDefinition column in columns)
             {
-                _ordinals[column.Name] = column.Ordinal;
+                if (!_ordinals.TryAdd(column.Name, column.Ordinal))
+                {
+                    throw new ArgumentException(
+                        $"Duplicate column name '{column.Name}' (case-insensitive) detected in the schema. " +
+                        "Each column must have a unique name.");
+                }
             }
-        }
-
-        /// <summary>
-        /// Finalizes the reader instance.
-        /// </summary>
-        ~ODataStreamingDataReader()
-        {
-            Dispose(disposing: false);
         }
 
         /// <inheritdoc />
@@ -890,13 +935,12 @@ public class QueryOData : IDisposable
         public void Dispose()
         {
             Dispose(disposing: true);
-            GC.SuppressFinalize(this);
         }
 
         /// <summary>
-        /// Releases unmanaged resources and optionally managed ones.
+        /// Releases managed resources.
         /// </summary>
-        /// <param name="disposing">Indicates whether managed resources should be released.</param>
+        /// <param name="disposing">Always <see langword="true"/>; kept for extensibility.</param>
         private void Dispose(bool disposing)
         {
             if (_isClosed)
@@ -912,15 +956,15 @@ public class QueryOData : IDisposable
                 {
                     _backgroundTask.Wait();
                 }
-                catch (AggregateException aggregate) when (aggregate.InnerExceptions.Count == 1)
+                catch (AggregateException aggregate)
+                        when (aggregate.InnerExceptions.Count == 1
+                              && aggregate.InnerExceptions[0] is OperationCanceledException)
                 {
-                    // Swallow exceptions during disposal to avoid masking the original exception.
-                    // AggregateException with a single OperationCanceledException is the expected case.
-                    _ = aggregate;
+                    // Suppress only cancellation that was initiated by this Dispose call.
                 }
                 catch (OperationCanceledException)
                 {
-                    // Ignore cancellation during disposal.
+                    // Suppress only cancellation that was initiated by this Dispose call.
                 }
 
                 _cancellationSource.Dispose();
@@ -976,7 +1020,7 @@ public class QueryOData : IDisposable
             catch (OperationCanceledException)
             {
                 _currentRow = null;
-                return false;
+                throw;
             }
         }
 
@@ -1050,23 +1094,37 @@ public class QueryOData : IDisposable
         /// <inheritdoc />
         public long GetBytes(int i, long fieldOffset, byte[]? buffer, int bufferoffset, int length)
         {
+            if (fieldOffset < 0)
+                throw new ArgumentOutOfRangeException(nameof(fieldOffset), "Field offset must be non-negative.");
+            if (fieldOffset > int.MaxValue)
+                throw new ArgumentOutOfRangeException(nameof(fieldOffset), "Field offset exceeds the supported int range.");
+            if (length < 0)
+                throw new ArgumentOutOfRangeException(nameof(length), "Length must be non-negative.");
+
             object value = GetValue(i);
             if (value is DBNull)
-            {
                 return 0;
-            }
 
             if (value is not byte[] data)
-            {
                 throw new InvalidCastException($"Column {i} does not contain binary data.");
-            }
 
-            int available = Math.Max(0, data.Length - (int)fieldOffset);
+            if (buffer is null)
+                return data.Length;
+
+            if (bufferoffset < 0)
+                throw new ArgumentOutOfRangeException(nameof(bufferoffset), "Buffer offset must be non-negative.");
+            if (bufferoffset > buffer.Length)
+                throw new ArgumentOutOfRangeException(nameof(bufferoffset), "Buffer offset exceeds buffer length.");
+            if (length > buffer.Length - bufferoffset)
+                throw new ArgumentException(
+                    "The requested copy length exceeds the available buffer capacity (bufferoffset + length > buffer.Length).",
+                    nameof(length));
+
+            int sourceOffset = (int)fieldOffset;
+            int available = Math.Max(0, data.Length - sourceOffset);
             int count = Math.Min(available, length);
-            if (buffer is not null && count > 0)
-            {
-                Array.Copy(data, (int)fieldOffset, buffer, bufferoffset, count);
-            }
+            if (count > 0)
+                Array.Copy(data, sourceOffset, buffer, bufferoffset, count);
 
             return count;
         }
@@ -1077,13 +1135,32 @@ public class QueryOData : IDisposable
         /// <inheritdoc />
         public long GetChars(int i, long fieldoffset, char[]? buffer, int bufferoffset, int length)
         {
+            if (fieldoffset < 0)
+                throw new ArgumentOutOfRangeException(nameof(fieldoffset), "Field offset must be non-negative.");
+            if (fieldoffset > int.MaxValue)
+                throw new ArgumentOutOfRangeException(nameof(fieldoffset), "Field offset exceeds the supported int range.");
+            if (length < 0)
+                throw new ArgumentOutOfRangeException(nameof(length), "Length must be non-negative.");
+
             string data = GetString(i);
-            int available = Math.Max(0, data.Length - (int)fieldoffset);
+
+            if (buffer is null)
+                return data.Length;
+
+            if (bufferoffset < 0)
+                throw new ArgumentOutOfRangeException(nameof(bufferoffset), "Buffer offset must be non-negative.");
+            if (bufferoffset > buffer.Length)
+                throw new ArgumentOutOfRangeException(nameof(bufferoffset), "Buffer offset exceeds buffer length.");
+            if (length > buffer.Length - bufferoffset)
+                throw new ArgumentException(
+                    "The requested copy length exceeds the available buffer capacity (bufferoffset + length > buffer.Length).",
+                    nameof(length));
+
+            int sourceOffset = (int)fieldoffset;
+            int available = Math.Max(0, data.Length - sourceOffset);
             int count = Math.Min(available, length);
-            if (buffer is not null && count > 0)
-            {
-                data.CopyTo((int)fieldoffset, buffer, bufferoffset, count);
-            }
+            if (count > 0)
+                data.CopyTo(sourceOffset, buffer, bufferoffset, count);
 
             return count;
         }
