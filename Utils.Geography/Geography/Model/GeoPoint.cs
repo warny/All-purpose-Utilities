@@ -58,14 +58,18 @@ namespace Utils.Geography.Model
         private static readonly IAngleCalculator<T> degree = Trigonometry<T>.Degree;
 
         /// <summary>
-        /// Number of decimal places latitude/longitude (and bearing, for <see cref="GeoVector{T}"/>) are
-        /// rounded to before being compared in <see cref="Equals(GeoPoint{T})"/> and hashed in
-        /// <see cref="GetHashCode"/>. Rounding both sides the same way keeps the two members consistent
-        /// with each other by construction, at the cost of treating two values that are extremely close
-        /// but land on opposite sides of a rounding boundary as unequal. See the remarks on
-        /// <see cref="Equals(GeoPoint{T})"/> for the full rationale and a worked example.
+        /// Equality grid step for <see cref="Equals(GeoPoint{T})"/> and <see cref="GetHashCode"/>.
+        /// Computed as <c>max(2⁻³³, 2⁷ × ε_machine)</c> where <c>ε_machine = T.BitIncrement(1) − 1</c>
+        /// (the ULP at 1.0, i.e. the true machine epsilon — a negative power of 2).
+        /// Both terms are exact powers of 2, so dividing a coordinate value (|v| &lt; 2¹⁹ degrees) by
+        /// this step is equivalent to multiplying by a power of 2, which is IEEE 754 exact with no
+        /// base-10 rounding artifacts.
+        /// For <c>double</c> (ε_m ≈ 2⁻⁵²): max(2⁻³³, 2⁻⁴⁵) = 2⁻³³ ≈ 1.16 × 10⁻¹⁰ degrees.
+        /// For <c>float</c>  (ε_m ≈ 2⁻²³): max(2⁻³³, 2⁻¹⁶) = 2⁻¹⁶ ≈ 1.53 × 10⁻⁵ degrees.
         /// </summary>
-        internal const int EqualityPrecision = 5;
+        internal static readonly T EqualityStep = T.Max(
+            T.ScaleB(T.One, -33),
+            T.ScaleB(T.BitIncrement(T.One) - T.One, 7));
 
         /// <summary>
         /// Floating-point comparer used for tolerance-based domain checks that are not part of the
@@ -73,7 +77,28 @@ namespace Utils.Geography.Model
         /// meridians in <see cref="GeoVector{T}.ComputeBearing"/>, or the default tolerance used by
         /// <see cref="IsApproximately(GeoPoint{T})"/>).
         /// </summary>
-        private static readonly FloatingPointComparer<T> comparer = new(EqualityPrecision);
+        internal static readonly FloatingPointComparer<T> comparer = new(EqualityStep);
+
+        /// <summary>
+        /// Returns the grid index of <paramref name="value"/> for <see cref="EqualityStep"/>-based
+        /// comparison. When <see cref="EqualityStep"/> is a power of 2 and |<paramref name="value"/>|
+        /// &lt; 2¹⁹, the division is IEEE 754 exact (no rounding in the grid computation itself).
+        /// </summary>
+        private static T SnapIndex(T value) => T.Round(value / EqualityStep);
+
+        /// <summary>
+        /// Returns the grid index of <paramref name="angle"/> after normalizing it to
+        /// <c>[0, Perigon)</c>, wrapping the index back to zero when it would equal the perigon
+        /// index (e.g. 360° and 0° map to the same index). Used for circular quantities such as
+        /// longitude and bearing.
+        /// </summary>
+        internal static T SnapCircleIndex(T angle)
+        {
+            T normalized = degree.Normalize0To2Max(angle);
+            T idx = T.Round(normalized / EqualityStep);
+            T perigonIdx = T.Round(degree.Perigon / EqualityStep);
+            return idx >= perigonIdx ? T.Zero : idx;
+        }
 
         /// <summary>
         /// Maximum valid latitude in degrees.
@@ -332,77 +357,72 @@ namespace Utils.Geography.Model
 
         /// <summary>
         /// Determines whether the specified <see cref="GeoPoint{T}"/> represents the same location as this
-        /// instance, comparing latitude and longitude after rounding both to <see cref="EqualityPrecision"/>
-        /// decimal places.
+        /// instance, by snapping each coordinate to the nearest <see cref="EqualityStep"/> multiple and
+        /// comparing the resulting integer grid indices.
         /// </summary>
         /// <param name="other">The point to compare with this instance.</param>
         /// <returns>
-        /// <see langword="true"/> if both points round to the same latitude and longitude (or are both at
-        /// the same pole, regardless of longitude); otherwise <see langword="false"/>.
+        /// <see langword="true"/> if both points snap to the same grid cell (or are both at the same pole,
+        /// regardless of longitude); otherwise <see langword="false"/>.
         /// </returns>
         /// <remarks>
         /// <para>
-        /// <b>Why rounding, and not a tolerance window:</b> latitude/longitude are floating-point values
-        /// produced by trigonometric computations (<see cref="GeoVector{T}.Travel"/>,
-        /// <see cref="GeoVector{T}.Intersections"/>, ...), which never land on exact values. An earlier
-        /// implementation compared raw values with a tolerance window (<c>|a - b| &lt;= 1e-5</c>) via
-        /// <see cref="FloatingPointComparer{T}"/>, but that comparer is <em>intentionally non-transitive</em>
-        /// (see its own documentation) and cannot be paired with a correct <see cref="GetHashCode"/>: two
-        /// values considered equal by the tolerance window could still hash differently, breaking
-        /// <see cref="Dictionary{TKey, TValue}"/>/<see cref="HashSet{T}"/> usage. Rounding both operands to
-        /// the same precision before comparing removes that risk entirely, because <see cref="Equals(GeoPoint{T})"/>
-        /// and <see cref="GetHashCode"/> then always operate on the exact same rounded values.
+        /// <b>Why grid-snapping, not a tolerance window:</b> a tolerance window (<c>|a − b| ≤ ε</c>) is
+        /// intentionally non-transitive and cannot be paired with a correct <see cref="GetHashCode"/>.
+        /// Snapping both operands to the same <see cref="EqualityStep"/> grid before comparing removes that
+        /// risk entirely: <see cref="Equals(GeoPoint{T})"/> and <see cref="GetHashCode"/> always operate on
+        /// the same integer indices, so equal points are guaranteed to hash equally.
         /// </para>
         /// <para>
-        /// <b>Known limitation — rounding-boundary straddling:</b> this trades away the "equal within a
-        /// tolerance window" behavior. Two values that are extremely close to each other, but fall on
-        /// opposite sides of a rounding boundary, are now treated as <em>unequal</em>, even though a raw
-        /// tolerance comparison would have called them equal. For example, with
-        /// <see cref="EqualityPrecision"/> = 5, <c>1.0000449999</c> rounds down to <c>1.00004</c> while
-        /// <c>1.0000450001</c> rounds up to <c>1.00005</c> — a difference of about <c>2e-7</c>, far below
-        /// the old <c>1e-5</c> tolerance, yet the two values are no longer equal. This is a deliberate,
-        /// accepted trade-off (values this close in practice only arise from floating-point noise around a
-        /// rounding boundary, and rounding-consistency was judged more valuable than tolerance-window
-        /// equality for this type). See <c>GeoPointTests.PointsOnOppositeSidesOfARoundingBoundaryAreNotEqual</c>
-        /// for a regression test that pins down this exact behavior.
+        /// <b>Grid step and precision:</b> <see cref="EqualityStep"/> is <c>max(2⁻³³, 2⁷ × ε_machine)</c>
+        /// — pure powers of 2, so dividing a coordinate by the step is IEEE 754 exact for |coord| &lt; 2¹⁹.
+        /// For <c>double</c> this gives 2⁻³³ ≈ 1.16 × 10⁻¹⁰ degrees (≈ 13 μm on Earth's surface); for
+        /// <c>float</c>, 2⁻¹⁶ ≈ 1.53 × 10⁻⁵ degrees, which matches <c>float</c>'s natural precision at
+        /// coordinate scale.
+        /// Coordinates produced by <see cref="GeoVector{T}.Travel"/> or
+        /// <see cref="GeoVector{T}.Intersections"/> are pre-quantized to a grid ≥ <see cref="EqualityStep"/>,
+        /// so two identical trig computations always land on the same grid point and compare equal.
+        /// </para>
+        /// <para>
+        /// <b>Known limitation — grid-boundary straddling:</b> two values that differ by less than half a
+        /// step but straddle a grid boundary compare as <em>unequal</em>. This is unavoidable for any
+        /// snap-to-grid comparison; the step size is chosen small enough that this only affects values
+        /// within ~6 × 10⁻¹¹ degrees of a boundary, which cannot arise from normal trig computation paths.
         /// </para>
         /// <para>
         /// <b>Longitude wraps around, latitude doesn't:</b> longitude is compared via
-        /// <see cref="IAngleCalculator{T}.AreEqualRounded"/> rather than a plain rounded comparison, so that
-        /// values on opposite sides of the antimeridian (e.g. <c>179.9999951°</c> and <c>-179.9999999°</c>,
-        /// which both refer to almost the same point near 180°) round to the same normalized value instead
-        /// of comparing as ~360° apart. Latitude never wraps (it is clamped to [-90°, 90°] and the poles are
-        /// handled separately above), so it only needs a plain rounded comparison.
+        /// <see cref="SnapCircleIndex"/> which normalizes to <c>[0°, 360°)</c> before snapping, so values
+        /// on opposite sides of the antimeridian map to the same index.
         /// </para>
         /// </remarks>
         public bool Equals(GeoPoint<T> other)
         {
-            T roundedLatitude = T.Round(Latitude, EqualityPrecision);
-            T otherRoundedLatitude = T.Round(other.Latitude, EqualityPrecision);
+            T latIdx = SnapIndex(Latitude);
+            T otherLatIdx = SnapIndex(other.Latitude);
 
-            // Any longitude at a pole refers to the same point.
-            if (roundedLatitude == MaxLatitude && otherRoundedLatitude == MaxLatitude) return true;
-            if (roundedLatitude == MinLatitude && otherRoundedLatitude == MinLatitude) return true;
+            // Any longitude at a pole refers to the same physical point.
+            if (latIdx == SnapIndex(MaxLatitude) && otherLatIdx == SnapIndex(MaxLatitude)) return true;
+            if (latIdx == SnapIndex(MinLatitude) && otherLatIdx == SnapIndex(MinLatitude)) return true;
 
-            return roundedLatitude == otherRoundedLatitude
-                && degree.AreEqualRounded(Longitude, other.Longitude, EqualityPrecision);
+            return latIdx == otherLatIdx
+                && SnapCircleIndex(Longitude) == SnapCircleIndex(other.Longitude);
         }
 
         /// <summary>
-        /// Returns a hash code consistent with <see cref="Equals(GeoPoint{T})"/>: latitude is rounded, and
-        /// longitude is normalized (to handle antimeridian wraparound) and rounded, to
-        /// <see cref="EqualityPrecision"/> decimal places before hashing — the exact same values that
-        /// <see cref="Equals(GeoPoint{T})"/> compares on, so equal points always hash equally.
-        /// At either pole all longitudes refer to the same geographic point (matching <see cref="Equals(GeoPoint{T})"/>),
-        /// so longitude is excluded from the hash when the rounded latitude equals exactly ±90°.
+        /// Returns a hash code consistent with <see cref="Equals(GeoPoint{T})"/>: both latitude and
+        /// longitude are snapped to <see cref="EqualityStep"/> grid indices (the exact same values
+        /// <see cref="Equals(GeoPoint{T})"/> compares on), so equal points always hash equally.
+        /// At either pole all longitudes refer to the same geographic point, so longitude is excluded
+        /// from the hash when the latitude index equals the pole index (matching
+        /// <see cref="Equals(GeoPoint{T})"/>'s pole handling).
         /// </summary>
         public override int GetHashCode()
         {
-            T roundedLat = T.Round(Latitude, EqualityPrecision);
+            T latIdx = SnapIndex(Latitude);
             // At a pole every longitude is the same physical point; longitude must not affect the hash.
-            if (roundedLat == MaxLatitude || roundedLat == MinLatitude)
-                return roundedLat.GetHashCode();
-            return ObjectUtils.ComputeHash(roundedLat, degree.NormalizeRounded(Longitude, EqualityPrecision));
+            if (latIdx == SnapIndex(MaxLatitude) || latIdx == SnapIndex(MinLatitude))
+                return latIdx.GetHashCode();
+            return ObjectUtils.ComputeHash(latIdx, SnapCircleIndex(Longitude));
         }
 
         /// <summary>

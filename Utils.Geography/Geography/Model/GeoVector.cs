@@ -33,7 +33,7 @@ public readonly struct GeoVector<T> : IEquatable<GeoVector<T>>, IFormattable, IU
     /// <summary>
     /// Floating-point comparer used for the default tolerance in <see cref="IsApproximately(GeoVector{T})"/>.
     /// </summary>
-    private static readonly FloatingPointComparer<T> comparer = new(GeoPoint<T>.EqualityPrecision);
+    private static readonly FloatingPointComparer<T> comparer = new(GeoPoint<T>.EqualityStep);
 
     /// <summary>
     /// The geographic position this vector originates from. Immutable.
@@ -522,39 +522,37 @@ public readonly struct GeoVector<T> : IEquatable<GeoVector<T>>, IFormattable, IU
     /// <summary>
     /// Determines whether the specified <see cref="GeoVector{T}"/> has the same position and bearing as
     /// this instance: latitude/longitude are compared via <see cref="GeoPoint{T}.Equals(GeoPoint{T})"/>
-    /// (rounded to <see cref="GeoPoint{T}.EqualityPrecision"/> decimal places), and bearing is compared the
-    /// same way longitude is: normalized and rounded to the same precision via
-    /// <see cref="IAngleCalculator{T}.AreEqualRounded"/>, since bearing wraps around at 0°/360° just like
-    /// longitude wraps around at the antimeridian.
+    /// (snapped to the <see cref="GeoPoint{T}.EqualityStep"/> grid), and bearing is compared the same way
+    /// longitude is — via <see cref="GeoPoint{T}.SnapCircleIndex"/> — since bearing wraps around at
+    /// 0°/360° just like longitude wraps around at the antimeridian.
     /// </summary>
     /// <param name="other">The vector to compare with this instance.</param>
     /// <returns>
-    /// <see langword="true"/> if both vectors round to the same latitude, longitude, and bearing;
+    /// <see langword="true"/> if both vectors snap to the same latitude, longitude, and bearing grid cell;
     /// otherwise <see langword="false"/>.
     /// </returns>
     /// <remarks>
     /// This has the exact same known limitation as <see cref="GeoPoint{T}.Equals(GeoPoint{T})"/> (see its
-    /// remarks for the full rationale and a worked example): rounding each coordinate before comparing
-    /// keeps <see cref="Equals(GeoVector{T})"/> and <see cref="GetHashCode"/> always consistent with each
-    /// other, but two bearings that are extremely close yet fall on opposite sides of a rounding boundary
-    /// (e.g. <c>1.0000449999</c> vs <c>1.0000450001</c>, with <see cref="GeoPoint{T}.EqualityPrecision"/> = 5)
+    /// remarks for the full rationale): snapping each coordinate to the <see cref="GeoPoint{T}.EqualityStep"/>
+    /// grid keeps <see cref="Equals(GeoVector{T})"/> and <see cref="GetHashCode"/> always consistent, but
+    /// two bearings straddling a grid boundary (e.g. <c>1.0000449999</c> vs <c>1.0000450001</c>)
     /// are treated as unequal. See <c>GeoVectorTests.VectorsOnOppositeSidesOfARoundingBoundaryAreNotEqual</c>
     /// for a regression test pinning down this behavior.
     /// </remarks>
     public bool Equals(GeoVector<T> other)
-        => degree.AreEqualRounded(Bearing, other.Bearing, GeoPoint<T>.EqualityPrecision)
+        => GeoPoint<T>.SnapCircleIndex(Bearing) == GeoPoint<T>.SnapCircleIndex(other.Bearing)
            && Point.Equals(other.Point);
 
     /// <summary>
     /// Returns a hash code consistent with <see cref="Equals(GeoVector{T})"/>: it combines <see cref="Point"/>'s
-    /// own hash code (already rounded/normalized, see <see cref="GeoPoint{T}.GetHashCode"/>) with the bearing,
-    /// normalized (to handle 0°/360° wraparound) and rounded to <see cref="GeoPoint{T}.EqualityPrecision"/>
-    /// decimal places — the exact same values that <see cref="Equals(GeoVector{T})"/> compares on.
+    /// own hash code (already snapped to grid, see <see cref="GeoPoint{T}.GetHashCode"/>) with the bearing
+    /// snapped via <see cref="GeoPoint{T}.SnapCircleIndex"/> (handles 0°/360° wraparound) — the exact same
+    /// value that <see cref="Equals(GeoVector{T})"/> compares on.
     /// </summary>
     public override int GetHashCode()
         => ObjectUtils.ComputeHash(
             Point.GetHashCode(),
-            degree.NormalizeRounded(Bearing, GeoPoint<T>.EqualityPrecision));
+            GeoPoint<T>.SnapCircleIndex(Bearing));
 
     /// <summary>
     /// Determines whether this vector is within <paramref name="tolerance"/> of <paramref name="other"/>,

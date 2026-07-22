@@ -117,11 +117,11 @@ namespace UtilsTest.Geography
         [TestMethod]
         public void EqualVectorsProduceEqualHashCodes()
         {
-            // Regression test: Equals() and GetHashCode() both round latitude/longitude/bearing to the
-            // same precision (5 decimal places) before comparing/hashing, so vectors that only differ in
-            // noise beyond that precision are equal and always hash equally.
+            // Regression test: Equals() and GetHashCode() snap latitude/longitude/bearing to the
+            // EqualityStep grid (2^-33 ≈ 1.16e-10 degrees for double), so vectors that only differ
+            // by noise smaller than half a step are equal and always hash equally.
             var vector1 = new GeoVector<double>(45.123456, -73.654321, 10.123456);
-            var vector2 = new GeoVector<double>(45.1234560001, -73.6543209999, 10.1234560001);
+            var vector2 = new GeoVector<double>(45.12345600001, -73.65432099999, 10.12345600001);  // differ by 1e-11 < half step
 
             Assert.AreEqual(vector1, vector2);
             Assert.AreEqual(vector1.GetHashCode(), vector2.GetHashCode());
@@ -130,8 +130,9 @@ namespace UtilsTest.Geography
         [TestMethod]
         public void VectorsOnOppositeSidesOfARoundingBoundaryAreNotEqual()
         {
-            // Documents the same deliberate trade-off as GeoPointTests.
-            // PointsOnOppositeSidesOfARoundingBoundaryAreNotEqual, applied to bearing.
+            // Documents the deliberate trade-off of snap-to-grid equality applied to bearing.
+            // With EqualityStep = 2^-33 ≈ 1.16e-10 degrees, these two bearings differ by 2e-10 ≈ 1.72
+            // steps, so they land in different grid cells.
             var vector1 = new GeoVector<double>(0, 0, 1.0000449999);
             var vector2 = new GeoVector<double>(0, 0, 1.0000450001);
 
@@ -141,13 +142,13 @@ namespace UtilsTest.Geography
         [TestMethod]
         public void VectorsWithBearingOnOppositeSidesOfZeroAreEqualWhenClose()
         {
-            // Regression test: bearing wraps around at 0/360 deg, so a bearing just below 360 and a
-            // bearing just above 0 can be almost the same heading even though their raw numeric values
-            // are ~360 deg apart. Equals/GetHashCode must normalize bearing (via
-            // IAngleCalculator<T>.AreEqualRounded/NormalizeRounded) before comparing, not just round the
-            // raw value, otherwise these would incorrectly compare as different.
-            var vector1 = new GeoVector<double>(0, 0, 359.999998);
-            var vector2 = new GeoVector<double>(0, 0, 0.000002);
+            // Regression test: bearing wraps around at 0°/360°, so a bearing just below 360° and one
+            // just above 0° can be nearly the same heading even though their raw values differ by ~360°.
+            // SnapCircleIndex normalizes to [0°, 360°) before snapping: 359.99999999999° is 1e-11° below
+            // 360° (within half a step ≈ 5.8e-11°), which rounds UP to the perigon index and wraps to 0;
+            // 0.00000000001° is 1e-11° above 0°, which rounds DOWN to 0 — both map to index 0 → equal.
+            var vector1 = new GeoVector<double>(0, 0, 359.99999999999);
+            var vector2 = new GeoVector<double>(0, 0, 0.00000000001);
 
             Assert.AreEqual(vector1, vector2);
             Assert.AreEqual(vector1.GetHashCode(), vector2.GetHashCode());
