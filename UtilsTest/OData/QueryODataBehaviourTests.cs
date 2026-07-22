@@ -270,7 +270,8 @@ public class QueryODataBehaviourTests
         var ctor = colDefType.GetConstructors()[0];
 
         Func<JsonNode?, object> converter = node => node?.GetValue<int>() ?? (object)DBNull.Value;
-        var col = ctor.Invoke(["Id", typeof(int), 0, converter]);
+        // ColumnDefinition now has a 5th parameter AllowDbNull (item 54); default to true.
+        var col = ctor.Invoke(["Id", typeof(int), 0, converter, true]);
 
         var listType = typeof(System.Collections.Generic.List<>).MakeGenericType(colDefType);
         var list = (System.Collections.IList)Activator.CreateInstance(listType)!;

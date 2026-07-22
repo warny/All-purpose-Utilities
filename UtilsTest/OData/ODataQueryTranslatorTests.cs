@@ -22,8 +22,12 @@ public class ODataQueryTranslatorTests
 
     /// <summary>
     /// Translates <paramref name="predicate"/> against the <c>Items</c> entity set and returns
-    /// the resulting OData URI string.
+    /// the percent-decoded OData URI string.
     /// </summary>
+    /// <remarks>
+    /// <c>ToUriString()</c> percent-encodes query option values (item 26); decoding here keeps the
+    /// assertions focused on OData expression logic rather than URI encoding rules.
+    /// </remarks>
     private static string Filter<T>(Expression<Func<Item, bool>> predicate)
     {
         var queryable = new ODataQueryable<Item>(
@@ -36,7 +40,7 @@ public class ODataQueryTranslatorTests
                 Expression.Constant(queryable),
                 predicate),
             "Items");
-        return compiled.ToUriString();
+        return Uri.UnescapeDataString(compiled.ToUriString());
     }
 
     // -----------------------------------------------------------------------

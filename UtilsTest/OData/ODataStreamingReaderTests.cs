@@ -30,7 +30,8 @@ public class ODataStreamingReaderTests
         Func<JsonNode?, object>? converter = null)
     {
         converter ??= _ => DBNull.Value;
-        return ColDefType.GetConstructors()[0].Invoke([name, clrType, ordinal, converter]);
+        // ColumnDefinition has a 5th parameter AllowDbNull added by item 54; default to true.
+        return ColDefType.GetConstructors()[0].Invoke([name, clrType, ordinal, converter, true]);
     }
 
     private static System.Collections.IList MakeColumnList(params object[] cols)
