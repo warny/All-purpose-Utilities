@@ -12,6 +12,7 @@ namespace UtilsTest.OData;
 [TestClass]
 public class ODataQueryTranslatorTests
 {
+    /// <summary>Entity type used as the element type in translator tests.</summary>
     private sealed class Item
     {
         public int Quantity { get; set; }
@@ -19,6 +20,10 @@ public class ODataQueryTranslatorTests
         public decimal Price { get; set; }
     }
 
+    /// <summary>
+    /// Translates <paramref name="predicate"/> against the <c>Items</c> entity set and returns
+    /// the resulting OData URI string.
+    /// </summary>
     private static string Filter<T>(Expression<Func<Item, bool>> predicate)
     {
         var queryable = new ODataQueryable<Item>(

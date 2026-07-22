@@ -815,6 +815,16 @@ public class QueryOData : IDisposable
     private sealed record ColumnDefinition(string Name, Type FieldType, int Ordinal, Func<JsonNode?, object> Converter);
 
     /// <summary>
+    /// Raised by <see cref="ReadBoundedAsync"/> when the stream exceeds the configured byte limit.
+    /// Caught exclusively in <see cref="FetchMetadataAsync"/> to produce a uniform error return value.
+    /// </summary>
+    private sealed class MetadataSizeLimitException : Exception
+    {
+        public MetadataSizeLimitException(int maxBytes)
+            : base($"Metadata response stream exceeded the {maxBytes / (1024 * 1024)} MiB size limit.") { }
+    }
+
+    /// <summary>
     /// Represents an error raised while streaming paginated OData results.
     /// </summary>
     private sealed class ODataDataReaderException : Exception
@@ -1175,6 +1185,8 @@ public class QueryOData : IDisposable
             {
                 DateTime dateTime => dateTime,
                 DateTimeOffset dateTimeOffset => dateTimeOffset.UtcDateTime,
+                // Edm.Date is materialised as DateOnly (item 23); convert to midnight DateTime.
+                DateOnly dateOnly => dateOnly.ToDateTime(TimeOnly.MinValue),
                 _ => Convert.ToDateTime(value, CultureInfo.InvariantCulture)
             };
         }
@@ -1652,9 +1664,22 @@ public class QueryOData : IDisposable
 
         // Item 48: read with a bounded buffer so that streaming responses cannot allocate
         // unbounded memory even when Content-Length is absent or spoofed.
-        using MemoryStream bounded = await ReadBoundedAsync(contentStream, MaxMetadataBytes, cancellationToken);
+        MemoryStream bounded;
+        try
+        {
+            bounded = await ReadBoundedAsync(contentStream, MaxMetadataBytes, cancellationToken);
+        }
+        catch (MetadataSizeLimitException ex)
+        {
+            return new(new ErrorReturnValue(-13, ex.Message));
+        }
 
-        var metadata = DeserializeMetadatas.Deserialize(bounded);
+        Edmx? metadata;
+        using (bounded)
+        {
+            metadata = DeserializeMetadatas.Deserialize(bounded);
+        }
+
         if (metadata is null)
             return new(new ErrorReturnValue(-12, "Metadata document could not be parsed."));
 
@@ -1680,10 +1705,7 @@ public class QueryOData : IDisposable
 
             totalRead += bytesRead;
             if (totalRead > maxBytes)
-            {
-                throw new InvalidOperationException(
-                    $"Metadata response stream exceeded the {maxBytes / (1024 * 1024)} MiB size limit.");
-            }
+                throw new MetadataSizeLimitException(maxBytes);
 
             ms.Write(buffer, 0, bytesRead);
         }

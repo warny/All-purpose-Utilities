@@ -18,12 +18,16 @@ public class EdmFieldConverterRegistryTests
     // Helper — uses the internal test-facing overload to avoid Property ambiguity
     // -----------------------------------------------------------------------
 
+    /// <summary>
+    /// Resolves the converter for <paramref name="edmType"/> and invokes it on <paramref name="node"/>.
+    /// </summary>
     private static object Convert(string edmType, JsonNode? node)
     {
         var conv = EdmFieldConverterRegistry.ResolveByEdmType(edmType);
         return conv.Converter(node);
     }
 
+    /// <summary>Returns the advertised CLR type for the given EDM type string.</summary>
     private static Type ClrType(string edmType)
         => EdmFieldConverterRegistry.ResolveByEdmType(edmType).ClrType;
 
