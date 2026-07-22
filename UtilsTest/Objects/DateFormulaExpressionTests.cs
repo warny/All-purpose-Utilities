@@ -350,4 +350,22 @@ public class DateFormulaExpressionTests
     [ExpectedException(typeof(ArgumentException))]
     public void Parse_DayAsBasePeriod_Throws()
         => DateFormulaExpression.Parse("FJ", Fr);
+
+    [DataTestMethod]
+    [DataRow("FM+LuMa")]   // AdjustToWeekDay (+Lu) followed by MoveToSameWeekDay (Ma)
+    [DataRow("FM+LuXYZ")]  // AdjustToWeekDay (+Lu) followed by unknown tokens
+    [DataRow("FM+1JLuX")]  // MoveToSameWeekDay (Lu) with trailing garbage
+    public void Parse_ContentAfterTerminalOperation_Throws(string formula)
+    {
+        Assert.ThrowsException<ArgumentException>(
+            () => DateFormulaExpression.Parse(formula, Fr));
+    }
+
+    [TestMethod]
+    public void Steps_IsReadOnly_CannotBeMutatedByDowncast()
+    {
+        var expr = DateFormulaExpression.Parse("FM+1J", Fr);
+        // Steps is backed by ReadOnlyCollection, not List — the downcast must fail.
+        Assert.IsFalse(expr.Steps is List<DateFormulaStep>);
+    }
 }

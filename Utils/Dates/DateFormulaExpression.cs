@@ -108,7 +108,7 @@ public sealed class DateFormulaExpression : IFormattable
     {
         IsStart = isStart;
         BasePeriod = basePeriod;
-        Steps = steps;
+        Steps = Array.AsReadOnly(steps.ToArray());
     }
 
     /// <summary>
@@ -178,14 +178,23 @@ public sealed class DateFormulaExpression : IFormattable
                     throw new ArgumentException($"Unknown day token '{dayStr}'.", nameof(formula));
                 steps.Add(DateFormulaStep.ForAdjustToWeekDay(sign == '+' ? 1 : -1, dayOfWeek));
                 index = pos + 2;
+                if (index != formula.Length)
+                    throw new ArgumentException(
+                        $"No token is allowed after a day-of-week adjustment (position {index}).",
+                        nameof(formula));
                 break;
             }
         }
 
         if (index < formula.Length)
         {
-            if (formula.Length - index < 2)
+            var remaining = formula.Length - index;
+            if (remaining < 2)
                 throw new ArgumentException("Trailing token is too short.", nameof(formula));
+            if (remaining > 2)
+                throw new ArgumentException(
+                    $"Unexpected trailing content at position {index + 2}.",
+                    nameof(formula));
             var token = formula.Substring(index, 2);
 
             if ((token[0] == '+' || token[0] == '-') && token[1] == lang.WorkingDay)
