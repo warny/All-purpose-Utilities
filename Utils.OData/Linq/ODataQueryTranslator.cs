@@ -192,24 +192,85 @@ internal static class ODataQueryTranslator
         /// <summary>
         /// Translates a binary expression into a filter fragment.
         /// </summary>
+        /// <remarks>
+        /// Item 11: when the member (property access) is on the right-hand side and the value is
+        /// on the left — for example <c>5 &lt; entity.Quantity</c> — the operands are swapped and
+        /// the comparison operator is reversed so the OData fragment always reads
+        /// <c>Quantity gt 5</c>.
+        /// </remarks>
         /// <param name="binary">Binary expression to translate.</param>
         /// <returns>The resulting filter fragment.</returns>
         private static string TranslateBinary(BinaryExpression binary)
         {
-            string operatorToken = binary.NodeType switch
+            bool leftIsMember = IsMemberOrColumnAccess(binary.Left);
+            bool rightIsMember = IsMemberOrColumnAccess(binary.Right);
+
+            // Normalise: ensure the member expression is always on the left.
+            Expression memberSide;
+            Expression valueSide;
+            bool swapped;
+
+            if (leftIsMember && !rightIsMember)
             {
-                ExpressionType.Equal => "eq",
-                ExpressionType.NotEqual => "ne",
-                ExpressionType.GreaterThan => "gt",
-                ExpressionType.GreaterThanOrEqual => "ge",
-                ExpressionType.LessThan => "lt",
-                ExpressionType.LessThanOrEqual => "le",
+                memberSide = binary.Left;
+                valueSide = binary.Right;
+                swapped = false;
+            }
+            else if (rightIsMember && !leftIsMember)
+            {
+                memberSide = binary.Right;
+                valueSide = binary.Left;
+                swapped = true;
+            }
+            else if (leftIsMember)
+            {
+                // Both sides are members: emit left op right without swapping.
+                memberSide = binary.Left;
+                valueSide = binary.Right;
+                swapped = false;
+            }
+            else
+            {
+                throw new NotSupportedException(
+                    "At least one operand of a comparison expression must be a member or column access.");
+            }
+
+            string operatorToken = (binary.NodeType, swapped) switch
+            {
+                (ExpressionType.Equal, _) => "eq",
+                (ExpressionType.NotEqual, _) => "ne",
+                (ExpressionType.GreaterThan, false) => "gt",
+                (ExpressionType.GreaterThan, true) => "lt",   // 5 > x  →  x lt 5
+                (ExpressionType.GreaterThanOrEqual, false) => "ge",
+                (ExpressionType.GreaterThanOrEqual, true) => "le", // 5 >= x →  x le 5
+                (ExpressionType.LessThan, false) => "lt",
+                (ExpressionType.LessThan, true) => "gt",      // 5 < x  →  x gt 5
+                (ExpressionType.LessThanOrEqual, false) => "le",
+                (ExpressionType.LessThanOrEqual, true) => "ge", // 5 <= x →  x ge 5
                 _ => throw new NotSupportedException($"Binary operator '{binary.NodeType}' is not supported.")
             };
 
-            string left = TranslateMember(binary.Left);
-            string right = TranslateValue(binary.Right);
-            return string.Create(CultureInfo.InvariantCulture, $"{left} {operatorToken} {right}");
+            string member = TranslateMember(memberSide);
+            string value = rightIsMember && leftIsMember
+                ? TranslateMember(valueSide)
+                : TranslateValue(valueSide);
+            return string.Create(CultureInfo.InvariantCulture, $"{member} {operatorToken} {value}");
+        }
+
+        /// <summary>
+        /// Returns <see langword="true"/> when the expression (after stripping Convert nodes)
+        /// is a member access or untyped column accessor.
+        /// </summary>
+        private static bool IsMemberOrColumnAccess(Expression expression)
+        {
+            Expression inner = RemoveConvert(expression);
+            if (inner is MemberExpression)
+                return true;
+            if (inner is MethodCallExpression mc && IsColumnAccessor(mc))
+                return true;
+            if (inner is IndexExpression)
+                return true;
+            return false;
         }
 
         /// <summary>
