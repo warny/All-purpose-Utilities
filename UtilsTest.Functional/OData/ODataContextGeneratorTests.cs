@@ -103,32 +103,18 @@ public class ODataContextGeneratorTests
     }
 
     /// <summary>
-    /// Ensures the source generator can download compressed EDMX metadata from an HTTP endpoint.
+    /// Ensures the source generator emits ODATA003 and produces no generated code when a remote
+    /// HTTP URL is supplied as the metadata source. Network access is prohibited in source
+    /// generators (item 49); EDMX must be provided as a local file or AdditionalFile.
     /// </summary>
     [TestMethod]
-    public void GeneratorLoadsCompressedMetadataFromHttp()
+    public void GeneratorRejectsRemoteHttpMetadataWithOdata003()
     {
         string metadataPath = GetSampleMetadataPath();
         string metadataUrl = StartCompressedMetadataServer(metadataPath, out var listener, out var serverTask);
 
         try
         {
-            using (var client = new HttpClient(new HttpClientHandler { AutomaticDecompression = DecompressionMethods.All }))
-            {
-                try
-                {
-                    using var response = client.GetAsync(metadataUrl).GetAwaiter().GetResult();
-                    if (!response.IsSuccessStatusCode)
-                    {
-                        Assert.Inconclusive($"Unable to fetch metadata from '{metadataUrl}'. Status code: {response.StatusCode}.");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Assert.Inconclusive($"Unable to reach metadata server at '{metadataUrl}'. {ex.GetType().Name}: {ex.Message}");
-                }
-            }
-
             string source =
                 $$"""
                 using Utils.OData;
@@ -155,10 +141,15 @@ public class ODataContextGeneratorTests
             driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out var outputCompilation, out var diagnostics);
 
             Assert.IsNotNull(outputCompilation);
-            Assert.AreEqual(0, diagnostics.Length, "Compilation produced diagnostics: {0}", string.Join(Environment.NewLine, diagnostics.Select(d => d.ToString())));
+            Assert.AreEqual(1, diagnostics.Length,
+                "Expected exactly one ODATA003 diagnostic for a remote HTTP URL, but got: {0}",
+                string.Join(Environment.NewLine, diagnostics.Select(d => d.ToString())));
+            Assert.AreEqual("ODATA003", diagnostics[0].Id,
+                "Expected ODATA003 diagnostic for remote URL rejection.");
 
             var runResult = driver.GetRunResult();
-            Assert.AreEqual(1, runResult.GeneratedTrees.Length);
+            Assert.AreEqual(0, runResult.GeneratedTrees.Length,
+                "No source should be generated when a remote URL is rejected.");
         }
         finally
         {

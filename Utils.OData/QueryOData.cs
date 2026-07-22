@@ -57,7 +57,8 @@ public class QueryOData : IDisposable
     private readonly Dictionary<string, Edmx> _metadataCache = new(StringComparer.OrdinalIgnoreCase);
     // Item 55: cache deterministic metadata failures so repeated calls for the same broken
     // URL do not trigger expensive network/disk retries on every invocation.
-    private readonly Dictionary<string, string> _metadataErrorCache = new(StringComparer.OrdinalIgnoreCase);
+    // Stores the full ErrorReturnValue so the original error code is preserved on repeat calls.
+    private readonly Dictionary<string, ErrorReturnValue> _metadataErrorCache = new(StringComparer.OrdinalIgnoreCase);
 
     // Item 7: allowlist of request-context headers that may safely be forwarded to the
     // OData service.  Host, Connection, Transfer-Encoding, content headers, and security
@@ -274,11 +275,16 @@ public class QueryOData : IDisposable
                 metadatas = new Dictionary<string, string>(chunk.Metadatas);
             }
 
-            // Item 6: extract the continuation link from the current page for use in the
-            // next iteration. Validate the origin to prevent SSRF via server-controlled links.
-            string? chunkNextLink = ExtractNextLink(chunk.Metadatas);
-            if (chunkNextLink is not null && IsNextLinkSafe(chunkNextLink))
-                nextLink = chunkNextLink;
+            // Item 6: extract and validate the continuation link from the current page.
+            // A present but invalid/out-of-origin link is an error — do not silently fall back.
+            string? rawNextLink = ExtractNextLink(chunk.Metadatas);
+            if (rawNextLink is not null)
+            {
+                var (resolved, linkError) = ResolveNextLink(rawNextLink);
+                if (linkError is not null)
+                    return new(linkError);
+                nextLink = resolved;
+            }
 
             if (chunk.Datas is not JsonArray { Count: > 0 } chunkDataArray)
             {
@@ -396,11 +402,16 @@ public class QueryOData : IDisposable
         Channel<object?[]> channel = Channel.CreateBounded<object?[]>(channelOptions);
         CancellationTokenSource linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
-        // Item 6: extract the continuation link from the first page so the streaming task
-        // can follow it instead of recalculating the skip offset.
-        string? initialNextLink = ExtractNextLink(firstChunk.Metadatas);
-        if (initialNextLink is not null && !IsNextLinkSafe(initialNextLink))
-            initialNextLink = null;
+        // Item 6: resolve and validate the continuation link from the first page.
+        string? initialNextLink = null;
+        string? rawInitialNextLink = ExtractNextLink(firstChunk.Metadatas);
+        if (rawInitialNextLink is not null)
+        {
+            var (resolved, linkError) = ResolveNextLink(rawInitialNextLink);
+            if (linkError is not null)
+                return new(linkError);
+            initialNextLink = resolved;
+        }
 
         Task streamingTask = StreamBatchesAsync(
                 parameter,
@@ -489,10 +500,15 @@ public class QueryOData : IDisposable
                     throw new ODataDataReaderException(convertResult.Error);
                 }
 
-                // Item 6: extract continuation link from the current page.
-                string? chunkNextLink = ExtractNextLink(convertResult.Value.Metadatas);
-                if (chunkNextLink is not null && IsNextLinkSafe(chunkNextLink))
-                    nextLink = chunkNextLink;
+                // Item 6: resolve and validate the continuation link; an invalid link is an error.
+                string? rawChunkNextLink = ExtractNextLink(convertResult.Value.Metadatas);
+                if (rawChunkNextLink is not null)
+                {
+                    var (resolved, linkError) = ResolveNextLink(rawChunkNextLink);
+                    if (linkError is not null)
+                        throw new ODataDataReaderException(linkError);
+                    nextLink = resolved;
+                }
 
                 JsonArray? batch = convertResult.Value.Datas;
                 if (batch is not JsonArray { Count: > 0 } nonEmptyBatch)
@@ -1561,17 +1577,38 @@ public class QueryOData : IDisposable
     }
 
     /// <summary>
-    /// Returns <see langword="true"/> when the nextLink URL is within the same HTTP origin as
-    /// <see cref="BaseUrl"/>, preventing open-redirect and SSRF via server-controlled pagination
-    /// links (item 6 / item 30).
+    /// Resolves a raw <c>@odata.nextLink</c> value (absolute or relative) to an absolute URI,
+    /// validates that it stays within the same HTTP origin as <see cref="BaseUrl"/>, and returns
+    /// the resolved absolute link string, or an explicit error (item 6 / item 30).
     /// </summary>
-    private bool IsNextLinkSafe(string nextLink)
+    /// <remarks>
+    /// Relative continuation links (e.g. <c>Products?$skiptoken=abc</c>) are resolved against
+    /// <see cref="BaseUrl"/>. A link that cannot be parsed, cannot be resolved, or whose origin
+    /// differs from <see cref="BaseUrl"/> (different scheme, host, or port) is rejected with an
+    /// error rather than silently ignored.
+    /// </remarks>
+    private (string? resolvedLink, ErrorReturnValue? error) ResolveNextLink(string rawLink)
     {
-        if (!Uri.TryCreate(nextLink, UriKind.Absolute, out Uri? nextUri)) return false;
-        if (!Uri.TryCreate(BaseUrl, UriKind.Absolute, out Uri? baseUri)) return false;
-        return string.Equals(nextUri.Scheme, baseUri.Scheme, StringComparison.OrdinalIgnoreCase)
-            && string.Equals(nextUri.Host, baseUri.Host, StringComparison.OrdinalIgnoreCase)
-            && nextUri.Port == baseUri.Port;
+        if (!Uri.TryCreate(BaseUrl, UriKind.Absolute, out Uri? baseUri))
+            return (null, new ErrorReturnValue(-6, "The service base URL is invalid; cannot validate @odata.nextLink origin."));
+
+        Uri? nextUri;
+        if (!Uri.TryCreate(rawLink, UriKind.Absolute, out nextUri))
+        {
+            // Relative link — resolve against the service base URL.
+            if (!Uri.TryCreate(baseUri, rawLink, out nextUri))
+                return (null, new ErrorReturnValue(-6, $"The @odata.nextLink value '{rawLink}' could not be resolved to a valid URI."));
+        }
+
+        if (!string.Equals(nextUri.Scheme, baseUri.Scheme, StringComparison.OrdinalIgnoreCase)
+            || !string.Equals(nextUri.Host, baseUri.Host, StringComparison.OrdinalIgnoreCase)
+            || nextUri.Port != baseUri.Port)
+        {
+            return (null, new ErrorReturnValue(-6,
+                $"The @odata.nextLink '{nextUri.GetLeftPart(UriPartial.Authority)}' is outside the allowed service origin and was rejected."));
+        }
+
+        return (nextUri.ToString(), null);
     }
 
     /// <summary>
@@ -1727,9 +1764,10 @@ public class QueryOData : IDisposable
 
         lock (_metadataCache)
         {
-            // Item 55: return a cached permanent failure before attempting a new fetch.
-            if (_metadataErrorCache.TryGetValue(resolvedUrl, out string? cachedError))
-                return new(new ErrorReturnValue(-55, cachedError));
+            // Item 55: return the cached permanent failure verbatim so the original error
+            // code (-404, -11, -12, -13) is preserved on every subsequent call.
+            if (_metadataErrorCache.TryGetValue(resolvedUrl, out ErrorReturnValue? cachedError))
+                return new(cachedError);
 
             if (_metadataCache.TryGetValue(resolvedUrl, out Edmx? cached))
                 return new(cached);
@@ -1740,8 +1778,8 @@ public class QueryOData : IDisposable
         {
             lock (_metadataCache)
             {
-                if (_metadataErrorCache.TryGetValue(resolvedUrl, out string? cachedError))
-                    return new(new ErrorReturnValue(-55, cachedError));
+                if (_metadataErrorCache.TryGetValue(resolvedUrl, out ErrorReturnValue? cachedError))
+                    return new(cachedError);
 
                 if (_metadataCache.TryGetValue(resolvedUrl, out Edmx? cached))
                     return new(cached);
@@ -1752,11 +1790,12 @@ public class QueryOData : IDisposable
             {
                 // Item 55: cache deterministic failures (HTTP 4xx, empty/unparseable document)
                 // to prevent expensive retries.  Transient failures (5xx, network) are not cached.
+                // The full ErrorReturnValue is stored so the original code is returned unchanged.
                 if (IsPermanentMetadataFailure(metadataResult.Error))
                 {
                     lock (_metadataCache)
                     {
-                        _metadataErrorCache[resolvedUrl] = metadataResult.Error.message;
+                        _metadataErrorCache[resolvedUrl] = metadataResult.Error;
                     }
                 }
 

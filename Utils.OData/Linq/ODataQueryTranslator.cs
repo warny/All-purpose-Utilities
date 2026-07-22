@@ -466,10 +466,23 @@ internal static class ODataQueryTranslator
         /// Evaluates an expression into a CLR value using a safe, restricted subset.
         /// </summary>
         /// <remarks>
-        /// Item 10: only constants, closure field/property reads, type conversions, and new-array
-        /// initialisers are supported.  Method calls and any other potentially side-effecting
-        /// expression forms are rejected with <see cref="NotSupportedException"/> rather than being
-        /// compiled and invoked as arbitrary code.
+        /// Item 10: only constants, compiler-generated closure <em>field</em> reads, numeric/enum
+        /// type conversions, <c>TypeAs</c>, and new-array initialisers are supported.
+        /// <list type="bullet">
+        ///   <item><description>
+        ///     <b>Property getters are explicitly rejected</b>: they are arbitrary user code that
+        ///     can modify state, perform I/O, or throw. Assign the value to a local variable before
+        ///     building the LINQ query.
+        ///   </description></item>
+        ///   <item><description>
+        ///     <b>Failed conversions are not silenced</b>: enum, nullable, and numeric conversions
+        ///     that cannot succeed propagate their exception rather than returning the wrong type.
+        ///   </description></item>
+        ///   <item><description>
+        ///     Method calls and all other expression forms are rejected with
+        ///     <see cref="NotSupportedException"/>.
+        ///   </description></item>
+        /// </list>
         /// </remarks>
         /// <param name="expression">Expression to evaluate.</param>
         /// <returns>The resulting value.</returns>
@@ -478,30 +491,46 @@ internal static class ODataQueryTranslator
             if (expression is ConstantExpression constant)
                 return constant.Value;
 
-            // Type conversion (e.g., int → long, int → double) wrapping a safe sub-expression.
-            if (expression is UnaryExpression unary
-                && (unary.NodeType == ExpressionType.Convert
-                    || unary.NodeType == ExpressionType.ConvertChecked
-                    || unary.NodeType == ExpressionType.TypeAs))
+            // TypeAs: return null if the value is not assignable to the target type; never throws.
+            if (expression is UnaryExpression typeAs && typeAs.NodeType == ExpressionType.TypeAs)
             {
-                object? inner = EvaluateExpression(unary.Operand);
-                if (inner is null) return null;
-                try { return System.Convert.ChangeType(inner, unary.Type, System.Globalization.CultureInfo.InvariantCulture); }
-                catch { return inner; }
+                object? inner = EvaluateExpression(typeAs.Operand);
+                return (inner is not null && typeAs.Type.IsInstanceOfType(inner)) ? inner : null;
             }
 
-            // Closure field or property read: MemberExpression whose root resolves to a constant.
+            // Numeric / enum / nullable type conversions.
+            if (expression is UnaryExpression convert
+                && (convert.NodeType == ExpressionType.Convert || convert.NodeType == ExpressionType.ConvertChecked))
+            {
+                object? inner = EvaluateExpression(convert.Operand);
+                if (inner is null) return null;
+
+                Type targetType = convert.Type;
+                // Nullable<T>: convert to the underlying type; boxing handles re-wrapping.
+                if (targetType.IsGenericType && targetType.GetGenericTypeDefinition() == typeof(Nullable<>))
+                    targetType = targetType.GetGenericArguments()[0];
+                // Enum: use Enum.ToObject to produce the correct named enum instance.
+                if (targetType.IsEnum)
+                    return Enum.ToObject(targetType, inner);
+                // All other numeric and reference conversions; OverflowException propagates for checked nodes.
+                return System.Convert.ChangeType(inner, targetType, System.Globalization.CultureInfo.InvariantCulture);
+            }
+
+            // Compiler-generated closure field reads (item 10).
+            // ONLY FieldInfo is allowed: compiler-generated closures store captured variables as fields.
+            // PropertyInfo is REJECTED because property getters are arbitrary user code.
             if (expression is MemberExpression member && member.Expression is not null)
             {
                 object? target = EvaluateExpression(member.Expression);
-                return member.Member switch
-                {
-                    System.Reflection.FieldInfo field => field.GetValue(target),
-                    System.Reflection.PropertyInfo prop => prop.GetValue(target),
-                    _ => throw new NotSupportedException(
-                        $"Member '{member.Member.Name}' of kind '{member.Member.MemberType}' cannot be safely evaluated. " +
-                        "Only field and property reads of captured variables are supported.")
-                };
+                if (member.Member is System.Reflection.FieldInfo field)
+                    return field.GetValue(target);
+                if (member.Member is System.Reflection.PropertyInfo)
+                    throw new NotSupportedException(
+                        $"Property getter '{member.Member.DeclaringType?.Name}.{member.Member.Name}' " +
+                        "cannot be executed during query compilation because property getters are arbitrary " +
+                        "user code. Assign the value to a local variable before building the LINQ query.");
+                throw new NotSupportedException(
+                    $"Member '{member.Member.Name}' of kind '{member.Member.MemberType}' cannot be safely evaluated.");
             }
 
             // Array initialisation (e.g., new[] { "A", "B" } in Expand calls).
@@ -517,8 +546,8 @@ internal static class ODataQueryTranslator
 
             throw new NotSupportedException(
                 $"Expression of kind '{expression.NodeType}' cannot be safely evaluated during query compilation. " +
-                "Only constants, closure field/property reads, type conversions, and new-array initialisers are supported. " +
-                "Pre-evaluate any method calls or complex expressions before building the LINQ query.");
+                "Only constants, closure field reads, type conversions, TypeAs, and new-array initialisers are supported. " +
+                "Pre-evaluate method calls or complex expressions before building the LINQ query.");
         }
 
         /// <summary>

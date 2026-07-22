@@ -165,6 +165,18 @@ public class ODataQueryTranslatorTests
     }
 
     [TestMethod]
+    public void PropertyGetterInFilter_ThrowsNotSupported()
+    {
+        // item 10: property getters are arbitrary user code and must be rejected.
+        // Only compiler-generated closure fields (FieldInfo) are in the safe subset.
+        // The caller must assign the value to a local variable before building the query.
+        var settings = new { MinQuantity = 5 };
+        Assert.ThrowsException<NotSupportedException>(
+            () => Filter<Item>(x => x.Quantity > settings.MinQuantity),
+            "A property getter read in a filter value expression must throw NotSupportedException.");
+    }
+
+    [TestMethod]
     public void NewArrayInExpand_EvaluatesCorrectly()
     {
         // item 10: new-array initialisers are in the safe subset and must work for Expand.
