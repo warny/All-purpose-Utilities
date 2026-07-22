@@ -335,6 +335,11 @@ public class QueryOData : IDisposable
             if (selectedColumns.Length > 0)
             {
                 var emptyMeta = await GetMetadataFromBaseAsync(cancellationToken);
+                // A metadata failure is intentionally ignored here: an empty result set is a
+                // valid OData response and must not become an error just because the schema
+                // endpoint is unavailable.  Columns fall back to generic (object/DBNull)
+                // types.  The non-empty path, by contrast, does propagate metadata errors
+                // because type converters are required to materialise rows correctly.
                 Edmx? emptyEdmx = emptyMeta.IsError ? null : emptyMeta.Value;
                 string? emptyEntity = ExtractEntityName(firstChunk.Metadatas, parameter);
                 EntityType? emptyType = emptyEdmx is not null ? ResolveEntityType(emptyEdmx, emptyEntity) : null;
