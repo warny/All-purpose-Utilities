@@ -726,4 +726,28 @@ public class EmitWorkerProtocolTests
         Assert.IsFalse(helloResponse.Success, "Worker must reject a mismatched protocol version.");
         StringAssert.Contains(helloResponse.ErrorMessage, wrongVersion.ToString());
     }
+
+    // ─── Review #495: return-type comparison in FindMatchingMethod ───────────────
+
+    [TestMethod]
+    public void MethodDescriptorDto_FromMethodInfo_CapturesReturnType()
+    {
+        MethodInfo method = typeof(IMethodIdTestContract).GetMethod(nameof(IMethodIdTestContract.Format))!;
+        var descriptor = MethodDescriptorDto.FromMethodInfo(0, method);
+
+        // Return type must use the assembly-qualified stable name, not just FullName.
+        Assert.AreEqual(typeof(string).AssemblyQualifiedName, descriptor.ReturnType,
+            "ReturnType must be the assembly-qualified stable name of the return type.");
+    }
+
+    [TestMethod]
+    public void MethodDescriptorDto_FromMethodInfo_VoidReturnType_UsesStableName()
+    {
+        // Void return type must also round-trip as a stable name.
+        MethodInfo method = typeof(ILeaseTestContract).GetMethod(nameof(ILeaseTestContract.DoWork))!;
+        var descriptor = MethodDescriptorDto.FromMethodInfo(0, method);
+
+        Assert.AreEqual(typeof(void).AssemblyQualifiedName, descriptor.ReturnType,
+            "void return type must be captured as its assembly-qualified stable name.");
+    }
 }

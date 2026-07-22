@@ -564,6 +564,15 @@ internal sealed class EmitWorkerProcess : IDisposable, IAsyncDisposable
                     "The interface definition may differ between the host and the worker assembly.");
             }
 
+            if (table.ContainsKey(matched))
+            {
+                throw new InvalidOperationException(
+                    $"The worker returned two descriptors that both match the local method " +
+                    $"'{matched.DeclaringType?.FullName}.{matched.Name}' on interface '{interfaceType.FullName}'. " +
+                    "Each method must map to exactly one worker-assigned ID; a duplicate indicates " +
+                    "a protocol violation or a corrupted Load response.");
+            }
+
             table[matched] = descriptor.MethodId;
         }
 
@@ -572,9 +581,12 @@ internal sealed class EmitWorkerProcess : IDisposable, IAsyncDisposable
 
     /// <summary>
     /// Finds the <see cref="MethodInfo"/> in <paramref name="candidates"/> that matches the given
-    /// <paramref name="descriptor"/> by name, declaring type (assembly-qualified), and parameter
-    /// types (assembly-qualified). Uses <see cref="MethodDescriptorDto.StableTypeName"/> so the
-    /// comparison is consistent with how descriptors are produced by <see cref="MethodDescriptorDto.FromMethodInfo"/>.
+    /// <paramref name="descriptor"/> by name, declaring type (assembly-qualified), parameter types
+    /// (assembly-qualified), and return type (assembly-qualified). The return type is included so
+    /// that methods whose signatures differ only by return type — valid in IL-emitted or
+    /// dynamically generated assemblies even if C# forbids it — are not confused.
+    /// Uses <see cref="MethodDescriptorDto.StableTypeName"/> so the comparison is consistent with
+    /// how descriptors are produced by <see cref="MethodDescriptorDto.FromMethodInfo"/>.
     /// </summary>
     private static MethodInfo? FindMatchingMethod(MethodInfo[] candidates, MethodDescriptorDto descriptor)
     {
@@ -582,6 +594,7 @@ internal sealed class EmitWorkerProcess : IDisposable, IAsyncDisposable
         {
             if (m.Name != descriptor.Name) continue;
             if ((m.DeclaringType?.AssemblyQualifiedName ?? string.Empty) != descriptor.DeclaringType) continue;
+            if (MethodDescriptorDto.StableTypeName(m.ReturnType) != descriptor.ReturnType) continue;
 
             ParameterInfo[] parameters = m.GetParameters();
             if (parameters.Length != descriptor.ParameterTypes.Length) continue;
