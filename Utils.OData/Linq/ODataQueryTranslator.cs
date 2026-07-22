@@ -463,19 +463,62 @@ internal static class ODataQueryTranslator
         }
 
         /// <summary>
-        /// Evaluates an expression into a CLR value.
+        /// Evaluates an expression into a CLR value using a safe, restricted subset.
         /// </summary>
+        /// <remarks>
+        /// Item 10: only constants, closure field/property reads, type conversions, and new-array
+        /// initialisers are supported.  Method calls and any other potentially side-effecting
+        /// expression forms are rejected with <see cref="NotSupportedException"/> rather than being
+        /// compiled and invoked as arbitrary code.
+        /// </remarks>
         /// <param name="expression">Expression to evaluate.</param>
         /// <returns>The resulting value.</returns>
         private static object? EvaluateExpression(Expression expression)
         {
             if (expression is ConstantExpression constant)
-            {
                 return constant.Value;
+
+            // Type conversion (e.g., int → long, int → double) wrapping a safe sub-expression.
+            if (expression is UnaryExpression unary
+                && (unary.NodeType == ExpressionType.Convert
+                    || unary.NodeType == ExpressionType.ConvertChecked
+                    || unary.NodeType == ExpressionType.TypeAs))
+            {
+                object? inner = EvaluateExpression(unary.Operand);
+                if (inner is null) return null;
+                try { return System.Convert.ChangeType(inner, unary.Type, System.Globalization.CultureInfo.InvariantCulture); }
+                catch { return inner; }
             }
 
-            var lambda = Expression.Lambda<Func<object?>>(Expression.Convert(expression, typeof(object)));
-            return lambda.Compile().Invoke();
+            // Closure field or property read: MemberExpression whose root resolves to a constant.
+            if (expression is MemberExpression member && member.Expression is not null)
+            {
+                object? target = EvaluateExpression(member.Expression);
+                return member.Member switch
+                {
+                    System.Reflection.FieldInfo field => field.GetValue(target),
+                    System.Reflection.PropertyInfo prop => prop.GetValue(target),
+                    _ => throw new NotSupportedException(
+                        $"Member '{member.Member.Name}' of kind '{member.Member.MemberType}' cannot be safely evaluated. " +
+                        "Only field and property reads of captured variables are supported.")
+                };
+            }
+
+            // Array initialisation (e.g., new[] { "A", "B" } in Expand calls).
+            if (expression is NewArrayExpression newArray && newArray.NodeType == ExpressionType.NewArrayInit)
+            {
+                object?[] items = newArray.Expressions.Select(EvaluateExpression).ToArray();
+                Type elementType = newArray.Type.GetElementType()!;
+                System.Array array = System.Array.CreateInstance(elementType, items.Length);
+                for (int i = 0; i < items.Length; i++)
+                    array.SetValue(items[i], i);
+                return array;
+            }
+
+            throw new NotSupportedException(
+                $"Expression of kind '{expression.NodeType}' cannot be safely evaluated during query compilation. " +
+                "Only constants, closure field/property reads, type conversions, and new-array initialisers are supported. " +
+                "Pre-evaluate any method calls or complex expressions before building the LINQ query.");
         }
 
         /// <summary>

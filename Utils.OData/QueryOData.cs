@@ -55,6 +55,17 @@ public class QueryOData : IDisposable
     // model classes (Edmx, DataServices, Schema, EntityType, Property) are mutable and
     // mutating a cached reference corrupts the schema for all concurrent and later readers.
     private readonly Dictionary<string, Edmx> _metadataCache = new(StringComparer.OrdinalIgnoreCase);
+    // Item 55: cache deterministic metadata failures so repeated calls for the same broken
+    // URL do not trigger expensive network/disk retries on every invocation.
+    private readonly Dictionary<string, string> _metadataErrorCache = new(StringComparer.OrdinalIgnoreCase);
+
+    // Item 7: allowlist of request-context headers that may safely be forwarded to the
+    // OData service.  Host, Connection, Transfer-Encoding, content headers, and security
+    // credentials are intentionally excluded.
+    private static readonly HashSet<string> AllowedForwardHeaders = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Accept", "Accept-Language", "Accept-Encoding", "Accept-Charset"
+    };
 
     /// <summary>
     /// Initializes a new instance of the <see cref="QueryOData"/> class with the specified base URL.
@@ -164,37 +175,21 @@ public class QueryOData : IDisposable
 
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
 
-        // Copy standard headers (excluding sensitive ones handled elsewhere).
+        // Item 7: forward only explicitly allowed context headers; never copy Host,
+        // Connection, Transfer-Encoding, content headers, or security credentials.
+        // Item 8: forward per-request cookies directly on the outgoing message so they
+        // are scoped to this request only and do not pollute the shared CookieContainer.
         if (sourceRequest is not null)
         {
             foreach (var header in sourceRequest.Headers)
             {
-                // Skip headers that would be invalid on DefaultRequestHeaders but add to the outgoing request
-                request.Headers.TryAddWithoutValidation(header.Key, header.Value);
-            }
-
-            if (sourceRequest.Content is not null)
-            {
-                foreach (var header in sourceRequest.Content.Headers)
-                {
+                if (AllowedForwardHeaders.Contains(header.Key))
                     request.Headers.TryAddWithoutValidation(header.Key, header.Value);
-                }
             }
+            // Content headers are never forwarded for a bodyless GET request.
 
-            // Copy cookies to the handler container when available.
-            // BaseUrl is already validated as a valid URI in the constructor.
-            if (_handler?.CookieContainer is not null && sourceRequest.Headers.TryGetValues("Cookie", out var cookieHeaders))
-            {
-                var cookieHeader = string.Join("; ", cookieHeaders);
-                try
-                {
-                    _handler.CookieContainer.SetCookies(new Uri(BaseUrl), cookieHeader);
-                }
-                catch (System.Net.CookieException)
-                {
-                    // Malformed cookie header from the source request; skip forwarding and proceed.
-                }
-            }
+            if (sourceRequest.Headers.TryGetValues("Cookie", out var cookieHeaders))
+                request.Headers.TryAddWithoutValidation("Cookie", string.Join("; ", cookieHeaders));
         }
 
         Debug.WriteLine($"Requesting : {url}");
@@ -234,6 +229,8 @@ public class QueryOData : IDisposable
         Dictionary<string, string>? metadatas = null;
         int totalRetrieved = 0;
         int? originalTop = parameter.Top;
+        // Item 6: track the server-provided continuation link between iterations.
+        string? nextLink = null;
 
         while (true)
         {
@@ -243,9 +240,21 @@ public class QueryOData : IDisposable
                 break;
             }
 
-            int? requestTop = DetermineRequestTop(remaining, maxPerRequest);
-            Query requestQuery = CloneQueryForPagination(parameter, requestTop);
-            var queryResult = await QueryDatas(requestQuery, skip + totalRetrieved, cancellationToken);
+            ReturnValue<Stream> queryResult;
+            if (nextLink is not null)
+            {
+                // Item 6: follow the server-provided continuation link instead of
+                // recalculating the skip offset, which can miss/duplicate rows when
+                // the service uses opaque skip-tokens or server-driven partitions.
+                queryResult = await QueryUrl(nextLink, cancellationToken);
+                nextLink = null;
+            }
+            else
+            {
+                int? requestTop = DetermineRequestTop(remaining, maxPerRequest);
+                Query requestQuery = CloneQueryForPagination(parameter, requestTop);
+                queryResult = await QueryDatas(requestQuery, skip + totalRetrieved, cancellationToken);
+            }
 
             if (queryResult.IsError)
             {
@@ -264,6 +273,12 @@ public class QueryOData : IDisposable
             {
                 metadatas = new Dictionary<string, string>(chunk.Metadatas);
             }
+
+            // Item 6: extract the continuation link from the current page for use in the
+            // next iteration. Validate the origin to prevent SSRF via server-controlled links.
+            string? chunkNextLink = ExtractNextLink(chunk.Metadatas);
+            if (chunkNextLink is not null && IsNextLinkSafe(chunkNextLink))
+                nextLink = chunkNextLink;
 
             if (chunk.Datas is not JsonArray { Count: > 0 } chunkDataArray)
             {
@@ -381,6 +396,12 @@ public class QueryOData : IDisposable
         Channel<object?[]> channel = Channel.CreateBounded<object?[]>(channelOptions);
         CancellationTokenSource linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
+        // Item 6: extract the continuation link from the first page so the streaming task
+        // can follow it instead of recalculating the skip offset.
+        string? initialNextLink = ExtractNextLink(firstChunk.Metadatas);
+        if (initialNextLink is not null && !IsNextLinkSafe(initialNextLink))
+            initialNextLink = null;
+
         Task streamingTask = StreamBatchesAsync(
                 parameter,
                 skip,
@@ -390,7 +411,8 @@ public class QueryOData : IDisposable
                 columns,
                 rowConverter,
                 channel.Writer,
-                linkedTokenSource.Token);
+                linkedTokenSource.Token,
+                initialNextLink);
 
         var reader = new ODataStreamingDataReader(columns, channel.Reader, linkedTokenSource, streamingTask);
         return new(reader);
@@ -408,6 +430,7 @@ public class QueryOData : IDisposable
     /// <param name="rowConverter">Compiled delegate used to materialize JSON objects into row buffers.</param>
     /// <param name="writer">Channel writer that receives the materialized rows.</param>
     /// <param name="cancellationToken">Token used to cancel the streaming operation.</param>
+    /// <param name="nextLink">Optional server-provided continuation URL extracted from the first page (item 6).</param>
     private async Task StreamBatchesAsync(
             IQuery parameter,
             int skip,
@@ -417,7 +440,8 @@ public class QueryOData : IDisposable
             IReadOnlyList<ColumnDefinition> columns,
             Func<JsonObject, object[]> rowConverter,
             ChannelWriter<object?[]> writer,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            string? nextLink = null)
     {
         ArgumentNullException.ThrowIfNull(parameter);
         ArgumentNullException.ThrowIfNull(firstBatch);
@@ -439,9 +463,20 @@ public class QueryOData : IDisposable
                     break;
                 }
 
-                int? requestTop = DetermineRequestTop(remaining, maxPerRequest);
-                Query nextQuery = CloneQueryForPagination(parameter, requestTop);
-                var queryResult = await QueryDatas(nextQuery, skip + totalRetrieved, cancellationToken);
+                ReturnValue<Stream> queryResult;
+                if (nextLink is not null)
+                {
+                    // Item 6: follow the server-provided continuation link.
+                    queryResult = await QueryUrl(nextLink, cancellationToken);
+                    nextLink = null;
+                }
+                else
+                {
+                    int? requestTop = DetermineRequestTop(remaining, maxPerRequest);
+                    Query nextQuery = CloneQueryForPagination(parameter, requestTop);
+                    queryResult = await QueryDatas(nextQuery, skip + totalRetrieved, cancellationToken);
+                }
+
                 if (queryResult.IsError)
                 {
                     throw new ODataDataReaderException(queryResult.Error);
@@ -453,6 +488,11 @@ public class QueryOData : IDisposable
                 {
                     throw new ODataDataReaderException(convertResult.Error);
                 }
+
+                // Item 6: extract continuation link from the current page.
+                string? chunkNextLink = ExtractNextLink(convertResult.Value.Metadatas);
+                if (chunkNextLink is not null && IsNextLinkSafe(chunkNextLink))
+                    nextLink = chunkNextLink;
 
                 JsonArray? batch = convertResult.Value.Datas;
                 if (batch is not JsonArray { Count: > 0 } nonEmptyBatch)
@@ -1511,6 +1551,65 @@ public class QueryOData : IDisposable
     }
 
     /// <summary>
+    /// Extracts the <c>@odata.nextLink</c> continuation URL from response metadata (item 6).
+    /// </summary>
+    private static string? ExtractNextLink(Dictionary<string, string>? metadata)
+    {
+        if (metadata is null) return null;
+        return metadata.TryGetValue("@odata.nextLink", out string? link) && !string.IsNullOrWhiteSpace(link)
+            ? link : null;
+    }
+
+    /// <summary>
+    /// Returns <see langword="true"/> when the nextLink URL is within the same HTTP origin as
+    /// <see cref="BaseUrl"/>, preventing open-redirect and SSRF via server-controlled pagination
+    /// links (item 6 / item 30).
+    /// </summary>
+    private bool IsNextLinkSafe(string nextLink)
+    {
+        if (!Uri.TryCreate(nextLink, UriKind.Absolute, out Uri? nextUri)) return false;
+        if (!Uri.TryCreate(BaseUrl, UriKind.Absolute, out Uri? baseUri)) return false;
+        return string.Equals(nextUri.Scheme, baseUri.Scheme, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(nextUri.Host, baseUri.Host, StringComparison.OrdinalIgnoreCase)
+            && nextUri.Port == baseUri.Port;
+    }
+
+    /// <summary>
+    /// Fetches a raw URL and wraps the response as a <see cref="ReturnValue{Stream}"/> (item 6).
+    /// Used to follow <c>@odata.nextLink</c> continuation links.
+    /// </summary>
+    private async Task<ReturnValue<Stream>> QueryUrl(string url, CancellationToken cancellationToken = default)
+    {
+        var response = await HttpGet(url, sourceRequest: null, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            try { return new(-1, $"{(int)response.StatusCode} {response.ReasonPhrase}"); }
+            finally { response.Dispose(); }
+        }
+        var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        if (contentStream is null)
+        {
+            response.Dispose();
+            return new(-3, "The HTTP response did not contain a readable stream.");
+        }
+        return CreateResponseStream(response, contentStream);
+    }
+
+    /// <summary>
+    /// Returns <see langword="true"/> when the failure is deterministic (e.g. HTTP 4xx, empty or
+    /// unparseable document) and should be cached to prevent repeated expensive retries (item 55).
+    /// Transient failures (HTTP 5xx, network errors) are not cached.
+    /// </summary>
+    private static bool IsPermanentMetadataFailure(ErrorReturnValue error)
+    {
+        int code = error.code;
+        // HTTP 4xx errors are stored as -(status code): -400 to -499.
+        if (code >= -499 && code <= -400) return true;
+        // Internal deterministic errors: empty document (-11), parse failure (-12), size limit (-13).
+        return code == -11 || code == -12 || code == -13;
+    }
+
+    /// <summary>
     /// Executes a query based on the specified parameters and returns the result as a stream.
     /// </summary>
     /// <remarks>This method performs an asynchronous query operation and returns the result as a stream. If the
@@ -1628,6 +1727,10 @@ public class QueryOData : IDisposable
 
         lock (_metadataCache)
         {
+            // Item 55: return a cached permanent failure before attempting a new fetch.
+            if (_metadataErrorCache.TryGetValue(resolvedUrl, out string? cachedError))
+                return new(new ErrorReturnValue(-55, cachedError));
+
             if (_metadataCache.TryGetValue(resolvedUrl, out Edmx? cached))
                 return new(cached);
         }
@@ -1637,13 +1740,28 @@ public class QueryOData : IDisposable
         {
             lock (_metadataCache)
             {
+                if (_metadataErrorCache.TryGetValue(resolvedUrl, out string? cachedError))
+                    return new(new ErrorReturnValue(-55, cachedError));
+
                 if (_metadataCache.TryGetValue(resolvedUrl, out Edmx? cached))
                     return new(cached);
             }
 
             var metadataResult = await FetchMetadataAsync(resolvedUrl, cancellationToken);
             if (metadataResult.IsError)
+            {
+                // Item 55: cache deterministic failures (HTTP 4xx, empty/unparseable document)
+                // to prevent expensive retries.  Transient failures (5xx, network) are not cached.
+                if (IsPermanentMetadataFailure(metadataResult.Error))
+                {
+                    lock (_metadataCache)
+                    {
+                        _metadataErrorCache[resolvedUrl] = metadataResult.Error.message;
+                    }
+                }
+
                 return metadataResult;
+            }
 
             var metadataValue = metadataResult.Value
                     ?? throw new InvalidOperationException("Metadata content cannot be null when the operation succeeds.");
