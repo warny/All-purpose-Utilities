@@ -235,6 +235,30 @@ public class EmitWorkerProtocolTests
         Assert.AreEqual(new string('x', 100), result);
     }
 
+    // ─── Item 10: frame-size limit tightened ────────────────────────────────────
+
+    [TestMethod]
+    public void MaxLineLength_IsAtMost4MiB()
+    {
+        // 64 MiB allowed 16 MiB of binary data per frame; 4 MiB is a more appropriate limit
+        // for P/Invoke parameters while still being generous (1 MiB binary ~ 3 MiB JSON).
+        Assert.IsTrue(ProtocolFraming.MaxLineLength <= 4 * 1024 * 1024,
+            $"MaxLineLength ({ProtocolFraming.MaxLineLength:N0}) exceeds 4 MiB.");
+    }
+
+    [TestMethod]
+    public void ReadBoundedLine_DoesNotExceedMaxLengthCharsInBuffer()
+    {
+        // Verify the check fires before appending the character that would exceed the limit,
+        // so the StringBuilder never holds more than maxLength characters.
+        // A 100-char line followed by one extra character triggers the guard.
+        string oversizedByOne = new string('x', 100) + "!";
+        using var reader = new StringReader(oversizedByOne);
+
+        Assert.ThrowsException<InvalidOperationException>(
+            () => ProtocolFraming.ReadBoundedLine(reader, maxLength: 100));
+    }
+
     // ─── Item 1: worker-private method IDs replace metadata tokens ───────────────
 
     /// <summary>Minimal interface used for method-descriptor and method-ID tests.</summary>
