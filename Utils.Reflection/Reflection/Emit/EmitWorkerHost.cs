@@ -373,14 +373,24 @@ internal static class EmitWorkerHost
         catch (Exception ex)
         {
             Exception effective = ex is TargetInvocationException { InnerException: { } inner } ? inner : ex;
+
+            // Sanitize the error: only the short class name is returned (no namespace, no assembly info).
+            // Messages are exposed verbatim only for exceptions whose text is caller-controlled and safe
+            // to forward (ArgumentException, NotSupportedException). All other exceptions get a generic
+            // message so that internal worker details (local paths, generated type names, loader internals)
+            // do not cross the process boundary.
+            string safeMessage = effective is ArgumentException or NotSupportedException
+                ? effective.Message
+                : "The isolated worker failed while processing the request.";
+
             response = new WorkerResponse
             {
                 Id = request.Id,
                 Success = false,
-                ErrorMessage = effective.Message,
-                ErrorTypeName = effective.GetType().FullName,
-                // Stack trace is omitted by default; it may contain internal paths and type names.
-                // Expose it only when explicitly opted in via diagnostics configuration.
+                ErrorMessage = safeMessage,
+                ErrorTypeName = effective.GetType().Name,
+                // Stack trace is omitted; it may contain internal paths, generated type names, and
+                // assembly locations from the worker's isolated environment.
             };
         }
 

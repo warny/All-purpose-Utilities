@@ -168,15 +168,31 @@ internal sealed class MethodDescriptorDto
     public string ReturnType { get; set; } = string.Empty;
 
     /// <summary>
+    /// Returns a stable, assembly-qualified type name suitable for cross-process identity comparison.
+    /// By-ref types (<c>ref int</c>, <c>out string</c>) do not have a CLR assembly-qualified name, so
+    /// their element type's name is used with a trailing <c>&amp;</c> appended, mirroring the
+    /// convention used by <see cref="Type.FullName"/> for by-ref types.
+    /// </summary>
+    internal static string StableTypeName(Type type)
+    {
+        if (type.IsByRef)
+            return StableTypeName(type.GetElementType()!) + "&";
+
+        return type.AssemblyQualifiedName ?? type.FullName ?? string.Empty;
+    }
+
+    /// <summary>
     /// Builds a descriptor from <paramref name="methodId"/> and the given <paramref name="method"/>.
+    /// Uses assembly-qualified type names so two types from different assemblies that share the same
+    /// <see cref="Type.FullName"/> are never confused by the host's matching logic.
     /// </summary>
     internal static MethodDescriptorDto FromMethodInfo(int methodId, MethodInfo method) =>
         new()
         {
             MethodId = methodId,
             Name = method.Name,
-            DeclaringType = method.DeclaringType?.FullName ?? string.Empty,
-            ParameterTypes = Array.ConvertAll(method.GetParameters(), p => p.ParameterType.FullName ?? string.Empty),
-            ReturnType = method.ReturnType.FullName ?? string.Empty,
+            DeclaringType = method.DeclaringType?.AssemblyQualifiedName ?? string.Empty,
+            ParameterTypes = Array.ConvertAll(method.GetParameters(), p => StableTypeName(p.ParameterType)),
+            ReturnType = StableTypeName(method.ReturnType),
         };
 }

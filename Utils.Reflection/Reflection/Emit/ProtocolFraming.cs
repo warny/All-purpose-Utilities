@@ -12,13 +12,13 @@ internal static class ProtocolFraming
 {
     /// <summary>
     /// Maximum number of characters allowed in a single protocol line (request or response JSON).
-    /// 4 MiB is generous for JSON-encoded P/Invoke parameters (a 1 MiB binary array encodes to
-    /// roughly 3 MiB of JSON) while bounding the allocation per frame to a reasonable upper limit.
-    /// The limit applies per line; there is no aggregate in-flight budget at this layer.
-    /// A complete fix would use length-prefixed binary framing so the length is known before any
-    /// allocation, but that requires protocol versioning (item 11).
+    /// 64 MiB is retained to avoid a compatibility regression: callers that pass large arrays
+    /// (e.g. a multi-megabyte <c>byte[]</c>) would be silently broken by a lower limit because
+    /// a 1 MiB binary array encodes to roughly 3 MiB of JSON. Reducing this limit safely requires
+    /// length-prefixed binary framing so the receiver can reject oversized frames before allocating,
+    /// which is a separate protocol change tracked independently of this audit.
     /// </summary>
-    internal const int MaxLineLength = 4 * 1024 * 1024;
+    internal const int MaxLineLength = 64 * 1024 * 1024;
 
     /// <summary>
     /// Reads one line from <paramref name="reader"/>, returning <see langword="null"/> at

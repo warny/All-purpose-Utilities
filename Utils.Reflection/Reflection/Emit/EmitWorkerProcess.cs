@@ -372,7 +372,26 @@ internal sealed class EmitWorkerProcess : IDisposable, IAsyncDisposable
             CallingConvention = callingConvention,
         };
 
-        WorkerResponse response = await SendAndReceiveAsync(request, timeout, cancellationToken).ConfigureAwait(false);
+        WorkerResponse response;
+        try
+        {
+            response = await SendAndReceiveAsync(request, timeout, cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            // The Load request was written to the pipe before cancellation fired. The worker may
+            // have completed the Load and allocated a handle that we can never observe or unload.
+            // Retire this worker immediately to prevent resource leaks from the orphaned handle.
+            RetireAfterOrphanedLoad();
+            throw;
+        }
+        catch (TimeoutException)
+        {
+            // Same as cancellation: the frame was sent, the worker may have created a handle.
+            RetireAfterOrphanedLoad();
+            throw;
+        }
+
         ThrowIfFailed(response);
 
         // Build the host-side MethodInfo→ID mapping from the worker-assigned descriptor table.
@@ -553,14 +572,16 @@ internal sealed class EmitWorkerProcess : IDisposable, IAsyncDisposable
 
     /// <summary>
     /// Finds the <see cref="MethodInfo"/> in <paramref name="candidates"/> that matches the given
-    /// <paramref name="descriptor"/> by name, declaring type, and parameter types.
+    /// <paramref name="descriptor"/> by name, declaring type (assembly-qualified), and parameter
+    /// types (assembly-qualified). Uses <see cref="MethodDescriptorDto.StableTypeName"/> so the
+    /// comparison is consistent with how descriptors are produced by <see cref="MethodDescriptorDto.FromMethodInfo"/>.
     /// </summary>
     private static MethodInfo? FindMatchingMethod(MethodInfo[] candidates, MethodDescriptorDto descriptor)
     {
         foreach (MethodInfo m in candidates)
         {
             if (m.Name != descriptor.Name) continue;
-            if (m.DeclaringType?.FullName != descriptor.DeclaringType) continue;
+            if ((m.DeclaringType?.AssemblyQualifiedName ?? string.Empty) != descriptor.DeclaringType) continue;
 
             ParameterInfo[] parameters = m.GetParameters();
             if (parameters.Length != descriptor.ParameterTypes.Length) continue;
@@ -568,7 +589,7 @@ internal sealed class EmitWorkerProcess : IDisposable, IAsyncDisposable
             bool match = true;
             for (int i = 0; i < parameters.Length; i++)
             {
-                if (parameters[i].ParameterType.FullName != descriptor.ParameterTypes[i])
+                if (MethodDescriptorDto.StableTypeName(parameters[i].ParameterType) != descriptor.ParameterTypes[i])
                 {
                     match = false;
                     break;
@@ -811,6 +832,23 @@ internal sealed class EmitWorkerProcess : IDisposable, IAsyncDisposable
             {
                 completion.TrySetException(fault);
             }
+        }
+    }
+
+    /// <summary>
+    /// Retires this worker after a <see cref="WorkerRequestKind.Load"/> request was sent but no
+    /// response was received (timeout or cancellation). Because the worker may have allocated a
+    /// handle that the host can never observe or <see cref="UnloadInterface">unload</see>,
+    /// continuing to use this worker would leak the native mapping until worker shutdown.
+    /// </summary>
+    private void RetireAfterOrphanedLoad()
+    {
+        if (connectionFault is null)
+        {
+            connectionFault = new InvalidOperationException(
+                "A Load request was cancelled or timed out after being sent to the worker. " +
+                "The worker may have allocated a handle that can never be unloaded. " +
+                "The worker has been retired to prevent resource leaks from orphaned handles.");
         }
     }
 

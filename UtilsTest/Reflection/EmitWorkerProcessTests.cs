@@ -143,6 +143,41 @@ public class EmitWorkerProcessTests
         Assert.AreEqual(maxSupported, result);
     }
 
+    // ─── Review #495 point 1: assembly-qualified type identity in descriptors ──────
+
+    [TestMethod]
+    public void MethodDescriptorDto_StableTypeName_NonByRefType_UsesAssemblyQualifiedName()
+    {
+        // Ordinary types must use AssemblyQualifiedName so that two types from different assemblies
+        // with the same FullName are distinguished during the host-side method matching.
+        string name = MethodDescriptorDto.StableTypeName(typeof(int));
+        Assert.AreEqual(typeof(int).AssemblyQualifiedName, name);
+    }
+
+    [TestMethod]
+    public void MethodDescriptorDto_StableTypeName_ByRefInt_EndsWithAmpersand()
+    {
+        Type byRefInt = typeof(int).MakeByRefType();
+        string name = MethodDescriptorDto.StableTypeName(byRefInt);
+
+        Assert.IsTrue(name.EndsWith("&", StringComparison.Ordinal),
+            $"By-ref type name must end with '&', got: {name}");
+        StringAssert.Contains(name, typeof(int).AssemblyQualifiedName!);
+    }
+
+    // ─── Review #495 point 3: worker retirement on orphaned Load ─────────────────
+
+    [TestMethod]
+    public void LoadInterfaceAsync_HasRetireAfterOrphanedLoad_PrivateMethod()
+    {
+        // Verify the retirement helper exists — its runtime behavior is covered by integration tests.
+        MethodInfo? method = typeof(EmitWorkerProcess).GetMethod(
+            "RetireAfterOrphanedLoad",
+            BindingFlags.NonPublic | BindingFlags.Instance);
+
+        Assert.IsNotNull(method, "RetireAfterOrphanedLoad must be declared on EmitWorkerProcess.");
+    }
+
     // ─── Item 15: async lifecycle APIs ───────────────────────────────────────────
 
     [TestMethod]
