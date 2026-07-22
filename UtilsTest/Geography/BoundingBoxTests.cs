@@ -100,4 +100,53 @@ public class BoundingBoxTests
         StringAssert.Contains(text, "3");
         StringAssert.Contains(text, "4");
     }
+
+    [TestMethod]
+    public void ToStringProducesParseableFormatForFromStringRoundTrip()
+    {
+        // Before the fix, ToString() emitted "minLatitude=..., ..." which FromString cannot
+        // parse (it expects four comma-separated bare numbers). Now ToString() emits the
+        // parseable format so FromString(box.ToString()) round-trips correctly.
+        var original = new BoundingBox<double>(-10, -20, 10, 20);
+        var roundTripped = BoundingBox<double>.FromString(original.ToString());
+
+        Assert.AreEqual(original, roundTripped);
+    }
+
+    [TestMethod]
+    public void ToStringLabeledFormatContainsLabels()
+    {
+        var box = new BoundingBox<double>(-10, -20, 10, 20);
+        string labeled = box.ToString("L");
+
+        StringAssert.Contains(labeled, "minLatitude=");
+        StringAssert.Contains(labeled, "minLongitude=");
+        StringAssert.Contains(labeled, "maxLatitude=");
+        StringAssert.Contains(labeled, "maxLongitude=");
+    }
+
+    [TestMethod]
+    public void ToStringDefaultFormatDoesNotContainLabels()
+    {
+        var box = new BoundingBox<double>(-10, -20, 10, 20);
+        string text = box.ToString();
+
+        Assert.IsFalse(text.Contains("minLatitude"), "Default ToString() must not emit labels");
+        Assert.IsFalse(text.Contains("maxLatitude"), "Default ToString() must not emit labels");
+    }
+
+    [TestMethod]
+    public void AntimeridianCrossingBoxIsNotSupportedAndConvertsToWideBox()
+    {
+        // Documents the known limitation: a box from 170°E to 170°W (20° arc across the
+        // antimeridian) is silently stored as a 340°-wide box because ValidateBoundingBox
+        // uses T.Min/T.Max on the raw longitude values. The test pins the current behavior
+        // so any future fix is visible as a test change.
+        var box = new BoundingBox<double>(-10, 170, 10, -170);
+
+        // Current (unsupported) behavior: Min/Max ordering gives a 340° box.
+        Assert.AreEqual(-170.0, box.MinLongitude, 1e-9);
+        Assert.AreEqual(170.0, box.MaxLongitude, 1e-9);
+        Assert.AreEqual(340.0, box.LongitudeSpan, 1e-9);
+    }
 }

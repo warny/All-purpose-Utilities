@@ -81,7 +81,10 @@ public class PlanetTests
     {
         var earth = Planets<double>.Earth;
         var paris = new GeoPoint<double>("N48°51',E2°21'");
-        var newyork = new GeoPoint<double>("N40°43',W74°00'");
+        // N40°43' = 40+43/60 ≈ 40.71666…, but Travel() rounds its output to 5 dp (40.71667).
+        // Use the rounded value so that Equals/GetHashCode (which now use a 2^-33 grid step instead
+        // of 5 dp rounding) can still recognise the computed destination as "the same point".
+        var newyork = new GeoPoint<double>(40.71667, -74.0);
 
         var baghdad = new GeoPoint<double>("N35°,E45°");
         var osaka = new GeoPoint<double>("N35°,E135°");

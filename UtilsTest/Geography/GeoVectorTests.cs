@@ -117,11 +117,11 @@ namespace UtilsTest.Geography
         [TestMethod]
         public void EqualVectorsProduceEqualHashCodes()
         {
-            // Regression test: Equals() and GetHashCode() both round latitude/longitude/bearing to the
-            // same precision (5 decimal places) before comparing/hashing, so vectors that only differ in
-            // noise beyond that precision are equal and always hash equally.
+            // Regression test: Equals() and GetHashCode() snap latitude/longitude/bearing to the
+            // EqualityStep grid (2^-33 ≈ 1.16e-10 degrees for double), so vectors that only differ
+            // by noise smaller than half a step are equal and always hash equally.
             var vector1 = new GeoVector<double>(45.123456, -73.654321, 10.123456);
-            var vector2 = new GeoVector<double>(45.1234560001, -73.6543209999, 10.1234560001);
+            var vector2 = new GeoVector<double>(45.12345600001, -73.65432099999, 10.12345600001);  // differ by 1e-11 < half step
 
             Assert.AreEqual(vector1, vector2);
             Assert.AreEqual(vector1.GetHashCode(), vector2.GetHashCode());
@@ -130,8 +130,9 @@ namespace UtilsTest.Geography
         [TestMethod]
         public void VectorsOnOppositeSidesOfARoundingBoundaryAreNotEqual()
         {
-            // Documents the same deliberate trade-off as GeoPointTests.
-            // PointsOnOppositeSidesOfARoundingBoundaryAreNotEqual, applied to bearing.
+            // Documents the deliberate trade-off of snap-to-grid equality applied to bearing.
+            // With EqualityStep = 2^-33 ≈ 1.16e-10 degrees, these two bearings differ by 2e-10 ≈ 1.72
+            // steps, so they land in different grid cells.
             var vector1 = new GeoVector<double>(0, 0, 1.0000449999);
             var vector2 = new GeoVector<double>(0, 0, 1.0000450001);
 
@@ -141,13 +142,13 @@ namespace UtilsTest.Geography
         [TestMethod]
         public void VectorsWithBearingOnOppositeSidesOfZeroAreEqualWhenClose()
         {
-            // Regression test: bearing wraps around at 0/360 deg, so a bearing just below 360 and a
-            // bearing just above 0 can be almost the same heading even though their raw numeric values
-            // are ~360 deg apart. Equals/GetHashCode must normalize bearing (via
-            // IAngleCalculator<T>.AreEqualRounded/NormalizeRounded) before comparing, not just round the
-            // raw value, otherwise these would incorrectly compare as different.
-            var vector1 = new GeoVector<double>(0, 0, 359.999998);
-            var vector2 = new GeoVector<double>(0, 0, 0.000002);
+            // Regression test: bearing wraps around at 0°/360°, so a bearing just below 360° and one
+            // just above 0° can be nearly the same heading even though their raw values differ by ~360°.
+            // SnapCircleIndex normalizes to [0°, 360°) before snapping: 359.99999999999° is 1e-11° below
+            // 360° (within half a step ≈ 5.8e-11°), which rounds UP to the perigon index and wraps to 0;
+            // 0.00000000001° is 1e-11° above 0°, which rounds DOWN to 0 — both map to index 0 → equal.
+            var vector1 = new GeoVector<double>(0, 0, 359.99999999999);
+            var vector2 = new GeoVector<double>(0, 0, 0.00000000001);
 
             Assert.AreEqual(vector1, vector2);
             Assert.AreEqual(vector1.GetHashCode(), vector2.GetHashCode());
@@ -171,6 +172,46 @@ namespace UtilsTest.Geography
             var vector2 = new GeoVector<double>(0, 0, 0.0000001);
 
             Assert.IsTrue(vector1.IsApproximately(vector2, 1e-5));
+        }
+
+        [TestMethod]
+        public void TravelWithZeroAngleReturnsOriginalVector()
+        {
+            // Regression for Asin clamp: travelling 0° must return the same vector, not NaN.
+            var vector = new GeoVector<double>(45, 10, 90);
+            var result = vector.Travel(0);
+
+            Assert.IsFalse(double.IsNaN(result.Latitude), "Travel(0) must not produce NaN latitude");
+            Assert.AreEqual(vector.Latitude, result.Latitude, 1e-9);
+            Assert.AreEqual(vector.Longitude, result.Longitude, 1e-9);
+        }
+
+        [TestMethod]
+        public void TravelWithSmallAngleDoesNotReturnNaN()
+        {
+            // A very small angle (near 0) stresses the Asin clamp; if the argument drifts just
+            // above 1 due to floating-point rounding, unclamped Asin would return NaN.
+            var vector = new GeoVector<double>(89.9999, 0, 0);
+            var result = vector.Travel(1e-10);
+
+            Assert.IsFalse(double.IsNaN(result.Latitude), "Travel with tiny angle must not produce NaN");
+        }
+
+        [TestMethod]
+        public void IntersectionsOfNearlyIdenticalVectorsDoesNotReturnNaN()
+        {
+            // Before the clamp fix, Acos inputs could drift just outside [-1,1] for nearly
+            // identical vectors or near-degenerate great-circle configurations, producing NaN.
+            var v1 = new GeoVector<double>(0.0001, 0.0001, 90);
+            var v2 = new GeoVector<double>(0, 0, 90);
+
+            // Either returns empty (same great circle) or non-NaN intersections.
+            var result = v1.Intersections(v2);
+            foreach (var pt in result)
+            {
+                Assert.IsFalse(double.IsNaN(pt.Latitude), $"Intersection latitude must not be NaN: {pt}");
+                Assert.IsFalse(double.IsNaN(pt.Longitude), $"Intersection longitude must not be NaN: {pt}");
+            }
         }
 
         [TestMethod]

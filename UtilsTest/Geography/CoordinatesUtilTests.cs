@@ -56,4 +56,36 @@ public class CoordinatesUtilTests
     {
         Assert.ThrowsException<ArgumentException>(() => CoordinatesUtil<double>.ValidateLatitude(double.NaN));
     }
+
+    [TestMethod]
+    public void ParseCoordinatestringRejectsMiddleEmptyToken()
+    {
+        // Before the fix, RemoveEmptyEntries caused "1,,2,3,4" to become 4 tokens ["1","2","3","4"],
+        // which was accepted when 4 coordinates were expected, silently shifting all values after
+        // the empty position. StringSplitOptions.None preserves empty tokens so the count mismatch
+        // (or explicit empty-token check) causes a proper rejection.
+        Assert.ThrowsException<ArgumentException>(
+            () => CoordinatesUtil<double>.ParseCoordinatestring("1,,2,3,4", 4));
+    }
+
+    [TestMethod]
+    public void ParseCoordinatestringRejectsLeadingEmptyToken()
+    {
+        Assert.ThrowsException<ArgumentException>(
+            () => CoordinatesUtil<double>.ParseCoordinatestring(",1,2,3", 4));
+    }
+
+    [TestMethod]
+    public void ParseCoordinatestringRejectsTrailingEmptyToken()
+    {
+        Assert.ThrowsException<ArgumentException>(
+            () => CoordinatesUtil<double>.ParseCoordinatestring("1,2,3,", 4));
+    }
+
+    [TestMethod]
+    public void ParseCoordinatestringRejectsWhitespaceOnlyToken()
+    {
+        Assert.ThrowsException<ArgumentException>(
+            () => CoordinatesUtil<double>.ParseCoordinatestring("1, ,3,4", 4));
+    }
 }

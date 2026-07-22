@@ -87,11 +87,19 @@ namespace Utils.Geography.Display
          */
         public static T[] ParseCoordinatestring(string coordinatesstring, int numberOfCoordinates)
         {
-            string[] tokens = coordinatesstring.Split(DELIMITER, StringSplitOptions.RemoveEmptyEntries);
+            // Use None so that empty tokens (e.g. "1,,2,3,4") are preserved and counted,
+            // preventing silent position shifting when entries are missing.
+            string[] tokens = coordinatesstring.Split(DELIMITER, StringSplitOptions.None);
 
             if (tokens.Length != numberOfCoordinates)
             {
                 throw new ArgumentException("invalid number of coordinate values: " + coordinatesstring, nameof(numberOfCoordinates));
+            }
+
+            foreach (string token in tokens)
+            {
+                if (string.IsNullOrWhiteSpace(token))
+                    throw new ArgumentException("coordinate value must not be empty or whitespace: " + coordinatesstring, nameof(coordinatesstring));
             }
 
             T[] coordinates = tokens.Select(t => T.Parse(t, CultureInfo.InvariantCulture)).ToArray();
