@@ -848,7 +848,12 @@ public class QueryOData : IDisposable
             _ordinals = new Dictionary<string, int>(columns.Count, StringComparer.OrdinalIgnoreCase);
             foreach (ColumnDefinition column in columns)
             {
-                _ordinals[column.Name] = column.Ordinal;
+                if (!_ordinals.TryAdd(column.Name, column.Ordinal))
+                {
+                    throw new ArgumentException(
+                        $"Duplicate column name '{column.Name}' (case-insensitive) detected in the schema. " +
+                        "Each column must have a unique name.");
+                }
             }
         }
 
@@ -1039,23 +1044,33 @@ public class QueryOData : IDisposable
         /// <inheritdoc />
         public long GetBytes(int i, long fieldOffset, byte[]? buffer, int bufferoffset, int length)
         {
+            if (fieldOffset < 0)
+                throw new ArgumentOutOfRangeException(nameof(fieldOffset), "Field offset must be non-negative.");
+            if (fieldOffset > int.MaxValue)
+                throw new ArgumentOutOfRangeException(nameof(fieldOffset), "Field offset exceeds the supported int range.");
+            if (length < 0)
+                throw new ArgumentOutOfRangeException(nameof(length), "Length must be non-negative.");
+
             object value = GetValue(i);
             if (value is DBNull)
-            {
                 return 0;
-            }
 
             if (value is not byte[] data)
-            {
                 throw new InvalidCastException($"Column {i} does not contain binary data.");
-            }
 
-            int available = Math.Max(0, data.Length - (int)fieldOffset);
-            int count = Math.Min(available, length);
-            if (buffer is not null && count > 0)
-            {
-                Array.Copy(data, (int)fieldOffset, buffer, bufferoffset, count);
-            }
+            if (buffer is null)
+                return data.Length;
+
+            if (bufferoffset < 0)
+                throw new ArgumentOutOfRangeException(nameof(bufferoffset), "Buffer offset must be non-negative.");
+            if (bufferoffset > buffer.Length)
+                throw new ArgumentOutOfRangeException(nameof(bufferoffset), "Buffer offset exceeds buffer length.");
+
+            int sourceOffset = (int)fieldOffset;
+            int available = Math.Max(0, data.Length - sourceOffset);
+            int count = Math.Min(available, Math.Min(length, buffer.Length - bufferoffset));
+            if (count > 0)
+                Array.Copy(data, sourceOffset, buffer, bufferoffset, count);
 
             return count;
         }
@@ -1066,13 +1081,28 @@ public class QueryOData : IDisposable
         /// <inheritdoc />
         public long GetChars(int i, long fieldoffset, char[]? buffer, int bufferoffset, int length)
         {
+            if (fieldoffset < 0)
+                throw new ArgumentOutOfRangeException(nameof(fieldoffset), "Field offset must be non-negative.");
+            if (fieldoffset > int.MaxValue)
+                throw new ArgumentOutOfRangeException(nameof(fieldoffset), "Field offset exceeds the supported int range.");
+            if (length < 0)
+                throw new ArgumentOutOfRangeException(nameof(length), "Length must be non-negative.");
+
             string data = GetString(i);
-            int available = Math.Max(0, data.Length - (int)fieldoffset);
-            int count = Math.Min(available, length);
-            if (buffer is not null && count > 0)
-            {
-                data.CopyTo((int)fieldoffset, buffer, bufferoffset, count);
-            }
+
+            if (buffer is null)
+                return data.Length;
+
+            if (bufferoffset < 0)
+                throw new ArgumentOutOfRangeException(nameof(bufferoffset), "Buffer offset must be non-negative.");
+            if (bufferoffset > buffer.Length)
+                throw new ArgumentOutOfRangeException(nameof(bufferoffset), "Buffer offset exceeds buffer length.");
+
+            int sourceOffset = (int)fieldoffset;
+            int available = Math.Max(0, data.Length - sourceOffset);
+            int count = Math.Min(available, Math.Min(length, buffer.Length - bufferoffset));
+            if (count > 0)
+                data.CopyTo(sourceOffset, buffer, bufferoffset, count);
 
             return count;
         }
