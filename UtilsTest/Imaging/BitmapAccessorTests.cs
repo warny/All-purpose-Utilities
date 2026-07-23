@@ -9,6 +9,13 @@ namespace UtilsTest.Imaging;
 [TestClass]
 public class BitmapAccessorTests
 {
+    [TestInitialize]
+    public void RequireWindows()
+    {
+        if (!OperatingSystem.IsWindows())
+            Assert.Inconclusive("Test requires Windows (GDI+ / gdiplus.dll).");
+    }
+
     // ── BitmapAccessor ────────────────────────────────────────────────────────
 
     [TestMethod]
