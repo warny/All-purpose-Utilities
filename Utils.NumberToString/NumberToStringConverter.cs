@@ -397,7 +397,12 @@ namespace Utils.NumberToString
                             $"Trigger pattern '{from}' is not a valid regular expression: {ex.Message}", nameof(from), ex);
                     }
                 }
-                Forms = forms;
+                Forms = forms
+                    .Select(static form => (
+                        Constraints: (IReadOnlyDictionary<string, string>)
+                            form.Constraints.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase),
+                        form.To))
+                    .ToImmutableArray();
                 DefaultTo = defaultTo;
             }
             /// <summary>Gets the text or regex pattern to match.</summary>
@@ -435,13 +440,13 @@ namespace Utils.NumberToString
                                 $"All group indices must be non-negative; found {idx}.", nameof(groupIndices));
                 }
                 ExecuteAt = executeAt;
-                GroupIndices = groupIndices;
-                Replaces = replaces;
+                GroupIndices = groupIndices?.ToImmutableArray();
+                Replaces = replaces.ToImmutableArray();
             }
             /// <summary>Gets when this trigger fires.</summary>
             public TriggerAt ExecuteAt { get; }
             /// <summary>Gets the group indices this trigger is restricted to, or <see langword="null"/> for all groups.</summary>
-            public int[]? GroupIndices { get; }
+            public IReadOnlyList<int>? GroupIndices { get; }
             /// <summary>Gets the replacement rules applied when this trigger fires.</summary>
             public IReadOnlyList<TriggerReplace> Replaces { get; }
         }
@@ -888,7 +893,7 @@ namespace Utils.NumberToString
             {
                 if (trigger.ExecuteAt != at) continue;
                 if (trigger.GroupIndices != null
-                    && (groupIndex == null || !Array.Exists(trigger.GroupIndices, i => i == groupIndex.Value)))
+                    && (groupIndex == null || !trigger.GroupIndices.Contains(groupIndex.Value)))
                     continue;
 
                 foreach (var replace in trigger.Replaces)
@@ -1264,6 +1269,10 @@ namespace Utils.NumberToString
                 throw new ArgumentOutOfRangeException(nameof(groupNumber),
                     $"groupNumber {groupNumber} is not a configured group index. " +
                     $"Valid indices: {string.Join(", ", Groups.Keys.OrderBy(k => k))}.");
+            if (number < 0)
+                throw new ArgumentOutOfRangeException(nameof(number),
+                    $"number must be non-negative; got {number}.");
+
             if (groupNumber > 1 && Exceptions.TryGetValue(number, out var value)) return value;
 
             // Use exact integer power from the pre-computed table to avoid floating-point imprecision.
@@ -1272,6 +1281,18 @@ namespace Utils.NumberToString
                 throw new ArgumentOutOfRangeException(nameof(groupNumber),
                     $"groupNumber {groupNumber} exceeds the supported maximum of {_decimalPowersOfTen.Length}.");
             long group = _decimalPowersOfTen[powerIndex];
+
+            // Reject values that exceed the range representable by this group.
+            // _decimalPowersOfTen[groupNumber] is the exclusive upper bound (e.g., 10 for group 1, 100 for group 2).
+            // For the last supported group (groupNumber == _decimalPowersOfTen.Length) the bound would be 10^19,
+            // which exceeds long, so only the non-negative check above applies.
+            if (groupNumber < _decimalPowersOfTen.Length)
+            {
+                long upperExclusive = _decimalPowersOfTen[groupNumber];
+                if (number >= upperExclusive)
+                    throw new ArgumentOutOfRangeException(nameof(number),
+                        $"number must be in the range [0, {upperExclusive - 1}] for groupNumber {groupNumber}; got {number}.");
+            }
             var (groupValue, remainder) = long.DivRem(number, group);
 
             var leftText = ConvertGroup(groupNumber - 1, remainder);
@@ -1745,7 +1766,16 @@ namespace Utils.NumberToString
                 bool firstLetterUppercase = false)
         {
             StaticValues = staticValues.Arg().MustNotBeNull().Value.ToImmutableArray();
+            for (int i = 0; i < StaticValues.Count; i++)
+                if (StaticValues[i] is null)
+                    throw new ArgumentException(
+                        $"staticValues contains null at index {i}.", nameof(staticValues));
+
             ScaleSuffixes = scaleSuffixes.Arg().MustNotBeNull().Value.ToImmutableArray();
+            for (int i = 0; i < ScaleSuffixes.Count; i++)
+                if (ScaleSuffixes[i] is null)
+                    throw new ArgumentException(
+                        $"scaleSuffixes contains null at index {i}.", nameof(scaleSuffixes));
 
             if (startIndex < 0)
                 throw new ArgumentOutOfRangeException(nameof(startIndex),
@@ -1771,13 +1801,19 @@ namespace Utils.NumberToString
             ValidatePrefixTable(HundredsPrefixes, nameof(hundredsPrefixes));
         }
 
-        /// <summary>Validates that a digit-prefix table has exactly 10 entries (one per decimal digit 0–9).</summary>
+        /// <summary>Validates that a decimal digit-prefix table has exactly 10 entries (one per decimal digit 0–9) and contains no null entries.</summary>
+        /// <param name="table">Table to validate.</param>
+        /// <param name="paramName">Public constructor parameter represented by the table.</param>
         private static void ValidatePrefixTable(IReadOnlyList<string> table, string paramName)
         {
             if (table.Count != 10)
                 throw new ArgumentException(
                     $"Prefix table '{paramName}' must have exactly 10 entries (one per decimal digit 0–9); got {table.Count}.",
                     paramName);
+            for (int i = 0; i < table.Count; i++)
+                if (table[i] is null)
+                    throw new ArgumentException(
+                        $"Prefix table '{paramName}' contains null at index {i}.", paramName);
         }
 
         /// <summary>
@@ -1894,7 +1930,7 @@ namespace Utils.NumberToString
             if (prefix.Between(0L, 9L))
             {
                 var value = Scale0Prefixes[(int)prefix] + GroupSeparator + suffix;
-                return FirstLetterUppercase ? char.ToUpperInvariant(value[0]) + value[1..] : value;
+                return FirstLetterUppercase && value.Length > 0 ? char.ToUpperInvariant(value[0]) + value[1..] : value;
             }
 
             var prefixes = new List<string>();

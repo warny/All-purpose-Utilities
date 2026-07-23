@@ -794,4 +794,108 @@ public class NumberToStringConverterAuditFixesTests
         Assert.IsNotNull(result);
         Assert.IsFalse(string.IsNullOrWhiteSpace(result), "GetScaleName(int.MaxValue) must return a non-empty string");
     }
+
+    // ── PR #503 review — deep-copy immutability of trigger models ─────────────
+
+    [TestMethod]
+    public void TriggerReplace_MutatingSourceFormsList_DoesNotAffectStoredForms()
+    {
+        var constraints = new System.Collections.Generic.Dictionary<string, string>();
+        var formsList = new System.Collections.Generic.List<(IReadOnlyDictionary<string, string> Constraints, string To)>
+        {
+            (constraints, "uno")
+        };
+        var replace = new NumberToStringConverter.TriggerReplace("one", false, formsList, null);
+        formsList.Clear();
+        Assert.AreEqual(1, replace.Forms.Count,
+            "Clearing the source list after construction must not affect the stored Forms");
+    }
+
+    [TestMethod]
+    public void TriggerReplace_MutatingSourceConstraintsDict_DoesNotAffectStoredForms()
+    {
+        var constraints = new System.Collections.Generic.Dictionary<string, string> { ["gender"] = "m" };
+        var replace = new NumberToStringConverter.TriggerReplace(
+            "one", false, [(constraints, "uno")], null);
+        constraints["gender"] = "mutated";
+        // The stored snapshot must still reflect the original value.
+        Assert.AreEqual("m", replace.Forms[0].Constraints["gender"],
+            "Mutating the source Constraints dictionary after construction must not affect the stored snapshot");
+    }
+
+    [TestMethod]
+    public void TriggerRule_MutatingSourceGroupIndicesArray_DoesNotAffectStoredIndices()
+    {
+        var indices = new[] { 1, 2 };
+        var rule = new NumberToStringConverter.TriggerRule(
+            NumberToStringConverter.TriggerAt.Group, indices, []);
+        indices[0] = 99;
+        Assert.AreEqual(1, rule.GroupIndices![0],
+            "Mutating the source array after construction must not affect the stored GroupIndices");
+    }
+
+    [TestMethod]
+    public void TriggerRule_MutatingSourceReplacesList_DoesNotAffectStoredReplaces()
+    {
+        var r = new NumberToStringConverter.TriggerReplace("x", false, [], "y");
+        var list = new System.Collections.Generic.List<NumberToStringConverter.TriggerReplace> { r };
+        var rule = new NumberToStringConverter.TriggerRule(
+            NumberToStringConverter.TriggerAt.End, null, list);
+        list.Clear();
+        Assert.AreEqual(1, rule.Replaces.Count,
+            "Clearing the source list after construction must not affect the stored Replaces");
+    }
+
+    // ── PR #503 review — NumberScale null-entry validation ───────────────────
+
+    [TestMethod]
+    public void NumberScale_NullEntryInStaticValues_ThrowsArgumentException()
+    {
+        Assert.ThrowsException<ArgumentException>(
+            () => new NumberScale(
+                staticValues: (IReadOnlyList<string>)new string[] { "", null! },
+                scaleSuffixes: (IReadOnlyList<string>)new[] { "illion" }),
+            "null entry in staticValues must be rejected");
+    }
+
+    [TestMethod]
+    public void NumberScale_NullEntryInScaleSuffixes_ThrowsArgumentException()
+    {
+        Assert.ThrowsException<ArgumentException>(
+            () => new NumberScale(
+                staticValues: (IReadOnlyList<string>)new[] { "" },
+                scaleSuffixes: (IReadOnlyList<string>)new string[] { null! }),
+            "null entry in scaleSuffixes must be rejected");
+    }
+
+    [TestMethod]
+    public void NumberScale_NullEntryInScale0Prefixes_ThrowsArgumentException()
+    {
+        var prefixes = new string[] { "", null!, "du", "tri", "quadri", "quinti", "sexti", "septi", "octi", "noni" };
+        Assert.ThrowsException<ArgumentException>(
+            () => new NumberScale(
+                staticValues: (IReadOnlyList<string>)new[] { "" },
+                scaleSuffixes: (IReadOnlyList<string>)new[] { "illion" },
+                scale0Prefixes: (IReadOnlyList<string>)prefixes),
+            "null entry in scale0Prefixes must be rejected");
+    }
+
+    // ── PR #503 review — ConvertGroup validates number range ─────────────────
+
+    [TestMethod]
+    public void ConvertGroup_NegativeNumber_ThrowsArgumentOutOfRange()
+    {
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => EN.ConvertGroup(1, -1),
+            "Negative number must be rejected by ConvertGroup");
+    }
+
+    [TestMethod]
+    public void ConvertGroup_NumberExceedsGroupRange_ThrowsArgumentOutOfRange()
+    {
+        // EN group 1 covers values 0–9; passing 10 must throw, not produce a KeyNotFoundException.
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => EN.ConvertGroup(1, 10),
+            "A number that exceeds the valid range for the group must be rejected with a clear message");
+    }
 }
