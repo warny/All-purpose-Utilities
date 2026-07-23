@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Imaging_BitmapArgb64Accessor" data-uid="Utils.Imaging.BitmapArgb64Accessor" class="text-break">
-Class BitmapArgb64Accessor  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapArgb64Accessor.cs/#L11"><i class="bi bi-code-slash"></i></a>
+Class BitmapArgb64Accessor  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapArgb64Accessor.cs/#L15"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -257,6 +257,9 @@ manipulation scenarios.</p>
 
 
 
+  <h2 id="Utils_Imaging_BitmapArgb64Accessor_remarks">Remarks</h2>
+  <div class="markdown level0 remarks"><p>This class depends on <code>System.Drawing</code> (GDI+) and is supported on Windows only.</p>
+</div>
 
 
   <h2 class="section" id="constructors">Constructors
@@ -267,7 +270,7 @@ manipulation scenarios.</p>
 
   <h3 id="Utils_Imaging_BitmapArgb64Accessor__ctor_System_Drawing_Bitmap_System_Nullable_System_Drawing_Rectangle__" data-uid="Utils.Imaging.BitmapArgb64Accessor.#ctor(System.Drawing.Bitmap,System.Nullable{System.Drawing.Rectangle})">
   BitmapArgb64Accessor(Bitmap, Rectangle?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapArgb64Accessor.cs/#L41"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapArgb64Accessor.cs/#L64"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Imaging.BitmapArgb64Accessor.html">BitmapArgb64Accessor</a> class and
@@ -297,6 +300,15 @@ locks the specified bitmap region.</p>
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">bitmap</code> is null.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when <code class="paramref">region</code> has non-positive dimensions or exceeds the bitmap bounds.</p>
+</dd>
+  </dl>
 
 
 
@@ -308,7 +320,7 @@ locks the specified bitmap region.</p>
 
   <h3 id="Utils_Imaging_BitmapArgb64Accessor_Height" data-uid="Utils.Imaging.BitmapArgb64Accessor.Height">
   Height
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapArgb64Accessor.cs/#L26"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapArgb64Accessor.cs/#L35"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the height of the accessed bitmap region.</p>
@@ -340,7 +352,7 @@ locks the specified bitmap region.</p>
 
   <h3 id="Utils_Imaging_BitmapArgb64Accessor_Item_System_Int32_System_Int32_" data-uid="Utils.Imaging.BitmapArgb64Accessor.Item(System.Int32,System.Int32)">
   this[int, int]
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapArgb64Accessor.cs/#L57"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapArgb64Accessor.cs/#L98"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the color at the specified pixel coordinates.</p>
@@ -374,6 +386,15 @@ locks the specified bitmap region.</p>
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.objectdisposedexception">ObjectDisposedException</a></dt>
+    <dd><p>Thrown after <a class="xref" href="Utils.Imaging.BitmapArgb64Accessor.html#Utils_Imaging_BitmapArgb64Accessor_Dispose">Dispose()</a> has been called.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when any coordinate is out of bounds.</p>
+</dd>
+  </dl>
 
 
 
@@ -381,7 +402,7 @@ locks the specified bitmap region.</p>
 
   <h3 id="Utils_Imaging_BitmapArgb64Accessor_Width" data-uid="Utils.Imaging.BitmapArgb64Accessor.Width">
   Width
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapArgb64Accessor.cs/#L21"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapArgb64Accessor.cs/#L30"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the width of the accessed bitmap region.</p>
@@ -417,7 +438,7 @@ locks the specified bitmap region.</p>
 
   <h3 id="Utils_Imaging_BitmapArgb64Accessor_ApplySprite_System_Drawing_Point_Utils_Imaging_BitmapArgb64Accessor_System_Func_Utils_Imaging_ColorArgb64_Utils_Imaging_ColorArgb64_Utils_Imaging_ColorArgb64__" data-uid="Utils.Imaging.BitmapArgb64Accessor.ApplySprite(System.Drawing.Point,Utils.Imaging.BitmapArgb64Accessor,System.Func{Utils.Imaging.ColorArgb64,Utils.Imaging.ColorArgb64,Utils.Imaging.ColorArgb64})">
   ApplySprite(Point, BitmapArgb64Accessor, Func&lt;ColorArgb64, ColorArgb64, ColorArgb64&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapArgb64Accessor.cs/#L70"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapArgb64Accessor.cs/#L123"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Draws a sprite bitmap onto this bitmap at the specified location using the
@@ -450,6 +471,15 @@ provided blending function.</p>
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.objectdisposedexception">ObjectDisposedException</a></dt>
+    <dd><p>Thrown after <a class="xref" href="Utils.Imaging.BitmapArgb64Accessor.html#Utils_Imaging_BitmapArgb64Accessor_Dispose">Dispose()</a> has been called.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">sprite</code> or <code class="paramref">blend</code> is null.</p>
+</dd>
+  </dl>
 
 
 
@@ -457,7 +487,7 @@ provided blending function.</p>
 
   <h3 id="Utils_Imaging_BitmapArgb64Accessor_Dispose" data-uid="Utils.Imaging.BitmapArgb64Accessor.Dispose">
   Dispose()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapArgb64Accessor.cs/#L94"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapArgb64Accessor.cs/#L156"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Releases resources associated with the accessor and unlocks the bitmap.</p>
@@ -484,7 +514,7 @@ provided blending function.</p>
 
   <h3 id="Utils_Imaging_BitmapArgb64Accessor_Dispose_System_Boolean_" data-uid="Utils.Imaging.BitmapArgb64Accessor.Dispose(System.Boolean)">
   Dispose(bool)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapArgb64Accessor.cs/#L109"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapArgb64Accessor.cs/#L171"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Performs the actual resource cleanup.</p>
@@ -517,7 +547,7 @@ provided blending function.</p>
 
   <h3 id="Utils_Imaging_BitmapArgb64Accessor_Finalize" data-uid="Utils.Imaging.BitmapArgb64Accessor.Finalize">
   ~BitmapArgb64Accessor()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapArgb64Accessor.cs/#L103"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapArgb64Accessor.cs/#L165"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Finalizes the accessor and ensures resources are released.</p>
@@ -544,7 +574,7 @@ provided blending function.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapArgb64Accessor.cs/#L11" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapArgb64Accessor.cs/#L15" class="edit-link">Edit this page</a>
         </div>
 
 

@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Imaging_BitmapIndexed8Accessor" data-uid="Utils.Imaging.BitmapIndexed8Accessor" class="text-break">
-Class BitmapIndexed8Accessor  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapIndexed8Accessor.cs/#L10"><i class="bi bi-code-slash"></i></a>
+Class BitmapIndexed8Accessor  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapIndexed8Accessor.cs/#L14"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -245,6 +245,9 @@ Class BitmapIndexed8Accessor  <a class="header-action link-secondary" title="Vie
 
 
 
+  <h2 id="Utils_Imaging_BitmapIndexed8Accessor_remarks">Remarks</h2>
+  <div class="markdown level0 remarks"><p>This class depends on <code>System.Drawing</code> (GDI+) and is supported on Windows only.</p>
+</div>
 
 
   <h2 class="section" id="constructors">Constructors
@@ -255,7 +258,7 @@ Class BitmapIndexed8Accessor  <a class="header-action link-secondary" title="Vie
 
   <h3 id="Utils_Imaging_BitmapIndexed8Accessor__ctor_System_Drawing_Bitmap_System_Nullable_System_Drawing_Rectangle__" data-uid="Utils.Imaging.BitmapIndexed8Accessor.#ctor(System.Drawing.Bitmap,System.Nullable{System.Drawing.Rectangle})">
   BitmapIndexed8Accessor(Bitmap, Rectangle?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapIndexed8Accessor.cs/#L33"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapIndexed8Accessor.cs/#L45"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Imaging.BitmapIndexed8Accessor.html">BitmapIndexed8Accessor</a> class and
@@ -285,6 +288,15 @@ locks the specified bitmap region.</p>
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">bitmap</code> is null.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when <code class="paramref">region</code> has non-positive dimensions or exceeds the bitmap bounds.</p>
+</dd>
+  </dl>
 
 
 
@@ -296,7 +308,7 @@ locks the specified bitmap region.</p>
 
   <h3 id="Utils_Imaging_BitmapIndexed8Accessor_Height" data-uid="Utils.Imaging.BitmapIndexed8Accessor.Height">
   Height
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapIndexed8Accessor.cs/#L25"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapIndexed8Accessor.cs/#L33"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the height of the accessed bitmap region.</p>
@@ -328,7 +340,7 @@ locks the specified bitmap region.</p>
 
   <h3 id="Utils_Imaging_BitmapIndexed8Accessor_Item_System_Int32_System_Int32_" data-uid="Utils.Imaging.BitmapIndexed8Accessor.Item(System.Int32,System.Int32)">
   this[int, int]
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapIndexed8Accessor.cs/#L49"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapIndexed8Accessor.cs/#L78"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the indexed value at the specified pixel coordinates.</p>
@@ -362,6 +374,15 @@ locks the specified bitmap region.</p>
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.objectdisposedexception">ObjectDisposedException</a></dt>
+    <dd><p>Thrown after <a class="xref" href="Utils.Imaging.BitmapIndexed8Accessor.html#Utils_Imaging_BitmapIndexed8Accessor_Dispose">Dispose()</a> has been called.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when any coordinate is out of bounds.</p>
+</dd>
+  </dl>
 
 
 
@@ -369,7 +390,7 @@ locks the specified bitmap region.</p>
 
   <h3 id="Utils_Imaging_BitmapIndexed8Accessor_Width" data-uid="Utils.Imaging.BitmapIndexed8Accessor.Width">
   Width
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapIndexed8Accessor.cs/#L20"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapIndexed8Accessor.cs/#L28"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the width of the accessed bitmap region.</p>
@@ -405,7 +426,7 @@ locks the specified bitmap region.</p>
 
   <h3 id="Utils_Imaging_BitmapIndexed8Accessor_Dispose" data-uid="Utils.Imaging.BitmapIndexed8Accessor.Dispose">
   Dispose()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapIndexed8Accessor.cs/#L58"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapIndexed8Accessor.cs/#L119"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Releases resources associated with the accessor and unlocks the bitmap.</p>
@@ -432,7 +453,7 @@ locks the specified bitmap region.</p>
 
   <h3 id="Utils_Imaging_BitmapIndexed8Accessor_Dispose_System_Boolean_" data-uid="Utils.Imaging.BitmapIndexed8Accessor.Dispose(System.Boolean)">
   Dispose(bool)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapIndexed8Accessor.cs/#L73"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapIndexed8Accessor.cs/#L134"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Performs the actual resource cleanup.</p>
@@ -465,7 +486,7 @@ locks the specified bitmap region.</p>
 
   <h3 id="Utils_Imaging_BitmapIndexed8Accessor_Finalize" data-uid="Utils.Imaging.BitmapIndexed8Accessor.Finalize">
   ~BitmapIndexed8Accessor()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapIndexed8Accessor.cs/#L67"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapIndexed8Accessor.cs/#L128"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Finalizes the accessor and ensures resources are released.</p>
@@ -492,7 +513,7 @@ locks the specified bitmap region.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapIndexed8Accessor.cs/#L10" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapIndexed8Accessor.cs/#L14" class="edit-link">Edit this page</a>
         </div>
 
 

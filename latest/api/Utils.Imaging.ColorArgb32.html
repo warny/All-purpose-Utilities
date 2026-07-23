@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Imaging_ColorArgb32" data-uid="Utils.Imaging.ColorArgb32" class="text-break">
-Struct ColorArgb32  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L11"><i class="bi bi-code-slash"></i></a>
+Struct ColorArgb32  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L20"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -224,6 +224,15 @@ Struct ColorArgb32  <a class="header-action link-secondary" title="View source" 
 
 
 
+  <h2 id="Utils_Imaging_ColorArgb32_remarks">Remarks</h2>
+  <div class="markdown level0 remarks"><p>
+The overlapping <a class="xref" href="Utils.Imaging.ColorArgb32.html#Utils_Imaging_ColorArgb32_Value">Value</a> field uses a <code>[StructLayout(LayoutKind.Explicit)]</code>
+layout that assumes <b>little-endian byte order</b>.  On a little-endian host the packed value
+is <code>(Alpha &lt;&lt; 24) | (Red &lt;&lt; 16) | (Green &lt;&lt; 8) | Blue</code>.  Since this library
+depends on <code>System.Drawing</code> (Windows/GDI+) it only runs on little-endian platforms,
+so the canonical packing and the overlapping layout are always consistent.
+</p>
+</div>
 
 
   <h2 class="section" id="constructors">Constructors
@@ -234,7 +243,7 @@ Struct ColorArgb32  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_Imaging_ColorArgb32__ctor_System_Byte_System_Byte_System_Byte_" data-uid="Utils.Imaging.ColorArgb32.#ctor(System.Byte,System.Byte,System.Byte)">
   ColorArgb32(byte, byte, byte)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L93"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L106"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes an opaque color from explicit RGB components.</p>
@@ -273,7 +282,7 @@ Struct ColorArgb32  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_Imaging_ColorArgb32__ctor_System_Byte_System_Byte_System_Byte_System_Byte_" data-uid="Utils.Imaging.ColorArgb32.#ctor(System.Byte,System.Byte,System.Byte,System.Byte)">
   ColorArgb32(byte, byte, byte, byte)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L102"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L115"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a color from explicit ARGB components.</p>
@@ -315,7 +324,7 @@ Struct ColorArgb32  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_Imaging_ColorArgb32__ctor_System_Byte___System_Int32_" data-uid="Utils.Imaging.ColorArgb32.#ctor(System.Byte[],System.Int32)">
   ColorArgb32(byte[], int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L115"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L128"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a color by reading components from an array.</p>
@@ -351,7 +360,7 @@ Struct ColorArgb32  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_Imaging_ColorArgb32__ctor_System_Drawing_Color_" data-uid="Utils.Imaging.ColorArgb32.#ctor(System.Drawing.Color)">
   ColorArgb32(Color)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L163"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L181"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a color from a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.color">Color</a> value.</p>
@@ -384,7 +393,7 @@ Struct ColorArgb32  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_Imaging_ColorArgb32__ctor_System_UInt32_" data-uid="Utils.Imaging.ColorArgb32.#ctor(System.UInt32)">
   ColorArgb32(uint)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L85"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L98"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a color from a packed 32-bit ARGB value.</p>
@@ -417,7 +426,7 @@ Struct ColorArgb32  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_Imaging_ColorArgb32__ctor_Utils_Imaging_ColorAhsv32_" data-uid="Utils.Imaging.ColorArgb32.#ctor(Utils.Imaging.ColorAhsv32)">
   ColorArgb32(ColorAhsv32)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L175"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L193"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a color from an HSV representation.</p>
@@ -450,7 +459,7 @@ Struct ColorArgb32  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_Imaging_ColorArgb32__ctor_Utils_Imaging_ColorArgb_" data-uid="Utils.Imaging.ColorArgb32.#ctor(Utils.Imaging.ColorArgb)">
   ColorArgb32(ColorArgb)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L139"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L152"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a color by converting from a floating-point representation.</p>
@@ -483,7 +492,7 @@ Struct ColorArgb32  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_Imaging_ColorArgb32__ctor_Utils_Imaging_ColorArgb64_" data-uid="Utils.Imaging.ColorArgb32.#ctor(Utils.Imaging.ColorArgb64)">
   ColorArgb32(ColorArgb64)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L151"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L169"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a color by converting from a 16-bit representation.</p>
@@ -516,10 +525,10 @@ Struct ColorArgb32  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_Imaging_ColorArgb32__ctor_Utils_Imaging_IColorArgb_System_Byte__" data-uid="Utils.Imaging.ColorArgb32.#ctor(Utils.Imaging.IColorArgb{System.Byte})">
   ColorArgb32(IColorArgb&lt;byte&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L127"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L140"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Initializes a color by converting from another 8-bit color representation.</p>
+  <div class="markdown level1 summary"><p>Initializes a color by copying byte components from another 8-bit color representation.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -553,7 +562,7 @@ Struct ColorArgb32  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_Imaging_ColorArgb32_Alpha" data-uid="Utils.Imaging.ColorArgb32.Alpha">
   Alpha
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L48"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L61"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the alpha channel.</p>
@@ -585,7 +594,7 @@ Struct ColorArgb32  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_Imaging_ColorArgb32_Blue" data-uid="Utils.Imaging.ColorArgb32.Blue">
   Blue
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L75"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L88"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the blue channel.</p>
@@ -617,7 +626,7 @@ Struct ColorArgb32  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_Imaging_ColorArgb32_Green" data-uid="Utils.Imaging.ColorArgb32.Green">
   Green
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L66"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L79"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the green channel.</p>
@@ -649,7 +658,7 @@ Struct ColorArgb32  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_Imaging_ColorArgb32_MaxValue" data-uid="Utils.Imaging.ColorArgb32.MaxValue">
   MaxValue
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L22"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L31"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Highest component value available for the 8-bit representation.</p>
@@ -681,7 +690,7 @@ Struct ColorArgb32  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_Imaging_ColorArgb32_MinValue" data-uid="Utils.Imaging.ColorArgb32.MinValue">
   MinValue
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L17"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L26"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Lowest component value available for the 8-bit representation.</p>
@@ -713,7 +722,7 @@ Struct ColorArgb32  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_Imaging_ColorArgb32_Red" data-uid="Utils.Imaging.ColorArgb32.Red">
   Red
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L57"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L70"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the red channel.</p>
@@ -745,10 +754,10 @@ Struct ColorArgb32  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_Imaging_ColorArgb32_Value" data-uid="Utils.Imaging.ColorArgb32.Value">
   Value
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L39"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L52"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets or sets the packed ARGB value.</p>
+  <div class="markdown level1 summary"><p>Gets or sets the packed ARGB value in host byte order.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -769,6 +778,10 @@ Struct ColorArgb32  <a class="header-action link-secondary" title="View source" 
 
 
 
+  <h4 class="section" id="Utils_Imaging_ColorArgb32_Value_remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>On a little-endian host the value equals
+<code>(Alpha &lt;&lt; 24) | (Red &lt;&lt; 16) | (Green &lt;&lt; 8) | Blue</code>.</p>
+</div>
 
 
 
@@ -781,7 +794,7 @@ Struct ColorArgb32  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_Imaging_ColorArgb32_Add_Utils_Imaging_IColorArgb_System_Byte__" data-uid="Utils.Imaging.ColorArgb32.Add(Utils.Imaging.IColorArgb{System.Byte})">
   Add(IColorArgb&lt;byte&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L265"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L293"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Adds two colors while clamping each component to the valid range.</p>
@@ -820,7 +833,7 @@ Struct ColorArgb32  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_Imaging_ColorArgb32_Equals_System_Object_" data-uid="Utils.Imaging.ColorArgb32.Equals(System.Object)">
   Equals(object?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L181"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L199"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Indicates whether this instance and a specified object are equal.</p>
@@ -859,7 +872,7 @@ Struct ColorArgb32  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_Imaging_ColorArgb32_Equals_Utils_Imaging_ColorArgb32_" data-uid="Utils.Imaging.ColorArgb32.Equals(Utils.Imaging.ColorArgb32)">
   Equals(ColorArgb32)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L184"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L202"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Indicates whether the current object is equal to another object of the same type.</p>
@@ -898,7 +911,7 @@ Struct ColorArgb32  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_Imaging_ColorArgb32_GetHashCode" data-uid="Utils.Imaging.ColorArgb32.GetHashCode">
   GetHashCode()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L187"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L205"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns the hash code for this instance.</p>
@@ -931,7 +944,7 @@ Struct ColorArgb32  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_Imaging_ColorArgb32_LinearGradient_Utils_Imaging_ColorArgb32_Utils_Imaging_ColorArgb32_System_Single_" data-uid="Utils.Imaging.ColorArgb32.LinearGradient(Utils.Imaging.ColorArgb32,Utils.Imaging.ColorArgb32,System.Single)">
   LinearGradient(ColorArgb32, ColorArgb32, float)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L298"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L330"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Computes a linear gradient between two colors.</p>
@@ -951,7 +964,7 @@ Struct ColorArgb32  <a class="header-action link-secondary" title="View source" 
     <dd><p>The ending color.</p>
 </dd>
     <dt><code>position</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
-    <dd><p>Interpolation factor between 0 and 1.</p>
+    <dd><p>Interpolation factor clamped to the [0, 1] range.</p>
 </dd>
   </dl>
 
@@ -968,6 +981,10 @@ Struct ColorArgb32  <a class="header-action link-secondary" title="View source" 
 
 
 
+  <h4 class="section" id="Utils_Imaging_ColorArgb32_LinearGradient_Utils_Imaging_ColorArgb32_Utils_Imaging_ColorArgb32_System_Single__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Each component is rounded to the nearest integer rather than truncated.
+Out-of-range factors are clamped to [0, 1] before interpolation.</p>
+</div>
 
 
 
@@ -976,10 +993,13 @@ Struct ColorArgb32  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_Imaging_ColorArgb32_Over_Utils_Imaging_IColorArgb_System_Byte__" data-uid="Utils.Imaging.ColorArgb32.Over(Utils.Imaging.IColorArgb{System.Byte})">
   Over(IColorArgb&lt;byte&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L250"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L271"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Applies the Porter-Duff over operator using the current color as the foreground.</p>
+  <div class="markdown level1 summary"><p>Applies the Porter-Duff over operator using the current color as the foreground.
+Straight-alpha formula: α_out = α_src + α_dst×(1−α_src);
+C_out = (C_src×α_src + C_dst×α_dst×(1−α_src)) / α_out.
+All intermediate arithmetic is performed in double precision to avoid overflow.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -1015,7 +1035,7 @@ Struct ColorArgb32  <a class="header-action link-secondary" title="View source" 
 
   <h3 id="Utils_Imaging_ColorArgb32_Subtract_Utils_Imaging_IColorArgb_System_Byte__" data-uid="Utils.Imaging.ColorArgb32.Subtract(Utils.Imaging.IColorArgb{System.Byte})">
   Subtract(IColorArgb&lt;byte&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L281"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L309"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Subtracts each channel of <code class="paramref">other</code> from the corresponding channel of this
@@ -1055,7 +1075,7 @@ color, clamping results to [0, 255].</p>
 
   <h3 id="Utils_Imaging_ColorArgb32_ToString" data-uid="Utils.Imaging.ColorArgb32.ToString">
   ToString()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L243"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L261"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns a textual representation of the ARGB components.</p>
@@ -1092,7 +1112,7 @@ color, clamping results to [0, 255].</p>
 
   <h3 id="Utils_Imaging_ColorArgb32_op_Equality_Utils_Imaging_ColorArgb32_Utils_Imaging_ColorArgb32_" data-uid="Utils.Imaging.ColorArgb32.op_Equality(Utils.Imaging.ColorArgb32,Utils.Imaging.ColorArgb32)">
   operator ==(ColorArgb32, ColorArgb32)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L192"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L210"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Equality operator.</p>
@@ -1131,7 +1151,7 @@ color, clamping results to [0, 255].</p>
 
   <h3 id="Utils_Imaging_ColorArgb32_op_Implicit_System_Drawing_Color__Utils_Imaging_ColorArgb32" data-uid="Utils.Imaging.ColorArgb32.op_Implicit(System.Drawing.Color)~Utils.Imaging.ColorArgb32">
   implicit operator ColorArgb32(Color)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L234"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L252"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.color">Color</a> value to the 8-bit representation.</p>
@@ -1170,7 +1190,7 @@ color, clamping results to [0, 255].</p>
 
   <h3 id="Utils_Imaging_ColorArgb32_op_Implicit_Utils_Imaging_ColorAhsv32__Utils_Imaging_ColorArgb32" data-uid="Utils.Imaging.ColorArgb32.op_Implicit(Utils.Imaging.ColorAhsv32)~Utils.Imaging.ColorArgb32">
   implicit operator ColorArgb32(ColorAhsv32)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L204"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L222"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts an HSV color to the 8-bit ARGB representation.</p>
@@ -1209,7 +1229,7 @@ color, clamping results to [0, 255].</p>
 
   <h3 id="Utils_Imaging_ColorArgb32_op_Implicit_Utils_Imaging_ColorArgb__Utils_Imaging_ColorArgb32" data-uid="Utils.Imaging.ColorArgb32.op_Implicit(Utils.Imaging.ColorArgb)~Utils.Imaging.ColorArgb32">
   implicit operator ColorArgb32(ColorArgb)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L214"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L232"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts a floating-point ARGB color to the 8-bit representation.</p>
@@ -1248,7 +1268,7 @@ color, clamping results to [0, 255].</p>
 
   <h3 id="Utils_Imaging_ColorArgb32_op_Implicit_Utils_Imaging_ColorArgb64__Utils_Imaging_ColorArgb32" data-uid="Utils.Imaging.ColorArgb32.op_Implicit(Utils.Imaging.ColorArgb64)~Utils.Imaging.ColorArgb32">
   implicit operator ColorArgb32(ColorArgb64)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L224"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L242"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Converts a 16-bit ARGB color to the 8-bit representation.</p>
@@ -1287,7 +1307,7 @@ color, clamping results to [0, 255].</p>
 
   <h3 id="Utils_Imaging_ColorArgb32_op_Inequality_Utils_Imaging_ColorArgb32_Utils_Imaging_ColorArgb32_" data-uid="Utils.Imaging.ColorArgb32.op_Inequality(Utils.Imaging.ColorArgb32,Utils.Imaging.ColorArgb32)">
   operator !=(ColorArgb32, ColorArgb32)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L197"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L215"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Inequality operator.</p>
@@ -1326,7 +1346,7 @@ color, clamping results to [0, 255].</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L11" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ColorArgb32.cs/#L20" class="edit-link">Edit this page</a>
         </div>
 
 

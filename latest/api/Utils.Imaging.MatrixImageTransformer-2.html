@@ -263,7 +263,7 @@ Class MatrixImageTransformer&lt;A, T&gt;  <a class="header-action link-secondary
 
   <h3 id="Utils_Imaging_MatrixImageTransformer_2__ctor_System_Double_0__0___System_Drawing_Point_System_Func__1__1__1__1__0__" data-uid="Utils.Imaging.MatrixImageTransformer`2.#ctor(System.Double[0:,0:],System.Drawing.Point,System.Func{`1,`1,`1,`1,`0})">
   MatrixImageTransformer(double[,], Point, Func&lt;T, T, T, T, A&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/MatrixImageTransformer.cs/#L29"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/MatrixImageTransformer.cs/#L41"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Imaging.MatrixImageTransformer-2.html">MatrixImageTransformer&lt;A, T&gt;</a> class.</p>
@@ -277,7 +277,8 @@ Class MatrixImageTransformer&lt;A, T&gt;  <a class="header-action link-secondary
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>weights</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a>[,]</dt>
-    <dd><p>Weight matrix.</p>
+    <dd><p>Weight matrix. The matrix is cloned internally; mutations to the array after
+construction have no effect. All entries must be finite (no NaN or infinity).</p>
 </dd>
     <dt><code>offset</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.point">Point</a></dt>
     <dd><p>Offset of the matrix relative to the processed pixel.</p>
@@ -295,6 +296,15 @@ Class MatrixImageTransformer&lt;A, T&gt;  <a class="header-action link-secondary
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">weights</code> or <code class="paramref">creator</code> is null.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when <code class="paramref">weights</code> is empty or contains non-finite values.</p>
+</dd>
+  </dl>
 
 
 
@@ -306,7 +316,7 @@ Class MatrixImageTransformer&lt;A, T&gt;  <a class="header-action link-secondary
 
   <h3 id="Utils_Imaging_MatrixImageTransformer_2_Transform_Utils_Imaging_IImageAccessor__0__1__" data-uid="Utils.Imaging.MatrixImageTransformer`2.Transform(Utils.Imaging.IImageAccessor{`0,`1})">
   Transform(IImageAccessor&lt;A, T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/MatrixImageTransformer.cs/#L37"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/MatrixImageTransformer.cs/#L64"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Transforms the specified image in place.</p>
@@ -339,7 +349,7 @@ Class MatrixImageTransformer&lt;A, T&gt;  <a class="header-action link-secondary
 
   <h3 id="Utils_Imaging_MatrixImageTransformer_2_Transform_Utils_Imaging_IImageAccessor__0__1__Utils_Imaging_IImageAccessor__0__1__" data-uid="Utils.Imaging.MatrixImageTransformer`2.Transform(Utils.Imaging.IImageAccessor{`0,`1},Utils.Imaging.IImageAccessor{`0,`1})">
   Transform(IImageAccessor&lt;A, T&gt;, IImageAccessor&lt;A, T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/MatrixImageTransformer.cs/#L43"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/MatrixImageTransformer.cs/#L75"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Transforms the specified image in place using a per-pixel mask.</p>
@@ -368,6 +378,18 @@ Class MatrixImageTransformer&lt;A, T&gt;  <a class="header-action link-secondary
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">accessor</code> is null.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when <code class="paramref">mask</code> is not null and its dimensions differ from <code class="paramref">accessor</code>.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.overflowexception">OverflowException</a></dt>
+    <dd><p>Thrown when the image is too large for the work buffer.</p>
+</dd>
+  </dl>
 
 
 

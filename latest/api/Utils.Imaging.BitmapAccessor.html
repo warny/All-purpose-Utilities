@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Imaging_BitmapAccessor" data-uid="Utils.Imaging.BitmapAccessor" class="text-break">
-Class BitmapAccessor  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapAccessor.cs/#L12"><i class="bi bi-code-slash"></i></a>
+Class BitmapAccessor  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapAccessor.cs/#L16"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -244,6 +244,9 @@ Class BitmapAccessor  <a class="header-action link-secondary" title="View source
 
 
 
+  <h2 id="Utils_Imaging_BitmapAccessor_remarks">Remarks</h2>
+  <div class="markdown level0 remarks"><p>This class depends on <code>System.Drawing</code> (GDI+) and is supported on Windows only.</p>
+</div>
 
 
   <h2 class="section" id="constructors">Constructors
@@ -254,7 +257,7 @@ Class BitmapAccessor  <a class="header-action link-secondary" title="View source
 
   <h3 id="Utils_Imaging_BitmapAccessor__ctor_System_Drawing_Bitmap_System_Drawing_Imaging_PixelFormat_System_Nullable_System_Drawing_Rectangle__" data-uid="Utils.Imaging.BitmapAccessor.#ctor(System.Drawing.Bitmap,System.Drawing.Imaging.PixelFormat,System.Nullable{System.Drawing.Rectangle})">
   BitmapAccessor(Bitmap, PixelFormat, Rectangle?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapAccessor.cs/#L61"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapAccessor.cs/#L89"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Imaging.BitmapAccessor.html">BitmapAccessor</a> class.</p>
@@ -286,6 +289,18 @@ Class BitmapAccessor  <a class="header-action link-secondary" title="View source
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">bitmap</code> is null.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when <code class="paramref">region</code> has non-positive dimensions or exceeds the bitmap bounds.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a></dt>
+    <dd><p>Thrown when the resolved pixel format is not supported.</p>
+</dd>
+  </dl>
 
 
 
@@ -297,7 +312,7 @@ Class BitmapAccessor  <a class="header-action link-secondary" title="View source
 
   <h3 id="Utils_Imaging_BitmapAccessor_ColorDepth" data-uid="Utils.Imaging.BitmapAccessor.ColorDepth">
   ColorDepth
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapAccessor.cs/#L33"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapAccessor.cs/#L43"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the number of bytes per pixel.</p>
@@ -329,7 +344,7 @@ Class BitmapAccessor  <a class="header-action link-secondary" title="View source
 
   <h3 id="Utils_Imaging_BitmapAccessor_Height" data-uid="Utils.Imaging.BitmapAccessor.Height">
   Height
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapAccessor.cs/#L28"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapAccessor.cs/#L36"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the bitmap height in pixels.</p>
@@ -361,7 +376,7 @@ Class BitmapAccessor  <a class="header-action link-secondary" title="View source
 
   <h3 id="Utils_Imaging_BitmapAccessor_Item_System_Int32_System_Int32_System_Int32_" data-uid="Utils.Imaging.BitmapAccessor.Item(System.Int32,System.Int32,System.Int32)">
   this[int, int, int]
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapAccessor.cs/#L80"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapAccessor.cs/#L131"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the raw value at the specified pixel and color component.</p>
@@ -399,6 +414,47 @@ Class BitmapAccessor  <a class="header-action link-secondary" title="View source
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.objectdisposedexception">ObjectDisposedException</a></dt>
+    <dd><p>Thrown after <a class="xref" href="Utils.Imaging.BitmapAccessor.html#Utils_Imaging_BitmapAccessor_Dispose">Dispose()</a> has been called.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when any coordinate is out of bounds.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Imaging_BitmapAccessor_PixelFormat_" data-uid="Utils.Imaging.BitmapAccessor.PixelFormat*"></a>
+
+  <h3 id="Utils_Imaging_BitmapAccessor_PixelFormat" data-uid="Utils.Imaging.BitmapAccessor.PixelFormat">
+  PixelFormat
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapAccessor.cs/#L48"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the pixel format used when locking the bitmap.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public PixelFormat PixelFormat { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.drawing.imaging.pixelformat">PixelFormat</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
 
 
 
@@ -406,7 +462,7 @@ Class BitmapAccessor  <a class="header-action link-secondary" title="View source
 
   <h3 id="Utils_Imaging_BitmapAccessor_Width" data-uid="Utils.Imaging.BitmapAccessor.Width">
   Width
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapAccessor.cs/#L23"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapAccessor.cs/#L31"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the bitmap width in pixels.</p>
@@ -442,7 +498,7 @@ Class BitmapAccessor  <a class="header-action link-secondary" title="View source
 
   <h3 id="Utils_Imaging_BitmapAccessor_ApplySprite_System_Drawing_Point_Utils_Imaging_BitmapAccessor_System_Func_Utils_Imaging_ColorArgb32_Utils_Imaging_ColorArgb32_Utils_Imaging_ColorArgb32__" data-uid="Utils.Imaging.BitmapAccessor.ApplySprite(System.Drawing.Point,Utils.Imaging.BitmapAccessor,System.Func{Utils.Imaging.ColorArgb32,Utils.Imaging.ColorArgb32,Utils.Imaging.ColorArgb32})">
   ApplySprite(Point, BitmapAccessor, Func&lt;ColorArgb32, ColorArgb32, ColorArgb32&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapAccessor.cs/#L93"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapAccessor.cs/#L156"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Draws a sprite bitmap onto this bitmap at the specified location using the
@@ -475,6 +531,15 @@ provided blending function.</p>
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.objectdisposedexception">ObjectDisposedException</a></dt>
+    <dd><p>Thrown after <a class="xref" href="Utils.Imaging.BitmapAccessor.html#Utils_Imaging_BitmapAccessor_Dispose">Dispose()</a> has been called.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">sprite</code> or <code class="paramref">blend</code> is null.</p>
+</dd>
+  </dl>
 
 
 
@@ -482,7 +547,7 @@ provided blending function.</p>
 
   <h3 id="Utils_Imaging_BitmapAccessor_Dispose" data-uid="Utils.Imaging.BitmapAccessor.Dispose">
   Dispose()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapAccessor.cs/#L145"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapAccessor.cs/#L243"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Releases resources associated with the bitmap.</p>
@@ -509,7 +574,7 @@ provided blending function.</p>
 
   <h3 id="Utils_Imaging_BitmapAccessor_Dispose_System_Boolean_" data-uid="Utils.Imaging.BitmapAccessor.Dispose(System.Boolean)">
   Dispose(bool)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapAccessor.cs/#L160"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapAccessor.cs/#L258"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Unlocks the bitmap and frees unmanaged resources.</p>
@@ -542,7 +607,7 @@ provided blending function.</p>
 
   <h3 id="Utils_Imaging_BitmapAccessor_Finalize" data-uid="Utils.Imaging.BitmapAccessor.Finalize">
   ~BitmapAccessor()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapAccessor.cs/#L154"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapAccessor.cs/#L252"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Finalizer.</p>
@@ -569,7 +634,7 @@ provided blending function.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapAccessor.cs/#L12" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/BitmapAccessor.cs/#L16" class="edit-link">Edit this page</a>
         </div>
 
 

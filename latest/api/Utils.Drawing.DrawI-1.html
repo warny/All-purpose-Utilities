@@ -263,7 +263,7 @@ level helpers, such as <a class="xref" href="Utils.Drawing.DrawF-1.html">DrawF&l
 
   <h3 id="Utils_Drawing_DrawI_1__ctor_Utils_Imaging_IImageAccessor__0__" data-uid="Utils.Drawing.DrawI`1.#ctor(Utils.Imaging.IImageAccessor{`0})">
   DrawI(IImageAccessor&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L30"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L62"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Drawing.DrawI-1.html">DrawI&lt;T&gt;</a> class.</p>
@@ -296,6 +296,62 @@ several drawing operations without recreating the wrapper.</p>
 
 
 
+  <h2 class="section" id="properties">Properties
+</h2>
+
+
+  <a id="Utils_Drawing_DrawI_1_IntersectionMergeThreshold_" data-uid="Utils.Drawing.DrawI`1.IntersectionMergeThreshold*"></a>
+
+  <h3 id="Utils_Drawing_DrawI_1_IntersectionMergeThreshold" data-uid="Utils.Drawing.DrawI`1.IntersectionMergeThreshold">
+  IntersectionMergeThreshold
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L42"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the maximum distance (in pixels) below which two adjacent scan-line
+intersections are merged during fill rasterization.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public float IntersectionMergeThreshold { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+  <h4 class="section" id="Utils_Drawing_DrawI_1_IntersectionMergeThreshold_remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>
+When the fill algorithm encounters two consecutive intersections whose X positions differ
+by less than this value it collapses them: if their winding contributions cancel (a spike
+or aller-retour segment) both entries are discarded; otherwise they are collapsed into a
+single entry so that the winding count stays correct.
+</p>
+<p>
+The default value of <code>0.5</code> works well for pixel-scale geometry.  For sub-pixel or
+very-small-feature geometry, reduce this value toward <code>0</code>; set it to <code>0</code> to
+disable merging entirely (shared vertices must then be handled by the geometry source).
+</p>
+</div>
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when set to a negative, NaN or infinite value.</p>
+</dd>
+  </dl>
+
+
+
   <h2 class="section" id="methods">Methods
 </h2>
 
@@ -304,7 +360,7 @@ several drawing operations without recreating the wrapper.</p>
 
   <h3 id="Utils_Drawing_DrawI_1_DrawBezier_Utils_Drawing_MapBrush__0__System_Drawing_Point___" data-uid="Utils.Drawing.DrawI`1.DrawBezier(Utils.Drawing.MapBrush{`0},System.Drawing.Point[])">
   DrawBezier(MapBrush&lt;T&gt;, params Point[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L356"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L408"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Draws a Bézier curve using a brush.</p>
@@ -340,7 +396,7 @@ several drawing operations without recreating the wrapper.</p>
 
   <h3 id="Utils_Drawing_DrawI_1_DrawBezier__0_System_Drawing_Point___" data-uid="Utils.Drawing.DrawI`1.DrawBezier(`0,System.Drawing.Point[])">
   DrawBezier(T, params Point[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L338"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L390"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Draws a Bézier curve using integer coordinates.</p>
@@ -376,7 +432,7 @@ several drawing operations without recreating the wrapper.</p>
 
   <h3 id="Utils_Drawing_DrawI_1_DrawCircle_System_Drawing_Point_System_Int32_Utils_Drawing_IBrush__0__System_Double_System_Double_" data-uid="Utils.Drawing.DrawI`1.DrawCircle(System.Drawing.Point,System.Int32,Utils.Drawing.IBrush{`0},System.Double,System.Double)">
   DrawCircle(Point, int, IBrush&lt;T&gt;, double, double)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L514"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L566"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Draws a circle outline with a brush.</p>
@@ -421,7 +477,7 @@ several drawing operations without recreating the wrapper.</p>
 
   <h3 id="Utils_Drawing_DrawI_1_DrawCircle_System_Drawing_Point_System_Int32__0_System_Double_System_Double_" data-uid="Utils.Drawing.DrawI`1.DrawCircle(System.Drawing.Point,System.Int32,`0,System.Double,System.Double)">
   DrawCircle(Point, int, T, double, double)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L503"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L555"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Draws a circle outline with a solid color.</p>
@@ -466,7 +522,7 @@ several drawing operations without recreating the wrapper.</p>
 
   <h3 id="Utils_Drawing_DrawI_1_DrawEllipse_System_Drawing_Point_System_Int32_System_Int32_Utils_Drawing_IBrush__0__System_Double_System_Double_System_Double_" data-uid="Utils.Drawing.DrawI`1.DrawEllipse(System.Drawing.Point,System.Int32,System.Int32,Utils.Drawing.IBrush{`0},System.Double,System.Double,System.Double)">
   DrawEllipse(Point, int, int, IBrush&lt;T&gt;, double, double, double)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L543"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L595"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Draws an ellipse outline with a brush.</p>
@@ -517,7 +573,7 @@ several drawing operations without recreating the wrapper.</p>
 
   <h3 id="Utils_Drawing_DrawI_1_DrawEllipse_System_Drawing_Point_System_Int32_System_Int32__0_System_Double_System_Double_System_Double_" data-uid="Utils.Drawing.DrawI`1.DrawEllipse(System.Drawing.Point,System.Int32,System.Int32,`0,System.Double,System.Double,System.Double)">
   DrawEllipse(Point, int, int, T, double, double, double)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L527"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L579"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Draws an ellipse outline with a solid color.</p>
@@ -568,7 +624,7 @@ several drawing operations without recreating the wrapper.</p>
 
   <h3 id="Utils_Drawing_DrawI_1_DrawLine_System_Drawing_Point_System_Drawing_Point_Utils_Drawing_IBrush__0__" data-uid="Utils.Drawing.DrawI`1.DrawLine(System.Drawing.Point,System.Drawing.Point,Utils.Drawing.IBrush{`0})">
   DrawLine(Point, Point, IBrush&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L316"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L368"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Draws a line between two pixels using a brush.</p>
@@ -607,7 +663,7 @@ several drawing operations without recreating the wrapper.</p>
 
   <h3 id="Utils_Drawing_DrawI_1_DrawLine_System_Drawing_Point_System_Drawing_Point__0_" data-uid="Utils.Drawing.DrawI`1.DrawLine(System.Drawing.Point,System.Drawing.Point,`0)">
   DrawLine(Point, Point, T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L298"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L350"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Draws a line between two pixels using a solid color.</p>
@@ -646,7 +702,7 @@ several drawing operations without recreating the wrapper.</p>
 
   <h3 id="Utils_Drawing_DrawI_1_DrawLine_System_Int32_System_Int32_System_Int32_System_Int32_Utils_Drawing_IBrush__0__" data-uid="Utils.Drawing.DrawI`1.DrawLine(System.Int32,System.Int32,System.Int32,System.Int32,Utils.Drawing.IBrush{`0})">
   DrawLine(int, int, int, int, IBrush&lt;T&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L326"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L378"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Draws a line between two pixels using a brush.</p>
@@ -691,7 +747,7 @@ several drawing operations without recreating the wrapper.</p>
 
   <h3 id="Utils_Drawing_DrawI_1_DrawLine_System_Int32_System_Int32_System_Int32_System_Int32__0_" data-uid="Utils.Drawing.DrawI`1.DrawLine(System.Int32,System.Int32,System.Int32,System.Int32,`0)">
   DrawLine(int, int, int, int, T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L308"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L360"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Draws a line between two pixels using a solid color.</p>
@@ -736,7 +792,7 @@ several drawing operations without recreating the wrapper.</p>
 
   <h3 id="Utils_Drawing_DrawI_1_DrawPoint_System_Drawing_Point__0_" data-uid="Utils.Drawing.DrawI`1.DrawPoint(System.Drawing.Point,`0)">
   DrawPoint(Point, T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L38"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L70"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Draws a single pixel.</p>
@@ -772,7 +828,7 @@ several drawing operations without recreating the wrapper.</p>
 
   <h3 id="Utils_Drawing_DrawI_1_DrawPoint_System_Int32_System_Int32__0_" data-uid="Utils.Drawing.DrawI`1.DrawPoint(System.Int32,System.Int32,`0)">
   DrawPoint(int, int, T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L46"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L78"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Draws a single pixel.</p>
@@ -811,7 +867,7 @@ several drawing operations without recreating the wrapper.</p>
 
   <h3 id="Utils_Drawing_DrawI_1_DrawPolygon_Utils_Drawing_IBrush__0__System_Collections_Generic_IEnumerable_System_Drawing_Point__" data-uid="Utils.Drawing.DrawI`1.DrawPolygon(Utils.Drawing.IBrush{`0},System.Collections.Generic.IEnumerable{System.Drawing.Point})">
   DrawPolygon(IBrush&lt;T&gt;, IEnumerable&lt;Point&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L430"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L482"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Draws a polygon filled with a brush.</p>
@@ -847,7 +903,7 @@ several drawing operations without recreating the wrapper.</p>
 
   <h3 id="Utils_Drawing_DrawI_1_DrawPolygon_Utils_Drawing_IBrush__0__System_Drawing_Point___" data-uid="Utils.Drawing.DrawI`1.DrawPolygon(Utils.Drawing.IBrush{`0},System.Drawing.Point[])">
   DrawPolygon(IBrush&lt;T&gt;, params Point[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L437"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L489"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Draws a polygon filled with a brush.</p>
@@ -883,7 +939,7 @@ several drawing operations without recreating the wrapper.</p>
 
   <h3 id="Utils_Drawing_DrawI_1_DrawPolygon__0_System_Collections_Generic_IEnumerable_System_Drawing_Point__" data-uid="Utils.Drawing.DrawI`1.DrawPolygon(`0,System.Collections.Generic.IEnumerable{System.Drawing.Point})">
   DrawPolygon(T, IEnumerable&lt;Point&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L412"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L464"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Draws a polygon filled with a solid color.</p>
@@ -919,7 +975,7 @@ several drawing operations without recreating the wrapper.</p>
 
   <h3 id="Utils_Drawing_DrawI_1_DrawPolygon__0_System_Drawing_Point___" data-uid="Utils.Drawing.DrawI`1.DrawPolygon(`0,System.Drawing.Point[])">
   DrawPolygon(T, params Point[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L419"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L471"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Draws a polygon filled with a solid color.</p>
@@ -955,7 +1011,7 @@ several drawing operations without recreating the wrapper.</p>
 
   <h3 id="Utils_Drawing_DrawI_1_DrawShape_Utils_Drawing_IBrush__0__System_Collections_Generic_IEnumerable_Utils_Drawing_IDrawable__" data-uid="Utils.Drawing.DrawI`1.DrawShape(Utils.Drawing.IBrush{`0},System.Collections.Generic.IEnumerable{Utils.Drawing.IDrawable})">
   DrawShape(IBrush&lt;T&gt;, IEnumerable&lt;IDrawable&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L104"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L146"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Draws the outline of shapes using a brush.
@@ -992,7 +1048,7 @@ The brush position is normalised independently per shape over [0, 1].</p>
 
   <h3 id="Utils_Drawing_DrawI_1_DrawShape_Utils_Drawing_IBrush__0__Utils_Drawing_IDrawable___" data-uid="Utils.Drawing.DrawI`1.DrawShape(Utils.Drawing.IBrush{`0},Utils.Drawing.IDrawable[])">
   DrawShape(IBrush&lt;T&gt;, params IDrawable[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L95"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L137"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Draws the outline of one or more shapes using a brush.
@@ -1029,7 +1085,7 @@ The brush position is normalised independently per shape over [0, 1].</p>
 
   <h3 id="Utils_Drawing_DrawI_1_DrawShape__0_System_Collections_Generic_IEnumerable_Utils_Drawing_IDrawable__" data-uid="Utils.Drawing.DrawI`1.DrawShape(`0,System.Collections.Generic.IEnumerable{Utils.Drawing.IDrawable})">
   DrawShape(T, IEnumerable&lt;IDrawable&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L86"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L128"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Draws the outline of shapes using a solid color.</p>
@@ -1065,7 +1121,7 @@ The brush position is normalised independently per shape over [0, 1].</p>
 
   <h3 id="Utils_Drawing_DrawI_1_DrawShape__0_Utils_Drawing_IDrawable___" data-uid="Utils.Drawing.DrawI`1.DrawShape(`0,Utils.Drawing.IDrawable[])">
   DrawShape(T, params IDrawable[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L78"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L120"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Draws the outline of one or more shapes using a solid color.</p>
@@ -1101,7 +1157,7 @@ The brush position is normalised independently per shape over [0, 1].</p>
 
   <h3 id="Utils_Drawing_DrawI_1_DrawShapeThick_System_Func_System_Single_System_Single__0__System_Single_Utils_Drawing_JoinStyle_System_Collections_Generic_IEnumerable_Utils_Drawing_IDrawable__" data-uid="Utils.Drawing.DrawI`1.DrawShapeThick(System.Func{System.Single,System.Single,`0},System.Single,Utils.Drawing.JoinStyle,System.Collections.Generic.IEnumerable{Utils.Drawing.IDrawable})">
   DrawShapeThick(Func&lt;float, float, T&gt;, float, JoinStyle, IEnumerable&lt;IDrawable&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L591"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L643"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Draws one or more shapes with a given stroke width and join style, using a
@@ -1148,7 +1204,7 @@ perpendicular distance from the centre line.</p>
 
   <h3 id="Utils_Drawing_DrawI_1_DrawShapeThick_System_Func_System_Single_System_Single__0__System_Single_Utils_Drawing_JoinStyle_System_Single_System_Collections_Generic_IEnumerable_Utils_Drawing_IDrawable__" data-uid="Utils.Drawing.DrawI`1.DrawShapeThick(System.Func{System.Single,System.Single,`0},System.Single,Utils.Drawing.JoinStyle,System.Single,System.Collections.Generic.IEnumerable{Utils.Drawing.IDrawable})">
   DrawShapeThick(Func&lt;float, float, T&gt;, float, JoinStyle, float, IEnumerable&lt;IDrawable&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L595"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L647"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Draws shapes with a given stroke width, join style and explicit miter limit.</p>
@@ -1195,7 +1251,7 @@ Ignored for other join styles.</p>
 
   <h3 id="Utils_Drawing_DrawI_1_DrawShapeThick_System_Func_System_Single_System_Single__0__System_Single_Utils_Drawing_JoinStyle_System_Single_Utils_Drawing_IDrawable___" data-uid="Utils.Drawing.DrawI`1.DrawShapeThick(System.Func{System.Single,System.Single,`0},System.Single,Utils.Drawing.JoinStyle,System.Single,Utils.Drawing.IDrawable[])">
   DrawShapeThick(Func&lt;float, float, T&gt;, float, JoinStyle, float, params IDrawable[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L587"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L639"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Draws shapes with a given stroke width, join style and explicit miter limit.</p>
@@ -1242,7 +1298,7 @@ Ignored for other join styles.</p>
 
   <h3 id="Utils_Drawing_DrawI_1_DrawShapeThick_System_Func_System_Single_System_Single__0__System_Single_Utils_Drawing_JoinStyle_Utils_Drawing_IDrawable___" data-uid="Utils.Drawing.DrawI`1.DrawShapeThick(System.Func{System.Single,System.Single,`0},System.Single,Utils.Drawing.JoinStyle,Utils.Drawing.IDrawable[])">
   DrawShapeThick(Func&lt;float, float, T&gt;, float, JoinStyle, params IDrawable[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L572"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L624"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Draws one or more shapes with a given stroke width and join style, using a
@@ -1289,7 +1345,7 @@ perpendicular distance from the centre line.</p>
 
   <h3 id="Utils_Drawing_DrawI_1_DrawShapeThick__0_System_Single_Utils_Drawing_JoinStyle_System_Collections_Generic_IEnumerable_Utils_Drawing_IDrawable__" data-uid="Utils.Drawing.DrawI`1.DrawShapeThick(`0,System.Single,Utils.Drawing.JoinStyle,System.Collections.Generic.IEnumerable{Utils.Drawing.IDrawable})">
   DrawShapeThick(T, float, JoinStyle, IEnumerable&lt;IDrawable&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L624"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L676"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Draws shapes with a uniform solid colour and the given stroke width.</p>
@@ -1331,7 +1387,7 @@ perpendicular distance from the centre line.</p>
 
   <h3 id="Utils_Drawing_DrawI_1_DrawShapeThick__0_System_Single_Utils_Drawing_JoinStyle_System_Single_System_Collections_Generic_IEnumerable_Utils_Drawing_IDrawable__" data-uid="Utils.Drawing.DrawI`1.DrawShapeThick(`0,System.Single,Utils.Drawing.JoinStyle,System.Single,System.Collections.Generic.IEnumerable{Utils.Drawing.IDrawable})">
   DrawShapeThick(T, float, JoinStyle, float, IEnumerable&lt;IDrawable&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L628"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L680"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Draws shapes with a uniform solid colour, given stroke width and explicit miter limit.</p>
@@ -1376,7 +1432,7 @@ perpendicular distance from the centre line.</p>
 
   <h3 id="Utils_Drawing_DrawI_1_DrawShapeThick__0_System_Single_Utils_Drawing_JoinStyle_System_Single_Utils_Drawing_IDrawable___" data-uid="Utils.Drawing.DrawI`1.DrawShapeThick(`0,System.Single,Utils.Drawing.JoinStyle,System.Single,Utils.Drawing.IDrawable[])">
   DrawShapeThick(T, float, JoinStyle, float, params IDrawable[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L620"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L672"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Draws shapes with a uniform solid colour, given stroke width and explicit miter limit.</p>
@@ -1421,7 +1477,7 @@ perpendicular distance from the centre line.</p>
 
   <h3 id="Utils_Drawing_DrawI_1_DrawShapeThick__0_System_Single_Utils_Drawing_JoinStyle_Utils_Drawing_IDrawable___" data-uid="Utils.Drawing.DrawI`1.DrawShapeThick(`0,System.Single,Utils.Drawing.JoinStyle,Utils.Drawing.IDrawable[])">
   DrawShapeThick(T, float, JoinStyle, params IDrawable[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L609"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L661"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Draws shapes with a uniform solid colour and the given stroke width.</p>
@@ -1463,7 +1519,7 @@ perpendicular distance from the centre line.</p>
 
   <h3 id="Utils_Drawing_DrawI_1_FillBezier_Utils_Drawing_UVMap__0__System_Drawing_Point___" data-uid="Utils.Drawing.DrawI`1.FillBezier(Utils.Drawing.UVMap{`0},System.Drawing.Point[])">
   FillBezier(UVMap&lt;T&gt;, params Point[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L392"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L444"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Fills the area enclosed by a Bézier curve using a UV mapping.</p>
@@ -1499,7 +1555,7 @@ perpendicular distance from the centre line.</p>
 
   <h3 id="Utils_Drawing_DrawI_1_FillBezier__0_System_Drawing_Point___" data-uid="Utils.Drawing.DrawI`1.FillBezier(`0,System.Drawing.Point[])">
   FillBezier(T, params Point[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L374"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L426"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Fills the area enclosed by a Bézier curve with a solid color.</p>
@@ -1535,7 +1591,7 @@ perpendicular distance from the centre line.</p>
 
   <h3 id="Utils_Drawing_DrawI_1_FillCircle_System_Drawing_Point_System_Int32_Utils_Drawing_UVMap__0__System_Double_System_Double_" data-uid="Utils.Drawing.DrawI`1.FillCircle(System.Drawing.Point,System.Int32,Utils.Drawing.UVMap{`0},System.Double,System.Double)">
   FillCircle(Point, int, UVMap&lt;T&gt;, double, double)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L489"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L541"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Fills a circular arc using a UV color mapping.</p>
@@ -1580,7 +1636,7 @@ perpendicular distance from the centre line.</p>
 
   <h3 id="Utils_Drawing_DrawI_1_FillCircle_System_Drawing_Point_System_Int32__0_System_Double_System_Double_" data-uid="Utils.Drawing.DrawI`1.FillCircle(System.Drawing.Point,System.Int32,`0,System.Double,System.Double)">
   FillCircle(Point, int, T, double, double)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L475"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L527"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Fills a circular arc with a solid color.</p>
@@ -1625,7 +1681,7 @@ perpendicular distance from the centre line.</p>
 
   <h3 id="Utils_Drawing_DrawI_1_FillPolygon1__0_System_Drawing_Point___" data-uid="Utils.Drawing.DrawI`1.FillPolygon1(`0,System.Drawing.Point[])">
   FillPolygon1(T, params Point[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L448"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L500"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Fills a polygon using the even-odd rule and a solid color.</p>
@@ -1661,7 +1717,7 @@ perpendicular distance from the centre line.</p>
 
   <h3 id="Utils_Drawing_DrawI_1_FillPolygon2__0_System_Drawing_Point___" data-uid="Utils.Drawing.DrawI`1.FillPolygon2(`0,System.Drawing.Point[])">
   FillPolygon2(T, params Point[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L459"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L511"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Fills a polygon using the non-zero winding rule and a solid color.</p>
@@ -1697,7 +1753,7 @@ perpendicular distance from the centre line.</p>
 
   <h3 id="Utils_Drawing_DrawI_1_FillRectangle_System_Drawing_Point_System_Drawing_Point__0_" data-uid="Utils.Drawing.DrawI`1.FillRectangle(System.Drawing.Point,System.Drawing.Point,`0)">
   FillRectangle(Point, Point, T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L905"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L957"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Fills a rectangle with a solid color.</p>
@@ -1736,7 +1792,7 @@ perpendicular distance from the centre line.</p>
 
   <h3 id="Utils_Drawing_DrawI_1_FillRectangle_System_Drawing_Rectangle__0_" data-uid="Utils.Drawing.DrawI`1.FillRectangle(System.Drawing.Rectangle,`0)">
   FillRectangle(Rectangle, T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L896"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L948"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Fills a rectangle with a solid color.</p>
@@ -1772,7 +1828,7 @@ perpendicular distance from the centre line.</p>
 
   <h3 id="Utils_Drawing_DrawI_1_FillRectangle_System_Int32_System_Int32_System_Int32_System_Int32__0_" data-uid="Utils.Drawing.DrawI`1.FillRectangle(System.Int32,System.Int32,System.Int32,System.Int32,`0)">
   FillRectangle(int, int, int, int, T)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L916"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L968"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Fills a rectangle with a solid color.</p>
@@ -1817,7 +1873,7 @@ perpendicular distance from the centre line.</p>
 
   <h3 id="Utils_Drawing_DrawI_1_FillShape1_Utils_Drawing_UVMap__0__System_Collections_Generic_IEnumerable_Utils_Drawing_IDrawable__" data-uid="Utils.Drawing.DrawI`1.FillShape1(Utils.Drawing.UVMap{`0},System.Collections.Generic.IEnumerable{Utils.Drawing.IDrawable})">
   FillShape1(UVMap&lt;T&gt;, IEnumerable&lt;IDrawable&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L130"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L172"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Fills shapes using the non-zero winding rule with a UV color mapping.</p>
@@ -1854,7 +1910,7 @@ all shapes) and returns the color for each pixel.</p>
 
   <h3 id="Utils_Drawing_DrawI_1_FillShape1_Utils_Drawing_UVMap__0__Utils_Drawing_IDrawable___" data-uid="Utils.Drawing.DrawI`1.FillShape1(Utils.Drawing.UVMap{`0},Utils.Drawing.IDrawable[])">
   FillShape1(UVMap&lt;T&gt;, params IDrawable[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L119"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L161"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Fills shapes using the non-zero winding rule with a UV color mapping.</p>
@@ -1892,7 +1948,7 @@ all shapes) and returns the color for each pixel.  Pass a constant lambda such a
 
   <h3 id="Utils_Drawing_DrawI_1_FillShape2_Utils_Drawing_UVMap__0__System_Collections_Generic_IEnumerable_Utils_Drawing_IDrawable__" data-uid="Utils.Drawing.DrawI`1.FillShape2(Utils.Drawing.UVMap{`0},System.Collections.Generic.IEnumerable{Utils.Drawing.IDrawable})">
   FillShape2(UVMap&lt;T&gt;, IEnumerable&lt;IDrawable&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L153"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L195"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Fills shapes using the even-odd winding rule with a UV color mapping.</p>
@@ -1929,7 +1985,7 @@ all shapes) and returns the color for each pixel.</p>
 
   <h3 id="Utils_Drawing_DrawI_1_FillShape2_Utils_Drawing_UVMap__0__Utils_Drawing_IDrawable___" data-uid="Utils.Drawing.DrawI`1.FillShape2(Utils.Drawing.UVMap{`0},Utils.Drawing.IDrawable[])">
   FillShape2(UVMap&lt;T&gt;, params IDrawable[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L142"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Drawing/DrawI.cs/#L184"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Fills shapes using the even-odd winding rule with a UV color mapping.</p>

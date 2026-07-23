@@ -157,7 +157,7 @@ Class ConvolutionMatrixFactory  <a class="header-action link-secondary" title="V
 
   <h3 id="Utils_Imaging_ConvolutionMatrixFactory_Blur_System_Int32_" data-uid="Utils.Imaging.ConvolutionMatrixFactory.Blur(System.Int32)">
   Blur(int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ConvolutionMatrixFactory.cs/#L15"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ConvolutionMatrixFactory.cs/#L21"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Creates a simple averaging blur kernel of the specified size.</p>
@@ -171,7 +171,7 @@ Class ConvolutionMatrixFactory  <a class="header-action link-secondary" title="V
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>size</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
-    <dd><p>Side size of the square kernel.</p>
+    <dd><p>Side size of the square kernel (must be in [1, 1024]).</p>
 </dd>
   </dl>
 
@@ -189,6 +189,12 @@ Class ConvolutionMatrixFactory  <a class="header-action link-secondary" title="V
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>Thrown when <code class="paramref">size</code> is less than 1 or greater than <span class="xref">Utils.Imaging.ConvolutionMatrixFactory.MaxKernelSize</span>.</p>
+</dd>
+  </dl>
 
 
 
@@ -196,7 +202,7 @@ Class ConvolutionMatrixFactory  <a class="header-action link-secondary" title="V
 
   <h3 id="Utils_Imaging_ConvolutionMatrixFactory_EdgeDetection" data-uid="Utils.Imaging.ConvolutionMatrixFactory.EdgeDetection">
   EdgeDetection()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ConvolutionMatrixFactory.cs/#L45"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ConvolutionMatrixFactory.cs/#L53"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns a simple edge detection kernel.</p>
@@ -228,7 +234,7 @@ Class ConvolutionMatrixFactory  <a class="header-action link-secondary" title="V
 
   <h3 id="Utils_Imaging_ConvolutionMatrixFactory_Sharpen" data-uid="Utils.Imaging.ConvolutionMatrixFactory.Sharpen">
   Sharpen()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ConvolutionMatrixFactory.cs/#L33"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Imaging/Imaging/ConvolutionMatrixFactory.cs/#L41"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns a basic sharpening kernel.</p>
