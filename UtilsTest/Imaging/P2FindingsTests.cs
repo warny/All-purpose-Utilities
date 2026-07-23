@@ -219,103 +219,114 @@ public class P2FindingsTests
     public void ColorArgb32_FromFloat_HalfValue_Rounds_To_128()
     {
         var c = new ColorArgb32(new ColorArgb(0.5, 0.5, 0.5, 0.5));
-        Assert.AreEqual(128, c.Alpha, "alpha");
-        Assert.AreEqual(128, c.Red,   "red");
-        Assert.AreEqual(128, c.Green, "green");
-        Assert.AreEqual(128, c.Blue,  "blue");
+        Assert.AreEqual((byte)128, c.Alpha, "alpha");
+        Assert.AreEqual((byte)128, c.Red,   "red");
+        Assert.AreEqual((byte)128, c.Green, "green");
+        Assert.AreEqual((byte)128, c.Blue,  "blue");
     }
 
     [TestMethod]
     public void ColorArgb64_FromFloat_HalfValue_Rounds_To_32768()
     {
         var c = new ColorArgb64(new ColorArgb(0.5, 0.5, 0.5, 0.5));
-        Assert.AreEqual(32768, c.Alpha, "alpha");
-        Assert.AreEqual(32768, c.Red,   "red");
-        Assert.AreEqual(32768, c.Green, "green");
-        Assert.AreEqual(32768, c.Blue,  "blue");
+        Assert.AreEqual((ushort)32768, c.Alpha, "alpha");
+        Assert.AreEqual((ushort)32768, c.Red,   "red");
+        Assert.AreEqual((ushort)32768, c.Green, "green");
+        Assert.AreEqual((ushort)32768, c.Blue,  "blue");
     }
 
     [TestMethod]
     public void ColorArgb32_FromFloat_Zero_Produces_Zero()
     {
         var c = new ColorArgb32(new ColorArgb(0.0, 0.0, 0.0, 0.0));
-        Assert.AreEqual(0, c.Alpha, "alpha");
-        Assert.AreEqual(0, c.Red,   "red");
-        Assert.AreEqual(0, c.Green, "green");
-        Assert.AreEqual(0, c.Blue,  "blue");
+        Assert.AreEqual((byte)0, c.Alpha, "alpha");
+        Assert.AreEqual((byte)0, c.Red,   "red");
+        Assert.AreEqual((byte)0, c.Green, "green");
+        Assert.AreEqual((byte)0, c.Blue,  "blue");
     }
 
     [TestMethod]
     public void ColorArgb32_FromFloat_One_Produces_255()
     {
         var c = new ColorArgb32(new ColorArgb(1.0, 1.0, 1.0, 1.0));
-        Assert.AreEqual(255, c.Alpha, "alpha");
-        Assert.AreEqual(255, c.Red,   "red");
-        Assert.AreEqual(255, c.Green, "green");
-        Assert.AreEqual(255, c.Blue,  "blue");
+        Assert.AreEqual(byte.MaxValue, c.Alpha, "alpha");
+        Assert.AreEqual(byte.MaxValue, c.Red,   "red");
+        Assert.AreEqual(byte.MaxValue, c.Green, "green");
+        Assert.AreEqual(byte.MaxValue, c.Blue,  "blue");
     }
 
     [TestMethod]
     public void ColorArgb64_FromFloat_Zero_Produces_Zero()
     {
         var c = new ColorArgb64(new ColorArgb(0.0, 0.0, 0.0, 0.0));
-        Assert.AreEqual(0, c.Alpha, "alpha");
-        Assert.AreEqual(0, c.Red,   "red");
-        Assert.AreEqual(0, c.Green, "green");
-        Assert.AreEqual(0, c.Blue,  "blue");
+        Assert.AreEqual((ushort)0, c.Alpha, "alpha");
+        Assert.AreEqual((ushort)0, c.Red,   "red");
+        Assert.AreEqual((ushort)0, c.Green, "green");
+        Assert.AreEqual((ushort)0, c.Blue,  "blue");
     }
 
     [TestMethod]
     public void ColorArgb64_FromFloat_One_Produces_65535()
     {
         var c = new ColorArgb64(new ColorArgb(1.0, 1.0, 1.0, 1.0));
-        Assert.AreEqual(65535, c.Alpha, "alpha");
-        Assert.AreEqual(65535, c.Red,   "red");
-        Assert.AreEqual(65535, c.Green, "green");
-        Assert.AreEqual(65535, c.Blue,  "blue");
+        Assert.AreEqual(ushort.MaxValue, c.Alpha, "alpha");
+        Assert.AreEqual(ushort.MaxValue, c.Red,   "red");
+        Assert.AreEqual(ushort.MaxValue, c.Green, "green");
+        Assert.AreEqual(ushort.MaxValue, c.Blue,  "blue");
     }
 
     [TestMethod]
-    public void ColorArgb32_FromFloat_JustBelowHalfUnit_Truncates()
+    public void ColorArgb32_FromFloat_JustBelowMidpoint_RoundsDown()
     {
-        // 127/255 = 0.498039... → 127.499... → rounds to 127
-        double justBelow = (127.0 / 255.0) - 1e-10;
+        // The midpoint between 127 and 128 is 127.5/255. Just below → rounds to 127.
+        double justBelow = 127.5 / 255.0 - 1e-10;
         var c = new ColorArgb32(new ColorArgb(justBelow, justBelow, justBelow, justBelow));
-        Assert.AreEqual(127, c.Red, "just below 0.5/255 unit should round down");
+        Assert.AreEqual((byte)127, c.Red, "just below 127.5/255 should round down to 127");
     }
 
     [TestMethod]
-    public void ColorArgb32_FromFloat_AtHalfUnit_RoundsUp()
+    public void ColorArgb32_FromFloat_AtMidpoint_RoundsUp()
     {
-        // 0.5/255 unit → (n + 0.5) × 255/255... but actual midpoint is n/255 + 0.5/255
-        // Let's pick channel = (127 + 0.5)/255 = 127.5/255 → should round to 128
+        // Exact midpoint 127.5/255 → rounds away from zero → 128.
         double midpoint = 127.5 / 255.0;
         var c = new ColorArgb32(new ColorArgb(midpoint, midpoint, midpoint, midpoint));
-        Assert.AreEqual(128, c.Red, "exact midpoint should round away from zero (128)");
+        Assert.AreEqual((byte)128, c.Red, "exact midpoint 127.5/255 should round to 128");
     }
 
     [TestMethod]
-    public void ColorArgb32_FromFloat_JustAboveHalfUnit_RoundsUp()
+    public void ColorArgb32_FromFloat_JustAboveMidpoint_RoundsUp()
     {
-        double justAbove = (127.0 / 255.0) + 1e-6;
+        // Just above 127.5/255 → still rounds to 128.
+        double justAbove = 127.5 / 255.0 + 1e-10;
         var c = new ColorArgb32(new ColorArgb(justAbove, justAbove, justAbove, justAbove));
-        Assert.AreEqual(127, c.Red, "just above 127/255 is still closer to 127 than 128");
+        Assert.AreEqual((byte)128, c.Red, "just above 127.5/255 should round up to 128");
     }
 
     [TestMethod]
-    public void ColorArgb64_FromFloat_JustBelowHalfUnit_Truncates()
+    public void ColorArgb64_FromFloat_JustBelowMidpoint_RoundsDown()
     {
-        double justBelow = (32767.0 / 65535.0) - 1e-10;
+        // The midpoint between 32767 and 32768 is 32767.5/65535. Just below → rounds to 32767.
+        double justBelow = 32767.5 / 65535.0 - 1e-10;
         var c = new ColorArgb64(new ColorArgb(justBelow, justBelow, justBelow, justBelow));
-        Assert.AreEqual(32767, c.Red, "just below 32767.5/65535 should round down");
+        Assert.AreEqual((ushort)32767, c.Red, "just below 32767.5/65535 should round down to 32767");
     }
 
     [TestMethod]
-    public void ColorArgb64_FromFloat_AtHalfUnit_RoundsUp()
+    public void ColorArgb64_FromFloat_AtMidpoint_RoundsUp()
     {
+        // Exact midpoint 32767.5/65535 → rounds away from zero → 32768.
         double midpoint = 32767.5 / 65535.0;
         var c = new ColorArgb64(new ColorArgb(midpoint, midpoint, midpoint, midpoint));
-        Assert.AreEqual(32768, c.Red, "exact midpoint should round away from zero (32768)");
+        Assert.AreEqual((ushort)32768, c.Red, "exact midpoint 32767.5/65535 should round to 32768");
+    }
+
+    [TestMethod]
+    public void ColorArgb64_FromFloat_JustAboveMidpoint_RoundsUp()
+    {
+        // Just above 32767.5/65535 → still rounds to 32768.
+        double justAbove = 32767.5 / 65535.0 + 1e-10;
+        var c = new ColorArgb64(new ColorArgb(justAbove, justAbove, justAbove, justAbove));
+        Assert.AreEqual((ushort)32768, c.Red, "just above 32767.5/65535 should round up to 32768");
     }
 
     [TestMethod]
