@@ -26,7 +26,7 @@ The findings below are newly identified and remain open.
 
 ## Critical and high-priority findings
 
-### 47. `decimal.MinValue` overflows in decimal and currency conversion
+### 47. ✅ `decimal.MinValue` overflows in decimal and currency conversion
 
 Both decimal conversion and currency conversion compute an absolute value with unary negation:
 
@@ -41,7 +41,7 @@ Negating `decimal.MinValue` throws `OverflowException`, so the public API cannot
 
 **Priority: P1 numeric correctness.**
 
-### 48. Currency conversion is restricted to `long` without declaring that limit
+### 48. ✅ Currency conversion is restricted to `long` without declaring that limit
 
 `ConvertCurrency` casts the truncated unit amount to `long`. Valid decimal values outside `long` range therefore throw even though the API accepts `decimal` and the cardinal converter supports `BigInteger`.
 
@@ -49,7 +49,7 @@ Negating `decimal.MinValue` throws `OverflowException`, so the public API cannot
 
 **Priority: P1 API correctness.**
 
-### 49. `CurrencyDefinition.SubunitDigits` is unvalidated and uses floating-point arithmetic
+### 49. ✅ `CurrencyDefinition.SubunitDigits` is unvalidated and uses floating-point arithmetic
 
 The subunit factor is calculated through `Math.Pow(10, SubunitDigits)`, converted to `long`, and the decimal fraction is converted to `double` before rounding. Negative values can produce a zero factor and division by zero; large values overflow or produce invalid factors; conversion through `double` can round monetary values incorrectly.
 
@@ -57,7 +57,7 @@ The subunit factor is calculated through `Math.Pow(10, SubunitDigits)`, converte
 
 **Priority: P1 financial correctness.**
 
-### 50. Minimum signed values overflow in ordinal, year and duration conversion
+### 50. ✅ Minimum signed values overflow in ordinal, year and duration conversion
 
 - `ConvertOrdinal(long)` uses `Math.Abs(long)`, which throws for `long.MinValue`.
 - `ConvertYear(int)` uses `Math.Abs(int)`, which throws for `int.MinValue`.
@@ -75,7 +75,7 @@ The subunit factor is calculated through `Math.Pow(10, SubunitDigits)`, converte
 
 **Priority: P1 API contract.**
 
-### 52. Large finite `double`/`float` values silently lose their fractional part
+### 52. ✅ Large finite `double`/`float` values silently lose their fractional part
 
 When a finite floating-point value cannot be parsed as `decimal`, conversion falls back to:
 
@@ -89,7 +89,7 @@ This silently discards the complete fractional part. The same method can therefo
 
 **Priority: P1 numeric correctness.**
 
-### 53. Configurable regular expressions have no execution timeout
+### 53. ✅ Configurable regular expressions have no execution timeout
 
 Trigger patterns are compiled with `new Regex(pattern, RegexOptions.Compiled)` and later applied to generated text without a timeout. Programmatic or externally registered configurations can provide catastrophic-backtracking patterns.
 
@@ -118,7 +118,7 @@ Malformed programmatic/XML configuration can therefore fail later with `DivideBy
 
 ## Medium-priority findings
 
-### 55. Fraction conversion accepts a zero or negative denominator without normalization
+### 55. ✅ Fraction conversion accepts a zero or negative denominator without normalization
 
 `ConvertFraction` delegates directly to `BuildFractionText`; denominator zero becomes spoken text such as “one / zero” rather than an error. Negative denominators can place the sign in the denominator text instead of normalizing it onto the numerator. Fractions are not reduced, making named-form selection and pluralization dependent on the caller's unreduced representation.
 
