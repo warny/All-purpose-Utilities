@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_OData_ODataContext" data-uid="Utils.OData.ODataContext" class="text-break">
-Class ODataContext  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/ODataContext.cs/#L12"><i class="bi bi-code-slash"></i></a>
+Class ODataContext  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/ODataContext.cs/#L23"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -239,6 +239,17 @@ The context is initialized from an EDMX definition provided as a stream or a pat
 
 
 
+  <h2 id="Utils_OData_ODataContext_remarks">Remarks</h2>
+  <div class="markdown level0 remarks"><p>
+The synchronous constructors are retained for backward compatibility with generated
+code. They perform blocking I/O and, for remote URLs, block a thread on a network call
+(item 14 / item 29). New code should prefer the asynchronous <code>CreateAsync</code> and
+<a class="xref" href="Utils.OData.ODataContext.html#Utils_OData_ODataContext_LoadMetadataAsync_System_String_Utils_OData_ODataMetadataOptions_System_Threading_CancellationToken_">LoadMetadataAsync(string, ODataMetadataOptions?, CancellationToken)</a> factory
+methods, which accept a caller-supplied <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.http.httpclient">HttpClient</a>, honour a
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a>, and apply a consistent bounded size policy to every metadata
+source (items 15, 16, 33, 34).
+</p>
+</div>
 
 
   <h2 class="section" id="constructors">Constructors
@@ -249,7 +260,7 @@ The context is initialized from an EDMX definition provided as a stream or a pat
 
   <h3 id="Utils_OData_ODataContext__ctor_System_IO_Stream_" data-uid="Utils.OData.ODataContext.#ctor(System.IO.Stream)">
   ODataContext(Stream)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/ODataContext.cs/#L30"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/ODataContext.cs/#L31"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.OData.ODataContext.html">ODataContext</a> class from the specified EDMX stream.</p>
@@ -291,7 +302,7 @@ The context is initialized from an EDMX definition provided as a stream or a pat
 
   <h3 id="Utils_OData_ODataContext__ctor_System_String_" data-uid="Utils.OData.ODataContext.#ctor(System.String)">
   ODataContext(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/ODataContext.cs/#L43"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/ODataContext.cs/#L44"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.OData.ODataContext.html">ODataContext</a> class from the specified file or URL.</p>
@@ -329,6 +340,46 @@ The context is initialized from an EDMX definition provided as a stream or a pat
 
 
 
+  <a id="Utils_OData_ODataContext__ctor_" data-uid="Utils.OData.ODataContext.#ctor*"></a>
+
+  <h3 id="Utils_OData_ODataContext__ctor_Utils_OData_Metadatas_Edmx_" data-uid="Utils.OData.ODataContext.#ctor(Utils.OData.Metadatas.Edmx)">
+  ODataContext(Edmx)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/ODataContext.cs/#L55"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.OData.ODataContext.html">ODataContext</a> class from already-parsed metadata.
+This constructor performs no I/O and is used by the asynchronous factory methods.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected ODataContext(Edmx metadata)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>metadata</code> <a class="xref" href="Utils.OData.Metadatas.Edmx.html">Edmx</a></dt>
+    <dd><p>The parsed EDMX metadata.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">metadata</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+  </dl>
+
+
+
   <h2 class="section" id="properties">Properties
 </h2>
 
@@ -337,7 +388,7 @@ The context is initialized from an EDMX definition provided as a stream or a pat
 
   <h3 id="Utils_OData_ODataContext_Metadata" data-uid="Utils.OData.ODataContext.Metadata">
   Metadata
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/ODataContext.cs/#L51"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/ODataContext.cs/#L63"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the EDMX metadata loaded for the current context.</p>
@@ -369,11 +420,257 @@ The context is initialized from an EDMX definition provided as a stream or a pat
 </h2>
 
 
+  <a id="Utils_OData_ODataContext_CreateAsync_" data-uid="Utils.OData.ODataContext.CreateAsync*"></a>
+
+  <h3 id="Utils_OData_ODataContext_CreateAsync__1_System_IO_Stream_System_Func_Utils_OData_Metadatas_Edmx___0__Utils_OData_ODataMetadataOptions_System_Threading_CancellationToken_" data-uid="Utils.OData.ODataContext.CreateAsync``1(System.IO.Stream,System.Func{Utils.OData.Metadatas.Edmx,``0},Utils.OData.ODataMetadataOptions,System.Threading.CancellationToken)">
+  CreateAsync&lt;TContext&gt;(Stream, Func&lt;Edmx, TContext&gt;, ODataMetadataOptions?, CancellationToken)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/ODataContext.cs/#L226"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Asynchronously creates a context instance from a caller-provided EDMX stream, delegating parsing
+to <a class="xref" href="Utils.OData.ODataContext.html#Utils_OData_ODataContext_LoadMetadataFromStreamAsync_System_IO_Stream_Utils_OData_ODataMetadataOptions_System_Threading_CancellationToken_">LoadMetadataFromStreamAsync(Stream, ODataMetadataOptions?, CancellationToken)</a> and
+then constructing <code class="typeparamref">TContext</code> through the supplied factory.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Task&lt;TContext&gt; CreateAsync&lt;TContext&gt;(Stream edmxStream, Func&lt;Edmx, TContext&gt; factory, ODataMetadataOptions? options = null, CancellationToken cancellationToken = default) where TContext : ODataContext</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>edmxStream</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a></dt>
+    <dd><p>Stream containing the EDMX content.</p>
+</dd>
+    <dt><code>factory</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.func-2">Func</a>&lt;<a class="xref" href="Utils.OData.Metadatas.Edmx.html">Edmx</a>, TContext&gt;</dt>
+    <dd><p>Factory that builds the context from the parsed metadata.</p>
+</dd>
+    <dt><code>options</code> <a class="xref" href="Utils.OData.ODataMetadataOptions.html">ODataMetadataOptions</a></dt>
+    <dd><p>Optional loading options. When <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>, <a class="xref" href="Utils.OData.ODataMetadataOptions.html#Utils_OData_ODataMetadataOptions_Default">Default</a> is used.</p>
+</dd>
+    <dt><code>cancellationToken</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></dt>
+    <dd><p>Token used to cancel the load operation.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;TContext&gt;</dt>
+    <dd><p>A task producing the constructed context.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>TContext</code></dt>
+    <dd><p>Concrete context type to create.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">edmxStream</code> or <code class="paramref">factory</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_OData_ODataContext_CreateAsync_" data-uid="Utils.OData.ODataContext.CreateAsync*"></a>
+
+  <h3 id="Utils_OData_ODataContext_CreateAsync__1_System_String_System_Func_Utils_OData_Metadatas_Edmx___0__Utils_OData_ODataMetadataOptions_System_Threading_CancellationToken_" data-uid="Utils.OData.ODataContext.CreateAsync``1(System.String,System.Func{Utils.OData.Metadatas.Edmx,``0},Utils.OData.ODataMetadataOptions,System.Threading.CancellationToken)">
+  CreateAsync&lt;TContext&gt;(string, Func&lt;Edmx, TContext&gt;, ODataMetadataOptions?, CancellationToken)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/ODataContext.cs/#L253"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Asynchronously creates a context instance from an EDMX file path or HTTP/HTTPS URL, delegating
+loading to <a class="xref" href="Utils.OData.ODataContext.html#Utils_OData_ODataContext_LoadMetadataAsync_System_String_Utils_OData_ODataMetadataOptions_System_Threading_CancellationToken_">LoadMetadataAsync(string, ODataMetadataOptions?, CancellationToken)</a> and
+then constructing <code class="typeparamref">TContext</code> through the supplied factory.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Task&lt;TContext&gt; CreateAsync&lt;TContext&gt;(string edmxPathOrUrl, Func&lt;Edmx, TContext&gt; factory, ODataMetadataOptions? options = null, CancellationToken cancellationToken = default) where TContext : ODataContext</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>edmxPathOrUrl</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Path or HTTP/HTTPS URL pointing to an EDMX resource.</p>
+</dd>
+    <dt><code>factory</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.func-2">Func</a>&lt;<a class="xref" href="Utils.OData.Metadatas.Edmx.html">Edmx</a>, TContext&gt;</dt>
+    <dd><p>Factory that builds the context from the parsed metadata.</p>
+</dd>
+    <dt><code>options</code> <a class="xref" href="Utils.OData.ODataMetadataOptions.html">ODataMetadataOptions</a></dt>
+    <dd><p>Optional loading options. When <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>, <a class="xref" href="Utils.OData.ODataMetadataOptions.html#Utils_OData_ODataMetadataOptions_Default">Default</a> is used.</p>
+</dd>
+    <dt><code>cancellationToken</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></dt>
+    <dd><p>Token used to cancel the load operation.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;TContext&gt;</dt>
+    <dd><p>A task producing the constructed context.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Type Parameters</h4>
+  <dl class="parameters">
+    <dt><code>TContext</code></dt>
+    <dd><p>Concrete context type to create.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when <code class="paramref">edmxPathOrUrl</code> is null or whitespace.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">factory</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_OData_ODataContext_LoadMetadataAsync_" data-uid="Utils.OData.ODataContext.LoadMetadataAsync*"></a>
+
+  <h3 id="Utils_OData_ODataContext_LoadMetadataAsync_System_String_Utils_OData_ODataMetadataOptions_System_Threading_CancellationToken_" data-uid="Utils.OData.ODataContext.LoadMetadataAsync(System.String,Utils.OData.ODataMetadataOptions,System.Threading.CancellationToken)">
+  LoadMetadataAsync(string, ODataMetadataOptions?, CancellationToken)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/ODataContext.cs/#L118"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Loads and parses EDMX metadata from the specified file path or HTTP/HTTPS URL without blocking
+the calling thread, using a caller-supplied transport and a bounded size policy.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Task&lt;Edmx&gt; LoadMetadataAsync(string edmxPathOrUrl, ODataMetadataOptions? options = null, CancellationToken cancellationToken = default)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>edmxPathOrUrl</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Path or HTTP/HTTPS URL pointing to an EDMX resource.</p>
+</dd>
+    <dt><code>options</code> <a class="xref" href="Utils.OData.ODataMetadataOptions.html">ODataMetadataOptions</a></dt>
+    <dd><p>Optional loading options controlling the maximum metadata size, the <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.net.http.httpclient">HttpClient</a>
+to reuse, the download timeout, and the cross-host redirect policy. When <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>,
+<a class="xref" href="Utils.OData.ODataMetadataOptions.html#Utils_OData_ODataMetadataOptions_Default">Default</a> is used.</p>
+</dd>
+    <dt><code>cancellationToken</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></dt>
+    <dd><p>Token used to cancel the load operation.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;<a class="xref" href="Utils.OData.Metadatas.Edmx.html">Edmx</a>&gt;</dt>
+    <dd><p>A task producing the parsed <a class="xref" href="Utils.OData.Metadatas.Edmx.html">Edmx</a> metadata.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p>Thrown when <code class="paramref">edmxPathOrUrl</code> is null or whitespace.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a></dt>
+    <dd><p>Thrown when the metadata cannot be read or parsed.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_OData_ODataContext_LoadMetadataFromStreamAsync_" data-uid="Utils.OData.ODataContext.LoadMetadataFromStreamAsync*"></a>
+
+  <h3 id="Utils_OData_ODataContext_LoadMetadataFromStreamAsync_System_IO_Stream_Utils_OData_ODataMetadataOptions_System_Threading_CancellationToken_" data-uid="Utils.OData.ODataContext.LoadMetadataFromStreamAsync(System.IO.Stream,Utils.OData.ODataMetadataOptions,System.Threading.CancellationToken)">
+  LoadMetadataFromStreamAsync(Stream, ODataMetadataOptions?, CancellationToken)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/ODataContext.cs/#L168"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Loads and parses EDMX metadata from a caller-provided stream without blocking the calling thread,
+enforcing the configured maximum size (item 15 / item 33).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Task&lt;Edmx&gt; LoadMetadataFromStreamAsync(Stream edmxStream, ODataMetadataOptions? options = null, CancellationToken cancellationToken = default)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>edmxStream</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream">Stream</a></dt>
+    <dd><p>Stream containing the EDMX content.</p>
+</dd>
+    <dt><code>options</code> <a class="xref" href="Utils.OData.ODataMetadataOptions.html">ODataMetadataOptions</a></dt>
+    <dd><p>Optional loading options controlling the maximum metadata size. When <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>,
+<a class="xref" href="Utils.OData.ODataMetadataOptions.html#Utils_OData_ODataMetadataOptions_Default">Default</a> is used.</p>
+</dd>
+    <dt><code>cancellationToken</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></dt>
+    <dd><p>Token used to cancel the load operation.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;<a class="xref" href="Utils.OData.Metadatas.Edmx.html">Edmx</a>&gt;</dt>
+    <dd><p>A task producing the parsed <a class="xref" href="Utils.OData.Metadatas.Edmx.html">Edmx</a> metadata.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+  <h4 class="section" id="Utils_OData_ODataContext_LoadMetadataFromStreamAsync_System_IO_Stream_Utils_OData_ODataMetadataOptions_System_Threading_CancellationToken__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>For seekable streams the EDMX document is read starting at the stream's current
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.stream.position">Position</a>. The size limit is checked against the number of bytes
+remaining from that position, not the total stream length. The position is not reset
+before reading.</p>
+</div>
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p>Thrown when <code class="paramref">edmxStream</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a></dt>
+    <dd><p>Thrown when the metadata cannot be parsed or exceeds the size limit.</p>
+</dd>
+  </dl>
+
+
+
   <a id="Utils_OData_ODataContext_Query_" data-uid="Utils.OData.ODataContext.Query*"></a>
 
   <h3 id="Utils_OData_ODataContext_Query__1_System_String_" data-uid="Utils.OData.ODataContext.Query``1(System.String)">
   Query&lt;TEntity&gt;(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/ODataContext.cs/#L60"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/ODataContext.cs/#L72"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Creates a queryable sequence targeting the specified entity set.</p>
@@ -424,7 +721,7 @@ The context is initialized from an EDMX definition provided as a stream or a pat
 
   <h3 id="Utils_OData_ODataContext_Table_System_String_" data-uid="Utils.OData.ODataContext.Table(System.String)">
   Table(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/ODataContext.cs/#L77"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/ODataContext.cs/#L89"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Creates a queryable sequence for an entity set when no CLR type exists for the table.</p>
@@ -469,7 +766,7 @@ The context is initialized from an EDMX definition provided as a stream or a pat
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/ODataContext.cs/#L12" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.OData/ODataContext.cs/#L23" class="edit-link">Edit this page</a>
         </div>
 
 

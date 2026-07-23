@@ -106,6 +106,13 @@ The context is initialized from an EDMX definition provided as a stream or a pat
 </dd>
     </dl>
     <dl class="jumplist">
+      <dt><a class="xref" href="Utils.OData.ODataMetadataOptions.html">ODataMetadataOptions</a></dt>
+      <dd><p>Configures how EDMX metadata is loaded by <a class="xref" href="Utils.OData.ODataContext.html">ODataContext</a>, providing a single,
+consistent policy for the maximum accepted size, the transport used for remote downloads,
+the download timeout, and the cross-host redirect behaviour.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
       <dt><a class="xref" href="Utils.OData.ODataQueryBuilder.html">ODataQueryBuilder</a></dt>
       <dd><p>Builds OData-compliant query URLs from <a class="xref" href="Utils.OData.IQuery.html">IQuery</a> definitions.</p>
 </dd>
@@ -131,6 +138,16 @@ Interfaces
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.OData.IQuery.html">IQuery</a></dt>
       <dd></dd>
+    </dl>
+    <h3 id="enums">
+Enums
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.OData.ODataErrorKind.html">ODataErrorKind</a></dt>
+      <dd><p>Categorizes the origin of an <a class="xref" href="Utils.OData.ErrorReturnValue.html">ErrorReturnValue</a> so callers can reliably distinguish
+transport, protocol, deserialization, validation, cancellation, and application errors
+without inspecting the numeric <a class="xref" href="Utils.OData.ErrorReturnValue.html#Utils_OData_ErrorReturnValue_code">code</a> (item 31).</p>
+</dd>
     </dl>
 
 

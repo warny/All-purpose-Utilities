@@ -8846,6 +8846,34 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.OData.ODataErrorKind.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.OData.ODataErrorKind.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.OData.ODataErrorKind",
+      "Summary": "<p sourcefile=\"api/Utils.OData.ODataErrorKind.yml\" sourcestartlinenumber=\"1\">Categorizes the origin of an <xref href=\"Utils.OData.ErrorReturnValue\" data-throw-if-not-resolved=\"false\"></xref> so callers can reliably distinguish\ntransport, protocol, deserialization, validation, cancellation, and application errors\nwithout inspecting the numeric <xref href=\"Utils.OData.ErrorReturnValue.code\" data-throw-if-not-resolved=\"false\"></xref> (item 31).</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.OData.ODataMetadataOptions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.OData.ODataMetadataOptions.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.OData.ODataMetadataOptions",
+      "Summary": "<p sourcefile=\"api/Utils.OData.ODataMetadataOptions.yml\" sourcestartlinenumber=\"1\">Configures how EDMX metadata is loaded by <xref href=\"Utils.OData.ODataContext\" data-throw-if-not-resolved=\"false\"></xref>, providing a single,\nconsistent policy for the maximum accepted size, the transport used for remote downloads,\nthe download timeout, and the cross-host redirect behaviour.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.OData.ODataQueryBuilder.yml",
       "output": {
         ".html": {
