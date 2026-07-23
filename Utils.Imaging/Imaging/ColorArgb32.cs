@@ -8,6 +8,15 @@ namespace Utils.Imaging;
 /// <summary>
 /// Represents a 32-bit ARGB color using byte components.
 /// </summary>
+/// <remarks>
+/// <para>
+/// The overlapping <see cref="Value"/> field uses a <c>[StructLayout(LayoutKind.Explicit)]</c>
+/// layout that assumes <b>little-endian byte order</b>.  On a little-endian host the packed value
+/// is <c>(Alpha &lt;&lt; 24) | (Red &lt;&lt; 16) | (Green &lt;&lt; 8) | Blue</c>.  Since this library
+/// depends on <c>System.Drawing</c> (Windows/GDI+) it only runs on little-endian platforms,
+/// so the canonical packing and the overlapping layout are always consistent.
+/// </para>
+/// </remarks>
 [StructLayout(LayoutKind.Explicit)]
 public struct ColorArgb32 : IColorArgb<byte>, IEquatable<ColorArgb32>, IEqualityOperators<ColorArgb32, ColorArgb32, bool>
 {
@@ -34,8 +43,12 @@ public struct ColorArgb32 : IColorArgb<byte>, IEquatable<ColorArgb32>, IEquality
     byte blue;
 
     /// <summary>
-    /// Gets or sets the packed ARGB value.
+    /// Gets or sets the packed ARGB value in host byte order.
     /// </summary>
+    /// <remarks>
+    /// On a little-endian host the value equals
+    /// <c>(Alpha &lt;&lt; 24) | (Red &lt;&lt; 16) | (Green &lt;&lt; 8) | Blue</c>.
+    /// </remarks>
     public uint Value
     {
         get { return value; }

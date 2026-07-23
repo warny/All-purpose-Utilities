@@ -164,7 +164,7 @@ The package is effectively Windows/GDI+ oriented on modern .NET.
 
 **Priority:** P2 compatibility.
 
-### 22. Packed color values depend on native endianness
+### 22. ~~Packed color values depend on native endianness~~ ✅ FIXED
 `ColorArgb32` and `ColorArgb64` overlay component fields and packed integers in host memory order.
 
 **Fix:** define canonical values with shifts/masks or clearly separate native-layout and canonical packing APIs.

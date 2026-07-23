@@ -9,6 +9,15 @@ namespace Utils.Imaging;
 /// <summary>
 /// Represents a 64-bit ARGB color using 16-bit components.
 /// </summary>
+/// <remarks>
+/// <para>
+/// The overlapping <see cref="Value"/> field uses a <c>[StructLayout(LayoutKind.Explicit)]</c>
+/// layout that assumes <b>little-endian byte order</b>.  On a little-endian host the packed value
+/// is <c>((ulong)Alpha &lt;&lt; 48) | ((ulong)Red &lt;&lt; 32) | ((ulong)Green &lt;&lt; 16) | Blue</c>.
+/// Since this library depends on <c>System.Drawing</c> (Windows/GDI+) it only runs on little-endian
+/// platforms, so the canonical packing and the overlapping layout are always consistent.
+/// </para>
+/// </remarks>
 [StructLayout(LayoutKind.Explicit)]
 public struct ColorArgb64 : IColorArgb<ushort>, IEquatable<ColorArgb64>, IEqualityOperators<ColorArgb64, ColorArgb64, bool>
 {
@@ -36,8 +45,12 @@ public struct ColorArgb64 : IColorArgb<ushort>, IEquatable<ColorArgb64>, IEquali
     ushort blue;
 
     /// <summary>
-    /// Gets or sets the packed ARGB value.
+    /// Gets or sets the packed ARGB value in host byte order.
     /// </summary>
+    /// <remarks>
+    /// On a little-endian host the value equals
+    /// <c>((ulong)Alpha &lt;&lt; 48) | ((ulong)Red &lt;&lt; 32) | ((ulong)Green &lt;&lt; 16) | Blue</c>.
+    /// </remarks>
     public ulong Value
     {
         get { return value; }

@@ -162,4 +162,65 @@ public class P2FindingsTests
         Assert.AreEqual(0.0, rgb.Green, 1e-9, "green");
         Assert.AreEqual(0.0, rgb.Blue,  1e-9, "blue");
     }
+
+    // ── Finding #22: packed value is canonical ARGB on little-endian ──────────
+
+    [TestMethod]
+    public void ColorArgb32_PackedValue_MatchesCanonicalArgbOnLittleEndian()
+    {
+        // Canonical ARGB: 0xAARRGGBB
+        // (Alpha=0xAA, Red=0xBB, Green=0xCC, Blue=0xDD)
+        var c = new ColorArgb32(0xAA, 0xBB, 0xCC, 0xDD);
+        Assert.AreEqual(0xAA, c.Alpha, "alpha");
+        Assert.AreEqual(0xBB, c.Red,   "red");
+        Assert.AreEqual(0xCC, c.Green, "green");
+        Assert.AreEqual(0xDD, c.Blue,  "blue");
+
+        // On little-endian the Value uint equals (A<<24)|(R<<16)|(G<<8)|B
+        if (System.BitConverter.IsLittleEndian)
+        {
+            uint expected = (0xAAu << 24) | (0xBBu << 16) | (0xCCu << 8) | 0xDDu;
+            Assert.AreEqual(expected, c.Value, "packed value on little-endian");
+        }
+    }
+
+    [TestMethod]
+    public void ColorArgb64_PackedValue_MatchesCanonicalArgbOnLittleEndian()
+    {
+        // (Alpha=0xAAAA, Red=0xBBBB, Green=0xCCCC, Blue=0xDDDD)
+        var c = new ColorArgb64(0xAAAA, 0xBBBB, 0xCCCC, 0xDDDD);
+        Assert.AreEqual(0xAAAA, c.Alpha, "alpha");
+        Assert.AreEqual(0xBBBB, c.Red,   "red");
+        Assert.AreEqual(0xCCCC, c.Green, "green");
+        Assert.AreEqual(0xDDDD, c.Blue,  "blue");
+
+        // On little-endian: Value = (A<<48)|(R<<32)|(G<<16)|B
+        if (System.BitConverter.IsLittleEndian)
+        {
+            ulong expected = ((ulong)0xAAAA << 48) | ((ulong)0xBBBB << 32) | ((ulong)0xCCCC << 16) | 0xDDDD;
+            Assert.AreEqual(expected, c.Value, "packed value on little-endian");
+        }
+    }
+
+    [TestMethod]
+    public void ColorArgb32_RoundTripThroughValue_IsConsistent()
+    {
+        var original = new ColorArgb32(0xFF, 0x12, 0x34, 0x56);
+        var roundTrip = new ColorArgb32(original.Value);
+        Assert.AreEqual(original.Alpha, roundTrip.Alpha);
+        Assert.AreEqual(original.Red,   roundTrip.Red);
+        Assert.AreEqual(original.Green, roundTrip.Green);
+        Assert.AreEqual(original.Blue,  roundTrip.Blue);
+    }
+
+    [TestMethod]
+    public void ColorArgb64_RoundTripThroughValue_IsConsistent()
+    {
+        var original = new ColorArgb64(0xFFFF, 0x1234, 0x5678, 0x9ABC);
+        var roundTrip = new ColorArgb64(original.Value);
+        Assert.AreEqual(original.Alpha, roundTrip.Alpha);
+        Assert.AreEqual(original.Red,   roundTrip.Red);
+        Assert.AreEqual(original.Green, roundTrip.Green);
+        Assert.AreEqual(original.Blue,  roundTrip.Blue);
+    }
 }
