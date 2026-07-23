@@ -131,22 +131,7 @@ namespace Utils.Imaging
             ThrowIfDisposed();
             if (sprite is null) throw new ArgumentNullException(nameof(sprite));
             if (blend is null) throw new ArgumentNullException(nameof(blend));
-            for (int sy = 0; sy < sprite.Height; sy++)
-            {
-                int dy = location.Y + sy;
-                if (dy < 0 || dy >= Height) continue;
-
-                for (int sx = 0; sx < sprite.Width; sx++)
-                {
-                    int dx = location.X + sx;
-                    if (dx < 0 || dx >= Width) continue;
-
-                    ColorArgb32 src = sprite[sx, sy];
-                    ColorArgb32 dst = this[dx, dy];
-                    ColorArgb32 result = blend(src, dst);
-                    this[dx, dy] = result;
-                }
-            }
+            ImageAccessorExtensions.ApplySprite<ColorArgb32, byte>(this, sprite, location, blend);
         }
 
         private void ThrowIfDisposed()

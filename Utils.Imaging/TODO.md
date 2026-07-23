@@ -143,7 +143,7 @@ PArgb formats are read and written with straight-alpha blending rules.
 
 **Priority:** P2.
 
-### 19. Sprite traversal is duplicated
+### 19. ~~Sprite traversal is duplicated~~ ✅ FIXED
 Sprite application exists in generic and specialized implementations.
 
 **Fix:** retain one traversal contract and isolate only measured low-level optimizations.
