@@ -247,4 +247,83 @@ public class BitmapAccessorTests
         ulongAcc[1, 2] = expected;
         Assert.AreEqual(expected, ulongAcc[1, 2]);
     }
+
+    // ── Finding #17: pixel-format aliases rejected ────────────────────────────
+
+    [TestMethod]
+    [ExpectedException(typeof(NotSupportedException))]
+    public void BitmapAccessor_AlphaFlagFormat_ThrowsNotSupportedException()
+    {
+        using var bmp = new Bitmap(4, 4, PixelFormat.Format32bppArgb);
+        using var _ = new BitmapAccessor(bmp, PixelFormat.Alpha);
+    }
+
+    [TestMethod]
+    [ExpectedException(typeof(NotSupportedException))]
+    public void BitmapAccessor_PAlphaFlagFormat_ThrowsNotSupportedException()
+    {
+        using var bmp = new Bitmap(4, 4, PixelFormat.Format32bppArgb);
+        using var _ = new BitmapAccessor(bmp, PixelFormat.PAlpha);
+    }
+
+    [TestMethod]
+    [ExpectedException(typeof(NotSupportedException))]
+    public void BitmapAccessor_CanonicalAliasFormat_ThrowsNotSupportedException()
+    {
+        using var bmp = new Bitmap(4, 4, PixelFormat.Format32bppArgb);
+        using var _ = new BitmapAccessor(bmp, PixelFormat.Canonical);
+    }
+
+    [TestMethod]
+    public void BitmapAccessor_ConcreteFormat_ReturnsCorrectColorDepth()
+    {
+        using var bmp = new Bitmap(4, 4, PixelFormat.Format32bppArgb);
+        using var acc = new BitmapAccessor(bmp, PixelFormat.Format32bppArgb);
+        Assert.AreEqual(4, acc.ColorDepth);
+        Assert.AreEqual(PixelFormat.Format32bppArgb, acc.PixelFormat);
+    }
+
+    // ── Finding #18: premultiplied formats rejected in ApplySprite ────────────
+
+    [TestMethod]
+    [ExpectedException(typeof(NotSupportedException))]
+    public void ApplySprite_PremultipliedDestination_ThrowsNotSupportedException()
+    {
+        using var dst = new Bitmap(4, 4, PixelFormat.Format32bppPArgb);
+        using var src = new Bitmap(2, 2, PixelFormat.Format32bppArgb);
+        using var dstAcc = new BitmapAccessor(dst, PixelFormat.Format32bppPArgb);
+        using var srcAcc = new BitmapAccessor(src, PixelFormat.Format32bppArgb);
+        dstAcc.ApplySprite(Point.Empty, srcAcc, (s, d) => s);
+    }
+
+    [TestMethod]
+    [ExpectedException(typeof(NotSupportedException))]
+    public void ApplySprite_PremultipliedSprite_ThrowsNotSupportedException()
+    {
+        using var dst = new Bitmap(4, 4, PixelFormat.Format32bppArgb);
+        using var src = new Bitmap(2, 2, PixelFormat.Format32bppPArgb);
+        using var dstAcc = new BitmapAccessor(dst, PixelFormat.Format32bppArgb);
+        using var srcAcc = new BitmapAccessor(src, PixelFormat.Format32bppPArgb);
+        dstAcc.ApplySprite(Point.Empty, srcAcc, (s, d) => s);
+    }
+
+    [TestMethod]
+    public void ApplySprite_StraightAlpha_BlendApplied()
+    {
+        using var dst = new Bitmap(4, 4, PixelFormat.Format32bppArgb);
+        using var src = new Bitmap(2, 2, PixelFormat.Format32bppArgb);
+        using var dstAcc = new BitmapAccessor(dst, PixelFormat.Format32bppArgb);
+        using var srcAcc = new BitmapAccessor(src, PixelFormat.Format32bppArgb);
+
+        // Set sprite pixel [0,0] Blue channel to 99 (component 0 in BGRA layout)
+        srcAcc[0, 0, 0] = 99;
+
+        int callCount = 0;
+        dstAcc.ApplySprite(Point.Empty, srcAcc, (s, d) => { callCount++; return s; });
+
+        // 2×2 sprite → 4 blend calls
+        Assert.AreEqual(4, callCount);
+        // Blended pixel at [0,0] Blue should be 99
+        Assert.AreEqual(99, dstAcc[0, 0, 0]);
+    }
 }

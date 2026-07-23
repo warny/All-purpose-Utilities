@@ -1,12 +1,17 @@
 using System;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Runtime.Versioning;
 
 namespace Utils.Imaging
 {
     /// <summary>
     /// Provides direct memory access to 8-bit indexed bitmap data.
     /// </summary>
+    /// <remarks>
+    /// This class depends on <c>System.Drawing</c> (GDI+) and is supported on Windows only.
+    /// </remarks>
+    [SupportedOSPlatform("windows")]
     public unsafe class BitmapIndexed8Accessor : IDisposable, IImageAccessor<byte>
     {
         private Bitmap bitmap;

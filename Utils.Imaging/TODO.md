@@ -129,14 +129,14 @@ The default viewport uses `Right = Width` and `Down = Height`, while mapping use
 
 ## Functional correctness and design findings
 
-### 17. Pixel-format aliases are treated as concrete layouts
+### 17. ~~Pixel-format aliases are treated as concrete layouts~~ ✅ FIXED
 Flag-like values such as `Alpha`, `PAlpha` and `Canonical` are accepted as if they uniquely described storage.
 
 **Fix:** support only tested concrete formats and validate with `Image.GetPixelFormatSize`.
 
 **Priority:** P2.
 
-### 18. Premultiplied-alpha formats are exposed as straight ARGB
+### 18. ~~Premultiplied-alpha formats are exposed as straight ARGB~~ ✅ FIXED
 PArgb formats are read and written with straight-alpha blending rules.
 
 **Fix:** reject them in straight-color operations or introduce explicit premultiplied accessors/types.
@@ -157,7 +157,7 @@ Accessors leave bitmaps alive while finalizers call `UnlockBits` through managed
 
 **Priority:** P2.
 
-### 21. `System.Drawing` platform constraints are not explicit
+### 21. ~~`System.Drawing` platform constraints are not explicit~~ ✅ FIXED
 The package is effectively Windows/GDI+ oriented on modern .NET.
 
 **Fix:** target/document Windows or isolate the backend behind a cross-platform abstraction.

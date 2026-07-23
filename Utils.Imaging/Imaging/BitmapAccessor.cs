@@ -3,12 +3,17 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Runtime.Versioning;
 
 namespace Utils.Imaging
 {
     /// <summary>
     /// Provides direct indexed access to a bitmap.
     /// </summary>
+    /// <remarks>
+    /// This class depends on <c>System.Drawing</c> (GDI+) and is supported on Windows only.
+    /// </remarks>
+    [SupportedOSPlatform("windows")]
     public unsafe class BitmapAccessor : IDisposable
     {
         private Bitmap bitmap;
@@ -35,25 +40,38 @@ namespace Utils.Imaging
         /// </summary>
         public int ColorDepth { get; }
 
+        /// <summary>
+        /// Gets the pixel format used when locking the bitmap.
+        /// </summary>
+        public PixelFormat PixelFormat => pixelformat;
+
         private static readonly IReadOnlyDictionary<PixelFormat, int> ColorDepths =
             new Dictionary<PixelFormat, int>
             {
-                { PixelFormat.Alpha,                   1 },
-                { PixelFormat.PAlpha,                  1 },
+                // Concrete 8-bit formats
                 { PixelFormat.Format8bppIndexed,       1 },
+                // Concrete 16-bit formats
                 { PixelFormat.Format16bppGrayScale,    2 },
                 { PixelFormat.Format16bppRgb555,       2 },
                 { PixelFormat.Format16bppRgb565,       2 },
                 { PixelFormat.Format16bppArgb1555,     2 },
+                // Concrete 24-bit formats
                 { PixelFormat.Format24bppRgb,          3 },
-                { PixelFormat.Canonical,               4 },
+                // Concrete 32-bit formats (straight alpha and opaque only)
                 { PixelFormat.Format32bppRgb,          4 },
                 { PixelFormat.Format32bppArgb,         4 },
                 { PixelFormat.Format32bppPArgb,        4 },
+                // Concrete 48-bit formats
                 { PixelFormat.Format48bppRgb,          6 },
+                // Concrete 64-bit formats
                 { PixelFormat.Format64bppArgb,         8 },
                 { PixelFormat.Format64bppPArgb,        8 },
             }.ToImmutableDictionary();
+
+        private static readonly ImmutableHashSet<PixelFormat> PremultipliedFormats =
+            ImmutableHashSet.Create(
+                PixelFormat.Format32bppPArgb,
+                PixelFormat.Format64bppPArgb);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BitmapAccessor"/> class.
@@ -144,6 +162,13 @@ namespace Utils.Imaging
                 throw new NotSupportedException("Only 32bpp images are supported for sprite blending.");
             }
 
+            if (PremultipliedFormats.Contains(pixelformat))
+                throw new NotSupportedException(
+                    $"ApplySprite requires straight-alpha data but this bitmap uses the premultiplied format {pixelformat}.");
+            if (PremultipliedFormats.Contains(sprite.pixelformat))
+                throw new NotSupportedException(
+                    $"ApplySprite requires straight-alpha data but the sprite uses the premultiplied format {sprite.pixelformat}.");
+
             for (int sy = 0; sy < sprite.Height; sy++)
             {
                 int dy = location.Y + sy;
@@ -184,7 +209,7 @@ namespace Utils.Imaging
         private static int GetColorDepth(PixelFormat pixelFormat) =>
             ColorDepths.TryGetValue(pixelFormat, out var depth)
                 ? depth
-                : throw new NotSupportedException($"La valeur {pixelFormat} n'est pas supportée");
+                : throw new NotSupportedException($"Pixel format {pixelFormat} is not supported. Use a concrete format such as Format32bppArgb.");
 
         private static void ValidateRegion(Rectangle region, int bitmapWidth, int bitmapHeight)
         {

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Runtime.Versioning;
 using Utils.Mathematics;
 
 namespace Utils.Imaging
@@ -9,6 +10,10 @@ namespace Utils.Imaging
     /// Provides direct memory access to 32-bit ARGB bitmap data, enabling fast pixel
     /// manipulation scenarios.
     /// </summary>
+    /// <remarks>
+    /// This class depends on <c>System.Drawing</c> (GDI+) and is supported on Windows only.
+    /// </remarks>
+    [SupportedOSPlatform("windows")]
     public unsafe class BitmapArgb32Accessor : IDisposable, IImageAccessor<ColorArgb32, byte>, IImageAccessor<uint>
     {
         private Bitmap bitmap;

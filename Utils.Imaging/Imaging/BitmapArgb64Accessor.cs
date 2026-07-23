@@ -1,6 +1,7 @@
 using System;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Runtime.Versioning;
 
 namespace Utils.Imaging
 {
@@ -8,6 +9,10 @@ namespace Utils.Imaging
     /// Provides direct memory access to 64-bit ARGB bitmap data for high precision pixel
     /// manipulation scenarios.
     /// </summary>
+    /// <remarks>
+    /// This class depends on <c>System.Drawing</c> (GDI+) and is supported on Windows only.
+    /// </remarks>
+    [SupportedOSPlatform("windows")]
     public unsafe class BitmapArgb64Accessor : IDisposable, IImageAccessor<ColorArgb64, ushort>, IImageAccessor<ulong>
     {
         private Bitmap bitmap;
