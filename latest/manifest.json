@@ -5104,7 +5104,7 @@
       "Uid": null,
       "IsMRef": true,
       "Title": "Utils.Mathematics.Expressions.ExpressionExtensionsException",
-      "Summary": "<p sourcefile=\"api/Utils.Mathematics.Expressions.ExpressionExtensionsException.yml\" sourcestartlinenumber=\"1\">Represents a custom exception related to expression extension operations.</p>\n"
+      "Summary": "<p sourcefile=\"api/Utils.Mathematics.Expressions.ExpressionExtensionsException.yml\" sourcestartlinenumber=\"1\">Represents validation errors that occur while building derivative expressions.</p>\n"
     },
     {
       "type": "ManagedReference",
