@@ -41,21 +41,21 @@ Empty, negative or out-of-image regions and unchecked offset/size arithmetic are
 
 **Priority:** P1.
 
-### 6. `MatrixImageTransformer` allocates from unchecked dimensions
+### 6. ~~`MatrixImageTransformer` allocates from unchecked dimensions~~ ✅ FIXED
 `new A[width * height]` uses unchecked multiplication and an unbounded full-image copy.
 
 **Fix:** validate dimensions, use checked multiplication, enforce a pixel limit or accept caller-provided/tiled workspace.
 
 **Priority:** P1.
 
-### 7. Mask dimensions are never validated
+### 7. ~~Mask dimensions are never validated~~ ✅ FIXED
 A mask is indexed over the destination dimensions without requiring a matching size.
 
 **Fix:** reject mismatched dimensions before modifying any destination pixel.
 
 **Priority:** P1.
 
-### 8. Transformer weights can be mutable or non-finite
+### 8. ~~Transformer weights can be mutable or non-finite~~ ✅ FIXED
 The caller's `double[,]` is retained directly and `NaN`/infinity are accepted.
 
 **Fix:** clone and validate a non-empty matrix into immutable internal storage.
@@ -90,7 +90,7 @@ The floating, 8-bit and 16-bit implementations use different and incomplete form
 
 **Priority:** P1 functional bug.
 
-### 12. Convolution semantics normalize only positive weight sums
+### 12. ~~Convolution semantics normalize only positive weight sums~~ ✅ FIXED
 Zero-sum and negative-sum kernels are skipped or normalized incorrectly.
 
 **Fix:** separate convolution from weighted averaging; expose divisor, bias, normalization and border policies explicitly.
