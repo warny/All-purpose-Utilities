@@ -257,19 +257,27 @@ public struct ColorArgb64 : IColorArgb<ushort>, IEquatable<ColorArgb64>, IEquali
 
     /// <summary>
     /// Applies standard alpha compositing with another color placed underneath the current one.
+    /// Straight-alpha formula: α_out = α_src + α_dst×(1−α_src);
+    /// C_out = (C_src×α_src + C_dst×α_dst×(1−α_src)) / α_out.
+    /// All intermediate arithmetic is performed in double precision.
     /// </summary>
     /// <param name="other">The background color.</param>
     /// <returns>The result of the over compositing operation.</returns>
     public IColorArgb<ushort> Over(IColorArgb<ushort> other)
     {
-        return BuildColor(
-                other,
-                (thisAlpha, otherAlpha) => (ushort)(thisAlpha + (ushort.MaxValue - thisAlpha) * otherAlpha / ushort.MaxValue),
-                (alpha, thisAlpha, otherAlpha, thisComponent, otherComponent) =>
-                {
-                    double numerator = (double)thisComponent * thisAlpha + (double)(ushort.MaxValue - thisAlpha) * otherComponent;
-                    return (ushort)(numerator / ushort.MaxValue);
-                });
+        const double max = 65535.0;
+        double aS = this.alpha / max;
+        double aD = other.Alpha / max;
+        double aOut = aS + aD * (1.0 - aS);
+        if (aOut <= 0.0) return new ColorArgb64(0);
+        double kSrc = aS / aOut;
+        double kDst = aD * (1.0 - aS) / aOut;
+        return new ColorArgb64(
+            (ushort)Math.Round(aOut * max),
+            (ushort)Math.Round(Math.Clamp(this.red   / max * kSrc + other.Red   / max * kDst, 0.0, 1.0) * max),
+            (ushort)Math.Round(Math.Clamp(this.green / max * kSrc + other.Green / max * kDst, 0.0, 1.0) * max),
+            (ushort)Math.Round(Math.Clamp(this.blue  / max * kSrc + other.Blue  / max * kDst, 0.0, 1.0) * max)
+        );
     }
 
     /// <summary>

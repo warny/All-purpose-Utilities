@@ -83,7 +83,7 @@ Use it for every 8→16 conversion path.
 
 **Priority:** P1 functional bug.
 
-### 11. Porter-Duff `Over` mixes straight and premultiplied formulas
+### 11. ~~Porter-Duff `Over` mixes straight and premultiplied formulas~~ ✅ FIXED
 The floating, 8-bit and 16-bit implementations use different and incomplete formulas.
 
 **Fix:** choose one documented representation and delegate every type to one tested generic implementation.

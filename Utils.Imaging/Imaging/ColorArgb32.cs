@@ -244,17 +244,27 @@ public struct ColorArgb32 : IColorArgb<byte>, IEquatable<ColorArgb32>, IEquality
 
     /// <summary>
     /// Applies the Porter-Duff over operator using the current color as the foreground.
+    /// Straight-alpha formula: α_out = α_src + α_dst×(1−α_src);
+    /// C_out = (C_src×α_src + C_dst×α_dst×(1−α_src)) / α_out.
+    /// All intermediate arithmetic is performed in double precision to avoid overflow.
     /// </summary>
     /// <param name="other">The background color.</param>
     /// <returns>The composited color.</returns>
     public IColorArgb<byte> Over(IColorArgb<byte> other)
     {
+        const double max = 255.0;
+        double aS = this.Alpha / max;
+        double aD = other.Alpha / max;
+        double aOut = aS + aD * (1.0 - aS);
+        if (aOut <= 0.0) return new ColorArgb32(0, 0, 0, 0);
+        double kSrc = aS / aOut;
+        double kDst = aD * (1.0 - aS) / aOut;
         return new ColorArgb32(
-                        (byte)(this.Alpha + (byte.MaxValue - this.Alpha) * other.Alpha / byte.MaxValue),
-                        (byte)(this.Red * this.Alpha + (byte.MaxValue - this.Alpha) * other.Red / byte.MaxValue),
-                        (byte)(this.Green * this.Alpha + (byte.MaxValue - this.Alpha) * other.Green / byte.MaxValue),
-                        (byte)(this.Blue * this.Alpha + (byte.MaxValue - this.Alpha) * other.Blue / byte.MaxValue)
-                );
+            (byte)Math.Round(aOut * max),
+            (byte)Math.Round(Math.Clamp(this.Red   / max * kSrc + other.Red   / max * kDst, 0.0, 1.0) * max),
+            (byte)Math.Round(Math.Clamp(this.Green / max * kSrc + other.Green / max * kDst, 0.0, 1.0) * max),
+            (byte)Math.Round(Math.Clamp(this.Blue  / max * kSrc + other.Blue  / max * kDst, 0.0, 1.0) * max)
+        );
     }
 
     /// <summary>

@@ -185,15 +185,24 @@ public struct ColorArgb : IColorArgb<double>, IEquatable<ColorArgb>, IEqualityOp
 
     /// <summary>
     /// Applies the Porter-Duff over operator using the current color as the foreground.
+    /// Straight-alpha formula: α_out = α_src + α_dst×(1−α_src);
+    /// C_out = (C_src×α_src + C_dst×α_dst×(1−α_src)) / α_out.
     /// </summary>
     /// <param name="other">The background color.</param>
     /// <returns>The composited color.</returns>
-    public IColorArgb<double> Over(IColorArgb<double> other) => new ColorArgb(
-            this.Alpha + (1.0 - this.Alpha) * other.Alpha,
-            this.Red * this.Alpha + (1.0 - this.Alpha) * other.Red,
-            this.Green * this.Alpha + (1.0 - this.Alpha) * other.Green,
-            this.Blue * this.Alpha + (1.0 - this.Alpha) * other.Blue
-    );
+    public IColorArgb<double> Over(IColorArgb<double> other)
+    {
+        double aOut = this.alpha + other.Alpha * (1.0 - this.alpha);
+        if (aOut <= 0.0) return new ColorArgb(0, 0, 0, 0);
+        double kSrc = this.alpha / aOut;
+        double kDst = other.Alpha * (1.0 - this.alpha) / aOut;
+        return new ColorArgb(
+            aOut,
+            Math.Clamp(this.red   * kSrc + other.Red   * kDst, 0.0, 1.0),
+            Math.Clamp(this.green * kSrc + other.Green * kDst, 0.0, 1.0),
+            Math.Clamp(this.blue  * kSrc + other.Blue  * kDst, 0.0, 1.0)
+        );
+    }
 
     /// <summary>
     /// Adds two colors while clamping each component to the [0,1] range.
