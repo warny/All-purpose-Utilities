@@ -35,15 +35,17 @@ namespace Utils.Imaging
         /// </summary>
         public int Height { get { ThrowIfDisposed(); return height; } }
 
+        private readonly int colorDepth;
+
         /// <summary>
         /// Gets the number of bytes per pixel.
         /// </summary>
-        public int ColorDepth { get; }
+        public int ColorDepth { get { ThrowIfDisposed(); return colorDepth; } }
 
         /// <summary>
         /// Gets the pixel format used when locking the bitmap.
         /// </summary>
-        public PixelFormat PixelFormat => pixelformat;
+        public PixelFormat PixelFormat { get { ThrowIfDisposed(); return pixelformat; } }
 
         private static readonly IReadOnlyDictionary<PixelFormat, int> ColorDepths =
             new Dictionary<PixelFormat, int>
@@ -97,7 +99,7 @@ namespace Utils.Imaging
             ValidateRegion(rgn, bitmap.Width, bitmap.Height);
 
             this.pixelformat = fmt;
-            this.ColorDepth = colorDepth;
+            this.colorDepth = colorDepth;
             this.bitmap = bitmap;
 
             bmpdata = bitmap.LockBits(rgn, ImageLockMode.ReadWrite, fmt);

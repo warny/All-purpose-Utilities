@@ -20,6 +20,56 @@ public class P2FindingsTests
         public T this[Point p]      { get => default!; set { } }
     }
 
+    // ── IntersectionMergeThreshold rejects NaN and Infinity ──────────────────
+
+    [TestMethod]
+    [ExpectedException(typeof(ArgumentOutOfRangeException))]
+    public void DrawI_IntersectionMergeThreshold_NaN_ThrowsArgumentOutOfRangeException()
+    {
+        var draw = new DrawI<ColorArgb32>(new DummyAccessor<ColorArgb32>());
+        draw.IntersectionMergeThreshold = float.NaN;
+    }
+
+    [TestMethod]
+    [ExpectedException(typeof(ArgumentOutOfRangeException))]
+    public void DrawI_IntersectionMergeThreshold_PositiveInfinity_ThrowsArgumentOutOfRangeException()
+    {
+        var draw = new DrawI<ColorArgb32>(new DummyAccessor<ColorArgb32>());
+        draw.IntersectionMergeThreshold = float.PositiveInfinity;
+    }
+
+    [TestMethod]
+    [ExpectedException(typeof(ArgumentOutOfRangeException))]
+    public void DrawI_IntersectionMergeThreshold_NegativeInfinity_ThrowsArgumentOutOfRangeException()
+    {
+        var draw = new DrawI<ColorArgb32>(new DummyAccessor<ColorArgb32>());
+        draw.IntersectionMergeThreshold = float.NegativeInfinity;
+    }
+
+    [TestMethod]
+    [ExpectedException(typeof(ArgumentOutOfRangeException))]
+    public void DrawI_IntersectionMergeThreshold_Negative_ThrowsArgumentOutOfRangeException()
+    {
+        var draw = new DrawI<ColorArgb32>(new DummyAccessor<ColorArgb32>());
+        draw.IntersectionMergeThreshold = -1f;
+    }
+
+    [TestMethod]
+    public void DrawI_IntersectionMergeThreshold_Zero_IsAccepted()
+    {
+        var draw = new DrawI<ColorArgb32>(new DummyAccessor<ColorArgb32>());
+        draw.IntersectionMergeThreshold = 0f;
+        Assert.AreEqual(0f, draw.IntersectionMergeThreshold);
+    }
+
+    [TestMethod]
+    public void DrawI_IntersectionMergeThreshold_PositiveFinite_IsAccepted()
+    {
+        var draw = new DrawI<ColorArgb32>(new DummyAccessor<ColorArgb32>());
+        draw.IntersectionMergeThreshold = 1.5f;
+        Assert.AreEqual(1.5f, draw.IntersectionMergeThreshold);
+    }
+
     // ── Finding #27: BaseDrawing validates null accessor ──────────────────────
 
     [TestMethod]

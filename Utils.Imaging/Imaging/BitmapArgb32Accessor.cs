@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.Versioning;
@@ -22,6 +22,8 @@ namespace Utils.Imaging
         private readonly int totalBytes;
         private readonly int width;
         private readonly int height;
+        // Stride expressed in uint units (4 bytes per pixel in Format32bppArgb).
+        private readonly int strideInPixels;
         private bool disposed;
 
         /// <summary>
@@ -37,8 +39,18 @@ namespace Utils.Imaging
         /// <inheritdoc/>
         uint IImageAccessor<uint>.this[int x, int y]
         {
-            get { ThrowIfDisposed(); return uintdata[y * width + x]; }
-            set { ThrowIfDisposed(); uintdata[y * width + x] = value; }
+            get
+            {
+                ThrowIfDisposed();
+                ValidateCoordinates(x, y);
+                return uintdata[y * strideInPixels + x];
+            }
+            set
+            {
+                ThrowIfDisposed();
+                ValidateCoordinates(x, y);
+                uintdata[y * strideInPixels + x] = value;
+            }
         }
 
         /// <summary>
@@ -48,18 +60,25 @@ namespace Utils.Imaging
         /// <param name="bitmap">Bitmap providing the pixel data.</param>
         /// <param name="region">Optional region to lock; when omitted the entire bitmap is used.</param>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="bitmap"/> is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">
+        /// Thrown when <paramref name="region"/> has non-positive dimensions or exceeds the bitmap bounds.
+        /// </exception>
         public BitmapArgb32Accessor(Bitmap bitmap, Rectangle? region = null)
         {
             if (bitmap is null) throw new ArgumentNullException(nameof(bitmap));
             this.bitmap = bitmap;
-            region = region ?? new Rectangle(0, 0, bitmap.Width, bitmap.Height);
 
-            this.bmpdata = bitmap.LockBits(region.Value, ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
+            var rgn = region ?? new Rectangle(0, 0, bitmap.Width, bitmap.Height);
+            ValidateRegion(rgn, bitmap.Width, bitmap.Height);
+
+            this.bmpdata = bitmap.LockBits(rgn, ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
             try
             {
                 this.uintdata = (uint*)(void*)bmpdata.Scan0;
                 this.width = bmpdata.Width;
                 this.height = bmpdata.Height;
+                // Stride is in bytes; each pixel is sizeof(uint) = 4 bytes.
+                this.strideInPixels = bmpdata.Stride / sizeof(uint);
                 this.totalBytes = bmpdata.Stride * bmpdata.Height;
             }
             catch
@@ -76,16 +95,27 @@ namespace Utils.Imaging
         /// <param name="x">Horizontal pixel coordinate.</param>
         /// <param name="y">Vertical pixel coordinate.</param>
         /// <exception cref="ObjectDisposedException">Thrown after <see cref="Dispose()"/> has been called.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when any coordinate is out of bounds.</exception>
         public ColorArgb32 this[int x, int y]
         {
-            get { ThrowIfDisposed(); return new ColorArgb32(uintdata[y * width + x]); }
-            set { ThrowIfDisposed(); uintdata[y * width + x] = value.Value; }
+            get
+            {
+                ThrowIfDisposed();
+                ValidateCoordinates(x, y);
+                return new ColorArgb32(uintdata[y * strideInPixels + x]);
+            }
+            set
+            {
+                ThrowIfDisposed();
+                ValidateCoordinates(x, y);
+                uintdata[y * strideInPixels + x] = value.Value;
+            }
         }
 
         /// <summary>
         /// Copies the raw pixel data to an array of unsigned integers.
         /// </summary>
-        /// <returns>Array containing the raw pixel values.</returns>
+        /// <returns>Array containing the raw pixel values, including stride padding.</returns>
         /// <exception cref="ObjectDisposedException">Thrown after <see cref="Dispose()"/> has been called.</exception>
         public uint[] CopyToArray()
         {
@@ -111,7 +141,7 @@ namespace Utils.Imaging
             {
                 for (int x = 0; x < width; x++)
                 {
-                    copy[x, y] = new ColorArgb32(uintdata[y * width + x]);
+                    copy[x, y] = new ColorArgb32(uintdata[y * strideInPixels + x]);
                 }
             }
             return copy;
@@ -132,6 +162,22 @@ namespace Utils.Imaging
             if (sprite is null) throw new ArgumentNullException(nameof(sprite));
             if (blend is null) throw new ArgumentNullException(nameof(blend));
             ImageAccessorExtensions.ApplySprite<ColorArgb32, byte>(this, sprite, location, blend);
+        }
+
+        private static void ValidateRegion(Rectangle region, int bitmapWidth, int bitmapHeight)
+        {
+            if (region.Width <= 0 || region.Height <= 0)
+                throw new ArgumentOutOfRangeException(nameof(region), "Region dimensions must be positive.");
+            if (region.X < 0 || region.Y < 0 || region.Right > bitmapWidth || region.Bottom > bitmapHeight)
+                throw new ArgumentOutOfRangeException(nameof(region), "Region must lie within the bitmap bounds.");
+        }
+
+        private void ValidateCoordinates(int x, int y)
+        {
+            if ((uint)x >= (uint)width)
+                throw new ArgumentOutOfRangeException(nameof(x), x, $"x must be in [0, {width - 1}].");
+            if ((uint)y >= (uint)height)
+                throw new ArgumentOutOfRangeException(nameof(y), y, $"y must be in [0, {height - 1}].");
         }
 
         private void ThrowIfDisposed()

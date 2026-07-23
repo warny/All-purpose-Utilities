@@ -37,15 +37,15 @@ namespace Utils.Drawing
         /// </para>
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException">
-        /// Thrown when set to a negative value.
+        /// Thrown when set to a negative, NaN or infinite value.
         /// </exception>
         public float IntersectionMergeThreshold
         {
             get => _intersectionMergeThreshold;
             set
             {
-                if (value < 0f)
-                    throw new ArgumentOutOfRangeException(nameof(value), "IntersectionMergeThreshold must be non-negative.");
+                if (!float.IsFinite(value) || value < 0f)
+                    throw new ArgumentOutOfRangeException(nameof(value), "IntersectionMergeThreshold must be a finite non-negative value.");
                 _intersectionMergeThreshold = value;
             }
         }

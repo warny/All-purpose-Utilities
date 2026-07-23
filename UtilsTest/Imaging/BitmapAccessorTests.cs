@@ -302,6 +302,70 @@ public class BitmapAccessorTests
         Assert.ThrowsException<ObjectDisposedException>(() => acc.CopyToArray());
     }
 
+    [TestMethod]
+    public void BitmapArgb32Accessor_OutOfBounds_ThrowsArgumentOutOfRangeException()
+    {
+        using var bmp = new Bitmap(4, 4, PixelFormat.Format32bppArgb);
+        using var acc = new BitmapArgb32Accessor(bmp);
+
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => { _ = acc[4, 0]; });
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => { _ = acc[0, 4]; });
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => { _ = acc[-1, 0]; });
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => { _ = acc[0, -1]; });
+    }
+
+    [TestMethod]
+    public void BitmapArgb32Accessor_MultipleRows_UsesStrideCorrectly()
+    {
+        using var bmp = new Bitmap(4, 4, PixelFormat.Format32bppArgb);
+        using var acc = new BitmapArgb32Accessor(bmp);
+
+        var red  = new ColorArgb32(255, 255, 0, 0);
+        var blue = new ColorArgb32(255, 0, 0, 255);
+
+        acc[0, 0] = red;
+        acc[0, 1] = blue;
+
+        Assert.AreEqual(red,  acc[0, 0], "Row 0 should be red");
+        Assert.AreEqual(blue, acc[0, 1], "Row 1 should be blue");
+    }
+
+    [TestMethod]
+    public void BitmapArgb32Accessor_InvalidRegion_ThrowsArgumentOutOfRangeException()
+    {
+        using var bmp = new Bitmap(4, 4, PixelFormat.Format32bppArgb);
+
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => new BitmapArgb32Accessor(bmp, new Rectangle(-1, 0, 2, 2)),
+            "negative X");
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => new BitmapArgb32Accessor(bmp, new Rectangle(0, 0, 0, 2)),
+            "zero width");
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => new BitmapArgb32Accessor(bmp, new Rectangle(0, 0, 5, 2)),
+            "width exceeds bitmap");
+    }
+
+    // ── BitmapAccessor: ColorDepth and PixelFormat throw after dispose ─────────
+
+    [TestMethod]
+    public void BitmapAccessor_AfterDispose_ColorDepthThrowsObjectDisposedException()
+    {
+        var bmp = new Bitmap(4, 4, PixelFormat.Format32bppArgb);
+        var acc = new BitmapAccessor(bmp, PixelFormat.Format32bppArgb);
+        acc.Dispose();
+        Assert.ThrowsException<ObjectDisposedException>(() => { _ = acc.ColorDepth; });
+    }
+
+    [TestMethod]
+    public void BitmapAccessor_AfterDispose_PixelFormatThrowsObjectDisposedException()
+    {
+        var bmp = new Bitmap(4, 4, PixelFormat.Format32bppArgb);
+        var acc = new BitmapAccessor(bmp, PixelFormat.Format32bppArgb);
+        acc.Dispose();
+        Assert.ThrowsException<ObjectDisposedException>(() => { _ = acc.PixelFormat; });
+    }
+
     // ── Finding #17: pixel-format aliases rejected ────────────────────────────
 
     [TestMethod]
