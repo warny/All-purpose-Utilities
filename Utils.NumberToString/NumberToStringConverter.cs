@@ -61,41 +61,27 @@ namespace Utils.NumberToString
 
             Group = options.Group;
 
-            // Validate Group (group size): must be positive and representable by _decimalPowersOfTen.
+            // Validate Group size: must be in the range [1, _decimalPowersOfTen.Length - 1].
             if (Group <= 0)
                 throw new ArgumentOutOfRangeException(nameof(options.Group),
                     $"Group size must be positive; got {Group}.");
+            if (Group >= _decimalPowersOfTen.Length)
+                throw new ArgumentOutOfRangeException(nameof(options.Group),
+                    $"Group size must be between 1 and {_decimalPowersOfTen.Length - 1}; got {Group}.");
 
             Separator = options.Separator ?? " ";
             GroupSeparator = options.GroupSeparator ?? "";
             Zero = options.Zero;
             Minus = options.Minus;
             DecimalSeparator = options.DecimalSeparator ?? ",";
-            Groups = options.Groups.ToImmutableDictionary(
+
+            // Validate options.Groups before building the immutable snapshot so that failures
+            // produce a precise diagnostic rather than a raw NullReferenceException from LINQ.
+            ValidateGroupsSource(options.Groups!, nameof(options.Groups));
+
+            Groups = options.Groups!.ToImmutableDictionary(
                 kv => kv.Key,
                 kv => (IReadOnlyDictionary<long, DigitType>)kv.Value.Digits.ToDictionary(d => d.Digit).ToImmutableDictionary());
-
-            // Validate the Groups dictionary structure.
-            if (Groups.Count == 0)
-                throw new ArgumentException("Groups must contain at least one group.", nameof(options.Groups));
-            var groupKeys = Groups.Keys.OrderBy(k => k).ToList();
-            if (groupKeys[0] < 1)
-                throw new ArgumentException(
-                    $"Group keys must be positive integers; the smallest key is {groupKeys[0]}.", nameof(options.Groups));
-            for (int gi = 1; gi < groupKeys.Count; gi++)
-                if (groupKeys[gi] != groupKeys[gi - 1] + 1)
-                    throw new ArgumentException(
-                        $"Group keys must form a contiguous sequence; gap between {groupKeys[gi - 1]} and {groupKeys[gi]}.",
-                        nameof(options.Groups));
-            int maxGroupKey = groupKeys[groupKeys.Count - 1];
-            if (maxGroupKey > _decimalPowersOfTen.Length)
-                throw new ArgumentException(
-                    $"The maximum group key ({maxGroupKey}) exceeds the supported limit of {_decimalPowersOfTen.Length}; " +
-                    "provide a smaller number of groups or add a custom power table.", nameof(options.Groups));
-            foreach (var (key, digitMap) in Groups)
-                if (digitMap.Count == 0)
-                    throw new ArgumentException(
-                        $"Group {key} has no digit definitions.", nameof(options.Groups));
             Exceptions = (options.Exceptions ?? new Dictionary<long, string>()).ToImmutableDictionary();
             Replacements = (options.Replacements ?? Array.Empty<ReplacementRule>())
                 .Select(r => r ?? throw new ArgumentNullException(nameof(options), "Replacement entries must not be null."))
@@ -1486,6 +1472,54 @@ namespace Utils.NumberToString
             }
 
             return isNegative ? Minus.Replace("*", result) : result;
+        }
+
+        /// <summary>
+        /// Validates the source groups dictionary before it is materialised into an immutable snapshot,
+        /// so that null entries, structural gaps, and duplicate digit values produce precise diagnostics
+        /// rather than NullReferenceException or ArgumentException from LINQ.
+        /// </summary>
+        private static void ValidateGroupsSource(IReadOnlyDictionary<int, DigitListType> src, string paramName)
+        {
+            if (src.Count == 0)
+                throw new ArgumentException("Groups must contain at least one group.", paramName);
+
+            var groupKeys = src.Keys.OrderBy(k => k).ToList();
+            if (groupKeys[0] < 1)
+                throw new ArgumentException(
+                    $"Group keys must be positive integers; the smallest key is {groupKeys[0]}.", paramName);
+            for (int gi = 1; gi < groupKeys.Count; gi++)
+                if (groupKeys[gi] != groupKeys[gi - 1] + 1)
+                    throw new ArgumentException(
+                        $"Group keys must form a contiguous sequence; gap between {groupKeys[gi - 1]} and {groupKeys[gi]}.",
+                        paramName);
+            int maxGroupKey = groupKeys[groupKeys.Count - 1];
+            if (maxGroupKey > _decimalPowersOfTen.Length)
+                throw new ArgumentException(
+                    $"The maximum group key ({maxGroupKey}) exceeds the supported limit of {_decimalPowersOfTen.Length}; " +
+                    $"provide a smaller number of groups or add a custom power table.", paramName);
+
+            foreach (var (key, digitList) in src)
+            {
+                if (digitList is null)
+                    throw new ArgumentException($"Group {key} has a null DigitListType.", paramName);
+                if (digitList.Digits is null)
+                    throw new ArgumentException($"Group {key} has a null Digits list.", paramName);
+                if (digitList.Digits.Count == 0)
+                    throw new ArgumentException($"Group {key} has no digit definitions.", paramName);
+
+                var digitValues = new HashSet<long>();
+                for (int i = 0; i < digitList.Digits.Count; i++)
+                {
+                    var dt = digitList.Digits[i];
+                    if (dt is null)
+                        throw new ArgumentException(
+                            $"Group {key} has a null DigitType at index {i}.", paramName);
+                    if (!digitValues.Add(dt.Digit))
+                        throw new ArgumentException(
+                            $"Group {key} has duplicate digit value {dt.Digit}.", paramName);
+                }
+            }
         }
 
         // Powers of ten from 10^0 to 10^18, computed with exact decimal arithmetic.

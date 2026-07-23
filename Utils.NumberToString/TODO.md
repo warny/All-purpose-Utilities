@@ -99,7 +99,7 @@ Trigger patterns are compiled with `new Regex(pattern, RegexOptions.Compiled)` a
 
 **Priority: P1 robustness/security.**
 
-### 54. ✅ Core grouping configuration is not structurally validated
+### 54. Core grouping configuration is not structurally validated
 
 The constructor checks that `Groups` and `Scale` are non-null but does not ensure that:
 
@@ -109,6 +109,8 @@ The constructor checks that `Groups` and `Scale` are non-null but does not ensur
 - `Groups.Keys.Max()` is safe;
 - `10^groupSize` fits the subsequent `long` remainder cast;
 - each `DigitType.BuildString` has a coherent placeholder contract.
+
+> **Partially addressed (PR #504):** `Group` is now validated in the range `[1, _decimalPowersOfTen.Length - 1]`. The Groups dictionary is now validated before LINQ materialisation: structure (non-empty, contiguous positive keys, max key ≤ 19), null `DigitListType`/`Digits`/`DigitType` entries, and duplicate digit values are all caught eagerly. Digit completeness (every required value 0–9 present) remains deferred: test fixtures legitimately use partial digit sets, and a generic "required digits" check would need to know the full number domain.
 
 Malformed programmatic/XML configuration can therefore fail later with `DivideByZeroException`, `OverflowException`, `InvalidOperationException` or `KeyNotFoundException`, sometimes after partial registration.
 

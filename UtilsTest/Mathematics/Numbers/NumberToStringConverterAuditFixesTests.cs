@@ -989,6 +989,88 @@ public class NumberToStringConverterAuditFixesTests
             "A group with no digit definitions must be rejected at construction time");
     }
 
+    [TestMethod]
+    public void Constructor_GroupSizeTooLarge_ThrowsArgumentOutOfRange()
+    {
+        // _decimalPowersOfTen has 19 entries; Group must be < 19 to stay in range.
+        var opts = new NumberToStringConverterOptions(EN) { Group = 19 };
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new NumberToStringConverter(opts),
+            "Group = 19 equals _decimalPowersOfTen.Length and must be rejected");
+    }
+
+    [TestMethod]
+    public void Constructor_NullDigitListTypeInGroup_ThrowsArgumentException()
+    {
+        var opts = new NumberToStringConverterOptions(EN)
+        {
+            Groups = new Dictionary<int, DigitListType> { [1] = null! }
+        };
+        Assert.ThrowsException<ArgumentException>(() => new NumberToStringConverter(opts),
+            "A null DigitListType entry must be rejected before the immutable snapshot is built");
+    }
+
+    [TestMethod]
+    public void Constructor_NullDigitsListInGroup_ThrowsArgumentException()
+    {
+        var opts = new NumberToStringConverterOptions(EN)
+        {
+            Groups = new Dictionary<int, DigitListType> { [1] = new DigitListType() }
+        };
+        Assert.ThrowsException<ArgumentException>(() => new NumberToStringConverter(opts),
+            "A null Digits list must be rejected before the immutable snapshot is built");
+    }
+
+    [TestMethod]
+    public void Constructor_NullDigitTypeEntryInGroup_ThrowsArgumentException()
+    {
+        var opts = new NumberToStringConverterOptions(EN)
+        {
+            Groups = new Dictionary<int, DigitListType>
+            {
+                [1] = new DigitListType { Digits = [new DigitType(1, "one"), null!] }
+            }
+        };
+        Assert.ThrowsException<ArgumentException>(() => new NumberToStringConverter(opts),
+            "A null DigitType entry in the Digits list must be rejected before LINQ materialisation");
+    }
+
+    [TestMethod]
+    public void Constructor_DuplicateDigitValuesInGroup_ThrowsArgumentException()
+    {
+        var opts = new NumberToStringConverterOptions(EN)
+        {
+            Groups = new Dictionary<int, DigitListType>
+            {
+                [1] = new DigitListType { Digits = [new DigitType(1, "one"), new DigitType(1, "uno")] }
+            }
+        };
+        Assert.ThrowsException<ArgumentException>(() => new NumberToStringConverter(opts),
+            "Duplicate digit value 1 in the same group must be rejected with a clear diagnostic");
+    }
+
+    [TestMethod]
+    public void Constructor_DuplicateDigitValuesDifferentEntries_ThrowsArgumentException()
+    {
+        // Two DigitType entries with the same Digit value — the second is unreachable
+        // and signals a configuration mistake; must be detected before LINQ materialisation.
+        var opts = new NumberToStringConverterOptions(EN)
+        {
+            Groups = new Dictionary<int, DigitListType>
+            {
+                [1] = new DigitListType
+                {
+                    Digits =
+                    [
+                        new DigitType(5, "five"),
+                        new DigitType(5, "cinq")
+                    ]
+                }
+            }
+        };
+        Assert.ThrowsException<ArgumentException>(() => new NumberToStringConverter(opts),
+            "Two DigitType entries with the same Digit value in the same group must be rejected");
+    }
+
     // ── Item 78 — MaxNumber must not be negative ──────────────────────────────
 
     [TestMethod]
