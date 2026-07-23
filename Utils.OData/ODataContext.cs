@@ -159,6 +159,12 @@ public abstract class ODataContext
     /// <returns>A task producing the parsed <see cref="Edmx"/> metadata.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="edmxStream"/> is <see langword="null"/>.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the metadata cannot be parsed or exceeds the size limit.</exception>
+    /// <remarks>
+    /// For seekable streams the EDMX document is read starting at the stream's current
+    /// <see cref="Stream.Position"/>. The size limit is checked against the number of bytes
+    /// remaining from that position, not the total stream length. The position is not reset
+    /// before reading.
+    /// </remarks>
     public static async Task<Edmx> LoadMetadataFromStreamAsync(
         Stream edmxStream,
         ODataMetadataOptions? options = null,
@@ -169,17 +175,18 @@ public abstract class ODataContext
 
         // Item 15: deserialize directly from an already-seekable stream when possible, avoiding
         // an unnecessary in-memory copy; otherwise buffer with a bounded copy.
+        // The document is read from the current Position; the size check uses remaining bytes.
         Stream deserializeSource;
         MemoryStream? bounded = null;
         if (edmxStream.CanSeek)
         {
-            if (edmxStream.Length > options.MaxMetadataBytes)
+            long remaining = edmxStream.Length - edmxStream.Position;
+            if (remaining > options.MaxMetadataBytes)
             {
                 throw new InvalidOperationException(
                     $"EDMX metadata exceeds the maximum allowed size of {options.MaxMetadataBytes} bytes.");
             }
 
-            edmxStream.Position = 0;
             deserializeSource = edmxStream;
         }
         else

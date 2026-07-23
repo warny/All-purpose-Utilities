@@ -115,20 +115,20 @@ public sealed record ErrorReturnValue
     }
 
     /// <summary>Application-specific or HTTP status code describing the failure.</summary>
-    public int code { get; init; }
+    public int code { get; }
 
     /// <summary>Human-readable explanation of the error.</summary>
-    public string message { get; init; }
+    public string message { get; }
 
     /// <summary>
     /// Gets the category of the error, enabling callers to branch on the failure origin without
     /// interpreting the numeric <see cref="code"/> (item 31).
     /// </summary>
-    public ODataErrorKind Kind { get; init; }
+    public ODataErrorKind Kind { get; }
 
     /// <summary>
     /// Gets the HTTP status code associated with the failure when the error originates from an
     /// HTTP response; otherwise <see langword="null"/> (item 31).
     /// </summary>
-    public int? HttpStatusCode { get; init; }
+    public int? HttpStatusCode { get; }
 }

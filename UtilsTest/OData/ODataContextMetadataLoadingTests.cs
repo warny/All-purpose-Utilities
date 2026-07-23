@@ -74,6 +74,42 @@ public class ODataContextMetadataLoadingTests
     }
 
     [TestMethod]
+    public async Task LoadMetadataFromStreamAsync_SeekableStreamAtOffset_ReadsFromCurrentPosition()
+    {
+        // Arrange: prepend 100 bytes of junk before the EDMX document.
+        // The deserializer must read from the current position, not from the beginning.
+        const int junkLength = 100;
+        byte[] edmxBytes = Encoding.UTF8.GetBytes(SampleEdmx);
+        using var stream = new MemoryStream();
+        stream.Write(new byte[junkLength], 0, junkLength);
+        stream.Write(edmxBytes, 0, edmxBytes.Length);
+        stream.Position = junkLength;  // Skip the junk prefix
+
+        var metadata = await ODataContext.LoadMetadataFromStreamAsync(stream);
+        Assert.IsNotNull(metadata);
+        Assert.IsNotNull(metadata.DataServices);
+    }
+
+    [TestMethod]
+    public async Task LoadMetadataFromStreamAsync_SeekableStreamAtOffset_SizeLimitAppliesToRemainingBytes()
+    {
+        // The size limit must be compared against (Length - Position), not total Length.
+        // With a 1 000-byte junk prefix and MaxMetadataBytes set between the EDMX size and
+        // the total size, the load must succeed when started at the correct offset.
+        const int junkLength = 1_000;
+        byte[] edmxBytes = Encoding.UTF8.GetBytes(SampleEdmx);
+        using var stream = new MemoryStream();
+        stream.Write(new byte[junkLength], 0, junkLength);
+        stream.Write(edmxBytes, 0, edmxBytes.Length);
+        stream.Position = junkLength;
+
+        // Limit is smaller than the full stream but larger than the EDMX portion alone.
+        var options = new ODataMetadataOptions { MaxMetadataBytes = junkLength + edmxBytes.Length - 1 };
+        var metadata = await ODataContext.LoadMetadataFromStreamAsync(stream, options);
+        Assert.IsNotNull(metadata);
+    }
+
+    [TestMethod]
     public async Task LoadMetadataFromStreamAsync_NonSeekableStreamOverLimit_Throws()
     {
         using MemoryStream backing = EdmxStream();

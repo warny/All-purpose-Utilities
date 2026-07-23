@@ -69,4 +69,28 @@ public class ErrorReturnValueTests
         Assert.AreEqual(ODataErrorKind.Metadata, error.Kind);
         Assert.IsNull(error.HttpStatusCode);
     }
+
+    // -----------------------------------------------------------------------
+    // Immutability: properties must be read-only so 'with' expressions cannot
+    // bypass the constructor invariants (code + message + kind consistency).
+    // -----------------------------------------------------------------------
+
+    [TestMethod]
+    public void Properties_AreReadOnly_NoInitSetters()
+    {
+        // Verify at runtime that none of the four properties expose an init or set accessor.
+        // This ensures that 'with' expressions cannot produce an invalid ErrorReturnValue.
+        var type = typeof(ErrorReturnValue);
+        string[] propertyNames = ["code", "message", "Kind", "HttpStatusCode"];
+
+        foreach (string name in propertyNames)
+        {
+            var prop = type.GetProperty(name);
+            Assert.IsNotNull(prop, $"Property '{name}' must exist.");
+            Assert.IsNull(
+                prop.SetMethod,
+                $"Property '{name}' must not have a setter (init or set). " +
+                "Remove it so that 'with' expressions cannot bypass the constructor invariants.");
+        }
+    }
 }

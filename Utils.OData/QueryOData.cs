@@ -140,8 +140,11 @@ public class QueryOData : IDisposable
     /// <param name="parameter">Parameters used to build the query URL.</param>
     /// <param name="skip">Number of records to skip in addition to <see cref="IQuery.Skip"/>.</param>
     /// <param name="cancellationToken">Token used to cancel the HTTP request.</param>
-    /// <returns>The HTTP response message when the request succeeds.</returns>
-    public Task<HttpResponseMessage?> SimpleQuery(IQuery parameter, int skip = 0, CancellationToken cancellationToken = default)
+    /// <returns>
+    /// The HTTP response message. The caller owns the returned response and is responsible for
+    /// disposing it. The method never returns <see langword="null"/>; it throws on transport failure.
+    /// </returns>
+    public Task<HttpResponseMessage> SimpleQuery(IQuery parameter, int skip = 0, CancellationToken cancellationToken = default)
             => SimpleQuery(parameter, sourceRequest: null, skip, cancellationToken);
 
     /// <summary>
@@ -151,13 +154,15 @@ public class QueryOData : IDisposable
     /// <param name="sourceRequest">Optional request providing HTTP headers to forward.</param>
     /// <param name="skip">Number of records to skip in addition to <see cref="IQuery.Skip"/>.</param>
     /// <param name="cancellationToken">Token used to cancel the HTTP request.</param>
-    /// <returns>The HTTP response message when the request succeeds.</returns>
-    public async Task<HttpResponseMessage?> SimpleQuery(IQuery parameter, HttpRequestMessage? sourceRequest = null, int skip = 0, CancellationToken cancellationToken = default)
+    /// <returns>
+    /// The HTTP response message. The caller owns the returned response and is responsible for
+    /// disposing it. The method never returns <see langword="null"/>; it throws on transport failure.
+    /// </returns>
+    public async Task<HttpResponseMessage> SimpleQuery(IQuery parameter, HttpRequestMessage? sourceRequest = null, int skip = 0, CancellationToken cancellationToken = default)
     {
         var query = new ODataQueryBuilder(BaseUrl, parameter, skip: skip);
 
-        HttpResponseMessage response = await HttpGet(query.Url, sourceRequest, cancellationToken);
-        return response;
+        return await HttpGet(query.Url, sourceRequest, cancellationToken);
     }
 
     /// <summary>
