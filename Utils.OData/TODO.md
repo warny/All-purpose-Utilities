@@ -72,7 +72,7 @@ There is no validation that the base URI is absolute HTTP(S), no normalization o
 
 **Priority: P1 paging correctness.**
 
-### 6. Pagination ignores `@odata.nextLink` and reconstructs pages with `$skip`
+### 6. **[FIXED]** Pagination ignores `@odata.nextLink` and reconstructs pages with `$skip`
 
 `QueryToJSon` and the streaming path repeatedly clone the original query and increment the skip count. OData servers can return server-driven paging with an opaque `@odata.nextLink` that includes skip tokens, snapshots, partitions, or additional continuation state.
 
@@ -82,7 +82,7 @@ There is no validation that the base URI is absolute HTTP(S), no normalization o
 
 **Priority: P1 OData protocol correctness.**
 
-### 7. Forwarding an incoming request copies almost every header without a policy
+### 7. **[FIXED]** Forwarding an incoming request copies almost every header without a policy
 
 `HttpGet` copies all source request headers and even content headers into the outgoing GET request using `TryAddWithoutValidation`. This can forward `Authorization`, `Host`, connection-specific headers, conditional headers, tracing headers, and unrelated content metadata.
 
@@ -92,7 +92,7 @@ There is no validation that the base URI is absolute HTTP(S), no normalization o
 
 **Priority: P1 security and HTTP correctness.**
 
-### 8. Cookie forwarding mutates a shared `CookieContainer` and uses `BaseUrl`, not the actual request URI
+### 8. **[FIXED]** Cookie forwarding mutates a shared `CookieContainer` and uses `BaseUrl`, not the actual request URI
 
 When a source cookie header is supplied, the code calls `CookieContainer.SetCookies(new Uri(BaseUrl), ...)`. The handler/container belongs to the `QueryOData` instance and is shared across requests. Concurrent calls can therefore persist and mix caller cookies, and redirects/subpaths may receive a cookie scope different from the actual outgoing URL.
 
@@ -112,7 +112,7 @@ Constructors accept any non-null string. Cookie propagation catches every except
 
 **Priority: P1 configuration correctness.**
 
-### 10. LINQ translation executes arbitrary captured expressions during query compilation
+### 10. **[FIXED]** LINQ translation executes arbitrary captured expressions during query compilation
 
 `EvaluateExpression` builds and compiles a lambda for every non-constant value expression, then invokes it. This can execute property getters, method calls, mutable closures, I/O, or other side effects while translating a query.
 

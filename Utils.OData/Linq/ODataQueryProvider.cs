@@ -85,7 +85,14 @@ public sealed class ODataQueryProvider : IQueryProvider
             return (TResult)(object)compilation;
         }
 
-        throw new NotSupportedException("The OData query provider can only return ODataQueryCompilation instances.");
+        // Item 27: this provider compiles LINQ expressions to OData URI syntax only.
+        // Supported LINQ operators: Where (→ $filter), Expand (→ $expand).
+        // Unsupported terminal operators (Count, Any, First, Select, OrderBy, Skip, Take, …)
+        // must be applied after materialising the OData response as LINQ-to-Objects.
+        throw new NotSupportedException(
+            $"The OData LINQ provider cannot execute '{typeof(TResult).Name}' terminal operators. " +
+            "It compiles Where/$filter and Expand/$expand to an ODataQueryCompilation only. " +
+            "Retrieve the data first, then apply aggregation or projection with LINQ-to-Objects.");
     }
 
     /// <summary>

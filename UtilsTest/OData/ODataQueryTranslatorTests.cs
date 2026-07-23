@@ -147,4 +147,52 @@ public class ODataQueryTranslatorTests
         StringAssert.DoesNotMatch(uri, new System.Text.RegularExpressions.Regex("threshold"),
             "The identifier 'threshold' must never appear in the generated filter.");
     }
+
+    // -----------------------------------------------------------------------
+    // Item 10 — safe evaluation: method calls must be rejected
+    // -----------------------------------------------------------------------
+
+    private static int GetThreshold() => 5;
+
+    [TestMethod]
+    public void MethodCallInFilter_ThrowsNotSupported()
+    {
+        // item 10: arbitrary method calls must not be compiled and invoked during
+        // query translation; NotSupportedException is the required signal.
+        Assert.ThrowsException<NotSupportedException>(
+            () => Filter<Item>(x => x.Quantity > GetThreshold()),
+            "A method call in a filter value expression must throw NotSupportedException.");
+    }
+
+    [TestMethod]
+    public void PropertyGetterInFilter_ThrowsNotSupported()
+    {
+        // item 10: property getters are arbitrary user code and must be rejected.
+        // Only compiler-generated closure fields (FieldInfo) are in the safe subset.
+        // The caller must assign the value to a local variable before building the query.
+        var settings = new { MinQuantity = 5 };
+        Assert.ThrowsException<NotSupportedException>(
+            () => Filter<Item>(x => x.Quantity > settings.MinQuantity),
+            "A property getter read in a filter value expression must throw NotSupportedException.");
+    }
+
+    [TestMethod]
+    public void NewArrayInExpand_EvaluatesCorrectly()
+    {
+        // item 10: new-array initialisers are in the safe subset and must work for Expand.
+        var queryable = new ODataQueryable<Item>(new ODataQueryProvider("Items"), "Items");
+        var compiled = ODataQueryTranslator.Translate(
+            Expression.Call(
+                typeof(ODataQueryableExtensions),
+                nameof(ODataQueryableExtensions.Expand),
+                [typeof(Item)],
+                Expression.Constant(queryable),
+                Expression.NewArrayInit(typeof(string),
+                    Expression.Constant("Orders"),
+                    Expression.Constant("Tags"))),
+            "Items");
+        string uri = Uri.UnescapeDataString(compiled.ToUriString());
+        StringAssert.Contains(uri, "$expand=Orders,Tags",
+            "New-array initialisers must be safely evaluated when used in Expand calls.");
+    }
 }

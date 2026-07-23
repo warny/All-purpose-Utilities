@@ -26,7 +26,7 @@ public class ODataLinqCompilationTests
         var compilation = query.CompileToODataQuery();
 
         Assert.AreEqual("Products", compilation.EntitySetName);
-        Assert.AreEqual("Products?$filter=Id eq 5", compilation.ToUriString());
+        Assert.AreEqual("Products?$filter=Id eq 5", Uri.UnescapeDataString(compilation.ToUriString()));
         Assert.AreEqual(1, compilation.Filters.Count);
         Assert.AreEqual("Id eq 5", compilation.Filters[0]);
     }
@@ -45,7 +45,7 @@ public class ODataLinqCompilationTests
         var compilation = query.CompileToODataQuery();
 
         Assert.AreEqual("Products", compilation.EntitySetName);
-        Assert.AreEqual("Products?$filter=(Price gt 10) and (CategoryName eq 'Hardware')", compilation.ToUriString());
+        Assert.AreEqual("Products?$filter=(Price gt 10) and (CategoryName eq 'Hardware')", Uri.UnescapeDataString(compilation.ToUriString()));
         Assert.AreEqual(1, compilation.Filters.Count);
         Assert.AreEqual("(Price gt 10) and (CategoryName eq 'Hardware')", compilation.Filters[0]);
     }
@@ -63,7 +63,7 @@ public class ODataLinqCompilationTests
         var compilation = query.CompileToODataQuery();
 
         Assert.AreEqual("Products", compilation.EntitySetName);
-        Assert.AreEqual("Products?$filter=Category/Title eq 'Tools'", compilation.ToUriString());
+        Assert.AreEqual("Products?$filter=Category/Title eq 'Tools'", Uri.UnescapeDataString(compilation.ToUriString()));
         Assert.AreEqual(1, compilation.Filters.Count);
         Assert.AreEqual("Category/Title eq 'Tools'", compilation.Filters[0]);
     }
@@ -81,7 +81,7 @@ public class ODataLinqCompilationTests
         var compilation = query.CompileToODataQuery();
 
         Assert.AreEqual("Products", compilation.EntitySetName);
-        Assert.AreEqual("Products?$filter=Supplier/Address/City eq 'Paris'", compilation.ToUriString());
+        Assert.AreEqual("Products?$filter=Supplier/Address/City eq 'Paris'", Uri.UnescapeDataString(compilation.ToUriString()));
         Assert.AreEqual(1, compilation.Filters.Count);
         Assert.AreEqual("Supplier/Address/City eq 'Paris'", compilation.Filters[0]);
     }
@@ -101,7 +101,7 @@ public class ODataLinqCompilationTests
         var compilation = query.CompileToODataQuery();
 
         Assert.AreEqual("Products", compilation.EntitySetName);
-        Assert.AreEqual("Products?$filter=(Price gt 10) and (CategoryName eq 'Hardware')", compilation.ToUriString());
+        Assert.AreEqual("Products?$filter=(Price gt 10) and (CategoryName eq 'Hardware')", Uri.UnescapeDataString(compilation.ToUriString()));
         Assert.AreEqual(1, compilation.Filters.Count);
         Assert.AreEqual("(Price gt 10) and (CategoryName eq 'Hardware')", compilation.Filters[0]);
     }
@@ -122,7 +122,7 @@ public class ODataLinqCompilationTests
 
         Assert.AreEqual("Products", compilation.EntitySetName);
         CollectionAssert.AreEqual(new[] { "Category", "Supplier" }, compilation.Expansions.ToArray());
-        Assert.AreEqual("Products?$expand=Category,Supplier&$filter=Id eq 42", compilation.ToUriString());
+        Assert.AreEqual("Products?$expand=Category,Supplier&$filter=Id eq 42", Uri.UnescapeDataString(compilation.ToUriString()));
     }
 
     /// <summary>
@@ -141,7 +141,7 @@ public class ODataLinqCompilationTests
 
         Assert.AreEqual("Products", compilation.EntitySetName);
         CollectionAssert.AreEqual(new[] { "Category" }, compilation.Expansions.ToArray());
-        Assert.AreEqual("Products?$expand=Category&$filter=Id eq 7", compilation.ToUriString());
+        Assert.AreEqual("Products?$expand=Category&$filter=Id eq 7", Uri.UnescapeDataString(compilation.ToUriString()));
     }
 
     /// <summary>

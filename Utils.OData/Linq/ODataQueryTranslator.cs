@@ -463,19 +463,91 @@ internal static class ODataQueryTranslator
         }
 
         /// <summary>
-        /// Evaluates an expression into a CLR value.
+        /// Evaluates an expression into a CLR value using a safe, restricted subset.
         /// </summary>
+        /// <remarks>
+        /// Item 10: only constants, compiler-generated closure <em>field</em> reads, numeric/enum
+        /// type conversions, <c>TypeAs</c>, and new-array initialisers are supported.
+        /// <list type="bullet">
+        ///   <item><description>
+        ///     <b>Property getters are explicitly rejected</b>: they are arbitrary user code that
+        ///     can modify state, perform I/O, or throw. Assign the value to a local variable before
+        ///     building the LINQ query.
+        ///   </description></item>
+        ///   <item><description>
+        ///     <b>Failed conversions are not silenced</b>: enum, nullable, and numeric conversions
+        ///     that cannot succeed propagate their exception rather than returning the wrong type.
+        ///   </description></item>
+        ///   <item><description>
+        ///     Method calls and all other expression forms are rejected with
+        ///     <see cref="NotSupportedException"/>.
+        ///   </description></item>
+        /// </list>
+        /// </remarks>
         /// <param name="expression">Expression to evaluate.</param>
         /// <returns>The resulting value.</returns>
         private static object? EvaluateExpression(Expression expression)
         {
             if (expression is ConstantExpression constant)
-            {
                 return constant.Value;
+
+            // TypeAs: return null if the value is not assignable to the target type; never throws.
+            if (expression is UnaryExpression typeAs && typeAs.NodeType == ExpressionType.TypeAs)
+            {
+                object? inner = EvaluateExpression(typeAs.Operand);
+                return (inner is not null && typeAs.Type.IsInstanceOfType(inner)) ? inner : null;
             }
 
-            var lambda = Expression.Lambda<Func<object?>>(Expression.Convert(expression, typeof(object)));
-            return lambda.Compile().Invoke();
+            // Numeric / enum / nullable type conversions.
+            if (expression is UnaryExpression convert
+                && (convert.NodeType == ExpressionType.Convert || convert.NodeType == ExpressionType.ConvertChecked))
+            {
+                object? inner = EvaluateExpression(convert.Operand);
+                if (inner is null) return null;
+
+                Type targetType = convert.Type;
+                // Nullable<T>: convert to the underlying type; boxing handles re-wrapping.
+                if (targetType.IsGenericType && targetType.GetGenericTypeDefinition() == typeof(Nullable<>))
+                    targetType = targetType.GetGenericArguments()[0];
+                // Enum: use Enum.ToObject to produce the correct named enum instance.
+                if (targetType.IsEnum)
+                    return Enum.ToObject(targetType, inner);
+                // All other numeric and reference conversions; OverflowException propagates for checked nodes.
+                return System.Convert.ChangeType(inner, targetType, System.Globalization.CultureInfo.InvariantCulture);
+            }
+
+            // Compiler-generated closure field reads (item 10).
+            // ONLY FieldInfo is allowed: compiler-generated closures store captured variables as fields.
+            // PropertyInfo is REJECTED because property getters are arbitrary user code.
+            if (expression is MemberExpression member && member.Expression is not null)
+            {
+                object? target = EvaluateExpression(member.Expression);
+                if (member.Member is System.Reflection.FieldInfo field)
+                    return field.GetValue(target);
+                if (member.Member is System.Reflection.PropertyInfo)
+                    throw new NotSupportedException(
+                        $"Property getter '{member.Member.DeclaringType?.Name}.{member.Member.Name}' " +
+                        "cannot be executed during query compilation because property getters are arbitrary " +
+                        "user code. Assign the value to a local variable before building the LINQ query.");
+                throw new NotSupportedException(
+                    $"Member '{member.Member.Name}' of kind '{member.Member.MemberType}' cannot be safely evaluated.");
+            }
+
+            // Array initialisation (e.g., new[] { "A", "B" } in Expand calls).
+            if (expression is NewArrayExpression newArray && newArray.NodeType == ExpressionType.NewArrayInit)
+            {
+                object?[] items = newArray.Expressions.Select(EvaluateExpression).ToArray();
+                Type elementType = newArray.Type.GetElementType()!;
+                System.Array array = System.Array.CreateInstance(elementType, items.Length);
+                for (int i = 0; i < items.Length; i++)
+                    array.SetValue(items[i], i);
+                return array;
+            }
+
+            throw new NotSupportedException(
+                $"Expression of kind '{expression.NodeType}' cannot be safely evaluated during query compilation. " +
+                "Only constants, closure field reads, type conversions, TypeAs, and new-array initialisers are supported. " +
+                "Pre-evaluate method calls or complex expressions before building the LINQ query.");
         }
 
         /// <summary>
