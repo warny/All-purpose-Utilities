@@ -411,10 +411,12 @@ public class NumberToStringConverterAuditFixesTests
     // ── Item 69 — Separator trimming uses exact token, not char stripping ─────
 
     [TestMethod]
-    public void ConvertRaw_TrailingSeparatorToken_TrimmedExactly()
+    public void ConvertRaw_AlphabeticSeparator_WordEndingWithSeparatorNotCorrupted()
     {
-        // Build a converter where Separator is a multi-character word so that
-        // character-level stripping would silently eat letters.
+        // When Separator="and", the word "thousand" ends with "and".
+        // Character-level TrimEnd would corrupt "thousand" → "thous".
+        // EndsWith-based stripping also corrupts: "oneandthousand".EndsWith("and") → "oneandthous".
+        // The correct fix avoids adding a dangling separator at construction time.
         var options = new NumberToStringConverterOptions(EN)
         {
             Zero = "zero",
@@ -427,68 +429,157 @@ public class NumberToStringConverterAuditFixesTests
             Minus = "minus *"
         };
         var converter = new NumberToStringConverter(options);
-        // 1000 → "one thousand" — no trailing separator expected; just verify no trailing "and"
+        // 1000 → "oneandthousand" with Separator="and" (no space); must NOT be truncated
         string result = converter.Convert(new BigInteger(1000));
-        Assert.IsFalse(result.EndsWith("and", StringComparison.Ordinal),
-            $"Result must not end with separator 'and'; got: '{result}'");
+        StringAssert.EndsWith(result, "thousand",
+            $"'thousand' must remain intact when Separator='and'; got: '{result}'");
     }
 
-    // ── Item 70 — Missing time units produce exception ────────────────────────
+    [TestMethod]
+    public void ConvertRaw_AlphabeticSeparator_UnitsNotCorrupted()
+    {
+        // For 1001 with Separator="and", result should be "oneandthousandandone"
+        // (all three components joined by "and"). No word should be truncated.
+        var options = new NumberToStringConverterOptions(EN)
+        {
+            Zero = "zero",
+            Separator = "and",
+            GroupSeparator = "",
+            Groups = NumberToStringConverter.GetConverter("EN").Groups
+                .ToDictionary(kv => kv.Key, kv => new DigitListType { Digits = kv.Value.Values.ToList() }),
+            Scale = NumberToStringConverter.GetConverter("EN").Scale,
+            Group = 3,
+            Minus = "minus *"
+        };
+        var converter = new NumberToStringConverter(options);
+        string result = converter.Convert(new BigInteger(1001));
+        StringAssert.Contains(result, "thousand",
+            $"'thousand' must be present and intact in result; got: '{result}'");
+        StringAssert.EndsWith(result, "one",
+            $"result must end with 'one' (the units); got: '{result}'");
+    }
+
+    // ── Item 70 — Missing time units produce exception (TimeSpan and TimeOnly) ──
 
     [TestMethod]
     public void Convert_TimeSpan_WithHour_NoHourUnit_ThrowsInvalidOperation()
     {
-        // Build a converter that has "minute" and "second" but NOT "hour"
-        // so SupportsTimeConversion is true but a non-zero hours value triggers the guard.
+        // Converter with "minute" and "second" but NOT "hour":
+        // SupportsTimeConversion is true, but a non-zero hour component must throw.
         var options = new NumberToStringConverterOptions(EN)
         {
             TimeUnits = new Dictionary<string, (string Singular, string Plural, string? Count1Form)>
             {
                 ["minute"] = ("minute", "minutes", null),
                 ["second"] = ("second", "seconds", null)
-                // "hour" intentionally absent
             }
         };
         var converter = new NumberToStringConverter(options);
-        // A 1-hour duration must throw because "hour" unit is not configured
         Assert.ThrowsException<InvalidOperationException>(
             () => converter.Convert(TimeSpan.FromHours(1)),
-            "A non-zero hours value with no configured hour unit must throw InvalidOperationException");
+            "A non-zero hours value with no 'hour' unit must throw InvalidOperationException");
+    }
+
+    [TestMethod]
+    public void Convert_TimeOnly_WithHour_NoHourUnit_ThrowsInvalidOperation()
+    {
+        // Same policy must apply to Convert(TimeOnly): non-zero hour with missing unit → throw.
+        var options = new NumberToStringConverterOptions(EN)
+        {
+            TimeUnits = new Dictionary<string, (string Singular, string Plural, string? Count1Form)>
+            {
+                ["minute"] = ("minute", "minutes", null),
+                ["second"] = ("second", "seconds", null)
+            }
+        };
+        var converter = new NumberToStringConverter(options);
+        Assert.ThrowsException<InvalidOperationException>(
+            () => converter.Convert(new TimeOnly(1, 0)),
+            "A non-zero hour in TimeOnly with no 'hour' unit must throw InvalidOperationException");
+    }
+
+    [TestMethod]
+    public void Convert_TimeOnly_WithMinute_NoMinuteUnit_ThrowsInvalidOperation()
+    {
+        // Non-zero minutes with missing minute unit → throw.
+        var options = new NumberToStringConverterOptions(EN)
+        {
+            TimeUnits = new Dictionary<string, (string Singular, string Plural, string? Count1Form)>
+            {
+                ["hour"] = ("hour", "hours", null)
+            }
+        };
+        var converter = new NumberToStringConverter(options);
+        Assert.ThrowsException<InvalidOperationException>(
+            () => converter.Convert(new TimeOnly(0, 30)),
+            "A non-zero minute in TimeOnly with no 'minute' unit must throw InvalidOperationException");
     }
 
     // ── Item 82 — Scale-name capitalization uses ToUpperInvariant ────────────
 
     [TestMethod]
-    public void GetScaleName_FirstLetterUppercase_UsesInvariantCulture()
+    public void GetScaleName_FirstLetterUppercase_UsesInvariantCasing_UnderTurkishCulture()
     {
-        // The EN converter has FirstLetterUppercase = false, but we can build a custom Scale
-        // with FirstLetterUppercase = true and check that scale names are produced correctly.
-        // Use the existing EN converter to verify scale names come out consistently.
-        var en = EN;
-        // 10^9 in EN → "billion" (index 3 in the Scale static values for EN)
-        // Just verify that a large-scale conversion succeeds and returns a non-empty result
-        string result = en.Convert(new BigInteger(1_000_000_000));
-        Assert.IsNotNull(result);
-        StringAssert.Contains(result, "billion");
-    }
-
-    [TestMethod]
-    public void GetScaleName_Invariant_ConsistentAcrossCultures()
-    {
-        // Run the scale name lookup under a non-invariant culture to verify ToUpperInvariant
-        // prevents culture-dependent casing (e.g. Turkish dotted-I issue).
+        // Build a NumberScale with firstLetterUppercase=true whose first dynamic name starts
+        // with 'i' (scale0Prefixes[1]="illi"). Under Turkish culture, char.ToUpper('i')=='İ'
+        // (dotted capital I), but char.ToUpperInvariant('i')=='I' (plain capital I).
+        // With the fix (ToUpperInvariant), the name must start with 'I' regardless of culture.
         var originalCulture = System.Threading.Thread.CurrentThread.CurrentCulture;
         try
         {
-            // Turkish culture: i.ToUpper() == 'İ' (dotted capital I), not 'I'
             System.Threading.Thread.CurrentThread.CurrentCulture =
                 new System.Globalization.CultureInfo("tr-TR");
-            var en = EN;
-            string result = en.Convert(new BigInteger(1_000_000_000));
-            // If ToUpper were used instead of ToUpperInvariant, Turkish culture would corrupt
-            // the first letter of scale names starting with 'i'.
-            Assert.IsNotNull(result);
-            StringAssert.Contains(result, "billion");
+
+            // Verify that the Turkish culture actually uses dotted-I for 'i'
+            Assert.AreNotEqual(
+                char.ToUpperInvariant('i'), char.ToUpper('i'),
+                "Test setup: Turkish culture must capitalize 'i' differently from invariant");
+
+            // staticValues[0] = "" (units — no name), so GetScaleName(1) is dynamic.
+            // scale0Prefixes[1] = "illi" → generated name ≈ "illi" + "lli" + "on" = "illillion"
+            // With firstLetterUppercase=true and ToUpperInvariant → "Illillion" (starts with 'I')
+            var scale = new NumberScale(
+                staticValues: (IReadOnlyList<string>)new[] { "" },
+                scaleSuffixes: (IReadOnlyList<string>)new[] { "on" },
+                scale0Prefixes: (IReadOnlyList<string>)new[] { "", "illi" },
+                firstLetterUppercase: true);
+
+            string name = scale.GetScaleName(1);
+            Assert.IsTrue(name.Length > 0, "Generated scale name must be non-empty");
+            Assert.AreEqual('I', name[0],
+                $"Scale name must start with plain 'I' (ToUpperInvariant), not Turkish 'İ'; got: '{name}'");
+        }
+        finally
+        {
+            System.Threading.Thread.CurrentThread.CurrentCulture = originalCulture;
+        }
+    }
+
+    [TestMethod]
+    public void GetScaleName_MultiDigitPrefix_FirstLetterUppercase_UsesInvariantCasing()
+    {
+        // Verify ToUpperInvariant is also applied in the multi-digit prefix path of GetScaleName.
+        // A prefix index ≥ 10 triggers the while-loop path. Use 10 suffixes so scale index 10
+        // reaches the multi-digit branch with a prefix starting at 'i'.
+        var originalCulture = System.Threading.Thread.CurrentThread.CurrentCulture;
+        try
+        {
+            System.Threading.Thread.CurrentThread.CurrentCulture =
+                new System.Globalization.CultureInfo("tr-TR");
+
+            var suffixes = Enumerable.Repeat("on", 10).ToArray();
+            var scale = new NumberScale(
+                staticValues: (IReadOnlyList<string>)new[] { "" },
+                scaleSuffixes: (IReadOnlyList<string>)suffixes,
+                unitsPrefixes: (IReadOnlyList<string>)new[] { "", "illi", "du", "tre", "qua", "qui", "sex", "sep", "oct", "nov" },
+                firstLetterUppercase: true);
+
+            // scale index 10 will enter the while-loop path (prefix index > 9)
+            string name = scale.GetScaleName(10);
+            Assert.IsTrue(name.Length > 0, "Generated scale name must be non-empty");
+            // The first character must be plain uppercase regardless of Turkish culture
+            Assert.AreEqual(char.ToUpperInvariant(name[0]),  name[0],
+                $"Scale name first letter must equal its ToUpperInvariant form; got: '{name}'");
         }
         finally
         {

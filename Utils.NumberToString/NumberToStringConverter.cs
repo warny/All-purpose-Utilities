@@ -682,7 +682,13 @@ namespace Utils.NumberToString
                     string scaleJoin = (_scaleConnector != null && groupNumber > 0 && group >= _scaleConnectorThreshold)
                         ? Separator + _scaleConnector + Separator
                         : Separator;
-                    string resValue = digits + scaleJoin + scaleName;
+                    // Only append the separator+scale when there is actually a scale name.
+                    // If scaleName is empty (group 0 / units), appending scaleJoin would leave a
+                    // dangling separator that post-hoc trimming cannot remove safely (e.g. when
+                    // Separator="and", the word "thousand" ends with "and" and would be corrupted).
+                    string resValue = string.IsNullOrEmpty(scaleName)
+                        ? digits
+                        : digits + scaleJoin + scaleName;
                     resValue = ApplyReplacements(resValue, groupNumber, group);
                     if (variantQuery != null && _hasScaleSpecificVariantRules)
                         resValue = ApplyVariantRulesForScale(resValue, variantQuery, groupNumber, group);
@@ -709,26 +715,7 @@ namespace Utils.NumberToString
                 }
             }
 
-            // Trim trailing separator tokens as exact strings to avoid eating letters from
-            // alphabetic separators (e.g. Separator="and" must not strip a trailing 'd').
-            string finalResult = result.ToString();
-            bool trimmed;
-            do
-            {
-                trimmed = false;
-                if (Separator.Length > 0 && finalResult.EndsWith(Separator, StringComparison.Ordinal))
-                {
-                    finalResult = finalResult[..^Separator.Length];
-                    trimmed = true;
-                }
-                if (GroupSeparator.Length > 0 && finalResult.EndsWith(GroupSeparator, StringComparison.Ordinal))
-                {
-                    finalResult = finalResult[..^GroupSeparator.Length];
-                    trimmed = true;
-                }
-            } while (trimmed && finalResult.Length > 0);
-
-            return ApplyReplacements(finalResult, numericValue: abs <= long.MaxValue ? (long?)abs : null);
+            return ApplyReplacements(result.ToString(), numericValue: abs <= long.MaxValue ? (long?)abs : null);
         }
 
         /// <summary>
@@ -1528,10 +1515,24 @@ namespace Utils.NumberToString
             var parts = new List<string>();
             if (_timeUnits.TryGetValue("hour", out var h))
                 parts.Add(FormatTimeUnit(time.Hour, h, variants));
-            if (time.Minute > 0 && _timeUnits.TryGetValue("minute", out var m))
+            else if (time.Hour > 0)
+                throw new InvalidOperationException(
+                    $"Language '{LanguageIdentifier}' has a non-zero hours component but no 'hour' unit configured in <TimeUnits>.");
+
+            if (time.Minute > 0)
+            {
+                if (!_timeUnits.TryGetValue("minute", out var m))
+                    throw new InvalidOperationException(
+                        $"Language '{LanguageIdentifier}' has a non-zero minutes component but no 'minute' unit configured in <TimeUnits>.");
                 parts.Add(FormatTimeUnit(time.Minute, m, variants));
-            if (time.Second > 0 && _timeUnits.TryGetValue("second", out var s))
+            }
+            if (time.Second > 0)
+            {
+                if (!_timeUnits.TryGetValue("second", out var s))
+                    throw new InvalidOperationException(
+                        $"Language '{LanguageIdentifier}' has a non-zero seconds component but no 'second' unit configured in <TimeUnits>.");
                 parts.Add(FormatTimeUnit(time.Second, s, variants));
+            }
 
             return parts.Count > 0 ? string.Join(Separator, parts) : Zero;
         }
