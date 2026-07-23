@@ -60,6 +60,12 @@ namespace Utils.NumberToString
             options.Scale.Arg().MustNotBeNull();
 
             Group = options.Group;
+
+            // Validate Group (group size): must be positive and representable by _decimalPowersOfTen.
+            if (Group <= 0)
+                throw new ArgumentOutOfRangeException(nameof(options.Group),
+                    $"Group size must be positive; got {Group}.");
+
             Separator = options.Separator ?? " ";
             GroupSeparator = options.GroupSeparator ?? "";
             Zero = options.Zero;
@@ -68,6 +74,28 @@ namespace Utils.NumberToString
             Groups = options.Groups.ToImmutableDictionary(
                 kv => kv.Key,
                 kv => (IReadOnlyDictionary<long, DigitType>)kv.Value.Digits.ToDictionary(d => d.Digit).ToImmutableDictionary());
+
+            // Validate the Groups dictionary structure.
+            if (Groups.Count == 0)
+                throw new ArgumentException("Groups must contain at least one group.", nameof(options.Groups));
+            var groupKeys = Groups.Keys.OrderBy(k => k).ToList();
+            if (groupKeys[0] < 1)
+                throw new ArgumentException(
+                    $"Group keys must be positive integers; the smallest key is {groupKeys[0]}.", nameof(options.Groups));
+            for (int gi = 1; gi < groupKeys.Count; gi++)
+                if (groupKeys[gi] != groupKeys[gi - 1] + 1)
+                    throw new ArgumentException(
+                        $"Group keys must form a contiguous sequence; gap between {groupKeys[gi - 1]} and {groupKeys[gi]}.",
+                        nameof(options.Groups));
+            int maxGroupKey = groupKeys[groupKeys.Count - 1];
+            if (maxGroupKey > _decimalPowersOfTen.Length)
+                throw new ArgumentException(
+                    $"The maximum group key ({maxGroupKey}) exceeds the supported limit of {_decimalPowersOfTen.Length}; " +
+                    "provide a smaller number of groups or add a custom power table.", nameof(options.Groups));
+            foreach (var (key, digitMap) in Groups)
+                if (digitMap.Count == 0)
+                    throw new ArgumentException(
+                        $"Group {key} has no digit definitions.", nameof(options.Groups));
             Exceptions = (options.Exceptions ?? new Dictionary<long, string>()).ToImmutableDictionary();
             Replacements = (options.Replacements ?? Array.Empty<ReplacementRule>())
                 .Select(r => r ?? throw new ArgumentNullException(nameof(options), "Replacement entries must not be null."))
@@ -101,6 +129,9 @@ namespace Utils.NumberToString
             AdjustFunction = input => LanguageSpecifics.FinalizeWriting(LanguageIdentifier, (_rawAdjustFunction ?? (s => s))(input));
             Fractions = options.Fractions?.ToImmutableDictionary() ?? ImmutableDictionary<int, string>.Empty;
             MaxNumber = options.MaxNumber;
+            if (MaxNumber.HasValue && MaxNumber.Value < 0)
+                throw new ArgumentOutOfRangeException(nameof(options.MaxNumber),
+                    $"MaxNumber must be non-negative when specified; got {MaxNumber.Value}.");
             FractionSeparator = string.IsNullOrWhiteSpace(options.FractionSeparator) ? "/" : options.FractionSeparator;
 
             OrdinalSuffix = options.OrdinalSuffix;

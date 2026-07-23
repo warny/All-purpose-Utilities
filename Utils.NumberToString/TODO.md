@@ -99,7 +99,7 @@ Trigger patterns are compiled with `new Regex(pattern, RegexOptions.Compiled)` a
 
 **Priority: P1 robustness/security.**
 
-### 54. Core grouping configuration is not structurally validated
+### 54. ✅ Core grouping configuration is not structurally validated
 
 The constructor checks that `Groups` and `Scale` are non-null but does not ensure that:
 

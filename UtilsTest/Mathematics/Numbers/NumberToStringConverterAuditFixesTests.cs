@@ -908,4 +908,94 @@ public class NumberToStringConverterAuditFixesTests
             () => EN.ConvertGroup(0, -1),
             "ConvertGroup(0, -1) must throw because number is invalid regardless of groupNumber");
     }
+
+    // ── Item 54 — Group size and Groups structure are validated at construction ─
+
+    private static DigitListType OneDigitList() =>
+        new() { Digits = [new DigitType(1, "one")] };
+
+    [TestMethod]
+    public void Constructor_GroupSizeZero_ThrowsArgumentOutOfRange()
+    {
+        var opts = new NumberToStringConverterOptions(EN) { Group = 0 };
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new NumberToStringConverter(opts),
+            "Group = 0 must be rejected at construction time");
+    }
+
+    [TestMethod]
+    public void Constructor_GroupSizeNegative_ThrowsArgumentOutOfRange()
+    {
+        var opts = new NumberToStringConverterOptions(EN) { Group = -1 };
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new NumberToStringConverter(opts),
+            "Group = -1 must be rejected at construction time");
+    }
+
+    [TestMethod]
+    public void Constructor_EmptyGroups_ThrowsArgumentException()
+    {
+        var opts = new NumberToStringConverterOptions(EN)
+        {
+            Groups = new Dictionary<int, DigitListType>()
+        };
+        Assert.ThrowsException<ArgumentException>(() => new NumberToStringConverter(opts),
+            "An empty Groups dictionary must be rejected at construction time");
+    }
+
+    [TestMethod]
+    public void Constructor_GroupKeyZero_ThrowsArgumentException()
+    {
+        var opts = new NumberToStringConverterOptions(EN)
+        {
+            Groups = new Dictionary<int, DigitListType> { [0] = OneDigitList() }
+        };
+        Assert.ThrowsException<ArgumentException>(() => new NumberToStringConverter(opts),
+            "Group key 0 is not a positive integer and must be rejected");
+    }
+
+    [TestMethod]
+    public void Constructor_NonContiguousGroupKeys_ThrowsArgumentException()
+    {
+        var dl = OneDigitList();
+        var opts = new NumberToStringConverterOptions(EN)
+        {
+            Groups = new Dictionary<int, DigitListType> { [1] = dl, [3] = dl }
+        };
+        Assert.ThrowsException<ArgumentException>(() => new NumberToStringConverter(opts),
+            "Group keys 1 and 3 have a gap at 2 and must be rejected");
+    }
+
+    [TestMethod]
+    public void Constructor_MaxGroupKeyExceedsLimit_ThrowsArgumentException()
+    {
+        var dl = OneDigitList();
+        var groups = new Dictionary<int, DigitListType>();
+        for (int i = 1; i <= 20; i++) groups[i] = dl;
+        var opts = new NumberToStringConverterOptions(EN) { Groups = groups };
+        Assert.ThrowsException<ArgumentException>(() => new NumberToStringConverter(opts),
+            "Group key 20 exceeds the supported limit and must be rejected");
+    }
+
+    [TestMethod]
+    public void Constructor_GroupWithNoDigits_ThrowsArgumentException()
+    {
+        var opts = new NumberToStringConverterOptions(EN)
+        {
+            Groups = new Dictionary<int, DigitListType>
+            {
+                [1] = new() { Digits = [] }
+            }
+        };
+        Assert.ThrowsException<ArgumentException>(() => new NumberToStringConverter(opts),
+            "A group with no digit definitions must be rejected at construction time");
+    }
+
+    // ── Item 78 — MaxNumber must not be negative ──────────────────────────────
+
+    [TestMethod]
+    public void Constructor_NegativeMaxNumber_ThrowsArgumentOutOfRange()
+    {
+        var opts = new NumberToStringConverterOptions(EN) { MaxNumber = -1 };
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => new NumberToStringConverter(opts),
+            "MaxNumber = -1 must be rejected; a negative maximum makes every conversion fail");
+    }
 }
