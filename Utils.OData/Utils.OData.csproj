@@ -1,7 +1,22 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
+        <!--
+            Item 20: the package targets net9.0 intentionally. The library uses net9.0-only
+            APIs (DateOnly/TimeOnly EDM materialisation, System.Threading.Channels streaming,
+            required members). Multi-targeting is deliberately not enabled to keep the protocol
+            surface single-runtime. A wider TFM policy would require conditional shims for these
+            APIs and is out of scope for the current pre-release line.
+        -->
         <TargetFramework>net9.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <!--
+            Item 20: XML documentation is authored on the public API surface; CS1591 is only
+            suppressed to tolerate a small number of internal/legacy members that are not part
+            of the supported contract. Public documentation is otherwise required.
+            Nullable analysis is opted into per-file (#nullable enable) rather than project-wide
+            to avoid a large, unrelated churn in the legacy XML metadata model.
+        -->
         <NoWarn>$(NoWarn);1591</NoWarn>
         <PackageId>omy.Utils.OData</PackageId>
         <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
@@ -10,8 +25,14 @@
         <Copyright>Olivier MARTY 2025</Copyright>
         <Authors>Olivier MARTY</Authors>
         <Company>Olivier MARTY</Company>
-        <Version>0.0.1</Version>
-        <Description>HTTP client helpers, LINQ provider, and metadata utilities for consuming OData services.</Description>
+        <!--
+            Item 20: pre-release semantic version. While the major version is 0 the public API
+            may change between minor versions; consumers should pin an exact version. Compatibility
+            guarantees begin at 1.0.0. See PackageReleaseNotes and README for the policy.
+        -->
+        <Version>0.1.0-preview</Version>
+        <PackageReleaseNotes>Pre-release (0.x): the public API is not yet stable and may change between minor versions. The package targets net9.0 only. Pin an exact version until 1.0.0.</PackageReleaseNotes>
+        <Description>HTTP client helpers, LINQ provider, and metadata utilities for consuming OData services. Targets net9.0. Pre-release: pin an exact version until 1.0.0.</Description>
         <PackageTags>omy;utilities;odata;http;linq;edmx</PackageTags>
         <RepositoryUrl>https://github.com/warny/All-purpose-Utilities</RepositoryUrl>
         <RepositoryType>git</RepositoryType>

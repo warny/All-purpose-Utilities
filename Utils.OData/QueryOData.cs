@@ -140,8 +140,11 @@ public class QueryOData : IDisposable
     /// <param name="parameter">Parameters used to build the query URL.</param>
     /// <param name="skip">Number of records to skip in addition to <see cref="IQuery.Skip"/>.</param>
     /// <param name="cancellationToken">Token used to cancel the HTTP request.</param>
-    /// <returns>The HTTP response message when the request succeeds.</returns>
-    public Task<HttpResponseMessage?> SimpleQuery(IQuery parameter, int skip = 0, CancellationToken cancellationToken = default)
+    /// <returns>
+    /// The HTTP response message. The caller owns the returned response and is responsible for
+    /// disposing it. The method never returns <see langword="null"/>; it throws on transport failure.
+    /// </returns>
+    public Task<HttpResponseMessage> SimpleQuery(IQuery parameter, int skip = 0, CancellationToken cancellationToken = default)
             => SimpleQuery(parameter, sourceRequest: null, skip, cancellationToken);
 
     /// <summary>
@@ -151,13 +154,15 @@ public class QueryOData : IDisposable
     /// <param name="sourceRequest">Optional request providing HTTP headers to forward.</param>
     /// <param name="skip">Number of records to skip in addition to <see cref="IQuery.Skip"/>.</param>
     /// <param name="cancellationToken">Token used to cancel the HTTP request.</param>
-    /// <returns>The HTTP response message when the request succeeds.</returns>
-    public async Task<HttpResponseMessage?> SimpleQuery(IQuery parameter, HttpRequestMessage? sourceRequest = null, int skip = 0, CancellationToken cancellationToken = default)
+    /// <returns>
+    /// The HTTP response message. The caller owns the returned response and is responsible for
+    /// disposing it. The method never returns <see langword="null"/>; it throws on transport failure.
+    /// </returns>
+    public async Task<HttpResponseMessage> SimpleQuery(IQuery parameter, HttpRequestMessage? sourceRequest = null, int skip = 0, CancellationToken cancellationToken = default)
     {
         var query = new ODataQueryBuilder(BaseUrl, parameter, skip: skip);
 
-        HttpResponseMessage response = await HttpGet(query.Url, sourceRequest, cancellationToken);
-        return response;
+        return await HttpGet(query.Url, sourceRequest, cancellationToken);
     }
 
     /// <summary>
@@ -225,6 +230,10 @@ public class QueryOData : IDisposable
         {
             maxPerRequest?.ArgMustBeGreaterThan(0);
         }
+
+        // Item 18: snapshot the query at operation entry so that a caller mutating the same
+        // IQuery instance during this asynchronous operation cannot produce mixed requests.
+        parameter = SnapshotQuery(parameter);
 
         JsonArray aggregatedValues = new();
         Dictionary<string, string>? metadatas = null;
@@ -337,6 +346,9 @@ public class QueryOData : IDisposable
         {
             throw new ArgumentOutOfRangeException(nameof(maxPerRequest));
         }
+
+        // Item 18: snapshot the query at operation entry to isolate it from concurrent mutation.
+        parameter = SnapshotQuery(parameter);
 
         int? originalTop = parameter.Top;
         int? requestTop = DetermineRequestTop(originalTop, maxPerRequest);
@@ -1367,6 +1379,19 @@ public class QueryOData : IDisposable
     }
 
     /// <summary>
+    /// Creates an immutable snapshot copy of the supplied query so that later mutation of the
+    /// caller's instance cannot affect a running asynchronous operation (item 18).
+    /// </summary>
+    /// <param name="source">Query to snapshot.</param>
+    /// <returns>A detached <see cref="Query"/> carrying the same values as <paramref name="source"/>.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="source"/> is <see langword="null"/>.</exception>
+    private static Query SnapshotQuery(IQuery source)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        return CloneQueryForPagination(source, source.Top);
+    }
+
+    /// <summary>
     /// Creates a clone of the provided query with an updated <c>$top</c> value for pagination.
     /// </summary>
     /// <param name="source">Source query used as the template for the request.</param>
@@ -1685,17 +1710,51 @@ public class QueryOData : IDisposable
     private async Task<ReturnValue<HttpQueryResult>> QueryUrl(string url, CancellationToken cancellationToken = default)
     {
         var response = await HttpGet(url, sourceRequest: null, cancellationToken);
+        return await ValidateAndWrapResponse(response, cancellationToken);
+    }
+
+    /// <summary>
+    /// Centralizes HTTP response validation and body extraction so that transport success/error
+    /// handling lives in one place instead of being duplicated across query methods (item 19).
+    /// On failure the response is disposed and a categorized <see cref="ErrorReturnValue"/> is
+    /// returned (item 31). On success the caller owns the returned <see cref="HttpQueryResult"/>
+    /// and must dispose it.
+    /// </summary>
+    /// <param name="response">The HTTP response to validate. May be <see langword="null"/>.</param>
+    /// <param name="cancellationToken">Token used to cancel the body read.</param>
+    /// <returns>A wrapped response stream on success; otherwise a categorized error.</returns>
+    private static async Task<ReturnValue<HttpQueryResult>> ValidateAndWrapResponse(
+            HttpResponseMessage? response,
+            CancellationToken cancellationToken)
+    {
+        if (response is null)
+        {
+            return new(new ErrorReturnValue(-2, "no response returned", ODataErrorKind.Transport));
+        }
+
         if (!response.IsSuccessStatusCode)
         {
-            try { return new(-1, $"{(int)response.StatusCode} {response.ReasonPhrase}"); }
-            finally { response.Dispose(); }
+            try
+            {
+                return new(new ErrorReturnValue(
+                    -1,
+                    $"{(int)response.StatusCode} {response.ReasonPhrase}",
+                    ODataErrorKind.Transport,
+                    (int)response.StatusCode));
+            }
+            finally
+            {
+                response.Dispose();
+            }
         }
+
         var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
         if (contentStream is null)
         {
             response.Dispose();
-            return new(-3, "The HTTP response did not contain a readable stream.");
+            return new(new ErrorReturnValue(-3, "The HTTP response did not contain a readable stream.", ODataErrorKind.Transport));
         }
+
         Uri? responseUri = response.RequestMessage?.RequestUri;
         return new(new HttpQueryResult(CreateResponseStream(response, contentStream), responseUri));
     }
@@ -1727,33 +1786,8 @@ public class QueryOData : IDisposable
     private async Task<ReturnValue<HttpQueryResult>> QueryDatas(IQuery parameter, int skip = 0, CancellationToken cancellationToken = default)
     {
         var response = await SimpleQuery(parameter, skip: skip, cancellationToken: cancellationToken);
-
-        if (response is null)
-        {
-            return new(-2, "no response returned");
-        }
-
-        if (!response.IsSuccessStatusCode)
-        {
-            try
-            {
-                return new(-1, $"{(int)response.StatusCode} {response.ReasonPhrase}");
-            }
-            finally
-            {
-                response.Dispose();
-            }
-        }
-
-        var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        if (contentStream is null)
-        {
-            response.Dispose();
-            return new(-3, "The HTTP response did not contain a readable stream.");
-        }
-
-        Uri? responseUri = response.RequestMessage?.RequestUri;
-        return new(new HttpQueryResult(CreateResponseStream(response, contentStream), responseUri));
+        // Item 19: reuse the centralized validation/extraction path shared with QueryUrl.
+        return await ValidateAndWrapResponse(response, cancellationToken);
     }
 
     /// <summary>

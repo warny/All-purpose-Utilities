@@ -8,6 +8,15 @@ namespace Utils.OData.Linq;
 /// <summary>
 /// Represents the result of compiling a LINQ expression tree into an OData query.
 /// </summary>
+/// <remarks>
+/// Item 36: this compilation model deliberately captures only <c>$filter</c> (from <c>Where</c>)
+/// and <c>$expand</c> (from navigation-property expansion). It intentionally does not model
+/// ordering, projection, <c>$skip</c>, <c>$top</c>, <c>$count</c>, <c>$search</c>, aggregation,
+/// or terminal operators. Those options must be applied through <see cref="IQuery"/>/
+/// <see cref="ODataQueryBuilder"/> when issuing the request, or with LINQ-to-Objects after the
+/// data has been materialised. The public promise is narrowed to filter/expand compilation
+/// rather than advertising broader LINQ support that the model cannot honour.
+/// </remarks>
 public sealed class ODataQueryCompilation
 {
     /// <summary>
