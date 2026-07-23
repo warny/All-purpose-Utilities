@@ -120,7 +120,7 @@ public struct ColorArgb : IColorArgb<double>, IEquatable<ColorArgb>, IEqualityOp
     /// Initializes a color by converting from a 16-bit ARGB representation.
     /// </summary>
     /// <param name="color">The color to convert.</param>
-    public ColorArgb(ColorArgb64 color) : this(color.Alpha / 255.0, color.Red / 255.0, color.Green / 255.0, color.Blue / 255.0) { }
+    public ColorArgb(ColorArgb64 color) : this(color.Alpha / 65535.0, color.Red / 65535.0, color.Green / 65535.0, color.Blue / 65535.0) { }
 
     /// <summary>
     /// Initializes a color by converting from an HSV representation.
@@ -160,12 +160,18 @@ public struct ColorArgb : IColorArgb<double>, IEquatable<ColorArgb>, IEqualityOp
     public static implicit operator ColorArgb(System.Drawing.Color color) => new(color.A / 255.0, color.R / 255.0, color.G / 255.0, color.B / 255.0);
 
     /// <summary>
-    /// Blends two colors using a perceptual gradient.
+    /// Blends two colors using a perceptual (square-root) gradient.
     /// </summary>
     /// <param name="color1">The starting color.</param>
     /// <param name="color2">The ending color.</param>
-    /// <param name="percent">Blend factor in the [0,1] range.</param>
+    /// <param name="percent">Blend factor clamped to the [0,1] range.</param>
     /// <returns>The interpolated color.</returns>
+    /// <remarks>
+    /// RGB channels are interpolated in the power-2 domain and projected back via square root,
+    /// which produces a more visually uniform gradient than linear interpolation.
+    /// Alpha is interpolated linearly.
+    /// For a linear interpolation, use <see cref="LinearGradient(ColorArgb,ColorArgb,double)"/>.
+    /// </remarks>
     public static ColorArgb Gradient(ColorArgb color1, ColorArgb color2, double percent)
     {
         if (percent < 0) percent = 0;
@@ -177,6 +183,24 @@ public struct ColorArgb : IColorArgb<double>, IEquatable<ColorArgb>, IEqualityOp
             Math.Sqrt(color1.green * color1.green * inv + color2.green * color2.green * percent),
             Math.Sqrt(color1.blue  * color1.blue  * inv + color2.blue  * color2.blue  * percent));
     }
+
+    /// <summary>
+    /// Blends two colors using a linear gradient.
+    /// </summary>
+    /// <param name="color1">The starting color.</param>
+    /// <param name="color2">The ending color.</param>
+    /// <param name="position">Blend factor clamped to the [0,1] range.</param>
+    /// <returns>The interpolated color.</returns>
+    public static ColorArgb LinearGradient(ColorArgb color1, ColorArgb color2, double position)
+    {
+        position = Math.Clamp(position, 0.0, 1.0);
+        double inv = 1.0 - position;
+        return new ColorArgb(
+            color1.alpha * inv + color2.alpha * position,
+            color1.red   * inv + color2.red   * position,
+            color1.green * inv + color2.green * position,
+            color1.blue  * inv + color2.blue  * position);
+    }
     /// <summary>
     /// Returns a textual representation of the ARGB components.
     /// </summary>
@@ -185,15 +209,24 @@ public struct ColorArgb : IColorArgb<double>, IEquatable<ColorArgb>, IEqualityOp
 
     /// <summary>
     /// Applies the Porter-Duff over operator using the current color as the foreground.
+    /// Straight-alpha formula: α_out = α_src + α_dst×(1−α_src);
+    /// C_out = (C_src×α_src + C_dst×α_dst×(1−α_src)) / α_out.
     /// </summary>
     /// <param name="other">The background color.</param>
     /// <returns>The composited color.</returns>
-    public IColorArgb<double> Over(IColorArgb<double> other) => new ColorArgb(
-            this.Alpha + (1.0 - this.Alpha) * other.Alpha,
-            this.Red * this.Alpha + (1.0 - this.Alpha) * other.Red,
-            this.Green * this.Alpha + (1.0 - this.Alpha) * other.Green,
-            this.Blue * this.Alpha + (1.0 - this.Alpha) * other.Blue
-    );
+    public IColorArgb<double> Over(IColorArgb<double> other)
+    {
+        double aOut = this.alpha + other.Alpha * (1.0 - this.alpha);
+        if (aOut <= 0.0) return new ColorArgb(0, 0, 0, 0);
+        double kSrc = this.alpha / aOut;
+        double kDst = other.Alpha * (1.0 - this.alpha) / aOut;
+        return new ColorArgb(
+            aOut,
+            Math.Clamp(this.red   * kSrc + other.Red   * kDst, 0.0, 1.0),
+            Math.Clamp(this.green * kSrc + other.Green * kDst, 0.0, 1.0),
+            Math.Clamp(this.blue  * kSrc + other.Blue  * kDst, 0.0, 1.0)
+        );
+    }
 
     /// <summary>
     /// Adds two colors while clamping each component to the [0,1] range.

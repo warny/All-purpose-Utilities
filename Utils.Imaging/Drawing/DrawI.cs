@@ -20,6 +20,38 @@ namespace Utils.Drawing
     public class DrawI<T> : BaseDrawing<T>
     {
         /// <summary>
+        /// Gets or sets the maximum distance (in pixels) below which two adjacent scan-line
+        /// intersections are merged during fill rasterization.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// When the fill algorithm encounters two consecutive intersections whose X positions differ
+        /// by less than this value it collapses them: if their winding contributions cancel (a spike
+        /// or aller-retour segment) both entries are discarded; otherwise they are collapsed into a
+        /// single entry so that the winding count stays correct.
+        /// </para>
+        /// <para>
+        /// The default value of <c>0.5</c> works well for pixel-scale geometry.  For sub-pixel or
+        /// very-small-feature geometry, reduce this value toward <c>0</c>; set it to <c>0</c> to
+        /// disable merging entirely (shared vertices must then be handled by the geometry source).
+        /// </para>
+        /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException">
+        /// Thrown when set to a negative, NaN or infinite value.
+        /// </exception>
+        public float IntersectionMergeThreshold
+        {
+            get => _intersectionMergeThreshold;
+            set
+            {
+                if (!float.IsFinite(value) || value < 0f)
+                    throw new ArgumentOutOfRangeException(nameof(value), "IntersectionMergeThreshold must be a finite non-negative value.");
+                _intersectionMergeThreshold = value;
+            }
+        }
+        private float _intersectionMergeThreshold = 0.5f;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="DrawI{T}"/> class.
         /// </summary>
         /// <param name="imageAccessor">Accessor used to manipulate the underlying image.</param>
@@ -60,6 +92,16 @@ namespace Utils.Drawing
         {
             draw.Reset();
             var length = drawable.Length;
+
+            if (length <= 0f)
+            {
+                // Zero-length or degenerate shape: evaluate the brush at position 0
+                // for each geometry point rather than dividing by zero.
+                foreach (var point in drawable.GetPoints(false))
+                    foreach (var drawPoint in draw.Draw(point, 0f))
+                        DrawPoint(drawPoint.Point.X, drawPoint.Point.Y, drawPoint.Color);
+                return;
+            }
 
             foreach (var point in drawable.GetPoints(false))
             {
@@ -199,10 +241,19 @@ namespace Utils.Drawing
                 if (seg.Y2 > maxY) maxY = seg.Y2;
             }
 
+            // Reject geometry containing non-finite coordinates (NaN, Infinity).
+            if (!float.IsFinite(minX) || !float.IsFinite(maxX) ||
+                !float.IsFinite(minY) || !float.IsFinite(maxY))
+                return;
+
             float rangeX = maxX - minX;
             float rangeY = maxY - minY;
-            int yStart = (int)Math.Ceiling(minY);
-            int yEnd = (int)Math.Floor(maxY);
+
+            // Clip the scan-line range to the image bounds before entering the loop.
+            // Without clipping, extreme off-screen geometry would trigger O(extent) work
+            // even though DrawPoint would reject every pixel.
+            int yStart = Math.Max(0, (int)Math.Ceiling(minY));
+            int yEnd   = Math.Min(ImageAccessor.Height - 1, (int)Math.Floor(maxY));
 
             var intersections = new List<(float x, int winding)>();
 
@@ -231,17 +282,18 @@ namespace Utils.Drawing
 
                 intersections.Sort((a, b) => a.x.CompareTo(b.x));
 
-                // Merge coincident intersections (< 0.5 px apart) to handle spikes
-                // (aller + retour along the same path) and floating-point near-duplicates.
+                // Merge coincident intersections closer than IntersectionMergeThreshold to handle
+                // spikes (aller + retour along the same path) and floating-point near-duplicates.
                 // Adjacent entries whose windings sum to zero are both removed (they cancel);
                 // those with a non-zero sum are collapsed into a single entry at the left X.
                 // A forward while-loop is used so that i stays in place after a removal,
                 // naturally pointing to the next unprocessed element without going out of range.
                 {
+                    float mergeThreshold = _intersectionMergeThreshold;
                     int i = 0;
                     while (i < intersections.Count - 1)
                     {
-                        if (intersections[i + 1].x - intersections[i].x < 0.5f)
+                        if (intersections[i + 1].x - intersections[i].x < mergeThreshold)
                         {
                             int merged = intersections[i].winding + intersections[i + 1].winding;
                             intersections.RemoveAt(i + 1);
@@ -272,8 +324,8 @@ namespace Utils.Drawing
                 {
                     if (!first && fillTest(windingSum))
                     {
-                        int xFrom = (int)Math.Ceiling(prevX);
-                        int xTo = (int)Math.Floor(xi);
+                        int xFrom = Math.Max(0, (int)Math.Ceiling(prevX));
+                        int xTo   = Math.Min(ImageAccessor.Width - 1, (int)Math.Floor(xi));
                         for (int x = xFrom; x <= xTo; x++)
                         {
                             float u = rangeX > 0f ? (x - minX) / rangeX : 0f;

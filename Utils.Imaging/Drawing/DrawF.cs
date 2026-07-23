@@ -61,7 +61,12 @@ namespace Utils.Drawing
         /// <remarks>
         /// The viewport matches the full image bounds so one drawing unit equals one pixel.
         /// </remarks>
-        public DrawF(IImageAccessor<T> imageAccessor) : this(imageAccessor, 0, 0, imageAccessor.Width, imageAccessor.Height) { }
+        public DrawF(IImageAccessor<T> imageAccessor)
+            : this(
+                imageAccessor ?? throw new ArgumentNullException(nameof(imageAccessor)),
+                0, 0,
+                imageAccessor!.Width,
+                imageAccessor!.Height) { }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DrawF{T}"/> class using a custom viewport.
@@ -69,21 +74,42 @@ namespace Utils.Drawing
         /// <param name="imageAccessor">Accessor used to manipulate the underlying image.</param>
         /// <param name="top">Top boundary of the viewport.</param>
         /// <param name="left">Left boundary of the viewport.</param>
-        /// <param name="right">Right boundary of the viewport.</param>
-        /// <param name="down">Bottom boundary of the viewport.</param>
+        /// <param name="right">Right boundary of the viewport (exclusive — the half-open interval [Left, Right) maps to pixels 0..Width-1).</param>
+        /// <param name="down">Bottom boundary of the viewport (exclusive — the half-open interval [Top, Down) maps to pixels 0..Height-1).</param>
         /// <remarks>
-        /// The viewport boundaries define the coordinate space exposed to callers; the constructor computes
-        /// the scaling factors that map the viewport to pixel positions.
+        /// <para>
+        /// The viewport uses a <b>half-open</b> coordinate contract: the intervals are [Left, Right) and
+        /// [Top, Down).  A coordinate equal to Right or Down maps to a pixel index that is out of bounds and
+        /// is silently discarded by <see cref="DrawI{T}.DrawPoint(int,int,T)"/>.  Reversed axes (Right &lt;
+        /// Left, or Down &lt; Top) are accepted and produce a mirrored mapping.
+        /// </para>
+        /// <para>
+        /// All boundary values must be finite; Left ≠ Right and Top ≠ Down are required to avoid
+        /// a zero-span viewport.
+        /// </para>
         /// </remarks>
+        /// <exception cref="ArgumentException">
+        /// Thrown when any boundary value is not finite, or when the horizontal or vertical span is zero.
+        /// </exception>
         public DrawF(IImageAccessor<T> imageAccessor, float top, float left, float right, float down) : base(imageAccessor)
         {
+            if (!float.IsFinite(top))   throw new ArgumentException("top must be finite.",   nameof(top));
+            if (!float.IsFinite(left))  throw new ArgumentException("left must be finite.",  nameof(left));
+            if (!float.IsFinite(right)) throw new ArgumentException("right must be finite.", nameof(right));
+            if (!float.IsFinite(down))  throw new ArgumentException("down must be finite.",  nameof(down));
+
+            float hSpan = right - left;
+            float vSpan = down - top;
+            if (hSpan == 0f) throw new ArgumentException("right and left must differ (zero-width viewport).", nameof(right));
+            if (vSpan == 0f) throw new ArgumentException("down and top must differ (zero-height viewport).",  nameof(down));
+
             Draw = new DrawI<T>(imageAccessor);
             Top = top;
             Left = left;
             Right = right;
             Down = down;
-            hRatio = ImageAccessor.Width / (Right - Left);
-            vRatio = ImageAccessor.Height / (Down - Top);
+            hRatio = ImageAccessor.Width / hSpan;
+            vRatio = ImageAccessor.Height / vSpan;
             hPrecision = Math.Abs(1 / hRatio);
             vPrecision = Math.Abs(1 / vRatio);
         }

@@ -8,6 +8,15 @@ namespace Utils.Imaging;
 /// <summary>
 /// Represents a 32-bit ARGB color using byte components.
 /// </summary>
+/// <remarks>
+/// <para>
+/// The overlapping <see cref="Value"/> field uses a <c>[StructLayout(LayoutKind.Explicit)]</c>
+/// layout that assumes <b>little-endian byte order</b>.  On a little-endian host the packed value
+/// is <c>(Alpha &lt;&lt; 24) | (Red &lt;&lt; 16) | (Green &lt;&lt; 8) | Blue</c>.  Since this library
+/// depends on <c>System.Drawing</c> (Windows/GDI+) it only runs on little-endian platforms,
+/// so the canonical packing and the overlapping layout are always consistent.
+/// </para>
+/// </remarks>
 [StructLayout(LayoutKind.Explicit)]
 public struct ColorArgb32 : IColorArgb<byte>, IEquatable<ColorArgb32>, IEqualityOperators<ColorArgb32, ColorArgb32, bool>
 {
@@ -34,8 +43,12 @@ public struct ColorArgb32 : IColorArgb<byte>, IEquatable<ColorArgb32>, IEquality
     byte blue;
 
     /// <summary>
-    /// Gets or sets the packed ARGB value.
+    /// Gets or sets the packed ARGB value in host byte order.
     /// </summary>
+    /// <remarks>
+    /// On a little-endian host the value equals
+    /// <c>(Alpha &lt;&lt; 24) | (Red &lt;&lt; 16) | (Green &lt;&lt; 8) | Blue</c>.
+    /// </remarks>
     public uint Value
     {
         get { return value; }
@@ -121,15 +134,15 @@ public struct ColorArgb32 : IColorArgb<byte>, IEquatable<ColorArgb32>, IEquality
     }
 
     /// <summary>
-    /// Initializes a color by converting from another 8-bit color representation.
+    /// Initializes a color by copying byte components from another 8-bit color representation.
     /// </summary>
     /// <param name="colorArgb64">The source color.</param>
     public ColorArgb32(IColorArgb<byte> colorArgb64) : this()
     {
-        this.alpha = (byte)(colorArgb64.Alpha * 255);
-        this.red = (byte)(colorArgb64.Red * 255);
-        this.green = (byte)(colorArgb64.Green * 255);
-        this.blue = (byte)(colorArgb64.Blue * 255);
+        this.alpha = colorArgb64.Alpha;
+        this.red = colorArgb64.Red;
+        this.green = colorArgb64.Green;
+        this.blue = colorArgb64.Blue;
     }
 
     /// <summary>
@@ -138,11 +151,16 @@ public struct ColorArgb32 : IColorArgb<byte>, IEquatable<ColorArgb32>, IEquality
     /// <param name="colorArgb64">The source color.</param>
     public ColorArgb32(ColorArgb colorArgb64) : this()
     {
-        this.alpha = (byte)(colorArgb64.Alpha * 255);
-        this.red = (byte)(colorArgb64.Red * 255);
-        this.green = (byte)(colorArgb64.Green * 255);
-        this.blue = (byte)(colorArgb64.Blue * 255);
+        this.alpha = ToByte(colorArgb64.Alpha);
+        this.red   = ToByte(colorArgb64.Red);
+        this.green = ToByte(colorArgb64.Green);
+        this.blue  = ToByte(colorArgb64.Blue);
     }
+
+    private static byte ToByte(double value) =>
+        (byte)Math.Round(
+            Math.Clamp(value, 0.0, 1.0) * byte.MaxValue,
+            MidpointRounding.AwayFromZero);
 
     /// <summary>
     /// Initializes a color by converting from a 16-bit representation.
@@ -244,17 +262,27 @@ public struct ColorArgb32 : IColorArgb<byte>, IEquatable<ColorArgb32>, IEquality
 
     /// <summary>
     /// Applies the Porter-Duff over operator using the current color as the foreground.
+    /// Straight-alpha formula: α_out = α_src + α_dst×(1−α_src);
+    /// C_out = (C_src×α_src + C_dst×α_dst×(1−α_src)) / α_out.
+    /// All intermediate arithmetic is performed in double precision to avoid overflow.
     /// </summary>
     /// <param name="other">The background color.</param>
     /// <returns>The composited color.</returns>
     public IColorArgb<byte> Over(IColorArgb<byte> other)
     {
+        const double max = 255.0;
+        double aS = this.Alpha / max;
+        double aD = other.Alpha / max;
+        double aOut = aS + aD * (1.0 - aS);
+        if (aOut <= 0.0) return new ColorArgb32(0, 0, 0, 0);
+        double kSrc = aS / aOut;
+        double kDst = aD * (1.0 - aS) / aOut;
         return new ColorArgb32(
-                        (byte)(this.Alpha + (byte.MaxValue - this.Alpha) * other.Alpha / byte.MaxValue),
-                        (byte)(this.Red * this.Alpha + (byte.MaxValue - this.Alpha) * other.Red / byte.MaxValue),
-                        (byte)(this.Green * this.Alpha + (byte.MaxValue - this.Alpha) * other.Green / byte.MaxValue),
-                        (byte)(this.Blue * this.Alpha + (byte.MaxValue - this.Alpha) * other.Blue / byte.MaxValue)
-                );
+            (byte)Math.Round(aOut * max),
+            (byte)Math.Round(Math.Clamp(this.Red   / max * kSrc + other.Red   / max * kDst, 0.0, 1.0) * max),
+            (byte)Math.Round(Math.Clamp(this.Green / max * kSrc + other.Green / max * kDst, 0.0, 1.0) * max),
+            (byte)Math.Round(Math.Clamp(this.Blue  / max * kSrc + other.Blue  / max * kDst, 0.0, 1.0) * max)
+        );
     }
 
     /// <summary>
@@ -293,15 +321,21 @@ public struct ColorArgb32 : IColorArgb<byte>, IEquatable<ColorArgb32>, IEquality
     /// </summary>
     /// <param name="color1">The starting color.</param>
     /// <param name="color2">The ending color.</param>
-    /// <param name="position">Interpolation factor between 0 and 1.</param>
+    /// <param name="position">Interpolation factor clamped to the [0, 1] range.</param>
     /// <returns>The interpolated color.</returns>
+    /// <remarks>
+    /// Each component is rounded to the nearest integer rather than truncated.
+    /// Out-of-range factors are clamped to [0, 1] before interpolation.
+    /// </remarks>
     public static ColorArgb32 LinearGradient(ColorArgb32 color1, ColorArgb32 color2, float position)
     {
+        float p = Math.Clamp(position, 0f, 1f);
+        float inv = 1f - p;
         return new ColorArgb32(
-                (byte)(color1.alpha * (1 - position) + color2.alpha * position),
-                (byte)(color1.red * (1 - position) + color2.red * position),
-                (byte)(color1.green * (1 - position) + color2.green * position),
-    (byte)(color1.blue * (1 - position) + color2.blue * position)
-);
+            (byte)Math.Round(color1.alpha * inv + color2.alpha * p),
+            (byte)Math.Round(color1.red   * inv + color2.red   * p),
+            (byte)Math.Round(color1.green * inv + color2.green * p),
+            (byte)Math.Round(color1.blue  * inv + color2.blue  * p)
+        );
     }
 }

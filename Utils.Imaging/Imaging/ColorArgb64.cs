@@ -9,6 +9,15 @@ namespace Utils.Imaging;
 /// <summary>
 /// Represents a 64-bit ARGB color using 16-bit components.
 /// </summary>
+/// <remarks>
+/// <para>
+/// The overlapping <see cref="Value"/> field uses a <c>[StructLayout(LayoutKind.Explicit)]</c>
+/// layout that assumes <b>little-endian byte order</b>.  On a little-endian host the packed value
+/// is <c>((ulong)Alpha &lt;&lt; 48) | ((ulong)Red &lt;&lt; 32) | ((ulong)Green &lt;&lt; 16) | Blue</c>.
+/// Since this library depends on <c>System.Drawing</c> (Windows/GDI+) it only runs on little-endian
+/// platforms, so the canonical packing and the overlapping layout are always consistent.
+/// </para>
+/// </remarks>
 [StructLayout(LayoutKind.Explicit)]
 public struct ColorArgb64 : IColorArgb<ushort>, IEquatable<ColorArgb64>, IEqualityOperators<ColorArgb64, ColorArgb64, bool>
 {
@@ -36,8 +45,12 @@ public struct ColorArgb64 : IColorArgb<ushort>, IEquatable<ColorArgb64>, IEquali
     ushort blue;
 
     /// <summary>
-    /// Gets or sets the packed ARGB value.
+    /// Gets or sets the packed ARGB value in host byte order.
     /// </summary>
+    /// <remarks>
+    /// On a little-endian host the value equals
+    /// <c>((ulong)Alpha &lt;&lt; 48) | ((ulong)Red &lt;&lt; 32) | ((ulong)Green &lt;&lt; 16) | Blue</c>.
+    /// </remarks>
     public ulong Value
     {
         get { return value; }
@@ -92,13 +105,13 @@ public struct ColorArgb64 : IColorArgb<ushort>, IEquatable<ColorArgb64>, IEquali
     /// <summary>
     /// Initializes a new instance of the <see cref="ColorArgb64"/> struct from a 32-bit packed ARGB value.
     /// </summary>
-    /// <param name="color">The packed ARGB value containing four 8-bit components.</param>
+    /// <param name="color">The packed ARGB value containing four 8-bit components in 0xAARRGGBB order.</param>
     public ColorArgb64(uint color) : this()
     {
-        this.alpha = (ushort)(0xFF00 & color >> 16);
-        this.red = (ushort)(0xFF00 & color >> 8);
-        this.green = (ushort)(0xFF00 & color);
-        this.blue = (ushort)(0xFF00 & color << 8);
+        this.alpha = ExpandByte((byte)(color >> 24));
+        this.red = ExpandByte((byte)(color >> 16));
+        this.green = ExpandByte((byte)(color >> 8));
+        this.blue = ExpandByte((byte)color);
     }
 
     /// <summary>
@@ -107,11 +120,16 @@ public struct ColorArgb64 : IColorArgb<ushort>, IEquatable<ColorArgb64>, IEquali
     /// <param name="colorArgb">The floating-point color whose channels are scaled to 16 bits.</param>
     public ColorArgb64(ColorArgb colorArgb) : this()
     {
-        this.alpha = (ushort)(colorArgb.Alpha * 65535);
-        this.red = (ushort)(colorArgb.Red * 65535);
-        this.green = (ushort)(colorArgb.Green * 65535);
-        this.blue = (ushort)(colorArgb.Blue * 65535);
+        this.alpha = ToUInt16(colorArgb.Alpha);
+        this.red   = ToUInt16(colorArgb.Red);
+        this.green = ToUInt16(colorArgb.Green);
+        this.blue  = ToUInt16(colorArgb.Blue);
     }
+
+    private static ushort ToUInt16(double value) =>
+        (ushort)Math.Round(
+            Math.Clamp(value, 0.0, 1.0) * ushort.MaxValue,
+            MidpointRounding.AwayFromZero);
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ColorArgb64"/> struct from an 8-bit color.
@@ -119,10 +137,10 @@ public struct ColorArgb64 : IColorArgb<ushort>, IEquatable<ColorArgb64>, IEquali
     /// <param name="colorArgb32">The 8-bit color whose channels are expanded to 16 bits.</param>
     public ColorArgb64(ColorArgb32 colorArgb32) : this()
     {
-        this.alpha = (ushort)(colorArgb32.Alpha << 8);
-        this.red = (ushort)(colorArgb32.Red << 8);
-        this.green = (ushort)(colorArgb32.Green << 8);
-        this.blue = (ushort)(colorArgb32.Blue << 8);
+        this.alpha = ExpandByte(colorArgb32.Alpha);
+        this.red = ExpandByte(colorArgb32.Red);
+        this.green = ExpandByte(colorArgb32.Green);
+        this.blue = ExpandByte(colorArgb32.Blue);
     }
 
     /// <summary>
@@ -131,11 +149,17 @@ public struct ColorArgb64 : IColorArgb<ushort>, IEquatable<ColorArgb64>, IEquali
     /// <param name="color">The color whose channels are expanded to 16 bits.</param>
     public ColorArgb64(System.Drawing.Color color) : this()
     {
-        this.alpha = (ushort)(color.A << 8);
-        this.red = (ushort)(color.R << 8);
-        this.green = (ushort)(color.G << 8);
-        this.blue = (ushort)(color.B << 8);
+        this.alpha = ExpandByte(color.A);
+        this.red = ExpandByte(color.R);
+        this.green = ExpandByte(color.G);
+        this.blue = ExpandByte(color.B);
     }
+
+    /// <summary>
+    /// Expands an 8-bit channel value to 16 bits while preserving the full [0, 65535] range.
+    /// Maps 0 to 0 and 255 to 65535 exactly via bit replication.
+    /// </summary>
+    private static ushort ExpandByte(byte value) => (ushort)((value << 8) | value);
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ColorArgb64"/> struct using explicit RGB components.
@@ -251,19 +275,27 @@ public struct ColorArgb64 : IColorArgb<ushort>, IEquatable<ColorArgb64>, IEquali
 
     /// <summary>
     /// Applies standard alpha compositing with another color placed underneath the current one.
+    /// Straight-alpha formula: α_out = α_src + α_dst×(1−α_src);
+    /// C_out = (C_src×α_src + C_dst×α_dst×(1−α_src)) / α_out.
+    /// All intermediate arithmetic is performed in double precision.
     /// </summary>
     /// <param name="other">The background color.</param>
     /// <returns>The result of the over compositing operation.</returns>
     public IColorArgb<ushort> Over(IColorArgb<ushort> other)
     {
-        return BuildColor(
-                other,
-                (thisAlpha, otherAlpha) => (ushort)(thisAlpha + (ushort.MaxValue - thisAlpha) * otherAlpha / ushort.MaxValue),
-                (alpha, thisAlpha, otherAlpha, thisComponent, otherComponent) =>
-                {
-                    double numerator = (double)thisComponent * thisAlpha + (double)(ushort.MaxValue - thisAlpha) * otherComponent;
-                    return (ushort)(numerator / ushort.MaxValue);
-                });
+        const double max = 65535.0;
+        double aS = this.alpha / max;
+        double aD = other.Alpha / max;
+        double aOut = aS + aD * (1.0 - aS);
+        if (aOut <= 0.0) return new ColorArgb64(0);
+        double kSrc = aS / aOut;
+        double kDst = aD * (1.0 - aS) / aOut;
+        return new ColorArgb64(
+            (ushort)Math.Round(aOut * max),
+            (ushort)Math.Round(Math.Clamp(this.red   / max * kSrc + other.Red   / max * kDst, 0.0, 1.0) * max),
+            (ushort)Math.Round(Math.Clamp(this.green / max * kSrc + other.Green / max * kDst, 0.0, 1.0) * max),
+            (ushort)Math.Round(Math.Clamp(this.blue  / max * kSrc + other.Blue  / max * kDst, 0.0, 1.0) * max)
+        );
     }
 
     /// <summary>
@@ -298,6 +330,29 @@ public struct ColorArgb64 : IColorArgb<ushort>, IEquatable<ColorArgb64>, IEquali
             (ushort)Math.Max(0, this.Red   - other.Red),
             (ushort)Math.Max(0, this.Green - other.Green),
             (ushort)Math.Max(0, this.Blue  - other.Blue)
+        );
+    }
+
+    /// <summary>
+    /// Computes a linear gradient between two 64-bit ARGB colors.
+    /// </summary>
+    /// <param name="color1">The starting color.</param>
+    /// <param name="color2">The ending color.</param>
+    /// <param name="position">Interpolation factor clamped to the [0, 1] range.</param>
+    /// <returns>The interpolated color.</returns>
+    /// <remarks>
+    /// Each component is rounded to the nearest integer.
+    /// Out-of-range factors are clamped to [0, 1] before interpolation.
+    /// </remarks>
+    public static ColorArgb64 LinearGradient(ColorArgb64 color1, ColorArgb64 color2, float position)
+    {
+        float p = Math.Clamp(position, 0f, 1f);
+        float inv = 1f - p;
+        return new ColorArgb64(
+            (ushort)Math.Round(color1.alpha * inv + color2.alpha * p),
+            (ushort)Math.Round(color1.red   * inv + color2.red   * p),
+            (ushort)Math.Round(color1.green * inv + color2.green * p),
+            (ushort)Math.Round(color1.blue  * inv + color2.blue  * p)
         );
     }
 
