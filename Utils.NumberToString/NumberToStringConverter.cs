@@ -440,15 +440,20 @@ namespace Utils.NumberToString
                                 $"All group indices must be non-negative; found {idx}.", nameof(groupIndices));
                 }
                 ExecuteAt = executeAt;
-                GroupIndices = groupIndices?.ToImmutableArray();
+                _groupIndices = groupIndices?.ToImmutableArray();
                 Replaces = replaces.ToImmutableArray();
             }
+            private readonly ImmutableArray<int>? _groupIndices;
             /// <summary>Gets when this trigger fires.</summary>
             public TriggerAt ExecuteAt { get; }
             /// <summary>Gets the group indices this trigger is restricted to, or <see langword="null"/> for all groups.</summary>
-            public IReadOnlyList<int>? GroupIndices { get; }
+            public int[]? GroupIndices => _groupIndices?.ToArray();
             /// <summary>Gets the replacement rules applied when this trigger fires.</summary>
             public IReadOnlyList<TriggerReplace> Replaces { get; }
+            /// <summary>Returns <see langword="true"/> when this trigger applies to the given group index.</summary>
+            internal bool AppliesToGroup(int? groupIndex) =>
+                !_groupIndices.HasValue ||
+                (groupIndex.HasValue && _groupIndices.Value.Contains(groupIndex.Value));
         }
 
         /// <summary>
@@ -892,9 +897,7 @@ namespace Utils.NumberToString
             foreach (var trigger in Triggers)
             {
                 if (trigger.ExecuteAt != at) continue;
-                if (trigger.GroupIndices != null
-                    && (groupIndex == null || !trigger.GroupIndices.Contains(groupIndex.Value)))
-                    continue;
+                if (!trigger.AppliesToGroup(groupIndex)) continue;
 
                 foreach (var replace in trigger.Replaces)
                     text = ApplyTriggerReplace(text, replace, query);
@@ -1264,14 +1267,14 @@ namespace Utils.NumberToString
             if (groupNumber < 0)
                 throw new ArgumentOutOfRangeException(nameof(groupNumber),
                     $"groupNumber must be non-negative; got {groupNumber}.");
+            if (number < 0)
+                throw new ArgumentOutOfRangeException(nameof(number),
+                    $"number must be non-negative; got {number}.");
             if (groupNumber == 0) return string.Empty;
             if (!Groups.ContainsKey(groupNumber))
                 throw new ArgumentOutOfRangeException(nameof(groupNumber),
                     $"groupNumber {groupNumber} is not a configured group index. " +
                     $"Valid indices: {string.Join(", ", Groups.Keys.OrderBy(k => k))}.");
-            if (number < 0)
-                throw new ArgumentOutOfRangeException(nameof(number),
-                    $"number must be non-negative; got {number}.");
 
             if (groupNumber > 1 && Exceptions.TryGetValue(number, out var value)) return value;
 

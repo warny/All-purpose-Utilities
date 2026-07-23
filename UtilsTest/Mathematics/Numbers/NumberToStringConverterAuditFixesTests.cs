@@ -898,4 +898,14 @@ public class NumberToStringConverterAuditFixesTests
             () => EN.ConvertGroup(1, 10),
             "A number that exceeds the valid range for the group must be rejected with a clear message");
     }
+
+    [TestMethod]
+    public void ConvertGroup_GroupZero_NegativeNumber_ThrowsArgumentOutOfRange()
+    {
+        // groupNumber == 0 is the recursive base case but the method is public.
+        // A negative number must still be rejected even for group 0.
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => EN.ConvertGroup(0, -1),
+            "ConvertGroup(0, -1) must throw because number is invalid regardless of groupNumber");
+    }
 }
