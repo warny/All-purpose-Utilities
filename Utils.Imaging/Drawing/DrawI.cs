@@ -61,6 +61,16 @@ namespace Utils.Drawing
             draw.Reset();
             var length = drawable.Length;
 
+            if (length <= 0f)
+            {
+                // Zero-length or degenerate shape: evaluate the brush at position 0
+                // for each geometry point rather than dividing by zero.
+                foreach (var point in drawable.GetPoints(false))
+                    foreach (var drawPoint in draw.Draw(point, 0f))
+                        DrawPoint(drawPoint.Point.X, drawPoint.Point.Y, drawPoint.Color);
+                return;
+            }
+
             foreach (var point in drawable.GetPoints(false))
             {
                 foreach (var drawPoint in draw.Draw(point, point.Position / length))
@@ -199,10 +209,19 @@ namespace Utils.Drawing
                 if (seg.Y2 > maxY) maxY = seg.Y2;
             }
 
+            // Reject geometry containing non-finite coordinates (NaN, Infinity).
+            if (!float.IsFinite(minX) || !float.IsFinite(maxX) ||
+                !float.IsFinite(minY) || !float.IsFinite(maxY))
+                return;
+
             float rangeX = maxX - minX;
             float rangeY = maxY - minY;
-            int yStart = (int)Math.Ceiling(minY);
-            int yEnd = (int)Math.Floor(maxY);
+
+            // Clip the scan-line range to the image bounds before entering the loop.
+            // Without clipping, extreme off-screen geometry would trigger O(extent) work
+            // even though DrawPoint would reject every pixel.
+            int yStart = Math.Max(0, (int)Math.Ceiling(minY));
+            int yEnd   = Math.Min(ImageAccessor.Height - 1, (int)Math.Floor(maxY));
 
             var intersections = new List<(float x, int winding)>();
 
@@ -272,8 +291,8 @@ namespace Utils.Drawing
                 {
                     if (!first && fillTest(windingSum))
                     {
-                        int xFrom = (int)Math.Ceiling(prevX);
-                        int xTo = (int)Math.Floor(xi);
+                        int xFrom = Math.Max(0, (int)Math.Ceiling(prevX));
+                        int xTo   = Math.Min(ImageAccessor.Width - 1, (int)Math.Floor(xi));
                         for (int x = xFrom; x <= xTo; x++)
                         {
                             float u = rangeX > 0f ? (x - minX) / rangeX : 0f;

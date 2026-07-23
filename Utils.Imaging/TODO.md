@@ -97,28 +97,28 @@ Zero-sum and negative-sum kernels are skipped or normalized incorrectly.
 
 **Priority:** P1 functional bug.
 
-### 13. Drawing viewports accept zero, non-finite and otherwise degenerate ranges
+### 13. ~~Drawing viewports accept zero, non-finite and otherwise degenerate ranges~~ ✅ FIXED
 `DrawF` divides image dimensions by `Right - Left` and `Down - Top` without validating zero spans, `NaN` or infinity. This creates infinite/NaN ratios and undefined integer conversions later.
 
 **Fix:** reject non-finite boundaries and zero-width/zero-height viewports; define whether reversed axes are supported and validate consistently.
 
 **Priority:** P1.
 
-### 14. `DrawF` maps the declared right/bottom boundaries outside the image
+### 14. ~~`DrawF` maps the declared right/bottom boundaries outside the image~~ ✅ FIXED
 The default viewport uses `Right = Width` and `Down = Height`, while mapping uses `Width / (Right - Left)` and truncation. Therefore `x == Right` maps to `Width` and `y == Down` maps to `Height`, both outside valid indexes. The downstream point routine silently drops them.
 
 **Fix:** define a pixel-center or edge-based coordinate contract. For an inclusive endpoint contract, scale to `Width - 1`/`Height - 1`; for a half-open viewport, document and test `[Left, Right)` and `[Top, Down)` explicitly.
 
 **Priority:** P1 functional bug.
 
-### 15. Shape drawing divides by zero for zero-length drawables
+### 15. ~~Shape drawing divides by zero for zero-length drawables~~ ✅ FIXED
 `DrawI.DrawShape` passes `point.Position / drawable.Length` to the brush. Empty or degenerate shapes can have length zero, producing `NaN`/infinity and undefined brush behavior.
 
 **Fix:** handle zero-length shapes explicitly, either drawing a single point with position zero or rejecting them before brush evaluation.
 
 **Priority:** P1.
 
-### 16. Scan-line filling is not clipped before iteration
+### 16. ~~Scan-line filling is not clipped before iteration~~ ✅ FIXED
 `FillShapeCore` derives `yStart`, `yEnd`, `xFrom` and `xTo` from arbitrary geometry and only clips at `DrawPoint`. Shapes far outside the image can therefore trigger enormous loops while producing no pixels.
 
 **Risk:** CPU denial of service from untrusted or accidental extreme coordinates.
