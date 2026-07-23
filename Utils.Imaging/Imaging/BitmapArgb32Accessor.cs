@@ -17,25 +17,28 @@ namespace Utils.Imaging
     public unsafe class BitmapArgb32Accessor : IDisposable, IImageAccessor<ColorArgb32, byte>, IImageAccessor<uint>
     {
         private Bitmap bitmap;
-        private BitmapData bmpdata = null;
+        private BitmapData bmpdata;
         private uint* uintdata;
         private readonly int totalBytes;
+        private readonly int width;
+        private readonly int height;
+        private bool disposed;
 
         /// <summary>
         /// Gets the width of the accessed bitmap region.
         /// </summary>
-        public int Width => bmpdata.Width;
+        public int Width { get { ThrowIfDisposed(); return width; } }
 
         /// <summary>
         /// Gets the height of the accessed bitmap region.
         /// </summary>
-        public int Height => bmpdata.Height;
+        public int Height { get { ThrowIfDisposed(); return height; } }
 
         /// <inheritdoc/>
         uint IImageAccessor<uint>.this[int x, int y]
         {
-            get { return uintdata[y * bmpdata.Width + x]; }
-            set { uintdata[y * bmpdata.Width + x] = value; }
+            get { ThrowIfDisposed(); return uintdata[y * width + x]; }
+            set { ThrowIfDisposed(); uintdata[y * width + x] = value; }
         }
 
         /// <summary>
@@ -44,15 +47,27 @@ namespace Utils.Imaging
         /// </summary>
         /// <param name="bitmap">Bitmap providing the pixel data.</param>
         /// <param name="region">Optional region to lock; when omitted the entire bitmap is used.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="bitmap"/> is null.</exception>
         public BitmapArgb32Accessor(Bitmap bitmap, Rectangle? region = null)
         {
+            if (bitmap is null) throw new ArgumentNullException(nameof(bitmap));
             this.bitmap = bitmap;
             region = region ?? new Rectangle(0, 0, bitmap.Width, bitmap.Height);
 
             this.bmpdata = bitmap.LockBits(region.Value, ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
-            this.totalBytes = bmpdata.Stride * bmpdata.Height;
-
-            this.uintdata = (uint*)(void*)bmpdata.Scan0;
+            try
+            {
+                this.uintdata = (uint*)(void*)bmpdata.Scan0;
+                this.width = bmpdata.Width;
+                this.height = bmpdata.Height;
+                this.totalBytes = bmpdata.Stride * bmpdata.Height;
+            }
+            catch
+            {
+                bitmap.UnlockBits(bmpdata);
+                bmpdata = null;
+                throw;
+            }
         }
 
         /// <summary>
@@ -60,18 +75,21 @@ namespace Utils.Imaging
         /// </summary>
         /// <param name="x">Horizontal pixel coordinate.</param>
         /// <param name="y">Vertical pixel coordinate.</param>
+        /// <exception cref="ObjectDisposedException">Thrown after <see cref="Dispose()"/> has been called.</exception>
         public ColorArgb32 this[int x, int y]
         {
-            get { return new ColorArgb32(uintdata[y * bmpdata.Width + x]); }
-            set { uintdata[y * bmpdata.Width + x] = value.Value; }
+            get { ThrowIfDisposed(); return new ColorArgb32(uintdata[y * width + x]); }
+            set { ThrowIfDisposed(); uintdata[y * width + x] = value.Value; }
         }
 
         /// <summary>
         /// Copies the raw pixel data to an array of unsigned integers.
         /// </summary>
         /// <returns>Array containing the raw pixel values.</returns>
+        /// <exception cref="ObjectDisposedException">Thrown after <see cref="Dispose()"/> has been called.</exception>
         public uint[] CopyToArray()
         {
+            ThrowIfDisposed();
             uint[] copy = new uint[totalBytes / sizeof(uint)];
             for (int i = 0; i < copy.Length; i++)
             {
@@ -84,14 +102,16 @@ namespace Utils.Imaging
         /// Copies the pixel data to a two-dimensional array of color structures.
         /// </summary>
         /// <returns>Matrix of <see cref="ColorArgb32"/> values.</returns>
+        /// <exception cref="ObjectDisposedException">Thrown after <see cref="Dispose()"/> has been called.</exception>
         public ColorArgb32[,] CopyToColorArray()
         {
-            ColorArgb32[,] copy = new ColorArgb32[Width, Height];
-            for (int y = 0; y < Height; y++)
+            ThrowIfDisposed();
+            ColorArgb32[,] copy = new ColorArgb32[width, height];
+            for (int y = 0; y < height; y++)
             {
-                for (int x = 0; x < Width; x++)
+                for (int x = 0; x < width; x++)
                 {
-                    copy[x, y] = this[x, y];
+                    copy[x, y] = new ColorArgb32(uintdata[y * width + x]);
                 }
             }
             return copy;
@@ -104,8 +124,13 @@ namespace Utils.Imaging
         /// <param name="location">Top-left destination coordinates.</param>
         /// <param name="sprite">Bitmap containing the sprite.</param>
         /// <param name="blend">Function blending sprite and destination colors.</param>
+        /// <exception cref="ObjectDisposedException">Thrown after <see cref="Dispose()"/> has been called.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="sprite"/> or <paramref name="blend"/> is null.</exception>
         public void ApplySprite(Point location, BitmapArgb32Accessor sprite, Func<ColorArgb32, ColorArgb32, ColorArgb32> blend)
         {
+            ThrowIfDisposed();
+            if (sprite is null) throw new ArgumentNullException(nameof(sprite));
+            if (blend is null) throw new ArgumentNullException(nameof(blend));
             for (int sy = 0; sy < sprite.Height; sy++)
             {
                 int dy = location.Y + sy;
@@ -122,6 +147,12 @@ namespace Utils.Imaging
                     this[dx, dy] = result;
                 }
             }
+        }
+
+        private void ThrowIfDisposed()
+        {
+            if (disposed)
+                throw new ObjectDisposedException(GetType().Name);
         }
 
         /// <summary>
@@ -144,12 +175,14 @@ namespace Utils.Imaging
         /// <param name="disposing">Indicates whether the method is called from <see cref="Dispose()"/>.</param>
         protected virtual void Dispose(bool disposing)
         {
-            if (bitmap is not null && bmpdata is not null)
+            if (!disposed)
             {
-                this.bitmap.UnlockBits(bmpdata);
-                this.bitmap = null;
-                this.uintdata = null;
-                this.bmpdata = null;
+                if (bitmap is not null && bmpdata is not null)
+                    bitmap.UnlockBits(bmpdata);
+                bitmap = null;
+                uintdata = null;
+                bmpdata = null;
+                disposed = true;
             }
         }
 

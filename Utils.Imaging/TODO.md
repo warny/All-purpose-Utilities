@@ -150,7 +150,7 @@ Sprite application exists in generic and specialized implementations.
 
 **Priority:** P2 maintainability.
 
-### 20. Resource ownership and finalization are implicit
+### 20. ~~Resource ownership and finalization are implicit~~ ✅ FIXED
 Accessors leave bitmaps alive while finalizers call `UnlockBits` through managed objects at nondeterministic times.
 
 **Fix:** standardize ownership, prefer deterministic disposal and minimize/remove finalizers where possible.

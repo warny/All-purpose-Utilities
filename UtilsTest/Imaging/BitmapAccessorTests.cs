@@ -248,6 +248,60 @@ public class BitmapAccessorTests
         Assert.AreEqual(expected, ulongAcc[1, 2]);
     }
 
+    // ── BitmapArgb32Accessor — finding #20: disposed-state contract ──────────
+
+    [TestMethod]
+    [ExpectedException(typeof(ArgumentNullException))]
+    public void BitmapArgb32Accessor_NullBitmap_ThrowsArgumentNullException()
+    {
+        _ = new BitmapArgb32Accessor(null!);
+    }
+
+    [TestMethod]
+    public void BitmapArgb32Accessor_WriteThenRead_RoundTrips()
+    {
+        using var bmp = new Bitmap(4, 4, PixelFormat.Format32bppArgb);
+        using var acc = new BitmapArgb32Accessor(bmp);
+        acc[1, 2] = new ColorArgb32(255, 10, 20, 30);
+        Assert.AreEqual(new ColorArgb32(255, 10, 20, 30), acc[1, 2]);
+    }
+
+    [TestMethod]
+    public void BitmapArgb32Accessor_AfterDispose_IndexerThrowsObjectDisposedException()
+    {
+        var bmp = new Bitmap(4, 4, PixelFormat.Format32bppArgb);
+        var acc = new BitmapArgb32Accessor(bmp);
+        acc.Dispose();
+        Assert.ThrowsException<ObjectDisposedException>(() => { _ = acc[0, 0]; });
+    }
+
+    [TestMethod]
+    public void BitmapArgb32Accessor_AfterDispose_WidthThrowsObjectDisposedException()
+    {
+        var bmp = new Bitmap(4, 4, PixelFormat.Format32bppArgb);
+        var acc = new BitmapArgb32Accessor(bmp);
+        acc.Dispose();
+        Assert.ThrowsException<ObjectDisposedException>(() => { _ = acc.Width; });
+    }
+
+    [TestMethod]
+    public void BitmapArgb32Accessor_DoubleDispose_DoesNotThrow()
+    {
+        var bmp = new Bitmap(4, 4, PixelFormat.Format32bppArgb);
+        var acc = new BitmapArgb32Accessor(bmp);
+        acc.Dispose();
+        acc.Dispose();
+    }
+
+    [TestMethod]
+    public void BitmapArgb32Accessor_CopyToArray_AfterDispose_ThrowsObjectDisposedException()
+    {
+        var bmp = new Bitmap(4, 4, PixelFormat.Format32bppArgb);
+        var acc = new BitmapArgb32Accessor(bmp);
+        acc.Dispose();
+        Assert.ThrowsException<ObjectDisposedException>(() => acc.CopyToArray());
+    }
+
     // ── Finding #17: pixel-format aliases rejected ────────────────────────────
 
     [TestMethod]
