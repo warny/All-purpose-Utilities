@@ -192,7 +192,7 @@ Some paths truncate, some round and some throw after partial image mutation.
 
 **Priority:** P2.
 
-### 26. Fill topology is changed by a hard-coded 0.5-pixel merge threshold
+### 26. ~~Fill topology is changed by a hard-coded 0.5-pixel merge threshold~~ ✅ FIXED
 `FillShapeCore` merges adjacent scan-line intersections whenever their distance is below `0.5f`. Legitimate narrow features, close contours and small holes can be collapsed or cancelled solely because of scale.
 
 **Fix:** do not use a global geometric-distance heuristic to alter winding topology. Resolve shared vertices from segment identity/rasterization rules, or make tolerance explicit and scale-aware.

@@ -20,6 +20,38 @@ namespace Utils.Drawing
     public class DrawI<T> : BaseDrawing<T>
     {
         /// <summary>
+        /// Gets or sets the maximum distance (in pixels) below which two adjacent scan-line
+        /// intersections are merged during fill rasterization.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// When the fill algorithm encounters two consecutive intersections whose X positions differ
+        /// by less than this value it collapses them: if their winding contributions cancel (a spike
+        /// or aller-retour segment) both entries are discarded; otherwise they are collapsed into a
+        /// single entry so that the winding count stays correct.
+        /// </para>
+        /// <para>
+        /// The default value of <c>0.5</c> works well for pixel-scale geometry.  For sub-pixel or
+        /// very-small-feature geometry, reduce this value toward <c>0</c>; set it to <c>0</c> to
+        /// disable merging entirely (shared vertices must then be handled by the geometry source).
+        /// </para>
+        /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException">
+        /// Thrown when set to a negative value.
+        /// </exception>
+        public float IntersectionMergeThreshold
+        {
+            get => _intersectionMergeThreshold;
+            set
+            {
+                if (value < 0f)
+                    throw new ArgumentOutOfRangeException(nameof(value), "IntersectionMergeThreshold must be non-negative.");
+                _intersectionMergeThreshold = value;
+            }
+        }
+        private float _intersectionMergeThreshold = 0.5f;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="DrawI{T}"/> class.
         /// </summary>
         /// <param name="imageAccessor">Accessor used to manipulate the underlying image.</param>
@@ -250,17 +282,18 @@ namespace Utils.Drawing
 
                 intersections.Sort((a, b) => a.x.CompareTo(b.x));
 
-                // Merge coincident intersections (< 0.5 px apart) to handle spikes
-                // (aller + retour along the same path) and floating-point near-duplicates.
+                // Merge coincident intersections closer than IntersectionMergeThreshold to handle
+                // spikes (aller + retour along the same path) and floating-point near-duplicates.
                 // Adjacent entries whose windings sum to zero are both removed (they cancel);
                 // those with a non-zero sum are collapsed into a single entry at the left X.
                 // A forward while-loop is used so that i stays in place after a removal,
                 // naturally pointing to the next unprocessed element without going out of range.
                 {
+                    float mergeThreshold = _intersectionMergeThreshold;
                     int i = 0;
                     while (i < intersections.Count - 1)
                     {
-                        if (intersections[i + 1].x - intersections[i].x < 0.5f)
+                        if (intersections[i + 1].x - intersections[i].x < mergeThreshold)
                         {
                             int merged = intersections[i].winding + intersections[i + 1].winding;
                             intersections.RemoveAt(i + 1);

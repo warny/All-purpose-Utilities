@@ -275,4 +275,43 @@ public class DrawMappingTests
             new Point(int.MaxValue, int.MinValue),
             new Point(int.MaxValue, int.MaxValue));
     }
+
+    // ── Finding #26: IntersectionMergeThreshold is explicit and configurable ──
+
+    [TestMethod]
+    public void IntersectionMergeThreshold_DefaultIsHalfPixel()
+    {
+        var accessor = new ArrayImageAccessor<ColorArgb32>(10, 10);
+        var draw = new DrawI<ColorArgb32>(accessor);
+        Assert.AreEqual(0.5f, draw.IntersectionMergeThreshold, 1e-6f);
+    }
+
+    [TestMethod]
+    public void IntersectionMergeThreshold_SetZero_DisablesMerging()
+    {
+        var accessor = new ArrayImageAccessor<ColorArgb32>(10, 10);
+        var draw = new DrawI<ColorArgb32>(accessor) { IntersectionMergeThreshold = 0f };
+        Assert.AreEqual(0f, draw.IntersectionMergeThreshold, 1e-6f);
+        // Fill a simple square — must not throw and must actually paint pixels.
+        ColorArgb32 red = new(255, 255, 0, 0);
+        draw.FillPolygon1(red, new Point(2, 2), new Point(6, 2), new Point(6, 6), new Point(2, 6));
+        Assert.AreNotEqual(default(ColorArgb32), accessor[4, 4], "Interior pixel should be filled.");
+    }
+
+    [TestMethod]
+    public void IntersectionMergeThreshold_CustomValue_IsRespected()
+    {
+        var accessor = new ArrayImageAccessor<ColorArgb32>(20, 20);
+        var draw = new DrawI<ColorArgb32>(accessor) { IntersectionMergeThreshold = 2.0f };
+        Assert.AreEqual(2.0f, draw.IntersectionMergeThreshold, 1e-6f);
+    }
+
+    [TestMethod]
+    [ExpectedException(typeof(ArgumentOutOfRangeException))]
+    public void IntersectionMergeThreshold_NegativeValue_ThrowsArgumentOutOfRangeException()
+    {
+        var accessor = new ArrayImageAccessor<ColorArgb32>(10, 10);
+        var draw = new DrawI<ColorArgb32>(accessor);
+        draw.IntersectionMergeThreshold = -0.1f;
+    }
 }
