@@ -469,8 +469,13 @@ namespace Utils.NumberToString
         /// <param name="variants">Zero or more <c>"dimension=value"</c> strings.</param>
         public string Convert(decimal number, int mandatoryDecimalDigits, DecimalFormatOptions? options, params string[] variants)
         {
+            if (mandatoryDecimalDigits > 28)
+                throw new ArgumentOutOfRangeException(nameof(mandatoryDecimalDigits),
+                    $"mandatoryDecimalDigits must be between 0 and 28 (the maximum decimal precision); got {mandatoryDecimalDigits}.");
+
             bool isNegative = number < 0;
-            if (isNegative) number = -number;
+            // Avoid unary negation of decimal.MinValue by using decimal.Negate.
+            if (isNegative) number = decimal.Negate(number);
 
             if (mandatoryDecimalDigits >= 0)
                 number = decimal.Round(number, mandatoryDecimalDigits, MidpointRounding.AwayFromZero);
@@ -494,15 +499,21 @@ namespace Utils.NumberToString
             if (digits.Length > 0)
             {
                 string separatorWord = options?.DecimalSeparator ?? DecimalSeparator;
-                result.Append(Separator).Append(separatorWord.ToPlural((long)integerPart)).Append(Separator);
+                // Use BigInteger to avoid long overflow when the integer part exceeds long.MaxValue.
+                BigInteger integerBig = (BigInteger)integerPart;
+                long separatorPluralProxy = BigInteger.Abs(integerBig) <= 1 ? (long)integerBig : 2L;
+                result.Append(Separator).Append(separatorWord.ToPlural(separatorPluralProxy)).Append(Separator);
 
                 Fractions.TryGetValue(digits.Length, out var configuredSuffix);
                 string? activeSuffix = options?.DecimalSuffix ?? configuredSuffix;
 
                 if (activeSuffix != null)
                 {
-                    var valueText = Convert(BigInteger.Parse(digits), variants).Replace("-", " ");
-                    result.Append(valueText).Append(Separator).Append(activeSuffix.ToPlural(long.Parse(digits)));
+                    BigInteger fracNumerator = BigInteger.Parse(digits);
+                    var valueText = Convert(fracNumerator, variants).Replace("-", " ");
+                    // Use BigInteger to avoid long overflow when fractional digits exceed 18.
+                    long fracPluralProxy = fracNumerator <= 1 ? (long)fracNumerator : 2L;
+                    result.Append(valueText).Append(Separator).Append(activeSuffix.ToPlural(fracPluralProxy));
                 }
                 else
                 {
@@ -557,7 +568,13 @@ namespace Utils.NumberToString
                     System.Globalization.CultureInfo.InvariantCulture,
                     out decimal d))
                 return Convert(d, variants);
-            return Convert(new System.Numerics.BigInteger(Math.Truncate(number)), variants);
+
+            // The value is finite but outside the decimal range.
+            // Silent truncation of the fractional part would silently change the value semantics,
+            // so we throw rather than produce an integer approximation.
+            throw new ArgumentOutOfRangeException(nameof(number),
+                $"The value '{number}' is outside the supported decimal range and cannot be converted exactly. " +
+                "Use a BigInteger overload for integer-only conversion of large values.");
         }
 
         /// <inheritdoc cref="INumberToStringConverter.Convert(float)"/>
@@ -607,13 +624,13 @@ namespace Utils.NumberToString
             if (MaxNumber.HasValue && BigInteger.Abs(number) > MaxNumber.Value)
                 throw new ArgumentOutOfRangeException(nameof(number), $"The value exceeds the maximum supported number ({MaxNumber.Value}).");
 
-            if (number == 0) return Zero;
-
             bool isNegative = number.Sign == -1;
             BigInteger abs = isNegative ? BigInteger.Abs(number) : number;
 
             var query = BuildVariantQuery(variants);
-            string raw = ConvertRaw(abs, query);
+            // Zero goes through the same post-processing pipeline as non-zero values so that
+            // variant rules, end triggers, and language finalization can be applied to "zero".
+            string raw = abs == BigInteger.Zero ? Zero : ConvertRaw(abs, query);
             if (_rawAdjustFunction != null) raw = _rawAdjustFunction(raw);
             raw = ApplyVariantRules(raw, query, abs <= long.MaxValue ? (long?)abs : null);
             raw = ApplyTriggers(raw, TriggerAt.End, null, query);
@@ -1227,6 +1244,9 @@ namespace Utils.NumberToString
         /// <inheritdoc cref="INumberToStringConverter.ConvertOrdinal(long, string[])"/>
         public string ConvertOrdinal(long number, params string[] variants)
         {
+            if (number == long.MinValue)
+                throw new ArgumentOutOfRangeException(nameof(number),
+                    "long.MinValue cannot be converted to ordinal because its absolute value exceeds long.MaxValue.");
             bool isNegative = number < 0;
             long absNumber = Math.Abs(number);
             var activeVariants = BuildVariantQuery(variants);
@@ -1287,20 +1307,27 @@ namespace Utils.NumberToString
         public string ConvertCurrency(decimal amount, CurrencyDefinition currency, params string[] variants)
         {
             ArgumentNullException.ThrowIfNull(currency);
+            if (currency.SubunitDigits < 0 || currency.SubunitDigits > 18)
+                throw new ArgumentOutOfRangeException(nameof(currency),
+                    $"SubunitDigits must be between 0 and 18 (inclusive); got {currency.SubunitDigits}.");
 
             bool isNegative = amount < 0;
-            decimal absAmount = isNegative ? -amount : amount;
+            // Avoid unary negation of extreme values: extract sign and magnitude separately.
+            decimal absAmount = isNegative ? decimal.Negate(amount) : amount;
 
-            long units = (long)decimal.Truncate(absAmount);
-            decimal fractional = absAmount - units;
-            long subunitFactor = (long)Math.Pow(10, currency.SubunitDigits);
-            long subunits = (long)Math.Round((double)fractional * subunitFactor);
+            // Use BigInteger for the unit part so amounts above long.MaxValue are supported.
+            BigInteger units = (BigInteger)decimal.Truncate(absAmount);
+            decimal fractional = absAmount - (decimal)units;
+
+            // Compute subunit factor with exact decimal arithmetic instead of Math.Pow (double).
+            long subunitFactor = _decimalPowersOfTen[currency.SubunitDigits];
+            long subunits = (long)decimal.Round(fractional * subunitFactor, MidpointRounding.AwayFromZero);
 
             // Carry: rounding may push subunits to subunitFactor (e.g. 1.999m → subunits=100).
             units += subunits / subunitFactor;
             subunits %= subunitFactor;
 
-            string unitName = units == 1 ? currency.UnitSingular : currency.UnitPlural;
+            string unitName = units == BigInteger.One ? currency.UnitSingular : currency.UnitPlural;
             string result = Convert(units, variants) + Separator + unitName;
 
             if (subunits > 0)
@@ -1313,14 +1340,28 @@ namespace Utils.NumberToString
             return isNegative ? Minus.Replace("*", result) : result;
         }
 
+        // Powers of ten from 10^0 to 10^18, computed with exact decimal arithmetic.
+        private static readonly long[] _decimalPowersOfTen =
+        [
+            1L, 10L, 100L, 1_000L, 10_000L, 100_000L, 1_000_000L, 10_000_000L,
+            100_000_000L, 1_000_000_000L, 10_000_000_000L, 100_000_000_000L,
+            1_000_000_000_000L, 10_000_000_000_000L, 100_000_000_000_000L,
+            1_000_000_000_000_000L, 10_000_000_000_000_000L, 100_000_000_000_000_000L,
+            1_000_000_000_000_000_000L,
+        ];
+
         /// <inheritdoc cref="INumberToStringConverter.ConvertYear(int)"/>
         public string ConvertYear(int year) => ConvertYear(year, []);
 
         /// <inheritdoc cref="INumberToStringConverter.ConvertYear(int, string[])"/>
         public string ConvertYear(int year, params string[] variants)
         {
+            if (year == int.MinValue)
+                throw new ArgumentOutOfRangeException(nameof(year),
+                    "int.MinValue cannot be converted because its absolute value exceeds int.MaxValue.");
             bool isNegative = year < 0;
-            int abs = Math.Abs(year);
+            // Use long to safely compute abs of any int value including int.MinValue+1..int.MaxValue.
+            int abs = (int)Math.Abs((long)year);
 
             string body;
             if (_yearFormat?.SplitRanges?.Contains(abs) == true)
@@ -1347,7 +1388,19 @@ namespace Utils.NumberToString
 
         /// <inheritdoc cref="INumberToStringConverter.ConvertFraction(BigInteger, BigInteger, string[])"/>
         public string ConvertFraction(BigInteger numerator, BigInteger denominator, params string[] variants)
-            => BuildFractionText(numerator, denominator, allowFractionNames: true, variants);
+        {
+            if (denominator == BigInteger.Zero)
+                throw new ArgumentOutOfRangeException(nameof(denominator), "Denominator must not be zero.");
+
+            // Normalize: ensure denominator is positive; move sign to numerator.
+            if (denominator < BigInteger.Zero)
+            {
+                numerator = BigInteger.Negate(numerator);
+                denominator = BigInteger.Negate(denominator);
+            }
+
+            return BuildFractionText(numerator, denominator, allowFractionNames: true, variants);
+        }
 
         /// <inheritdoc cref="INumberToStringConverter.ConvertFraction(int, int, string[])"/>
         public string ConvertFraction(int numerator, int denominator, params string[] variants)
@@ -1387,6 +1440,9 @@ namespace Utils.NumberToString
             if (!SupportsTimeConversion)
                 throw new NotSupportedException($"Language '{LanguageIdentifier}' has no <TimeUnits> configuration.");
 
+            if (duration == TimeSpan.MinValue)
+                throw new ArgumentOutOfRangeException(nameof(duration),
+                    "TimeSpan.MinValue cannot be converted because its negation overflows.");
             var abs = duration < TimeSpan.Zero ? -duration : duration;
             var parts = new List<string>();
             int totalHours = (int)(abs.Days * 24 + abs.Hours);
