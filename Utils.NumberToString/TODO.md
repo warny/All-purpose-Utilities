@@ -67,7 +67,7 @@ The subunit factor is calculated through `Math.Pow(10, SubunitDigits)`, converte
 
 **Priority: P1 numeric correctness.**
 
-### 51. The `BigInteger` ordinal API only supports the `long` range
+### 51. ✅ The `BigInteger` ordinal API only supports the `long` range
 
 `ConvertOrdinal(BigInteger)` immediately performs `checked((long)number)`. The overload therefore suggests arbitrary-precision support while rejecting values outside `Int64`, unlike cardinal conversion.
 
