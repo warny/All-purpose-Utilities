@@ -725,6 +725,28 @@ public class NumberToStringConverterAuditFixesTests
             "Negative group index must be rejected");
     }
 
+    [TestMethod]
+    public void TriggerReplace_NullConstraintsInForm_ThrowsArgumentException()
+    {
+        Assert.ThrowsException<ArgumentException>(
+            () => new NumberToStringConverter.TriggerReplace(
+                "word", false,
+                [(null!, "replacement")],
+                null),
+            "A form with null Constraints must be rejected at construction time");
+    }
+
+    [TestMethod]
+    public void TriggerReplace_NullToInForm_ThrowsArgumentException()
+    {
+        Assert.ThrowsException<ArgumentException>(
+            () => new NumberToStringConverter.TriggerReplace(
+                "word", false,
+                [(new System.Collections.Generic.Dictionary<string, string>(), null!)],
+                null),
+            "A form with null To value must be rejected at construction time");
+    }
+
     // ── Item 81 — Duplicate exact replacement keys produce clear error ────────
 
     [TestMethod]
@@ -755,5 +777,21 @@ public class NumberToStringConverterAuditFixesTests
         Assert.ThrowsException<ArgumentOutOfRangeException>(
             () => scale.GetScaleName(-1),
             "Negative scale must be rejected");
+    }
+
+    [TestMethod]
+    public void GetScaleName_IntMaxValue_WithPositiveStartIndex_DoesNotOverflow()
+    {
+        // Regression: the previous int arithmetic overflowed when scale + StartIndex exceeded int.MaxValue.
+        // With long arithmetic this must complete without overflow or index-out-of-range.
+        var prefixes10 = new[] { "", "un", "du", "tri", "quadri", "quinti", "sexti", "septi", "octi", "noni" };
+        var scale = new NumberScale(
+            staticValues: (IReadOnlyList<string>)new[] { "", "thousand" },
+            scaleSuffixes: (IReadOnlyList<string>)new[] { "illion" },
+            startIndex: 10,
+            scale0Prefixes: (IReadOnlyList<string>)prefixes10);
+        string result = scale.GetScaleName(int.MaxValue);
+        Assert.IsNotNull(result);
+        Assert.IsFalse(string.IsNullOrWhiteSpace(result), "GetScaleName(int.MaxValue) must return a non-empty string");
     }
 }

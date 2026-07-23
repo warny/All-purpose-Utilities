@@ -373,6 +373,15 @@ namespace Utils.NumberToString
                 if (forms is null)
                     throw new ArgumentNullException(nameof(forms),
                         "Trigger forms collection must not be null (use an empty list when no variant forms are needed).");
+                foreach (var form in forms)
+                {
+                    if (form.Constraints is null)
+                        throw new ArgumentException(
+                            "Each trigger form's Constraints must not be null.", nameof(forms));
+                    if (form.To is null)
+                        throw new ArgumentException(
+                            "Each trigger form's To value must not be null.", nameof(forms));
+                }
 
                 From = from;
                 IsRegex = isRegex;
@@ -1762,6 +1771,7 @@ namespace Utils.NumberToString
             ValidatePrefixTable(HundredsPrefixes, nameof(hundredsPrefixes));
         }
 
+        /// <summary>Validates that a digit-prefix table has exactly 10 entries (one per decimal digit 0–9).</summary>
         private static void ValidatePrefixTable(IReadOnlyList<string> table, string paramName)
         {
             if (table.Count != 10)
@@ -1875,16 +1885,15 @@ namespace Utils.NumberToString
                     $"scale {scale} exceeds the {StaticValues.Count} static names and no scaleSuffixes are configured " +
                     "for dynamic generation. Either add more static names or provide at least one suffix.");
 
-            scale -= StaticValues.Count;
-            scale += StartIndex;
-            var result = int.DivRem(scale, ScaleSuffixes.Count);
+            long dynamicScale = (long)scale - StaticValues.Count + StartIndex;
+            var (quotient, remainder) = long.DivRem(dynamicScale, ScaleSuffixes.Count);
 
-            var suffix = ScaleSuffixes[result.Remainder];
-            var prefix = result.Quotient + 1;
+            var suffix = ScaleSuffixes[(int)remainder];
+            long prefix = quotient + 1;
 
-            if (prefix.Between(0, 9))
+            if (prefix.Between(0L, 9L))
             {
-                var value = Scale0Prefixes[prefix] + GroupSeparator + suffix;
+                var value = Scale0Prefixes[(int)prefix] + GroupSeparator + suffix;
                 return FirstLetterUppercase ? char.ToUpperInvariant(value[0]) + value[1..] : value;
             }
 
@@ -1892,9 +1901,9 @@ namespace Utils.NumberToString
 
             while (prefix > 0)
             {
-                (prefix, int u) = int.DivRem(prefix, 10);
-                (prefix, int t) = int.DivRem(prefix, 10);
-                (prefix, int h) = int.DivRem(prefix, 10);
+                (prefix, long u) = long.DivRem(prefix, 10);
+                (prefix, long t) = long.DivRem(prefix, 10);
+                (prefix, long h) = long.DivRem(prefix, 10);
 
                 if (h == 0 && t == 0 && u == 0)
                 {
@@ -1903,9 +1912,9 @@ namespace Utils.NumberToString
                 }
 
                 Match[] groupValues = [
-                    PrefixParser.Match(HundredsPrefixes[h]),
-                    PrefixParser.Match(TensPrefixes[t]),
-                    PrefixParser.Match(UnitsPrefixes[u])
+                    PrefixParser.Match(HundredsPrefixes[(int)h]),
+                    PrefixParser.Match(TensPrefixes[(int)t]),
+                    PrefixParser.Match(UnitsPrefixes[(int)u])
                 ];
 
                 var value = new StringBuilder();
