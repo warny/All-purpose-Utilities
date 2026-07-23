@@ -328,4 +328,27 @@ public struct ColorArgb64 : IColorArgb<ushort>, IEquatable<ColorArgb64>, IEquali
         );
     }
 
+    /// <summary>
+    /// Computes a linear gradient between two 64-bit ARGB colors.
+    /// </summary>
+    /// <param name="color1">The starting color.</param>
+    /// <param name="color2">The ending color.</param>
+    /// <param name="position">Interpolation factor clamped to the [0, 1] range.</param>
+    /// <returns>The interpolated color.</returns>
+    /// <remarks>
+    /// Each component is rounded to the nearest integer.
+    /// Out-of-range factors are clamped to [0, 1] before interpolation.
+    /// </remarks>
+    public static ColorArgb64 LinearGradient(ColorArgb64 color1, ColorArgb64 color2, float position)
+    {
+        float p = Math.Clamp(position, 0f, 1f);
+        float inv = 1f - p;
+        return new ColorArgb64(
+            (ushort)Math.Round(color1.alpha * inv + color2.alpha * p),
+            (ushort)Math.Round(color1.red   * inv + color2.red   * p),
+            (ushort)Math.Round(color1.green * inv + color2.green * p),
+            (ushort)Math.Round(color1.blue  * inv + color2.blue  * p)
+        );
+    }
+
 }

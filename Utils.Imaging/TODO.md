@@ -178,14 +178,14 @@ The constructor multiplies byte components by 255 before casting back to byte.
 
 **Priority:** P2 functional bug.
 
-### 24. Gradient APIs use inconsistent interpolation and factor validation
+### 24. ~~Gradient APIs use inconsistent interpolation and factor validation~~ ✅ FIXED
 Floating and byte implementations use different spaces and different out-of-range behavior.
 
 **Fix:** expose explicit interpolation modes with shared factor validation and conversion rules.
 
 **Priority:** P2.
 
-### 25. Numeric conversion and rounding policies are inconsistent
+### 25. ~~Numeric conversion and rounding policies are inconsistent~~ ✅ FIXED
 Some paths truncate, some round and some throw after partial image mutation.
 
 **Fix:** centralize clamp/round/convert helpers and stage results before committing when conversion can fail.

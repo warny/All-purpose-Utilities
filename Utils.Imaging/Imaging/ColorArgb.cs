@@ -160,12 +160,18 @@ public struct ColorArgb : IColorArgb<double>, IEquatable<ColorArgb>, IEqualityOp
     public static implicit operator ColorArgb(System.Drawing.Color color) => new(color.A / 255.0, color.R / 255.0, color.G / 255.0, color.B / 255.0);
 
     /// <summary>
-    /// Blends two colors using a perceptual gradient.
+    /// Blends two colors using a perceptual (square-root) gradient.
     /// </summary>
     /// <param name="color1">The starting color.</param>
     /// <param name="color2">The ending color.</param>
-    /// <param name="percent">Blend factor in the [0,1] range.</param>
+    /// <param name="percent">Blend factor clamped to the [0,1] range.</param>
     /// <returns>The interpolated color.</returns>
+    /// <remarks>
+    /// RGB channels are interpolated in the power-2 domain and projected back via square root,
+    /// which produces a more visually uniform gradient than linear interpolation.
+    /// Alpha is interpolated linearly.
+    /// For a linear interpolation, use <see cref="LinearGradient(ColorArgb,ColorArgb,double)"/>.
+    /// </remarks>
     public static ColorArgb Gradient(ColorArgb color1, ColorArgb color2, double percent)
     {
         if (percent < 0) percent = 0;
@@ -176,6 +182,24 @@ public struct ColorArgb : IColorArgb<double>, IEquatable<ColorArgb>, IEqualityOp
             Math.Sqrt(color1.red   * color1.red   * inv + color2.red   * color2.red   * percent),
             Math.Sqrt(color1.green * color1.green * inv + color2.green * color2.green * percent),
             Math.Sqrt(color1.blue  * color1.blue  * inv + color2.blue  * color2.blue  * percent));
+    }
+
+    /// <summary>
+    /// Blends two colors using a linear gradient.
+    /// </summary>
+    /// <param name="color1">The starting color.</param>
+    /// <param name="color2">The ending color.</param>
+    /// <param name="position">Blend factor clamped to the [0,1] range.</param>
+    /// <returns>The interpolated color.</returns>
+    public static ColorArgb LinearGradient(ColorArgb color1, ColorArgb color2, double position)
+    {
+        position = Math.Clamp(position, 0.0, 1.0);
+        double inv = 1.0 - position;
+        return new ColorArgb(
+            color1.alpha * inv + color2.alpha * position,
+            color1.red   * inv + color2.red   * position,
+            color1.green * inv + color2.green * position,
+            color1.blue  * inv + color2.blue  * position);
     }
     /// <summary>
     /// Returns a textual representation of the ARGB components.

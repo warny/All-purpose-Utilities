@@ -316,15 +316,21 @@ public struct ColorArgb32 : IColorArgb<byte>, IEquatable<ColorArgb32>, IEquality
     /// </summary>
     /// <param name="color1">The starting color.</param>
     /// <param name="color2">The ending color.</param>
-    /// <param name="position">Interpolation factor between 0 and 1.</param>
+    /// <param name="position">Interpolation factor clamped to the [0, 1] range.</param>
     /// <returns>The interpolated color.</returns>
+    /// <remarks>
+    /// Each component is rounded to the nearest integer rather than truncated.
+    /// Out-of-range factors are clamped to [0, 1] before interpolation.
+    /// </remarks>
     public static ColorArgb32 LinearGradient(ColorArgb32 color1, ColorArgb32 color2, float position)
     {
+        float p = Math.Clamp(position, 0f, 1f);
+        float inv = 1f - p;
         return new ColorArgb32(
-                (byte)(color1.alpha * (1 - position) + color2.alpha * position),
-                (byte)(color1.red * (1 - position) + color2.red * position),
-                (byte)(color1.green * (1 - position) + color2.green * position),
-    (byte)(color1.blue * (1 - position) + color2.blue * position)
-);
+            (byte)Math.Round(color1.alpha * inv + color2.alpha * p),
+            (byte)Math.Round(color1.red   * inv + color2.red   * p),
+            (byte)Math.Round(color1.green * inv + color2.green * p),
+            (byte)Math.Round(color1.blue  * inv + color2.blue  * p)
+        );
     }
 }

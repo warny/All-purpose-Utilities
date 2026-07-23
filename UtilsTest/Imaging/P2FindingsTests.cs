@@ -223,4 +223,86 @@ public class P2FindingsTests
         Assert.AreEqual(original.Green, roundTrip.Green);
         Assert.AreEqual(original.Blue,  roundTrip.Blue);
     }
+
+    // ── Finding #24/#25: gradient validation and rounding ─────────────────────
+
+    [TestMethod]
+    public void ColorArgb32_LinearGradient_ClampsBelowZero()
+    {
+        ColorArgb32 white = new(255, 255, 255, 255);
+        ColorArgb32 black = new(255, 0, 0, 0);
+        var result = ColorArgb32.LinearGradient(white, black, -1f);
+        Assert.AreEqual(white, result, "position < 0 should clamp to color1");
+    }
+
+    [TestMethod]
+    public void ColorArgb32_LinearGradient_ClampsAboveOne()
+    {
+        ColorArgb32 white = new(255, 255, 255, 255);
+        ColorArgb32 black = new(255, 0, 0, 0);
+        var result = ColorArgb32.LinearGradient(white, black, 2f);
+        Assert.AreEqual(black, result, "position > 1 should clamp to color2");
+    }
+
+    [TestMethod]
+    public void ColorArgb32_LinearGradient_MidpointRoundsCorrectly()
+    {
+        ColorArgb32 a = new(255, 100, 200, 50);
+        ColorArgb32 b = new(255, 101, 201, 51);
+        var mid = ColorArgb32.LinearGradient(a, b, 0.5f);
+        // (100+101)/2 = 100.5 → rounds to 101 (half-to-even or banker's rounding)
+        // Math.Round uses MidpointRounding.ToEven by default
+        Assert.AreEqual((byte)Math.Round(100.5), mid.Red,   "midpoint red");
+        Assert.AreEqual((byte)Math.Round(200.5), mid.Green, "midpoint green");
+        Assert.AreEqual((byte)Math.Round(50.5f), mid.Blue,  "midpoint blue");
+    }
+
+    [TestMethod]
+    public void ColorArgb64_LinearGradient_ClampsBelowZero()
+    {
+        ColorArgb64 white = new(65535, 65535, 65535, 65535);
+        ColorArgb64 black = new(65535, 0, 0, 0);
+        var result = ColorArgb64.LinearGradient(white, black, -1f);
+        Assert.AreEqual(white, result, "position < 0 should clamp to color1");
+    }
+
+    [TestMethod]
+    public void ColorArgb64_LinearGradient_ClampsAboveOne()
+    {
+        ColorArgb64 white = new(65535, 65535, 65535, 65535);
+        ColorArgb64 black = new(65535, 0, 0, 0);
+        var result = ColorArgb64.LinearGradient(white, black, 2f);
+        Assert.AreEqual(black, result, "position > 1 should clamp to color2");
+    }
+
+    [TestMethod]
+    public void ColorArgb_LinearGradient_ClampsBelowZero()
+    {
+        ColorArgb white = new(1.0, 1.0, 1.0, 1.0);
+        ColorArgb black = new(1.0, 0.0, 0.0, 0.0);
+        var result = ColorArgb.LinearGradient(white, black, -1.0);
+        Assert.AreEqual(1.0, result.Red, 1e-9, "position < 0 should clamp to color1");
+    }
+
+    [TestMethod]
+    public void ColorArgb_LinearGradient_ClampsAboveOne()
+    {
+        ColorArgb white = new(1.0, 1.0, 1.0, 1.0);
+        ColorArgb black = new(1.0, 0.0, 0.0, 0.0);
+        var result = ColorArgb.LinearGradient(white, black, 2.0);
+        Assert.AreEqual(0.0, result.Red, 1e-9, "position > 1 should clamp to color2");
+    }
+
+    [TestMethod]
+    public void ColorArgb_PerceptualGradient_DiffersFromLinearForColorful()
+    {
+        // For equal mix of red and black, sqrt gives a different result than linear.
+        ColorArgb red   = new(1.0, 1.0, 0.0, 0.0);
+        ColorArgb black = new(1.0, 0.0, 0.0, 0.0);
+        var perceptual = ColorArgb.Gradient(red, black, 0.5);
+        var linear     = ColorArgb.LinearGradient(red, black, 0.5);
+        // sqrt((1²×0.5 + 0²×0.5)) = sqrt(0.5) ≈ 0.707, linear = 0.5
+        Assert.AreNotEqual(linear.Red, perceptual.Red, 1e-6, "perceptual and linear should differ");
+        Assert.AreEqual(Math.Sqrt(0.5), perceptual.Red, 1e-9, "perceptual red should use sqrt formula");
+    }
 }
