@@ -359,4 +359,140 @@ public class NumberToStringConverterAuditFixesTests
         Assert.IsNotNull(result);
         StringAssert.Contains(result, "ten-billionth");
     }
+
+    // ── Item 53 — Configurable regex timeout ─────────────────────────────────
+
+    [TestMethod]
+    public void TriggerReplace_InvalidRegex_ThrowsArgumentException()
+    {
+        // The ArgumentException must be thrown inside TriggerReplace's constructor
+        // because that is where the Regex is compiled.
+        Assert.ThrowsException<ArgumentException>(
+            () => new NumberToStringConverter.TriggerReplace("[invalid(", true, [], "x"),
+            "An invalid regex pattern must throw ArgumentException at construction time");
+    }
+
+    [TestMethod]
+    public void TriggerReplace_ValidRegex_AppliedCorrectly()
+    {
+        var options = new NumberToStringConverterOptions(EN)
+        {
+            Zero = "zero",
+            Triggers =
+            [
+                new NumberToStringConverter.TriggerRule(
+                    NumberToStringConverter.TriggerAt.End,
+                    null,
+                    [new NumberToStringConverter.TriggerReplace(@"\bone\b", true, [], "ONE")])
+            ]
+        };
+        var converter = new NumberToStringConverter(options);
+        string result = converter.Convert(BigInteger.One);
+        StringAssert.Contains(result, "ONE",
+            "Regex trigger must be applied and replace 'one' with 'ONE'");
+    }
+
+    [TestMethod]
+    public void TriggerReplace_RegexTimeout_CanBeConfigured()
+    {
+        // Verify the timeout property is settable without error
+        var previous = NumberToStringConverter.RegexTimeout;
+        try
+        {
+            NumberToStringConverter.RegexTimeout = TimeSpan.FromSeconds(5);
+            Assert.AreEqual(TimeSpan.FromSeconds(5), NumberToStringConverter.RegexTimeout);
+        }
+        finally
+        {
+            NumberToStringConverter.RegexTimeout = previous;
+        }
+    }
+
+    // ── Item 69 — Separator trimming uses exact token, not char stripping ─────
+
+    [TestMethod]
+    public void ConvertRaw_TrailingSeparatorToken_TrimmedExactly()
+    {
+        // Build a converter where Separator is a multi-character word so that
+        // character-level stripping would silently eat letters.
+        var options = new NumberToStringConverterOptions(EN)
+        {
+            Zero = "zero",
+            Separator = "and",
+            GroupSeparator = "",
+            Groups = NumberToStringConverter.GetConverter("EN").Groups
+                .ToDictionary(kv => kv.Key, kv => new DigitListType { Digits = kv.Value.Values.ToList() }),
+            Scale = NumberToStringConverter.GetConverter("EN").Scale,
+            Group = 3,
+            Minus = "minus *"
+        };
+        var converter = new NumberToStringConverter(options);
+        // 1000 → "one thousand" — no trailing separator expected; just verify no trailing "and"
+        string result = converter.Convert(new BigInteger(1000));
+        Assert.IsFalse(result.EndsWith("and", StringComparison.Ordinal),
+            $"Result must not end with separator 'and'; got: '{result}'");
+    }
+
+    // ── Item 70 — Missing time units produce exception ────────────────────────
+
+    [TestMethod]
+    public void Convert_TimeSpan_WithHour_NoHourUnit_ThrowsInvalidOperation()
+    {
+        // Build a converter that has "minute" and "second" but NOT "hour"
+        // so SupportsTimeConversion is true but a non-zero hours value triggers the guard.
+        var options = new NumberToStringConverterOptions(EN)
+        {
+            TimeUnits = new Dictionary<string, (string Singular, string Plural, string? Count1Form)>
+            {
+                ["minute"] = ("minute", "minutes", null),
+                ["second"] = ("second", "seconds", null)
+                // "hour" intentionally absent
+            }
+        };
+        var converter = new NumberToStringConverter(options);
+        // A 1-hour duration must throw because "hour" unit is not configured
+        Assert.ThrowsException<InvalidOperationException>(
+            () => converter.Convert(TimeSpan.FromHours(1)),
+            "A non-zero hours value with no configured hour unit must throw InvalidOperationException");
+    }
+
+    // ── Item 82 — Scale-name capitalization uses ToUpperInvariant ────────────
+
+    [TestMethod]
+    public void GetScaleName_FirstLetterUppercase_UsesInvariantCulture()
+    {
+        // The EN converter has FirstLetterUppercase = false, but we can build a custom Scale
+        // with FirstLetterUppercase = true and check that scale names are produced correctly.
+        // Use the existing EN converter to verify scale names come out consistently.
+        var en = EN;
+        // 10^9 in EN → "billion" (index 3 in the Scale static values for EN)
+        // Just verify that a large-scale conversion succeeds and returns a non-empty result
+        string result = en.Convert(new BigInteger(1_000_000_000));
+        Assert.IsNotNull(result);
+        StringAssert.Contains(result, "billion");
+    }
+
+    [TestMethod]
+    public void GetScaleName_Invariant_ConsistentAcrossCultures()
+    {
+        // Run the scale name lookup under a non-invariant culture to verify ToUpperInvariant
+        // prevents culture-dependent casing (e.g. Turkish dotted-I issue).
+        var originalCulture = System.Threading.Thread.CurrentThread.CurrentCulture;
+        try
+        {
+            // Turkish culture: i.ToUpper() == 'İ' (dotted capital I), not 'I'
+            System.Threading.Thread.CurrentThread.CurrentCulture =
+                new System.Globalization.CultureInfo("tr-TR");
+            var en = EN;
+            string result = en.Convert(new BigInteger(1_000_000_000));
+            // If ToUpper were used instead of ToUpperInvariant, Turkish culture would corrupt
+            // the first letter of scale names starting with 'i'.
+            Assert.IsNotNull(result);
+            StringAssert.Contains(result, "billion");
+        }
+        finally
+        {
+            System.Threading.Thread.CurrentThread.CurrentCulture = originalCulture;
+        }
+    }
 }

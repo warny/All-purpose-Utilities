@@ -339,6 +339,12 @@ namespace Utils.NumberToString
         }
 
         /// <summary>
+        /// Default timeout applied to compiled trigger regular expressions to prevent
+        /// catastrophic-backtracking patterns from consuming unbounded CPU.
+        /// </summary>
+        public static TimeSpan RegexTimeout { get; set; } = TimeSpan.FromSeconds(1);
+
+        /// <summary>
         /// A compiled text-replacement rule inside a <see cref="TriggerRule"/>.
         /// When the trigger fires, the most specific matching variant form is selected and
         /// applied exactly once; <see cref="DefaultTo"/> is used when nothing matches.
@@ -354,7 +360,18 @@ namespace Utils.NumberToString
             {
                 From = from;
                 IsRegex = isRegex;
-                CompiledRegex = isRegex ? new Regex(from, RegexOptions.Compiled) : null;
+                if (isRegex)
+                {
+                    try
+                    {
+                        CompiledRegex = new Regex(from, RegexOptions.Compiled, RegexTimeout);
+                    }
+                    catch (ArgumentException ex)
+                    {
+                        throw new ArgumentException(
+                            $"Trigger pattern '{from}' is not a valid regular expression: {ex.Message}", nameof(from), ex);
+                    }
+                }
                 Forms = forms;
                 DefaultTo = defaultTo;
             }
@@ -692,7 +709,25 @@ namespace Utils.NumberToString
                 }
             }
 
-            var finalResult = result.ToString().TrimEnd(GroupSeparator.ToCharArray().Union(Separator.ToCharArray()).ToArray());
+            // Trim trailing separator tokens as exact strings to avoid eating letters from
+            // alphabetic separators (e.g. Separator="and" must not strip a trailing 'd').
+            string finalResult = result.ToString();
+            bool trimmed;
+            do
+            {
+                trimmed = false;
+                if (Separator.Length > 0 && finalResult.EndsWith(Separator, StringComparison.Ordinal))
+                {
+                    finalResult = finalResult[..^Separator.Length];
+                    trimmed = true;
+                }
+                if (GroupSeparator.Length > 0 && finalResult.EndsWith(GroupSeparator, StringComparison.Ordinal))
+                {
+                    finalResult = finalResult[..^GroupSeparator.Length];
+                    trimmed = true;
+                }
+            } while (trimmed && finalResult.Length > 0);
+
             return ApplyReplacements(finalResult, numericValue: abs <= long.MaxValue ? (long?)abs : null);
         }
 
@@ -869,9 +904,20 @@ namespace Utils.NumberToString
             string? effectiveTo = bestTo ?? replace.DefaultTo;
             if (effectiveTo == null) return text;
 
-            return replace.CompiledRegex != null
-                ? replace.CompiledRegex.Replace(text, effectiveTo)
-                : text.Replace(replace.From, effectiveTo, StringComparison.Ordinal);
+            if (replace.CompiledRegex != null)
+            {
+                try
+                {
+                    return replace.CompiledRegex.Replace(text, effectiveTo);
+                }
+                catch (RegexMatchTimeoutException ex)
+                {
+                    throw new InvalidOperationException(
+                        $"Trigger pattern '{replace.From}' timed out after {RegexTimeout.TotalMilliseconds:0}ms. " +
+                        "Consider simplifying the pattern or increasing RegexTimeout.", ex);
+                }
+            }
+            return text.Replace(replace.From, effectiveTo, StringComparison.Ordinal);
         }
 
         /// <summary>
@@ -1447,12 +1493,27 @@ namespace Utils.NumberToString
             var parts = new List<string>();
             int totalHours = (int)(abs.Days * 24 + abs.Hours);
 
-            if (totalHours > 0 && _timeUnits.TryGetValue("hour", out var h))
+            if (totalHours > 0)
+            {
+                if (!_timeUnits.TryGetValue("hour", out var h))
+                    throw new InvalidOperationException(
+                        $"Language '{LanguageIdentifier}' has a non-zero hours component but no 'hour' unit configured in <TimeUnits>.");
                 parts.Add(FormatTimeUnit(totalHours, h, variants));
-            if (abs.Minutes > 0 && _timeUnits.TryGetValue("minute", out var m))
+            }
+            if (abs.Minutes > 0)
+            {
+                if (!_timeUnits.TryGetValue("minute", out var m))
+                    throw new InvalidOperationException(
+                        $"Language '{LanguageIdentifier}' has a non-zero minutes component but no 'minute' unit configured in <TimeUnits>.");
                 parts.Add(FormatTimeUnit(abs.Minutes, m, variants));
-            if (abs.Seconds > 0 && _timeUnits.TryGetValue("second", out var s))
+            }
+            if (abs.Seconds > 0)
+            {
+                if (!_timeUnits.TryGetValue("second", out var s))
+                    throw new InvalidOperationException(
+                        $"Language '{LanguageIdentifier}' has a non-zero seconds component but no 'second' unit configured in <TimeUnits>.");
                 parts.Add(FormatTimeUnit(abs.Seconds, s, variants));
+            }
 
             string body = parts.Count > 0 ? string.Join(Separator, parts) : Zero;
             return duration < TimeSpan.Zero ? Minus.Replace("*", body) : body;
@@ -1745,7 +1806,7 @@ namespace Utils.NumberToString
             if (prefix.Between(0, 9))
             {
                 var value = Scale0Prefixes[prefix] + GroupSeparator + suffix;
-                return FirstLetterUppercase ? char.ToUpper(value[0]) + value[1..] : value;
+                return FirstLetterUppercase ? char.ToUpperInvariant(value[0]) + value[1..] : value;
             }
 
             var prefixes = new List<string>();
@@ -1791,7 +1852,7 @@ namespace Utils.NumberToString
 
                 if (FirstLetterUppercase && value.Length > 0)
                 {
-                    value[0] = char.ToUpper(value[0]);
+                    value[0] = char.ToUpperInvariant(value[0]);
                 }
                 prefixes.Add(value.ToString());
             }
