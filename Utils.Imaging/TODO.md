@@ -4,21 +4,21 @@ Static audit of `Utils.Imaging`, covering unsafe bitmap accessors, transformatio
 
 ## Critical findings
 
-### 1. Unsafe bitmap indexers allow out-of-bounds native memory access
+### 1. ~~Unsafe bitmap indexers allow out-of-bounds native memory access~~ ✅ FIXED
 `BitmapAccessor`, `BitmapIndexed8Accessor` and `BitmapArgb64Accessor` calculate pointer offsets directly from caller-provided coordinates/components without range checks.
 
 **Fix:** validate coordinates and components before every public access; retain only explicitly named internal unchecked paths after bounds have been proven; check disposed state.
 
 **Priority:** P0.
 
-### 2. `BitmapArgb64Accessor` ignores bitmap stride
+### 2. ~~`BitmapArgb64Accessor` ignores bitmap stride~~ ✅ FIXED
 The accessor addresses pixels with `y * Width + x` instead of deriving each row from `Scan0 + y * Stride`.
 
 **Fix:** use stride-aware row addressing and define/test logical orientation for negative strides.
 
 **Priority:** P0.
 
-### 3. Constructor failure can leave a bitmap locked
+### 3. ~~Constructor failure can leave a bitmap locked~~ ✅ FIXED
 `BitmapAccessor` calls `LockBits` before all post-lock validation is complete. A later exception can leak the lock because construction never completes.
 
 **Fix:** validate first and make post-lock initialization transactional with guaranteed `UnlockBits` on failure.
@@ -27,7 +27,7 @@ The accessor addresses pixels with `y * Width + x` instead of deriving each row 
 
 ## High-severity findings
 
-### 4. Accessors remain callable after disposal
+### 4. ~~Accessors remain callable after disposal~~ ✅ FIXED
 Public properties/indexers can dereference cleared native state.
 
 **Fix:** explicit disposed state, idempotent disposal and `ObjectDisposedException` from all public members.
