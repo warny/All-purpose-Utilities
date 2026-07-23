@@ -332,44 +332,112 @@ public abstract class ODataContext
 
         // Item 16: reuse an injected HttpClient when provided, avoiding a per-download client/handler.
         HttpClient client = options.HttpClient ?? SharedMetadataClient.Value;
+        Uri currentUri = uri;
 
-        using var request = new HttpRequestMessage(HttpMethod.Get, uri);
-        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeoutCts.CancelAfter(options.DownloadTimeout);
-
-        using var response = await client
-            .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, timeoutCts.Token)
-            .ConfigureAwait(false);
-
-        if (!response.IsSuccessStatusCode)
+        for (int hop = 0; hop <= options.MaxRedirects; hop++)
         {
-            throw new InvalidOperationException(
-                $"Failed to download EDMX metadata from '{uri}'. Status code: {response.StatusCode}.");
+            using var request = new HttpRequestMessage(HttpMethod.Get, currentUri);
+            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeoutCts.CancelAfter(options.DownloadTimeout);
+
+            HttpResponseMessage response;
+            try
+            {
+                response = await client
+                    .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, timeoutCts.Token)
+                    .ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                throw new InvalidOperationException(
+                    $"Timed out while connecting to '{currentUri}'.");
+            }
+
+            // Item 30: manually follow 3xx so the destination is validated BEFORE sending any
+            // request to the redirect target.
+            bool isRedirect = response.StatusCode is
+                HttpStatusCode.MovedPermanently or HttpStatusCode.Found or
+                HttpStatusCode.SeeOther or HttpStatusCode.TemporaryRedirect or
+                HttpStatusCode.PermanentRedirect;
+
+            Uri? redirectLocation = isRedirect ? response.Headers.Location : null;
+
+            using (response)
+            {
+                if (isRedirect)
+                {
+                    if (redirectLocation is null)
+                    {
+                        throw new InvalidOperationException(
+                            $"Redirect response from '{currentUri}' has no Location header.");
+                    }
+
+                    Uri nextUri = redirectLocation.IsAbsoluteUri
+                        ? redirectLocation
+                        : new Uri(currentUri, redirectLocation);
+
+                    if (!options.AllowCrossOriginRedirect && !IsSameOrigin(nextUri, uri))
+                    {
+                        throw new InvalidOperationException(
+                            $"EDMX metadata request for '{uri}' was redirected to a different origin " +
+                            $"('{nextUri.GetLeftPart(UriPartial.Authority)}'), which is not allowed by the current redirect policy.");
+                    }
+
+                    currentUri = nextUri;
+                    continue;
+                }
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new InvalidOperationException(
+                        $"Failed to download EDMX metadata from '{currentUri}'. Status code: {response.StatusCode}.");
+                }
+
+                // Best-effort post-hoc check for injected clients whose handler auto-follows redirects.
+                Uri finalUri = response.RequestMessage?.RequestUri ?? currentUri;
+                if (!options.AllowCrossOriginRedirect && !IsSameOrigin(finalUri, uri))
+                {
+                    throw new InvalidOperationException(
+                        $"EDMX metadata request for '{uri}' was redirected to a different origin " +
+                        $"('{finalUri.GetLeftPart(UriPartial.Authority)}'), which is not allowed by the current redirect policy.");
+                }
+
+                long? contentLength = response.Content.Headers.ContentLength;
+                if (contentLength.HasValue && contentLength.Value > options.MaxMetadataBytes)
+                {
+                    throw new InvalidOperationException(
+                        $"EDMX metadata from '{currentUri}' exceeds the maximum allowed size of {options.MaxMetadataBytes} bytes.");
+                }
+
+                // Defect 3: apply timeoutCts.Token to the body read so DownloadTimeout covers
+                // the complete download, not just the connection/headers phase.
+                try
+                {
+                    await using Stream bodyStream = await response.Content
+                        .ReadAsStreamAsync(timeoutCts.Token)
+                        .ConfigureAwait(false);
+                    return await CopyToMemoryAsync(bodyStream, options.MaxMetadataBytes, timeoutCts.Token)
+                        .ConfigureAwait(false);
+                }
+                catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+                {
+                    throw new InvalidOperationException(
+                        $"Timed out while downloading EDMX metadata body from '{currentUri}'.");
+                }
+            }
         }
 
-        // Item 30: validate the final (post-redirect) URI against the cross-host redirect policy.
-        Uri finalUri = response.RequestMessage?.RequestUri ?? uri;
-        if (!options.AllowCrossHostRedirect
-            && (!string.Equals(finalUri.Host, uri.Host, StringComparison.OrdinalIgnoreCase)
-                || !string.Equals(finalUri.Scheme, uri.Scheme, StringComparison.OrdinalIgnoreCase)))
-        {
-            throw new InvalidOperationException(
-                $"EDMX metadata request for '{uri}' was redirected to a different origin " +
-                $"('{finalUri.GetLeftPart(UriPartial.Authority)}'), which is not allowed by the current redirect policy.");
-        }
-
-        long? contentLength = response.Content.Headers.ContentLength;
-        if (contentLength.HasValue && contentLength.Value > options.MaxMetadataBytes)
-        {
-            throw new InvalidOperationException(
-                $"EDMX metadata from '{uri}' exceeds the maximum allowed size of {options.MaxMetadataBytes} bytes.");
-        }
-
-        await using var responseStream = await response.Content
-            .ReadAsStreamAsync(cancellationToken)
-            .ConfigureAwait(false);
-        return await CopyToMemoryAsync(responseStream, options.MaxMetadataBytes, cancellationToken).ConfigureAwait(false);
+        throw new InvalidOperationException(
+            $"EDMX metadata download from '{uri}' exceeded the maximum allowed number of redirects ({options.MaxRedirects}).");
     }
+
+    /// <summary>
+    /// Returns <see langword="true"/> when two URIs share the same origin: same scheme, host (case-insensitive), and port.
+    /// </summary>
+    private static bool IsSameOrigin(Uri a, Uri b) =>
+        string.Equals(a.Scheme, b.Scheme, StringComparison.OrdinalIgnoreCase)
+        && string.Equals(a.Host, b.Host, StringComparison.OrdinalIgnoreCase)
+        && a.Port == b.Port;
 
     /// <summary>
     /// Copies a stream to memory to ensure it can be consumed multiple times.
@@ -461,10 +529,12 @@ public abstract class ODataContext
     /// Lazily-created shared <see cref="HttpClient"/> used when the caller does not inject one (item 16).
     /// A single static instance enables handler pooling instead of creating one client per download.
     /// </summary>
+    // AllowAutoRedirect = false so DownloadMetadataAsync can validate the redirect destination
+    // before sending any request to it (item 30).
     private static readonly Lazy<HttpClient> SharedMetadataClient = new(() =>
         new HttpClient(new HttpClientHandler
         {
             AutomaticDecompression = DecompressionMethods.All,
-            AllowAutoRedirect = true
+            AllowAutoRedirect = false
         }));
 }

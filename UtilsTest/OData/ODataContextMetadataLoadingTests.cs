@@ -151,10 +151,10 @@ public class ODataContextMetadataLoadingTests
     }
 
     [TestMethod]
-    public void ODataMetadataOptions_Default_HasTenMebibyteCapAndNoCrossHostRedirect()
+    public void ODataMetadataOptions_Default_HasTenMebibyteCapAndNoCrossOriginRedirect()
     {
         Assert.AreEqual(10 * 1024 * 1024, ODataMetadataOptions.Default.MaxMetadataBytes);
-        Assert.IsFalse(ODataMetadataOptions.Default.AllowCrossHostRedirect);
+        Assert.IsFalse(ODataMetadataOptions.Default.AllowCrossOriginRedirect);
     }
 
     /// <summary>Minimal concrete context used to exercise construction from a metadata stream.</summary>
