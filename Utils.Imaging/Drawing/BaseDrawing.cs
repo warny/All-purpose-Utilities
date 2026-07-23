@@ -21,8 +21,10 @@ namespace Utils.Drawing
         /// Initializes a new instance of the <see cref="BaseDrawing{T}"/> class.
         /// </summary>
         /// <param name="imageAccessor">Accessor that exposes the underlying image.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="imageAccessor"/> is null.</exception>
         public BaseDrawing(IImageAccessor<T> imageAccessor)
         {
+            if (imageAccessor is null) throw new ArgumentNullException(nameof(imageAccessor));
             ImageAccessor = imageAccessor;
         }
 

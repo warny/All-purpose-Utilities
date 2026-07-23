@@ -40,11 +40,16 @@ namespace Utils.Imaging
             }
         }
 
-        /// <summary>Hue component in degrees.</summary>
+        /// <summary>Hue component in degrees. Non-finite values (NaN, Infinity) are rejected.</summary>
         public double Hue
         {
             get => hue;
-            set => this.hue = MathEx.Mod(value, 360.0);
+            set
+            {
+                if (!double.IsFinite(value))
+                    throw new ArgumentOutOfRangeException(nameof(value), "Hue must be finite.");
+                this.hue = MathEx.Mod(value, 360.0);
+            }
         }
 
         /// <summary>Saturation value in the [0,1] range.</summary>
@@ -81,11 +86,13 @@ namespace Utils.Imaging
         public ColorAhsv(double alpha, double hue, double saturation, double value)
         {
             alpha.ArgMustBeBetween(MinValue, MaxValue);
+            if (!double.IsFinite(hue))
+                throw new ArgumentOutOfRangeException(nameof(hue), "Hue must be finite.");
             saturation.ArgMustBeBetween(MinValue, MaxValue);
             value.ArgMustBeBetween(MinValue, MaxValue);
 
             this.alpha = alpha;
-            this.Hue = MathEx.Mod(hue, 360.0);
+            this.hue = MathEx.Mod(hue, 360.0);
             this.saturation = saturation;
             this.value = value;
         }

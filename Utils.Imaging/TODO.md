@@ -199,21 +199,21 @@ Some paths truncate, some round and some throw after partial image mutation.
 
 **Priority:** P2 functional bug.
 
-### 27. Drawing abstractions do not validate null dependencies
+### 27. ~~Drawing abstractions do not validate null dependencies~~ ✅ FIXED
 `BaseDrawing` stores a nullable-at-runtime accessor without checking it, and public drawing methods similarly assume non-null brushes, delegates and drawable collections.
 
 **Fix:** validate constructor and public API dependencies immediately with precise `ArgumentNullException`s.
 
 **Priority:** P2 API quality.
 
-### 28. Blur kernel size arithmetic can overflow before normalization
+### 28. ~~Blur kernel size arithmetic can overflow before normalization~~ ✅ FIXED
 `ConvolutionMatrixFactory.Blur` computes `size * size` as `int` and allocates a square array without an upper bound. Large sizes can overflow the divisor or cause uncontrolled allocation.
 
 **Fix:** use checked `long`/`double` arithmetic, enforce a practical maximum kernel area and fail before allocation.
 
 **Priority:** P2.
 
-### 29. HSV hue accepts non-finite values
+### 29. ~~HSV hue accepts non-finite values~~ ✅ FIXED
 `ColorAhsv.Hue` applies modulo directly without rejecting `NaN` or infinity. Such values can survive into sector selection and produce invalid conversions.
 
 **Fix:** reject non-finite hue values before normalization and apply the same policy to all floating color components.

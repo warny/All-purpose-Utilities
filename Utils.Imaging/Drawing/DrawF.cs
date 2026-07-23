@@ -61,7 +61,12 @@ namespace Utils.Drawing
         /// <remarks>
         /// The viewport matches the full image bounds so one drawing unit equals one pixel.
         /// </remarks>
-        public DrawF(IImageAccessor<T> imageAccessor) : this(imageAccessor, 0, 0, imageAccessor.Width, imageAccessor.Height) { }
+        public DrawF(IImageAccessor<T> imageAccessor)
+            : this(
+                imageAccessor ?? throw new ArgumentNullException(nameof(imageAccessor)),
+                0, 0,
+                imageAccessor!.Width,
+                imageAccessor!.Height) { }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DrawF{T}"/> class using a custom viewport.
