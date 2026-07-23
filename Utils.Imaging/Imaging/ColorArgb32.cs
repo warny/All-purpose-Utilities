@@ -121,15 +121,15 @@ public struct ColorArgb32 : IColorArgb<byte>, IEquatable<ColorArgb32>, IEquality
     }
 
     /// <summary>
-    /// Initializes a color by converting from another 8-bit color representation.
+    /// Initializes a color by copying byte components from another 8-bit color representation.
     /// </summary>
     /// <param name="colorArgb64">The source color.</param>
     public ColorArgb32(IColorArgb<byte> colorArgb64) : this()
     {
-        this.alpha = (byte)(colorArgb64.Alpha * 255);
-        this.red = (byte)(colorArgb64.Red * 255);
-        this.green = (byte)(colorArgb64.Green * 255);
-        this.blue = (byte)(colorArgb64.Blue * 255);
+        this.alpha = colorArgb64.Alpha;
+        this.red = colorArgb64.Red;
+        this.green = colorArgb64.Green;
+        this.blue = colorArgb64.Blue;
     }
 
     /// <summary>

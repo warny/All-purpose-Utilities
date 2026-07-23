@@ -120,7 +120,7 @@ public struct ColorArgb : IColorArgb<double>, IEquatable<ColorArgb>, IEqualityOp
     /// Initializes a color by converting from a 16-bit ARGB representation.
     /// </summary>
     /// <param name="color">The color to convert.</param>
-    public ColorArgb(ColorArgb64 color) : this(color.Alpha / 255.0, color.Red / 255.0, color.Green / 255.0, color.Blue / 255.0) { }
+    public ColorArgb(ColorArgb64 color) : this(color.Alpha / 65535.0, color.Red / 65535.0, color.Green / 65535.0, color.Blue / 65535.0) { }
 
     /// <summary>
     /// Initializes a color by converting from an HSV representation.

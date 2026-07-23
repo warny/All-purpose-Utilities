@@ -92,13 +92,13 @@ public struct ColorArgb64 : IColorArgb<ushort>, IEquatable<ColorArgb64>, IEquali
     /// <summary>
     /// Initializes a new instance of the <see cref="ColorArgb64"/> struct from a 32-bit packed ARGB value.
     /// </summary>
-    /// <param name="color">The packed ARGB value containing four 8-bit components.</param>
+    /// <param name="color">The packed ARGB value containing four 8-bit components in 0xAARRGGBB order.</param>
     public ColorArgb64(uint color) : this()
     {
-        this.alpha = (ushort)(0xFF00 & color >> 16);
-        this.red = (ushort)(0xFF00 & color >> 8);
-        this.green = (ushort)(0xFF00 & color);
-        this.blue = (ushort)(0xFF00 & color << 8);
+        this.alpha = ExpandByte((byte)(color >> 24));
+        this.red = ExpandByte((byte)(color >> 16));
+        this.green = ExpandByte((byte)(color >> 8));
+        this.blue = ExpandByte((byte)color);
     }
 
     /// <summary>
@@ -119,10 +119,10 @@ public struct ColorArgb64 : IColorArgb<ushort>, IEquatable<ColorArgb64>, IEquali
     /// <param name="colorArgb32">The 8-bit color whose channels are expanded to 16 bits.</param>
     public ColorArgb64(ColorArgb32 colorArgb32) : this()
     {
-        this.alpha = (ushort)(colorArgb32.Alpha << 8);
-        this.red = (ushort)(colorArgb32.Red << 8);
-        this.green = (ushort)(colorArgb32.Green << 8);
-        this.blue = (ushort)(colorArgb32.Blue << 8);
+        this.alpha = ExpandByte(colorArgb32.Alpha);
+        this.red = ExpandByte(colorArgb32.Red);
+        this.green = ExpandByte(colorArgb32.Green);
+        this.blue = ExpandByte(colorArgb32.Blue);
     }
 
     /// <summary>
@@ -131,11 +131,17 @@ public struct ColorArgb64 : IColorArgb<ushort>, IEquatable<ColorArgb64>, IEquali
     /// <param name="color">The color whose channels are expanded to 16 bits.</param>
     public ColorArgb64(System.Drawing.Color color) : this()
     {
-        this.alpha = (ushort)(color.A << 8);
-        this.red = (ushort)(color.R << 8);
-        this.green = (ushort)(color.G << 8);
-        this.blue = (ushort)(color.B << 8);
+        this.alpha = ExpandByte(color.A);
+        this.red = ExpandByte(color.R);
+        this.green = ExpandByte(color.G);
+        this.blue = ExpandByte(color.B);
     }
+
+    /// <summary>
+    /// Expands an 8-bit channel value to 16 bits while preserving the full [0, 65535] range.
+    /// Maps 0 to 0 and 255 to 65535 exactly via bit replication.
+    /// </summary>
+    private static ushort ExpandByte(byte value) => (ushort)((value << 8) | value);
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ColorArgb64"/> struct using explicit RGB components.

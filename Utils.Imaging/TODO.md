@@ -62,14 +62,14 @@ The caller's `double[,]` is retained directly and `NaN`/infinity are accepted.
 
 **Priority:** P1.
 
-### 9. `ColorArgb64` to `ColorArgb` uses the wrong divisor
+### 9. ~~`ColorArgb64` to `ColorArgb` uses the wrong divisor~~ ✅ FIXED
 16-bit channels are divided by `255.0` instead of `65535.0`.
 
 **Fix:** divide by `ushort.MaxValue` and test exact endpoints/random round trips.
 
 **Priority:** P1 functional bug.
 
-### 10. 8-bit to 16-bit expansion is not range-preserving
+### 10. ~~8-bit to 16-bit expansion is not range-preserving~~ ✅ FIXED
 Current conversions use `value << 8`, mapping 255 to 65280 instead of 65535.
 
 **Fix:** centralize exact binary replication:
@@ -171,7 +171,7 @@ The package is effectively Windows/GDI+ oriented on modern .NET.
 
 **Priority:** P2.
 
-### 23. `ColorArgb32(IColorArgb<byte>)` wraps valid component values
+### 23. ~~`ColorArgb32(IColorArgb<byte>)` wraps valid component values~~ ✅ FIXED
 The constructor multiplies byte components by 255 before casting back to byte.
 
 **Fix:** copy byte values directly or replace it with correctly typed conversion overloads.

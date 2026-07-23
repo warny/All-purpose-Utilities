@@ -12,10 +12,11 @@ public class ColorArgb64Tests
         ColorArgb32 source = new(128, 10, 20, 30);
         ColorArgb64 converted = source;
 
-        Assert.AreEqual((ushort)(128 << 8), converted.Alpha);
-        Assert.AreEqual((ushort)(10 << 8), converted.Red);
-        Assert.AreEqual((ushort)(20 << 8), converted.Green);
-        Assert.AreEqual((ushort)(30 << 8), converted.Blue);
+        // Correct 8→16 expansion: (v << 8) | v maps 0→0 and 255→65535 exactly.
+        Assert.AreEqual((ushort)((128 << 8) | 128), converted.Alpha);
+        Assert.AreEqual((ushort)((10 << 8)  | 10),  converted.Red);
+        Assert.AreEqual((ushort)((20 << 8)  | 20),  converted.Green);
+        Assert.AreEqual((ushort)((30 << 8)  | 30),  converted.Blue);
     }
 
     [TestMethod]
@@ -87,10 +88,11 @@ public class ColorArgb64Tests
 
         ColorArgb64 color = new(source);
 
-        Assert.AreEqual((ushort)(25 << 8), color.Alpha);
-        Assert.AreEqual((ushort)(12 << 8), color.Red);
-        Assert.AreEqual((ushort)(34 << 8), color.Green);
-        Assert.AreEqual((ushort)(56 << 8), color.Blue);
+        // Correct 8→16 expansion: (v << 8) | v maps 0→0 and 255→65535 exactly.
+        Assert.AreEqual((ushort)((25 << 8) | 25), color.Alpha);
+        Assert.AreEqual((ushort)((12 << 8) | 12), color.Red);
+        Assert.AreEqual((ushort)((34 << 8) | 34), color.Green);
+        Assert.AreEqual((ushort)((56 << 8) | 56), color.Blue);
     }
 
     [TestMethod]
