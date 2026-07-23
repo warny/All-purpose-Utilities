@@ -213,6 +213,136 @@ public class P2FindingsTests
         Assert.AreEqual(0.0, rgb.Blue,  1e-9, "blue");
     }
 
+    // ── Float-to-int conversion rounding (PR #501 review) ────────────────────
+
+    [TestMethod]
+    public void ColorArgb32_FromFloat_HalfValue_Rounds_To_128()
+    {
+        var c = new ColorArgb32(new ColorArgb(0.5, 0.5, 0.5, 0.5));
+        Assert.AreEqual(128, c.Alpha, "alpha");
+        Assert.AreEqual(128, c.Red,   "red");
+        Assert.AreEqual(128, c.Green, "green");
+        Assert.AreEqual(128, c.Blue,  "blue");
+    }
+
+    [TestMethod]
+    public void ColorArgb64_FromFloat_HalfValue_Rounds_To_32768()
+    {
+        var c = new ColorArgb64(new ColorArgb(0.5, 0.5, 0.5, 0.5));
+        Assert.AreEqual(32768, c.Alpha, "alpha");
+        Assert.AreEqual(32768, c.Red,   "red");
+        Assert.AreEqual(32768, c.Green, "green");
+        Assert.AreEqual(32768, c.Blue,  "blue");
+    }
+
+    [TestMethod]
+    public void ColorArgb32_FromFloat_Zero_Produces_Zero()
+    {
+        var c = new ColorArgb32(new ColorArgb(0.0, 0.0, 0.0, 0.0));
+        Assert.AreEqual(0, c.Alpha, "alpha");
+        Assert.AreEqual(0, c.Red,   "red");
+        Assert.AreEqual(0, c.Green, "green");
+        Assert.AreEqual(0, c.Blue,  "blue");
+    }
+
+    [TestMethod]
+    public void ColorArgb32_FromFloat_One_Produces_255()
+    {
+        var c = new ColorArgb32(new ColorArgb(1.0, 1.0, 1.0, 1.0));
+        Assert.AreEqual(255, c.Alpha, "alpha");
+        Assert.AreEqual(255, c.Red,   "red");
+        Assert.AreEqual(255, c.Green, "green");
+        Assert.AreEqual(255, c.Blue,  "blue");
+    }
+
+    [TestMethod]
+    public void ColorArgb64_FromFloat_Zero_Produces_Zero()
+    {
+        var c = new ColorArgb64(new ColorArgb(0.0, 0.0, 0.0, 0.0));
+        Assert.AreEqual(0, c.Alpha, "alpha");
+        Assert.AreEqual(0, c.Red,   "red");
+        Assert.AreEqual(0, c.Green, "green");
+        Assert.AreEqual(0, c.Blue,  "blue");
+    }
+
+    [TestMethod]
+    public void ColorArgb64_FromFloat_One_Produces_65535()
+    {
+        var c = new ColorArgb64(new ColorArgb(1.0, 1.0, 1.0, 1.0));
+        Assert.AreEqual(65535, c.Alpha, "alpha");
+        Assert.AreEqual(65535, c.Red,   "red");
+        Assert.AreEqual(65535, c.Green, "green");
+        Assert.AreEqual(65535, c.Blue,  "blue");
+    }
+
+    [TestMethod]
+    public void ColorArgb32_FromFloat_JustBelowHalfUnit_Truncates()
+    {
+        // 127/255 = 0.498039... → 127.499... → rounds to 127
+        double justBelow = (127.0 / 255.0) - 1e-10;
+        var c = new ColorArgb32(new ColorArgb(justBelow, justBelow, justBelow, justBelow));
+        Assert.AreEqual(127, c.Red, "just below 0.5/255 unit should round down");
+    }
+
+    [TestMethod]
+    public void ColorArgb32_FromFloat_AtHalfUnit_RoundsUp()
+    {
+        // 0.5/255 unit → (n + 0.5) × 255/255... but actual midpoint is n/255 + 0.5/255
+        // Let's pick channel = (127 + 0.5)/255 = 127.5/255 → should round to 128
+        double midpoint = 127.5 / 255.0;
+        var c = new ColorArgb32(new ColorArgb(midpoint, midpoint, midpoint, midpoint));
+        Assert.AreEqual(128, c.Red, "exact midpoint should round away from zero (128)");
+    }
+
+    [TestMethod]
+    public void ColorArgb32_FromFloat_JustAboveHalfUnit_RoundsUp()
+    {
+        double justAbove = (127.0 / 255.0) + 1e-6;
+        var c = new ColorArgb32(new ColorArgb(justAbove, justAbove, justAbove, justAbove));
+        Assert.AreEqual(127, c.Red, "just above 127/255 is still closer to 127 than 128");
+    }
+
+    [TestMethod]
+    public void ColorArgb64_FromFloat_JustBelowHalfUnit_Truncates()
+    {
+        double justBelow = (32767.0 / 65535.0) - 1e-10;
+        var c = new ColorArgb64(new ColorArgb(justBelow, justBelow, justBelow, justBelow));
+        Assert.AreEqual(32767, c.Red, "just below 32767.5/65535 should round down");
+    }
+
+    [TestMethod]
+    public void ColorArgb64_FromFloat_AtHalfUnit_RoundsUp()
+    {
+        double midpoint = 32767.5 / 65535.0;
+        var c = new ColorArgb64(new ColorArgb(midpoint, midpoint, midpoint, midpoint));
+        Assert.AreEqual(32768, c.Red, "exact midpoint should round away from zero (32768)");
+    }
+
+    [TestMethod]
+    public void ColorArgb32_RoundTripFloatToByteToFloat_IsConsistent()
+    {
+        // Representative values that survive a round-trip with at most ±1 LSB error.
+        byte[] samples = { 0, 1, 64, 127, 128, 191, 254, 255 };
+        foreach (byte b in samples)
+        {
+            double f = b / 255.0;
+            var c = new ColorArgb32(new ColorArgb(f, f, f, f));
+            Assert.AreEqual(b, c.Red, $"round-trip for byte {b}");
+        }
+    }
+
+    [TestMethod]
+    public void ColorArgb64_RoundTripFloatToUShortToFloat_IsConsistent()
+    {
+        ushort[] samples = { 0, 1, 256, 32767, 32768, 65534, 65535 };
+        foreach (ushort u in samples)
+        {
+            double f = u / 65535.0;
+            var c = new ColorArgb64(new ColorArgb(f, f, f, f));
+            Assert.AreEqual(u, c.Red, $"round-trip for ushort {u}");
+        }
+    }
+
     // ── Finding #22: packed value is canonical ARGB on little-endian ──────────
 
     [TestMethod]

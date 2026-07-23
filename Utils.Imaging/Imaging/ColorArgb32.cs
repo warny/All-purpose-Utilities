@@ -151,11 +151,16 @@ public struct ColorArgb32 : IColorArgb<byte>, IEquatable<ColorArgb32>, IEquality
     /// <param name="colorArgb64">The source color.</param>
     public ColorArgb32(ColorArgb colorArgb64) : this()
     {
-        this.alpha = (byte)(colorArgb64.Alpha * 255);
-        this.red = (byte)(colorArgb64.Red * 255);
-        this.green = (byte)(colorArgb64.Green * 255);
-        this.blue = (byte)(colorArgb64.Blue * 255);
+        this.alpha = ToByte(colorArgb64.Alpha);
+        this.red   = ToByte(colorArgb64.Red);
+        this.green = ToByte(colorArgb64.Green);
+        this.blue  = ToByte(colorArgb64.Blue);
     }
+
+    private static byte ToByte(double value) =>
+        (byte)Math.Round(
+            Math.Clamp(value, 0.0, 1.0) * byte.MaxValue,
+            MidpointRounding.AwayFromZero);
 
     /// <summary>
     /// Initializes a color by converting from a 16-bit representation.

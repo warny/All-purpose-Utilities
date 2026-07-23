@@ -120,11 +120,16 @@ public struct ColorArgb64 : IColorArgb<ushort>, IEquatable<ColorArgb64>, IEquali
     /// <param name="colorArgb">The floating-point color whose channels are scaled to 16 bits.</param>
     public ColorArgb64(ColorArgb colorArgb) : this()
     {
-        this.alpha = (ushort)(colorArgb.Alpha * 65535);
-        this.red = (ushort)(colorArgb.Red * 65535);
-        this.green = (ushort)(colorArgb.Green * 65535);
-        this.blue = (ushort)(colorArgb.Blue * 65535);
+        this.alpha = ToUInt16(colorArgb.Alpha);
+        this.red   = ToUInt16(colorArgb.Red);
+        this.green = ToUInt16(colorArgb.Green);
+        this.blue  = ToUInt16(colorArgb.Blue);
     }
+
+    private static ushort ToUInt16(double value) =>
+        (ushort)Math.Round(
+            Math.Clamp(value, 0.0, 1.0) * ushort.MaxValue,
+            MidpointRounding.AwayFromZero);
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ColorArgb64"/> struct from an 8-bit color.
