@@ -538,10 +538,12 @@ public class NumberToStringConverterAuditFixesTests
             // staticValues[0] = "" (units — no name), so GetScaleName(1) is dynamic.
             // scale0Prefixes[1] = "illi" → generated name ≈ "illi" + "lli" + "on" = "illillion"
             // With firstLetterUppercase=true and ToUpperInvariant → "Illillion" (starts with 'I')
+            // scale0Prefixes must have exactly 10 entries (0-9); index 1 starts with 'i'
+            var prefixes10 = new[] { "", "illi", "du", "tri", "quadri", "quinti", "sexti", "septi", "octi", "noni" };
             var scale = new NumberScale(
                 staticValues: (IReadOnlyList<string>)new[] { "" },
                 scaleSuffixes: (IReadOnlyList<string>)new[] { "on" },
-                scale0Prefixes: (IReadOnlyList<string>)new[] { "", "illi" },
+                scale0Prefixes: (IReadOnlyList<string>)prefixes10,
                 firstLetterUppercase: true);
 
             string name = scale.GetScaleName(1);
@@ -585,5 +587,173 @@ public class NumberToStringConverterAuditFixesTests
         {
             System.Threading.Thread.CurrentThread.CurrentCulture = originalCulture;
         }
+    }
+
+    // ── Item 51 — ConvertOrdinal(BigInteger) out-of-long-range → clear exception ──
+
+    [TestMethod]
+    public void ConvertOrdinal_BigInteger_AboveLongMax_ThrowsArgumentOutOfRange()
+    {
+        var c = EN;
+        var tooLarge = new BigInteger(long.MaxValue) + 1;
+        var ex = Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => c.ConvertOrdinal(tooLarge));
+        StringAssert.Contains(ex.Message, tooLarge.ToString(),
+            "Exception message must include the out-of-range value");
+    }
+
+    [TestMethod]
+    public void ConvertOrdinal_BigInteger_BelowLongMin_ThrowsArgumentOutOfRange()
+    {
+        var c = EN;
+        var tooSmall = new BigInteger(long.MinValue) - 1;
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => c.ConvertOrdinal(tooSmall));
+    }
+
+    [TestMethod]
+    public void ConvertOrdinal_BigInteger_AtLongMax_Succeeds()
+    {
+        var c = EN;
+        string result = c.ConvertOrdinal(new BigInteger(long.MaxValue));
+        Assert.IsNotNull(result);
+        Assert.IsFalse(string.IsNullOrWhiteSpace(result));
+    }
+
+    // ── Item 77 — NumberScale validates collections ───────────────────────────
+
+    [TestMethod]
+    public void NumberScale_EmptyScaleSuffixes_DynamicGenerationThrows()
+    {
+        // A scale with no suffixes can still serve static-only languages.
+        // Requesting a scale beyond the static list must throw with a clear message.
+        var scale = new NumberScale(
+            staticValues: (IReadOnlyList<string>)new[] { "", "thousand" },
+            scaleSuffixes: (IReadOnlyList<string>)System.Array.Empty<string>());
+        // Static names are fine
+        Assert.AreEqual("thousand", scale.GetScaleName(1));
+        // Beyond static → must throw
+        Assert.ThrowsException<InvalidOperationException>(
+            () => scale.GetScaleName(2),
+            "Requesting a dynamic scale when no suffixes are configured must throw");
+    }
+
+    [TestMethod]
+    public void NumberScale_NegativeStartIndex_ThrowsArgumentOutOfRange()
+    {
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => new NumberScale(
+                staticValues: (IReadOnlyList<string>)new[] { "" },
+                scaleSuffixes: (IReadOnlyList<string>)new[] { "illion" },
+                startIndex: -1),
+            "Negative startIndex must be rejected");
+    }
+
+    [TestMethod]
+    public void NumberScale_PrefixTableWrongSize_ThrowsArgumentException()
+    {
+        Assert.ThrowsException<ArgumentException>(
+            () => new NumberScale(
+                staticValues: (IReadOnlyList<string>)new[] { "" },
+                scaleSuffixes: (IReadOnlyList<string>)new[] { "illion" },
+                scale0Prefixes: (IReadOnlyList<string>)new[] { "", "un" }), // only 2 entries
+            "A prefix table with fewer than 10 entries must be rejected");
+    }
+
+    // ── Item 79 — ConvertGroup uses exact integer power ───────────────────────
+
+    [TestMethod]
+    public void ConvertGroup_NegativeGroupNumber_ThrowsArgumentOutOfRange()
+    {
+        var c = EN;
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => c.ConvertGroup(-1, 1),
+            "Negative groupNumber must be rejected");
+    }
+
+    [TestMethod]
+    public void ConvertGroup_InvalidGroupNumber_ThrowsArgumentOutOfRange()
+    {
+        var c = EN;
+        // EN uses group=3 (keys 1, 2, 3). groupNumber=99 is not configured.
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => c.ConvertGroup(99, 1),
+            "Unconfigured groupNumber must be rejected with a clear message");
+    }
+
+    // ── Item 80 — TriggerReplace/TriggerRule validate null/empty ─────────────
+
+    [TestMethod]
+    public void TriggerReplace_NullFrom_ThrowsArgumentException()
+    {
+        Assert.ThrowsException<ArgumentException>(
+            () => new NumberToStringConverter.TriggerReplace(null!, false, [], "x"),
+            "null 'from' must be rejected");
+    }
+
+    [TestMethod]
+    public void TriggerReplace_EmptyFrom_ThrowsArgumentException()
+    {
+        Assert.ThrowsException<ArgumentException>(
+            () => new NumberToStringConverter.TriggerReplace("", false, [], "x"),
+            "Empty 'from' must be rejected");
+    }
+
+    [TestMethod]
+    public void TriggerReplace_NullForms_ThrowsArgumentNullException()
+    {
+        Assert.ThrowsException<ArgumentNullException>(
+            () => new NumberToStringConverter.TriggerReplace("word", false, null!, "x"),
+            "null forms must be rejected");
+    }
+
+    [TestMethod]
+    public void TriggerRule_NullReplaces_ThrowsArgumentNullException()
+    {
+        Assert.ThrowsException<ArgumentNullException>(
+            () => new NumberToStringConverter.TriggerRule(
+                NumberToStringConverter.TriggerAt.End, null, null!),
+            "null replaces must be rejected");
+    }
+
+    [TestMethod]
+    public void TriggerRule_NegativeGroupIndex_ThrowsArgumentException()
+    {
+        Assert.ThrowsException<ArgumentException>(
+            () => new NumberToStringConverter.TriggerRule(
+                NumberToStringConverter.TriggerAt.Group, new[] { -1 }, []),
+            "Negative group index must be rejected");
+    }
+
+    // ── Item 81 — Duplicate exact replacement keys produce clear error ────────
+
+    [TestMethod]
+    public void Constructor_DuplicateExactReplacementKeys_ThrowsInvalidOperation()
+    {
+        var options = new NumberToStringConverterOptions(EN)
+        {
+            Replacements =
+            [
+                new NumberToStringConverter.ReplacementRule("one", "1", ReplacementScope.Standalone),
+                new NumberToStringConverter.ReplacementRule("one", "uno", ReplacementScope.Standalone)  // duplicate key
+            ]
+        };
+        var ex = Assert.ThrowsException<InvalidOperationException>(
+            () => new NumberToStringConverter(options));
+        StringAssert.Contains(ex.Message, "'one'",
+            "Exception must identify the conflicting key");
+    }
+
+    // ── Item 83 — GetScaleName rejects negative scale ─────────────────────────
+
+    [TestMethod]
+    public void GetScaleName_NegativeScale_ThrowsArgumentOutOfRange()
+    {
+        var scale = new NumberScale(
+            staticValues: (IReadOnlyList<string>)new[] { "", "thousand" },
+            scaleSuffixes: (IReadOnlyList<string>)new[] { "illion" });
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => scale.GetScaleName(-1),
+            "Negative scale must be rejected");
     }
 }

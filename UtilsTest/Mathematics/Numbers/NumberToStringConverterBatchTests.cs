@@ -37,8 +37,8 @@ public class NumberToStringConverterBatchTests
     public void ConvertOrdinal_BigInteger_OverflowThrows()
     {
         INumberToStringConverter iface = NumberToStringConverter.GetConverter("EN");
-        // BigInteger > long.MaxValue → OverflowException from checked cast
-        Assert.ThrowsException<OverflowException>(
+        // BigInteger > long.MaxValue → ArgumentOutOfRangeException with clear message (#51)
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
             () => iface.ConvertOrdinal(new BigInteger(long.MaxValue) + 1));
     }
 

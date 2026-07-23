@@ -75,6 +75,15 @@ namespace Utils.NumberToString
             // Rules with onValue require numeric-value-aware evaluation and are excluded from the
             // fast-path dictionaries.
             var globalUnfiltered = Replacements.Where(r => r.OnScale is null && r.OnValue is null).ToImmutableArray();
+            var duplicateKeys = globalUnfiltered
+                .GroupBy(r => r.OldValue, StringComparer.Ordinal)
+                .Where(g => g.Count() > 1)
+                .Select(g => g.Key)
+                .ToList();
+            if (duplicateKeys.Count > 0)
+                throw new InvalidOperationException(
+                    $"Duplicate exact replacement keys are not allowed. " +
+                    $"Conflicting OldValue(s): {string.Join(", ", duplicateKeys.Select(k => $"'{k}'"))}.");
             _replacementLookup = globalUnfiltered.ToImmutableDictionary(r => r.OldValue, r => r.NewValue, StringComparer.Ordinal);
             _substringReplacements = globalUnfiltered.Where(r =>
                 r.Scope is ReplacementScope.Anywhere or ReplacementScope.StartsWith or ReplacementScope.EndsWith)
@@ -358,6 +367,13 @@ namespace Utils.NumberToString
                 IReadOnlyList<(IReadOnlyDictionary<string, string> Constraints, string To)> forms,
                 string? defaultTo)
             {
+                if (string.IsNullOrEmpty(from))
+                    throw new ArgumentException(
+                        "Trigger source pattern must not be null or empty.", nameof(from));
+                if (forms is null)
+                    throw new ArgumentNullException(nameof(forms),
+                        "Trigger forms collection must not be null (use an empty list when no variant forms are needed).");
+
                 From = from;
                 IsRegex = isRegex;
                 if (isRegex)
@@ -399,6 +415,16 @@ namespace Utils.NumberToString
             /// <summary>Initializes a new <see cref="TriggerRule"/>.</summary>
             public TriggerRule(TriggerAt executeAt, int[]? groupIndices, IReadOnlyList<TriggerReplace> replaces)
             {
+                if (replaces is null)
+                    throw new ArgumentNullException(nameof(replaces),
+                        "TriggerRule replaces collection must not be null (use an empty list when no replacements are needed).");
+                if (groupIndices is not null)
+                {
+                    foreach (int idx in groupIndices)
+                        if (idx < 0)
+                            throw new ArgumentException(
+                                $"All group indices must be non-negative; found {idx}.", nameof(groupIndices));
+                }
                 ExecuteAt = executeAt;
                 GroupIndices = groupIndices;
                 Replaces = replaces;
@@ -1221,10 +1247,22 @@ namespace Utils.NumberToString
         /// </summary>
         public string ConvertGroup(int groupNumber, long number)
         {
+            if (groupNumber < 0)
+                throw new ArgumentOutOfRangeException(nameof(groupNumber),
+                    $"groupNumber must be non-negative; got {groupNumber}.");
             if (groupNumber == 0) return string.Empty;
+            if (!Groups.ContainsKey(groupNumber))
+                throw new ArgumentOutOfRangeException(nameof(groupNumber),
+                    $"groupNumber {groupNumber} is not a configured group index. " +
+                    $"Valid indices: {string.Join(", ", Groups.Keys.OrderBy(k => k))}.");
             if (groupNumber > 1 && Exceptions.TryGetValue(number, out var value)) return value;
 
-            long group = (long)Math.Pow(10, groupNumber - 1);
+            // Use exact integer power from the pre-computed table to avoid floating-point imprecision.
+            int powerIndex = groupNumber - 1;
+            if (powerIndex >= _decimalPowersOfTen.Length)
+                throw new ArgumentOutOfRangeException(nameof(groupNumber),
+                    $"groupNumber {groupNumber} exceeds the supported maximum of {_decimalPowersOfTen.Length}.");
+            long group = _decimalPowersOfTen[powerIndex];
             var (groupValue, remainder) = long.DivRem(number, group);
 
             var leftText = ConvertGroup(groupNumber - 1, remainder);
@@ -1326,11 +1364,24 @@ namespace Utils.NumberToString
         }
 
         /// <inheritdoc cref="INumberToStringConverter.ConvertOrdinal(BigInteger)"/>
-        public string ConvertOrdinal(BigInteger number) => ConvertOrdinal(checked((long)number), []);
+        public string ConvertOrdinal(BigInteger number)
+        {
+            if (number < long.MinValue || number > long.MaxValue)
+                throw new ArgumentOutOfRangeException(nameof(number),
+                    $"Ordinal conversion is limited to the range [{long.MinValue}, {long.MaxValue}]. " +
+                    $"The supplied value {number} is outside that range.");
+            return ConvertOrdinal((long)number, []);
+        }
 
         /// <inheritdoc cref="INumberToStringConverter.ConvertOrdinal(BigInteger, string[])"/>
         public string ConvertOrdinal(BigInteger number, params string[] variants)
-            => ConvertOrdinal(checked((long)number), variants);
+        {
+            if (number < long.MinValue || number > long.MaxValue)
+                throw new ArgumentOutOfRangeException(nameof(number),
+                    $"Ordinal conversion is limited to the range [{long.MinValue}, {long.MaxValue}]. " +
+                    $"The supplied value {number} is outside that range.");
+            return ConvertOrdinal((long)number, variants);
+        }
 
         /// <inheritdoc cref="INumberToStringConverter.ConvertCurrency(decimal, CurrencyDefinition)"/>
         public string ConvertCurrency(decimal amount, CurrencyDefinition currency)
@@ -1686,6 +1737,11 @@ namespace Utils.NumberToString
         {
             StaticValues = staticValues.Arg().MustNotBeNull().Value.ToImmutableArray();
             ScaleSuffixes = scaleSuffixes.Arg().MustNotBeNull().Value.ToImmutableArray();
+
+            if (startIndex < 0)
+                throw new ArgumentOutOfRangeException(nameof(startIndex),
+                    $"startIndex must be non-negative; got {startIndex}.");
+
             StartIndex = startIndex;
             FirstLetterUppercase = firstLetterUppercase;
 
@@ -1697,6 +1753,21 @@ namespace Utils.NumberToString
             UnitsPrefixes = unitsPrefixes?.ToImmutableArray() ?? UnitsPrefixes;
             TensPrefixes = tensPrefixes?.ToImmutableArray() ?? TensPrefixes;
             HundredsPrefixes = hundredsPrefixes?.ToImmutableArray() ?? HundredsPrefixes;
+
+            // Prefix tables used for dynamic generation must each have exactly 10 entries
+            // (one per decimal digit 0–9) so that index-by-digit lookups cannot fail.
+            ValidatePrefixTable(Scale0Prefixes, nameof(scale0Prefixes));
+            ValidatePrefixTable(UnitsPrefixes, nameof(unitsPrefixes));
+            ValidatePrefixTable(TensPrefixes, nameof(tensPrefixes));
+            ValidatePrefixTable(HundredsPrefixes, nameof(hundredsPrefixes));
+        }
+
+        private static void ValidatePrefixTable(IReadOnlyList<string> table, string paramName)
+        {
+            if (table.Count != 10)
+                throw new ArgumentException(
+                    $"Prefix table '{paramName}' must have exactly 10 entries (one per decimal digit 0–9); got {table.Count}.",
+                    paramName);
         }
 
         /// <summary>
@@ -1795,7 +1866,14 @@ namespace Utils.NumberToString
         /// </summary>
         public string GetScaleName(int scale)
         {
+            if (scale < 0)
+                throw new ArgumentOutOfRangeException(nameof(scale),
+                    $"scale must be non-negative; got {scale}.");
             if (scale < StaticValues.Count) return StaticValues[scale];
+            if (ScaleSuffixes.Count == 0)
+                throw new InvalidOperationException(
+                    $"scale {scale} exceeds the {StaticValues.Count} static names and no scaleSuffixes are configured " +
+                    "for dynamic generation. Either add more static names or provide at least one suffix.");
 
             scale -= StaticValues.Count;
             scale += StartIndex;
