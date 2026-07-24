@@ -12,8 +12,9 @@ public class DNSCanonicalWriterTests
     [TestMethod]
     public void CanonicalWriterProducesLowercaseNamesWithoutCompression()
     {
-        // Build a DNS header with repeated names using various casing
-        DNSHeader header = new DNSHeader();
+        // Build a DNS header with repeated names using various casing.
+        // ID is fixed to avoid a random 0xC0 byte that would falsely trip the compression check.
+        DNSHeader header = new DNSHeader { ID = 0x1234 };
         header.Requests.Add(new DNSRequestRecord("A", "EXAMPLE.COM"));
         header.QrBit = DNSQRBit.Response;
         header.Responses.Add(new DNSResponseRecord("EXAMPLE.COM", 300, new Address { IPAddress = IPAddress.Parse("1.2.3.4") }));
