@@ -76,12 +76,24 @@ namespace Utils.NumberToString
         /// Registers an <see cref="INumberToStringLanguageSpecifics"/> instance under a given type name
         /// so that XML configurations referencing that name find it without reflection.
         /// </summary>
+        /// <remarks>
+        /// <para>
+        /// If an instance is already registered under <paramref name="typeName"/>, it is
+        /// replaced silently. The registered instance is shared across all converters that
+        /// reference the type name and is invoked concurrently during conversion.
+        /// Implementations must therefore be stateless or internally thread-safe.
+        /// </para>
+        /// </remarks>
         /// <param name="typeName">
         /// The type name as it appears in <c>&lt;LanguageSpecifics&gt;</c> elements (full or short name).
+        /// Must be non-null and non-whitespace.
         /// </param>
-        /// <param name="instance">The instance to register.</param>
+        /// <param name="instance">The instance to register. Must not be <see langword="null"/>.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="instance"/> is <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="typeName"/> is null, empty, or whitespace.</exception>
         public static void RegisterLanguageSpecifics(string typeName, INumberToStringLanguageSpecifics instance)
         {
+            ArgumentException.ThrowIfNullOrWhiteSpace(typeName, nameof(typeName));
             ArgumentNullException.ThrowIfNull(instance);
             _registeredSpecifics[typeName] = instance;
         }
@@ -164,13 +176,25 @@ namespace Utils.NumberToString
         /// all three are declared in the same XML document. If the base is found only in
         /// <paramref name="docLanguages"/> (not yet cached) and also carries a <c>baseOn</c>
         /// attribute, it is resolved recursively before the merge.
-        /// Throws <see cref="InvalidOperationException"/> when the referenced base cannot be found.
+        /// Throws <see cref="InvalidOperationException"/> when the referenced base cannot be found
+        /// or when a <c>baseOn</c> cycle is detected.
         /// </summary>
         private static LanguageType ResolveBaseOn(
             LanguageType child,
             IReadOnlyDictionary<string, LanguageType> docLanguages)
+            => ResolveBaseOn(child, docLanguages, new HashSet<string>(StringComparer.OrdinalIgnoreCase));
+
+        private static LanguageType ResolveBaseOn(
+            LanguageType child,
+            IReadOnlyDictionary<string, LanguageType> docLanguages,
+            HashSet<string> visiting)
         {
             string baseKey = NormalizeCulture(child.BaseOn);
+
+            if (!visiting.Add(baseKey))
+                throw new InvalidOperationException(
+                    $"Language configuration error: baseOn cycle detected at \"{baseKey}\". " +
+                    $"Resolution path: {string.Join(" → ", visiting)} → {baseKey}");
 
             // Prefer the already-resolved version from the cache (handles multi-document chains
             // and in-order same-document chains where the base was already processed).
@@ -185,7 +209,7 @@ namespace Utils.NumberToString
                 // If it itself carries a baseOn, resolve it recursively so the merge always
                 // operates on a fully inherited configuration.
                 if (!string.IsNullOrEmpty(baseType.BaseOn))
-                    baseType = ResolveBaseOn(baseType, docLanguages);
+                    baseType = ResolveBaseOn(baseType, docLanguages, visiting);
             }
 
             return MergeLanguageType(baseType!, child);

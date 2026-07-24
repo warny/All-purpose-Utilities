@@ -1877,4 +1877,117 @@ public class NumberToStringConverterAuditFixesTests
         Assert.AreEqual("3", result,
             "When LanguageIdentifier does not resolve to a CultureInfo, the month must be emitted as its decimal number");
     }
+
+    // ── Item 57 — baseOn cycle detection ─────────────────────────────────────
+
+    [TestMethod]
+    public void ReadConfiguration_BaseOnCycle_ThrowsInvalidOperation()
+    {
+        // Two languages that each list the other as their baseOn must trigger cycle detection.
+        const string xml = @"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language baseOn=""CYCLE-B"" groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>CYCLE-A</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+  <Language baseOn=""CYCLE-A"" groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>CYCLE-B</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+</Numbers>";
+        var ex = Assert.ThrowsException<InvalidOperationException>(
+            () => NumberToStringConverter.ReadConfiguration(xml));
+        StringAssert.Contains(ex.Message, "cycle",
+            "Exception must mention 'cycle' to identify the cause");
+    }
+
+    // ── Item 60 — RegisterLanguageSpecifics name validation ───────────────────
+
+    [TestMethod]
+    public void RegisterLanguageSpecifics_NullName_ThrowsArgumentNullException()
+    {
+        Assert.ThrowsException<ArgumentNullException>(
+            () => NumberToStringConverter.RegisterLanguageSpecifics(null!, new FakeSpecifics()),
+            "Null typeName must be rejected");
+    }
+
+    [TestMethod]
+    public void RegisterLanguageSpecifics_EmptyName_ThrowsArgumentException()
+    {
+        Assert.ThrowsException<ArgumentException>(
+            () => NumberToStringConverter.RegisterLanguageSpecifics("", new FakeSpecifics()),
+            "Empty typeName must be rejected");
+    }
+
+    [TestMethod]
+    public void RegisterLanguageSpecifics_WhitespaceName_ThrowsArgumentException()
+    {
+        Assert.ThrowsException<ArgumentException>(
+            () => NumberToStringConverter.RegisterLanguageSpecifics("   ", new FakeSpecifics()),
+            "Whitespace-only typeName must be rejected");
+    }
+
+    // ── Item 61 — TryGetConverter explicit non-fallback API ───────────────────
+
+    [TestMethod]
+    public void TryGetConverter_KnownCulture_ReturnsTrueAndConverter()
+    {
+        bool found = NumberToStringConverter.TryGetConverter("EN", out var converter);
+        Assert.IsTrue(found, "TryGetConverter must return true for a registered culture");
+        Assert.IsNotNull(converter, "converter must not be null when TryGetConverter returns true");
+    }
+
+    [TestMethod]
+    public void TryGetConverter_KnownCultureCaseInsensitive_ReturnsTrueAndConverter()
+    {
+        bool found = NumberToStringConverter.TryGetConverter("en", out var converter);
+        Assert.IsTrue(found, "TryGetConverter must be case-insensitive");
+        Assert.IsNotNull(converter);
+    }
+
+    [TestMethod]
+    public void TryGetConverter_UnknownCulture_ReturnsFalseAndNullConverter()
+    {
+        bool found = NumberToStringConverter.TryGetConverter("XTEST-UNKNOWN", out var converter);
+        Assert.IsFalse(found,
+            "TryGetConverter must return false — not fall back to English — for an unknown culture");
+        Assert.IsNull(converter, "converter must be null when TryGetConverter returns false");
+    }
+
+    [TestMethod]
+    public void TryGetConverter_EmptyString_ReturnsFalse()
+    {
+        Assert.IsFalse(NumberToStringConverter.TryGetConverter("", out _));
+    }
+
+    [TestMethod]
+    public void TryGetConverter_SingleCharString_ReturnsFalse()
+    {
+        Assert.IsFalse(NumberToStringConverter.TryGetConverter("X", out _),
+            "Single-character culture codes are invalid and must return false");
+    }
+
+    [TestMethod]
+    public void TryGetConverter_CultureInfo_KnownCulture_ReturnsTrueAndConverter()
+    {
+        var ci = System.Globalization.CultureInfo.GetCultureInfo("en-US");
+        bool found = NumberToStringConverter.TryGetConverter(ci, out var converter);
+        Assert.IsTrue(found, "TryGetConverter(CultureInfo) must return true for en-US (resolves to EN)");
+        Assert.IsNotNull(converter);
+    }
+
+    [TestMethod]
+    public void TryGetConverter_CultureInfo_InvariantCulture_ReturnsFalse()
+    {
+        // InvariantCulture.Name is "" — too short, so must return false.
+        Assert.IsFalse(NumberToStringConverter.TryGetConverter(
+            System.Globalization.CultureInfo.InvariantCulture, out _));
+    }
+
+    private sealed class FakeSpecifics : INumberToStringLanguageSpecifics
+    {
+        public string FinalizeWriting(string language, string value) => value;
+    }
 }

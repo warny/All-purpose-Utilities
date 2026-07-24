@@ -136,13 +136,11 @@ Malformed programmatic/XML configuration can therefore fail later with `DivideBy
 
 **Priority: P2 lifecycle/configuration.**
 
-### 57. `baseOn` inheritance is global, order-dependent and has no cycle detection
+### ✅ 57. `baseOn` inheritance is global, order-dependent and has no cycle detection
 
 Resolved language definitions are stored in a process-wide cache while documents are parsed. A child can therefore inherit from whichever definition of a culture was cached first in an earlier call. Recursive `baseOn` chains do not maintain a visited set, so cycles can recurse until stack overflow.
 
-**Fix:** resolve inheritance inside an isolated configuration graph with explicit document/batch scope, detect cycles with a visiting set, and commit resolved definitions only after the graph validates. Cross-batch inheritance should require an explicit registry/version policy.
-
-**Priority: P2 determinism and robustness.**
+**Fix:** `ResolveBaseOn` now accepts a `HashSet<string> visiting` parameter (case-insensitive). Before looking up a base key, `visiting.Add(baseKey)` is called; if it returns false the key is already on the resolution stack and `InvalidOperationException` is thrown with the message "baseOn cycle detected" and the resolution path. The public overload initialises an empty set. Cross-batch inheritance ordering (global cache) remains order-dependent as before; only within-document and multi-document cycles are now detected. Addressed in PR fix/Utils.NumberToString-todo-items-57-60-61.
 
 ### 58. Runtime variants are permissive while configuration variants are strict
 
@@ -160,21 +158,17 @@ For equally specific matching trigger forms or ordinal variants, the first decla
 
 **Priority: P2 determinism.**
 
-### 60. `RegisterLanguageSpecifics` stores shared mutable instances globally
+### ✅ 60. `RegisterLanguageSpecifics` stores shared mutable instances globally
 
 A single registered `INumberToStringLanguageSpecifics` instance may be reused by many immutable converters and concurrent calls. The API does not require implementations to be stateless/thread-safe and allows silent replacement under the same key.
 
-**Fix:** register factories or immutable descriptors instead of instances, validate non-empty names, define duplicate behavior, and document/thread-test the required lifecycle.
+**Fix:** `RegisterLanguageSpecifics` now validates `typeName` with `ArgumentException.ThrowIfNullOrWhiteSpace` (null → `ArgumentNullException`, empty/whitespace → `ArgumentException`). XML documentation clarified: the registered instance is shared and must be stateless or thread-safe; duplicate keys are silently replaced. Factory/descriptor registration and thread-testing remain out of scope for this pass. Addressed in PR fix/Utils.NumberToString-todo-items-57-60-61.
 
-**Priority: P2 concurrency/design.**
-
-### 61. Unknown cultures silently fall back to English
+### ✅ 61. Unknown cultures silently fall back to English
 
 After recursively stripping BCP-47 subtags, `GetConverter` returns the English converter for any unresolved culture. A spelling error can therefore produce valid but wrong-language business text without any diagnostic.
 
-**Fix:** make fallback policy explicit. Prefer a throwing `GetRequiredConverter`, a `TryGetConverter`, and an opt-in fallback converter/culture. Preserve the current behavior only as a clearly named compatibility path.
-
-**Priority: P2 API correctness.**
+**Fix:** two new overloads `TryGetConverter(string, out NumberToStringConverter?)` and `TryGetConverter(CultureInfo, out NumberToStringConverter?)` return `false` (and `null`) without falling back to English when the culture cannot be resolved. BCP-47 subtag stripping is applied the same way as `GetConverter`. `GetConverter` XML doc updated to mention the fallback and link to `TryGetConverter`. Addressed in PR fix/Utils.NumberToString-todo-items-57-60-61.
 
 ## Duplications of intent to reduce
 

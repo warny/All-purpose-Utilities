@@ -29,6 +29,9 @@ namespace Utils.NumberToString
 
         /// <summary>
         /// Retrieves a number-to-string converter for the specified culture name.
+        /// Falls back to the English converter when the culture cannot be resolved.
+        /// Use <see cref="TryGetConverter(string, out NumberToStringConverter)"/> when a
+        /// missing culture should be distinguished from the English fallback.
         /// </summary>
         /// <param name="culture">The name of the culture to retrieve the converter for.</param>
         /// <returns>The corresponding NumberToStringConverter instance.</returns>
@@ -45,6 +48,54 @@ namespace Utils.NumberToString
             int lastSep = culture.LastIndexOf('-');
             if (lastSep >= 2) return GetConverter(culture[..lastSep]);
             return CachedConfigurations["EN"];
+        }
+
+        /// <summary>
+        /// Attempts to retrieve a number-to-string converter for the specified
+        /// <see cref="CultureInfo"/>. Unlike <see cref="GetConverter(CultureInfo)"/>, this
+        /// method returns <see langword="false"/> rather than falling back to English when the
+        /// culture cannot be resolved.
+        /// </summary>
+        /// <param name="culture">The culture to retrieve the converter for.</param>
+        /// <param name="converter">
+        /// When this method returns <see langword="true"/>, the resolved converter;
+        /// otherwise <see langword="null"/>.
+        /// </param>
+        /// <returns>
+        /// <see langword="true"/> when a converter was found for the culture or any of its
+        /// BCP-47 parent tags; <see langword="false"/> otherwise.
+        /// </returns>
+        public static bool TryGetConverter(CultureInfo culture, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out NumberToStringConverter? converter)
+            => TryGetConverter(culture.Name, out converter);
+
+        /// <summary>
+        /// Attempts to retrieve a number-to-string converter for the specified culture name.
+        /// Unlike <see cref="GetConverter(string)"/>, this method returns <see langword="false"/>
+        /// rather than falling back to English when the culture cannot be resolved. BCP-47 subtags
+        /// are stripped recursively (e.g. <c>"zh-Hans-CN"</c> → <c>"zh-Hans"</c> → <c>"zh"</c>)
+        /// until a match is found or no more subtags remain.
+        /// </summary>
+        /// <param name="culture">The culture name to resolve.</param>
+        /// <param name="converter">
+        /// When this method returns <see langword="true"/>, the resolved converter;
+        /// otherwise <see langword="null"/>.
+        /// </param>
+        /// <returns>
+        /// <see langword="true"/> when a converter was found; <see langword="false"/> otherwise.
+        /// </returns>
+        public static bool TryGetConverter(string culture, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out NumberToStringConverter? converter)
+        {
+            if (string.IsNullOrWhiteSpace(culture) || culture.Trim().Length < 2)
+            {
+                converter = null;
+                return false;
+            }
+            culture = culture.Trim();
+            if (CachedConfigurations.TryGetValue(culture, out converter)) return true;
+            int lastSep = culture.LastIndexOf('-');
+            if (lastSep >= 2) return TryGetConverter(culture[..lastSep], out converter);
+            converter = null;
+            return false;
         }
 
         /// <summary>
