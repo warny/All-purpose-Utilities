@@ -110,6 +110,8 @@ The constructor checks that `Groups` and `Scale` are non-null but does not ensur
 - `10^groupSize` fits the subsequent `long` remainder cast;
 - each `DigitType.BuildString` has a coherent placeholder contract.
 
+> **Partially addressed (PR #504):** `Group` is now validated in the range `[1, _decimalPowersOfTen.Length - 1]`. The Groups dictionary is now validated before LINQ materialisation: structure (non-empty, contiguous positive keys, max key ≤ 19), null `DigitListType`/`Digits`/`DigitType` entries, and duplicate digit values are all caught eagerly. Digit completeness (every required value 0–9 present) remains deferred: test fixtures legitimately use partial digit sets, and a generic "required digits" check would need to know the full number domain.
+
 Malformed programmatic/XML configuration can therefore fail later with `DivideByZeroException`, `OverflowException`, `InvalidOperationException` or `KeyNotFoundException`, sometimes after partial registration.
 
 **Fix:** add one comprehensive immutable configuration-validation phase before creating or registering a converter. Reject unsupported group sizes explicitly and report the exact language/group/digit path.

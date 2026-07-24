@@ -60,12 +60,26 @@ namespace Utils.NumberToString
             options.Scale.Arg().MustNotBeNull();
 
             Group = options.Group;
+
+            // Validate Group size: must be in the range [1, _decimalPowersOfTen.Length - 1].
+            if (Group <= 0)
+                throw new ArgumentOutOfRangeException(nameof(options.Group),
+                    $"Group size must be positive; got {Group}.");
+            if (Group >= _decimalPowersOfTen.Length)
+                throw new ArgumentOutOfRangeException(nameof(options.Group),
+                    $"Group size must be between 1 and {_decimalPowersOfTen.Length - 1}; got {Group}.");
+
             Separator = options.Separator ?? " ";
             GroupSeparator = options.GroupSeparator ?? "";
             Zero = options.Zero;
             Minus = options.Minus;
             DecimalSeparator = options.DecimalSeparator ?? ",";
-            Groups = options.Groups.ToImmutableDictionary(
+
+            // Validate options.Groups before building the immutable snapshot so that failures
+            // produce a precise diagnostic rather than a raw NullReferenceException from LINQ.
+            ValidateGroupsSource(options.Groups!, nameof(options.Groups));
+
+            Groups = options.Groups!.ToImmutableDictionary(
                 kv => kv.Key,
                 kv => (IReadOnlyDictionary<long, DigitType>)kv.Value.Digits.ToDictionary(d => d.Digit).ToImmutableDictionary());
             Exceptions = (options.Exceptions ?? new Dictionary<long, string>()).ToImmutableDictionary();
@@ -101,6 +115,9 @@ namespace Utils.NumberToString
             AdjustFunction = input => LanguageSpecifics.FinalizeWriting(LanguageIdentifier, (_rawAdjustFunction ?? (s => s))(input));
             Fractions = options.Fractions?.ToImmutableDictionary() ?? ImmutableDictionary<int, string>.Empty;
             MaxNumber = options.MaxNumber;
+            if (MaxNumber.HasValue && MaxNumber.Value < 0)
+                throw new ArgumentOutOfRangeException(nameof(options.MaxNumber),
+                    $"MaxNumber must be non-negative when specified; got {MaxNumber.Value}.");
             FractionSeparator = string.IsNullOrWhiteSpace(options.FractionSeparator) ? "/" : options.FractionSeparator;
 
             OrdinalSuffix = options.OrdinalSuffix;
@@ -1455,6 +1472,53 @@ namespace Utils.NumberToString
             }
 
             return isNegative ? Minus.Replace("*", result) : result;
+        }
+
+        /// <summary>
+        /// Validates the source groups dictionary before it is materialised into an immutable snapshot,
+        /// so that null entries, structural gaps, and duplicate digit values produce precise diagnostics
+        /// rather than NullReferenceException or ArgumentException from LINQ.
+        /// </summary>
+        private static void ValidateGroupsSource(IReadOnlyDictionary<int, DigitListType> src, string paramName)
+        {
+            if (src.Count == 0)
+                throw new ArgumentException("Groups must contain at least one group.", paramName);
+
+            var groupKeys = src.Keys.OrderBy(k => k).ToList();
+            if (groupKeys[0] != 1)
+                throw new ArgumentException(
+                    $"Group keys must start at 1; the smallest key is {groupKeys[0]}.", paramName);
+            for (int gi = 1; gi < groupKeys.Count; gi++)
+                if (groupKeys[gi] != groupKeys[gi - 1] + 1)
+                    throw new ArgumentException(
+                        $"Group keys must form a contiguous sequence; gap between {groupKeys[gi - 1]} and {groupKeys[gi]}.",
+                        paramName);
+            int maxGroupKey = groupKeys[groupKeys.Count - 1];
+            if (maxGroupKey > _decimalPowersOfTen.Length)
+                throw new ArgumentException(
+                    $"The maximum group key ({maxGroupKey}) exceeds the maximum supported by this library ({_decimalPowersOfTen.Length}).", paramName);
+
+            foreach (var (key, digitList) in src)
+            {
+                if (digitList is null)
+                    throw new ArgumentException($"Group {key} has a null DigitListType.", paramName);
+                if (digitList.Digits is null)
+                    throw new ArgumentException($"Group {key} has a null Digits list.", paramName);
+                if (digitList.Digits.Count == 0)
+                    throw new ArgumentException($"Group {key} has no digit definitions.", paramName);
+
+                var digitValues = new HashSet<long>();
+                for (int i = 0; i < digitList.Digits.Count; i++)
+                {
+                    var dt = digitList.Digits[i];
+                    if (dt is null)
+                        throw new ArgumentException(
+                            $"Group {key} has a null DigitType at index {i}.", paramName);
+                    if (!digitValues.Add(dt.Digit))
+                        throw new ArgumentException(
+                            $"Group {key} has duplicate digit value {dt.Digit}.", paramName);
+                }
+            }
         }
 
         // Powers of ten from 10^0 to 10^18, computed with exact decimal arithmetic.
