@@ -17,12 +17,15 @@ namespace Utils.NumberToString
         static NumberToStringConverter()
         {
             InitializeConfigurations(
+                // Scale bases must be loaded before any language that uses baseOn to reference them.
+                NumberConverterResources.NumberConvertionConfiguration_SCALE,
                 NumberConverterResources.NumberConvertionConfiguration_FR_fr_ca,
                 NumberConverterResources.NumberConvertionConfiguration_FR_be_ch,
                 NumberConverterResources.NumberConvertionConfiguration_DE,
                 NumberConverterResources.NumberConvertionConfiguration_DE_ch,
                 NumberConverterResources.NumberConvertionConfiguration_DA,
                 NumberConverterResources.NumberConvertionConfiguration_EN,
+                NumberConverterResources.NumberConvertionConfiguration_EN_GB,
                 NumberConverterResources.NumberConvertionConfiguration_ES,
                 NumberConverterResources.NumberConvertionConfiguration_BG,
                 NumberConverterResources.NumberConvertionConfiguration_CA,
@@ -108,6 +111,9 @@ namespace Utils.NumberToString
             }
         }
 
+        /// <summary>Trims whitespace from a culture identifier at registration/lookup boundaries.</summary>
+        private static string NormalizeCulture(string culture) => culture.Trim();
+
         /// <summary>
         /// Parses a configuration document into converter instances keyed by culture name.
         /// </summary>
@@ -128,7 +134,7 @@ namespace Utils.NumberToString
             var docLanguageTypes = new Dictionary<string, LanguageType>(StringComparer.OrdinalIgnoreCase);
             foreach (var lang in obj.Languages)
                 foreach (var culture in lang.Cultures ?? [])
-                    docLanguageTypes.TryAdd(culture, lang);
+                    docLanguageTypes.TryAdd(NormalizeCulture(culture), lang);
 
             var result = new Dictionary<string, NumberToStringConverter>();
             foreach (var language in obj.Languages)
@@ -139,12 +145,13 @@ namespace Utils.NumberToString
 
                 // Cache the resolved LanguageType so other documents can reference it via baseOn.
                 foreach (var culture in resolved.Cultures ?? [])
-                    _cachedLanguageTypes.TryAdd(culture, resolved);
+                    _cachedLanguageTypes.TryAdd(NormalizeCulture(culture), resolved);
 
                 foreach (var culture in resolved.Cultures ?? [])
                 {
-                    if (!result.ContainsKey(culture))
-                        result.Add(culture, ReadConverter(resolved, culture));
+                    var key = NormalizeCulture(culture);
+                    if (!result.ContainsKey(key))
+                        result.Add(key, ReadConverter(resolved, key));
                 }
             }
             return result;
@@ -163,7 +170,7 @@ namespace Utils.NumberToString
             LanguageType child,
             IReadOnlyDictionary<string, LanguageType> docLanguages)
         {
-            string baseKey = child.BaseOn;
+            string baseKey = NormalizeCulture(child.BaseOn);
 
             // Prefer the already-resolved version from the cache (handles multi-document chains
             // and in-order same-document chains where the base was already processed).
@@ -269,6 +276,41 @@ namespace Utils.NumberToString
         }
 
         /// <summary>
+        /// Validates that no two variant dimensions share a canonical name or alias (case-insensitive).
+        /// </summary>
+        private static void ValidateDimensionNames(
+            IReadOnlyList<NumberToStringConverter.VariantDimension> dims, string languageIdentifier)
+        {
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var d in dims)
+            {
+                if (!seen.Add(d.Name))
+                    throw new InvalidOperationException(
+                        $"[{languageIdentifier}] Duplicate variant dimension name '{d.Name}'.");
+                if (!string.IsNullOrEmpty(d.LocalName) && !seen.Add(d.LocalName))
+                    throw new InvalidOperationException(
+                        $"[{languageIdentifier}] Variant dimension alias '{d.LocalName}' for '{d.Name}' " +
+                        $"collides with an existing name or alias.");
+            }
+        }
+
+        /// <summary>
+        /// Validates that static scale entries have unique, zero-based, contiguous integer indices.
+        /// </summary>
+        private static void ValidateStaticScaleIndices(
+            IReadOnlyList<NumberType> scales, string languageIdentifier)
+        {
+            var sorted = scales.OrderBy(s => s.Value).ToList();
+            for (int i = 0; i < sorted.Count; i++)
+            {
+                if (sorted[i].Value != i)
+                    throw new InvalidOperationException(
+                        $"[{languageIdentifier}] Static scale indices must be unique and contiguous starting at 0. " +
+                        $"Expected index {i} but found {sorted[i].Value}.");
+            }
+        }
+
+        /// <summary>
         /// Builds a converter for a specific language definition and culture identifier.
         /// </summary>
         /// <param name="language">The language definition deserialized from XML.</param>
@@ -278,6 +320,7 @@ namespace Utils.NumberToString
         {
             var confScale = language.NumberScale;
 
+            ValidateStaticScaleIndices(confScale.StaticNames.Scales, languageIdentifier);
             var scale = new NumberScale(
                 confScale.StaticNames.Scales.OrderBy(n => n.Value).Select(n => n.StringValue).ToArray(),
                 confScale.Suffixes?.Values?.ToArray() ?? Array.Empty<string>(),
@@ -291,12 +334,22 @@ namespace Utils.NumberToString
                 confScale.FirstLetterUpperCase
             );
 
-            static IEnumerable<NumberToStringConverter.ReplacementRule> ParseReplacements(ReplacementsListType list) =>
-                list?.Replacements?
-                    .Where(r => r.NewValue != null)
-                    .Select(r => new NumberToStringConverter.ReplacementRule(r.OldValue, r.NewValue!, r.Scope, r.OnScale,
-                        r.OnValue))
-                ?? [];
+            IEnumerable<NumberToStringConverter.ReplacementRule> ParseReplacements(ReplacementsListType list)
+            {
+                if (list?.Replacements == null) return [];
+                var rules = new List<NumberToStringConverter.ReplacementRule>();
+                foreach (var r in list.Replacements)
+                {
+                    if (r.NewValue != null)
+                        rules.Add(new NumberToStringConverter.ReplacementRule(r.OldValue, r.NewValue, r.Scope, r.OnScale, r.OnValue));
+                    else if (r.FormVariants == null || r.FormVariants.Count == 0)
+                        throw new InvalidOperationException(
+                            $"[{languageIdentifier}] Replacement for '{r.OldValue}' has neither a newValue " +
+                            $"nor child form-variant elements. Either add newValue or provide at least one <Variant>.");
+                    // else: no direct newValue but has form variants — handled by ExpandFormVariants in ParseVariantRules
+                }
+                return rules;
+            }
 
             static IReadOnlyList<NumberToStringConverter.VariantDimension> ParseVariantDimensions(VariantsType variants) =>
                 variants?.Dimensions?
@@ -312,6 +365,7 @@ namespace Utils.NumberToString
             // Used when loading variant constraints from XML attributes so that <Variant genus="…">
             // and <Variant gender="…"> are treated identically after German was renamed.
             var parsedDimensions = ParseVariantDimensions(language.Variants);
+            ValidateDimensionNames(parsedDimensions, languageIdentifier);
             var nameNormalizer = parsedDimensions
                 .SelectMany(d => string.IsNullOrEmpty(d.LocalName)
                     ? (IEnumerable<(string, string)>)[(d.Name, d.Name)]
@@ -383,11 +437,20 @@ namespace Utils.NumberToString
                             ? [variant.VariantValue]
                             : [""];
 
-                var replacements = (variant.Replacements ?? [])
-                    .Where(r => r.NewValue != null)
-                    .Select(r => new NumberToStringConverter.ReplacementRule(r.OldValue, r.NewValue!, r.Scope, r.OnScale,
-                        r.OnValue))
-                    .ToList();
+                var replacements = new List<NumberToStringConverter.ReplacementRule>();
+                foreach (var r in variant.Replacements ?? [])
+                {
+                    if (r.NewValue != null)
+                        replacements.Add(new NumberToStringConverter.ReplacementRule(r.OldValue, r.NewValue, r.Scope, r.OnScale, r.OnValue));
+                    else if (r.FormVariants == null || r.FormVariants.Count == 0)
+                        throw new InvalidOperationException(
+                            $"[{languageIdentifier}] Replacement for '{r.OldValue}' inside a Variant rule has neither " +
+                            $"a newValue nor child form-variant elements.");
+                    else
+                        throw new InvalidOperationException(
+                            $"[{languageIdentifier}] Replacement for '{r.OldValue}' inside a Variant rule has form-variant " +
+                            $"children, which are not supported at this nesting level. Use a flat Variant element instead.");
+                }
 
                 foreach (var dimValue in dimValues)
                 {
@@ -438,10 +501,20 @@ namespace Utils.NumberToString
                             ?.Values ?? (IReadOnlyList<string>)[];
 
                         var entries = node.Forms.Split(',');
-                        for (int i = 0; i < Math.Min(entries.Length, dimValues.Count); i++)
+                        if (entries.Length != dimValues.Count)
+                            throw new InvalidOperationException(
+                                $"Dimension '{dimName}' declares {dimValues.Count} value(s) " +
+                                $"({string.Join(", ", dimValues)}) but forms=\"{node.Forms}\" " +
+                                $"supplies {entries.Length} entry/entries. " +
+                                $"The number of comma-separated forms must match the number of declared dimension values.");
+                        for (int i = 0; i < dimValues.Count; i++)
                         {
                             var form = entries[i].Trim();
-                            if (string.IsNullOrEmpty(form)) continue;
+                            if (string.IsNullOrEmpty(form))
+                                throw new InvalidOperationException(
+                                    $"Dimension '{dimName}' value '{dimValues[i]}' (index {i}) has an empty form " +
+                                    $"in forms=\"{node.Forms}\". All entries must be non-empty; " +
+                                    $"use a named Variant element for partial mappings.");
                             var leafConstraints = new Dictionary<string, string>(constraints, StringComparer.OrdinalIgnoreCase)
                                 { [dimName] = dimValues[i] };
                             yield return (leafConstraints, form);
