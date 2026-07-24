@@ -114,6 +114,13 @@ namespace Utils {
             }
         }
 
+        /// <summary>Scale base configurations (SCALE-SHORT and SCALE-LONG) for use with baseOn.</summary>
+        internal static string NumberConvertionConfiguration_SCALE {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.SCALE", resourceCulture);
+            }
+        }
+
         /// <summary>Slovak number-to-string configuration.</summary>
         internal static string NumberConvertionConfiguration_SK {
             get {
@@ -285,7 +292,16 @@ namespace Utils {
                 return ResourceManager.GetString("NumberConvertionConfiguration.EN", resourceCulture);
             }
         }
-        
+
+        /// <summary>
+        ///   British English — derived from EN via baseOn, overrides DateFormat only.
+        /// </summary>
+        internal static string NumberConvertionConfiguration_EN_GB {
+            get {
+                return ResourceManager.GetString("NumberConvertionConfiguration.EN-GB", resourceCulture);
+            }
+        }
+
         /// <summary>
         ///   Recherche une chaîne localisée semblable à &lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
         ///&lt;Numbers xmlns=&quot;Utils/NumberConvertionConfiguration.xsd&quot;&gt;

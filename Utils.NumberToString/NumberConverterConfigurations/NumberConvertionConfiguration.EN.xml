@@ -1,16 +1,16 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
         <Language
+                        baseOn="SCALE-SHORT"
                         groupSize="3"
                         separator=" "
-                        groupSeparator="," 
+                        groupSeparator=","
                         zero="zero"
                         minus="minus *"
                         decimalSeparator="point"
                         fractionSeparator="over"
         >
 		<Culture>EN</Culture>
-		<Culture>EN-uk</Culture>
 		<Culture>EN-us</Culture>
 		<Groups>
 			<Group level="1">
@@ -50,15 +50,6 @@
 				<Digit digit="9" string="nine hundred" buildString="nine hundred and *" />
 			</Group>
 		</Groups>
-		<NumberScale firstLetterUpperCase="false">
-			<StaticNames>
-				<Scale value="0" string=""/>
-				<Scale value="1" string="thousand"/>
-			</StaticNames>
-			<Suffixes>
-				<Suffix>on</Suffix>
-			</Suffixes>
-		</NumberScale>
 		<Exceptions>
 			<Number value="11" string="eleven" />
 			<Number value="12" string="twelve" />

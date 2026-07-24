@@ -17,12 +17,15 @@ namespace Utils.NumberToString
         static NumberToStringConverter()
         {
             InitializeConfigurations(
+                // Scale bases must be loaded before any language that uses baseOn to reference them.
+                NumberConverterResources.NumberConvertionConfiguration_SCALE,
                 NumberConverterResources.NumberConvertionConfiguration_FR_fr_ca,
                 NumberConverterResources.NumberConvertionConfiguration_FR_be_ch,
                 NumberConverterResources.NumberConvertionConfiguration_DE,
                 NumberConverterResources.NumberConvertionConfiguration_DE_ch,
                 NumberConverterResources.NumberConvertionConfiguration_DA,
                 NumberConverterResources.NumberConvertionConfiguration_EN,
+                NumberConverterResources.NumberConvertionConfiguration_EN_GB,
                 NumberConverterResources.NumberConvertionConfiguration_ES,
                 NumberConverterResources.NumberConvertionConfiguration_BG,
                 NumberConverterResources.NumberConvertionConfiguration_CA,

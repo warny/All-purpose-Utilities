@@ -121,6 +121,9 @@
   <data name="NumberConvertionConfiguration" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>NumberConverterConfigurations\NumberConvertionConfiguration.xsd;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
   </data>
+  <data name="NumberConvertionConfiguration.SCALE" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>NumberConverterConfigurations\NumberConvertionConfiguration.SCALE.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
+  </data>
   <data name="NumberConvertionConfiguration.AR" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>NumberConverterConfigurations\NumberConvertionConfiguration.AR.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
   </data>
@@ -147,6 +150,9 @@
   </data>
   <data name="NumberConvertionConfiguration.EN" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>NumberConverterConfigurations\NumberConvertionConfiguration.EN.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
+  </data>
+  <data name="NumberConvertionConfiguration.EN-GB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>NumberConverterConfigurations\NumberConvertionConfiguration.EN-GB.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
   </data>
   <data name="NumberConvertionConfiguration.ES" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>NumberConverterConfigurations\NumberConvertionConfiguration.ES.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
