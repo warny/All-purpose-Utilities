@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+    British English — derived from American English (EN) via baseOn.
+    Inherits all number and time rules from EN; overrides only the date format.
+
+    American format : {month} {ordinal-day}, {year}   →  "July second, two thousand twenty-six"
+    British format  : {ordinal-day} {month} {year}    →  "second July two thousand twenty-six"
+-->
+<Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+	<Language baseOn="EN">
+		<Culture>EN-GB</Culture>
+		<Culture>EN-uk</Culture>
+		<DateFormat pattern="{ordinal-day} {month} {year}" />
+	</Language>
+</Numbers>

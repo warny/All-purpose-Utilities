@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+    Scale base configurations.
+    These languages are NOT intended for direct use.  They define only the
+    NumberScale section and the minimum required fields so that other language
+    configurations can inherit a complete scale definition via baseOn=.
+
+    SCALE-SHORT  Short scale (English/American system)
+                 10^3 = thousand, 10^6 = million, 10^9 = billion, …
+                 Suffix cycle: [on]  →  mill-on, bill-on, trill-on, …
+
+    SCALE-LONG   Long scale (continental European system)
+                 10^3 = thousand, 10^6 = million, 10^9 = milliard,
+                 10^12 = billion, 10^15 = billiard, …
+                 Suffix cycle: [on, ard]  →  mill-on, milliard, bill-on, …
+                 Note: suffix text is language-specific; override Suffixes in the
+                 derived configuration as needed (e.g. "on(s)"/"ard(s)" in French).
+-->
+<Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+
+	<!-- ── Short scale ──────────────────────────────────────────────────────── -->
+	<Language
+		groupSize="3"
+		separator=" "
+		groupSeparator=","
+		zero="zero"
+		minus="minus *"
+	>
+		<Culture>SCALE-SHORT</Culture>
+		<Groups>
+			<Group level="1">
+				<Digit digit="0" string=""  />
+				<Digit digit="1" string="one" />
+				<Digit digit="2" string="two" />
+				<Digit digit="3" string="three" />
+				<Digit digit="4" string="four" />
+				<Digit digit="5" string="five" />
+				<Digit digit="6" string="six"  />
+				<Digit digit="7" string="seven" />
+				<Digit digit="8" string="eight" />
+				<Digit digit="9" string="nine" />
+			</Group>
+		</Groups>
+		<NumberScale firstLetterUpperCase="false">
+			<StaticNames>
+				<Scale value="0" string=""/>
+				<Scale value="1" string="thousand"/>
+			</StaticNames>
+			<Suffixes>
+				<Suffix>on</Suffix>
+			</Suffixes>
+		</NumberScale>
+	</Language>
+
+	<!-- ── Long scale ───────────────────────────────────────────────────────── -->
+	<Language
+		groupSize="3"
+		separator=" "
+		groupSeparator=","
+		zero="zero"
+		minus="minus *"
+	>
+		<Culture>SCALE-LONG</Culture>
+		<Groups>
+			<Group level="1">
+				<Digit digit="0" string=""  />
+				<Digit digit="1" string="one" />
+				<Digit digit="2" string="two" />
+				<Digit digit="3" string="three" />
+				<Digit digit="4" string="four" />
+				<Digit digit="5" string="five" />
+				<Digit digit="6" string="six"  />
+				<Digit digit="7" string="seven" />
+				<Digit digit="8" string="eight" />
+				<Digit digit="9" string="nine" />
+			</Group>
+		</Groups>
+		<NumberScale firstLetterUpperCase="false">
+			<StaticNames>
+				<Scale value="0" string=""/>
+				<Scale value="1" string="thousand"/>
+			</StaticNames>
+			<Suffixes>
+				<Suffix>on</Suffix>
+				<Suffix>ard</Suffix>
+			</Suffixes>
+		</NumberScale>
+	</Language>
+
+</Numbers>

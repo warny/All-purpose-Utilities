@@ -335,4 +335,81 @@ public class NumberToStringConverterTimeAndNewLangTests
         Assert.IsFalse(hr.SupportsTimeConversion);
         Assert.ThrowsException<NotSupportedException>(() => hr.Convert(new TimeSpan(1, 0, 0)));
     }
+
+    // ─── EN-GB (British English, derived from EN via baseOn) ──────────────────
+
+    [TestMethod]
+    public void Convert_EN_GB_BasicNumbers_SameAsEN()
+    {
+        // Numbers must be identical to EN since EN-GB inherits all number rules.
+        var en = NumberToStringConverter.GetConverter("EN");
+        var gb = NumberToStringConverter.GetConverter("EN-GB");
+        Assert.AreEqual(en.Convert(0),        gb.Convert(0));
+        Assert.AreEqual(en.Convert(1),        gb.Convert(1));
+        Assert.AreEqual(en.Convert(42),       gb.Convert(42));
+        Assert.AreEqual(en.Convert(1_000),    gb.Convert(1_000));
+        Assert.AreEqual(en.Convert(1_000_000), gb.Convert(1_000_000));
+    }
+
+    [TestMethod]
+    public void Convert_EN_GB_DateFormat_DayBeforeMonth()
+    {
+        // British format: {ordinal-day} {month} {year} → "second July ..."
+        var gb = NumberToStringConverter.GetConverter("EN-GB");
+        Assert.IsTrue(gb.SupportsDateConversion);
+        string result = gb.Convert(new DateOnly(2026, 7, 2));
+        Assert.IsTrue(result.StartsWith("second July"),
+            $"British date must start with ordinal-day then month; got: '{result}'");
+    }
+
+    [TestMethod]
+    public void Convert_EN_GB_DateFormat_FirstOfMonth()
+    {
+        // firstDay override must still apply in British format.
+        var gb = NumberToStringConverter.GetConverter("EN-GB");
+        string result = gb.Convert(new DateOnly(2026, 7, 1));
+        Assert.IsTrue(result.StartsWith("first July"),
+            $"British date for day 1 must use 'first'; got: '{result}'");
+    }
+
+    [TestMethod]
+    public void Convert_EN_US_DateFormat_MonthBeforeDay()
+    {
+        // American format: {month} {ordinal-day}, {year} — unchanged.
+        var us = NumberToStringConverter.GetConverter("EN-us");
+        string result = us.Convert(new DateOnly(2026, 7, 2));
+        Assert.IsTrue(result.StartsWith("July second"),
+            $"American date must start with month then ordinal-day; got: '{result}'");
+    }
+
+    [TestMethod]
+    public void GetConverter_EN_uk_UsesBritishDateFormat()
+    {
+        // EN-uk culture alias moved to EN-GB; must use British date format.
+        var uk  = NumberToStringConverter.GetConverter("EN-uk");
+        string result = uk.Convert(new DateOnly(2026, 7, 2));
+        Assert.IsTrue(result.StartsWith("second July"),
+            $"EN-uk must use British date format; got: '{result}'");
+    }
+
+    [TestMethod]
+    public void Convert_EN_GB_Ordinals_SameAsEN()
+    {
+        var en = NumberToStringConverter.GetConverter("EN");
+        var gb = NumberToStringConverter.GetConverter("EN-GB");
+        Assert.IsTrue(gb.SupportsOrdinals);
+        Assert.AreEqual(en.ConvertOrdinal(1),  gb.ConvertOrdinal(1));
+        Assert.AreEqual(en.ConvertOrdinal(2),  gb.ConvertOrdinal(2));
+        Assert.AreEqual(en.ConvertOrdinal(21), gb.ConvertOrdinal(21));
+    }
+
+    [TestMethod]
+    public void Convert_EN_GB_ScaleNames_InheritedFromScaleShort()
+    {
+        // EN-GB inherits EN → SCALE-SHORT chain; scale names must match EN exactly.
+        var en = NumberToStringConverter.GetConverter("EN");
+        var gb = NumberToStringConverter.GetConverter("EN-GB");
+        Assert.AreEqual(en.Convert(1_000_000_000L),     gb.Convert(1_000_000_000L));
+        Assert.AreEqual(en.Convert(1_000_000_000_000L), gb.Convert(1_000_000_000_000L));
+    }
 }
