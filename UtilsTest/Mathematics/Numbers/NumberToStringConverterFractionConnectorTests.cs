@@ -97,8 +97,8 @@ namespace UtilsTest.Mathematics.Numbers
             const int numerator = 117;
             const int denominator = 1013;
 
-            string numeratorText = converter.Convert(numerator).Replace("-", " ");
-            string denominatorText = converter.Convert(denominator).Replace("-", " ");
+            string numeratorText = converter.Convert(numerator);
+            string denominatorText = converter.Convert(denominator);
 
             string combined = string.Concat(
                 numeratorText,

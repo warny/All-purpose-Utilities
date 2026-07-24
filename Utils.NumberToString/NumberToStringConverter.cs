@@ -145,6 +145,7 @@ namespace Utils.NumberToString
                          ?? ImmutableDictionary<string, (string Singular, string Plural, string? Count1Form)>.Empty;
             _datePattern = options.DatePattern;
             _dateFirstDay = options.DateFirstDay;
+            _dateFirstCardinalDay = options.DateFirstCardinalDay;
             _dateTimeConnector = options.DateTimeConnector;
             // Index both canonical name and localName so both are accepted in API calls and XML constraints.
             _dimensionIndex = VariantDimensions
@@ -313,8 +314,11 @@ namespace Utils.NumberToString
         /// <summary>Gets the date pattern string (tokens: {month}, {ordinal-day}, {cardinal-day}, {year}).</summary>
         public string? DatePattern => _datePattern;
 
-        /// <summary>Gets the special string for day 1 in date ordinal rendering (e.g. "premier" in French).</summary>
+        /// <summary>Gets the special string for day 1 in {ordinal-day} (e.g. "first" override).</summary>
         public string? DateFirstDay => _dateFirstDay;
+
+        /// <summary>Gets the special string for day 1 in {cardinal-day} (e.g. "premier" in French, "ersten" in German).</summary>
+        public string? DateFirstCardinalDay => _dateFirstCardinalDay;
 
         /// <summary>Gets the connector inserted between date and time in DateTime conversion.</summary>
         public string? DateTimeConnector => _dateTimeConnector;
@@ -343,6 +347,7 @@ namespace Utils.NumberToString
         private readonly ImmutableDictionary<string, (string Singular, string Plural, string? Count1Form)> _timeUnits;
         private readonly string? _datePattern;
         private readonly string? _dateFirstDay;
+        private readonly string? _dateFirstCardinalDay;
         private readonly string? _dateTimeConnector;
 
         /// <summary>
@@ -589,7 +594,7 @@ namespace Utils.NumberToString
                 if (activeSuffix != null)
                 {
                     BigInteger fracNumerator = BigInteger.Parse(digits);
-                    var valueText = Convert(fracNumerator, variants).Replace("-", " ");
+                    var valueText = Convert(fracNumerator, variants);
                     // Use BigInteger to avoid long overflow when fractional digits exceed 18.
                     long fracPluralProxy = fracNumerator <= 1 ? (long)fracNumerator : 2L;
                     result.Append(valueText).Append(Separator).Append(activeSuffix.ToPlural(fracPluralProxy));
@@ -1349,12 +1354,12 @@ namespace Utils.NumberToString
                 Fractions.TryGetValue(digits, out var suffix) &&
                 BigInteger.Abs(numerator) <= long.MaxValue)
             {
-                string valueText = (variants is { Length: > 0 } ? Convert(numerator, variants) : Convert(numerator)).Replace("-", " ");
+                string valueText = variants is { Length: > 0 } ? Convert(numerator, variants) : Convert(numerator);
                 return string.Concat(valueText, Separator, suffix.ToPlural((long)BigInteger.Abs(numerator))).Trim();
             }
 
-            string numeratorText = (variants is { Length: > 0 } ? Convert(numerator, variants) : Convert(numerator)).Replace("-", " ");
-            string denominatorText = (variants is { Length: > 0 } ? Convert(denominator, variants) : Convert(denominator)).Replace("-", " ");
+            string numeratorText = variants is { Length: > 0 } ? Convert(numerator, variants) : Convert(numerator);
+            string denominatorText = variants is { Length: > 0 } ? Convert(denominator, variants) : Convert(denominator);
 
             string connector = FractionSeparator;
             return string.Concat(numeratorText, Separator, connector, Separator, denominatorText).Trim();
@@ -1711,9 +1716,9 @@ namespace Utils.NumberToString
                 throw new NotSupportedException($"Language '{LanguageIdentifier}' has no <DateFormat> configuration.");
 
             string month = GetMonthName(date.Month);
-            // firstDay overrides both {ordinal-day} and {cardinal-day} when day == 1
-            string cardinalDay = (date.Day == 1 && _dateFirstDay != null)
-                ? _dateFirstDay
+            // _dateFirstDay overrides {ordinal-day} for day 1; _dateFirstCardinalDay overrides {cardinal-day} for day 1.
+            string cardinalDay = (date.Day == 1 && _dateFirstCardinalDay != null)
+                ? _dateFirstCardinalDay
                 : Convert(date.Day, variants);
             string ordinalDay = (date.Day == 1 && _dateFirstDay != null)
                 ? _dateFirstDay

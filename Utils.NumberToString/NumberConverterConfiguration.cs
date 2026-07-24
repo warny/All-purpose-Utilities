@@ -613,12 +613,13 @@ public class DateFormatType
     [XmlAttribute("pattern")]
     public string Pattern { get; set; } = "";
 
-    /// <summary>
-    /// Special string used for the first day of the month (e.g. "premier" in French).
-    /// When set, overrides the ordinal form of day 1 in {ordinal-day}.
-    /// </summary>
+    /// <summary>Special string for day 1 in {ordinal-day} (e.g. "first" override).</summary>
     [XmlAttribute("firstDay")]
     public string? FirstDay { get; set; }
+
+    /// <summary>Special string for day 1 in {cardinal-day} (e.g. "premier" in French, "ersten" in German).</summary>
+    [XmlAttribute("firstCardinalDay")]
+    public string? FirstCardinalDay { get; set; }
 
     /// <summary>Connector between the date and the time when converting a DateTime.</summary>
     [XmlAttribute("dateTimeConnector")]

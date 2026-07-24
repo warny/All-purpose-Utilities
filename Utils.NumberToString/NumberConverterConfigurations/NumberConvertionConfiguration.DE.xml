@@ -782,7 +782,6 @@
 			<Unit name="minute" singular="Minute"  plural="Minuten"  count1form="eine" />
 			<Unit name="second" singular="Sekunde" plural="Sekunden" count1form="eine" />
 		</TimeUnits>
-		<!-- firstDay="ersten" applies to both {cardinal-day} and {ordinal-day} when day == 1 -->
-		<DateFormat pattern="{cardinal-day}. {month} {year}" firstDay="ersten" />
+		<DateFormat pattern="{cardinal-day}. {month} {year}" firstCardinalDay="ersten" />
 	</Language>
 </Numbers>

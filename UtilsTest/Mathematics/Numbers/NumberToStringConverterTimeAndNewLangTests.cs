@@ -165,7 +165,7 @@ public class NumberToStringConverterTimeAndNewLangTests
     public void Convert_DateOnly_FR_FirstOfMonth()
     {
         var fr = NumberToStringConverter.GetConverter("FR");
-        // firstDay="premier" applies to {cardinal-day} too when day == 1
+        // firstCardinalDay="premier" applies to {cardinal-day} when day == 1
         string result = fr.Convert(new DateOnly(2026, 7, 1));
         Assert.IsTrue(result.StartsWith("premier juillet"), $"Actual: {result}");
     }
@@ -185,7 +185,7 @@ public class NumberToStringConverterTimeAndNewLangTests
     public void Convert_DateOnly_DE_FirstDay_CardinalDay()
     {
         var de = NumberToStringConverter.GetConverter("DE");
-        // firstDay="ersten" must also apply to {cardinal-day} when day == 1
+        // firstCardinalDay="ersten" applies to {cardinal-day} when day == 1
         string result = de.Convert(new DateOnly(2026, 7, 1));
         Assert.IsTrue(result.StartsWith("ersten. Juli"), $"Actual: {result}");
     }

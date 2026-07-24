@@ -1405,10 +1405,19 @@
                                     <xs:attribute name="firstDay" type="xs:string" use="optional">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                Special string for the first day of the month, applied to both
-                                                {ordinal-day} and {cardinal-day} when day == 1
+                                                Special string for the first day of the month applied only to
+                                                {ordinal-day} when day == 1.
+                                                When absent, the standard ordinal form of 1 is used.
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+                                    <xs:attribute name="firstCardinalDay" type="xs:string" use="optional">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                Special string for the first day of the month applied only to
+                                                {cardinal-day} when day == 1
                                                 (e.g. "premier" in French, "ersten" in German).
-                                                When absent, the standard ordinal or cardinal form of 1 is used.
+                                                When absent, the standard cardinal form of 1 is used.
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:attribute>
