@@ -2887,4 +2887,106 @@ public class NumberToStringConverterAuditFixesTests
     {
         public string FinalizeWriting(string language, string value) => value + "_TRANSFORMED";
     }
+
+    // ── Item 89 — Ordinal fallback must match the declared default variant ─────
+
+    [TestMethod]
+    public void ConvertOrdinal_Spanish_Value1_NoVariant_ReturnsMasculineDefault()
+    {
+        // ES ordinal 1 without variant → must return the masculine form "primero"
+        // (gender dimension declares masculino as its first/default value).
+        var es = NumberToStringConverter.GetConverter("ES");
+        string result = es.ConvertOrdinal(1L);
+        Assert.AreEqual("primero", result,
+            "ConvertOrdinal(1) without variant must return masculine 'primero' for ES");
+    }
+
+    [TestMethod]
+    public void ConvertOrdinal_Spanish_Value1_FeminineVariant_ReturnsFemenino()
+    {
+        var es = NumberToStringConverter.GetConverter("ES");
+        string result = es.ConvertOrdinal(1L, "gender=femenino");
+        Assert.AreEqual("primera", result,
+            "ConvertOrdinal(1, gender=femenino) must return feminine 'primera' for ES");
+    }
+
+    [TestMethod]
+    public void ConvertOrdinal_Greek_Value11_NoVariant_ReturnsMasculineDefault()
+    {
+        // EL ordinal 11 without variant → must return the masculine form ενδέκατος
+        // (gender dimension declares αρσενικό as its first/default value).
+        var el = NumberToStringConverter.GetConverter("EL");
+        string result = el.ConvertOrdinal(11L);
+        Assert.AreEqual("ενδέκατος", result,
+            "ConvertOrdinal(11) without variant must return masculine 'ενδέκατος' for EL");
+    }
+
+    // ── Item 72 — Sub-second precision contract is documented ─────────────────
+
+    [TestMethod]
+    public void Convert_TimeSpan_SubSecondOnly_RendersAsZero()
+    {
+        // A duration of 500 ms only has no second component → must produce Zero text.
+        var fr = NumberToStringConverter.GetConverter("FR");
+        string result = fr.Convert(TimeSpan.FromMilliseconds(500));
+        Assert.AreEqual(fr.Zero, result,
+            "Convert(TimeSpan) for a sub-second-only duration must render as Zero");
+    }
+
+    [TestMethod]
+    public void Convert_TimeSpan_WithMilliseconds_MillisecondsAreDiscarded()
+    {
+        // 1 hour, 30 minutes, 500 ms → must mention hours and minutes but not milliseconds.
+        var fr = NumberToStringConverter.GetConverter("FR");
+        string result = fr.Convert(TimeSpan.FromHours(1).Add(TimeSpan.FromMinutes(30)).Add(TimeSpan.FromMilliseconds(500)));
+        StringAssert.Contains(result, "heure",
+            "Convert(TimeSpan) for 1h30m500ms must mention the hour component");
+        StringAssert.Contains(result, "minute",
+            "Convert(TimeSpan) for 1h30m500ms must mention the minute component");
+        // milliseconds are silently discarded per the documented precision contract
+        Assert.IsFalse(result.Contains("millisecon"),
+            $"Convert(TimeSpan) must not mention milliseconds; got: {result}");
+    }
+
+    // ── Item 95 — Fraction digit key validation ───────────────────────────────
+
+    [TestMethod]
+    public void Constructor_FractionKeyZero_ThrowsArgumentOutOfRange()
+    {
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"));
+        options.Fractions = new Dictionary<int, string> { { 0, "zeroth" } };
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => new NumberToStringConverter(options),
+            "A fraction key of 0 must be rejected");
+    }
+
+    [TestMethod]
+    public void Constructor_FractionKeyNegative_ThrowsArgumentOutOfRange()
+    {
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"));
+        options.Fractions = new Dictionary<int, string> { { -1, "negative-ths" } };
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => new NumberToStringConverter(options),
+            "A negative fraction key must be rejected");
+    }
+
+    [TestMethod]
+    public void Constructor_FractionKeyAbove28_ThrowsArgumentOutOfRange()
+    {
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"));
+        options.Fractions = new Dictionary<int, string> { { 29, "29ths" } };
+        Assert.ThrowsException<ArgumentOutOfRangeException>(
+            () => new NumberToStringConverter(options),
+            "A fraction key above 28 must be rejected (exceeds decimal precision)");
+    }
+
+    [TestMethod]
+    public void Constructor_FractionKeyEmptyName_ThrowsArgumentException()
+    {
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("EN"));
+        options.Fractions = new Dictionary<int, string> { { 2, "" } };
+        Assert.ThrowsException<ArgumentException>(
+            () => new NumberToStringConverter(options),
+            "An empty fraction name must be rejected");
+    }
 }

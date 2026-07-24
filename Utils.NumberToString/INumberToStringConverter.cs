@@ -452,6 +452,13 @@ namespace Utils.NumberToString
         /// (e.g. "two hours thirty minutes five seconds").
         /// Requires <c>&lt;TimeUnits&gt;</c> in the XML configuration.
         /// </summary>
+        /// <remarks>
+        /// <b>Precision:</b> only whole hours, minutes, and seconds are represented.
+        /// Milliseconds and sub-millisecond ticks are silently discarded.
+        /// A duration whose entire magnitude is sub-second (e.g. 500 ms) is rendered as
+        /// <see cref="Zero"/> because no second component is emitted.
+        /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException"><see cref="TimeSpan.MinValue"/> cannot be converted because negating it overflows.</exception>
         /// <exception cref="NotSupportedException">The converter has no <c>&lt;TimeUnits&gt;</c> configuration (<see cref="SupportsTimeConversion"/> is <see langword="false"/>).</exception>
         string Convert(TimeSpan duration, params string[] variants)
             => throw new NotSupportedException("Time conversion requires <TimeUnits> in the XML configuration.");
