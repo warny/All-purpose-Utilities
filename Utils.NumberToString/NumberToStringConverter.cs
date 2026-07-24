@@ -856,7 +856,7 @@ namespace Utils.NumberToString
                     else
                     {
                         if (_hasScaleSpecificVariantRules && replacement.OnScale is not null) continue;
-                        if (replacement.OnValue is not null && (numericValue is null || !OnValueInRange(replacement.OnValue, numericValue.Value)))
+                        if (replacement.OnValue is not null && (numericValue is null || !replacement.OnValue.Contains(numericValue.Value)))
                             continue;
                     }
                     text = ApplyVariantReplacement(text, replacement);
@@ -881,23 +881,6 @@ namespace Utils.NumberToString
         /// </param>
         private string ApplyVariantRulesForScale(string text, IReadOnlyDictionary<string, string> query, int groupNumber, long groupNumericValue = 0) =>
             ApplyVariantRules(text, query, scaleGroupNumber: groupNumber, scaleGroupValue: groupNumericValue);
-
-        // Evaluates whether a BigInteger value is within an IntRange<long>.
-        // IntRange<long> can only represent values in [long.MinValue, long.MaxValue].
-        // For values outside that range, we approximate using the boundary: if the range contains
-        // long.MaxValue, it most likely has an open (+∞) upper bound and should match any larger
-        // positive integer. The rare edge case of a range whose upper bound is exactly long.MaxValue
-        // (not open) is treated as a match — this is an acceptable false positive given the
-        // practical impossibility of that configuration for number-to-string rules.
-        private static bool OnValueInRange(IntRange<long> range, BigInteger value)
-        {
-            if (value >= long.MinValue && value <= long.MaxValue)
-                return range.Contains((long)value);
-            // value is outside [long.MinValue, long.MaxValue].
-            // An open-upper-bound sub-range would necessarily contain long.MaxValue,
-            // so we use Contains(long.MaxValue) as a proxy.
-            return value > 0 && range.Contains(long.MaxValue);
-        }
 
         /// <summary>
         /// Applies a single replacement rule to <paramref name="text"/> according to its scope.
@@ -1027,7 +1010,7 @@ namespace Utils.NumberToString
                 foreach (var rule in _scaleReplacements)
                 {
                     if (!rule.OnScale!.Contains(groupNumber.Value)) continue;
-                    if (rule.OnValue is not null && (numericValue is null || !OnValueInRange(rule.OnValue, numericValue.Value)))
+                    if (rule.OnValue is not null && (numericValue is null || !rule.OnValue.Contains(numericValue.Value)))
                         continue;
                     value = ApplyVariantReplacement(value, rule);
                 }
@@ -1041,7 +1024,7 @@ namespace Utils.NumberToString
             {
                 foreach (var rule in _valueFilteredGlobalReplacements)
                 {
-                    if (OnValueInRange(rule.OnValue!, numericValue.Value))
+                    if (rule.OnValue!.Contains(numericValue.Value))
                         value = ApplyVariantReplacement(value, rule);
                 }
             }
