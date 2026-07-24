@@ -171,10 +171,16 @@ public sealed class NumberToStringConverterOptions
     public string? DatePattern { get; set; }
 
     /// <summary>
-    /// Special string used for the first day of the month (e.g. "premier" in French).
-    /// When set, overrides the ordinal form of day 1 in {ordinal-day}.
+    /// Special string for day 1 in {ordinal-day} (e.g. "first" override).
+    /// When set, replaces the standard ordinal form of 1 in ordinal-day slots.
     /// </summary>
     public string? DateFirstDay { get; set; }
+
+    /// <summary>
+    /// Special string for day 1 in {cardinal-day} (e.g. "premier" in French, "ersten" in German).
+    /// When set, replaces the standard cardinal form of 1 in cardinal-day slots.
+    /// </summary>
+    public string? DateFirstCardinalDay { get; set; }
 
     /// <summary>Connector inserted between date and time when converting a DateTime (defaults to Separator).</summary>
     public string? DateTimeConnector { get; set; }
@@ -229,6 +235,7 @@ public sealed class NumberToStringConverterOptions
         TimeUnits = source.TimeUnits;
         DatePattern = source.DatePattern;
         DateFirstDay = source.DateFirstDay;
+        DateFirstCardinalDay = source.DateFirstCardinalDay;
         DateTimeConnector = source.DateTimeConnector;
     }
 

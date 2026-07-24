@@ -119,6 +119,6 @@
 			<Unit name="minute" singular="minute"  plural="minutes"  />
 			<Unit name="second" singular="seconde" plural="secondes" />
 		</TimeUnits>
-		<DateFormat pattern="{cardinal-day} {month} {year}" firstDay="premier" />
+		<DateFormat pattern="{cardinal-day} {month} {year}" firstCardinalDay="premier" />
 	</Language>
 </Numbers>

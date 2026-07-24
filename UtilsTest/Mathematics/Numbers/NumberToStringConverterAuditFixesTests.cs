@@ -6,7 +6,7 @@ using Utils.NumberToString;
 namespace UtilsTest.Mathematics.Numbers;
 
 /// <summary>
-/// Tests for audit findings 47–71 from the Utils.NumberToString TODO files (pass 1 and pass 2).
+/// Tests for audit findings 47–71, 68, 71, 75–78 from the Utils.NumberToString TODO files.
 /// </summary>
 [TestClass]
 public class NumberToStringConverterAuditFixesTests
@@ -1305,5 +1305,117 @@ public class NumberToStringConverterAuditFixesTests
         var result = c.Convert(hugeValue);
         Assert.IsFalse(result.Contains("HUNDRED"),
             $"onValue='{long.MaxValue}' must NOT fire for 10^20; got: {result}");
+    }
+
+    // ── Item 68 — Hyphens must be preserved in fraction and decimal components ─
+
+    [TestMethod]
+    public void ConvertFraction_EN_HyphenatedNumerator_HyphenPreserved_NamedSuffix()
+    {
+        // 21/100 → denominator 100 is a power of 10 → named suffix path ("hundredths").
+        // The numerator "twenty-one" must retain its hyphen; no .Replace("-", " ").
+        string result = EN.ConvertFraction(21, 100);
+        StringAssert.Contains(result, "twenty-one",
+            $"Hyphen in 'twenty-one' must be preserved in named-suffix fraction path; got: '{result}'");
+    }
+
+    [TestMethod]
+    public void ConvertFraction_EN_HyphenatedNumerator_HyphenPreserved_OverConnector()
+    {
+        // 21/7 → denominator 7 is not a power of 10 → "over" connector path.
+        // The numerator "twenty-one" must retain its hyphen.
+        string result = EN.ConvertFraction(21, 7);
+        StringAssert.Contains(result, "twenty-one",
+            $"Hyphen in 'twenty-one' must be preserved in over-connector fraction path; got: '{result}'");
+    }
+
+    [TestMethod]
+    public void ConvertFraction_EN_HyphenatedDenominator_HyphenPreserved_OverConnector()
+    {
+        // 1/21 → denominator "twenty-one" must retain its hyphen in the over-connector path.
+        string result = EN.ConvertFraction(1, 21);
+        StringAssert.Contains(result, "twenty-one",
+            $"Hyphen in denominator 'twenty-one' must be preserved; got: '{result}'");
+    }
+
+    [TestMethod]
+    public void Convert_Decimal_EN_HyphenatedFractionPart_HyphenPreserved()
+    {
+        // 0.21 with a named decimal suffix forces the fractional part through Convert(21).
+        // "twenty-one" must appear without hyphen stripping in the decimal output.
+        var c = EN;
+        string result = c.Convert(0.21m);
+        StringAssert.Contains(result, "twenty-one",
+            $"Hyphen in decimal fraction 'twenty-one' must be preserved; got: '{result}'");
+    }
+
+    // ── Item 71 — DateFirstDay applies only to {{ordinal-day}}; DateFirstCardinalDay to {{cardinal-day}} ─
+
+    [TestMethod]
+    public void Convert_DateOnly_DateFirstDay_AppliesToOrdinalDayOnly()
+    {
+        // A pattern with both {ordinal-day} and {cardinal-day}:
+        // DateFirstDay → only {ordinal-day} for day 1;
+        // {cardinal-day} for day 1 uses the standard cardinal form.
+        var opts = new NumberToStringConverterOptions(EN)
+        {
+            DatePattern = "{cardinal-day}/{ordinal-day}",
+            DateFirstDay = "PREMIER"
+        };
+        var c = new NumberToStringConverter(opts);
+        string result = c.Convert(new DateOnly(2026, 1, 1));
+        // ordinal-day → "PREMIER", cardinal-day → standard cardinal "one"
+        Assert.AreEqual("one/PREMIER", result,
+            $"DateFirstDay must apply only to {{ordinal-day}}, not {{cardinal-day}}; got: '{result}'");
+    }
+
+    [TestMethod]
+    public void Convert_DateOnly_DateFirstCardinalDay_AppliesToCardinalDayOnly()
+    {
+        // DateFirstCardinalDay → only {cardinal-day} for day 1;
+        // {ordinal-day} for day 1 uses the standard ordinal form.
+        var opts = new NumberToStringConverterOptions(EN)
+        {
+            DatePattern = "{cardinal-day}/{ordinal-day}",
+            DateFirstCardinalDay = "ERSTEN"
+        };
+        var c = new NumberToStringConverter(opts);
+        string result = c.Convert(new DateOnly(2026, 1, 1));
+        // cardinal-day → "ERSTEN", ordinal-day → standard ordinal "first"
+        Assert.AreEqual("ERSTEN/first", result,
+            $"DateFirstCardinalDay must apply only to {{cardinal-day}}, not {{ordinal-day}}; got: '{result}'");
+    }
+
+    [TestMethod]
+    public void Convert_DateOnly_BothFirstDayOverrides_Independent()
+    {
+        // Both overrides set independently.
+        var opts = new NumberToStringConverterOptions(EN)
+        {
+            DatePattern = "{cardinal-day}/{ordinal-day}",
+            DateFirstDay = "ORDINAL-FIRST",
+            DateFirstCardinalDay = "CARDINAL-FIRST"
+        };
+        var c = new NumberToStringConverter(opts);
+        string result = c.Convert(new DateOnly(2026, 1, 1));
+        Assert.AreEqual("CARDINAL-FIRST/ORDINAL-FIRST", result,
+            $"Both overrides must apply to their respective tokens independently; got: '{result}'");
+    }
+
+    [TestMethod]
+    public void Convert_DateOnly_FirstDayOverrides_NotAppliedForOtherDays()
+    {
+        // Overrides must only fire for day == 1.
+        var opts = new NumberToStringConverterOptions(EN)
+        {
+            DatePattern = "{cardinal-day}/{ordinal-day}",
+            DateFirstDay = "ORDINAL-FIRST",
+            DateFirstCardinalDay = "CARDINAL-FIRST"
+        };
+        var c = new NumberToStringConverter(opts);
+        string result = c.Convert(new DateOnly(2026, 1, 2));
+        // day 2 → standard forms, no overrides
+        Assert.AreEqual("two/second", result,
+            $"First-day overrides must not apply for day 2; got: '{result}'");
     }
 }

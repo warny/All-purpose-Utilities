@@ -720,6 +720,7 @@ namespace Utils.NumberToString
                     .ToDictionary(u => u.Name, u => (u.Singular, u.Plural, u.Count1Form)),
                 DatePattern = language.DateFormat?.Pattern,
                 DateFirstDay = language.DateFormat?.FirstDay,
+                DateFirstCardinalDay = language.DateFormat?.FirstCardinalDay,
                 DateTimeConnector = language.DateFormat?.DateTimeConnector,
             };
 
