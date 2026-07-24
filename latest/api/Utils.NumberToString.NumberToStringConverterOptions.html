@@ -250,7 +250,7 @@ or <a class="xref" href="Utils.NumberToString.NumberToStringConverterOptions.htm
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions__ctor" data-uid="Utils.NumberToString.NumberToStringConverterOptions.#ctor">
   NumberToStringConverterOptions()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L185"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L191"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Creates an options object with sensible defaults. Required properties
@@ -279,7 +279,7 @@ must be set before passing to the constructor.</p>
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions__ctor_Utils_NumberToString_NumberToStringConverter_" data-uid="Utils.NumberToString.NumberToStringConverterOptions.#ctor(Utils.NumberToString.NumberToStringConverter)">
   NumberToStringConverterOptions(NumberToStringConverter)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L189"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L195"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Clones all settings from an existing converter instance.</p>
@@ -344,6 +344,39 @@ must be set before passing to the constructor.</p>
 
 
 
+  <a id="Utils_NumberToString_NumberToStringConverterOptions_DateFirstCardinalDay_" data-uid="Utils.NumberToString.NumberToStringConverterOptions.DateFirstCardinalDay*"></a>
+
+  <h3 id="Utils_NumberToString_NumberToStringConverterOptions_DateFirstCardinalDay" data-uid="Utils.NumberToString.NumberToStringConverterOptions.DateFirstCardinalDay">
+  DateFirstCardinalDay
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L183"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Special string for day 1 in {cardinal-day} (e.g. &quot;premier&quot; in French, &quot;ersten&quot; in German).
+When set, replaces the standard cardinal form of 1 in cardinal-day slots.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string? DateFirstCardinalDay { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <a id="Utils_NumberToString_NumberToStringConverterOptions_DateFirstDay_" data-uid="Utils.NumberToString.NumberToStringConverterOptions.DateFirstDay*"></a>
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions_DateFirstDay" data-uid="Utils.NumberToString.NumberToStringConverterOptions.DateFirstDay">
@@ -351,8 +384,8 @@ must be set before passing to the constructor.</p>
   <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L177"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Special string used for the first day of the month (e.g. &quot;premier&quot; in French).
-When set, overrides the ordinal form of day 1 in {ordinal-day}.</p>
+  <div class="markdown level1 summary"><p>Special string for day 1 in {ordinal-day} (e.g. &quot;first&quot; override).
+When set, replaces the standard ordinal form of 1 in ordinal-day slots.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -414,7 +447,7 @@ Required for Convert(DateOnly/DateTime).</p>
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions_DateTimeConnector" data-uid="Utils.NumberToString.NumberToStringConverterOptions.DateTimeConnector">
   DateTimeConnector
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L180"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L186"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Connector inserted between date and time when converting a DateTime (defaults to Separator).</p>
@@ -1554,7 +1587,7 @@ Applied between the raw adjustment function and <a class="xref" href="Utils.Numb
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions_FromCulture_System_Globalization_CultureInfo_" data-uid="Utils.NumberToString.NumberToStringConverterOptions.FromCulture(System.Globalization.CultureInfo)">
   FromCulture(CultureInfo)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L238"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L245"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Clones the settings of the converter registered for <code class="paramref">culture</code>.</p>
@@ -1591,7 +1624,7 @@ Applied between the raw adjustment function and <a class="xref" href="Utils.Numb
 
   <h3 id="Utils_NumberToString_NumberToStringConverterOptions_FromCulture_System_String_" data-uid="Utils.NumberToString.NumberToStringConverterOptions.FromCulture(System.String)">
   FromCulture(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L245"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverterOptions.cs/#L252"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Clones the settings of the converter registered for <code class="paramref">cultureName</code>
