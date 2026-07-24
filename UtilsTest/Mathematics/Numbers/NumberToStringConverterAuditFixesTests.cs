@@ -1549,6 +1549,61 @@ public class NumberToStringConverterAuditFixesTests
             "Exception must mention the missing newValue");
     }
 
+    // ── Follow-up: baseOn normalization (review finding) ─────────────────────
+
+    [TestMethod]
+    public void ReadConfiguration_BaseOnWithSpaces_ResolvesSuccessfully()
+    {
+        // Base culture registered with spaces; child references it via baseOn with spaces.
+        // Both must load without error, proving NormalizeCulture is applied to baseOn.
+        string xml = BuildXmlWithBaseOn(baseCulture: " XBASE ", childCulture: "XCHILD", baseOnValue: " XBASE ");
+        var converters = NumberToStringConverter.ReadConfiguration(xml);
+        Assert.IsTrue(converters.ContainsKey("XBASE"), "Base culture must be registered as 'XBASE'");
+        Assert.IsTrue(converters.ContainsKey("XCHILD"), "Child culture must resolve baseOn and load successfully");
+    }
+
+    // ── Follow-up: empty entries inside forms= are rejected (review finding) ──
+
+    [TestMethod]
+    public void ReadConfiguration_FormsWithLeadingEmptyEntry_ThrowsInvalidOperation()
+    {
+        // Count matches (2 values, 2 entries) but first entry is empty → must reject.
+        string xml = BuildXmlWithForms("dim1", "a,b", ",b");
+        var ex = Assert.ThrowsException<InvalidOperationException>(
+            () => NumberToStringConverter.ReadConfiguration(xml));
+        StringAssert.Contains(ex.Message, "dim1",
+            "Exception must identify the dimension");
+        StringAssert.Contains(ex.Message, "a",
+            "Exception must identify the dimension value that lacks a form");
+    }
+
+    [TestMethod]
+    public void ReadConfiguration_FormsWithTrailingEmptyEntry_ThrowsInvalidOperation()
+    {
+        // Count matches (2 values, 2 entries) but last entry is empty → must reject.
+        string xml = BuildXmlWithForms("dim1", "a,b", "X,");
+        var ex = Assert.ThrowsException<InvalidOperationException>(
+            () => NumberToStringConverter.ReadConfiguration(xml));
+        StringAssert.Contains(ex.Message, "dim1");
+        StringAssert.Contains(ex.Message, "b",
+            "Exception must identify the dimension value that lacks a form");
+    }
+
+    // ── Follow-up: item 94 in nested Variant rules (review finding) ───────────
+
+    [TestMethod]
+    public void ReadConfiguration_NestedVariantBareReplacement_ThrowsInvalidOperation()
+    {
+        // A <Replacement> inside a <Variant> rule with no newValue and no <Variant> children must throw.
+        string xml = BuildXmlWithNestedBareReplacement(dimName: "gender", dimValues: "a,b", dimValue: "a", oldValue: "one");
+        var ex = Assert.ThrowsException<InvalidOperationException>(
+            () => NumberToStringConverter.ReadConfiguration(xml));
+        StringAssert.Contains(ex.Message, "one",
+            "Exception must identify the incomplete replacement's oldValue");
+        StringAssert.Contains(ex.Message, "newValue",
+            "Exception must mention the missing newValue");
+    }
+
     // ── XML helpers for configuration audit tests ─────────────────────────────
 
     private static string BuildXmlWithForms(string dimName, string dimValues, string forms) => $@"<?xml version=""1.0"" encoding=""utf-8"" ?>
@@ -1618,6 +1673,36 @@ public class NumberToStringConverterAuditFixesTests
     <Replacements>
       <Replacement oldValue=""{oldValue}"" scope=""Standalone"" />
     </Replacements>
+  </Language>
+</Numbers>";
+
+    private static string BuildXmlWithBaseOn(string baseCulture, string childCulture, string baseOnValue) => $@"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>{baseCulture}</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"" baseOn=""{baseOnValue}"">
+    <Culture>{childCulture}</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+</Numbers>";
+
+    private static string BuildXmlWithNestedBareReplacement(
+        string dimName, string dimValues, string dimValue, string oldValue) => $@"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>XTEST</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+    <Variants>
+      <Dimension name=""{dimName}"" values=""{dimValues}"" />
+      <Variant type=""{dimName}"" variant=""{dimValue}"">
+        <Replacement oldValue=""{oldValue}"" scope=""Standalone"" />
+      </Variant>
+    </Variants>
   </Language>
 </Numbers>";
 }

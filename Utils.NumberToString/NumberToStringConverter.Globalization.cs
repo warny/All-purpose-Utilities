@@ -167,7 +167,7 @@ namespace Utils.NumberToString
             LanguageType child,
             IReadOnlyDictionary<string, LanguageType> docLanguages)
         {
-            string baseKey = child.BaseOn;
+            string baseKey = NormalizeCulture(child.BaseOn);
 
             // Prefer the already-resolved version from the cache (handles multi-document chains
             // and in-order same-document chains where the base was already processed).
@@ -434,11 +434,17 @@ namespace Utils.NumberToString
                             ? [variant.VariantValue]
                             : [""];
 
-                var replacements = (variant.Replacements ?? [])
-                    .Where(r => r.NewValue != null)
-                    .Select(r => new NumberToStringConverter.ReplacementRule(r.OldValue, r.NewValue!, r.Scope, r.OnScale,
-                        r.OnValue))
-                    .ToList();
+                var replacements = new List<NumberToStringConverter.ReplacementRule>();
+                foreach (var r in variant.Replacements ?? [])
+                {
+                    if (r.NewValue != null)
+                        replacements.Add(new NumberToStringConverter.ReplacementRule(r.OldValue, r.NewValue, r.Scope, r.OnScale, r.OnValue));
+                    else if (r.FormVariants == null || r.FormVariants.Count == 0)
+                        throw new InvalidOperationException(
+                            $"[{languageIdentifier}] Replacement for '{r.OldValue}' inside a Variant rule has neither " +
+                            $"a newValue nor child form-variant elements.");
+                    // else: form variants on nested replacements are currently not expanded in this path.
+                }
 
                 foreach (var dimValue in dimValues)
                 {
@@ -498,7 +504,11 @@ namespace Utils.NumberToString
                         for (int i = 0; i < dimValues.Count; i++)
                         {
                             var form = entries[i].Trim();
-                            if (string.IsNullOrEmpty(form)) continue;
+                            if (string.IsNullOrEmpty(form))
+                                throw new InvalidOperationException(
+                                    $"Dimension '{dimName}' value '{dimValues[i]}' (index {i}) has an empty form " +
+                                    $"in forms=\"{node.Forms}\". All entries must be non-empty; " +
+                                    $"use a named Variant element for partial mappings.");
                             var leafConstraints = new Dictionary<string, string>(constraints, StringComparer.OrdinalIgnoreCase)
                                 { [dimName] = dimValues[i] };
                             yield return (leafConstraints, form);
