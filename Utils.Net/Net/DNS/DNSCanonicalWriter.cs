@@ -470,11 +470,6 @@ public class DNSCanonicalWriter : IDNSWriter<byte[]>
         public int Position { get; set; } = 0;
 
         /// <summary>
-        /// Tracks positions of DNS names for DNS name compression (reusing labels with pointers).
-        /// </summary>
-        public Dictionary<string, ushort> StringsPositions { get; } = new();
-
-        /// <summary>
         /// Holds the current <see cref="Context"/> state if writing a resource record that tracks
         /// data length. When <c>null</c>, length tracking is not in use.
         /// </summary>
@@ -654,9 +649,9 @@ public class DNSCanonicalWriter : IDNSWriter<byte[]>
         }
 
         /// <summary>
-        /// Writes a DNS domain name using basic DNS label compression. If the domain was previously written,
-        /// a pointer is used. Otherwise, each label is written with a length byte, and a trailing 0 byte
-        /// denotes the end of the name.
+        /// Writes a DNS domain name in canonical form without compression: each label is written with
+        /// a one-byte length prefix in lower-case ASCII, followed by a trailing zero byte. No compression
+        /// pointers (0xC0) are emitted.
         /// </summary>
         /// <param name="s">The <see cref="DNSDomainName"/> to write.</param>
         public void WriteDomainName(DNSDomainName s)

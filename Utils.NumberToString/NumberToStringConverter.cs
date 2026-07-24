@@ -711,7 +711,7 @@ namespace Utils.NumberToString
             // variant rules, end triggers, and language finalization can be applied to "zero".
             string raw = abs == BigInteger.Zero ? Zero : ConvertRaw(abs, query);
             if (_rawAdjustFunction != null) raw = _rawAdjustFunction(raw);
-            raw = ApplyVariantRules(raw, query, abs <= long.MaxValue ? (long?)abs : null);
+            raw = ApplyVariantRules(raw, query, (BigInteger?)abs);
             raw = ApplyTriggers(raw, TriggerAt.End, null, query);
             string final = LanguageSpecifics.FinalizeWriting(LanguageIdentifier, raw);
 
@@ -777,7 +777,7 @@ namespace Utils.NumberToString
                 }
             }
 
-            return ApplyReplacements(result.ToString(), numericValue: abs <= long.MaxValue ? (long?)abs : null);
+            return ApplyReplacements(result.ToString(), numericValue: (BigInteger?)abs);
         }
 
         /// <summary>
@@ -834,7 +834,7 @@ namespace Utils.NumberToString
         /// The numeric value of the current group in scale mode (e.g. 1 for the thousands group
         /// in 1 000), evaluated against <see cref="ReplacementRule.OnValue"/>.
         /// </param>
-        private string ApplyVariantRules(string text, IReadOnlyDictionary<string, string> query, long? numericValue = null, int? scaleGroupNumber = null, long scaleGroupValue = 0)
+        private string ApplyVariantRules(string text, IReadOnlyDictionary<string, string> query, BigInteger? numericValue = null, int? scaleGroupNumber = null, long scaleGroupValue = 0)
         {
             if (VariantRules.Count == 0 || query.Count == 0) return text;
 
@@ -856,7 +856,7 @@ namespace Utils.NumberToString
                     else
                     {
                         if (_hasScaleSpecificVariantRules && replacement.OnScale is not null) continue;
-                        if (replacement.OnValue is not null && (numericValue is null || !replacement.OnValue.Contains(numericValue.Value)))
+                        if (replacement.OnValue is not null && (numericValue is null || !OnValueInRange(replacement.OnValue, numericValue.Value)))
                             continue;
                     }
                     text = ApplyVariantReplacement(text, replacement);
@@ -881,6 +881,23 @@ namespace Utils.NumberToString
         /// </param>
         private string ApplyVariantRulesForScale(string text, IReadOnlyDictionary<string, string> query, int groupNumber, long groupNumericValue = 0) =>
             ApplyVariantRules(text, query, scaleGroupNumber: groupNumber, scaleGroupValue: groupNumericValue);
+
+        // Evaluates whether a BigInteger value is within an IntRange<long>.
+        // IntRange<long> can only represent values in [long.MinValue, long.MaxValue].
+        // For values outside that range, we approximate using the boundary: if the range contains
+        // long.MaxValue, it most likely has an open (+∞) upper bound and should match any larger
+        // positive integer. The rare edge case of a range whose upper bound is exactly long.MaxValue
+        // (not open) is treated as a match — this is an acceptable false positive given the
+        // practical impossibility of that configuration for number-to-string rules.
+        private static bool OnValueInRange(IntRange<long> range, BigInteger value)
+        {
+            if (value >= long.MinValue && value <= long.MaxValue)
+                return range.Contains((long)value);
+            // value is outside [long.MinValue, long.MaxValue].
+            // An open-upper-bound sub-range would necessarily contain long.MaxValue,
+            // so we use Contains(long.MaxValue) as a proxy.
+            return value > 0 && range.Contains(long.MaxValue);
+        }
 
         /// <summary>
         /// Applies a single replacement rule to <paramref name="text"/> according to its scope.
@@ -1000,7 +1017,7 @@ namespace Utils.NumberToString
         /// <see langword="null"/> suppresses <c>onValue</c> filtering (rule fires regardless).
         /// </param>
         /// <returns>The value after applying any matching replacements.</returns>
-        private string ApplyReplacements(string value, int? groupNumber = null, long? numericValue = null)
+        private string ApplyReplacements(string value, int? groupNumber = null, BigInteger? numericValue = null)
         {
             if (string.IsNullOrEmpty(value) || Replacements.Count == 0)
                 return value;
@@ -1010,7 +1027,7 @@ namespace Utils.NumberToString
                 foreach (var rule in _scaleReplacements)
                 {
                     if (!rule.OnScale!.Contains(groupNumber.Value)) continue;
-                    if (rule.OnValue is not null && (numericValue is null || !rule.OnValue.Contains(numericValue.Value)))
+                    if (rule.OnValue is not null && (numericValue is null || !OnValueInRange(rule.OnValue, numericValue.Value)))
                         continue;
                     value = ApplyVariantReplacement(value, rule);
                 }
@@ -1024,7 +1041,7 @@ namespace Utils.NumberToString
             {
                 foreach (var rule in _valueFilteredGlobalReplacements)
                 {
-                    if (rule.OnValue!.Contains(numericValue.Value))
+                    if (OnValueInRange(rule.OnValue!, numericValue.Value))
                         value = ApplyVariantReplacement(value, rule);
                 }
             }
@@ -1191,8 +1208,10 @@ namespace Utils.NumberToString
             /// <param name="localName">Optional language-specific alias (e.g. "genus" for German, "sijamuoto" for Finnish).</param>
             public VariantDimension(string name, IReadOnlyList<string> values, string? localName = null)
             {
+                ArgumentException.ThrowIfNullOrEmpty(name);
+                ArgumentNullException.ThrowIfNull(values);
                 Name = name;
-                Values = values;
+                Values = values.ToImmutableArray();
                 LocalName = localName;
             }
 
@@ -1222,8 +1241,10 @@ namespace Utils.NumberToString
             /// <param name="replacements">Replacement rules applied when this variant is active.</param>
             public VariantRule(IReadOnlyDictionary<string, string> constraints, IReadOnlyList<ReplacementRule> replacements)
             {
-                Constraints = constraints;
-                Replacements = replacements;
+                ArgumentNullException.ThrowIfNull(constraints);
+                ArgumentNullException.ThrowIfNull(replacements);
+                Constraints = constraints.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase);
+                Replacements = replacements.ToImmutableArray();
             }
 
             /// <summary>Gets the dimension constraints (name → required value).</summary>
@@ -1255,9 +1276,12 @@ namespace Utils.NumberToString
                 string? suffix,
                 string? removeTrailing)
             {
-                Constraints = constraints;
-                Exceptions = exceptions;
-                WordRules = wordRules;
+                ArgumentNullException.ThrowIfNull(constraints);
+                ArgumentNullException.ThrowIfNull(exceptions);
+                ArgumentNullException.ThrowIfNull(wordRules);
+                Constraints = constraints.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase);
+                Exceptions = exceptions.ToImmutableDictionary();
+                WordRules = wordRules.ToImmutableDictionary();
                 Suffix = suffix;
                 RemoveTrailing = removeTrailing;
             }
