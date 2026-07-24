@@ -1071,6 +1071,23 @@ public class NumberToStringConverterAuditFixesTests
             "Two DigitType entries with the same Digit value in the same group must be rejected");
     }
 
+    [TestMethod]
+    public void Constructor_GroupKeysStartingAtTwo_ThrowsArgumentException()
+    {
+        // ConvertGroup recurses down to group 1; a sequence starting at 2 would cause
+        // a late KeyNotFoundException; must be caught at construction time.
+        var opts = new NumberToStringConverterOptions(EN)
+        {
+            Groups = new Dictionary<int, DigitListType>
+            {
+                [2] = OneDigitList(),
+                [3] = OneDigitList()
+            }
+        };
+        Assert.ThrowsException<ArgumentException>(() => new NumberToStringConverter(opts),
+            "Group keys must start at 1");
+    }
+
     // ── Item 78 — MaxNumber must not be negative ──────────────────────────────
 
     [TestMethod]

@@ -1485,9 +1485,9 @@ namespace Utils.NumberToString
                 throw new ArgumentException("Groups must contain at least one group.", paramName);
 
             var groupKeys = src.Keys.OrderBy(k => k).ToList();
-            if (groupKeys[0] < 1)
+            if (groupKeys[0] != 1)
                 throw new ArgumentException(
-                    $"Group keys must be positive integers; the smallest key is {groupKeys[0]}.", paramName);
+                    $"Group keys must start at 1; the smallest key is {groupKeys[0]}.", paramName);
             for (int gi = 1; gi < groupKeys.Count; gi++)
                 if (groupKeys[gi] != groupKeys[gi - 1] + 1)
                     throw new ArgumentException(
@@ -1496,8 +1496,7 @@ namespace Utils.NumberToString
             int maxGroupKey = groupKeys[groupKeys.Count - 1];
             if (maxGroupKey > _decimalPowersOfTen.Length)
                 throw new ArgumentException(
-                    $"The maximum group key ({maxGroupKey}) exceeds the supported limit of {_decimalPowersOfTen.Length}; " +
-                    $"provide a smaller number of groups or add a custom power table.", paramName);
+                    $"The maximum group key ({maxGroupKey}) exceeds the maximum supported by this library ({_decimalPowersOfTen.Length}).", paramName);
 
             foreach (var (key, digitList) in src)
             {
