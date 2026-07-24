@@ -491,6 +491,37 @@ namespace Utils.Range
         }
 
         /// <summary>
+        /// Checks whether a <see cref="BigInteger"/> value is contained in any of the intervals.
+        /// Converts each finite bound to <see cref="BigInteger"/> for an exact comparison, so values
+        /// outside the range of <typeparamref name="T"/> (e.g. above <see cref="long.MaxValue"/>) are
+        /// evaluated correctly against open or closed bounds.
+        /// </summary>
+        public bool Contains(BigInteger value)
+        {
+            foreach (var range in _ranges)
+            {
+                BigInteger? min = range.Minimum.HasValue
+                    ? BigInteger.CreateChecked(range.Minimum.Value)
+                    : null;
+                BigInteger? max = range.Maximum.HasValue
+                    ? BigInteger.CreateChecked(range.Maximum.Value)
+                    : null;
+
+                bool aboveMin = min is null || value >= min.Value;
+                bool belowMax = max is null || value <= max.Value;
+
+                if (aboveMin && belowMax)
+                    return true;
+
+                // Ranges are sorted by minimum: once value < this range's minimum,
+                // no subsequent range can match.
+                if (min.HasValue && value < min.Value)
+                    return false;
+            }
+            return false;
+        }
+
+        /// <summary>
         /// Produces the union of two IntRange sets (|).
         /// </summary>
         public static IntRange<T> Union(IntRange<T> left, IntRange<T> right)

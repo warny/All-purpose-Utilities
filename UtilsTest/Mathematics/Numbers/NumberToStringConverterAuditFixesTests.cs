@@ -1280,4 +1280,30 @@ public class NumberToStringConverterAuditFixesTests
         Assert.IsFalse(result.Contains("HUNDRED"),
             $"onValue='1..100' must NOT fire for BigInteger > long.MaxValue; got: {result}");
     }
+
+    [TestMethod]
+    public void OnValueRule_BigIntegerAboveLongMax_DoesNotFireForClosedLongMaxRange()
+    {
+        // A rule with onValue="1..9223372036854775807" has a closed upper bound at exactly
+        // long.MaxValue. 10^20 > long.MaxValue, so it is outside [1, long.MaxValue] and
+        // the rule must NOT fire. The previous approximation (Contains(long.MaxValue) as proxy
+        // for "open upper bound") incorrectly returned true for this case.
+        var c = BuildEnWithOnValueRule($"1..{long.MaxValue}");
+        var hugeValue = BigInteger.Pow(10, 20);
+        var result = c.Convert(hugeValue);
+        Assert.IsFalse(result.Contains("HUNDRED"),
+            $"onValue='1..{long.MaxValue}' must NOT fire for 10^20 (above the closed upper bound); got: {result}");
+    }
+
+    [TestMethod]
+    public void OnValueRule_BigIntegerAboveLongMax_DoesNotFireForExactLongMax()
+    {
+        // A rule with onValue="9223372036854775807" (the single exact value long.MaxValue)
+        // must NOT fire for 10^20, which is strictly greater than long.MaxValue.
+        var c = BuildEnWithOnValueRule($"{long.MaxValue}");
+        var hugeValue = BigInteger.Pow(10, 20);
+        var result = c.Convert(hugeValue);
+        Assert.IsFalse(result.Contains("HUNDRED"),
+            $"onValue='{long.MaxValue}' must NOT fire for 10^20; got: {result}");
+    }
 }
