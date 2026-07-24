@@ -35,6 +35,7 @@ namespace Utils.NumberToString
         public static NumberToStringConverter GetConverter(string culture)
         {
             ArgumentException.ThrowIfNullOrEmpty(culture);
+            culture = culture.Trim();
             if (culture.Length < 2)
                 throw new ArgumentException("Culture code must be at least 2 characters.", nameof(culture));
 
