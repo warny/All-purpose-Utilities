@@ -1418,4 +1418,206 @@ public class NumberToStringConverterAuditFixesTests
         Assert.AreEqual("two/second", result,
             $"First-day overrides must not apply for day 2; got: '{result}'");
     }
+
+    // ── Item 88 — forms= count must match dimension value count ──────────────
+
+    [TestMethod]
+    public void ReadConfiguration_FormsTooFew_ThrowsInvalidOperation()
+    {
+        // Dimension declares 3 values; forms= provides only 2 → must reject.
+        string xml = BuildXmlWithForms("dim1", "a,b,c", "X,Y");
+        var ex = Assert.ThrowsException<InvalidOperationException>(
+            () => NumberToStringConverter.ReadConfiguration(xml));
+        StringAssert.Contains(ex.Message, "dim1",
+            "Exception must identify the offending dimension name");
+        StringAssert.Contains(ex.Message, "3",
+            "Exception must state the expected count");
+        StringAssert.Contains(ex.Message, "2",
+            "Exception must state the actual count");
+    }
+
+    [TestMethod]
+    public void ReadConfiguration_FormsTooMany_ThrowsInvalidOperation()
+    {
+        // Dimension declares 2 values; forms= provides 3 → must reject.
+        string xml = BuildXmlWithForms("dim1", "a,b", "X,Y,Z");
+        var ex = Assert.ThrowsException<InvalidOperationException>(
+            () => NumberToStringConverter.ReadConfiguration(xml));
+        StringAssert.Contains(ex.Message, "dim1");
+    }
+
+    [TestMethod]
+    public void ReadConfiguration_FormsExactCount_Succeeds()
+    {
+        // Exact count (2 values, 2 forms) must load without error.
+        string xml = BuildXmlWithForms("dim1", "a,b", "X,Y");
+        var converters = NumberToStringConverter.ReadConfiguration(xml);
+        Assert.IsTrue(converters.Count > 0, "Valid forms count must produce at least one converter");
+    }
+
+    // ── Item 90 — dimension alias collisions are reported clearly ─────────────
+
+    [TestMethod]
+    public void ReadConfiguration_DuplicateDimensionName_ThrowsInvalidOperation()
+    {
+        // Two dimensions with the same canonical name must be rejected.
+        string xml = BuildXmlWithDuplicateDimension(canonical1: "gender", alias1: null,
+                                                    canonical2: "gender", alias2: null);
+        var ex = Assert.ThrowsException<InvalidOperationException>(
+            () => NumberToStringConverter.ReadConfiguration(xml));
+        StringAssert.Contains(ex.Message, "gender",
+            "Exception must identify the colliding dimension name");
+    }
+
+    [TestMethod]
+    public void ReadConfiguration_AliasCollidesWithCanonicalName_ThrowsInvalidOperation()
+    {
+        // Dimension "case" with alias "gender" collides with the canonical name of another dimension "gender".
+        string xml = BuildXmlWithDuplicateDimension(canonical1: "gender", alias1: null,
+                                                    canonical2: "case", alias2: "gender");
+        var ex = Assert.ThrowsException<InvalidOperationException>(
+            () => NumberToStringConverter.ReadConfiguration(xml));
+        StringAssert.Contains(ex.Message, "gender");
+    }
+
+    // ── Item 91 — culture identifiers are trimmed at registration boundaries ──
+
+    [TestMethod]
+    public void GetConverter_CultureWithLeadingTrailingSpace_ResolvesSamAsWithout()
+    {
+        // "EN" and " EN " must resolve to the same converter.
+        var plain = NumberToStringConverter.GetConverter("EN");
+        var spaced = NumberToStringConverter.GetConverter(" EN ");
+        Assert.AreSame(plain, spaced,
+            "GetConverter must trim whitespace from culture identifiers before lookup");
+    }
+
+    [TestMethod]
+    public void ReadConfiguration_CultureWithSpaces_RegisteredAndLookupSucceeds()
+    {
+        // A culture registered as " XTEST " must be found as "XTEST".
+        string xml = BuildMinimalXml(" XTEST ");
+        var converters = NumberToStringConverter.ReadConfiguration(xml);
+        Assert.IsTrue(converters.ContainsKey("XTEST"),
+            "ReadConfiguration must trim culture keys before registering them");
+    }
+
+    // ── Item 93 — static scale indices must be zero-based and contiguous ──────
+
+    [TestMethod]
+    public void ReadConfiguration_StaticScaleSkipsIndex_ThrowsInvalidOperation()
+    {
+        // indices 0 and 2 (gap at 1) must be rejected.
+        string xml = BuildXmlWithScaleIndices(0, 2);
+        var ex = Assert.ThrowsException<InvalidOperationException>(
+            () => NumberToStringConverter.ReadConfiguration(xml));
+        StringAssert.Contains(ex.Message, "contiguous",
+            "Exception must mention contiguous indices requirement");
+    }
+
+    [TestMethod]
+    public void ReadConfiguration_StaticScaleStartsAtOne_ThrowsInvalidOperation()
+    {
+        // An index starting at 1 (missing 0) must be rejected.
+        string xml = BuildXmlWithScaleIndices(1, 2);
+        var ex = Assert.ThrowsException<InvalidOperationException>(
+            () => NumberToStringConverter.ReadConfiguration(xml));
+        StringAssert.Contains(ex.Message, "0",
+            "Exception must mention that index 0 is expected first");
+    }
+
+    [TestMethod]
+    public void ReadConfiguration_StaticScaleContiguous_Succeeds()
+    {
+        // Indices 0, 1 (the normal pattern) must succeed.
+        string xml = BuildXmlWithScaleIndices(0, 1);
+        var converters = NumberToStringConverter.ReadConfiguration(xml);
+        Assert.IsTrue(converters.Count > 0, "Contiguous scale indices must load successfully");
+    }
+
+    // ── Item 94 — replacement without newValue or form variants is rejected ───
+
+    [TestMethod]
+    public void ReadConfiguration_ReplacementWithoutNewValueOrVariants_ThrowsInvalidOperation()
+    {
+        string xml = BuildXmlWithBareReplacement("one");
+        var ex = Assert.ThrowsException<InvalidOperationException>(
+            () => NumberToStringConverter.ReadConfiguration(xml));
+        StringAssert.Contains(ex.Message, "one",
+            "Exception must identify the incomplete replacement's oldValue");
+        StringAssert.Contains(ex.Message, "newValue",
+            "Exception must mention the missing newValue");
+    }
+
+    // ── XML helpers for configuration audit tests ─────────────────────────────
+
+    private static string BuildXmlWithForms(string dimName, string dimValues, string forms) => $@"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>XTEST</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+    <Variants>
+      <Dimension name=""{dimName}"" values=""{dimValues}"" />
+    </Variants>
+    <Replacements>
+      <Replacement oldValue=""zero"" scope=""Standalone"">
+        <Variant type=""{dimName}"" forms=""{forms}"" />
+      </Replacement>
+    </Replacements>
+  </Language>
+</Numbers>";
+
+    private static string BuildXmlWithDuplicateDimension(
+        string canonical1, string? alias1, string canonical2, string? alias2)
+    {
+        string attr1 = alias1 != null ? $@" localName=""{alias1}""" : "";
+        string attr2 = alias2 != null ? $@" localName=""{alias2}""" : "";
+        return $@"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>XTEST</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+    <Variants>
+      <Dimension name=""{canonical1}""{attr1} values=""a,b"" />
+      <Dimension name=""{canonical2}""{attr2} values=""x,y"" />
+    </Variants>
+  </Language>
+</Numbers>";
+    }
+
+    private static string BuildMinimalXml(string culture) => $@"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>{culture}</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+  </Language>
+</Numbers>";
+
+    private static string BuildXmlWithScaleIndices(params int[] indices)
+    {
+        var scales = string.Concat(indices.Select(i => $@"<Scale value=""{i}"" string=""s{i}"" />"));
+        return $@"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>XTEST</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames>{scales}</StaticNames></NumberScale>
+  </Language>
+</Numbers>";
+    }
+
+    private static string BuildXmlWithBareReplacement(string oldValue) => $@"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<Numbers xmlns=""Utils/NumberConvertionConfiguration.xsd"">
+  <Language groupSize=""3"" separator="" "" groupSeparator="","" zero=""zero"" minus=""minus *"">
+    <Culture>XTEST</Culture>
+    <Groups><Group level=""1""><Digit digit=""0"" string=""zero"" /><Digit digit=""1"" string=""one"" /></Group></Groups>
+    <NumberScale><StaticNames><Scale value=""0"" string="""" /></StaticNames></NumberScale>
+    <Replacements>
+      <Replacement oldValue=""{oldValue}"" scope=""Standalone"" />
+    </Replacements>
+  </Language>
+</Numbers>";
 }
