@@ -1227,4 +1227,57 @@ public class NumberToStringConverterAuditFixesTests
             new NumberToStringConverter.OrdinalVariantRule(
                 new Dictionary<string, string>(), new Dictionary<long, string>(), null!, null, null));
     }
+
+    // ── Item 76 — onValue rules must not be silently suppressed for BigInteger > long.MaxValue ──
+
+    private static NumberToStringConverter BuildEnWithOnValueRule(string onValue) =>
+        new(new NumberToStringConverterOptions(EN)
+        {
+            Replacements =
+            [
+                ..EN.Replacements,
+                new NumberToStringConverter.ReplacementRule(
+                    "hundred", "HUNDRED",
+                    ReplacementScope.Anywhere,
+                    onScale: null,
+                    onValue: NumberToStringConverter.ParseRangeExpression(onValue))
+            ]
+        });
+
+    [TestMethod]
+    public void OnValueRule_SmallValue_WithinLongRange_FiresCorrectly()
+    {
+        // Baseline: onValue="1.." fires for a small value that contains "hundred".
+        var c = BuildEnWithOnValueRule("1..");
+        var result = c.Convert(100); // "one hundred"
+        StringAssert.Contains(result, "HUNDRED",
+            $"onValue='1..' must fire for value 100 (within long range); got: {result}");
+    }
+
+    [TestMethod]
+    public void OnValueRule_BigIntegerAboveLongMax_FiresForOpenUpperBound()
+    {
+        // 10^20 is well above long.MaxValue (~9.2×10^18).
+        // The assembled text for 10^20 in English is "one hundred quintillion".
+        // A global replacement rule with onValue="1.." (= [1, +∞)) must fire
+        // because the range has an open upper bound; previously it was silently
+        // suppressed (numericValue was passed as null for large BigIntegers).
+        var c = BuildEnWithOnValueRule("1..");
+        var hugeValue = BigInteger.Pow(10, 20);
+        var result = c.Convert(hugeValue);
+        StringAssert.Contains(result, "HUNDRED",
+            $"onValue='1..' must fire for BigInteger > long.MaxValue; got: {result}");
+    }
+
+    [TestMethod]
+    public void OnValueRule_BigIntegerAboveLongMax_DoesNotFireForClosedRange()
+    {
+        // A rule with onValue="1..100" (closed upper bound far below long.MaxValue)
+        // must NOT fire for 10^20, since 10^20 is not in [1, 100].
+        var c = BuildEnWithOnValueRule("1..100");
+        var hugeValue = BigInteger.Pow(10, 20);
+        var result = c.Convert(hugeValue);
+        Assert.IsFalse(result.Contains("HUNDRED"),
+            $"onValue='1..100' must NOT fire for BigInteger > long.MaxValue; got: {result}");
+    }
 }
